@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "stor",
-  "devDependencies": {
+  "dependencies": {
     "lerna": "^3.3.2",
     "parcel-bundler": "^1.10.3",
     "psc-package-bin-simple": "^1.0.1",
