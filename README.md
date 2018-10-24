@@ -1,10 +1,17 @@
-# Stor
+# Affresco
 
-Repo for all the front-end stuff.
+![Affresco](http://www.hotelfororomano.com/wp-content/gallery/gallery-arte-braocca-roma/vita-di-mose-affresco-cappella-sistina-michelangelo.jpg)
+
+Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful apps are contained in this repo.
 
 ## Initializing
 
-For initializing the repo, run `yarn install`, `yarn build-purs` and `lerna bootstrap`.
+For initializing the repo, run:
+```bash
+yarn install
+yarn build-purs
+lerna bootstrap
+```
 
 ## Structure
 
