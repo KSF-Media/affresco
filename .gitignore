@@ -12,3 +12,4 @@ packages/*/index.js
 apps/*/index.js
 .env.production
 yarn-error.log
+.yarn-cache/

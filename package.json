@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "stor",
+  "name": "affresco",
   "dependencies": {
     "lerna": "^3.3.2",
     "parcel-bundler": "^1.10.3",
@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build-purs": "psc-package build \"packages/*/src/**/*.purs\" \"apps/*/src/**/*.purs\"  && ./build-purs.rb",
-    "clean": "rm -rf .cache .psc-package .psci_modules node_modules output dist"
+    "clean": "rm -rf .cache .psc-package .psci_modules node_modules output dist .yarn-cache"
   },
   "workspaces": [
     "packages/*",
