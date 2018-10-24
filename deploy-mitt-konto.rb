@@ -31,6 +31,7 @@ def run_command(command)
 end
 
 build_commands = [
+  'npm run clean',
   'npm install yarn',
   'yarn install --pure-lockfile --cache-folder=.yarn-cache',
   'yarn run --cache-folder=.yarn-cache build-purs',
