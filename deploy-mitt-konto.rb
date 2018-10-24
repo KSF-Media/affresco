@@ -32,10 +32,10 @@ end
 
 build_commands = [
   'npm install yarn',
-  'yarn install',
-  'yarn build-purs',
+  'yarn install --pure-lockfile --cache-folder=.yarn-cache',
+  'yarn run --cache-folder=.yarn-cache build-purs',
   'lerna bootstrap',
-  'lerna run build'
+  'lerna run --cache-folder=.yarn-cache build'
 ]
 
 build_commands.each { |c| run_command(c) }
