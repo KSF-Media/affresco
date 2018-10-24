@@ -14,7 +14,7 @@
     "npmClient": "yarn"
   },
   "scripts": {
-    "build-purs": "psc-package build \"/packages/src/**/*.purs\" \"apps/*/src/**/*.purs\"  && ./build-purs.rb",
+    "build-purs": "psc-package build \"packages/*/src/**/*.purs\" \"apps/*/src/**/*.purs\"  && ./build-purs.rb",
     "clean": "rm -rf .cache .psc-package .psci_modules node_modules output dist"
   },
   "workspaces": [
