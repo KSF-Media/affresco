@@ -1,0 +1,20 @@
+{
+  "name": "stor",
+  "set": "master",
+  "source": "https://github.com/KSF-Media/package-sets.git",
+  "depends": [
+    "aff",
+    "formatters",
+    "datetime",
+    "react-basic",
+    "psci-support",
+    "console",
+    "effect",
+    "prelude",
+    "js-date",
+    "foreign-generic",
+    "generics-rep",
+    "ordered-collections",
+    "simple-json"
+  ]
+}

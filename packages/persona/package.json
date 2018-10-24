@@ -1,0 +1,10 @@
+{
+  "name": "@affresco/persona",
+  "version": "1.0.0",
+  "description": "Persona client",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#a9a13840014c90e056025025ebeb0a40f335924a"
+  }
+}

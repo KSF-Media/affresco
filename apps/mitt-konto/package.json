@@ -1,0 +1,15 @@
+{
+  "name": "@affresco/mitt-konto",
+  "version": "1.0.0",
+  "description": "A mitt konto frontend, allows customers to manage their subscriptions",
+  "license": "MIT",
+  "dependencies": {
+    "basscss": "^8.0.4",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2"
+  },
+  "scripts": {
+    "start": "parcel index.html -p 8000",
+    "build": "parcel build index.html && cp xd_receiver.html ./dist"
+  }
+}

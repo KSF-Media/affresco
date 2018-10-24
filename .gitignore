@@ -1,0 +1,14 @@
+node_modules
+output
+dist
+build
+.psc-package
+.psci_modules
+.cache
+package-lock.json
+.DS_Store
+
+packages/*/index.js
+apps/*/index.js
+.env.production
+yarn-error.log

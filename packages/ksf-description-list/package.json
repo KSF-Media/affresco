@@ -1,0 +1,11 @@
+{
+  "name": "@affresco/ksf-description-list",
+  "version": "1.0.0",
+  "description": "A simple description list React component",
+  "main": "./build/index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "react": "^16.4.1",
+    "react-dom": "^16.4.1"
+  }
+}

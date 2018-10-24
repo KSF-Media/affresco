@@ -1,0 +1,216 @@
+@import (reference) '../less/ksf-colors';
+@import (reference) '../less/ksf-variables';
+@import '../less/ksf-fonts';
+
+body {
+    font-family: 'Duplex Sans', sans-serif;
+    font-weight: 300;
+    background-color: @grey-light;
+    margin: 0;
+}
+
+b, strong {
+    font-weight: bold;
+}
+
+a {
+    color: @link-color;
+    text-decoration: none;
+    &:hover {
+        transition: color 0.2s linear;
+        color: @grey-mediumdark;
+    }
+}
+
+dt {
+    font-weight: 500;
+}
+
+dd {
+    margin-left: 0;
+}
+
+.mitt-konto--heading {
+    color: @grey-dark;
+    font-family: 'Duplex Serif Web', serif;
+    font-weight: 700;
+    letter-spacing: -.015em;
+    margin-bottom: 10px;
+}
+
+h2.mitt-konto---heading {
+    font-size: 1.75rem;
+}
+
+
+.mitt-konto--component-heading {
+    color: @grey-mediumlight;
+    font-family: 'Roboto', serif;
+}
+
+
+.mitt-konto--description {
+    @media @to-large {
+        text-align: center;
+        padding-bottom: 10px;
+    }
+}
+
+.mitt-konto--main-container {
+    @media @to-xsmall {
+        width: 100% !important;
+    }
+}
+
+.mitt-konto--container {
+    position: relative;
+}
+
+.mitt-konto--loading {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: @grey-light;
+    z-index: @loading;
+    .mitt-konto--loading-image {
+        background-image: url("../images/loader-gif.gif");
+        background-size: 32px 32px;
+        width: 32px;
+        height: 32px;
+    }
+}
+
+.mitt-konto--subscribe-button-container {
+    @media @to-xsmall {
+        justify-content: center;
+    }
+}
+
+.mitt-konto--subscribe-button {
+    .button--blank-button {
+        background-color: @button-color-primary;
+        &:hover {
+            background-color: @button-color-primary-hover;
+        }
+    }
+}
+
+.mitt-konto--no-subscriptions {
+    p:first-child { margin-top: 0 }
+    p:last-child { margin-bottom: 0 }
+}
+
+@width-of-account-edit-icon: 50px;
+@height-of-account-edit-icon: 50px;
+
+.mitt-konto--icon-container {
+    width: @width-of-account-edit-icon;
+    height: @height-of-account-edit-icon;
+    background: white;
+}
+
+.format-edit-subscription-block(@icon-name) {
+    display: block;
+    width: @width-of-account-edit-icon;
+    height: @height-of-account-edit-icon;
+    background-position: center;
+    background-repeat: no-repeat, repeat;
+    background-image: url('../images/@{icon-name}');
+    background-size: 30px;
+}
+
+.mitt-konto--pause-subscription {
+    .format-edit-subscription-block('tim-pocket-watch.svg');
+}
+
+.mitt-konto--temporary-address-change {
+    .format-edit-subscription-block('loc-point-map.svg');
+}
+
+.mitt-konto--permanent-address-change {
+    .format-edit-subscription-block('loc-point-distance.svg');
+}
+
+.mitt-konto--password-change {
+    .format-edit-subscription-block('sec-shield.svg');
+}
+
+.mitt-konto--feedback {
+    .format-edit-subscription-block('cha-rect-text.svg');
+    padding-top: 3px;
+}
+
+.mitt-konto--account-edit-container {
+    a {
+        color: @grey-dark;
+        text-decoration: underline;
+    }
+    @media @to-xsmall {
+        margin-left: 1em;
+    }
+}
+
+.mitt-konto--subscribe-image {
+    img {
+       width: 100%;
+    }
+}
+
+.mitt-konto--break {
+    border: 0;
+    height: 1px;
+    background: @grey-almostlight;
+    margin-top: 2em;
+    margin-bottom: 2em;
+}
+
+.mitt-konto--edit-account {
+    margin-top: 2em;
+}
+
+
+.mitt-konto--component-block-container {
+    @media @to-medium {
+        margin-right: 1em;
+
+    }
+    @media @to-xsmall {
+        margin-left: 1em;
+    }
+    .mitt-konto--heading {
+        padding-bottom: 1em;
+    }
+}
+
+.mitt-konto--component-block-content {
+    background: white;
+    border-radius: 5px;
+    margin-top: 1em;
+    padding: 15px;
+    dl {
+        margin-top: 0;
+        margin-bottom: 0;
+        > dt {
+            color: @grey-mediumlight;
+            margin-top: 1em;
+            font-weight: 300;
+            &:first-child {
+                margin-top: 0;
+            }
+        }
+    }
+}
+
+.mitt-konto--profile {
+    padding-right: 2em;
+    @media @to-medium {
+        padding: 0;
+    }
+}
+
+.mitt-konto--disappearing-break {
+    display: none;
+    @media @to-medium {
+        display: block;
+    }
+}

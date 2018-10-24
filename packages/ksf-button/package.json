@@ -1,0 +1,11 @@
+{
+  "name": "@affresco/ksf-button",
+  "version": "1.0.0",
+  "description": "Button React component",
+  "main": "./build/index.js",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2"
+  }
+}
