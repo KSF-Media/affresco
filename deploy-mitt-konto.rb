@@ -25,6 +25,6 @@ else
   ENV['NODE_ENV'] = 'development'
 end
 
-%x[npm install yarn && yarn install && yarn build-purs && asdasd && lerna bootstrap && lerna run build]
+%x[npm install yarn && yarn install && yarn build-purs && lerna bootstrap && lerna run build]
 
 abort("Mitt konto build failed.") if !$?.success?
