@@ -25,4 +25,18 @@ else
   ENV['NODE_ENV'] = 'development'
 end
 
-%x[npm install yarn && yarn install && yarn build-purs && lerna bootstrap && lerna run build]
+def run_command(command)
+  puts "Running '#{command}'"
+  system(command) or abort("'#{command}' failed.")
+end
+
+build_commands = [
+  'npm run clean',
+  'npm install yarn',
+  'yarn install --pure-lockfile --cache-folder=.yarn-cache',
+  'yarn run --cache-folder=.yarn-cache build-purs',
+  'lerna bootstrap',
+  'lerna run --cache-folder=.yarn-cache build'
+]
+
+build_commands.each { |c| run_command(c) }

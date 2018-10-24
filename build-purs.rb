@@ -24,6 +24,6 @@ purs_modules_given =
   end
 
 purs_modules_given.each do |mod|
-  %x[npx purp make-module -m #{mod.name} -t #{mod.path}/index.js]
+  %x[purp make-module -m #{mod.name} -t #{mod.path}/index.js]
   puts "Built #{mod.name}"
 end
