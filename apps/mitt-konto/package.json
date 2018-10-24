@@ -5,11 +5,15 @@
   "license": "MIT",
   "dependencies": {
     "basscss": "^8.0.4",
+    "create-react-class": "^15.6.3",
     "react": "^16.5.2",
     "react-dom": "^16.5.2"
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
     "build": "parcel build index.html && cp xd_receiver.html ./dist"
+  },
+  "devDependencies": {
+    "less": "^3.8.1"
   }
 }
