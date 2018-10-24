@@ -7,20 +7,22 @@ env_variables = %w[
   PRODUCTION_FACEBOOK_APP_ID
 ]
 
-abort("HEAD is not 'master'") if ENV['HEAD'] != 'master'
-
-env_variables.each do |v|
-  abort("Did not find #{v} in the environment variables") if ENV[v].nil?
-end
-
-File.open('apps/mitt-konto/.env.production', 'a') do |f|
+if ENV['HEAD'] == 'master'
   env_variables.each do |v|
-    # Strip 'PRODUCTION_' from the variable name
-    env_var_name = v.sub(/^PRODUCTION_/, '')
-    f.puts("#{env_var_name}=#{ENV[v]}")
+    abort("Did not find #{v} in the environment variables") if ENV[v].nil?
   end
-end
 
-ENV['NODE_ENV'] = 'production'
+  File.open('apps/mitt-konto/.env.production', 'a') do |f|
+    env_variables.each do |v|
+      # Strip 'PRODUCTION_' from the variable name
+      env_var_name = v.sub(/^PRODUCTION_/, '')
+      f.puts("#{env_var_name}=#{ENV[v]}")
+    end
+  end
+
+  ENV['NODE_ENV'] = 'production'
+else
+  ENV['NODE_ENV'] = 'development'
+end
 
 %x[npm install yarn && yarn install && yarn build-purs && lerna bootstrap && lerna run build]
