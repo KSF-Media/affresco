@@ -33,6 +33,7 @@ end
 build_commands = [
   'npm run clean',
   'npm install yarn',
+  'lerna clean --yes',
   'yarn install --pure-lockfile --cache-folder=.yarn-cache',
   'yarn run --cache-folder=.yarn-cache build-purs',
   'lerna bootstrap',
