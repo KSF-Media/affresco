@@ -4,7 +4,7 @@
   "description": "React component to show customer information",
   "main": "./build/index.js",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "react": "^16.4.1",
     "react-dom": "^16.4.1"
   }
