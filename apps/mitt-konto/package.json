@@ -12,6 +12,6 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "parcel build index.html && cp xd_receiver.html ./dist"
+    "build": "parcel build index.html --no-cache && cp xd_receiver.html ./dist"
   }
 }
