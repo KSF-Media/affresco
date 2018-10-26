@@ -9,19 +9,21 @@ import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, Error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
+import Effect.Class.Console as Log
 import Effect.Exception (error)
+import Effect.Exception as Error
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
-import Persona as Persona
 import KSF.Profile.Component as Profile
 import KSF.Subscription.Component as Subscription
+import Persona as Persona
 import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -89,27 +91,41 @@ loadingIndicator Loading =
           ]
       }
 
-showLoadingIndicator :: SetState -> Number -> (Aff Unit -> Effect Unit)
-showLoadingIndicator setState delay =
-   \aff -> do
-     let setLoading l = liftEffect do
-           setState \s -> s { loading { login = l } }
-     Aff.launchAff_ do
-       -- the trick in here is that we want to show the loading indicator
-       -- only after the action takes some noticable time
-       Aff.bracket
-         (Aff.forkAff do
-           -- the forked action runs without blocking the thread
-           -- but returns a reference that allows to cancel it
-           Aff.delay $ Aff.Milliseconds delay
-           -- after a short sleep we enable the indicator
-           setLoading $ Just Loading)
-         (\loading -> do
-           -- when we are done we can cancel the loading indicator
-           -- so that it won't get enabled if we've finished early
-           Aff.killFiber (error "we're done") loading
-           setLoading Nothing)
-         (\loading -> aff)
+-- | Allows to run the asynchronous action while showing the loading indicator
+--   and handling the result.
+runAffLoading
+  :: forall a.
+     SetState
+  -> (Either Error a -> Effect Unit) -- ^ result handler
+  -> Aff a -- ^ asynchronous action
+  -> Effect Unit
+runAffLoading setState handler action =
+   Aff.launchAff_ do
+     loadingFiber <- Aff.forkAff do
+       -- In this thread we wait a bit and then switch the spinner on
+       -- This prevents flickering if the action completes instantly
+       Aff.delay $ Aff.Milliseconds 100.0
+       setLoading $ Just Loading
+     actionFiber <- Aff.forkAff do
+       -- In the meanwhile we run the action
+       result <- Aff.try action
+       -- then we give result to the handler (swallowing errors thrown by it)
+       Aff.apathize $ liftEffect $ handler result
+     timeoutFiber <- Aff.forkAff do
+       -- in yet another thread we sleep we are counting down till timeout
+       Aff.delay $ Aff.Milliseconds (30.0 * 1000.0)
+       -- and kill the main action in case if it's still running
+       Aff.killFiber (error "Loading timeout reached") actionFiber
+     Aff.joinFiber actionFiber # Aff.finally do
+       -- finally in the end, when the action has been completed
+       -- we kill all other threads and switch the loading off
+       Aff.killFiber (error "Action is done") timeoutFiber
+       Aff.killFiber (error "Action is done") loadingFiber
+       setLoading Nothing
+  where
+    setLoading l = liftEffect do
+      setState \s -> s { loading { login = l } }
+
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
@@ -119,7 +135,10 @@ navbarView { state, setState } =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          showLoadingIndicator setState 0.0
+          runAffLoading setState
+            (case _ of
+               Left err -> Log.error $ "Error during logout: " <> Error.message err
+               Right _ ->  Log.info "Logout successful")
             $ Login.logout \u -> setState \s -> s { loggedInUser = u }
       }
 
@@ -289,7 +308,10 @@ loginView { state, setState } = React.fragment
               Right user -> do
                 log "Fetching user succeeded"
                 setState \s -> s { loggedInUser = Just user }
-          , launchAff_: showLoadingIndicator setState 100.0
+          , launchAff_: runAffLoading setState $ case _ of
+              Left err -> do
+                Log.error $ "Error during login: " <> Error.message err
+              Right r -> pure unit
           }
 
     heading =
