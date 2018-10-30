@@ -99,7 +99,8 @@ runAffLoading
   -> (Either Error a -> Effect Unit) -- ^ result handler
   -> Aff a -- ^ asynchronous action
   -> Effect Unit
-runAffLoading setState handler action =
+runAffLoading setState handler action = do
+   let timeoutSeconds = 30.0
    Aff.launchAff_ do
      loadingFiber <- Aff.forkAff do
        -- In this thread we wait a bit and then switch the spinner on
@@ -113,7 +114,7 @@ runAffLoading setState handler action =
        Aff.apathize $ liftEffect $ handler result
      timeoutFiber <- Aff.forkAff do
        -- in yet another thread we sleep we are counting down till timeout
-       Aff.delay $ Aff.Milliseconds (30.0 * 1000.0)
+       Aff.delay $ Aff.Milliseconds $ timeoutSeconds * 1000.0
        -- and kill the main action in case if it's still running
        Aff.killFiber (error "Loading timeout reached") actionFiber
      Aff.joinFiber actionFiber # Aff.finally do
@@ -125,7 +126,6 @@ runAffLoading setState handler action =
   where
     setLoading l = liftEffect do
       setState \s -> s { loading { login = l } }
-
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
