@@ -93,13 +93,13 @@ loadingIndicator Loading =
 
 -- | Allows to run the asynchronous action while showing the loading indicator
 --   and handling the result.
-runAffLoading
+runAffWithSpinner
   :: forall a.
      SetState
   -> (Either Error a -> Effect Unit) -- ^ result handler
   -> Aff a -- ^ asynchronous action
   -> Effect Unit
-runAffLoading setState handler action = do
+runAffWithSpinner setState handler action = do
    let timeoutSeconds = 30.0
    Aff.launchAff_ do
      loadingFiber <- Aff.forkAff do
@@ -135,7 +135,7 @@ navbarView { state, setState } =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          runAffLoading setState
+          runAffWithSpinner setState
             (case _ of
                Left err -> Log.error $ "Error during logout: " <> Error.message err
                Right _ ->  Log.info "Logout successful")
@@ -308,7 +308,7 @@ loginView { state, setState } = React.fragment
               Right user -> do
                 log "Fetching user succeeded"
                 setState \s -> s { loggedInUser = Just user }
-          , launchAff_: runAffLoading setState $ case _ of
+          , launchAff_: runAffWithSpinner setState $ case _ of
               Left err -> do
                 Log.error $ "Error during login: " <> Error.message err
               Right r -> pure unit
