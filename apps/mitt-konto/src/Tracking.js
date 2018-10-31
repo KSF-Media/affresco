@@ -4,10 +4,12 @@ function Tracker() {
   this.dataLayer = window.dataLayer;
 }
 
-Tracker.prototype.pushPageLoad = function() {
-  var pushData = {'event': 'page_data'};
-  // TODO: Add user UUID to the request
-  this.dataLayer.push(pushData);
+exports.newTracker = function() {
+  return new Tracker();
 }
 
-exports.tracker_ = new Tracker();
+exports.pushPageLoad = function(tracker) {
+  return function() {
+    tracker.dataLayer.push({'event': 'page_data'});
+  }
+}
