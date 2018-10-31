@@ -56,7 +56,9 @@ app = React.component
   , render
   }
   where
-    receiveProps _ = Tracking.pushPageLoad
+    receiveProps _ = do
+      tracker <- Tracking.newTracker
+      Tracking.pushPageLoad tracker
     render { state, setState } =
       React.fragment
         [ navbarView { state, setState }
