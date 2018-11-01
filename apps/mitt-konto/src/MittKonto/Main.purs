@@ -9,13 +9,11 @@ import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
 import Effect (Effect)
-import Effect.Aff (Aff, Error)
+import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Effect.Class.Console as Log
 import Effect.Exception (error)
-import Effect.Exception as Error
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
@@ -37,9 +35,15 @@ type Props =
 type State =
   { paper :: Navbar.Paper
   , loggedInUser :: Maybe Persona.User
-  , loading :: { login :: Maybe Loading }
+  , loading :: Maybe Loading
   , showWelcome :: Boolean
   }
+
+setLoading :: Maybe Loading -> State -> State
+setLoading loading = _ { loading = loading }
+
+setLoggedInUser :: Maybe Persona.User -> State -> State
+setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
 
 data Loading = Loading
 
@@ -51,7 +55,7 @@ app = React.component
   , initialState:
       { paper: KSF
       , loggedInUser: Nothing
-      , loading: { login: Just Loading }
+      , loading: Nothing
       , showWelcome: true
       }
   , receiveProps
@@ -73,7 +77,7 @@ app = React.component
      where
        mittKonto =
          classy DOM.div "mitt-konto--container clearfix mt4"
-           [ foldMap loadingIndicator state.loading.login
+           [ foldMap loadingIndicator state.loading
            , case state.loggedInUser of
                Just user -> userView { user }
                Nothing   -> loginView { state, setState }
@@ -93,39 +97,26 @@ loadingIndicator Loading =
 
 -- | Allows to run the asynchronous action while showing the loading indicator
 --   and handling the result.
-runAffWithSpinner
-  :: forall a.
-     SetState
-  -> (Either Error a -> Effect Unit) -- ^ result handler
-  -> Aff a -- ^ asynchronous action
-  -> Effect Unit
-runAffWithSpinner setState handler action = do
+withSpinner :: forall a. (Maybe Loading -> Effect Unit) -> Aff a -> Aff a
+withSpinner setLoadingState action = do
    let timeoutSeconds = 30.0
-   Aff.launchAff_ do
-     loadingFiber <- Aff.forkAff do
-       -- In this thread we wait a bit and then switch the spinner on
-       -- This prevents flickering if the action completes instantly
-       Aff.delay $ Aff.Milliseconds 100.0
-       setLoading $ Just Loading
-     actionFiber <- Aff.forkAff do
-       -- In the meanwhile we run the action
-       result <- Aff.try action
-       -- then we give result to the handler (swallowing errors thrown by it)
-       Aff.apathize $ liftEffect $ handler result
-     timeoutFiber <- Aff.forkAff do
-       -- in yet another thread we sleep we are counting down till timeout
-       Aff.delay $ Aff.Milliseconds $ timeoutSeconds * 1000.0
-       -- and kill the main action in case if it's still running
-       Aff.killFiber (error "Loading timeout reached") actionFiber
-     Aff.joinFiber actionFiber # Aff.finally do
-       -- finally in the end, when the action has been completed
-       -- we kill all other threads and switch the loading off
-       Aff.killFiber (error "Action is done") timeoutFiber
-       Aff.killFiber (error "Action is done") loadingFiber
-       setLoading Nothing
-  where
-    setLoading l = liftEffect do
-      setState \s -> s { loading { login = l } }
+   -- The "loading" thread sleeps a bit and then switches turns the spinner on.
+   -- This is to prevent flickering in case if the action completes instantly.
+   loadingFiber <- Aff.forkAff do
+     Aff.delay $ Aff.Milliseconds 100.0
+     liftEffect $ setLoadingState $ Just Loading
+   -- The "action" thread runs the asynchronous task
+   actionFiber <- Aff.forkAff action
+   -- The "timeout" thread would kill the "action" thread after the delay.
+   timeoutFiber <- Aff.forkAff do
+     Aff.delay $ Aff.Milliseconds $ timeoutSeconds * 1000.0
+     Aff.killFiber (error "Timeout reached") actionFiber
+   Aff.joinFiber actionFiber # Aff.finally do
+     -- finally in the end, when the action has been completed
+     -- we kill all other threads and switch the loading off
+     Aff.killFiber (error "Action is done") timeoutFiber
+     Aff.killFiber (error "Action is done") loadingFiber
+     liftEffect $ setLoadingState Nothing
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
@@ -135,11 +126,8 @@ navbarView { state, setState } =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          runAffWithSpinner setState
-            (case _ of
-               Left err -> Log.error $ "Error during logout: " <> Error.message err
-               Right _ ->  Log.info "Logout successful")
-            $ Login.logout \u -> setState \s -> s { loggedInUser = u }
+          Aff.launchAff_ $ withSpinner (setState <<< setLoading)
+            (Login.logout (setState <<< setLoggedInUser))
       }
 
 footerView :: React.JSX
@@ -304,14 +292,11 @@ loginView { state, setState } = React.fragment
             case _ of
               Left err -> do
                 log "Fetching user failed"
-                setState \s -> s { loggedInUser = Nothing }
+                setState $ setLoggedInUser Nothing
               Right user -> do
                 log "Fetching user succeeded"
-                setState \s -> s { loggedInUser = Just user }
-          , launchAff_: runAffWithSpinner setState $ case _ of
-              Left err -> do
-                Log.error $ "Error during login: " <> Error.message err
-              Right r -> pure unit
+                setState $ setLoggedInUser $ Just user
+          , launchAff_: Aff.launchAff_ <<< withSpinner (setState <<< setLoading)
           }
 
     heading =
