@@ -3,17 +3,20 @@ module MittKonto.Main where
 import Prelude
 
 import Data.Array ((:))
+import Data.DateTime.Instant as Instant
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
+import Data.Time.Duration as Time
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (error)
+import Effect.Now as Effect
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
@@ -99,24 +102,31 @@ loadingIndicator Loading =
 --   and handling the result.
 withSpinner :: forall a. (Maybe Loading -> Effect Unit) -> Aff a -> Aff a
 withSpinner setLoadingState action = do
-   let timeoutSeconds = 30.0
-   -- The "loading" thread sleeps a bit and then switches turns the spinner on.
-   -- This is to prevent flickering in case if the action completes instantly.
-   loadingFiber <- Aff.forkAff do
-     Aff.delay $ Aff.Milliseconds 100.0
-     liftEffect $ setLoadingState $ Just Loading
+   let timeoutDelay = Aff.Milliseconds $ 30.0 * 1000.0
+       flickerDelay = Aff.Milliseconds $ 333.3
+   -- The "loading" thread turns the spinner on and off, preventing the flickering
+   loadingFiber <- Aff.forkAff $ do
+     -- delay switching the spinner on to avoid having to switch it off right away
+     Aff.delay flickerDelay *> do liftEffect $ setLoadingState $ Just Loading
+     loadingSince <- Instant.unInstant <$> liftEffect Effect.now
+     -- sleep forever, when interrupted switch the spinner off
+     Aff.never `Aff.cancelWith` Aff.Canceler \err -> do
+       -- again, we sleep a bit in cases when the spinner was turned on just a moment ago
+       now <- Instant.unInstant <$> liftEffect Effect.now
+       Aff.delay $ Time.negateDuration now <> loadingSince <> flickerDelay
+       liftEffect $ setLoadingState Nothing
    -- The "action" thread runs the asynchronous task
    actionFiber <- Aff.forkAff action
    -- The "timeout" thread would kill the "action" thread after the delay.
    timeoutFiber <- Aff.forkAff do
-     Aff.delay $ Aff.Milliseconds $ timeoutSeconds * 1000.0
+     Aff.delay timeoutDelay
      Aff.killFiber (error "Timeout reached") actionFiber
+     Aff.killFiber (error "Timeout reached") loadingFiber
    Aff.joinFiber actionFiber # Aff.finally do
      -- finally in the end, when the action has been completed
      -- we kill all other threads and switch the loading off
      Aff.killFiber (error "Action is done") timeoutFiber
      Aff.killFiber (error "Action is done") loadingFiber
-     liftEffect $ setLoadingState Nothing
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
