@@ -2,10 +2,15 @@ module JanrainSSO where
 
 import Prelude
 
-import Data.Maybe (Maybe)
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Aff as Aff
+import Effect.Class.Console as Console
+import Effect.Exception as Exception
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 
 foreign import loadConfig :: Effect Config
@@ -26,8 +31,14 @@ checkSession = runEffectFn1 sso.check_session
 setSession :: String -> Effect Unit
 setSession = runEffectFn1 sso.set_session
 
-endSession :: Maybe (Effect Unit) -> Effect Unit
-endSession = runEffectFn1 sso.end_session <<< Nullable.toNullable
+endSession :: Aff Unit
+endSession = Aff.makeAff \callback -> do
+  Exception.catchException
+    (\err -> do
+      Console.error $ "JanrainSSO.set_session failed: " <> Exception.message err
+      callback $ Left err)
+    (runEffectFn1 sso.end_session $ Nullable.toNullable $ Just $ callback $ Right unit)
+  pure Aff.nonCanceler
 
 type Config =
   { client_id    :: String
