@@ -27,30 +27,30 @@ module KSF.Login.Facebook.Sdk
 
 import Prelude
 
-import Control.Monad (bind, (<#>), (<$>), (<*>), (=<<))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (runExcept)
 import Data.Array (zip)
 import Data.Either (Either(..), either, note)
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Function.Uncurried (Fn5, runFn5)
-import Data.Functor (map)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Map as M
-import Foreign.Object as SM
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.String (joinWith, toLower)
 import Data.Traversable (intercalate, traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import Effect.Aff (Aff, Canceler(..), makeAff)
+import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Effect.Exception (error)
+import Effect.Exception as Exception
 import Foreign (F, Foreign, MultipleErrors, readInt, readNullOrUndefined, readString)
 import Foreign.Class (class Encode, encode)
 import Foreign.Index ((!))
 import Foreign.Keys (keys)
+import Foreign.Object as SM
 
 type AppId = String
 
@@ -212,10 +212,11 @@ readSMap value = do
 
 -- | Initialize Facebook SDK
 init :: Config -> Aff Sdk
-init config = makeAff (\f -> do
-                          let success = f <<< (\a -> Right a)
-                          _init success config
-                          pure $ Canceler (\err -> pure unit))
+init config = Aff.makeAff \callback -> do
+  Exception.catchException
+    (callback <<< Left)
+    (_init (callback <<< Right) config)
+  pure Aff.nonCanceler
 
 -- | Retrieve a Facebook Login status
 loginStatus :: Sdk -> Aff StatusInfo
@@ -274,12 +275,11 @@ api sdk (AccessToken token) method path params = do
   let path' = encode path
   let method' = encode method
   let params' = encode $ SM.insert "access_token" token params
-  value <- makeAff (\f -> do
-                       let cb = f <<< (\a -> Right a)
-                       runFn5 _api sdk path' method' params' cb
-                       pure $ Canceler (\err -> pure unit))
-
-           --(\_ cb -> runFn5 _api sdk path' method' params' cb)
+  value <- Aff.makeAff \callback -> do
+    Exception.catchException
+      (callback <<< Left)
+      (runFn5 _api sdk path' method' params' (callback <<< Right))
+    pure Aff.nonCanceler
   let prefix = "Facebook graph api call (" <> (show method) <> " "
                                            <> (show path)   <> ") error"
   either (handleForeignErrors prefix) pure $ runExcept (readSMap value)
@@ -288,11 +288,11 @@ returnStatusInfo :: (Sdk -> (Foreign -> Effect Unit) -> Effect Unit)
                  -> Sdk
                  -> Aff StatusInfo
 returnStatusInfo f sdk = do
-  value <- makeAff (\g -> do
-                       let success = g <<< (\b -> Right b)
-                       f sdk success
-                       pure $ Canceler (\err -> pure unit))
-           -- (\_ success -> f sdk success)
+  value <- Aff.makeAff \callback -> do
+    Exception.catchException
+      (callback <<< Left)
+      (f sdk (callback <<< Right))
+    pure Aff.nonCanceler
   either (handleForeignErrors "Facebook status info") pure $
     runExcept (readStatusInfo value)
 
