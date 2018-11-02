@@ -36,7 +36,7 @@ exports.isSignedIn_ = function() {
   return false;
 };
 
-exports.signOut_ = function(onSignOut) {
+exports.signOut_ = function() {
   var auth2 = gapi.auth2.getAuthInstance();
-  auth2.signOut().then(onSignOut);
+  return auth2.signOut();
 }
