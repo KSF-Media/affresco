@@ -3,20 +3,17 @@ module MittKonto.Main where
 import Prelude
 
 import Data.Array ((:))
-import Data.DateTime.Instant as Instant
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
-import Data.Time.Duration as Time
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (error)
-import Effect.Now as Effect
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
@@ -103,18 +100,20 @@ loadingIndicator Loading =
 withSpinner :: forall a. (Maybe Loading -> Effect Unit) -> Aff a -> Aff a
 withSpinner setLoadingState action = do
    let timeoutDelay = Aff.Milliseconds $ 30.0 * 1000.0
-       flickerDelay = Aff.Milliseconds $ 333.3
-   -- The "loading" thread turns the spinner on and off, preventing the flickering
-   loadingFiber <- Aff.forkAff $ do
-     -- delay switching the spinner on to avoid having to switch it off right away
-     Aff.delay flickerDelay *> do liftEffect $ setLoadingState $ Just Loading
-     loadingSince <- Instant.unInstant <$> liftEffect Effect.now
-     -- sleep forever, when interrupted switch the spinner off
-     Aff.never `Aff.cancelWith` Aff.Canceler \err -> do
-       -- again, we sleep a bit in cases when the spinner was turned on just a moment ago
-       now <- Instant.unInstant <$> liftEffect Effect.now
-       Aff.delay $ Time.negateDuration now <> loadingSince <> flickerDelay
-       liftEffect $ setLoadingState Nothing
+       flickerDelay = Aff.Milliseconds $ 200.0
+   -- The "loading" thread turns the spinner on (when started) and off (when killed).
+   -- Prevent the spinner from flickering.
+   loadingFiber <-
+     Aff.forkAff $ (do
+       -- delay turning on the spinner, in case if the action is "instantanious"
+       Aff.delay flickerDelay
+       -- invincibly sleep for a bit more (would still wait if killed here)
+       Aff.invincible $ do
+         -- turn the spinner on
+         liftEffect $ setLoadingState $ Just Loading
+         Aff.delay flickerDelay
+       -- in the end we sleep indefinetely. When killed, remove the spinner
+       Aff.never) `Aff.cancelWith` Aff.effectCanceler (setLoadingState Nothing)
    -- The "action" thread runs the asynchronous task
    actionFiber <- Aff.forkAff action
    -- The "timeout" thread would kill the "action" thread after the delay.
