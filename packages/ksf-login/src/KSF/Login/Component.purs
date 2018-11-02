@@ -346,8 +346,8 @@ logout setParentUser = do
   -- This prevents flickering of the landing page right before the loading indicator is shown.
   logoutFacebook
   logoutGoogle
+  logoutJanrain
   liftEffect do
-    logoutJanrain
     deleteToken
     setParentUser Nothing
 
@@ -366,10 +366,10 @@ logoutGoogle = do
     Google.signOut
     Log.info "Logged out from Google."
 
-logoutJanrain :: Effect Unit
+logoutJanrain :: Aff Unit
 logoutJanrain = do
-  JanrainSSO.endSession $ Just $ do
-    Console.log "Ended janrain sso session"
+  JanrainSSO.endSession
+  Console.log "Ended Janrain session"
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
 saveToken { token, ssoCode, uuid } = liftEffect do
