@@ -337,10 +337,10 @@ finalizeLogin props loginResponse = do
       pure unit
   liftEffect $ props.onUserFetch userResponse
 
--- | This is for wrapping whatever action is supposed to happen when the user logs out.
--- | It is then supposed to be passed to the component where the logging out is actually triggered.
-logout :: (Maybe Persona.User -> Effect Unit) -> Aff Unit
-logout setParentUser = do
+-- | Logout the user. Calls social-media SDKs and SSO library.
+--   Wipes out local storage.
+logout :: Aff Unit
+logout = do
   -- Facebook logout is invoked first, as it includes an HTTP request to the Facebook backend.
   -- Before the request has finished, it is not wanted to remove the current user data from local storage or the state of the caller component.
   -- This prevents flickering of the landing page right before the loading indicator is shown.
@@ -349,7 +349,6 @@ logout setParentUser = do
     logoutJanrain
     logoutGoogle
     deleteToken
-    setParentUser Nothing
 
 logoutFacebook :: Aff Unit
 logoutFacebook = do

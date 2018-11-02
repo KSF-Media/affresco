@@ -135,8 +135,9 @@ navbarView { state, setState } =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          Aff.launchAff_ $ withSpinner (setState <<< setLoading)
-            (Login.logout (setState <<< setLoggedInUser))
+          Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
+            Login.logout
+            liftEffect $ setState $ setLoggedInUser Nothing
       }
 
 footerView :: React.JSX
