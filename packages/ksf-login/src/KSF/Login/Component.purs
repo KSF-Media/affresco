@@ -345,9 +345,9 @@ logout setParentUser = do
   -- Before the request has finished, it is not wanted to remove the current user data from local storage or the state of the caller component.
   -- This prevents flickering of the landing page right before the loading indicator is shown.
   logoutFacebook
+  logoutGoogle
   logoutJanrain
   liftEffect do
-    logoutGoogle
     deleteToken
     setParentUser Nothing
 
@@ -359,11 +359,12 @@ logoutFacebook = do
     _ <- FB.logout sdk
     Log.info "Logged out from Facebook."
 
-logoutGoogle :: Effect Unit
+logoutGoogle :: Aff Unit
 logoutGoogle = do
-  isSignedWithGoogle <- Google.isSignedIn
+  isSignedWithGoogle <- liftEffect Google.isSignedIn
   when isSignedWithGoogle do
-    Google.signOut (Log.info "Logged out from Google.")
+    Google.signOut
+    Log.info "Logged out from Google."
 
 logoutJanrain :: Aff Unit
 logoutJanrain = do

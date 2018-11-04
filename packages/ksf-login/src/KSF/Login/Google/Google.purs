@@ -1,7 +1,11 @@
 module KSF.Login.Google where
 
+import Control.Promise (Promise)
+import Control.Promise as Promise
 import Data.Unit (Unit)
 import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import Web.DOM as DOM
 
@@ -26,7 +30,7 @@ foreign import attachClickHandler_
        , onFailure :: EffectFn1 Error Unit
        }
        Unit
-foreign import signOut_ :: EffectFn1 (Effect Unit) Unit
+foreign import signOut_ :: Effect (Promise Unit)
 foreign import isSignedIn_ :: Effect Boolean
 
 attachClickHandler
@@ -43,5 +47,5 @@ attachClickHandler { node, options, onSuccess, onFailure } =
 isSignedIn :: Effect Boolean
 isSignedIn = isSignedIn_
 
-signOut :: Effect Unit -> Effect Unit
-signOut = runEffectFn1 signOut_
+signOut :: Aff Unit
+signOut = Promise.toAffE signOut_
