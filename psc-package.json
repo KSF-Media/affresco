@@ -4,6 +4,7 @@
   "source": "https://github.com/KSF-Media/package-sets.git",
   "depends": [
     "aff",
+    "aff-promise",
     "formatters",
     "datetime",
     "react-basic",
