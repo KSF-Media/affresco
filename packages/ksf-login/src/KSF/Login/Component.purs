@@ -345,9 +345,9 @@ logout = do
   -- Before the request has finished, it is not wanted to remove the current user data from local storage or the state of the caller component.
   -- This prevents flickering of the landing page right before the loading indicator is shown.
   logoutFacebook
+  logoutGoogle
+  logoutJanrain
   liftEffect do
-    logoutJanrain
-    logoutGoogle
     deleteToken
 
 logoutFacebook :: Aff Unit
@@ -358,16 +358,17 @@ logoutFacebook = do
     _ <- FB.logout sdk
     Log.info "Logged out from Facebook."
 
-logoutGoogle :: Effect Unit
+logoutGoogle :: Aff Unit
 logoutGoogle = do
-  isSignedWithGoogle <- Google.isSignedIn
+  isSignedWithGoogle <- liftEffect Google.isSignedIn
   when isSignedWithGoogle do
-    Google.signOut (Log.info "Logged out from Google.")
+    Google.signOut
+    Log.info "Logged out from Google."
 
-logoutJanrain :: Effect Unit
+logoutJanrain :: Aff Unit
 logoutJanrain = do
-  JanrainSSO.endSession $ Just $ do
-    Console.log "Ended janrain sso session"
+  JanrainSSO.endSession
+  Console.log "Ended Janrain session"
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
 saveToken { token, ssoCode, uuid } = liftEffect do
