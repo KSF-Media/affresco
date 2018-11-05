@@ -19,9 +19,9 @@ import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
-import Persona as Persona
 import KSF.Profile.Component as Profile
 import KSF.Subscription.Component as Subscription
+import Persona as Persona
 import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -35,9 +35,15 @@ type Props =
 type State =
   { paper :: Navbar.Paper
   , loggedInUser :: Maybe Persona.User
-  , loading :: { login :: Maybe Loading }
+  , loading :: Maybe Loading
   , showWelcome :: Boolean
   }
+
+setLoading :: Maybe Loading -> State -> State
+setLoading loading = _ { loading = loading }
+
+setLoggedInUser :: Maybe Persona.User -> State -> State
+setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
 
 data Loading = Loading
 
@@ -49,7 +55,7 @@ app = React.component
   , initialState:
       { paper: KSF
       , loggedInUser: Nothing
-      , loading: { login: Just Loading }
+      , loading: Nothing
       , showWelcome: true
       }
   , receiveProps
@@ -71,7 +77,7 @@ app = React.component
      where
        mittKonto =
          classy DOM.div "mitt-konto--container clearfix mt4"
-           [ foldMap loadingIndicator state.loading.login
+           [ foldMap loadingIndicator state.loading
            , case state.loggedInUser of
                Just user -> userView { user }
                Nothing   -> loginView { state, setState }
@@ -89,27 +95,37 @@ loadingIndicator Loading =
           ]
       }
 
-showLoadingIndicator :: SetState -> Number -> (Aff Unit -> Effect Unit)
-showLoadingIndicator setState delay =
-   \aff -> do
-     let setLoading l = liftEffect do
-           setState \s -> s { loading { login = l } }
-     Aff.launchAff_ do
-       -- the trick in here is that we want to show the loading indicator
-       -- only after the action takes some noticable time
-       Aff.bracket
-         (Aff.forkAff do
-           -- the forked action runs without blocking the thread
-           -- but returns a reference that allows to cancel it
-           Aff.delay $ Aff.Milliseconds delay
-           -- after a short sleep we enable the indicator
-           setLoading $ Just Loading)
-         (\loading -> do
-           -- when we are done we can cancel the loading indicator
-           -- so that it won't get enabled if we've finished early
-           Aff.killFiber (error "we're done") loading
-           setLoading Nothing)
-         (\loading -> aff)
+-- | Allows to run the asynchronous action while showing the loading indicator
+--   and handling the result.
+withSpinner :: forall a. (Maybe Loading -> Effect Unit) -> Aff a -> Aff a
+withSpinner setLoadingState action = do
+   let timeoutDelay = Aff.Milliseconds $ 30.0 * 1000.0
+       flickerDelay = Aff.Milliseconds $ 200.0
+   -- The "loading" thread turns the spinner on (when started) and off (when killed).
+   -- Prevent the spinner from flickering.
+   loadingFiber <-
+     Aff.forkAff $ (do
+       -- delay turning on the spinner, in case if the action is "instantanious"
+       Aff.delay flickerDelay
+       -- invincibly sleep for a bit more (would still wait if killed here)
+       Aff.invincible $ do
+         -- turn the spinner on
+         liftEffect $ setLoadingState $ Just Loading
+         Aff.delay flickerDelay
+       -- in the end we sleep indefinetely. When killed, remove the spinner
+       Aff.never) `Aff.cancelWith` Aff.effectCanceler (setLoadingState Nothing)
+   -- The "action" thread runs the asynchronous task
+   actionFiber <- Aff.forkAff action
+   -- The "timeout" thread would kill the "action" thread after the delay.
+   timeoutFiber <- Aff.forkAff do
+     Aff.delay timeoutDelay
+     Aff.killFiber (error "Timeout reached") actionFiber
+     Aff.killFiber (error "Timeout reached") loadingFiber
+   Aff.joinFiber actionFiber # Aff.finally do
+     -- finally in the end, when the action has been completed
+     -- we kill all other threads and switch the loading off
+     Aff.killFiber (error "Action is done") timeoutFiber
+     Aff.killFiber (error "Action is done") loadingFiber
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
@@ -119,8 +135,9 @@ navbarView { state, setState } =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          showLoadingIndicator setState 0.0
-            $ Login.logout \u -> setState \s -> s { loggedInUser = u }
+          Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
+            Login.logout
+            liftEffect $ setState $ setLoggedInUser Nothing
       }
 
 footerView :: React.JSX
@@ -285,11 +302,11 @@ loginView { state, setState } = React.fragment
             case _ of
               Left err -> do
                 log "Fetching user failed"
-                setState \s -> s { loggedInUser = Nothing }
+                setState $ setLoggedInUser Nothing
               Right user -> do
                 log "Fetching user succeeded"
-                setState \s -> s { loggedInUser = Just user }
-          , launchAff_: showLoadingIndicator setState 100.0
+                setState $ setLoggedInUser $ Just user
+          , launchAff_: Aff.launchAff_ <<< withSpinner (setState <<< setLoading)
           }
 
     heading =
