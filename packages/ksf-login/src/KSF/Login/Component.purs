@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
+import Control.Parallel (parSequence_)
 import Data.Either (Either(..), either)
 import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
@@ -19,11 +20,11 @@ import Effect.Class.Console as Log
 import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import JanrainSSO as JanrainSSO
-import LocalStorage as LocalStorage
 import KSF.Login.Facebook.Sdk as FB
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import KSF.Login.View as View
+import LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
 import React.Basic (JSX)
@@ -337,18 +338,23 @@ finalizeLogin props loginResponse = do
       pure unit
   liftEffect $ props.onUserFetch userResponse
 
+-- | JS-compatible version of 'logout', takes a callback
+--   that will be called when it's done.
+jsLogout :: Effect Unit -> Effect Unit
+jsLogout callback = Aff.runAff_ (\_ -> callback) logout
+
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
 logout :: Aff Unit
 logout = do
-  -- Facebook logout is invoked first, as it includes an HTTP request to the Facebook backend.
-  -- Before the request has finished, it is not wanted to remove the current user data from local storage or the state of the caller component.
-  -- This prevents flickering of the landing page right before the loading indicator is shown.
-  logoutFacebook
-  logoutGoogle
-  logoutJanrain
-  liftEffect do
-    deleteToken
+  -- first of all we wipe the local storage
+  liftEffect deleteToken `catchError` Console.errorShow
+  -- then, in parallel, we run all the third-party logouts
+  parSequence_
+    [ logoutFacebook `catchError` Console.errorShow
+    , logoutGoogle   `catchError` Console.errorShow
+    , logoutJanrain  `catchError` Console.errorShow
+    ]
 
 logoutFacebook :: Aff Unit
 logoutFacebook = do
