@@ -338,6 +338,11 @@ finalizeLogin props loginResponse = do
       pure unit
   liftEffect $ props.onUserFetch userResponse
 
+-- | JS-compatible version of 'logout', takes a callback
+--   that will be called when it's done.
+jsLogout :: Effect Unit -> Effect Unit
+jsLogout callback = Aff.runAff_ (\_ -> callback) logout
+
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
 logout :: Aff Unit
