@@ -1,7 +1,6 @@
 exports.sso = JANRAIN.SSO;
 
 exports.loadConfig = function() {
-  window.localStorage && window.localStorage.setItem('janrainSsoDebugEnabled', true);
   var baseUrl = window.location.protocol + "//" + window.location.host;
   var config = {
     client_id: process.env.JANRAIN_LOGIN_CLIENT_ID,
