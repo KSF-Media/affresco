@@ -3,7 +3,7 @@ module JanrainSSO where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Effect (Effect)
@@ -12,8 +12,15 @@ import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Effect.Exception as Exception
 import Effect.Uncurried (EffectFn1, runEffectFn1)
+import LocalStorage as LocalStorage
 
 foreign import loadConfig :: Effect Config
+
+setSsoSuccess :: Effect Unit
+setSsoSuccess = LocalStorage.setItem "KSF_JANRAIN_SSO_SUCCESS" "true"
+
+getSsoSuccess :: Effect Boolean
+getSsoSuccess = isJust <$> LocalStorage.getItem "KSF_JANRAIN_SSO_SUCCESS"
 
 foreign import sso ::
   { check_session

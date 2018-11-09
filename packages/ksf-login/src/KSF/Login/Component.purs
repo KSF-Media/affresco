@@ -128,10 +128,12 @@ receiveProps { props, state, setState, isFirstMount } = when isFirstMount do
              { callback_failure: mkEffectFn1 \a -> do
                 Console.log "Janrain SSO failure"
              , callback_success: mkEffectFn1 \a -> do
+                JanrainSSO.setSsoSuccess
                 Console.log "Janrain SSO success"
              , capture_error: mkEffectFn1 \a -> do
                 Console.log "Janrain SSO capture error"
              , capture_success: mkEffectFn1 \r@({ result: { accessToken, userData: { uuid } } }) -> do
+                JanrainSSO.setSsoSuccess
                 Console.log "Janrain SSO capture success"
                 Console.log $ unsafeCoerce r
                 props.launchAff_ do
@@ -352,7 +354,9 @@ logout = do
   parSequence_
     [ logoutFacebook `catchError` Console.errorShow
     , logoutGoogle   `catchError` Console.errorShow
-    , logoutJanrain  `catchError` Console.errorShow
+    , do needsSsoLogout <- liftEffect JanrainSSO.getSsoSuccess
+         when needsSsoLogout do
+           logoutJanrain  `catchError` Console.errorShow
     ]
 
 logoutFacebook :: Aff Unit
