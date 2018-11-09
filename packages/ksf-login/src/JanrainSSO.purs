@@ -35,7 +35,7 @@ endSession :: Aff Unit
 endSession = Aff.makeAff \callback -> do
   Exception.catchException
     (\err -> do
-      Console.error $ "JanrainSSO.set_session failed: " <> Exception.message err
+      Console.error $ "JanrainSSO.end_session failed: " <> Exception.message err
       callback $ Left err)
     (runEffectFn1 sso.end_session $ Nullable.toNullable $ Just $ callback $ Right unit)
   pure Aff.nonCanceler
