@@ -22,8 +22,3 @@ exports.removeItem_ = function(k) {
   window.localStorage.removeItem(k);
   return {};
 }
-
-exports.clear = function() {
-  window.localStorage.clear();
-  return {};
-}

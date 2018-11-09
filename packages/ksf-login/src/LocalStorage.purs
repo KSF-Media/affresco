@@ -10,7 +10,6 @@ import Effect.Uncurried (EffectFn1, EffectFn2, runEffectFn1, runEffectFn2)
 foreign import setItem_ :: EffectFn2 String String Unit
 foreign import getItem_ :: EffectFn1 String (Nullable String)
 foreign import removeItem_ :: EffectFn1 String Unit
-foreign import clear :: Effect Unit
 
 setItem :: String -> String -> Effect Unit
 setItem = runEffectFn2 setItem_

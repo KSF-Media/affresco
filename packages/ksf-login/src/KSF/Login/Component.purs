@@ -6,6 +6,7 @@ import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
 import Data.Either (Either(..), either)
+import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
@@ -392,4 +393,4 @@ loadToken = runMaybeT do
   pure { token, ssoCode: Nullable.toNullable Nothing, uuid }
 
 deleteToken :: Effect Unit
-deleteToken = LocalStorage.clear
+deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid" ]
