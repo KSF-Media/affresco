@@ -355,9 +355,7 @@ logout = do
   parSequence_
     [ logoutFacebook `catchError` Console.errorShow
     , logoutGoogle   `catchError` Console.errorShow
-    , do needsSsoLogout <- liftEffect JanrainSSO.getSsoSuccess
-         when needsSsoLogout do
-           logoutJanrain  `catchError` Console.errorShow
+    , logoutJanrain  `catchError` Console.errorShow
     ]
 
 logoutFacebook :: Aff Unit
@@ -377,8 +375,11 @@ logoutGoogle = do
 
 logoutJanrain :: Aff Unit
 logoutJanrain = do
-  JanrainSSO.endSession
-  Console.log "Ended Janrain session"
+  needsSsoLogout <- liftEffect do
+    JanrainSSO.getSsoSuccess <* JanrainSSO.unsetSsoSuccess
+  when needsSsoLogout do
+    JanrainSSO.endSession
+    Console.log "Ended Janrain session"
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
 saveToken { token, ssoCode, uuid } = liftEffect do

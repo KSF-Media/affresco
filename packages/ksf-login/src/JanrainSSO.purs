@@ -19,6 +19,9 @@ foreign import loadConfig :: Effect Config
 setSsoSuccess :: Effect Unit
 setSsoSuccess = LocalStorage.setItem "KSF_JANRAIN_SSO_SUCCESS" "true"
 
+unsetSsoSuccess :: Effect Unit
+unsetSsoSuccess = LocalStorage.removeItem "KSF_JANRAIN_SSO_SUCCESS"
+
 getSsoSuccess :: Effect Boolean
 getSsoSuccess = isJust <$> LocalStorage.getItem "KSF_JANRAIN_SSO_SUCCESS"
 
