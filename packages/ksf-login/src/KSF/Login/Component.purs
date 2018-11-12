@@ -129,8 +129,8 @@ receiveProps { props, state, setState, isFirstMount } = when isFirstMount do
              { callback_failure: mkEffectFn1 \a -> do
                 Console.log "Janrain SSO failure"
              , callback_success: mkEffectFn1 \a -> do
-                JanrainSSO.setSsoSuccess
                 Console.log "Janrain SSO success"
+                JanrainSSO.setSsoSuccess
              , capture_error: mkEffectFn1 \a -> do
                 Console.log "Janrain SSO capture error"
              , capture_success: mkEffectFn1 \r@({ result: { accessToken, userData: { uuid } } }) -> do

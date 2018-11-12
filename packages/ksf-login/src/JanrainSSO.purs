@@ -13,17 +13,25 @@ import Effect.Class.Console as Console
 import Effect.Exception as Exception
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import LocalStorage as LocalStorage
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import loadConfig :: Effect Config
 
 setSsoSuccess :: Effect Unit
-setSsoSuccess = LocalStorage.setItem "KSF_JANRAIN_SSO_SUCCESS" "true"
+setSsoSuccess = do
+  LocalStorage.setItem "KSF_JANRAIN_SSO_SUCCESS" "true"
+  Console.log "Set KSF_JANRAIN_SSO_SUCCESS"
 
 unsetSsoSuccess :: Effect Unit
-unsetSsoSuccess = LocalStorage.removeItem "KSF_JANRAIN_SSO_SUCCESS"
+unsetSsoSuccess = do
+  LocalStorage.removeItem "KSF_JANRAIN_SSO_SUCCESS"
+  Console.log "Unset KSF_JANRAIN_SSO_SUCCESS"
 
 getSsoSuccess :: Effect Boolean
-getSsoSuccess = isJust <$> LocalStorage.getItem "KSF_JANRAIN_SSO_SUCCESS"
+getSsoSuccess = do
+  item <- LocalStorage.getItem "KSF_JANRAIN_SSO_SUCCESS"
+  Console.log $ "KSF_JANRAIN_SSO_SUCCESS: " <> show item
+  pure $ isJust item
 
 foreign import sso ::
   { check_session
@@ -36,10 +44,15 @@ foreign import sso ::
   }
 
 checkSession :: forall params . { | params } -> Effect Unit
-checkSession = runEffectFn1 sso.check_session
+checkSession params = do
+  Console.log "Calling SSO.check_session"
+  Console.log $ unsafeCoerce params
+  runEffectFn1 sso.check_session params
 
 setSession :: String -> Effect Unit
-setSession = runEffectFn1 sso.set_session
+setSession session = do
+  Console.log $ "Calling SSO.set_session " <> session
+  runEffectFn1 sso.set_session session
 
 endSession :: Aff Unit
 endSession = Aff.makeAff \callback -> do
@@ -47,7 +60,10 @@ endSession = Aff.makeAff \callback -> do
     (\err -> do
       Console.error $ "JanrainSSO.end_session failed: " <> Exception.message err
       callback $ Left err)
-    (runEffectFn1 sso.end_session $ Nullable.toNullable $ Just $ callback $ Right unit)
+    (do Console.log "Calling SSO.end_session"
+        runEffectFn1 sso.end_session $ Nullable.toNullable $ Just $ do
+          Console.log "SSO.end_session called back"
+          callback $ Right unit)
   pure Aff.nonCanceler
 
 type Config =
