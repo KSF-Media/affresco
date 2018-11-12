@@ -2,10 +2,11 @@ module KSF.Button.Component where
 
 import Prelude
 
-import Data.Either (either)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe)
 import Effect (Effect)
-import Effect.Exception as Exception
+import Effect.Class.Console as Console
+import Effect.Exception as Error
 import KSF.Button.View as View
 import React.Basic (JSX)
 import React.Basic as React
@@ -23,8 +24,12 @@ component :: React.Component Props
 component = React.component { displayName: "Button", render, initialState: {}, receiveProps }
   where
     receiveProps { instance_, props, isFirstMount } = when isFirstMount do
-      node <- DOM.findDOMNode instance_
-      either Exception.throwException props.onLoad node
+      mountedNode <- DOM.findDOMNode instance_
+      case mountedNode of
+        Left err -> do
+          Console.error $ "Button component: " <> Error.message err
+        Right node -> do
+          props.onLoad node
 
 render :: forall r. { props :: Props | r } -> JSX
 render { props } =
