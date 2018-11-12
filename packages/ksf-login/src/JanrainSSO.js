@@ -9,7 +9,7 @@ exports.loadConfig = function() {
     locale: "sv-FI",
     redirect_uri: baseUrl,
     sso_server: process.env.JANRAIN_SSO_SERVER,
-    xd_receiver: baseUrl + "/xd_receiver.html"
+    xd_receiver: baseUrl + process.env.JANRAIN_XD_RECEIVER_PATH
   };
   console.log("SSO config", config);
   return config;
