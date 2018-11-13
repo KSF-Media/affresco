@@ -373,6 +373,11 @@ logoutGoogle = do
 
 logoutJanrain :: Aff Unit
 logoutJanrain = do
+  -- If JanrainSSO.checkSession is not called before this function,
+  -- the JanrainSSO.endSession will hang.
+  -- So call JanrainSSO.checkSession first just to be safe.
+  config <- liftEffect $ JanrainSSO.loadConfig
+  liftEffect $ JanrainSSO.checkSession config
   JanrainSSO.endSession
   Console.log "Ended Janrain session"
 
