@@ -373,6 +373,8 @@ logoutGoogle = do
 
 logoutJanrain :: Aff Unit
 logoutJanrain = do
+  config <- liftEffect $ JanrainSSO.loadConfig
+  liftEffect $ JanrainSSO.checkSession config
   JanrainSSO.endSession
   Console.log "Ended Janrain session"
 
