@@ -9,16 +9,18 @@ import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe, isJust)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
-import Foreign (readNullOrUndefined, unsafeToForeign)
+import Foreign (readNullOrUndefined)
+import Effect.Exception as Error
+import Foreign (readNullOrUndefined, unsafeToForeign) as Foreign
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
-import Foreign.Index as Foreign
+import Foreign.Index (readProp) as Foreign
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
@@ -122,7 +124,7 @@ errorData =
     <<< (JSON.read =<< _)
     <<< runExcept
           <<< Foreign.readProp "data"
-          <<< unsafeToForeign
+          <<< Foreign.unsafeToForeign
 
 -- | Matches internal server error produced by superagent.
 --   Checks that it has `status` field that's 5XX.
@@ -139,7 +141,25 @@ errorField field =
     <<< (traverse JSON.read =<< _)
     <<< runExcept
     <<< do readNullOrUndefined <=< Foreign.readProp field
-    <<< unsafeToForeign
+    <<< Foreign.unsafeToForeign
+
+-- | Matches network error produced by superagent.
+--   Checks that it has `method` and `url` fields, but no `status`.
+networkError :: Error -> Maybe String
+networkError err = do
+  guard $ hasField "method" err
+  guard $ hasField "url" err
+  guard $ not $ hasField "status" err
+  pure $ Error.message err
+
+-- | Check if an error has some field and it's not null or undefined.
+hasField :: String -> Error -> Boolean
+hasField field =
+  isJust
+    <<< join <<< hush
+    <<< runExcept
+    <<< do Foreign.readNullOrUndefined <=< Foreign.readProp field
+    <<< Foreign.unsafeToForeign
 
 data Provider
   = Facebook
