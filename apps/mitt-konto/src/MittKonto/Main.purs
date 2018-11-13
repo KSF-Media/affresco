@@ -14,6 +14,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (error)
+import Effect.Exception as Error
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
@@ -319,7 +320,16 @@ loginView { state, setState } = React.fragment
               Right user -> do
                 log "Fetching user succeeded"
                 setState $ setLoggedInUser $ Just user
-          , launchAff_: Aff.launchAff_ <<< withSpinner (setState <<< setLoading)
+          , launchAff_: Aff.runAff_
+              (case _ of
+                 Left err
+                   | Just errMessage <- Persona.networkError err -> do
+                       setState $ setErrorMessage $ Just
+                         "Failed to connect. Check your connection and try again later."
+                   | otherwise -> do
+                       setState $ setErrorMessage $ Just $ Error.message err
+                 Right _ -> pure unit
+              ) <<< withSpinner (setState <<< setLoading)
           }
 
     heading =
