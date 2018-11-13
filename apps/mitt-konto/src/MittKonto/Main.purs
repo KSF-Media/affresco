@@ -37,6 +37,7 @@ type State =
   , loggedInUser :: Maybe Persona.User
   , loading :: Maybe Loading
   , showWelcome :: Boolean
+  , errorMessage :: Maybe String
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -44,6 +45,9 @@ setLoading loading = _ { loading = loading }
 
 setLoggedInUser :: Maybe Persona.User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
+
+setErrorMessage :: Maybe String -> State -> State
+setErrorMessage errorMessage = _ { errorMessage = errorMessage }
 
 data Loading = Loading
 
@@ -57,6 +61,7 @@ app = React.component
       , loggedInUser: Nothing
       , loading: Nothing
       , showWelcome: true
+      , errorMessage: Nothing
       }
   , receiveProps
   , render
@@ -68,6 +73,7 @@ app = React.component
     render { state, setState } =
       React.fragment
         [ navbarView { state, setState }
+        , errorMessageView state.errorMessage
         , classy DOM.div "clearfix"
             [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
                 [ mittKonto ]
@@ -139,6 +145,13 @@ navbarView { state, setState } =
             Login.logout
             liftEffect $ setState $ setLoggedInUser Nothing
       }
+
+errorMessageView :: Maybe String -> JSX
+errorMessageView = foldMap \errorMessage ->
+  classy DOM.div "clearfix"
+    [ classy DOM.div "col-4 mx-auto center mitt-konto--error-message"
+      [ DOM.text errorMessage ]
+    ]
 
 footerView :: React.JSX
 footerView =
