@@ -20,8 +20,13 @@ exports.callApi_ = function(api, methodName, body, opts) {
         // If we have an error message we decode it and attach it as the `data`
         // so we can eventually read the error from there
         if (res && res.text) {
-          err.data = JSON.parse(res.text);
+          try {
+            err.data = JSON.parse(res.text);
+          } catch (decodeErr) {
+            console.error("Failed to parse persona's response body", decodeErr)
+          }
         }
+        console.error("Superagent error", err);
         onError(err);
       } else {
         onSuccess(data);
