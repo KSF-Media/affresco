@@ -170,7 +170,7 @@ merge attrs =
                 { inputAttributes: passwordAttributes
                 , className: "password-wrapper-and-submit-wrapper"
                 , children: [ loginButton "AKTIVERA" ]
-                , onChange: \_ -> pure unit
+                , onChange: attrs.onPasswordValueChange
                 }
             ]
         }
