@@ -323,7 +323,7 @@ loginView { state, setState } = React.fragment
           , launchAff_: Aff.runAff_
               (case _ of
                  Left err
-                   | Just errMessage <- Persona.networkError err -> do
+                   | Just { method, url } <- Persona.networkError err -> do
                        setState $ setErrorMessage $ Just
                          "Failed to connect. Check your connection and try again later."
                    | otherwise -> do
