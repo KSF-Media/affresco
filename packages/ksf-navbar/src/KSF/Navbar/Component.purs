@@ -66,7 +66,9 @@ render { props, state, setState } =
   View.navbar
     { onLogout:
         if isJust props.loggedInUser
-        then Just props.logout
+        then Just do
+             props.logout
+             setState \s -> s { collapsedNavVisibility = Hidden }
         else Nothing
     , paperInfo
     , toggleCollapsedNav:
