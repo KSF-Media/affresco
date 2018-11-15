@@ -12,7 +12,7 @@ import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Data.Traversable (for_)
 import Effect (Effect)
-import Effect.Aff (Aff, error, launchAff_)
+import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
@@ -215,10 +215,12 @@ render { props, state, setState } =
       finalizeLogin props loginResponse
 
     onFacebookLogin :: Effect Unit
-    onFacebookLogin = launchAff_ do
+    onFacebookLogin = props.launchAff_ do
       sdk <- facebookSdk
       FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
-      liftEffect $ fetchFacebookUser authResponse sdk
+      case authResponse of
+        Nothing -> Log.error "Facebook login failed"
+        Just auth -> fetchFacebookUser auth sdk
       where
         loginOptions :: FB.LoginOptions
         loginOptions = FB.LoginOptions { scopes: map FB.Scope [ "public_profile", "email" ] }
@@ -263,8 +265,8 @@ render { props, state, setState } =
 
     -- | Fetches user info from Facebook and then Persona.
     -- | Sets response to local storage and invokes `props.onUserFetch`.
-    fetchFacebookUser :: Maybe FB.AuthResponse -> FB.Sdk -> Effect Unit
-    fetchFacebookUser (Just (FB.AuthResponse { accessToken })) sdk = props.launchAff_ do
+    fetchFacebookUser :: FB.AuthResponse -> FB.Sdk -> Aff Unit
+    fetchFacebookUser (FB.AuthResponse { accessToken }) sdk = do
       FB.UserInfo { email: FB.UserEmail email } <-
         FB.userInfo accessToken sdk
           `catchError` \err -> do
@@ -278,7 +280,6 @@ render { props, state, setState } =
       let (FB.AccessToken fbAccessToken) = accessToken
       userResponse <- someAuth (Persona.Email email) (Token fbAccessToken) Persona.Facebook
       finalizeLogin props userResponse
-    fetchFacebookUser Nothing _ = Log.error "Facebook login failed"
 
     -- | If the email doesn't match the state saved from the Merge request
     -- | (so the previous login), we fail
