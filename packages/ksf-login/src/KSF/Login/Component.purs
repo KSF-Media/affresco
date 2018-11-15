@@ -130,9 +130,11 @@ receiveProps { props, state, setState, isFirstMount } = when isFirstMount do
                 Console.log "Janrain SSO failure"
              , callback_success: mkEffectFn1 \a -> do
                 Console.log "Janrain SSO success"
+                JanrainSSO.setSsoSuccess
              , capture_error: mkEffectFn1 \a -> do
                 Console.log "Janrain SSO capture error"
              , capture_success: mkEffectFn1 \r@({ result: { accessToken, userData: { uuid } } }) -> do
+                JanrainSSO.setSsoSuccess
                 Console.log "Janrain SSO capture success"
                 Console.log $ unsafeCoerce r
                 props.launchAff_ do
@@ -373,13 +375,16 @@ logoutGoogle = do
 
 logoutJanrain :: Aff Unit
 logoutJanrain = do
-  -- If JanrainSSO.checkSession is not called before this function,
-  -- the JanrainSSO.endSession will hang.
-  -- So call JanrainSSO.checkSession first just to be safe.
-  config <- liftEffect $ JanrainSSO.loadConfig
-  liftEffect $ JanrainSSO.checkSession config
-  JanrainSSO.endSession
-  Console.log "Ended Janrain session"
+  needsSsoLogout <- liftEffect do
+    JanrainSSO.getSsoSuccess <* JanrainSSO.unsetSsoSuccess
+  when needsSsoLogout do
+    -- If JanrainSSO.checkSession is not called before this function,
+    -- the JanrainSSO.endSession will hang.
+    -- So call JanrainSSO.checkSession first just to be safe.
+    config <- liftEffect $ JanrainSSO.loadConfig
+    liftEffect $ JanrainSSO.checkSession config
+    JanrainSSO.endSession
+    Console.log "Ended Janrain session"
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
 saveToken { token, ssoCode, uuid } = liftEffect do

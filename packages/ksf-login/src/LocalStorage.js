@@ -11,6 +11,7 @@ JavaScript, not even once.
 
 exports.setItem_ = function(k, v) {
   window.localStorage.setItem(k, v);
+  return {};
 };
 
 exports.getItem_ = function(k) {
@@ -19,4 +20,5 @@ exports.getItem_ = function(k) {
 
 exports.removeItem_ = function(k) {
   window.localStorage.removeItem(k);
+  return {};
 }
