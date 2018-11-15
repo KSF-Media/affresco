@@ -21,6 +21,7 @@ import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import JanrainSSO as JanrainSSO
 import KSF.Login.Facebook.Sdk as FB
+import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import KSF.Login.View as View
@@ -219,8 +220,12 @@ render { props, state, setState } =
       sdk <- facebookSdk
       FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
       case authResponse of
-        Nothing -> Log.error "Facebook login failed"
-        Just auth -> fetchFacebookUser auth sdk
+        Nothing -> do
+          liftEffect Facebook.Success.unsetFacebookSuccess
+          Log.error "Facebook login failed"
+        Just auth -> do
+          liftEffect Facebook.Success.setFacebookSuccess
+          fetchFacebookUser auth sdk
       where
         loginOptions :: FB.LoginOptions
         loginOptions = FB.LoginOptions { scopes: map FB.Scope [ "public_profile", "email" ] }
@@ -361,11 +366,14 @@ logout = do
 
 logoutFacebook :: Aff Unit
 logoutFacebook = do
-  sdk <- facebookSdk
-  FB.StatusInfo { status } <- FB.loginStatus sdk
-  when (status == FB.Connected) do
-    _ <- FB.logout sdk
-    Log.info "Logged out from Facebook."
+  needsFacebookLogout <- liftEffect do
+    Facebook.Success.getFacebookSuccess <* Facebook.Success.unsetFacebookSuccess
+  when needsFacebookLogout do
+    sdk <- facebookSdk
+    FB.StatusInfo { status } <- FB.loginStatus sdk
+    when (status == FB.Connected) do
+      _ <- FB.logout sdk
+      Log.info "Logged out from Facebook."
 
 logoutGoogle :: Aff Unit
 logoutGoogle = do
