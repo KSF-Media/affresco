@@ -14,8 +14,9 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (error)
-import Effect.Exception as Error
 import Effect.Unsafe (unsafePerformEffect)
+import KSF.Alert.Component (Alert)
+import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
@@ -38,7 +39,7 @@ type State =
   , loggedInUser :: Maybe Persona.User
   , loading :: Maybe Loading
   , showWelcome :: Boolean
-  , errorMessage :: Maybe String
+  , alert :: Maybe Alert
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -47,8 +48,8 @@ setLoading loading = _ { loading = loading }
 setLoggedInUser :: Maybe Persona.User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
 
-setErrorMessage :: Maybe String -> State -> State
-setErrorMessage errorMessage = _ { errorMessage = errorMessage }
+setAlert :: Maybe Alert -> State -> State
+setAlert alert = _ { alert = alert }
 
 data Loading = Loading
 
@@ -62,7 +63,7 @@ app = React.component
       , loggedInUser: Nothing
       , loading: Nothing
       , showWelcome: true
-      , errorMessage: Nothing
+      , alert: Nothing
       }
   , receiveProps
   , render
@@ -74,7 +75,7 @@ app = React.component
     render { state, setState } =
       React.fragment
         [ navbarView { state, setState }
-        , errorMessageView state.errorMessage
+        , alertView state.alert
         , classy DOM.div "clearfix"
             [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
                 [ mittKonto ]
@@ -147,11 +148,11 @@ navbarView { state, setState } =
             liftEffect $ setState $ setLoggedInUser Nothing
       }
 
-errorMessageView :: Maybe String -> JSX
-errorMessageView = foldMap \errorMessage ->
+alertView :: Maybe Alert -> JSX
+alertView = foldMap \alert ->
   classy DOM.div "clearfix"
-    [ classy DOM.div "col-4 mx-auto center mitt-konto--error-message"
-      [ DOM.text errorMessage ]
+    [ classy DOM.div "col-4 mx-auto center"
+      [ React.element Alert.component alert ]
     ]
 
 footerView :: React.JSX
@@ -324,10 +325,17 @@ loginView { state, setState } = React.fragment
               (case _ of
                  Left err
                    | Just { method, url } <- Persona.networkError err -> do
-                       setState $ setErrorMessage $ Just
-                         "Failed to connect. Check your connection and try again later."
+                       setState $ setAlert $ Just
+                         { level: Alert.danger
+                         , title: "Failed to connect."
+                         , message: "Check your connection and try again later."
+                         }
                    | otherwise -> do
-                       setState $ setErrorMessage $ Just $ Error.message err
+                       setState $ setAlert $ Just
+                         { level: Alert.warning
+                         , title: "Unknown failure"
+                         , message: "Something went wrong"
+                         }
                  Right _ -> pure unit
               ) <<< withSpinner (setState <<< setLoading)
           }
