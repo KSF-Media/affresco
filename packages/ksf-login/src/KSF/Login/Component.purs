@@ -208,6 +208,9 @@ render { props, state, setState } =
                    liftEffect $ setState \s -> s
                      { errors { login = Just Login.InvalidCredentials } }
                    throwError err
+               | Just serverError <- Persona.internalServerError err -> do
+                   Console.log "internal server error"
+                   throwError err
                | otherwise -> do
                    Console.error "An unexpected error occurred during traditional login"
                    throwError err
