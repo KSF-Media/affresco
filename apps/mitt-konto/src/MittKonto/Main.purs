@@ -3,17 +3,18 @@ module MittKonto.Main where
 import Prelude
 
 import Data.Array ((:))
-import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Either (Either(..), either)
+import Data.Foldable (foldMap, oneOf, traverse_)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
+import Data.Traversable (traverse)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Effect.Exception (error)
+import Effect.Exception (Error, error)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
@@ -321,23 +322,9 @@ loginView { state, setState } = React.fragment
               Right user -> do
                 log "Fetching user succeeded"
                 setState $ setLoggedInUser $ Just user
-          , launchAff_: Aff.runAff_
-              (case _ of
-                 Left err
-                   | Just { method, url } <- Persona.networkError err -> do
-                       setState $ setAlert $ Just
-                         { level: Alert.danger
-                         , title: "Failed to connect."
-                         , message: "Check your connection and try again later."
-                         }
-                   | otherwise -> do
-                       setState $ setAlert $ Just
-                         { level: Alert.warning
-                         , title: "Unknown failure"
-                         , message: "Something went wrong"
-                         }
-                 Right _ -> pure unit
-              ) <<< withSpinner (setState <<< setLoading)
+          , launchAff_:
+              Aff.runAff_ (either (setState <<< setAlert <<< errorAlert) pure)
+                <<< withSpinner (setState <<< setLoading)
           }
 
     heading =
@@ -361,6 +348,21 @@ loginView { state, setState } = React.fragment
             , anchor "https://www.hbl.fi/kundservice/" "Kundservice" []
             ]
         ]
+
+errorAlert :: Error -> Maybe Alert
+errorAlert err = oneOf
+  [ do { method, url } <- Persona.networkError err
+       pure
+         { level: Alert.danger
+         , title: "Failed to connect."
+         , message: "Check your connection and try again later."
+         }
+  , pure
+      { level: Alert.warning
+      , title: "Unknown failure"
+      , message: "Something went wrong"
+      }
+  ]
 
 break :: JSX
 break = DOM.hr { className: "mitt-konto--break" }
