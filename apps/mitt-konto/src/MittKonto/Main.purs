@@ -321,7 +321,7 @@ loginView { state, setState } = React.fragment
                 log "Fetching user succeeded"
                 setState $ setLoggedInUser $ Just user
           , launchAff_:
-              Aff.runAff_ (either (setState <<< setAlert <<< errorAlert) pure)
+              Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)
           }
 
