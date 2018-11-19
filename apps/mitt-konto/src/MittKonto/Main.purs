@@ -4,11 +4,10 @@ import Prelude
 
 import Data.Array ((:))
 import Data.Either (Either(..), either)
-import Data.Foldable (foldMap, oneOf, traverse_)
+import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
-import Data.Traversable (traverse)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -76,8 +75,9 @@ app = React.component
     render { state, setState } =
       React.fragment
         [ navbarView { state, setState }
-        , alertView state.alert
-        , classy DOM.div "clearfix"
+        , classy DOM.div "mt4 mb4"
+            [ foldMap alertView state.alert ]
+        , classy DOM.div "mt4 mb4 clearfix"
             [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
                 [ mittKonto ]
             ]
@@ -85,7 +85,7 @@ app = React.component
         ]
      where
        mittKonto =
-         classy DOM.div "mitt-konto--container clearfix mt4"
+         classy DOM.div "mitt-konto--container clearfix"
            [ foldMap loadingIndicator state.loading
            , case state.loggedInUser of
                Just user -> userView { user }
@@ -149,12 +149,10 @@ navbarView { state, setState } =
             liftEffect $ setState $ setLoggedInUser Nothing
       }
 
-alertView :: Maybe Alert -> JSX
-alertView = foldMap \alert ->
-  classy DOM.div "clearfix"
-    [ classy DOM.div "col-4 mx-auto center"
-      [ React.element Alert.component alert ]
-    ]
+alertView :: Alert -> JSX
+alertView alert =
+  classy DOM.div "col-4 mx-auto center"
+    [ React.element Alert.component alert ]
 
 footerView :: React.JSX
 footerView =
