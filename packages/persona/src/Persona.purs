@@ -3,6 +3,7 @@ module Persona where
 import Prelude
 
 import Control.Monad.Except (runExcept)
+import Control.MonadPlus (guard)
 import Data.Either (hush)
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
@@ -11,10 +12,11 @@ import Data.JSDate (JSDate)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
+import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
-import Foreign (unsafeToForeign)
+import Foreign (readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index as Foreign
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
@@ -102,6 +104,11 @@ type EmailAddressInUse = PersonaError
     }
   )
 
+type TokenInvalid = PersonaError
+  ( login_token_expired ::
+    { description :: String }
+  )
+
 type InvalidCredentials = PersonaError
   ( invalid_credentials :: { description :: String } )
 
@@ -116,6 +123,24 @@ errorData =
     <<< runExcept
           <<< Foreign.readProp "data"
           <<< unsafeToForeign
+
+-- | Matches internal server error produced by superagent.
+--   Checks that it has `status` field that's 5XX.
+internalServerError :: Error -> Maybe { status :: Int }
+internalServerError err = do
+  status <- err # errorField "status"
+  guard $ status >= 500 && status <= 599
+  pure { status }
+
+-- | Check if an error has some field and it's not null or undefined.
+errorField :: forall a. ReadForeign a => String -> Error -> Maybe a
+errorField field =
+  join <<< hush
+    <<< (traverse JSON.read =<< _)
+    <<< runExcept
+    <<< do readNullOrUndefined <=< Foreign.readProp field
+    <<< unsafeToForeign
+
 data Provider
   = Facebook
   | GooglePlus

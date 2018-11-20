@@ -5,3 +5,4 @@ data Error =
   | FacebookEmailMissing
   | EmailMismatchError
   | GoogleAuthInitError
+  | SomethingWentWrong

@@ -139,7 +139,16 @@ receiveProps { props, state, setState, isFirstMount } = when isFirstMount do
                 Console.log "Janrain SSO capture success"
                 Console.log $ unsafeCoerce r
                 props.launchAff_ do
-                  loginResponse <- Persona.loginSso { accessToken, uuid }
+                  loginResponse <-
+                    Persona.loginSso { accessToken, uuid } `catchError` case _ of
+                      err | Just serverError <- Persona.internalServerError err -> do
+                              Console.error "Something went wrong with SSO login"
+                              liftEffect $ setState \s -> s
+                                { errors { login = Just Login.SomethingWentWrong } }
+                              throwError err
+                          | otherwise -> do
+                              Console.error "An unexpected error occurred during SSO login"
+                              throwError err
                   finalizeLogin props loginResponse
             }
 
@@ -207,6 +216,11 @@ render { props, state, setState } =
                    Console.error errData.invalid_credentials.description
                    liftEffect $ setState \s -> s
                      { errors { login = Just Login.InvalidCredentials } }
+                   throwError err
+               | Just serverError <- Persona.internalServerError err -> do
+                   Console.error "Something went wrong with traditional login"
+                   liftEffect $ setState \s -> s
+                     { errors { login = Just Login.SomethingWentWrong } }
                    throwError err
                | otherwise -> do
                    Console.error "An unexpected error occurred during traditional login"
@@ -322,6 +336,11 @@ render { props, state, setState } =
                           }
                         }
                     throwError err
+                | Just serverError <- Persona.internalServerError err -> do
+                    Console.error "Something went wrong with SoMe login"
+                    liftEffect $ setState \s -> s
+                      { errors { login = Just Login.SomethingWentWrong } }
+                    throwError err
                 | otherwise -> do
                      Console.error "An unexpected error occurred during SoMe login"
                      throwError err
@@ -335,12 +354,14 @@ finalizeLogin props loginResponse = do
   userResponse <- try do
     Persona.getUser loginResponse.uuid loginResponse.token
   case userResponse of
-    -- If fetching fails, token is probably old -> clear local storage
-    -- TODO: Actually check the response body
-    Left err  -> do
-      Console.error "Failed to fetch the user: deleting the token"
-      liftEffect deleteToken
-      throwError err
+    Left err
+      | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
+          Console.error "Failed to fetch the user: Invalid token"
+          liftEffect deleteToken
+          throwError err
+      | otherwise -> do
+          Console.error "Failed to fetch the user"
+          throwError err
     Right user -> do
       Console.info "User fetched successfully"
       pure unit

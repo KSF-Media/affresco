@@ -313,3 +313,5 @@ formatErrorMessage err =
                 }
             , DOM.text "."
             ]
+        Login.SomethingWentWrong ->
+          DOM.text "Något gick fel vid inloggningen. Vänligen försök om en stund igen."
