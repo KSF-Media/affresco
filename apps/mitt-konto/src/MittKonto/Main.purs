@@ -352,13 +352,13 @@ errorAlert err = oneOf
   [ do { method, url } <- Persona.networkError err
        pure
          { level: Alert.danger
-         , title: "Failed to connect."
-         , message: "Check your connection and try again later."
+         , title: "Anslutningen misslyckades."
+         , message: "Vänligen kontrollera din internetanslutning och försök om en stund igen."
          }
   , pure
       { level: Alert.warning
-      , title: "Unknown failure"
-      , message: "Something went wrong"
+      , title: "Något gick fel vid inloggningen."
+      , message: "Vänligen försök om en stund igen."
       }
   ]
 
