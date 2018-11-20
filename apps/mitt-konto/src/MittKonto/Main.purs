@@ -3,8 +3,8 @@ module MittKonto.Main where
 import Prelude
 
 import Data.Array ((:))
-import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Either (Either(..), either)
+import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
@@ -13,8 +13,10 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Effect.Exception (error)
+import Effect.Exception (Error, error)
 import Effect.Unsafe (unsafePerformEffect)
+import KSF.Alert.Component (Alert)
+import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
@@ -37,6 +39,7 @@ type State =
   , loggedInUser :: Maybe Persona.User
   , loading :: Maybe Loading
   , showWelcome :: Boolean
+  , alert :: Maybe Alert
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -44,6 +47,9 @@ setLoading loading = _ { loading = loading }
 
 setLoggedInUser :: Maybe Persona.User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
+
+setAlert :: Maybe Alert -> State -> State
+setAlert alert = _ { alert = alert }
 
 data Loading = Loading
 
@@ -57,6 +63,7 @@ app = React.component
       , loggedInUser: Nothing
       , loading: Nothing
       , showWelcome: true
+      , alert: Nothing
       }
   , receiveProps
   , render
@@ -68,7 +75,9 @@ app = React.component
     render { state, setState } =
       React.fragment
         [ navbarView { state, setState }
-        , classy DOM.div "clearfix"
+        , classy DOM.div "mt4 mb4"
+            [ foldMap alertView state.alert ]
+        , classy DOM.div "mt4 mb4 clearfix"
             [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
                 [ mittKonto ]
             ]
@@ -76,7 +85,7 @@ app = React.component
         ]
      where
        mittKonto =
-         classy DOM.div "mitt-konto--container clearfix mt4"
+         classy DOM.div "mitt-konto--container clearfix"
            [ foldMap loadingIndicator state.loading
            , case state.loggedInUser of
                Just user -> userView { user }
@@ -139,6 +148,11 @@ navbarView { state, setState } =
             Login.logout
             liftEffect $ setState $ setLoggedInUser Nothing
       }
+
+alertView :: Alert -> JSX
+alertView alert =
+  classy DOM.div "col-4 mx-auto center"
+    [ React.element Alert.component alert ]
 
 footerView :: React.JSX
 footerView =
@@ -306,7 +320,9 @@ loginView { state, setState } = React.fragment
               Right user -> do
                 log "Fetching user succeeded"
                 setState $ setLoggedInUser $ Just user
-          , launchAff_: Aff.launchAff_ <<< withSpinner (setState <<< setLoading)
+          , launchAff_:
+              Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
+                <<< withSpinner (setState <<< setLoading)
           }
 
     heading =
@@ -330,6 +346,21 @@ loginView { state, setState } = React.fragment
             , anchor "https://www.hbl.fi/kundservice/" "Kundservice" []
             ]
         ]
+
+errorAlert :: Error -> Maybe Alert
+errorAlert err = oneOf
+  [ do { method, url } <- Persona.networkError err
+       pure
+         { level: Alert.danger
+         , title: "Anslutningen misslyckades."
+         , message: "Vänligen kontrollera din internetanslutning och försök om en stund igen."
+         }
+  , pure
+      { level: Alert.warning
+      , title: "Något gick fel vid inloggningen."
+      , message: "Vänligen försök om en stund igen."
+      }
+  ]
 
 break :: JSX
 break = DOM.hr { className: "mitt-konto--break" }

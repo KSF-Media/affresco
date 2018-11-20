@@ -11,6 +11,7 @@ purs_modules = [
   PursModule.new('KSF.Navbar.Component', 'packages/ksf-navbar'),
   PursModule.new('KSF.DescriptionList.Component', 'packages/ksf-description-list'),
   PursModule.new('KSF.Subscription.Component', 'packages/ksf-subscription'),
+  PursModule.new('KSF.Alert.Component', 'packages/ksf-alert'),
   PursModule.new('MittKonto.Main', 'apps/mitt-konto'),
 ]
 
