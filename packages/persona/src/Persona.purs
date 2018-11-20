@@ -16,7 +16,7 @@ import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
-import Foreign (readNullOrUndefined, unsafeToForeign)
+import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index as Foreign
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
@@ -35,21 +35,26 @@ foreign import callApi_
        { | opts }
        (EffectFnAff res)
 
-callApi :: forall req res opts. Api -> String -> req -> { | opts } -> Aff res
+callApi :: forall res opts. Api -> String -> Array Foreign -> { | opts } -> Aff res
 callApi api methodName req opts =
   fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
 login :: LoginData -> Aff LoginResponse
-login loginData = callApi loginApi "loginPost" loginData {}
+login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
 
 loginSome :: LoginDataSome -> Aff LoginResponse
-loginSome loginData = callApi loginApi "loginSomePost" loginData {}
+loginSome loginData = callApi loginApi "loginSomePost" [ unsafeToForeign loginData ] {}
 
 loginSso :: LoginDataSso -> Aff LoginResponse
-loginSso loginData = callApi loginApi "loginSsoPost" loginData {}
+loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
 getUser :: UUID -> Token -> Aff User
-getUser uuid token = callApi usersApi "usersUuidGet" uuid { authorization }
+getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { authorization }
+  where
+    authorization = oauthToken token
+
+updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
+updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
   where
     authorization = oauthToken token
 
@@ -265,4 +270,9 @@ type SubscriptionDates =
   , invoicingStart      :: Nullable JSDate
   , paidUntil           :: Nullable JSDate
   , suspend             :: Nullable JSDate
+  }
+
+type GdprConsent =
+  { key :: String
+  , val :: Boolean
   }
