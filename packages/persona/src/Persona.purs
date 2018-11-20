@@ -16,7 +16,7 @@ import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
-import Foreign (Foreign, readNullOrUndefined, unsafeToForeign) as Foreign
+import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
@@ -127,7 +127,7 @@ errorData =
     <<< (JSON.read =<< _)
     <<< runExcept
           <<< Foreign.readProp "data"
-          <<< Foreign.unsafeToForeign
+          <<< unsafeToForeign
 
 -- | Matches internal server error produced by superagent.
 --   Checks that it has `status` field that's 5XX.
@@ -152,8 +152,8 @@ errorField field =
   join <<< hush
     <<< (traverse JSON.read =<< _)
     <<< runExcept
-    <<< do Foreign.readNullOrUndefined <=< Foreign.readProp field
-    <<< Foreign.unsafeToForeign
+    <<< do readNullOrUndefined <=< Foreign.readProp field
+    <<< unsafeToForeign
 
 data Provider
   = Facebook
