@@ -16,8 +16,7 @@ import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
-import Foreign (Foreign)
-import Foreign (readNullOrUndefined, unsafeToForeign) as Foreign
+import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
@@ -36,21 +35,26 @@ foreign import callApi_
        { | opts }
        (EffectFnAff res)
 
-callApi :: forall req res opts. Api -> String -> req -> { | opts } -> Aff res
+callApi :: forall res opts. Api -> String -> Array Foreign -> { | opts } -> Aff res
 callApi api methodName req opts =
   fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
 login :: LoginData -> Aff LoginResponse
-login loginData = callApi loginApi "loginPost" loginData {}
+login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
 
 loginSome :: LoginDataSome -> Aff LoginResponse
-loginSome loginData = callApi loginApi "loginSomePost" loginData {}
+loginSome loginData = callApi loginApi "loginSomePost" [ unsafeToForeign loginData ] {}
 
 loginSso :: LoginDataSso -> Aff LoginResponse
-loginSso loginData = callApi loginApi "loginSsoPost" loginData {}
+loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
 getUser :: UUID -> Token -> Aff User
-getUser uuid token = callApi usersApi "usersUuidGet" uuid { authorization }
+getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { authorization }
+  where
+    authorization = oauthToken token
+
+updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
+updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
   where
     authorization = oauthToken token
 
@@ -123,7 +127,7 @@ errorData =
     <<< (JSON.read =<< _)
     <<< runExcept
           <<< Foreign.readProp "data"
-          <<< Foreign.unsafeToForeign
+          <<< unsafeToForeign
 
 -- | Matches internal server error produced by superagent.
 --   Checks that it has `status` field that's 5XX.
@@ -148,8 +152,8 @@ errorField field =
   join <<< hush
     <<< (traverse JSON.read =<< _)
     <<< runExcept
-    <<< do Foreign.readNullOrUndefined <=< Foreign.readProp field
-    <<< Foreign.unsafeToForeign
+    <<< do readNullOrUndefined <=< Foreign.readProp field
+    <<< unsafeToForeign
 
 data Provider
   = Facebook
@@ -275,4 +279,9 @@ type SubscriptionDates =
   , invoicingStart      :: Nullable JSDate
   , paidUntil           :: Nullable JSDate
   , suspend             :: Nullable JSDate
+  }
+
+type GdprConsent =
+  { key :: String
+  , val :: Boolean
   }
