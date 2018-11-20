@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
-import Data.Either (Either(..), either, isLeft)
+import Data.Either (Either(..), either)
 import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
@@ -33,12 +33,12 @@ import React.Basic.Extended as React
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 
-
 type JSProps =
   { onMerge            :: Nullable (Effect Unit)
   , onMergeCancelled   :: Nullable (Effect Unit)
-  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
-  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
+-- TODO:
+--  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
+--  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
   , onUserFetchFail    :: Nullable (EffectFn1 Error Unit)
   , onUserFetchSuccess :: Nullable (EffectFn1 Persona.User Unit)
   , onLoading          :: Nullable (Effect Unit)
@@ -49,10 +49,6 @@ fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { onMerge: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMerge
   , onMergeCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMergeCancelled
-  , onLogin:
-      Just $ either
-        (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onLoginFail)
-        (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onLoginSuccess)
   , onUserFetch:
       either
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchFail)
@@ -68,7 +64,8 @@ fromJSProps jsProps =
 type Props =
   { onMerge :: Effect Unit
   , onMergeCancelled :: Effect Unit
-  , onLogin :: Maybe (Either Error Persona.LoginResponse -> Effect Unit)
+-- TODO:
+--  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
   , onUserFetch :: Either Error Persona.User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
   }
@@ -209,37 +206,28 @@ render { props, state, setState } =
 
     onLogin :: Effect Unit
     onLogin = props.launchAff_ do
-      loginResponse <- try $
+      loginResponse <-
         Persona.login
           { username: state.formEmail
           , password: state.formPassword
           , mergeToken: toNullable $ map _.token state.merge
-          }
-      if isNothing props.onLogin
-        then case loginResponse of
-          Left err -> catchErr err
-          Right u -> do
-            -- removing merge token from state in case of success
-            liftEffect $ setState \s -> s { merge = Nothing }
-            finalizeLogin props u
-        else do
-          let onLoginCallback = fromMaybe (\_ -> pure unit) props.onLogin
-          liftEffect $ onLoginCallback loginResponse
-      where
-        catchErr err
-          | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err = do
-              Console.error errData.invalid_credentials.description
-              liftEffect $ setState \s -> s
-                { errors { login = Just Login.InvalidCredentials } }
-              throwError err
-          | Just serverError <- Persona.internalServerError err = do
-              Console.error "Something went wrong with traditional login"
-              liftEffect $ setState \s -> s
-                { errors { login = Just Login.SomethingWentWrong } }
-              throwError err
-          | otherwise = do
-              Console.error "An unexpected error occurred during traditional login"
-              throwError err
+          } `catchError` case _ of
+           err | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
+                   Console.error errData.invalid_credentials.description
+                   liftEffect $ setState \s -> s
+                     { errors { login = Just Login.InvalidCredentials } }
+                   throwError err
+               | Just serverError <- Persona.internalServerError err -> do
+                   Console.error "Something went wrong with traditional login"
+                   liftEffect $ setState \s -> s
+                     { errors { login = Just Login.SomethingWentWrong } }
+                   throwError err
+               | otherwise -> do
+                   Console.error "An unexpected error occurred during traditional login"
+                   throwError err
+      -- removing merge token from state in case of success
+      liftEffect $ setState \s -> s { merge = Nothing }
+      finalizeLogin props loginResponse
 
     onFacebookLogin :: Effect Unit
     onFacebookLogin = props.launchAff_ do
