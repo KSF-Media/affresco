@@ -1,0 +1,17 @@
+{
+  "name": "@affresco/subscribe-paper",
+  "version": "1.0.0",
+  "description": "Frontend for making subscriptions.",
+  "license": "MIT",
+  "dependencies": {
+    "basscss": "^8.0.4",
+    "create-react-class": "^15.6.3",
+    "less": "^3.8.1",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2"
+  },
+  "scripts": {
+    "start": "parcel index.html -p 8000",
+    "build": "parcel build index.html --no-cache && cp xd_receiver.html ./dist"
+  }
+}
