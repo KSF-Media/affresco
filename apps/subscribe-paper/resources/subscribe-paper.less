@@ -10,8 +10,9 @@ body {
 }
 
 h2 {
-    font-size: 2.75em;
+    font-family: 'Duplex Serif Web';
     color: @grey-dark;
+    font-size: 2.75em;
 }
 
 .subscribe-paper--choose-paper {
@@ -45,13 +46,68 @@ h2 {
 }
 
 h3 {
-    font-family: 'Duplex Sans Web';
     font-size: 16px;
     text-transform: uppercase;
     color: @grey-mediumdark;
     letter-spacing: 1px;
     word-spacing: 5px;
     text-align: center;
+}
+
+.subscribe-paper--package {
+    background-color: @nude;
+    border-radius: 5px;
+    h2 {
+        font-size: 1.75em;
+    }
+}
+
+.subscribe-paper--package-days {
+    font-family: 'Duplex Serif Web';
+    background-color: @grey-almostlight;
+}
+
+.subscribe-paper--package-description {
+  img {
+      width: 95%;
+      height: 95%;
+  }
+}
+
+.subscribe-paper--package-check-list {
+    list-style-image: url('check.svg');
+    text-align: left;
+    font-size: .875rem;
+    list-style-position: inside;
+    padding: 0;
+    p {
+        display: inline;
+    }
+    li {
+        padding-bottom: 1em;
+        padding-top: 1em;
+        padding-left: 1em;
+        border-bottom: solid 1px rgba(0, 0, 0, 0.1);
+    }
+    ul {
+        padding-bottom: 2em;
+    }
+}
+
+.subscribe-paper--buy-now {
+    font: 500 1.25rem "Roboto", sans-serif;
+    span {
+        cursor: pointer;
+        background-color: green;
+        color: white;
+        border-radius: 5px;
+        width: 70%;
+        height: 40px;
+        line-height: 40px;
+        &:hover {
+            background-color: #009b0c;
+        }
+    }
 }
 
 .ksf-block {
@@ -102,9 +158,11 @@ h3 {
 }
 
 .subscribe-paper--title {
-    font-family: 'Duplex Serif Web';
     margin-bottom: 1em;
     line-height: 2.2rem;
+    h2 {
+        font-size: 2.75em;
+    }
     span {
         border-bottom: 3px solid;
         &.hbl {
