@@ -18,7 +18,7 @@ footer =
         , children:
             [ DOM.div
               { className: "col-10 lg-col-7 mx-auto"
-              , children: [ DOM.hr { className: "mitt-konto--break" } ]
+              , children: [ DOM.hr { className: "footer--break" } ]
               }
             , paperImages
             , ksfAddress
