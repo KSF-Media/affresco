@@ -7,3 +7,8 @@ exports.startNavigation = function(navFn) {
     navFn(location.hash)();
   };
 };
+
+
+exports.images = {
+  hblTotal: require('./resources/HBLTotal.png')
+};
