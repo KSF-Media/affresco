@@ -96,6 +96,7 @@ update self = case _ of
     Update self.state { collapsedNavVisibility = v }
 
 data Paper = HBL | ON | VN | LS | HTHL | KSF
+derive instance eqPaper :: Eq Paper
 
 paperLogoUrl :: Paper -> String
 paperLogoUrl paper =
