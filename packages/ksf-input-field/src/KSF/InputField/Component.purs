@@ -5,8 +5,8 @@ import Prelude
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import KSF.InputField.View as View
-import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Extended (JSX)
+import React.Basic.Extended as React
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events as Events
 
