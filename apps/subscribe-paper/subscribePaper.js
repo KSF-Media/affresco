@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { BrowserRouter as Router } from "react-router-dom";
 
 // yup, welcome to react 16
 import createReactClass from 'create-react-class';
@@ -8,7 +9,9 @@ var Main = require('./index.js');
 
 function main() {
   const myComponent = (
-    <Main.app/>
+    <Router>
+      <Main.app />
+    </Router>
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));
