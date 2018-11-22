@@ -1,10 +1,13 @@
 module KSF.Navbar.Collapsed.Component where
 
-import React.Basic (JSX)
-import React.Basic as React
+import Data.Void (Void)
 import KSF.Navbar.Collapsed.View as View
+import React.Basic (JSX, make)
+import React.Basic as React
 
 data Visibility = Visible | Hidden
+
+type Self = React.Self Props {} Void
 
 type Props =
   { visibility :: Visibility
@@ -12,10 +15,16 @@ type Props =
   }
 
 component :: React.Component Props
-component = React.stateless { displayName: "CollapsedNav", render }
+component = React.createComponent "CollapsedNav"
 
-render :: Props -> JSX
-render props =
+collapsed :: Props -> JSX
+collapsed = make component
+  { initialState: {}
+  , render
+  }
+
+render :: Self -> JSX
+render { props } =
   View.collapsed
     { isHidden: isHidden props.visibility
     , navItems: props.navItems

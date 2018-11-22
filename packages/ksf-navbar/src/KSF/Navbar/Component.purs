@@ -75,11 +75,10 @@ render { props, state, setState } =
         setState \s -> s { collapsedNavVisibility = negateVisibility state.collapsedNavVisibility }
     , collapsedNav:
         \items ->
-          React.element
-            Collapsed.component
-              { visibility: state.collapsedNavVisibility
-              , navItems: items
-              }
+          Collapsed.collapsed
+            { visibility: state.collapsedNavVisibility
+            , navItems: items
+            }
     }
   where
     paperInfo =

@@ -212,13 +212,12 @@ someLoginButton { className, description, onClick, onLoad } =
   DOM.div
   { className: className <> surround " " additionalClasses
   , children:
-    [ React.element
-        Button.component
-          { description
-          , destination: Nothing
-          , onClick
-          , onLoad
-          }
+    [ Button.button
+        { description
+        , destination: Nothing
+        , onClick
+        , onLoad
+        }
     ]
   }
   where
