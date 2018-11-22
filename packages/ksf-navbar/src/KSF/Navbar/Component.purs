@@ -13,7 +13,7 @@ import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Navbar.View as View
 import Persona as Persona
 import React.Basic (JSX)
-import React.Basic.Extended as React
+import React.Basic.Compat as React
 
 type Props =
   { paper :: Paper
@@ -49,19 +49,19 @@ type State =
 initialState :: State
 initialState = { collapsedNavVisibility: Hidden }
 
-jsComponent :: Partial => React.Component JSProps
-jsComponent = React.component $ React.contramapComponentProps fromJSProps componentSpec
+-- jsComponent :: Partial => React.Component JSProps
+-- jsComponent = React.component $ React.contramapComponentProps fromJSProps componentSpec
 
 component :: React.Component Props
 component = React.component componentSpec
 
-componentSpec :: React.ComponentSpec Props State
+-- componentSpec :: React.ComponentSpec Props State
 componentSpec = { displayName: "Navbar", initialState, receiveProps, render }
 
-receiveProps :: React.ReceivePropsArgs Props State -> Effect Unit
+-- receiveProps :: React.ReceivePropsArgs Props State -> Effect Unit
 receiveProps _ = pure unit
 
-render :: React.RenderArgs Props State -> JSX
+-- render :: React.RenderArgs Props State -> JSX
 render { props, state, setState } =
   View.navbar
     { onLogout:

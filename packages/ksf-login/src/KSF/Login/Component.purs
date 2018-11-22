@@ -29,7 +29,7 @@ import LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
 import React.Basic (JSX)
-import React.Basic.Extended as React
+import React.Basic.Compat as React
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -108,14 +108,14 @@ forgotPasswordUrl = "https://www.hbl.fi/losenord/"
 component :: React.Component Props
 component = React.component componentSpec
 
-jsComponent :: React.Component JSProps
-jsComponent = React.component $ React.contramapComponentProps fromJSProps componentSpec
+-- jsComponent :: React.Component JSProps
+-- jsComponent = React.component $ React.contramapComponentProps fromJSProps componentSpec
 
-componentSpec :: React.ComponentSpec Props State
+-- componentSpec :: React.ComponentSpec Props State
 componentSpec = { displayName: "Login", initialState, receiveProps, render }
 
-receiveProps :: React.ReceivePropsArgs Props State -> Effect Unit
-receiveProps { props, state, setState, isFirstMount } = when isFirstMount do
+-- receiveProps :: React.ReceivePropsArgs Props State -> Effect Unit
+receiveProps { props, state, setState } = do -- TODO: when isFirstMount!
   loadedToken <- loadToken
   props.launchAff_
     case loadedToken of
@@ -155,7 +155,7 @@ receiveProps { props, state, setState, isFirstMount } = when isFirstMount do
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig
 
-render :: React.RenderArgs Props State -> JSX
+-- render :: React.RenderArgs Props State -> JSX
 render { props, state, setState } =
   case state.merge of
     Nothing ->

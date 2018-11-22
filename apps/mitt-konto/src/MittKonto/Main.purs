@@ -25,7 +25,7 @@ import KSF.Profile.Component as Profile
 import KSF.Subscription.Component as Subscription
 import Persona as Persona
 import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
 
@@ -155,9 +155,7 @@ alertView alert =
     [ React.element Alert.component alert ]
 
 footerView :: React.JSX
-footerView =
-  React.element
-    Footer.component {}
+footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: { user :: Persona.User } -> JSX
@@ -180,7 +178,7 @@ userView { user } = React.fragment
         , disappearingBreak
         ]
       where
-        profileComponentBlock = componentBlockContent $ React.element Profile.component { profile: user }
+        profileComponentBlock = componentBlockContent $ Profile.profile { profile: user }
 
     subscriptionsView =
       componentBlock "Mina prenumerationer:" blockContent
@@ -195,7 +193,7 @@ userView { user } = React.fragment
         blockContent = noSubscriptions : subscriptionBlocks <> [ break, subscribeImage ]
 
     subscriptionView subscription =
-      React.element Subscription.component { subscription }
+      Subscription.subscription { subscription }
 
     subscribeImage =
       DOM.div
