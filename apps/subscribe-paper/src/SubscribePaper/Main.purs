@@ -3,6 +3,7 @@ module SubscribePaper.Main where
 import Prelude
 
 import Data.Maybe (Maybe(..))
+import Data.Nullable (toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
@@ -13,10 +14,11 @@ import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
-import React.Basic (JSX)
-import React.Basic as React
+import React.Basic (JSX, ReactComponent, element, make, toReactComponent)
+import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
+import Router (RouteProps)
 import Router as Router
 import SubscribePaper.ProductSelect as ProductSelect
 
@@ -42,8 +44,8 @@ app = React.component
       , paper: HBL
       , loggedInUser: Nothing
       }
-  , receiveProps: \_ -> pure unit -- Check route
   , render
+  , receiveProps: \_ -> pure unit
   }
 
 render :: forall args. { state :: State, setState :: SetState | args } -> JSX
@@ -52,16 +54,17 @@ render { state, setState } =
     [ navbarView { state, setState }
     , classy DOM.div "clearfix"
         [ classy DOM.div "subscribe-paper--main-container col-10 lg-col-7 mx-auto"
-            [ subscribePaper ]
+            [ element Router.switch { children: [ productRoute, noMatchRoute ] } ]
         ]
     , footerView
-    , Router.route [ { path: "/about", component: ProductSelect.component } ]
     ]
   where
+    productRoute = element Router.route { exact: true, path: toNullable $ Just "/", component: ProductSelect.reactComponent }
+    noMatchRoute = element Router.route { exact: false, path: toNullable $ Nothing, component: Footer.reactComponent }
     subscribePaper =
       DOM.div
         { className: "subscribe-paper--container"
-        , children: [ React.element ProductSelect.component { paper: state.paper } ]
+        , children: [ ProductSelect.productSelect { paper: state.paper, match: Nothing } ]
         }
 
 setLoggedInUser :: Maybe Persona.User -> State -> State
@@ -116,9 +119,7 @@ navbarView { state, setState } =
       }
 
 footerView :: React.JSX
-footerView =
-  React.element
-    Footer.component {}
+footerView = Footer.footer {}
 
 classy
   :: ({ className :: String, children :: Array JSX} -> JSX)

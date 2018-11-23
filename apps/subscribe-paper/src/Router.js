@@ -5,12 +5,13 @@ var Link = ReactRouter.Link;
 var Switch = ReactRouter.Switch;
 
 exports.link_ = function(args) {
-  return React.createElement(Link, args, null);
+  return Link;
 };
 
-exports.route_ = function(routes) {
-  var routeComponents = routes.map(function(route) {
-    return React.createElement(Route, {path: route.path, component: route.component}, null);
-  });
-  return React.createElement(Switch, {children: routeComponents}, null);
+exports.switch_ = function() {
+  return Switch;
+};
+
+exports.route_ = function() {
+  return Route;
 };

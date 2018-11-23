@@ -1,9 +1,12 @@
 module KSF.Footer.Component where
 
+import Prelude
+
 import KSF.Footer.View as View
-import React.Basic (JSX, createComponent, makeStateless)
+import React.Basic (JSX, createComponent, make, makeStateless)
 import React.Basic as React
 
+type Self = React.Self Props {} Void
 type Props = {}
 
 jsComponent :: React.Component Props
@@ -12,8 +15,15 @@ jsComponent = component
 component :: React.Component Props
 component = createComponent "Footer"
 
-footer :: Props -> JSX
-footer = makeStateless component \_ -> View.footer
+reactComponent :: React.ReactComponent {}
+reactComponent =
+  React.toReactComponent (\_ -> {}) component { render, initialState: {} }
 
-render :: Props -> JSX
+footer :: Props -> JSX
+footer = make component
+  { initialState: {}
+  , render
+  }
+
+render :: Self -> JSX
 render _ = View.footer
