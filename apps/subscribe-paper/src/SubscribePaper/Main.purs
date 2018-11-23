@@ -60,7 +60,7 @@ render { state, setState } =
     ]
   where
     productRoute = element Router.route { exact: true, path: toNullable $ Just "/", component: ProductSelect.reactComponent }
-    noMatchRoute = element Router.route { exact: false, path: toNullable $ Nothing, component: Footer.reactComponent }
+    noMatchRoute = element Router.route { exact: false, path: toNullable $ Nothing, component: ProductSelect.reactComponent }
     subscribePaper =
       DOM.div
         { className: "subscribe-paper--container"
