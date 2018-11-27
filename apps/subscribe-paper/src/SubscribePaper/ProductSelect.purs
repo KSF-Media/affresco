@@ -2,22 +2,26 @@ module SubscribePaper.ProductSelect where
 
 import Prelude
 
+import Data.Function.Uncurried (Fn0, mkFn0, runFn0)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Class.Console as Console
 import Foreign (Foreign, unsafeFromForeign)
 import KSF.Navbar.Component (Paper(..))
 import Persona as Persona
 import Prim.Row (class Union)
-import React.Basic (JSX, StateUpdate(..), ComponentSpec, capture_, make)
+import React.Basic (ComponentSpec, JSX, StateUpdate(..), capture_, element, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events (EventHandler)
 import React.Basic.Events as Event
 import Router (Match)
+import Router as Router
 
 foreign import images :: { hblTotal :: String }
 
 type Self = React.Self Props State Action
-type Props = { paper :: Paper, match :: Maybe Match }
+type Props = { paper :: Paper, match :: Maybe Match, onClick :: EventHandler }
 type State =
   { paper :: Paper
   }
@@ -38,12 +42,13 @@ type JSProps =
       , path :: String
       , url :: String
       }
+  , onClick :: EventHandler
   }
 
 -- | For javascript FFI needs
 reactComponent :: React.ReactComponent JSProps
 reactComponent =
-  React.toReactComponent (\jsProps -> { paper: toPaper jsProps.paper, match: jsMatch jsProps.match }) component { initialState, render, update }
+  React.toReactComponent (\jsProps -> { paper: toPaper jsProps.paper, match: jsMatch jsProps.match, onClick: jsProps.onClick }) component { initialState, render, update }
   where
     toPaper paperString =
       case paperString of
@@ -88,7 +93,7 @@ render self@{ props, state } =
         }
     , DOM.h3_ [ DOM.text "Välj det paket som passar dig bäst!" ]
     , choosePaper
-    , mkPackage $
+    , mkPackage
                 { name: "HBL Total"
                 , days: "måndag till söndag"
                 , price: 37.90
@@ -96,6 +101,7 @@ render self@{ props, state } =
                 , description: "7 dagar med papper"
                 , checklist: defaultPackageChecklist
                 }
+                props.onClick
     ]
     where
       choosePaper :: JSX
@@ -154,8 +160,8 @@ defaultPackageChecklist =
     }
   ]
 
-mkPackage :: Package -> JSX
-mkPackage package =
+mkPackage :: Package -> EventHandler -> JSX
+mkPackage package onClick =
   DOM.div
     { className: "subscribe-paper--package col-2 center clearfix"
     , children:
@@ -171,7 +177,7 @@ mkPackage package =
                     { src: images.hblTotal }
                 ]
             }
-        , buyNowButton
+        , buyNowButton ("/buy/" <> package.name) onClick
         , mkChecklist package.checklist
         ]
     }
@@ -191,13 +197,19 @@ mkChecklist checklist =
             , DOM.text content ]
         ]
 
-buyNowButton :: JSX
-buyNowButton =
+buyNowButton :: String -> EventHandler -> JSX
+buyNowButton linkTo onClick =
   DOM.div
     { className: "subscribe-paper--buy-now flex justify-center"
     , children:
-        [ DOM.span_ [ DOM.text "Köp nu" ] ]
+        [ DOM.span
+            { children: [ link ]
+
+            }
+        ]
     }
+  where
+    link = element Router.link { to: linkTo, children: [ "Köp nu" ] }
 
 paperToString :: Paper -> String
 paperToString HBL  = "hbl"
