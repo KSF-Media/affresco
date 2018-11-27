@@ -15,6 +15,13 @@ h2 {
     font-size: 2.75em;
 }
 
+h4 {
+    font-family: 'Duplex Serif Web';
+    color: @grey-dark;
+    font-size: 1.75em;
+
+}
+
 .subscribe-paper--choose-paper {
     span {
         color: @grey-medium
@@ -96,6 +103,11 @@ h3 {
 
 .subscribe-paper--buy-now {
     font: 500 1.25rem "Roboto", sans-serif;
+    a {
+        text-decoration: none;
+        color: white;
+        outline: none;
+    }
     span {
         cursor: pointer;
         background-color: green;
@@ -227,4 +239,75 @@ h3 {
       }
     }
   }
+}
+
+
+.subscribe-paper--input {
+    text-align: left;
+    input {
+        width: 80%;
+        display: block;
+    }
+    label {
+        font-weight: 400;
+    }
+}
+
+.subscribe-paper--input-row {
+    padding: 10px;
+}
+
+.subscribe-paper--payment-select {
+    width: 100%;
+}
+
+.subscribe-paper--break {
+    border: 0;
+    height: 1px;
+    background: #dfdad6;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.subscribe-paper--accept-terms {
+    margin: 20px;
+}
+
+.subscribe-paper--continue {
+    font: 500 1.25rem "Roboto", sans-serif;
+    a {
+        text-decoration: none;
+        color: white;
+        outline: none;
+    }
+    span {
+        cursor: pointer;
+        background-color: green;
+        color: white;
+        border-radius: 5px;
+        width: 70%;
+        height: 40px;
+        line-height: 40px;
+        &:hover {
+            background-color: #009b0c;
+        }
+    }
+}
+
+.subscribe-paper--continue.disabled {
+    font: 500 1.25rem "Roboto", sans-serif;
+    a {
+        text-decoration: none;
+        color: white;
+        outline: none;
+    }
+    span {
+        pointer-events: none;
+        background-color: gray;
+        color: white;
+        border-radius: 5px;
+        width: 70%;
+        height: 40px;
+        line-height: 40px;
+    }
 }
