@@ -8,64 +8,108 @@ import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Uncurried (EffectFn1)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
-import React.Basic (JSX, ReactComponent, element, make, toReactComponent)
-import React.Basic.Compat as React
+import React.Basic (JSX, ReactComponent, StateUpdate(..), capture_, element, make, send, toReactComponent)
+import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
+import Record (merge)
 import Router (RouteProps)
 import Router as Router
+import SubscribePaper.ConfirmPurchase as ConfirmPurchase
 import SubscribePaper.ProductSelect as ProductSelect
+import SubscribePaper.User as User
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import startNavigation :: EffectFn1 (String -> Effect Unit) Unit
 
+type Self = React.Self Props State Action
 type Props = {}
 
 type State =
   { loading :: Maybe Loading
   , loggedInUser :: Maybe Persona.User
   , paper :: Navbar.Paper
+  , purchaseSteps :: { product :: Maybe PurchasePathStep, profile :: Maybe PurchasePathStep }
   }
 
 type SetState = (State -> State) -> Effect Unit
 
+data PurchasePathStep =
+  ChooseProduct
+  | ConfirmProfile
+
+data Action =
+  SetPurchasePathStep PurchasePathStep
+  | SetUser (Maybe Persona.User)
+
 data Loading = Loading
 
-app :: React.Component Props
-app = React.component
-  { displayName: "SubscribePaper"
-  , initialState:
+component :: React.Component Props
+component = React.createComponent "SubscribePaper"
+
+app :: Props -> JSX
+app = make component
+  { initialState:
       { loading: Nothing
       , paper: HBL
       , loggedInUser: Nothing
+      , purchaseSteps:
+          { product: Nothing
+          , profile: Nothing
+          }
       }
   , render
-  , receiveProps: \_ -> pure unit
+  , update
+  , didUpdate
   }
 
-render :: forall args. { state :: State, setState :: SetState | args } -> JSX
-render { state, setState } =
+render :: Self -> JSX
+render self  =
   React.fragment
-    [ navbarView { state, setState }
+    [ navbarView self
     , classy DOM.div "clearfix"
         [ classy DOM.div "subscribe-paper--main-container col-10 lg-col-7 mx-auto"
-            [ element Router.switch { children: [ productRoute, noMatchRoute ] } ]
+            [ element Router.switch { children: [ confirmRoute, productRoute, buyRoute, noMatchRoute ] } ]
         ]
     , footerView
     ]
   where
-    productRoute = element Router.route { exact: true, path: toNullable $ Just "/", component: ProductSelect.reactComponent }
+    confirmRoute = element Router.route { exact: true, path: toNullable $ Just "/confirm", component: ConfirmPurchase.jsComponent }
+    buyRoute     = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", component: User.jsComponent }
+    productRoute = element Router.route { exact: true,  path: toNullable $ Just "/", component: ProductSelect.reactComponent }
     noMatchRoute = element Router.route { exact: false, path: toNullable $ Nothing, component: ProductSelect.reactComponent }
     subscribePaper =
       DOM.div
         { className: "subscribe-paper--container"
-        , children: [ ProductSelect.productSelect { paper: state.paper, match: Nothing } ]
+        , children:
+            [ ProductSelect.productSelect
+                { paper: self.state.paper
+                , match: Nothing
+                , onClick: capture_ self $ SetPurchasePathStep ChooseProduct
+                }
+            ]
         }
+
+update :: Self -> Action -> StateUpdate Props State Action
+update self = case _ of
+  SetPurchasePathStep ChooseProduct ->
+    Update self.state { purchaseSteps = merge self.state.purchaseSteps { product: Just ChooseProduct } }
+  SetPurchasePathStep ConfirmProfile ->
+    Update self.state { purchaseSteps = merge self.state.purchaseSteps { profile: Just ConfirmProfile } }
+  SetUser user ->
+    Update self.state { loggedInUser = user }
+
+didUpdate :: Self -> Effect Unit
+didUpdate self = do
+  Console.log "DID UPDATE"
+  Console.log $ unsafeCoerce self.state
 
 setLoggedInUser :: Maybe Persona.User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
@@ -106,16 +150,17 @@ withSpinner setLoadingState action = do
      Aff.killFiber (error "Action is done") loadingFiber
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: { state :: State, setState :: SetState } -> JSX
-navbarView { state, setState } =
+navbarView :: Self -> JSX
+navbarView self  =
   React.element
     Navbar.component
-      { paper: state.paper
-      , loggedInUser: state.loggedInUser
+      { paper: self.state.paper
+      , loggedInUser: self.state.loggedInUser
       , logout: do
-          Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
+          Aff.launchAff_ do
             Login.logout
-            liftEffect $ setState $ setLoggedInUser Nothing
+            liftEffect $
+              send { props: self.props, state: self.state, instance_: self.instance_ } $ SetUser Nothing
       }
 
 footerView :: React.JSX
