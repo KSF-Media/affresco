@@ -67,7 +67,6 @@ app = make component
       }
   , render
   , update
-  , didUpdate
   }
 
 render :: Self -> JSX
@@ -105,11 +104,6 @@ update self = case _ of
     Update self.state { purchaseSteps = merge self.state.purchaseSteps { profile: Just ConfirmProfile } }
   SetUser user ->
     Update self.state { loggedInUser = user }
-
-didUpdate :: Self -> Effect Unit
-didUpdate self = do
-  Console.log "DID UPDATE"
-  Console.log $ unsafeCoerce self.state
 
 setLoggedInUser :: Maybe Persona.User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }

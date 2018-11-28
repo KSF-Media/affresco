@@ -17,6 +17,7 @@ import React.Basic.Events (EventHandler)
 import React.Basic.Events as Event
 import Router (Match)
 import Router as Router
+import SubscribePaper.SubscribePaper (Product)
 
 foreign import images :: { hblTotal :: String }
 
@@ -101,7 +102,7 @@ render self@{ props, state } =
                 , description: "7 dagar med papper"
                 , checklist: defaultPackageChecklist
                 }
-                props.onClick
+                self
     ]
     where
       choosePaper :: JSX
@@ -160,8 +161,8 @@ defaultPackageChecklist =
     }
   ]
 
-mkPackage :: Package -> EventHandler -> JSX
-mkPackage package onClick =
+mkPackage :: Package -> Self -> JSX
+mkPackage package self =
   DOM.div
     { className: "subscribe-paper--package col-2 center clearfix"
     , children:
@@ -177,7 +178,7 @@ mkPackage package onClick =
                     { src: images.hblTotal }
                 ]
             }
-        , buyNowButton ("/buy/" <> package.name) onClick
+        , buyNowButton ("/buy/" <> package.name) { name: package.name, price: package.price }
         , mkChecklist package.checklist
         ]
     }
@@ -197,19 +198,17 @@ mkChecklist checklist =
             , DOM.text content ]
         ]
 
-buyNowButton :: String -> EventHandler -> JSX
-buyNowButton linkTo onClick =
+buyNowButton :: String -> Product -> JSX
+buyNowButton linkTo product =
   DOM.div
     { className: "subscribe-paper--buy-now flex justify-center"
     , children:
         [ DOM.span
-            { children: [ link ]
-
-            }
+            { children: [ link ] }
         ]
     }
   where
-    link = element Router.link { to: linkTo, children: [ "Köp nu" ] }
+    link = element Router.link { to: { pathname: linkTo, state: { product } }, children: [ "Köp nu" ] }
 
 paperToString :: Paper -> String
 paperToString HBL  = "hbl"

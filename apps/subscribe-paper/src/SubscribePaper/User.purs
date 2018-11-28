@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Function.Uncurried (runFn0)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
-import Data.Nullable (Nullable, toMaybe)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
@@ -18,14 +18,15 @@ import React.Basic (JSX, StateUpdate(..), capture_, element, make, send)
 import React.Basic as React
 import React.Basic.Compat as React.Compat
 import React.Basic.DOM as DOM
-import Router (Match)
+import Router (Match, Location)
 import Router as Router
+import SubscribePaper.ConfirmPurchase as ConfirmPurchase
 import SubscribePaper.SubscribePaper (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Void
 
-type Props = { match :: Match }
+type Props = { match :: Match, location :: Location (Maybe { product :: Product }) }
 type State =
   { product :: Maybe Product
   , loggedInUser :: Maybe Persona.User
@@ -33,7 +34,9 @@ type State =
 type PathParams =
   { product :: String }
 type JSProps =
-  { match :: Match }
+  { match :: Match
+  , location :: Location (Nullable { product :: Product })
+  }
 
 type AddressView =
   { streetAddress :: String
@@ -47,8 +50,15 @@ data Action =
   | SetUser Persona.User
 
 fromJsProps :: JSProps -> Props
-fromJsProps jsProps =
-    { match: jsProps.match
+fromJsProps { match, location: { key, pathname, search, hash, state } } =
+    { match: match
+    , location:
+         { key
+         , pathname
+         , search
+         , hash
+         , state: toMaybe state
+         }
     }
 
 component :: React.Component Props
@@ -68,10 +78,11 @@ initialState =
   }
 
 didMount :: Self -> Effect Unit
-didMount self = do
-  send { props: self.props, state: self.state, instance_: self.instance_ } productUpdateAction
+didMount self@{ props: { location: { state: Just state } } } = do
+  send self productUpdateAction
   where
-    productUpdateAction = SetProduct $ product self.props.match
+    productUpdateAction = SetProduct state.product
+didMount _ = pure unit
 
 product :: Match -> Product
 product { params } =
@@ -107,7 +118,7 @@ loginContainer self =
     , children:
         [ if isNothing self.state.loggedInUser
           then loginComponent self
-          else foldMap controlProfile self.state.loggedInUser
+          else controlProfile self
         ]
     }
 
@@ -130,8 +141,8 @@ loginComponent self =
           }
     ]
 
-controlProfile :: Persona.User -> JSX
-controlProfile personaUser =
+controlProfile :: Self -> JSX
+controlProfile self@{ state: { loggedInUser: (Just personaUser) } } =
   DOM.div_
     [ DOM.h2_ [ DOM.text "Kontrollera konto" ]
     , userDataRow
@@ -162,7 +173,7 @@ controlProfile personaUser =
             { className: "col col-6 center"
             , children: [ DOM.text "* = obligatoriskt fält" ]
             }
-        , continueButton
+        , continueButton self
         ]
     ]
   where
@@ -178,6 +189,7 @@ controlProfile personaUser =
 
     valueOf :: Nullable String -> String
     valueOf s = fromMaybe "" $ toMaybe s
+controlProfile _ = mempty
 
 inputField description inputValue =
   DOM.div
@@ -191,36 +203,19 @@ inputField description inputValue =
        ]
    }
 
--- inputField description defaultValue =
---   DOM.div
---     { className: "col col-6 subscribe-paper--input"
---     , children:
---         [ DOM.label { children: [ DOM.text description ] }
---         , React.element
---             InputField.component
---               { type_: "text"
---               , placeholder: ""
---               , name: ""
---               , required: false
---               , children: []
---               , defaultValue: Just defaultValue
---               , onChange: \_ -> pure unit
---               }
---         ]
---     }
-
 userDataRow children =
   DOM.div
     { className: "clearfix subscribe-paper--input-row"
     , children
     }
 
-continueButton :: JSX
-continueButton =
+continueButton :: Self -> JSX
+continueButton self  =
   DOM.div
     { className: "subscribe-paper--buy-now flex justify-center"
     , children:
         [ DOM.span_ [ link ] ]
     }
   where
-    link = element Router.link { to: "/confirm", children: [ "Fortsätt" ] }
+    link = element Router.link { to: { pathname: "/confirm", state: confirmPurchaseState }, children: [ "Fortsätt" ] }
+    confirmPurchaseState = { user: toNullable self.state.loggedInUser, product: toNullable self.state.product }

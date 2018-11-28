@@ -2,29 +2,39 @@ module SubscribePaper.ConfirmPurchase where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
+import Data.Foldable (foldMap)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
+import Effect.Aff (Aff, Canceler(..), Error, launchAff_, makeAff)
+import Effect.Aff as Aff
 import Effect.Class.Console as Console
-import Foreign (Foreign)
+import Foreign (Foreign, unsafeFromForeign)
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), capture_, element, make)
+import React.Basic (JSX, StateUpdate(..), capture_, element, make, send, sendAsync)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Router (Match)
+import Router (Match, Location)
 import Router as Router
 import SubscribePaper.SubscribePaper (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Action
-type Props = { match :: Maybe Match }
+type Props = { match :: Maybe Match, location :: Location LocationState }
 type State =
   { user :: Maybe Persona.User
-  , product :: Product
+  , product :: Maybe Product
   , termsAccepted :: Boolean
   }
 
+type LocationState   = Maybe    { product :: Product, user :: Persona.User }
+type LocationJsState = Nullable { product :: Product, user :: Persona.User }
+
 data Action =
   AcceptTerms
+  | SetUser (Maybe Persona.User)
+  | SetProduct Product
 
 component :: React.Component Props
 component = React.createComponent "ConfirmPurchase"
@@ -36,23 +46,39 @@ type JSProps =
       , path    :: String
       , url     :: String
       }
+  , location :: Location LocationJsState
+  }
+
+fromJsProps :: JSProps -> Props
+fromJsProps { match, location: { key, pathname, search, hash, state } } =
+  { match: Just match
+  , location:
+      { key
+      , pathname
+      , search
+      , hash
+      , state: toMaybe state
+      }
   }
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
-  React.toReactComponent (\jsProps -> { match: Just jsProps.match }) component { initialState, render, didMount, update }
+  React.toReactComponent fromJsProps component { initialState, render, didMount, update }
 
 confirmPurchase :: Props -> JSX
-confirmPurchase = make component { initialState, render, didMount, update }
+confirmPurchase props = make component { initialState, render, didMount, update } props
 
 didMount :: Self -> Effect Unit
-didMount self =
-  Console.log $ unsafeCoerce self.props
+didMount self@{ props: { location: { state: Just state } } } = do
+  Console.log "confirm purchase didMount"
+  Console.log $ unsafeCoerce state
+  send self (SetProduct state.product)
+didMount _ = pure unit
 
 initialState :: State
 initialState =
   { user: Nothing
-  , product: { name: "", price: 0.0 }
+  , product: Nothing
   , termsAccepted: false
   }
 
@@ -60,6 +86,10 @@ update :: Self -> Action -> StateUpdate Props State Action
 update self = case _ of
   AcceptTerms ->
     Update self.state { termsAccepted = not self.state.termsAccepted }
+  SetUser u ->
+    Update self.state { user = u }
+  SetProduct p ->
+    Update self.state { product = Just p }
 
 render :: Self -> JSX
 render self =
@@ -70,7 +100,7 @@ render self =
               { className: "center col-4"
               , children:
                   [ DOM.h2_ [ DOM.text "Villkor och betalningssätt" ]
-                  , DOM.p_ [ DOM.text $ "Välj betalningssätt och faktureringsperiod för din produkt " <> "\"" <> self.state.product.name <> "\"" ]
+                  , DOM.p_ [ DOM.text $ "Välj betalningssätt och faktureringsperiod för din produkt " <> "\"" <> foldMap productName self.state.product <> "\"" ]
                   , DOM.p_ [ DOM.text "Prenumerationstyp: Fortlöpande" ]
                   , DOM.div
                       { className: "col col-12 mt1"
@@ -94,12 +124,15 @@ render self =
                       }
                   , select
                       [ { value: "1", text: "1 månader" } ]
-                  , price self.state.product
+                  , foldMap price self.state.product
                   , acceptTerms self
                   ]
               }
           ]
       }
+  where
+    productName :: Product -> String
+    productName product = product.name
 
 acceptTerms :: Self -> JSX
 acceptTerms self =
@@ -135,8 +168,7 @@ continueButton disabled =
         [ DOM.span_ [ link ] ]
     }
   where
-    link = element Router.link { to: "/order-successful", children: [ "Fortsätt" ] }
-
+    link = element Router.link { to: { pathname: "/order-successful", state: {} }, children: [ "Fortsätt" ] }
 
 price :: Product -> JSX
 price product =
