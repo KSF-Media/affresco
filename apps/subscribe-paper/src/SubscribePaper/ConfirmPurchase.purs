@@ -12,7 +12,7 @@ import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Foreign (Foreign, unsafeFromForeign)
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), capture_, element, make, send, sendAsync)
+import React.Basic (JSX, StateUpdate(..), capture_, element, make, monitor_, send, sendAsync)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Router (Match, Location)
@@ -144,7 +144,7 @@ acceptTerms self =
             , children:
                 [ DOM.input
                     { type: "checkbox"
-                    , onChange: capture_ self AcceptTerms
+                    , onChange: monitor_ self AcceptTerms
                     , className: "subscribe-paper--accept-terms"
                     }
                 , DOM.text "Jag har läst och godkänner KSF Medias bruksvillkor"
