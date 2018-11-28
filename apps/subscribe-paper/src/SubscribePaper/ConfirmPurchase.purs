@@ -21,15 +21,15 @@ import SubscribePaper.SubscribePaper (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Action
-type Props = { match :: Maybe Match, location :: Location LocationState }
+type Props = { match :: Maybe Match, location :: Location (Maybe LocationState) }
 type State =
   { user :: Maybe Persona.User
   , product :: Maybe Product
   , termsAccepted :: Boolean
   }
 
-type LocationState   = Maybe    { product :: Product, user :: Persona.User }
-type LocationJsState = Nullable { product :: Product, user :: Persona.User }
+type LocationState   = { product :: Maybe Product, user :: Maybe Persona.User }
+type LocationJsState = { product :: Nullable Product, user :: Nullable Persona.User }
 
 data Action =
   AcceptTerms
@@ -46,7 +46,7 @@ type JSProps =
       , path    :: String
       , url     :: String
       }
-  , location :: Location LocationJsState
+  , location :: Location (Nullable LocationJsState)
   }
 
 fromJsProps :: JSProps -> Props
@@ -57,9 +57,17 @@ fromJsProps { match, location: { key, pathname, search, hash, state } } =
       , pathname
       , search
       , hash
-      , state: toMaybe state
+      , state: convertState $ toMaybe state
       }
   }
+  where
+    convertState :: Maybe LocationJsState -> Maybe LocationState
+    convertState (Just s) =
+      Just
+        { product: toMaybe s.product
+        , user: toMaybe s.user
+        }
+    convertState _ = Nothing
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
@@ -72,8 +80,13 @@ didMount :: Self -> Effect Unit
 didMount self@{ props: { location: { state: Just state } } } = do
   Console.log "confirm purchase didMount"
   Console.log $ unsafeCoerce state
-  send self (SetProduct state.product)
+  setProduct self state.product
+
 didMount _ = pure unit
+
+setProduct :: Self -> Maybe Product -> Effect Unit
+setProduct self (Just product) = send self (SetProduct product)
+setProduct _ _ = pure unit
 
 initialState :: State
 initialState =

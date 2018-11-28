@@ -218,4 +218,5 @@ continueButton self  =
     }
   where
     link = element Router.link { to: { pathname: "/confirm", state: confirmPurchaseState }, children: [ "Fortsätt" ] }
+    confirmPurchaseState :: ConfirmPurchase.LocationJsState
     confirmPurchaseState = { user: toNullable self.state.loggedInUser, product: toNullable self.state.product }
