@@ -4,10 +4,12 @@ import Prelude
 
 import Data.Function.Uncurried (Fn0, mkFn0, runFn0)
 import Data.Maybe (Maybe(..))
+import Data.Nullable (toNullable)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (Foreign, unsafeFromForeign)
 import KSF.Navbar.Component (Paper(..))
+import Persona (User)
 import Persona as Persona
 import Prim.Row (class Union)
 import React.Basic (ComponentSpec, JSX, StateUpdate(..), capture_, element, make)
@@ -18,6 +20,7 @@ import React.Basic.Events as Event
 import Router (Match)
 import Router as Router
 import SubscribePaper.SubscribePaper (Product)
+import SubscribePaper.User as User
 
 foreign import images :: { hblTotal :: String }
 
@@ -178,7 +181,7 @@ mkPackage package self =
                     { src: images.hblTotal }
                 ]
             }
-        , buyNowButton ("/buy/" <> package.name) { name: package.name, price: package.price }
+        , buyNowButton ("/buy/" <> package.name) (Just { name: package.name, price: package.price })
         , mkChecklist package.checklist
         ]
     }
@@ -198,7 +201,7 @@ mkChecklist checklist =
             , DOM.text content ]
         ]
 
-buyNowButton :: String -> Product -> JSX
+buyNowButton :: String -> (Maybe Product) -> JSX
 buyNowButton linkTo product =
   DOM.div
     { className: "subscribe-paper--buy-now flex justify-center"
@@ -208,7 +211,9 @@ buyNowButton linkTo product =
         ]
     }
   where
-    link = element Router.link { to: { pathname: linkTo, state: { product } }, children: [ "Köp nu" ] }
+    link = element Router.link { to: { pathname: linkTo, state: userState }, children: [ "Köp nu" ] }
+    userState :: User.LocationJsState
+    userState = { product: toNullable product }
 
 paperToString :: Paper -> String
 paperToString HBL  = "hbl"

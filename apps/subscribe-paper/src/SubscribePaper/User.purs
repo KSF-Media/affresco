@@ -26,7 +26,7 @@ import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Void
 
-type Props = { match :: Match, location :: Location (Maybe { product :: Product }) }
+type Props = { match :: Match, location :: Location (Maybe LocationState) }
 type State =
   { product :: Maybe Product
   , loggedInUser :: Maybe Persona.User
@@ -35,8 +35,11 @@ type PathParams =
   { product :: String }
 type JSProps =
   { match :: Match
-  , location :: Location (Nullable { product :: Product })
+  , location :: Location (Nullable LocationJsState)
   }
+
+type LocationState   = { product :: Maybe Product }
+type LocationJsState = { product :: Nullable Product }
 
 type AddressView =
   { streetAddress :: String
@@ -57,9 +60,14 @@ fromJsProps { match, location: { key, pathname, search, hash, state } } =
          , pathname
          , search
          , hash
-         , state: toMaybe state
+         , state: convertState $ toMaybe state
          }
     }
+  where
+    convertState :: Maybe LocationJsState -> Maybe LocationState
+    convertState (Just s) =
+      Just { product: toMaybe s.product }
+    convertState _ = Nothing
 
 component :: React.Component Props
 component = React.createComponent "User"
@@ -79,10 +87,13 @@ initialState =
 
 didMount :: Self -> Effect Unit
 didMount self@{ props: { location: { state: Just state } } } = do
-  send self productUpdateAction
-  where
-    productUpdateAction = SetProduct state.product
+  setProduct self state.product
+
 didMount _ = pure unit
+
+setProduct :: Self -> Maybe Product -> Effect Unit
+setProduct self (Just p) = send self (SetProduct p)
+setProduct _ _ = pure unit
 
 product :: Match -> Product
 product { params } =
