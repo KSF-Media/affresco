@@ -210,7 +210,7 @@ inputField description inputValue =
            { children: [ DOM.text description ]
            }
        , DOM.input
-           { type: "text", value: inputValue }
+           { type: "text", defaultValue: inputValue }
        ]
    }
 
