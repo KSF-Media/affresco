@@ -47,6 +47,9 @@ type JSProps =
   , onLoadingEnd       :: Nullable (Effect Unit)
   }
 
+jsComponent :: React.ReactComponent JSProps
+jsComponent = React.toReactComponent fromJSProps component { initialState, render, didMount, update }
+
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { onMerge: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMerge
@@ -125,9 +128,6 @@ login = make component
   , didMount
   , update
   }
-
--- jsComponent :: React.Component JSProps
--- jsComponent = React.component $ React.contramapComponentProps fromJSProps componentSpec
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
