@@ -28,10 +28,12 @@ import KSF.Login.View as View
 import LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
-import React.Basic (JSX)
-import React.Basic.Compat as React
+import React.Basic (JSX, StateUpdate(..), make, send)
+import React.Basic as React
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
+
+type Self = React.Self Props State Action
 
 type JSProps =
   { onMerge            :: Nullable (Effect Unit)
@@ -87,6 +89,14 @@ type State =
   , merge :: Maybe MergeInfo
   }
 
+data Action =
+  LoginError Login.Error
+  | GoogleAuthInitError Google.Error
+  | FormEmail String
+  | FormPassword String
+  | MergeCancel
+  | SetMergeInfo (Maybe MergeInfo)
+
 initialState :: State
 initialState =
   { formEmail: ""
@@ -106,16 +116,21 @@ forgotPasswordUrl :: String
 forgotPasswordUrl = "https://www.hbl.fi/losenord/"
 
 component :: React.Component Props
-component = React.component componentSpec
+component = React.createComponent "Login"
+
+login :: Props -> JSX
+login = make component
+  { initialState
+  , render
+  , didMount
+  , update
+  }
 
 -- jsComponent :: React.Component JSProps
 -- jsComponent = React.component $ React.contramapComponentProps fromJSProps componentSpec
 
--- componentSpec :: React.ComponentSpec Props State
-componentSpec = { displayName: "Login", initialState, receiveProps, render }
-
--- receiveProps :: React.ReceivePropsArgs Props State -> Effect Unit
-receiveProps { props, state, setState } = do -- TODO: when isFirstMount!
+didMount :: Self -> Effect Unit
+didMount self@{ props, state } = do
   loadedToken <- loadToken
   props.launchAff_
     case loadedToken of
@@ -143,8 +158,7 @@ receiveProps { props, state, setState } = do -- TODO: when isFirstMount!
                     Persona.loginSso { accessToken, uuid } `catchError` case _ of
                       err | Just serverError <- Persona.internalServerError err -> do
                               Console.error "Something went wrong with SSO login"
-                              liftEffect $ setState \s -> s
-                                { errors { login = Just Login.SomethingWentWrong } }
+                              liftEffect $ send self (LoginError Login.SomethingWentWrong)
                               throwError err
                           | otherwise -> do
                               Console.error "An unexpected error occurred during SSO login"
@@ -152,11 +166,30 @@ receiveProps { props, state, setState } = do -- TODO: when isFirstMount!
                   finalizeLogin props loginResponse
             }
 
+update :: Self -> Action -> StateUpdate Props State Action
+update self = case _ of
+  LoginError err ->
+    Update self.state { errors { login = Just err } }
+  GoogleAuthInitError err ->
+    Update self.state { errors { googleAuthInit = Just err } }
+  FormEmail email ->
+    Update self.state { formEmail = email }
+  FormPassword password ->
+    Update self.state { formPassword = password }
+  MergeCancel ->
+    Update
+      self.state
+        { merge = Nothing
+        , errors { social = Nothing, login = Nothing }
+        }
+  SetMergeInfo mergeInfo ->
+    Update self.state { merge = mergeInfo }
+
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig
 
--- render :: React.RenderArgs Props State -> JSX
-render { props, state, setState } =
+render :: Self -> JSX
+render self@{ props, state } =
   case state.merge of
     Nothing ->
       View.login
@@ -196,12 +229,13 @@ render { props, state, setState } =
         , onMergeCancelled
         }
   where
-    onEmailValueChange = \v -> setState \s -> s { formEmail = v }
-    onPasswordValueChange = \v -> setState \s -> s { formPassword = v }
+    onEmailValueChange email =
+      send self (FormEmail email)
+    onPasswordValueChange password =
+      send self (FormPassword password)
 
     onMergeCancelled = do
-      setState \s -> s { merge = Nothing
-                       , errors { social = Nothing, login = Nothing } }
+      send self MergeCancel
       props.onMergeCancelled
 
     onLogin :: Effect Unit
@@ -214,19 +248,17 @@ render { props, state, setState } =
           } `catchError` case _ of
            err | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
                    Console.error errData.invalid_credentials.description
-                   liftEffect $ setState \s -> s
-                     { errors { login = Just Login.InvalidCredentials } }
+                   liftEffect $ send self (LoginError Login.InvalidCredentials)
                    throwError err
                | Just serverError <- Persona.internalServerError err -> do
                    Console.error "Something went wrong with traditional login"
-                   liftEffect $ setState \s -> s
-                     { errors { login = Just Login.SomethingWentWrong } }
+                   liftEffect $ send self (LoginError Login.SomethingWentWrong)
                    throwError err
                | otherwise -> do
                    Console.error "An unexpected error occurred during traditional login"
                    throwError err
       -- removing merge token from state in case of success
-      liftEffect $ setState \s -> s { merge = Nothing }
+      liftEffect $ send self (SetMergeInfo Nothing)
       finalizeLogin props loginResponse
 
     onFacebookLogin :: Effect Unit
@@ -250,7 +282,7 @@ render { props, state, setState } =
                   } = props.launchAff_ do
       failOnEmailMismatch email
       -- setting the email in the state to eventually have it in the merge view
-      liftEffect $ setState \s -> s { formEmail = email }
+      liftEffect $ send self (FormEmail email)
       userResponse <- someAuth (Persona.Email email) (Token accessToken) Persona.GooglePlus
       finalizeLogin props userResponse
 
@@ -267,7 +299,7 @@ render { props, state, setState } =
       -- is that we do not want to show the Google error message to the user
       -- until (if at all) the Google login button is clicked.
       -- This is handled by `googleFallbackOnClick`.
-      setState \s -> s { errors { googleAuthInit = Just err } }
+      send self (GoogleAuthInitError err)
     onGoogleFailure { error: "popup_closed_by_user" } = pure unit
     onGoogleFailure _ = Log.error "Google login failed."
 
@@ -279,7 +311,7 @@ render { props, state, setState } =
     -- | In this case, an error message is shown to the user when the button is clicked.
     googleFallbackOnClick
       | isJust state.errors.googleAuthInit =
-          setState \s -> s { errors { social = Just Login.GoogleAuthInitError } }
+          send self (LoginError Login.GoogleAuthInitError)
       | otherwise = pure unit
 
     -- | Fetches user info from Facebook and then Persona.
@@ -291,11 +323,11 @@ render { props, state, setState } =
           `catchError` \err -> do
             -- Here we get an exception if the FB email is missing,
             -- so we have to ask the user
-            liftEffect $ setState \s -> s { errors { social = Just Login.FacebookEmailMissing } }
+            liftEffect $ send self (LoginError Login.FacebookEmailMissing)
             throwError err
       failOnEmailMismatch email
       -- setting the email in the state to eventually send it from the merge view form
-      liftEffect $ setState \s -> s { formEmail = email }
+      liftEffect $ send self (FormEmail email)
       let (FB.AccessToken fbAccessToken) = accessToken
       userResponse <- someAuth (Persona.Email email) (Token fbAccessToken) Persona.Facebook
       finalizeLogin props userResponse
@@ -309,7 +341,7 @@ render { props, state, setState } =
       | Just (Persona.Email email) == map _.userEmail state.merge = do
           pure unit
       | otherwise = do
-          liftEffect $ setState \s -> s { errors { social = Just Login.EmailMismatchError } }
+          liftEffect $ send self (LoginError Login.EmailMismatchError)
           throwError $ error "Emails don't match"
 
     someAuth :: Persona.Email -> Persona.Token -> Persona.Provider -> Aff Persona.LoginResponse
@@ -327,25 +359,23 @@ render { props, state, setState } =
                     Console.error errData.email_address_in_use.description
                     liftEffect do
                       props.onMerge
-                      setState \s -> s
-                        { merge = Just
-                          { token: errData.email_address_in_use.merge_token
-                          , existingProvider: errData.email_address_in_use.existing_provider
-                          , newProvider: provider
-                          , userEmail: email
-                          }
-                        }
+                      send self (SetMergeInfo
+                                  (Just
+                                    { token: errData.email_address_in_use.merge_token
+                                    , existingProvider: errData.email_address_in_use.existing_provider
+                                    , newProvider: provider
+                                    , userEmail: email
+                                    }))
                     throwError err
                 | Just serverError <- Persona.internalServerError err -> do
                     Console.error "Something went wrong with SoMe login"
-                    liftEffect $ setState \s -> s
-                      { errors { login = Just Login.SomethingWentWrong } }
+                    liftEffect $ send self (LoginError Login.SomethingWentWrong)
                     throwError err
                 | otherwise -> do
                      Console.error "An unexpected error occurred during SoMe login"
                      throwError err
       -- removing merge token from state in case of success
-      liftEffect $ setState \s -> s { merge = Nothing }
+      liftEffect $ send self (SetMergeInfo Nothing)
       pure responseToken
 
 finalizeLogin :: Props -> Persona.LoginResponse -> Aff Unit

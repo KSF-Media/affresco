@@ -13,10 +13,12 @@ import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import Persona as Persona
+import React.Basic (JSX)
+import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events as Events
-import React.Basic.Extended (JSX, Style)
+import React.Basic.Extended (Style)
 import React.Basic.Extended as React
 import Web.DOM.Node as Web.DOM
 
