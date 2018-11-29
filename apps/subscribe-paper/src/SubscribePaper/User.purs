@@ -223,11 +223,17 @@ userDataRow children =
 continueButton :: Self -> JSX
 continueButton self  =
   DOM.div
-    { className: "subscribe-paper--buy-now flex justify-center"
-    , children:
-        [ DOM.span_ [ link ] ]
+    { className: "flex"
+    , children: [ link ]
     }
   where
-    link = element Router.link { to: { pathname: "/confirm", state: confirmPurchaseState }, children: [ "Fortsätt" ] }
+    link =
+      element
+        Router.link
+          { to: { pathname: "/confirm", state: confirmPurchaseState }
+          , children: [ button ]
+          , className: "subscribe-paper--button-link"
+          }
+    button = DOM.span_ [ DOM.text "Fortsätt" ]
     confirmPurchaseState :: ConfirmPurchase.LocationJsState
     confirmPurchaseState = { user: toNullable self.state.loggedInUser, product: toNullable self.state.product }

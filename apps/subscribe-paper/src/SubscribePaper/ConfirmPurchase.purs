@@ -176,12 +176,18 @@ acceptTerms self =
 continueButton :: String -> JSX
 continueButton disabled =
   DOM.div
-    { className: "subscribe-paper--continue flex justify-center " <> disabled
-    , children:
-        [ DOM.span_ [ link ] ]
+    { className: "flex justify-center"
+    , children: [ link ]
     }
   where
-    link = element Router.link { to: { pathname: "/order-successful", state: {} }, children: [ "Fortsätt" ] }
+    link =
+      element
+        Router.link
+          { to: { pathname: "/order-successful", state: {} }
+          , children: [ button ]
+          , className: "subscribe-paper--button-link " <> disabled
+          }
+    button = DOM.span_ [ DOM.text "Fortsätt" ]
 
 price :: Product -> JSX
 price product =

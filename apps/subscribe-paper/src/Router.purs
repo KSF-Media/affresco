@@ -32,7 +32,7 @@ type To state_ =
   }
 type SwitchProps = { children :: Array JSX }
 type RouteProps props = { exact :: Boolean, path :: Nullable String, component :: ReactComponent props }
-type LinkProps props state = { to :: To state, children :: Array String }
+type LinkProps props state = { to :: To state, children :: Array JSX, className :: String }
 
 route :: forall props. ReactComponent (RouteProps props)
 route = runFn0 route_

@@ -204,14 +204,18 @@ mkChecklist checklist =
 buyNowButton :: String -> (Maybe Product) -> JSX
 buyNowButton linkTo product =
   DOM.div
-    { className: "subscribe-paper--buy-now flex justify-center"
+    { className: "flex justify-center"
     , children:
-        [ DOM.span
-            { children: [ link ] }
+        [ element
+            Router.link
+              { to: { pathname: linkTo, state: userState }
+              , children: [ button ]
+              , className: "subscribe-paper--button-link"
+              }
         ]
     }
   where
-    link = element Router.link { to: { pathname: linkTo, state: userState }, children: [ "Köp nu" ] }
+    button = DOM.span { children: [ DOM.text "Köp nu" ] }
     userState :: User.LocationJsState
     userState = { product: toNullable product }
 
