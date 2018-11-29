@@ -139,8 +139,7 @@ withSpinner setLoadingState action = do
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
 navbarView { state, setState } =
-  React.element
-    Navbar.component
+    Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
@@ -152,7 +151,7 @@ navbarView { state, setState } =
 alertView :: Alert -> JSX
 alertView alert =
   classy DOM.div "col-4 mx-auto center"
-    [ React.element Alert.component alert ]
+    [ Alert.alert alert ]
 
 footerView :: React.JSX
 footerView = Footer.footer {}
@@ -306,8 +305,7 @@ loginView { state, setState } = React.fragment
   ]
   where
     loginForm =
-      React.element
-        Login.component
+        Login.login
           { onMerge:          setState \s -> s { showWelcome = false }
           , onMergeCancelled: setState \s -> s { showWelcome = true }
           , onUserFetch:

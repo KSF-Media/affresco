@@ -12,8 +12,10 @@ import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Navbar.View as View
 import Persona as Persona
-import React.Basic (JSX)
-import React.Basic.Compat as React
+import React.Basic (JSX, StateUpdate(..), make, send)
+import React.Basic as React
+
+type Self = React.Self Props State Void
 
 type Props =
   { paper :: Paper
@@ -26,6 +28,9 @@ type JSProps =
   , loggedInUser :: Nullable Persona.User
   , onLogout :: Effect Unit
   }
+
+data Action =
+  CollapsedNavVisibility Visibility
 
 fromJSProps :: Partial => JSProps -> Props
 fromJSProps jsProps =
@@ -49,30 +54,28 @@ type State =
 initialState :: State
 initialState = { collapsedNavVisibility: Hidden }
 
--- jsComponent :: Partial => React.Component JSProps
--- jsComponent = React.component $ React.contramapComponentProps fromJSProps componentSpec
+jsComponent :: Partial => React.ReactComponent JSProps
+jsComponent = React.toReactComponent fromJSProps component { initialState, render, update }
 
 component :: React.Component Props
-component = React.component componentSpec
+component = React.createComponent "Navbar"
 
--- componentSpec :: React.ComponentSpec Props State
-componentSpec = { displayName: "Navbar", initialState, receiveProps, render }
+navbar :: Props -> JSX
+navbar = make component
+  { initialState, render, update }
 
--- receiveProps :: React.ReceivePropsArgs Props State -> Effect Unit
-receiveProps _ = pure unit
-
--- render :: React.RenderArgs Props State -> JSX
-render { props, state, setState } =
+render :: Self -> JSX
+render self@{ props, state } =
   View.navbar
     { onLogout:
         if isJust props.loggedInUser
         then Just do
              props.logout
-             setState \s -> s { collapsedNavVisibility = Hidden }
+             send self (CollapsedNavVisibility Hidden)
         else Nothing
     , paperInfo
     , toggleCollapsedNav:
-        setState \s -> s { collapsedNavVisibility = negateVisibility state.collapsedNavVisibility }
+        send self (CollapsedNavVisibility $ negateVisibility state.collapsedNavVisibility)
     , collapsedNav:
         \items ->
           Collapsed.collapsed
@@ -86,6 +89,11 @@ render { props, state, setState } =
       , email: paperEmail props.paper
       , phoneNumber: paperPhoneNumber props.paper
       }
+
+update :: Self -> Action -> StateUpdate Props State Action
+update self = case _ of
+  CollapsedNavVisibility v ->
+    Update self.state { collapsedNavVisibility = v }
 
 data Paper = HBL | ON | VN | LS | HTHL | KSF
 

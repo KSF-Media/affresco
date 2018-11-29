@@ -19,7 +19,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events as Events
 import React.Basic.Extended (Style)
-import React.Basic.Extended as React
+import React.Basic.Extended as React.Extended
 import Web.DOM.Node as Web.DOM
 
 foreign import loginStyles :: Style
@@ -61,7 +61,7 @@ type MergeAttributes =
 
 login :: LoginAttributes -> JSX
 login attrs =
-    React.requireStyle
+    React.Extended.requireStyle
       loginStyles
       $ DOM.div
           { className: "login-form pt2"
