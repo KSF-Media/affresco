@@ -32,7 +32,7 @@ type JSProps =
 data Action =
   CollapsedNavVisibility Visibility
 
-fromJSProps :: Partial => JSProps -> Props
+fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { paper
   , loggedInUser: Nullable.toMaybe jsProps.loggedInUser
@@ -46,7 +46,7 @@ fromJSProps jsProps =
         "VN"   -> VN
         "LS"   -> LS
         "HTHL" -> HTHL
-        "KSF"  -> KSF
+        _      -> KSF
 
 type State =
   { collapsedNavVisibility :: Visibility  }
@@ -54,7 +54,7 @@ type State =
 initialState :: State
 initialState = { collapsedNavVisibility: Hidden }
 
-jsComponent :: Partial => React.ReactComponent JSProps
+jsComponent :: React.ReactComponent JSProps
 jsComponent = React.toReactComponent fromJSProps component { initialState, render, update }
 
 component :: React.Component Props
