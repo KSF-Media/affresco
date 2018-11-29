@@ -5,14 +5,12 @@ module React.Basic.Extended
   , ReceivePropsArgs
   , SetState
   , SetStateThen
-  , contramapComponentProps
   , Style
   , requireStyle
   ) where
 
 import React.Basic.Compat
 
-import Data.Function (($))
 import Data.Unit (Unit)
 import Effect (Effect)
 import React.Basic (ReactComponentInstance)
@@ -51,19 +49,6 @@ type ComponentSpec props state =
   , initialState :: state
   , receiveProps :: ReceivePropsArgs props state -> Effect Unit
   , render :: RenderArgs props state -> JSX
-  }
-
--- | Convert the props of component spec.
-contramapComponentProps
-  :: forall state propsA propsB
-   . (propsB -> propsA)
-  -> ComponentSpec propsA state
-  -> ComponentSpec propsB state
-contramapComponentProps mapProps spec = spec
-  { receiveProps = \self -> spec.receiveProps $ self
-      { props = mapProps self.props }
-  , render = \self -> spec.render $ self
-      { props = mapProps self.props }
   }
 
 -- | A dummy type to give to CSS files that we `import` from foreign modules
