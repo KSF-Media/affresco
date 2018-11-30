@@ -8,24 +8,20 @@ import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Uncurried (EffectFn1)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
-import React.Basic (JSX, ReactComponent, StateUpdate(..), capture_, element, make, send, toReactComponent)
+import React.Basic (JSX, StateUpdate(..), capture_, element, make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events as Event
 import Record (merge)
-import Router (RouteProps)
 import Router as Router
-import SubscribePaper.ConfirmPurchase as ConfirmPurchase
+import SubscribePaper.PaymentSelect as PaymentSelect
 import SubscribePaper.ProductSelect as ProductSelect
 import SubscribePaper.User as User
-import Unsafe.Coerce (unsafeCoerce)
 
 foreign import startNavigation :: EffectFn1 (String -> Effect Unit) Unit
 
@@ -80,7 +76,7 @@ render self  =
     , footerView
     ]
   where
-    confirmRoute = element Router.route { exact: true, path: toNullable $ Just "/confirm", component: ConfirmPurchase.jsComponent }
+    confirmRoute = element Router.route { exact: true, path: toNullable $ Just "/confirm", component: PaymentSelect.jsComponent }
     buyRoute     = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", component: User.jsComponent }
     productRoute = element Router.route { exact: true,  path: toNullable $ Just "/", component: ProductSelect.reactComponent }
     noMatchRoute = element Router.route { exact: false, path: toNullable $ Nothing, component: ProductSelect.reactComponent }

@@ -3,24 +3,22 @@ module SubscribePaper.User where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Foldable (fold, foldMap)
-import Data.Function.Uncurried (runFn0)
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Foreign (unsafeFromForeign)
-import KSF.InputField.Component as InputField
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), capture_, element, make, send)
+import React.Basic (JSX, StateUpdate(..), element, make, send)
 import React.Basic as React
 import React.Basic.Compat as React.Compat
 import React.Basic.DOM as DOM
 import Router (Match, Location)
 import Router as Router
-import SubscribePaper.ConfirmPurchase as ConfirmPurchase
+import SubscribePaper.PaymentSelect as PaymentSelect
 import SubscribePaper.SubscribePaper (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -230,10 +228,10 @@ continueButton self  =
     link =
       element
         Router.link
-          { to: { pathname: "/confirm", state: confirmPurchaseState }
+          { to: { pathname: "/confirm", state: paymentSelectState }
           , children: [ button ]
           , className: "subscribe-paper--button-link"
           }
     button = DOM.span_ [ DOM.text "Fortsätt" ]
-    confirmPurchaseState :: ConfirmPurchase.LocationJsState
-    confirmPurchaseState = { user: toNullable self.state.loggedInUser, product: toNullable self.state.product }
+    paymentSelectState :: PaymentSelect.LocationJsState
+    paymentSelectState = { user: toNullable self.state.loggedInUser, product: toNullable self.state.product }

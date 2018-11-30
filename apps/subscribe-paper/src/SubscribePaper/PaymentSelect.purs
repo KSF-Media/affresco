@@ -1,18 +1,15 @@
-module SubscribePaper.ConfirmPurchase where
+module SubscribePaper.PaymentSelect where
 
 import Prelude
 
-import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
-import Effect.Aff (Aff, Canceler(..), Error, launchAff_, makeAff)
-import Effect.Aff as Aff
 import Effect.Class.Console as Console
-import Foreign (Foreign, unsafeFromForeign)
+import Foreign (Foreign)
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), capture_, element, make, monitor_, send, sendAsync)
+import React.Basic (JSX, StateUpdate(..), element, make, monitor_, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Router (Match, Location)
