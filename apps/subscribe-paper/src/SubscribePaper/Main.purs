@@ -19,6 +19,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Router as Router
+import SubscribePaper.Confirm as Confirm
 import SubscribePaper.PaymentSelect as PaymentSelect
 import SubscribePaper.ProductSelect as ProductSelect
 import SubscribePaper.User as User
@@ -71,15 +72,16 @@ render self  =
     [ navbarView self
     , classy DOM.div "clearfix"
         [ classy DOM.div "subscribe-paper--main-container col-10 lg-col-7 mx-auto"
-            [ element Router.switch { children: [ confirmRoute, productRoute, buyRoute, noMatchRoute ] } ]
+            [ element Router.switch { children: [ confirmPurchase, selectPayment, productRoute, buyRoute, noMatchRoute ] } ]
         ]
     , footerView
     ]
   where
-    confirmRoute = element Router.route { exact: true, path: toNullable $ Just "/confirm", component: PaymentSelect.jsComponent }
-    buyRoute     = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", component: User.jsComponent }
-    productRoute = element Router.route { exact: true,  path: toNullable $ Just "/", component: ProductSelect.reactComponent }
-    noMatchRoute = element Router.route { exact: false, path: toNullable $ Nothing, component: ProductSelect.reactComponent }
+    confirmPurchase = element Router.route { exact: true, path: toNullable $ Just "/confirm", component: Confirm.jsComponent }
+    selectPayment   = element Router.route { exact: true, path: toNullable $ Just "/payment", component: PaymentSelect.jsComponent }
+    buyRoute        = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", component: User.jsComponent }
+    productRoute    = element Router.route { exact: true,  path: toNullable $ Just "/", component: ProductSelect.reactComponent }
+    noMatchRoute    = element Router.route { exact: false, path: toNullable $ Nothing, component: ProductSelect.reactComponent }
     subscribePaper =
       DOM.div
         { className: "subscribe-paper--container"

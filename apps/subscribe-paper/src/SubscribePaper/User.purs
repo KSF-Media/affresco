@@ -228,7 +228,7 @@ continueButton self  =
     link =
       element
         Router.link
-          { to: { pathname: "/confirm", state: paymentSelectState }
+          { to: { pathname: "/payment", state: paymentSelectState }
           , children: [ button ]
           , className: "subscribe-paper--button-link"
           }

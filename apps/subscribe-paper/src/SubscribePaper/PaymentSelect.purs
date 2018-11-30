@@ -3,8 +3,8 @@ module SubscribePaper.PaymentSelect where
 import Prelude
 
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (Foreign)
@@ -12,8 +12,11 @@ import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), element, make, monitor_, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (targetValue)
+import React.Basic.Events (handler)
 import Router (Match, Location)
 import Router as Router
+import SubscribePaper.Confirm as Confirm
 import SubscribePaper.SubscribePaper (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -23,6 +26,12 @@ type State =
   { user :: Maybe Persona.User
   , product :: Maybe Product
   , termsAccepted :: Boolean
+  , payment :: Payment
+  }
+
+type Payment =
+  { paymentMethod :: Maybe String
+  , surcharge :: Maybe Number
   }
 
 type LocationState   = { product :: Maybe Product, user :: Maybe Persona.User }
@@ -30,8 +39,9 @@ type LocationJsState = { product :: Nullable Product, user :: Nullable Persona.U
 
 data Action =
   AcceptTerms
-  | SetUser (Maybe Persona.User)
+  | SetUser Persona.User
   | SetProduct Product
+  | PaymentMethod String
 
 component :: React.Component Props
 component = React.createComponent "ConfirmPurchase"
@@ -68,28 +78,31 @@ fromJsProps { match, location: { key, pathname, search, hash, state } } =
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
-  React.toReactComponent fromJsProps component { initialState, render, didMount, update }
+  React.toReactComponent fromJsProps component { initialState, render, didMount, update, didUpdate }
 
-confirmPurchase :: Props -> JSX
-confirmPurchase props = make component { initialState, render, didMount, update } props
+paymentSelect :: Props -> JSX
+paymentSelect props = make component { initialState, render, didMount, update, didUpdate } props
 
 didMount :: Self -> Effect Unit
 didMount self@{ props: { location: { state: Just state } } } = do
-  Console.log "confirm purchase didMount"
-  Console.log $ unsafeCoerce state
-  setProduct self state.product
-
+  updateState (SetUser <$> state.user)
+  updateState (SetProduct <$> state.product)
+  where
+    updateState maybeAction =
+      maybe (pure unit) (send self) maybeAction
 didMount _ = pure unit
 
-setProduct :: Self -> Maybe Product -> Effect Unit
-setProduct self (Just product) = send self (SetProduct product)
-setProduct _ _ = pure unit
+didUpdate :: Self -> Effect Unit
+didUpdate self = do
+  Console.log "did update payment select"
+  Console.log $ unsafeCoerce self.state
 
 initialState :: State
 initialState =
   { user: Nothing
   , product: Nothing
   , termsAccepted: false
+  , payment: { paymentMethod: Nothing, surcharge: Just 5.0 }
   }
 
 update :: Self -> Action -> StateUpdate Props State Action
@@ -97,9 +110,11 @@ update self = case _ of
   AcceptTerms ->
     Update self.state { termsAccepted = not self.state.termsAccepted }
   SetUser u ->
-    Update self.state { user = u }
+    Update self.state { user = Just u }
   SetProduct p ->
     Update self.state { product = Just p }
+  PaymentMethod pm ->
+    Update self.state { payment { paymentMethod = Just pm } }
 
 render :: Self -> JSX
 render self =
@@ -122,7 +137,10 @@ render self =
                           ]
                       }
                   , select
-                      [ { value: "bill", text: "Faktura" } ]
+                      [ { value: "bill", text: "Faktura" }
+                      , { value: "creditCard", text: "Kreditkort" }
+                      ]
+                      self
                   , DOM.div
                       { className: "col col-12 mt1"
                       , children:
@@ -134,7 +152,8 @@ render self =
                       }
                   , select
                       [ { value: "1", text: "1 månader" } ]
-                  , foldMap price self.state.product
+                      self
+                  , foldMap (price self) self.state.product
                   , acceptTerms self
                   ]
               }
@@ -163,15 +182,13 @@ acceptTerms self =
         , DOM.div
             { className: ""
             , children:
-                [ continueButton disabled ]
+                [ continueButton self ]
             }
         ]
     }
-  where
-    disabled = if self.state.termsAccepted then "" else "disabled"
 
-continueButton :: String -> JSX
-continueButton disabled =
+continueButton :: Self -> JSX
+continueButton self =
   DOM.div
     { className: "flex justify-center"
     , children: [ link ]
@@ -180,14 +197,27 @@ continueButton disabled =
     link =
       element
         Router.link
-          { to: { pathname: "/order-successful", state: {} }
+          { to: { pathname: "/confirm", state }
           , children: [ button ]
           , className: "subscribe-paper--button-link " <> disabled
           }
+    state :: Confirm.LocationJsState
+    state =
+      { user: toNullable self.state.user
+      , product: toNullable self.state.product
+      , payment:
+          toNullable $
+            Just { startDate: toNullable $ Just "1.1.2020"
+                 , paymentMethod: toNullable $ self.state.payment.paymentMethod
+                 , price: toNullable $ _.price <$> self.state.product
+                 , surcharge: toNullable $ self.state.payment.surcharge
+                 }
+      }
     button = DOM.span_ [ DOM.text "Fortsätt" ]
+    disabled = if self.state.termsAccepted then "" else "disabled"
 
-price :: Product -> JSX
-price product =
+price :: Self -> Product -> JSX
+price self product =
   DOM.div
     { className: "col mt3"
     , children:
@@ -199,10 +229,12 @@ price product =
             { className: "col col-12 left-align"
             , children: [ DOM.strong_ [ DOM.text $ show product.price <> " €" ] ]
             }
-        , DOM.div
-            { className: "col col-12 left-align"
-            , children: [ DOM.text $ "+ " <> show extraCost <> " € fakturerungstillägg per pappersfaktura" ]
-            }
+        , foldMap
+            (\cost -> DOM.div
+                       { className: "col col-12 left-align"
+                       , children: [ DOM.text $ "+ " <> show cost <> " € fakturerungstillägg per pappersfaktura" ]
+                       })
+            self.state.payment.surcharge
         , DOM.div
             { className: "col col-12 left-align"
             , children: [ DOM.hr { className: "subscribe-paper--break" } ]
@@ -215,18 +247,23 @@ price product =
         ]
     }
   where
-    extraCost = 5.0
+    extraCost = fromMaybe 0.0 self.state.payment.surcharge
 
-select :: Array { value :: String, text :: String } -> JSX
-select values =
+select :: Array { value :: String, text :: String } -> Self -> JSX
+select values self =
   DOM.div
     { className: "col col-12 mt1"
     , children:
        [ DOM.select
            { children: map option values
            , className: "subscribe-paper--payment-select"
+           , onChange: handler targetValue $ updatePaymentMethod
            }
        ]
     }
   where
+    updatePaymentMethod :: Maybe String -> Effect Unit
+    updatePaymentMethod (Just method) = send self $ PaymentMethod method
+    updatePaymentMethod _ = pure unit
+
     option { value, text } = DOM.option { value, children: [ DOM.text text ] }
