@@ -1,20 +1,19 @@
 module React.Basic.Extended
-  ( module React.Basic
+  ( module React.Basic.Compat
   , ComponentSpec
   , RenderArgs
   , ReceivePropsArgs
   , SetState
   , SetStateThen
-  , contramapComponentProps
   , Style
   , requireStyle
   ) where
 
-import React.Basic
+import React.Basic.Compat
 
-import Data.Function (($))
 import Data.Unit (Unit)
 import Effect (Effect)
+import React.Basic (ReactComponentInstance)
 
 -- | In v4.0.0 this will be replaced with 'Update'.
 type SetState state = (state -> state) -> Effect Unit
@@ -31,7 +30,7 @@ type RenderArgs props state =
   , state :: state
   , setState :: SetState state
   , setStateThen :: SetStateThen state
-  , instance_ :: ComponentInstance
+  , instance_ :: ReactComponentInstance
   }
 
 -- | In v4.0.0 this will be replaced by 'Self'
@@ -41,7 +40,7 @@ type ReceivePropsArgs props state =
   , state :: state
   , setState :: SetState state
   , setStateThen :: SetStateThen state
-  , instance_ :: ComponentInstance
+  , instance_ :: ReactComponentInstance
   }
 
 -- | Will be provided in v4.0.0
@@ -50,19 +49,6 @@ type ComponentSpec props state =
   , initialState :: state
   , receiveProps :: ReceivePropsArgs props state -> Effect Unit
   , render :: RenderArgs props state -> JSX
-  }
-
--- | Convert the props of component spec.
-contramapComponentProps
-  :: forall state propsA propsB
-   . (propsB -> propsA)
-  -> ComponentSpec propsA state
-  -> ComponentSpec propsB state
-contramapComponentProps mapProps spec = spec
-  { receiveProps = \self -> spec.receiveProps $ self
-      { props = mapProps self.props }
-  , render = \self -> spec.render $ self
-      { props = mapProps self.props }
   }
 
 -- | A dummy type to give to CSS files that we `import` from foreign modules

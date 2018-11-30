@@ -25,7 +25,7 @@ import KSF.Profile.Component as Profile
 import KSF.Subscription.Component as Subscription
 import Persona as Persona
 import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
 
@@ -139,8 +139,7 @@ withSpinner setLoadingState action = do
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
 navbarView { state, setState } =
-  React.element
-    Navbar.component
+    Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
@@ -152,12 +151,10 @@ navbarView { state, setState } =
 alertView :: Alert -> JSX
 alertView alert =
   classy DOM.div "col-4 mx-auto center"
-    [ React.element Alert.component alert ]
+    [ Alert.alert alert ]
 
 footerView :: React.JSX
-footerView =
-  React.element
-    Footer.component {}
+footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: { user :: Persona.User } -> JSX
@@ -180,7 +177,7 @@ userView { user } = React.fragment
         , disappearingBreak
         ]
       where
-        profileComponentBlock = componentBlockContent $ React.element Profile.component { profile: user }
+        profileComponentBlock = componentBlockContent $ Profile.profile { profile: user }
 
     subscriptionsView =
       componentBlock "Mina prenumerationer:" blockContent
@@ -195,7 +192,7 @@ userView { user } = React.fragment
         blockContent = noSubscriptions : subscriptionBlocks <> [ break, subscribeImage ]
 
     subscriptionView subscription =
-      React.element Subscription.component { subscription }
+      Subscription.subscription { subscription }
 
     subscribeImage =
       DOM.div
@@ -308,8 +305,7 @@ loginView { state, setState } = React.fragment
   ]
   where
     loginForm =
-      React.element
-        Login.component
+        Login.login
           { onMerge:          setState \s -> s { showWelcome = false }
           , onMergeCancelled: setState \s -> s { showWelcome = true }
           , onUserFetch:

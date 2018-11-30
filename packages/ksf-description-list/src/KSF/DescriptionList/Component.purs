@@ -3,8 +3,8 @@ module KSF.DescriptionList.Component where
 import Prelude
 
 import KSF.DescriptionList.View as View
-import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Extended (JSX)
+import React.Basic.Extended as React
 
 type Props =
   { definitions :: Array Definition }

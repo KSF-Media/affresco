@@ -1,13 +1,17 @@
 module KSF.Alert.Component where
 
 import Prelude
-import React.Basic.DOM as JSX
-import React.Basic.Extended (JSX, Style)
-import React.Basic.Extended as React
 
-foreign import alertStyles :: Style
+import React.Basic (JSX, make)
+import React.Basic as React
+import React.Basic.DOM as JSX
+import React.Basic.Extended as React.Extended
+
+foreign import alertStyles :: React.Extended.Style
 
 newtype Level = Level String
+
+type Self = React.Self Props {} Void
 
 danger :: Level
 danger = Level "danger"
@@ -33,23 +37,27 @@ jsComponent :: React.Component Props
 jsComponent = component
 
 component :: React.Component Props
-component = React.stateless
-  { displayName: "Alert"
-  , render: React.requireStyle alertStyles <<< render
+component = React.createComponent "Alert"
+
+alert :: Props -> JSX
+alert = make component
+  { initialState: {}
+  , render: React.Extended.requireStyle alertStyles <<< render
   }
 
-render :: Props -> JSX
-render alert =
+
+render :: Self -> JSX
+render { props: alert_ } =
   JSX.div
-    { className: "alert" <> " " <> alertLevelClass alert.level
+    { className: "alert" <> " " <> alertLevelClass alert_.level
     , children:
         [ JSX.div
             { className: "alert__title"
-            , children: [ JSX.text alert.title ]
+            , children: [ JSX.text alert_.title ]
             }
         , JSX.div
             { className: "alert__message"
-            , children: [ JSX.text alert.message ]
+            , children: [ JSX.text alert_.message ]
             }
         ]
     }

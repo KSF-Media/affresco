@@ -7,11 +7,12 @@ import Data.Foldable (fold)
 import Data.Maybe (fromMaybe)
 import Data.Nullable as Nullable
 import Data.String (trim)
-import Persona as Persona
 import KSF.Profile.View as View
-import React.Basic (JSX)
+import Persona as Persona
+import React.Basic (JSX, make)
 import React.Basic as React
 
+type Self = React.Self Props {} Void
 type Props =
   { profile :: Persona.User }
 
@@ -19,15 +20,21 @@ jsComponent :: React.Component Props
 jsComponent = component
 
 component :: React.Component Props
-component = React.stateless { displayName: "Profile", render }
+component = React.createComponent "Profile"
 
-render :: Props -> JSX
-render { profile } =
+profile :: Props -> JSX
+profile = make component
+  { initialState: {}
+  , render
+  }
+
+render :: Self -> JSX
+render { props } =
   View.profile
-    { email: profile.email
-    , customerNumber: profile.cusno
-    , displayName: displayName profile
-    , address: fromMaybe [] $ addressArray <$> Nullable.toMaybe profile.address
+    { email: props.profile.email
+    , customerNumber: props.profile.cusno
+    , displayName: displayName props.profile
+    , address: fromMaybe [] $ addressArray <$> Nullable.toMaybe props.profile.address
     }
 
 addressArray :: Persona.Address -> Array String
