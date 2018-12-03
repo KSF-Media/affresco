@@ -14,10 +14,9 @@ import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), capture_, element, make, send)
+import React.Basic (JSX, element, make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Record (merge)
 import Router as Router
 import SubscribePaper.Confirm as Confirm
 import SubscribePaper.PaymentSelect as PaymentSelect
@@ -33,18 +32,10 @@ type State =
   { loading :: Maybe Loading
   , loggedInUser :: Maybe Persona.User
   , paper :: Navbar.Paper
-  , purchaseSteps :: { product :: Maybe PurchasePathStep, profile :: Maybe PurchasePathStep }
   }
 
-type SetState = (State -> State) -> Effect Unit
-
-data PurchasePathStep =
-  ChooseProduct
-  | ConfirmProfile
-
 data Action =
-  SetPurchasePathStep PurchasePathStep
-  | SetUser (Maybe Persona.User)
+  SetUser (Maybe Persona.User)
 
 data Loading = Loading
 
@@ -57,13 +48,8 @@ app = make component
       { loading: Nothing
       , paper: HBL
       , loggedInUser: Nothing
-      , purchaseSteps:
-          { product: Nothing
-          , profile: Nothing
-          }
       }
   , render
-  , update
   }
 
 render :: Self -> JSX
@@ -82,26 +68,6 @@ render self  =
     buyRoute        = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", component: User.jsComponent }
     productRoute    = element Router.route { exact: true,  path: toNullable $ Just "/", component: ProductSelect.reactComponent }
     noMatchRoute    = element Router.route { exact: false, path: toNullable $ Nothing, component: ProductSelect.reactComponent }
-    subscribePaper =
-      DOM.div
-        { className: "subscribe-paper--container"
-        , children:
-            [ ProductSelect.productSelect
-                { paper: self.state.paper
-                , match: Nothing
-                , onClick: capture_ self $ SetPurchasePathStep ChooseProduct
-                }
-            ]
-        }
-
-update :: Self -> Action -> StateUpdate Props State Action
-update self = case _ of
-  SetPurchasePathStep ChooseProduct ->
-    Update self.state { purchaseSteps = merge self.state.purchaseSteps { product: Just ChooseProduct } }
-  SetPurchasePathStep ConfirmProfile ->
-    Update self.state { purchaseSteps = merge self.state.purchaseSteps { profile: Just ConfirmProfile } }
-  SetUser user ->
-    Update self.state { loggedInUser = user }
 
 setLoggedInUser :: Maybe Persona.User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
