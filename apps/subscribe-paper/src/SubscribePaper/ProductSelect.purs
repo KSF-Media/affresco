@@ -2,24 +2,18 @@ module SubscribePaper.ProductSelect where
 
 import Prelude
 
-import Data.Function.Uncurried (Fn0, mkFn0, runFn0)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
-import Effect (Effect)
-import Effect.Class.Console as Console
 import Foreign (Foreign, unsafeFromForeign)
 import KSF.Navbar.Component (Paper(..))
-import Persona (User)
-import Persona as Persona
-import Prim.Row (class Union)
-import React.Basic (ComponentSpec, JSX, StateUpdate(..), capture_, element, make)
+import React.Basic (JSX, StateUpdate(..), capture_, element, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
-import React.Basic.Events as Event
 import Router (Match)
 import Router as Router
-import SubscribePaper.SubscribePaper (Product)
+import SubscribePaper.Package as Package
+import SubscribePaper.SubscribePaper (Product, Package)
 import SubscribePaper.User as User
 
 foreign import images :: { hblTotal :: String }
@@ -29,8 +23,6 @@ type Props = { paper :: Paper, match :: Maybe Match, onClick :: EventHandler }
 type State =
   { paper :: Paper
   }
-
-type SetState = (State -> State) -> Effect Unit
 
 data Action =
   ChangePaper Paper
@@ -97,15 +89,7 @@ render self@{ props, state } =
         }
     , DOM.h3_ [ DOM.text "Välj det paket som passar dig bäst!" ]
     , choosePaper
-    , mkPackage
-                { name: "HBL Total"
-                , days: "måndag till söndag"
-                , price: 37.90
-                , image: ""
-                , description: "7 dagar med papper"
-                , checklist: defaultPackageChecklist
-                }
-                self
+    , mkPackage self
     ]
     where
       choosePaper :: JSX
@@ -129,20 +113,19 @@ render self@{ props, state } =
         , href: "/#/" <> path
         , children: [ DOM.text description ]
         , onClick: capture_ self $ ChangePaper paper
-          --Event.handler_ $ setState \s -> s { paper = paper }
         }
         where
           active = if state.paper == paper then "active" else ""
           path = paperToString paper
 
-
-type Package =
-  { name        :: String
-  , price       :: Number
-  , days        :: String
-  , image       :: String
-  , description :: String
-  , checklist   :: Array { title :: String, content :: String }
+defaultPackage :: Package
+defaultPackage =
+  { name: "HBL Total"
+  , days: "måndag till söndag"
+  , price: 37.90
+  , image: ""
+  , description: "7 dagar med papper"
+  , checklist: defaultPackageChecklist
   }
 
 defaultPackageChecklist :: Array { title :: String, content :: String }
@@ -164,42 +147,13 @@ defaultPackageChecklist =
     }
   ]
 
-mkPackage :: Package -> Self -> JSX
-mkPackage package self =
-  DOM.div
-    { className: "subscribe-paper--package col-2 center clearfix"
-    , children:
-        [ DOM.h2_ [ DOM.text package.name ]
-        , DOM.div
-            { className: "subscribe-paper--package-days p2"
-            , children: [ DOM.strong_ [ DOM.text package.days ] ]
-            }
-        , DOM.div
-            { className: "subscribe-paper--package-description pt1"
-            , children:
-                [ DOM.img
-                    { src: images.hblTotal }
-                ]
-            }
-        , buyNowButton ("/buy/" <> package.name) (Just { name: package.name, price: package.price })
-        , mkChecklist package.checklist
-        ]
+mkPackage :: Self -> JSX
+mkPackage self =
+  Package.package
+    { package: defaultPackage
+    , image: images.hblTotal
+    , button: Just $ buyNowButton ("/buy/" <> defaultPackage.name) (Just { name: defaultPackage.name, price: defaultPackage.price })
     }
-
-mkChecklist :: Array { title :: String, content :: String } -> JSX
-mkChecklist checklist =
-  DOM.ul
-    { className: "subscribe-paper--package-check-list"
-    , children: map listItem checklist
-    }
-  where
-    listItem { title, content } =
-      DOM.li_
-        [ DOM.p_
-            [ DOM.strong_ [ DOM.text title ]
-            , DOM.br {}
-            , DOM.text content ]
-        ]
 
 buyNowButton :: String -> (Maybe Product) -> JSX
 buyNowButton linkTo product =
