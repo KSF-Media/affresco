@@ -87,6 +87,7 @@ didMount :: Self -> Effect Unit
 didMount self@{ props: { location: { state: Just state } } } = do
   updateState (SetUser <$> state.user)
   updateState (SetProduct <$> state.product)
+  send self (PaymentMethod "bill")
   where
     updateState maybeAction =
       maybe (pure unit) (send self) maybeAction

@@ -2,12 +2,16 @@ module SubscribePaper.Confirm where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Control.Comonad ((<<=))
+import Data.Array (catMaybes)
+import Data.Foldable (fold, foldMap)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, toMaybe)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), element, make)
+import React.Basic (JSX, StateUpdate(..), element, make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Router (Location)
@@ -25,6 +29,8 @@ type State = LocationState
 
 data Action =
   SetProduct Product
+  | SetUser Persona.User
+  | SetPayment Payment
 
 type Payment =
   { startDate :: Maybe String
@@ -83,8 +89,12 @@ confirm = make component
   }
 
 didMount :: Self -> Effect Unit
-didMount self =
-  Console.log $ unsafeCoerce self.props
+didMount self@{ props: { location: { state: Just state } } } = do
+  Console.log $ unsafeCoerce state
+  maybe (pure unit) (send self) $ SetProduct <$> state.product
+  maybe (pure unit) (send self) $ SetUser <$> state.user
+  maybe (pure unit) (send self) $ SetPayment <$> state.payment
+didMount _ = pure unit
 
 initialState :: State
 initialState =
@@ -105,8 +115,75 @@ render self =
                 , DOM.p_ [ DOM.text "Granska uppgifterna nedan före du fortsätter" ] ]
             }
         , confirmButton
+        , DOM.div
+            { className: "clearfix mt3"
+            , children:
+                [ column
+                    productName
+                    "Läspaket"
+                    $ mkList
+                      [ Tuple "Papperstidningen" $ DOM.text "Tryckta tidningen måndag-söndag"
+                      , Tuple "HBL365 nyhetsapp" $ DOM.text "e-tidning, nyhetsflöde, pushnotiser"
+                      , Tuple "eHBL" $ DOM.text "e-tidningen mobil, surfplatta och dator"
+                      ]
+                , column
+                    ""
+                    "Kontaktuppgifter"
+                    $ mkList
+                      [ Tuple "Namn" $ DOM.text $ foldMap customerName self.state.user
+                      , Tuple "E-post" $ DOM.text $ foldMap _.email self.state.user
+                      , Tuple "Adress" $ foldMap customerAddress $ self.state.user >>= (toMaybe <<< _.address)
+                      , Tuple "Kundnummer" $ DOM.text $ foldMap _.cusno self.state.user
+                      ]
+                , foldMap payment self.state.payment
+                ]
+            }
         ]
     }
+  where
+    payment :: Payment -> JSX
+    payment p =
+      column
+        ""
+        "Prenumeration"
+        $ mkList
+          [ Tuple "Startdatum" $ DOM.text $ fold p.startDate
+          , Tuple "Betalningssätt" $ DOM.text $ fold p.paymentMethod
+          , foldMap (\price -> Tuple "Pris" $ DOM.text $ show price <> " €") p.price
+          , foldMap (\extraCost -> Tuple "Tilläggsavgift" $ DOM.text $ "+ " <> show extraCost <> " €") p.surcharge
+          , foldMap (\total -> Tuple "Totalt" $ DOM.strong_ [ DOM.text $ show total <> " €" ]) totalPrice
+          ]
+      where
+        totalPrice =
+          add <$> p.price <*> p.surcharge
+
+    productName :: String
+    productName = foldMap _.name self.state.product
+
+    customerName :: Persona.User -> String
+    customerName { firstName, lastName } =
+      fname <> " " <> lname
+      where
+        fname = fold $ toMaybe firstName
+        lname = fold $ toMaybe lastName
+
+    customerAddress :: Persona.Address -> JSX
+    customerAddress { streetAddress, zipCode, city, countryCode } =
+      joinAddress $ catMaybes addressArray
+      where
+        addressArray =
+          [ Just streetAddress
+          , toMaybe zipCode
+          , toMaybe city
+          , Just countryCode
+          ]
+
+    joinAddress :: Array String -> JSX
+    joinAddress address =
+      DOM.ul_ $ map li address
+      where
+        li item = DOM.li_ [ DOM.text item ]
+
 
 confirmButton :: JSX
 confirmButton =
@@ -128,3 +205,41 @@ update :: Self -> Action -> StateUpdate Props State Action
 update self = case _ of
   SetProduct p ->
     Update self.state { product = Just p }
+  SetUser u ->
+    Update self.state { user = Just u }
+  SetPayment p ->
+    Update self.state { payment = Just p }
+
+column :: String -> String -> JSX -> JSX
+column header description list =
+  DOM.div
+    { className: "col col-4 subscribe-paper--confirm-summary"
+    , children:
+        [ DOM.div
+            { className: "subscribe-paper--confirm-summary-title"
+            , children:
+                [ DOM.text description ]
+            }
+        , DOM.strong_ [ DOM.text header ]
+        , list
+        ]
+    }
+
+mkList :: Array (Tuple String JSX) -> JSX
+mkList listItems =
+  DOM.div
+    { className: ""
+    , children: map list listItems
+    }
+  where
+    list (Tuple title content) =
+      DOM.div
+        { className: ""
+        , children:
+            [ DOM.p_
+                [ DOM.strong_ [ DOM.text title ]
+                , DOM.br {}
+                , content
+                ]
+            ]
+        }
