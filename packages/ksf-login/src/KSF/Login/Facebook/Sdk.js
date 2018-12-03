@@ -54,7 +54,7 @@ exports._init = function(callback) {
           window.isFBLoaded = true;
           callback(FB)(); // callback itself returns an effect
         };
-        if (typeof FB !== 'undefined') {
+        if (typeof FB === 'undefined') {
           (function(d, s, id){
             var js, fjs = d.getElementsByTagName(s)[0];
             if (d.getElementById(id)) {return;}
