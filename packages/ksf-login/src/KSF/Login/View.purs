@@ -282,7 +282,7 @@ forgotPassword =
     , children:
         [ DOM.a
             { href: forgotPasswordUrl
-            , children: [ DOM.text "Glömt lösenord?" ]
+            , children: [ DOM.text "Glömt lösenordet?" ]
             }
         ]
     }
