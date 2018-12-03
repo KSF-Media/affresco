@@ -54,15 +54,17 @@ exports._init = function(callback) {
           window.isFBLoaded = true;
           callback(FB)(); // callback itself returns an effect
         };
-        (function(d, s, id){
-          var js, fjs = d.getElementsByTagName(s)[0];
-          if (d.getElementById(id)) {return;}
-          js = d.createElement(s);
-          js.id = id;
-          var debug = fbConfig['debug'] ? "/debug" : "";
-          js.src = "//connect.facebook.net/" + fbConfig['locale'] + "/sdk" + debug + ".js";
-          fjs.parentNode.insertBefore(js, fjs);
-        }(window.document, 'script', 'facebook-jssdk'));
+        if (typeof FB !== 'undefined') {
+          (function(d, s, id){
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) {return;}
+            js = d.createElement(s);
+            js.id = id;
+            var debug = fbConfig['debug'] ? "/debug" : "";
+            js.src = "//connect.facebook.net/" + fbConfig['locale'] + "/sdk" + debug + ".js";
+            fjs.parentNode.insertBefore(js, fjs);
+          }(window.document, 'script', 'facebook-jssdk'));
+        }
       };
     }
   }
