@@ -2,7 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Array ((:))
+import Data.Array (snoc, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
@@ -180,16 +180,12 @@ userView { user } = React.fragment
         profileComponentBlock = componentBlockContent $ Profile.profile { profile: user }
 
     subscriptionsView =
-      componentBlock "Mina prenumerationer:" blockContent
+      componentBlock "Mina prenumerationer:" $ subscriptions <> [ break, subscribeImage ]
       where
-        noSubscriptions =
+        subscriptions =
           case user.subs of
-            [] -> componentBlockContent noSubscriptionsText
-            _  -> React.empty
-
-        subscriptionBlocks = map (componentBlockContent <<< subscriptionView) user.subs
-
-        blockContent = noSubscriptions : subscriptionBlocks <> [ cancelSubscription, break, subscribeImage ]
+            [] -> [ componentBlockContent noSubscriptionsText ]
+            subs -> map (componentBlockContent <<< subscriptionView) subs `snoc` cancelSubscription
 
     subscriptionView subscription =
       Subscription.subscription { subscription }
