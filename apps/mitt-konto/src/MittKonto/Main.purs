@@ -189,10 +189,22 @@ userView { user } = React.fragment
 
         subscriptionBlocks = map (componentBlockContent <<< subscriptionView) user.subs
 
-        blockContent = noSubscriptions : subscriptionBlocks <> [ break, subscribeImage ]
+        blockContent = noSubscriptions : subscriptionBlocks <> [ cancelSubscription, break, subscribeImage ]
 
     subscriptionView subscription =
       Subscription.subscription { subscription }
+
+    cancelSubscription =
+      DOM.div
+        { className: "mt2"
+        , children:
+            [ formatIconLink
+                { href: "https://ksfmedia1.typeform.com/to/zbh3kU"
+                , description: "Avsluta din prenumeration"
+                , className: "mitt-konto--cancel-subscription"
+                }
+            ]
+        }
 
     subscribeImage =
       DOM.div
