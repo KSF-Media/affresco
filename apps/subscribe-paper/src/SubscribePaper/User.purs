@@ -135,19 +135,18 @@ loginComponent :: Self -> JSX
 loginComponent self =
   DOM.div_
     [ DOM.h2_ [ DOM.text "Logga in för att göra din beställning" ]
-    , React.Compat.element
-        Login.component
-          { onMerge: pure unit
-          , onMergeCancelled: pure unit
-          , onUserFetch:
+    , Login.login
+        { onMerge: pure unit
+        , onMergeCancelled: pure unit
+        , onUserFetch:
             case _ of
               Left err -> Console.log $ unsafeCoerce err
               Right u  ->
                 send { props: self.props, state: self.state, instance_: self.instance_ } $ SetUser u
-          , launchAff_: \a -> do
-              _ <- Aff.launchAff a
-              Console.log "fetched user"
-          }
+        , launchAff_: \a -> do
+            _ <- Aff.launchAff a
+            Console.log "fetched user"
+        }
     ]
 
 controlProfile :: Self -> JSX

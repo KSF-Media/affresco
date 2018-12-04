@@ -110,16 +110,15 @@ withSpinner setLoadingState action = do
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: Self -> JSX
 navbarView self  =
-  React.element
-    Navbar.component
-      { paper: self.state.paper
-      , loggedInUser: self.state.loggedInUser
-      , logout: do
-          Aff.launchAff_ do
-            Login.logout
-            liftEffect $
-              send { props: self.props, state: self.state, instance_: self.instance_ } $ SetUser Nothing
-      }
+  Navbar.navbar
+    { paper: self.state.paper
+    , loggedInUser: self.state.loggedInUser
+    , logout: do
+        Aff.launchAff_ do
+          Login.logout
+          liftEffect $
+            send { props: self.props, state: self.state, instance_: self.instance_ } $ SetUser Nothing
+    }
 
 footerView :: React.JSX
 footerView = Footer.footer {}
