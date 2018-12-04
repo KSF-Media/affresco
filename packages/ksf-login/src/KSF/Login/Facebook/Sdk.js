@@ -45,14 +45,14 @@ exports._api = function(fb, path, method, params, callback) {
 exports._init = function(callback) {
   return function(fbConfig) {
     return function() { // returns an effect
-      if (window.isFBLoaded || typeof FB === 'object') {
-        callback(FB)();
+      if (window.isFBLoaded || window.FB && typeof window.FB === 'object') {
+        callback(window.FB)();
       } else {
         window.fbAsyncInit = function() {
-          FB.init(fbConfig);
-          FB.AppEvents.logPageView();
+          window.FB.init(fbConfig);
+          window.FB.AppEvents.logPageView();
           window.isFBLoaded = true;
-          callback(FB)(); // callback itself returns an effect
+          callback(window.FB)(); // callback itself returns an effect
         };
         (function(d, s, id){
           var js, fjs = d.getElementsByTagName(s)[0];
