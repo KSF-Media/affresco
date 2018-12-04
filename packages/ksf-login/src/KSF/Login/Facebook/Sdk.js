@@ -45,7 +45,7 @@ exports._api = function(fb, path, method, params, callback) {
 exports._init = function(callback) {
   return function(fbConfig) {
     return function() { // returns an effect
-      if (window.isFBLoaded) {
+      if (window.isFBLoaded || typeof FB === 'object') {
         callback(FB)();
       } else {
         window.fbAsyncInit = function() {
@@ -54,17 +54,15 @@ exports._init = function(callback) {
           window.isFBLoaded = true;
           callback(FB)(); // callback itself returns an effect
         };
-        if (typeof FB === 'undefined') {
-          (function(d, s, id){
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) {return;}
-            js = d.createElement(s);
-            js.id = id;
-            var debug = fbConfig['debug'] ? "/debug" : "";
-            js.src = "//connect.facebook.net/" + fbConfig['locale'] + "/sdk" + debug + ".js";
-            fjs.parentNode.insertBefore(js, fjs);
-          }(window.document, 'script', 'facebook-jssdk'));
-        }
+        (function(d, s, id){
+          var js, fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) {return;}
+          js = d.createElement(s);
+          js.id = id;
+          var debug = fbConfig['debug'] ? "/debug" : "";
+          js.src = "//connect.facebook.net/" + fbConfig['locale'] + "/sdk" + debug + ".js";
+          fjs.parentNode.insertBefore(js, fjs);
+        }(window.document, 'script', 'facebook-jssdk'));
       };
     }
   }
