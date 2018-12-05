@@ -14,9 +14,10 @@ import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
-import React.Basic (JSX, element, make, send)
+import React.Basic (JSX, StateUpdate(..), element, make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import Record (merge)
 import Router as Router
 import SubscribePaper.Confirm as Confirm
 import SubscribePaper.PaymentSelect as PaymentSelect
@@ -50,6 +51,7 @@ app = make component
       , loggedInUser: Nothing
       }
   , render
+  , update
   }
 
 render :: Self -> JSX
@@ -63,14 +65,24 @@ render self  =
     , footerView
     ]
   where
-    confirmPurchase = element Router.route { exact: true, path: toNullable $ Just "/confirm", component: Confirm.jsComponent }
-    selectPayment   = element Router.route { exact: true, path: toNullable $ Just "/payment", component: PaymentSelect.jsComponent }
-    buyRoute        = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", component: User.jsComponent }
-    productRoute    = element Router.route { exact: true,  path: toNullable $ Just "/", component: ProductSelect.reactComponent }
-    noMatchRoute    = element Router.route { exact: false, path: toNullable $ Nothing, component: ProductSelect.reactComponent }
+    confirmPurchase = element Router.route { exact: true, path: toNullable $ Just "/confirm", render: Confirm.confirm }
+    selectPayment   = element Router.route { exact: true, path: toNullable $ Just "/payment", render: PaymentSelect.paymentSelect }
+    buyRoute        = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", render: renderUser self }
+    productRoute    = element Router.route { exact: true,  path: toNullable $ Just "/", render: ProductSelect.productSelect }
+    noMatchRoute    = element Router.route { exact: false, path: toNullable $ Nothing, render: ProductSelect.productSelect }
 
-setLoggedInUser :: Maybe Persona.User -> State -> State
-setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
+update :: Self -> Action -> StateUpdate Props State Action
+update self = case _ of
+  SetUser u ->
+    Update self.state { loggedInUser = u }
+
+renderUser :: Self -> User.Props -> JSX
+renderUser self { location, match } =
+  User.user
+    { location
+    , match
+    , onUserLogin: \u -> send self $ SetUser u
+    }
 
 setLoading :: Maybe Loading -> State -> State
 setLoading loading = _ { loading = loading }
@@ -117,7 +129,7 @@ navbarView self  =
         Aff.launchAff_ do
           Login.logout
           liftEffect $
-            send { props: self.props, state: self.state, instance_: self.instance_ } $ SetUser Nothing
+            send self $ SetUser Nothing
     }
 
 footerView :: React.JSX

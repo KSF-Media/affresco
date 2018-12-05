@@ -16,6 +16,7 @@ import React.Basic (JSX, StateUpdate(..), element, make, send)
 import React.Basic as React
 import React.Basic.Compat as React.Compat
 import React.Basic.DOM as DOM
+import React.Basic.Events (EventHandler, handler_)
 import Router (Match, Location)
 import Router as Router
 import SubscribePaper.PaymentSelect as PaymentSelect
@@ -24,7 +25,7 @@ import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Void
 
-type Props = { match :: Match, location :: Location (Maybe LocationState) }
+type Props = { match :: Match, location :: Location (Maybe LocationState), onUserLogin :: (Maybe Persona.User -> Effect Unit) }
 type State =
   { product :: Maybe Product
   , loggedInUser :: Maybe Persona.User
@@ -34,6 +35,7 @@ type PathParams =
 type JSProps =
   { match :: Match
   , location :: Location (Nullable LocationJsState)
+  , onUserLogin :: (Maybe Persona.User -> Effect Unit)
   }
 
 type LocationState   = { product :: Maybe Product }
@@ -51,7 +53,7 @@ data Action =
   | SetUser Persona.User
 
 fromJsProps :: JSProps -> Props
-fromJsProps { match, location: { key, pathname, search, hash, state } } =
+fromJsProps { match, location: { key, pathname, search, hash, state }, onUserLogin } =
     { match: match
     , location:
          { key
@@ -60,6 +62,7 @@ fromJsProps { match, location: { key, pathname, search, hash, state } } =
          , hash
          , state: convertState $ toMaybe state
          }
+    , onUserLogin
     }
   where
     convertState :: Maybe LocationJsState -> Maybe LocationState
@@ -141,8 +144,9 @@ loginComponent self =
         , onUserFetch:
             case _ of
               Left err -> Console.log $ unsafeCoerce err
-              Right u  ->
+              Right u  -> do
                 send { props: self.props, state: self.state, instance_: self.instance_ } $ SetUser u
+                self.props.onUserLogin (Just u)
         , launchAff_: \a -> do
             _ <- Aff.launchAff a
             Console.log "fetched user"

@@ -31,7 +31,7 @@ type To state_ =
   , state :: state_
   }
 type SwitchProps = { children :: Array JSX }
-type RouteProps props = { exact :: Boolean, path :: Nullable String, component :: ReactComponent props }
+type RouteProps props = { exact :: Boolean, path :: Nullable String, render :: props -> JSX }
 type LinkProps props state = { to :: To state, children :: Array JSX, className :: String }
 
 route :: forall props. ReactComponent (RouteProps props)
