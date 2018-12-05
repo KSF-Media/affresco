@@ -236,10 +236,17 @@ mkList listItems =
       DOM.div
         { className: ""
         , children:
-            [ DOM.p_
-                [ DOM.strong_ [ DOM.text title ]
-                , DOM.br {}
-                , content
-                ]
+            [ DOM.div
+                { className: "clearfix mt2 mb2"
+                , children:
+                    [ row $ DOM.strong_ [ DOM.text title ]
+                    , row content
+                    ]
+                }
             ]
+        }
+    row child =
+      DOM.div
+        { className: "col col-12"
+        , children: [ child ]
         }
