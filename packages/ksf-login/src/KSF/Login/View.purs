@@ -244,6 +244,7 @@ createInputField { inputAttributes, className, children, onChange } =
               , required: inputAttributes.required
               , children
               , onChange
+              , defaultValue: Nothing
               }
         ]
     }
