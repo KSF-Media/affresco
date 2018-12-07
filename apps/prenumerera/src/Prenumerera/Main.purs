@@ -2,6 +2,7 @@ module Prenumerera.Main where
 
 import Prelude
 
+import Data.Function.Uncurried (runFn1)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Effect (Effect)
@@ -14,15 +15,15 @@ import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
+import Prenumerera.Confirm as Confirm
+import Prenumerera.PaymentSelect as PaymentSelect
+import Prenumerera.ProductSelect as ProductSelect
+import Prenumerera.User as User
 import React.Basic (JSX, StateUpdate(..), element, make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Router as Router
-import Prenumerera.Confirm as Confirm
-import Prenumerera.PaymentSelect as PaymentSelect
-import Prenumerera.ProductSelect as ProductSelect
-import Prenumerera.User as User
 
 foreign import startNavigation :: EffectFn1 (String -> Effect Unit) Unit
 
@@ -65,24 +66,55 @@ render self  =
     , footerView
     ]
   where
-    confirmPurchase = element Router.route { exact: true, path: toNullable $ Just "/confirm", render: Confirm.confirm }
-    selectPayment   = element Router.route { exact: true, path: toNullable $ Just "/payment", render: PaymentSelect.paymentSelect }
-    buyRoute        = element Router.route { exact: true, path: toNullable $ Just "/buy/:product", render: renderUser self }
-    productRoute    = element Router.route { exact: true,  path: toNullable $ Just "/", render: ProductSelect.productSelect }
-    noMatchRoute    = element Router.route { exact: false, path: toNullable $ Nothing, render: ProductSelect.productSelect }
+    confirmPurchase =
+      element
+        Router.route
+          { exact: true
+          , path: toNullable $ Just "/confirm"
+          , render: Confirm.confirm <<< Confirm.fromJSProps
+          }
+    selectPayment =
+      element
+        Router.route
+          { exact: true
+          , path: toNullable $ Just "/payment"
+          , render: PaymentSelect.paymentSelect <<< PaymentSelect.fromJsProps
+          }
+    buyRoute =
+      element
+        Router.route
+            { exact: true
+            , path: toNullable $ Just "/buy/:product"
+            , render: renderUser self
+            }
+    productRoute =
+      element
+        Router.route
+            { exact: true
+            , path: toNullable $ Just "/"
+            , render: ProductSelect.productSelect <<< ProductSelect.fromJsProps
+            }
+    noMatchRoute =
+      element
+        Router.route
+          { exact: false
+          , path: toNullable Nothing
+          , render: ProductSelect.productSelect <<< ProductSelect.fromJsProps
+          }
 
 update :: Self -> Action -> StateUpdate Props State Action
 update self = case _ of
   SetUser u ->
     Update self.state { loggedInUser = u }
 
-renderUser :: Self -> User.Props -> JSX
+renderUser :: Self -> User.JSProps -> JSX
 renderUser self { location, match } =
   User.user
-    { location
-    , match
-    , onUserLogin: \u -> send self $ SetUser u
-    }
+    $ User.fromJsProps
+      { location
+      , match
+      , onUserLogin: \u -> send self $ SetUser u
+      }
 
 setLoading :: Maybe Loading -> State -> State
 setLoading loading = _ { loading = loading }

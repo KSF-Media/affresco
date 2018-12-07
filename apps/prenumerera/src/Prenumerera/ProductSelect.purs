@@ -42,9 +42,13 @@ type JSProps =
   }
 
 -- | For javascript FFI needs
-reactComponent :: React.ReactComponent JSProps
-reactComponent =
-  React.toReactComponent (\jsProps -> { paper: toPaper jsProps.paper, match: jsMatch jsProps.match, onClick: jsProps.onClick }) component { initialState, render, update }
+jsComponent :: React.ReactComponent JSProps
+jsComponent =
+  React.toReactComponent fromJsProps component { initialState, render, update }
+
+fromJsProps :: JSProps -> Props
+fromJsProps jsProps =
+  { paper: toPaper jsProps.paper, match: jsMatch jsProps.match, onClick: jsProps.onClick }
   where
     toPaper paperString =
       case paperString of
@@ -55,12 +59,12 @@ reactComponent =
         "HTHL" -> HTHL
         _      -> KSF
     jsMatch match =
-        Just
-          { params: unsafeFromForeign match.params
-          , isExact: match.isExact
-          , path: match.path
-          , url: match.url
-          }
+      Just
+        { params: unsafeFromForeign match.params
+        , isExact: match.isExact
+        , path: match.path
+        , url: match.url
+        }
 
 productSelect :: Props -> JSX
 productSelect = make component { initialState, render, update }
