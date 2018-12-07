@@ -8,12 +8,21 @@ env_variables = %w[
   PRODUCTION_FACEBOOK_APP_ID
 ]
 
+apps = %w[
+  mitt-konto
+  prenumerera
+]
+
+app_name = ARGV.first
+
+abort("Invalid app name: #{app_name}") if !apps.include?(app_name)
+
 if ENV['HEAD'] == 'master'
   env_variables.each do |v|
     abort("Did not find #{v} in the environment variables") if ENV[v].nil?
   end
 
-  File.open('apps/mitt-konto/.env.production', 'a') do |f|
+  File.open("apps/#{app_name}/.env.production", 'a') do |f|
     env_variables.each do |v|
       # Strip 'PRODUCTION_' from the variable name
       env_var_name = v.sub(/^PRODUCTION_/, '')
