@@ -1,4 +1,4 @@
-module SubscribePaper.User where
+module Prenumerera.User where
 
 import Prelude
 
@@ -19,8 +19,8 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler, handler_)
 import Router (Match, Location)
 import Router as Router
-import SubscribePaper.PaymentSelect as PaymentSelect
-import SubscribePaper.SubscribePaper (Product)
+import Prenumerera.PaymentSelect as PaymentSelect
+import Prenumerera.Prenumerera (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Void
@@ -126,7 +126,7 @@ productName p =
 loginContainer :: Self -> JSX
 loginContainer self =
   DOM.div
-    { className: "subscribe-paper--login-container center"
+    { className: "prenumerera--login-container center"
     , children:
         [ if isNothing self.state.loggedInUser
           then loginComponent self
@@ -205,7 +205,7 @@ controlProfile _ = mempty
 
 inputField description inputValue =
   DOM.div
-   { className: "col col-6 subscribe-paper--input"
+   { className: "col col-6 prenumerera--input"
    , children:
        [ DOM.label
            { children: [ DOM.text description ]
@@ -217,7 +217,7 @@ inputField description inputValue =
 
 userDataRow children =
   DOM.div
-    { className: "clearfix subscribe-paper--input-row"
+    { className: "clearfix prenumerera--input-row"
     , children
     }
 
@@ -233,7 +233,7 @@ continueButton self  =
         Router.link
           { to: { pathname: "/payment", state: paymentSelectState }
           , children: [ button ]
-          , className: "subscribe-paper--button-link"
+          , className: "prenumerera--button-link"
           }
     button = DOM.span_ [ DOM.text "Fortsätt" ]
     paymentSelectState :: PaymentSelect.LocationJsState

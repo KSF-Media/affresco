@@ -1,4 +1,4 @@
-module SubscribePaper.Confirm where
+module Prenumerera.Confirm where
 
 import Prelude
 
@@ -16,7 +16,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import Router (Location)
 import Router as Router
-import SubscribePaper.SubscribePaper (Product)
+import Prenumerera.Prenumerera (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Action
@@ -197,7 +197,7 @@ confirmButton =
         Router.link
           { to: { pathname: "/order-successful", state: {} }
           , children: [ button ]
-          , className: "subscribe-paper--button-link center col-2"
+          , className: "prenumerera--button-link center col-2"
           }
     button = DOM.span_ [ DOM.text "Godkänn" ]
 
@@ -213,10 +213,10 @@ update self = case _ of
 column :: String -> String -> JSX -> JSX
 column header description list =
   DOM.div
-    { className: "col col-4 subscribe-paper--confirm-summary"
+    { className: "col col-4 prenumerera--confirm-summary"
     , children:
         [ DOM.div
-            { className: "subscribe-paper--confirm-summary-title"
+            { className: "prenumerera--confirm-summary-title"
             , children:
                 [ DOM.text description ]
             }

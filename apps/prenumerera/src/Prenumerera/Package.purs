@@ -1,4 +1,4 @@
-module SubscribePaper.Package where
+module Prenumerera.Package where
 
 import Prelude
 
@@ -8,7 +8,7 @@ import Effect (Effect)
 import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import SubscribePaper.SubscribePaper (Package)
+import Prenumerera.Prenumerera (Package)
 
 type Self = React.Self Props State Void
 
@@ -46,15 +46,15 @@ update self = case _ of
 render :: Self -> JSX
 render self@{ state: { package: Just thisPackage } } =
   DOM.div
-    { className: "subscribe-paper--package col-2 center clearfix"
+    { className: "prenumerera--package col-2 center clearfix"
     , children:
         [ DOM.h2_ [ DOM.text thisPackage.name ]
         , DOM.div
-            { className: "subscribe-paper--package-days p2"
+            { className: "prenumerera--package-days p2"
             , children: [ DOM.strong_ [ DOM.text thisPackage.days ] ]
             }
         , DOM.div
-            { className: "subscribe-paper--package-description pt1"
+            { className: "prenumerera--package-description pt1"
             , children:
                 [ DOM.img { src: self.props.image } ]
             }
@@ -67,7 +67,7 @@ render _ = mempty
 mkChecklist :: Array { title :: String, content :: String } -> JSX
 mkChecklist checklist =
   DOM.ul
-    { className: "subscribe-paper--package-check-list"
+    { className: "prenumerera--package-check-list"
     , children: map listItem checklist
     }
   where

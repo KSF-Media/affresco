@@ -1,4 +1,4 @@
-module SubscribePaper.Main where
+module Prenumerera.Main where
 
 import Prelude
 
@@ -19,10 +19,10 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Router as Router
-import SubscribePaper.Confirm as Confirm
-import SubscribePaper.PaymentSelect as PaymentSelect
-import SubscribePaper.ProductSelect as ProductSelect
-import SubscribePaper.User as User
+import Prenumerera.Confirm as Confirm
+import Prenumerera.PaymentSelect as PaymentSelect
+import Prenumerera.ProductSelect as ProductSelect
+import Prenumerera.User as User
 
 foreign import startNavigation :: EffectFn1 (String -> Effect Unit) Unit
 
@@ -41,7 +41,7 @@ data Action =
 data Loading = Loading
 
 component :: React.Component Props
-component = React.createComponent "SubscribePaper"
+component = React.createComponent "Prenumerera"
 
 app :: Props -> JSX
 app = make component
@@ -59,7 +59,7 @@ render self  =
   React.fragment
     [ navbarView self
     , classy DOM.div "clearfix"
-        [ classy DOM.div "subscribe-paper--main-container col-10 lg-col-7 mx-auto"
+        [ classy DOM.div "prenumerera--main-container col-10 lg-col-7 mx-auto"
             [ element Router.switch { children: [ confirmPurchase, selectPayment, productRoute, buyRoute, noMatchRoute ] } ]
         ]
     , footerView

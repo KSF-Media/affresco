@@ -1,4 +1,4 @@
-module SubscribePaper.PaymentSelect where
+module Prenumerera.PaymentSelect where
 
 import Prelude
 
@@ -16,8 +16,8 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
 import Router (Match, Location)
 import Router as Router
-import SubscribePaper.Confirm as Confirm
-import SubscribePaper.SubscribePaper (Product)
+import Prenumerera.Confirm as Confirm
+import Prenumerera.Prenumerera (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State Action
@@ -175,7 +175,7 @@ acceptTerms self =
                 [ DOM.input
                     { type: "checkbox"
                     , onChange: monitor_ self AcceptTerms
-                    , className: "subscribe-paper--accept-terms"
+                    , className: "prenumerera--accept-terms"
                     }
                 , DOM.text "Jag har läst och godkänner KSF Medias bruksvillkor"
                 ]
@@ -200,7 +200,7 @@ continueButton self =
         Router.link
           { to: { pathname: "/confirm", state }
           , children: [ button ]
-          , className: "subscribe-paper--button-link " <> disabled
+          , className: "prenumerera--button-link " <> disabled
           }
     state :: Confirm.LocationJsState
     state =
@@ -238,7 +238,7 @@ price self product =
             self.state.payment.surcharge
         , DOM.div
             { className: "col col-12 left-align"
-            , children: [ DOM.hr { className: "subscribe-paper--break" } ]
+            , children: [ DOM.hr { className: "prenumerera--break" } ]
             }
         , DOM.div
             { className: "col col-12 left-align"
@@ -257,7 +257,7 @@ select values self =
     , children:
        [ DOM.select
            { children: map option values
-           , className: "subscribe-paper--payment-select"
+           , className: "prenumerera--payment-select"
            , onChange: handler targetValue $ updatePaymentMethod
            }
        ]

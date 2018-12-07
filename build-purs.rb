@@ -13,7 +13,7 @@ purs_modules = [
   PursModule.new('KSF.Subscription.Component', 'packages/ksf-subscription'),
   PursModule.new('KSF.Alert.Component', 'packages/ksf-alert'),
   PursModule.new('MittKonto.Main', 'apps/mitt-konto'),
-  PursModule.new('SubscribePaper.Main', 'apps/subscribe-paper'),
+  PursModule.new('Prenumerera.Main', 'apps/prenumerera'),
 ]
 
 # Name of the modules can be given as an argument as well:

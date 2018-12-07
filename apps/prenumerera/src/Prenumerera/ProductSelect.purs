@@ -1,4 +1,4 @@
-module SubscribePaper.ProductSelect where
+module Prenumerera.ProductSelect where
 
 import Prelude
 
@@ -12,9 +12,9 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 import Router (Match)
 import Router as Router
-import SubscribePaper.Package as Package
-import SubscribePaper.SubscribePaper (Product, Package)
-import SubscribePaper.User as User
+import Prenumerera.Package as Package
+import Prenumerera.Prenumerera (Product, Package)
+import Prenumerera.User as User
 
 foreign import images :: { hblTotal :: String }
 
@@ -78,7 +78,7 @@ render :: Self -> JSX
 render self@{ props, state } =
   DOM.div_
     [ DOM.h2
-        { className: "subscribe-paper--title center"
+        { className: "prenumerera--title center"
         , children:
           [ DOM.span
               { className: paperToString state.paper
@@ -95,7 +95,7 @@ render self@{ props, state } =
       choosePaper :: JSX
       choosePaper =
         DOM.div
-        { className: "subscribe-paper--choose-paper pt2 pb2"
+        { className: "prenumerera--choose-paper pt2 pb2"
         , children:
             [ DOM.span_ [ DOM.text "Välj tidning:" ]
             , paperLink HBL "Hufvudstadsbladet"
@@ -164,7 +164,7 @@ buyNowButton linkTo product =
             Router.link
               { to: { pathname: linkTo, state: userState }
               , children: [ button ]
-              , className: "subscribe-paper--button-link"
+              , className: "prenumerera--button-link"
               }
         ]
     }

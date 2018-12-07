@@ -1,4 +1,4 @@
-module SubscribePaper.SubscribePaper where
+module Prenumerera.Prenumerera where
 
 type Product =
   { name :: String
