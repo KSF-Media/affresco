@@ -67,13 +67,13 @@ login attrs =
           { className: "login-form pt2"
           , children:
               [ foldMap formatErrorMessage attrs.errors.social
+              , loginForm
+              , forgotPassword
               , facebookLogin attrs.login.onFacebookLogin
               , googleLogin
                 attrs.login.onGoogleLogin
                 attrs.login.onGoogleFailure
                 attrs.login.googleFallbackOnClick
-              , loginForm
-              , forgotPassword
               ]
           }
   where
@@ -81,13 +81,9 @@ login attrs =
     loginForm =
       DOM.form
         { onSubmit
-        , className: "pt2 pb2"
+        , className: "pb2"
         , children:
-            [ DOM.div
-                { className: "login--login-with-email pb1"
-                , children: [ DOM.text "ELLER LOGGA IN MED E-POST:" ]
-                }
-            , foldMap formatErrorMessage attrs.errors.login
+            [ foldMap formatErrorMessage attrs.errors.login
             , createInputField
                 { inputAttributes: emailAttributes
                 , className: "email-wrapper"
@@ -279,7 +275,7 @@ forgotPasswordUrl = "https://www.hbl.fi/losenord/"
 forgotPassword :: JSX
 forgotPassword =
   DOM.div
-    { className: "underline center"
+    { className: "underline center mb3"
     , children:
         [ DOM.a
             { href: forgotPasswordUrl
