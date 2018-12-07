@@ -10,7 +10,7 @@ env_variables = %w[
 
 apps = %w[
   mitt-konto
-  subscribe-paper
+  prenumerera
 ]
 
 app_name = ARGV.first
