@@ -172,8 +172,6 @@ userView { user } = React.fragment
         [ profileComponentBlock
         , break
         , editAccount
-        , break
-        , feedbackForm
         , disappearingBreak
         ]
       where
@@ -225,14 +223,6 @@ userView { user } = React.fragment
         , children:
             componentHeader "Mina inställningar:"
             : accountEditLinks
-        }
-
-    feedbackForm :: JSX
-    feedbackForm =
-      formatIconLink
-        { href: "https://goo.gl/forms/DAEPPgskTofooCFF3"
-        , description: "Ge oss feedback om Mitt konto"
-        , className: "mitt-konto--feedback"
         }
 
     componentBlock headerText content =
