@@ -2,12 +2,13 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Array (snoc, (:))
+import Data.Array (cons, foldl, snoc, zip, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -163,6 +164,12 @@ userView { user } = React.fragment
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
   where
+    subsSorted = foldl canceledLast [] user.subs
+
+    canceledLast subs s
+      | Persona.isSubscriptionCanceled s = subs `snoc` s
+      | otherwise = s `cons` subs
+
     componentHeader title =
       classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]
 
@@ -181,9 +188,11 @@ userView { user } = React.fragment
       componentBlock "Mina prenumerationer:" $ subscriptions <> [ break, subscribeImage ]
       where
         subscriptions =
-          case user.subs of
+          case subsSorted of
             [] -> [ componentBlockContent noSubscriptionsText ]
-            subs -> map (componentBlockContent <<< subscriptionView) subs `snoc` cancelSubscription
+            subs -> do
+              let subscriptionViews = subscriptionView <$> subs
+              (subscriptionComponentBlockContent <$> zip subs subscriptionViews) `snoc` cancelSubscription
 
     subscriptionView subscription =
       Subscription.subscription { subscription }
@@ -232,6 +241,14 @@ userView { user } = React.fragment
             componentHeader headerText
             : content
         }
+
+    subscriptionComponentBlockContent (Tuple subscription subView)
+      | Persona.isSubscriptionCanceled subscription =
+          DOM.div
+            { className: "mitt-konto--canceled-subscription"
+            , children: [ componentBlockContent subView ]
+            }
+      | otherwise = componentBlockContent subView
 
     componentBlockContent child =
        DOM.div
