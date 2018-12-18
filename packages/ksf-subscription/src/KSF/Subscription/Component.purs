@@ -56,12 +56,13 @@ render { props } =
   View.subscription
     { product: props.subscription.package.name
     , status: translateStatus props.subscription.state
-    , nextBillingDate: nextBillingDate props.subscription.state
+    , nextBillingDate: nextBillingDate
     }
   where
-    nextBillingDate (Persona.SubscriptionState "Canceled") = Nothing
-    nextBillingDate _ =
-      Just $ trim $ fromMaybe "" $ formatDate =<< addOneDay props.subscription.dates.end
+    nextBillingDate
+      | Persona.isSubscriptionCanceled props.subscription = Nothing
+      | otherwise =
+          Just $ trim $ fromMaybe "" $ formatDate =<< addOneDay props.subscription.dates.end
 
 addOneDay :: Nullable JSDate -> Maybe JSDate
 addOneDay date = do

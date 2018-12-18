@@ -155,6 +155,10 @@ errorField field =
     <<< do readNullOrUndefined <=< Foreign.readProp field
     <<< unsafeToForeign
 
+isSubscriptionCanceled :: Subscription -> Boolean
+isSubscriptionCanceled { state: (SubscriptionState "Canceled") } = true
+isSubscriptionCanceled _ = false
+
 data Provider
   = Facebook
   | GooglePlus
