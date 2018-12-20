@@ -93,10 +93,10 @@ didMount self@{ props: { location: { state: Just state } } } = do
       maybe (pure unit) (send self) maybeAction
 didMount _ = pure unit
 
-didUpdate :: Self -> { prevProps :: Props, prevState :: State } -> Effect Unit
-didUpdate self _ = do
- Console.log "did update payment select"
- Console.log $ unsafeCoerce self.state
+didUpdate :: Self -> Effect Unit
+didUpdate self = do
+  Console.log "did update payment select"
+  Console.log $ unsafeCoerce self.state
 
 initialState :: State
 initialState =
