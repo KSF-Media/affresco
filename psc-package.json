@@ -1,6 +1,6 @@
 {
   "name": "affresco",
-  "set": "psc-0.12.1",
+  "set": "psc-0.12.1-20181218",
   "source": "https://github.com/purescript/package-sets",
   "depends": [
     "aff",
