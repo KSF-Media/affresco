@@ -2,7 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Array (cons, foldl, snoc, zip, (:))
+import Data.Array (cons, snoc, sortBy, zip, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
@@ -164,11 +164,8 @@ userView { user } = React.fragment
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
   where
-    subsSorted = foldl canceledLast [] user.subs
-
-    canceledLast subs s
-      | Persona.isSubscriptionCanceled s = subs `snoc` s
-      | otherwise = s `cons` subs
+    -- Sort the canceled subscriptions at the bottom
+    subsSorted = sortBy (\a b -> a.state `compare` b.state) user.subs
 
     componentHeader title =
       classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]

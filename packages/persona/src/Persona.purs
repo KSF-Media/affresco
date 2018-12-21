@@ -156,8 +156,11 @@ errorField field =
     <<< unsafeToForeign
 
 isSubscriptionCanceled :: Subscription -> Boolean
-isSubscriptionCanceled { state: (SubscriptionState "Canceled") } = true
-isSubscriptionCanceled _ = false
+isSubscriptionCanceled s = isSubscriptionStateCanceled s.state
+
+isSubscriptionStateCanceled :: SubscriptionState -> Boolean
+isSubscriptionStateCanceled (SubscriptionState "Canceled") = true
+isSubscriptionStateCanceled _ = false
 
 data Provider
   = Facebook
@@ -221,6 +224,13 @@ newtype SubscriptionState = SubscriptionState String
 derive instance genericSubscriptionState :: Generic SubscriptionState _
 instance readForeignSubscriptionState :: ReadForeign SubscriptionState where
   readImpl f = map SubscriptionState (readImpl f)
+instance eqSubscriptionState :: Eq SubscriptionState where
+  eq (SubscriptionState s1) (SubscriptionState s2) = s1 == s2
+instance ordSubscriptionState :: Ord SubscriptionState where
+  compare s1 s2
+    | isSubscriptionStateCanceled s1 = GT
+    | isSubscriptionStateCanceled s2 = LT
+    | otherwise = EQ
 
 type ModelPackage =
   { id          :: String
