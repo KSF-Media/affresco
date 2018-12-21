@@ -239,6 +239,8 @@ userView { user } = React.fragment
             : content
         }
 
+    -- | Wraps canceled subscriptions.
+    --   Meaning, if the subscription has a canceled state, we want to add extra css to it.
     subscriptionComponentBlockContent (Tuple subscription subView)
       | Persona.isSubscriptionCanceled subscription =
           DOM.div
