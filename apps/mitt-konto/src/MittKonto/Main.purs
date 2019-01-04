@@ -2,13 +2,12 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Array (cons, snoc, sortBy, zip, (:))
+import Data.Array (snoc, sortBy, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
-import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -164,9 +163,6 @@ userView { user } = React.fragment
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
   where
-    -- Sort the canceled subscriptions at the bottom
-    subsSorted = sortBy (\a b -> a.state `compare` b.state) user.subs
-
     componentHeader title =
       classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]
 
@@ -185,14 +181,21 @@ userView { user } = React.fragment
       componentBlock "Mina prenumerationer:" $ subscriptions <> [ break, subscribeImage ]
       where
         subscriptions =
-          case subsSorted of
-            [] -> [ componentBlockContent noSubscriptionsText ]
+          -- Sort the canceled subscriptions to the end of the list
+          case sortBy (comparing _.state) user.subs of
+            []   -> [ componentBlockContent noSubscriptionsText ]
             subs -> do
-              let subscriptionViews = subscriptionView <$> subs
-              (subscriptionComponentBlockContent <$> zip subs subscriptionViews) `snoc` cancelSubscription
-
-    subscriptionView subscription =
-      Subscription.subscription { subscription }
+              map subscriptionComponentBlockContent subs `snoc` cancelSubscription
+              where
+                subscriptionView subscription = Subscription.subscription { subscription }
+                subscriptionComponentBlockContent subscription
+                  -- If the subscription has a canceled state, we want to add extra css to it.
+                  | Persona.isSubscriptionCanceled subscription =
+                      DOM.div
+                        { className: "mitt-konto--canceled-subscription"
+                        , children: [ componentBlockContent $ subscriptionView subscription ]
+                        }
+                  | otherwise = componentBlockContent $ subscriptionView subscription
 
     cancelSubscription =
       DOM.div
@@ -238,16 +241,6 @@ userView { user } = React.fragment
             componentHeader headerText
             : content
         }
-
-    -- | Wraps canceled subscriptions.
-    --   Meaning, if the subscription has a canceled state, we want to add extra css to it.
-    subscriptionComponentBlockContent (Tuple subscription subView)
-      | Persona.isSubscriptionCanceled subscription =
-          DOM.div
-            { className: "mitt-konto--canceled-subscription"
-            , children: [ componentBlockContent subView ]
-            }
-      | otherwise = componentBlockContent subView
 
     componentBlockContent child =
        DOM.div
