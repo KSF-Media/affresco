@@ -6,7 +6,7 @@ import Data.DateTime (adjust)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String (trim)
@@ -62,7 +62,7 @@ render { props } =
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
       | otherwise =
-          Just $ trim $ fromMaybe "" $ formatDate =<< addOneDay props.subscription.dates.end
+          map trim $ formatDate =<< addOneDay props.subscription.dates.end
 
 addOneDay :: Nullable JSDate -> Maybe JSDate
 addOneDay date = do
