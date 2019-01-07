@@ -5929,9 +5929,9 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#ca262f04cdef62ef2f59657a0f241a45fb4a4e6b":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#8d5508b13ab4544653d1bf90fa4d1bb1d1ceb09b":
   version "1.2.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#ca262f04cdef62ef2f59657a0f241a45fb4a4e6b"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#8d5508b13ab4544653d1bf90fa4d1bb1d1ceb09b"
   dependencies:
     superagent "3.7.0"
 

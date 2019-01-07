@@ -58,6 +58,12 @@ updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut"
   where
     authorization = oauthToken token
 
+logout :: UUID -> Token -> Aff Unit
+logout uuid token =
+  callApi loginApi "loginUuidDelete" [ unsafeToForeign uuid ] { authorization }
+  where
+    authorization = oauthToken token
+
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
 derive newtype instance readforeignToken :: ReadForeign Token
