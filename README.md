@@ -8,10 +8,15 @@ Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautifu
 
 For initializing the repo, run:
 ```bash
-yarn install
-yarn build-purs
-lerna bootstrap
+yarn install-all
 ```
+This installs `npm` packages, `spago` packages and bootstraps the monorepo dependencies with `lerna`.
+
+It may be sometimes useful to only build purescript packages, do it by running:
+```bash
+yarn build-purs
+```
+This also creates an `index.js` entry point file for every purescript module, which can then be required by any javascript application.
 
 ## Structure
 

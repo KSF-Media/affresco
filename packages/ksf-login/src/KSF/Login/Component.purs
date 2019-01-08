@@ -19,8 +19,8 @@ import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
+import Facebook.Sdk as FB
 import JanrainSSO as JanrainSSO
-import KSF.Login.Facebook.Sdk as FB
 import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
@@ -32,6 +32,8 @@ import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
+
+foreign import facebookAppId :: String
 
 type Self = React.Self Props State Action
 
@@ -186,7 +188,7 @@ update self = case _ of
     Update self.state { merge = mergeInfo }
 
 facebookSdk :: Aff FB.Sdk
-facebookSdk = FB.init $ FB.defaultConfig
+facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
 render :: Self -> JSX
 render self@{ props, state } =

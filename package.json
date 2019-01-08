@@ -4,18 +4,18 @@
   "dependencies": {
     "lerna": "^3.3.2",
     "parcel-bundler": "^1.10.3",
-    "psc-package-bin-simple": "^1.0.1",
     "purescript": "^0.12.0",
-    "purp-bin-simple": "^1.0.1",
-    "yarn": "^1.10.1"
+    "purescript-spago": "^0.6.2",
+    "yarn": "^1.12.3"
   },
   "bootstrap": {
     "useWorkspaces": true,
     "npmClient": "yarn"
   },
   "scripts": {
-    "build-purs": "psc-package build \"packages/*/src/**/*.purs\" \"apps/*/src/**/*.purs\"  && ./build-purs.rb",
-    "clean": "rm -rf .cache .psc-package .psci_modules node_modules output dist .yarn-cache"
+    "install-all": "yarn install && spago install && lerna bootstrap",
+    "build-purs": "spago build --path \"packages/*/src/**/*.purs\" --path \"apps/*/src/**/*.purs\"  && ./build-purs.rb",
+    "clean": "rm -rf .cache .spago .psci_modules node_modules output dist .yarn-cache"
   },
   "workspaces": [
     "packages/*",

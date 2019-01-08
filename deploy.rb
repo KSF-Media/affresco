@@ -44,6 +44,7 @@ build_commands = [
   'npm run clean',
   'npm install yarn',
   'yarn install --pure-lockfile --cache-folder=.yarn-cache',
+  'spago install',
   'lerna clean --yes',
   'yarn run --cache-folder=.yarn-cache build-purs',
   'lerna bootstrap',
