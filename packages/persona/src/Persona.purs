@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Except (runExcept)
 import Control.MonadPlus (guard)
-import Data.Either (hush)
+import Data.Either (Either(..), hush)
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
@@ -161,6 +161,13 @@ errorField field =
     <<< do readNullOrUndefined <=< Foreign.readProp field
     <<< unsafeToForeign
 
+isSubscriptionCanceled :: Subscription -> Boolean
+isSubscriptionCanceled s = isSubscriptionStateCanceled s.state
+
+isSubscriptionStateCanceled :: SubscriptionState -> Boolean
+isSubscriptionStateCanceled (SubscriptionState "Canceled") = true
+isSubscriptionStateCanceled _ = false
+
 data Provider
   = Facebook
   | GooglePlus
@@ -223,6 +230,14 @@ newtype SubscriptionState = SubscriptionState String
 derive instance genericSubscriptionState :: Generic SubscriptionState _
 instance readForeignSubscriptionState :: ReadForeign SubscriptionState where
   readImpl f = map SubscriptionState (readImpl f)
+derive instance eqSubscriptionState :: Eq SubscriptionState
+instance ordSubscriptionState :: Ord SubscriptionState where
+  compare =
+    comparing
+      \s@(SubscriptionState st) ->
+        if isSubscriptionStateCanceled s
+        then Right st
+        else Left st
 
 type ModelPackage =
   { id          :: String
