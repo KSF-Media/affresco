@@ -2,7 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Array (snoc, (:))
+import Data.Array (snoc, sortBy, (:))
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
@@ -181,12 +181,21 @@ userView { user } = React.fragment
       componentBlock "Mina prenumerationer:" $ subscriptions <> [ break, subscribeImage ]
       where
         subscriptions =
-          case user.subs of
-            [] -> [ componentBlockContent noSubscriptionsText ]
-            subs -> map (componentBlockContent <<< subscriptionView) subs `snoc` cancelSubscription
-
-    subscriptionView subscription =
-      Subscription.subscription { subscription }
+          -- Sort the canceled subscriptions to the end of the list
+          case sortBy (comparing _.state) user.subs of
+            []   -> [ componentBlockContent noSubscriptionsText ]
+            subs -> do
+              map subscriptionComponentBlockContent subs `snoc` cancelSubscription
+              where
+                subscriptionView subscription = Subscription.subscription { subscription }
+                subscriptionComponentBlockContent subscription
+                  -- If the subscription has a canceled state, we want to add extra css to it.
+                  | Persona.isSubscriptionCanceled subscription =
+                      DOM.div
+                        { className: "mitt-konto--canceled-subscription"
+                        , children: [ componentBlockContent $ subscriptionView subscription ]
+                        }
+                  | otherwise = componentBlockContent $ subscriptionView subscription
 
     cancelSubscription =
       DOM.div
