@@ -127,8 +127,8 @@ let additions =
 		, "errors"
 		, "effect"
         ]
-		"https://github.com/KSF-Media/purescript-facebook.git"
-        "version-upgrade"
+		"https://github.com/Unisay/purescript-facebook.git"
+        "v0.3.0"
   }
 
 in  upstream ⫽ overrides ⫽ additions

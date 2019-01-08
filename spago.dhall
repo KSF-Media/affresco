@@ -19,6 +19,7 @@ You can edit this file as you like.
 	, "generics-rep"
 	, "ordered-collections"
 	, "simple-json"
+	, "facebook"
 	]
 , packages =
     ./packages.dhall
