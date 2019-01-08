@@ -408,7 +408,9 @@ jsLogout callback = Aff.runAff_ (\_ -> callback) logout
 --   Wipes out local storage.
 logout :: Aff Unit
 logout = do
-  -- first of all we wipe the local storage
+  -- use authentication data from local storage to logout first from Persona
+  logoutPersona `catchError` Console.errorShow
+  -- then we wipe the local storage
   liftEffect deleteToken `catchError` Console.errorShow
   -- then, in parallel, we run all the third-party logouts
   parSequence_
@@ -416,6 +418,13 @@ logout = do
     , logoutGoogle   `catchError` Console.errorShow
     , logoutJanrain  `catchError` Console.errorShow
     ]
+
+logoutPersona :: Aff Unit
+logoutPersona = do
+  token <- liftEffect loadToken
+  case token of
+    Just t  -> Persona.logout t.uuid t.token
+    Nothing -> pure unit
 
 logoutFacebook :: Aff Unit
 logoutFacebook = do
