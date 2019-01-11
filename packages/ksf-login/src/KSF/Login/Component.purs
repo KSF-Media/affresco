@@ -404,6 +404,15 @@ finalizeLogin props loginResponse = do
 jsLogout :: Effect Unit -> Effect Unit
 jsLogout callback = Aff.runAff_ (\_ -> callback) logout
 
+jsUpdateGdprConsent
+  :: Persona.UUID
+  -> Persona.Token
+  -> Array Persona.GdprConsent
+  -> Effect Unit
+  -> Effect Unit
+jsUpdateGdprConsent uuid token consents callback
+  = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents
+
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
 logout :: Aff Unit
