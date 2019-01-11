@@ -411,7 +411,7 @@ jsUpdateGdprConsent
   -> Effect Unit
   -> Effect Unit
 jsUpdateGdprConsent uuid token consents callback
-  = Aff.runAff_ (\_ -> callback) $ updateGdprConsent uuid token consents
+  = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents
 
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
