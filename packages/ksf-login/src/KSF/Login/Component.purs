@@ -404,7 +404,12 @@ finalizeLogin props loginResponse = do
 jsLogout :: Effect Unit -> Effect Unit
 jsLogout callback = Aff.runAff_ (\_ -> callback) logout
 
-jsUpdateGdprConsent :: UUID -> Token -> Array Persona.GdprConsent -> Effect Unit -> Effect Unit
+jsUpdateGdprConsent
+  :: Persona.UUID
+  -> Persona.Token
+  -> Array Persona.GdprConsent
+  -> Effect Unit
+  -> Effect Unit
 jsUpdateGdprConsent uuid token consents callback
   = Aff.runAff_ (\_ -> callback) $ updateGdprConsent uuid token consents
 
