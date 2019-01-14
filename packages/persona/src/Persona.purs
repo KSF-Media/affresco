@@ -199,6 +199,7 @@ type User =
   , address :: Nullable Address
   , cusno :: String
   , subs :: Array Subscription
+  , consent :: Array GdprConsent
   }
 
 type Address =
