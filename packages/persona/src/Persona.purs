@@ -303,6 +303,7 @@ type SubscriptionDates =
   }
 
 type GdprConsent =
-  { key :: String
-  , val :: Boolean
+  { brand :: String
+  , key   :: String
+  , val   :: Boolean
   }
