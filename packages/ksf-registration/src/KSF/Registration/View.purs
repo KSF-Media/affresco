@@ -151,13 +151,6 @@ zipInput =
     , name: "zip"
     }
 
-countryInput :: JSX
-countryInput =
-  createTextInput
-    { placeholder: "Land"
-    , name: "country"
-    }
-
 phoneInput :: JSX
 phoneInput =
   createTextInput
