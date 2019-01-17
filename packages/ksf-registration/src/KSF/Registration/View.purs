@@ -3,6 +3,8 @@ module KSF.Registration.View where
 import Prelude
 
 import Data.Maybe (Maybe(..))
+import Effect.Class.Console as Console
+import KSF.Button.Component as Button
 import KSF.InputField.Component as InputField
 import React.Basic (JSX)
 import React.Basic.Compat as React
@@ -40,6 +42,9 @@ registration =
             , inputRow
                 (input passwordInput "Lösenord*")
                 (input confirmPasswordInput "Bekräfta lösenord*")
+            , inputRow
+                (halfInputRow [ DOM.text "* = obligatoriskt fält" ])
+                (halfInputRow [ confirmButton ])
             ]
         }
 
@@ -51,23 +56,42 @@ registrationTitle =
         [ DOM.h1_ [ DOM.text "Skapa din konto" ] ]
     }
 
+confirmButton :: JSX
+confirmButton =
+  DOM.div
+    { className: "registration--create-button"
+    , children:
+        [ Button.button
+            { description: "Skapa konto"
+            , destination: Nothing
+            , onClick: Console.log "YEP!"
+            , onLoad: (\_ -> pure unit)
+            }
+        ]
+    }
+
 inputRow :: JSX -> JSX -> JSX
 inputRow leftInput rightInput =
   DOM.div
-    { className: "clearfix flex justify-around mt3"
+    { className: "clearfix flex justify-center mt3"
     , children: [ leftInput, rightInput ]
     }
 
 input :: JSX -> String -> JSX
 input inputField label =
+  halfInputRow
+    [ DOM.div
+        { className: "registration--input-label"
+        , children: [ DOM.text label ]
+        }
+    , inputField
+    ]
+
+halfInputRow :: Array JSX -> JSX
+halfInputRow children =
   DOM.div
-    { className: "col col-5 registration--input"
-    , children:
-        [ DOM.div
-            { className: "registration--input-label"
-            , children: [ DOM.text label ]
-            }
-        , inputField ]
+    { className: "col col-4 registration--input ml4"
+    , children
     }
 
 firstNameInput :: JSX
