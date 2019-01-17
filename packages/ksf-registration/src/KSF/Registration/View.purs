@@ -2,6 +2,7 @@ module KSF.Registration.View where
 
 import Prelude
 
+import Data.Array (zipWith)
 import Data.Maybe (Maybe(..))
 import Effect.Class.Console as Console
 import KSF.Button.Component as Button
@@ -19,6 +20,8 @@ type InputAttributes =
   , name :: String
   }
 
+type InputType = String
+
 registration :: JSX
 registration =
   React.Extended.requireStyle
@@ -35,7 +38,7 @@ registration =
                 (input cityInput "Stad*")
             , inputRow
                 (input zipInput "Postnummer*")
-                (input countryInput "Land*")
+                (input countryDropdown "Land*")
             , inputRow
                 (input phoneInput "Telefon*")
                 (input emailInput "E-postadress*")
@@ -94,81 +97,108 @@ halfInputRow children =
     , children
     }
 
+countryDropdown :: JSX
+countryDropdown =
+  dropdown
+    [ "FI", "AX", "SV", "NO", "DK" ]
+    [ "Finland", "Åland", "Sverige", "Norge", "Danmark" ]
+
+dropdown :: Array String -> Array String -> JSX
+dropdown options descriptions =
+  DOM.select
+    { className: ""
+    , children: zipWith createOption options descriptions
+    }
+  where
+    createOption value description =
+      DOM.option
+        { value
+        , children: [ DOM.text description ]
+        }
+
 firstNameInput :: JSX
 firstNameInput =
-  createInput
+  createTextInput
     { placeholder: "Förnamn"
     , name: "firstName"
     }
 
 lastNameInput :: JSX
 lastNameInput =
-  createInput
+  createTextInput
     { placeholder: "Efternamn"
     , name: "lastName"
     }
 
 addressInput :: JSX
 addressInput =
-  createInput
+  createTextInput
     { placeholder: "Adress"
     , name: "address"
     }
 
 cityInput :: JSX
 cityInput =
-  createInput
+  createTextInput
     { placeholder: "Stad"
     , name: "city"
     }
 
 zipInput :: JSX
 zipInput =
-  createInput
+  createTextInput
     { placeholder: "Postnummer"
     , name: "zip"
     }
 
 countryInput :: JSX
 countryInput =
-  createInput
+  createTextInput
     { placeholder: "Land"
     , name: "country"
     }
 
 phoneInput :: JSX
 phoneInput =
-  createInput
+  createTextInput
     { placeholder: "Telefon"
     , name: "phone"
     }
 
 emailInput :: JSX
 emailInput =
-  createInput
+  createTextInput
     { placeholder: "E-postadress"
     , name: "email"
     }
 
 passwordInput :: JSX
 passwordInput =
-  createInput
+  createPasswordInput
     { placeholder: "Lösenord"
     , name: "password"
     }
 
 confirmPasswordInput :: JSX
 confirmPasswordInput =
-  createInput
+  createPasswordInput
     { placeholder: "Bekräfta lösenord"
     , name: "confirm-password"
     }
 
-createInput :: InputAttributes -> JSX
-createInput { placeholder, name } =
+createTextInput :: InputAttributes -> JSX
+createTextInput inputAttrs =
+  createInput inputAttrs "text"
+
+createPasswordInput :: InputAttributes -> JSX
+createPasswordInput inputAttrs =
+  createInput inputAttrs "password"
+
+createInput :: InputAttributes -> InputType -> JSX
+createInput { placeholder, name } type_ =
   React.element
     InputField.component
-      { type_: "text"
+      { type_
       , required: true
       , children: []
       , defaultValue: Nothing
