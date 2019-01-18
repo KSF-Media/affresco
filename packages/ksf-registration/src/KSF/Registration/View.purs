@@ -47,7 +47,7 @@ registration =
                 (input confirmPasswordInput "Bekräfta lösenord*")
             , inputRow
                 (halfInputRow [ DOM.text "* = obligatoriskt fält" ])
-                (halfInputRow [ confirmButton ])
+                (halfInputRow confirm)
             ]
         }
 
@@ -59,10 +59,17 @@ registrationTitle =
         [ DOM.h1_ [ DOM.text "Skapa din konto" ] ]
     }
 
+confirm :: Array JSX
+confirm =
+  [ acceptTermsText
+  , confirmButton
+  , cancelText
+  ]
+
 confirmButton :: JSX
 confirmButton =
   DOM.div
-    { className: "registration--create-button"
+    { className: "registration--create-button mt2"
     , children:
         [ Button.button
             { description: "Skapa konto"
@@ -73,10 +80,46 @@ confirmButton =
         ]
     }
 
+acceptTermsText :: JSX
+acceptTermsText =
+  DOM.div
+    { className: "registration--accept-terms"
+    , children:
+        [ DOM.text "Genom att klicka på \"Fortsätt\", accepterar du våra "
+        , DOM.a
+            { href: termsUrl
+            , target: "_blank"
+            , children: [ DOM.text "användarvillkor" ]
+            }
+        , DOM.text " och bekräftar att ha läst och förstått vår "
+        , DOM.a
+            { href: privacyPolicyUrl
+            , target: "_blank"
+            , children: [ DOM.text "integritetspolicy." ]
+            }
+        ]
+    }
+  where
+    termsUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.33626213.557863145.1547627789-663578572.1543831809#terms"
+    privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.233133274.557863145.1547627789-663578572.1543831809#privacy"
+
+cancelText :: JSX
+cancelText =
+  DOM.div
+    { className: "mt2"
+    , children:
+        [ DOM.text "Eller "
+        , DOM.a
+            { href: ""
+            , children: [ DOM.text "avbryt." ]
+            }
+        ]
+    }
+
 inputRow :: JSX -> JSX -> JSX
 inputRow leftInput rightInput =
   DOM.div
-    { className: "clearfix flex justify-center mt3"
+    { className: "clearfix flex justify-center mt2"
     , children: [ leftInput, rightInput ]
     }
 

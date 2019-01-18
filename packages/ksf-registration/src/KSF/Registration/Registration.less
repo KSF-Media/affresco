@@ -1,4 +1,5 @@
 @import (reference) 'ksf-colors';
+@icon-triangle-down: '../images/icon-triangle-down.svg';
 
 .registration--input {
     input, select {
@@ -7,6 +8,21 @@
         border-width: 1px;
         border-color: @color-input-border;
         padding: 8px 10px 8px;
+        background: @white;
+        box-sizing: border-box;
+    }
+    select {
+        max-width: 100%;
+        font-weight: 400;
+        font-family: 'Duplex Sans', sans-serif;
+        font-size: 1em;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding: 8px 36px 8px 8px;
+        background: url(@icon-triangle-down) no-repeat @white;
+        background-position: right 15px center;
+        background-size: 8px;
     }
 }
 
@@ -19,4 +35,8 @@
 
 .registration--create-button .button--blank-button {
     background: green;
+}
+
+.registration--accept-terms {
+    text-align: left;
 }
