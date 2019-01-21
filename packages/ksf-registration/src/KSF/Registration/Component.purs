@@ -13,6 +13,8 @@ import KSF.Registration.View as View
 import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler, handler_)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
 
@@ -34,7 +36,7 @@ type State =
   , emailAddress :: Maybe String
   , password :: Maybe String
   , inputValidations ::
-       { passwordMissmatch :: Boolean }
+       { password :: Validation }
   }
 
 data RegistrationInputField =
@@ -56,9 +58,12 @@ type InputAttributes =
 
 type InputType = String
 
+data Validation = Valid | Invalid
+derive instance eqValidation :: Eq Validation
+
 data Action =
   UpdateInput RegistrationInputField String
-  | PasswordMissmatch Boolean
+  | PasswordMissmatch Validation
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent = React.toReactComponent fromJSProps component { initialState, render, update }
@@ -78,7 +83,7 @@ initialState =
   , emailAddress: Nothing
   , password: Nothing
   , inputValidations:
-     { passwordMissmatch: false }
+     { password: Valid }
   }
 
 fromJSProps :: JSProps -> Props
@@ -108,8 +113,8 @@ update self = case _ of
   UpdateInput Password newValue ->
     Update self.state { password = Just newValue }
 
-  PasswordMissmatch missmatch ->
-    Update self.state { inputValidations { passwordMissmatch = missmatch } }
+  PasswordMissmatch validation ->
+    Update self.state { inputValidations { password = validation } }
 
 render :: Self -> JSX
 render self =
@@ -118,31 +123,44 @@ render self =
     $ DOM.div
         { className: "registration--container clearfix"
         , children:
-            [ registrationTitle
-            , inputRow
-               (input firstNameInput "Förnamn*")
-               (input lastNameInput "Efternamn*")
-            , inputRow
-                (input addressInput "Adress*")
-                (input cityInput "Stad*")
-            , inputRow
-                (input zipInput "Postnummer*")
-                (input countryDropdown "Land*")
-            , inputRow
-                (input phoneInput "Telefon*")
-                (input emailInput "E-postadress*")
-            , inputRow
-                (input passwordInput "Lösenord*")
-                (input confirmPasswordInput "Bekräfta lösenord*")
-            , inputRow
-                (halfInputRow [ DOM.text "* = obligatoriskt fält" ])
-                (halfInputRow confirm)
+            [ form
+                [ registrationTitle
+                , inputRow
+                    (input firstNameInput "Förnamn*")
+                    (input lastNameInput "Efternamn*")
+                , inputRow
+                    (input addressInput "Adress*")
+                    (input cityInput "Stad*")
+                , inputRow
+                    (input zipInput "Postnummer*")
+                    (input countryDropdown "Land*")
+                , inputRow
+                    (input phoneInput "Telefon*")
+                    (input emailInput "E-postadress*")
+                , inputRow
+                    (input passwordInput "Lösenord*")
+                    (input confirmPasswordInput "Bekräfta lösenord*")
+                , inputRow
+                    (halfInputRow [ DOM.text "* = obligatoriskt fält" ])
+                    (halfInputRow confirm)
+                ]
             ]
         }
   where
+    form :: Array JSX -> JSX
+    form children =
+      DOM.form
+        { className: ""
+        , children
+        , onSubmit: handler preventDefault
+            (\_ -> when isFormValid do submit)
+        }
+      where
+        isFormValid = self.state.inputValidations.password == Valid
+        submit = Console.log "SUBMIT"
+
     inputFieldUpdate :: RegistrationInputField -> String -> Effect Unit
     inputFieldUpdate field newInputValue = do
-      Console.log newInputValue
       send self (UpdateInput field newInputValue)
 
     firstNameInput :: JSX
@@ -212,7 +230,7 @@ render self =
     confirmPasswordInput :: JSX
     confirmPasswordInput =
       DOM.div
-        { className: invalidFieldClass
+        { className: inCaseOfMissmatch "registration--invalid-form-field"
         , children:
             [ React.element
                 InputField.component
@@ -225,17 +243,23 @@ render self =
                   , placeholder: "Bekräfta lösenord"
                   , name: "confirm-password"
                   }
+            , inCaseOfMissmatch
+                DOM.div
+                  { className: "left mt1 registration--invalid-form-text"
+                  , children: [ DOM.text "Lösenorden överensstämmer inte med varandra." ]
+                  }
             ]
         }
       where
+        inCaseOfMissmatch :: forall a. Monoid a => a -> a
+        inCaseOfMissmatch invalidAction =
+          case self.state.inputValidations.password of
+            Invalid -> invalidAction
+            Valid   -> mempty
         currentPassword = fromMaybe "" self.state.password
         comparePasswords confirmedPassword
-          | confirmedPassword /= currentPassword = send self (PasswordMissmatch true)
-          | otherwise = send self (PasswordMissmatch false)
-        invalidFieldClass =
-          if self.state.inputValidations.passwordMissmatch
-          then "registration--invalid-form-field"
-          else ""
+          | confirmedPassword /= currentPassword = send self (PasswordMissmatch Invalid)
+          | otherwise = send self (PasswordMissmatch Valid)
 
 registrationTitle :: JSX
 registrationTitle =
@@ -254,16 +278,10 @@ confirm =
 
 confirmButton :: JSX
 confirmButton =
-  DOM.div
-    { className: "registration--create-button mt2"
-    , children:
-        [ Button.button
-            { description: "Skapa konto"
-            , destination: Nothing
-            , onClick: Console.log "YEP!"
-            , onLoad: (\_ -> pure unit)
-            }
-        ]
+  DOM.input
+    { type: "submit"
+    , className: "registration--create-button mt2"
+    , value: "Skapa konto"
     }
 
 acceptTermsText :: JSX
