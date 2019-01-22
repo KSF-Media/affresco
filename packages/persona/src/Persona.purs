@@ -64,6 +64,10 @@ logout uuid token =
   where
     authorization = oauthToken token
 
+register :: NewUser -> Aff LoginResponse
+register newUser =
+  callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
+
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
 derive newtype instance readforeignToken :: ReadForeign Token
@@ -199,6 +203,18 @@ type User =
   , address :: Nullable Address
   , cusno :: String
   , subs :: Array Subscription
+  }
+
+type NewUser =
+  { firstName :: String
+  , lastName :: String
+  , emailAddress :: String
+  , password :: String
+  , streetAddress :: String
+  , zipCode :: String
+  , city :: String
+  , country :: String
+  , phone :: String
   }
 
 type Address =
