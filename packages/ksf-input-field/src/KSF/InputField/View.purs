@@ -15,7 +15,6 @@ type Attributes =
   , value :: String
   , required :: Boolean
   , onChange :: EffectFn1 SyntheticEvent Unit
-  , onBlur :: EffectFn1 SyntheticEvent Unit
   , children :: Array JSX
   }
 
@@ -34,5 +33,4 @@ inputField attrs =
         , value: attrs.value
         , required: attrs.required
         , onChange: attrs.onChange
-        , onBlur: attrs.onBlur
         }

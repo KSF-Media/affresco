@@ -18,7 +18,6 @@ type Props =
   , children :: Array JSX
   , defaultValue :: Maybe String
   , onChange :: String -> Effect Unit
-  , onBlur :: String -> Effect Unit
   }
 
 type State =
@@ -53,7 +52,6 @@ render { state, setState, props } =
     , required: props.required
     , children: props.children
     , onChange
-    , onBlur
     }
   where
     onChange =
@@ -63,9 +61,3 @@ render { state, setState, props } =
           let newValue = fromMaybe "" targetValue
           setState _ { inputValue = newValue }
           props.onChange newValue
-    onBlur =
-      Events.handler
-        (preventDefault >>> Events.merge { targetValue })
-        \{ targetValue } -> do
-          let newValue = fromMaybe "" targetValue
-          props.onBlur newValue
