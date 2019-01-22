@@ -7,6 +7,7 @@ import Data.Either (Either)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (length)
 import Effect (Effect)
+import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Effect.Exception (Error)
 import KSF.Button.Component as Button
@@ -162,7 +163,33 @@ render self =
         }
       where
         isFormValid = self.state.inputValidations.password == Valid
-        submit = Console.log "SUBMIT"
+        submit = do
+          let maybeUser =
+                newUser
+                <$> self.state.firstName
+                <*> self.state.lastName
+                <*> self.state.emailAddress
+                <*> self.state.password
+                <*> self.state.streetAddress
+                <*> self.state.city
+                <*> self.state.zip
+                <*> self.state.country
+                <*> self.state.phone
+          case maybeUser of
+            Just user -> Aff.runAff_ self.props.onRegister $ Persona.register user
+            Nothing   -> Console.error "Not all registration fields were filled."
+
+        newUser
+          firstName
+          lastName
+          emailAddress
+          password
+          streetAddress
+          city
+          zipCode
+          country
+          phone =
+            { firstName, lastName, emailAddress, password, streetAddress, city, zipCode, country, phone }
 
     inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
     inputFieldUpdate field newInputValue = do
