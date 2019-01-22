@@ -280,7 +280,7 @@ render self =
                 }
             , inCaseOfMissmatch
                 DOM.div
-                  { className: "left mt1 registration--invalid-form-text"
+                  { className: "mt1 registration--invalid-form-text"
                   , children: [ DOM.text "Lösenorden överensstämmer inte med varandra." ]
                   }
             ]
