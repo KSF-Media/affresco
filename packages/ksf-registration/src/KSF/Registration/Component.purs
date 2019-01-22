@@ -3,17 +3,20 @@ module KSF.Registration.Component where
 import Prelude
 
 import Data.Array (zipWith)
+import Data.Either (Either)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (length)
 import Effect (Effect)
 import Effect.Class.Console as Console
+import Effect.Exception (Error)
 import KSF.Button.Component as Button
 import KSF.InputField.Component as InputField
 import KSF.Registration.View as View
+import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
@@ -21,9 +24,11 @@ import React.Basic.Extended as React.Extended
 foreign import registrationStyles :: Style
 
 type Self = React.Self Props State Void
-type Props = {}
+type Props =
+  { onRegister :: Either Error Persona.LoginResponse -> Effect Unit }
 
-type JSProps = {}
+type JSProps =
+  { onRegister :: Either Error Persona.LoginResponse -> Effect Unit }
 
 type State =
   { firstName :: Maybe String
@@ -53,7 +58,7 @@ data RegistrationInputField =
 type InputAttributes =
   { placeholder :: String
   , name :: String
-  , onChange :: (String -> Effect Unit)
+  , onChange :: (Maybe String -> Effect Unit)
   }
 
 type InputType = String
@@ -62,7 +67,7 @@ data Validation = Valid | Invalid
 derive instance eqValidation :: Eq Validation
 
 data Action =
-  UpdateInput RegistrationInputField String
+  UpdateInput RegistrationInputField (Maybe String)
   | PasswordMissmatch Validation
 
 jsComponent :: React.ReactComponent JSProps
@@ -78,7 +83,7 @@ initialState =
   , streetAddress: Nothing
   , city: Nothing
   , zip: Nothing
-  , country: Nothing
+  , country: Just "FI"
   , phone: Nothing
   , emailAddress: Nothing
   , password: Nothing
@@ -87,7 +92,7 @@ initialState =
   }
 
 fromJSProps :: JSProps -> Props
-fromJSProps _ = {}
+fromJSProps jsProps = jsProps
 
 component :: React.Component Props
 component = React.createComponent "Registration"
@@ -95,23 +100,23 @@ component = React.createComponent "Registration"
 update :: Self -> Action -> StateUpdate Props State Action
 update self = case _ of
   UpdateInput FirstName newValue ->
-    Update self.state { firstName = Just newValue }
+    Update self.state { firstName = newValue }
   UpdateInput LastName newValue ->
-    Update self.state { lastName = Just newValue }
+    Update self.state { lastName = newValue }
   UpdateInput StreetAddress newValue ->
-    Update self.state { streetAddress = Just newValue }
+    Update self.state { streetAddress = newValue }
   UpdateInput City newValue ->
-    Update self.state { city = Just newValue }
+    Update self.state { city = newValue }
   UpdateInput Zip newValue ->
-    Update self.state { zip = Just newValue }
+    Update self.state { zip = newValue }
   UpdateInput Country newValue ->
-    Update self.state { country = Just newValue }
+    Update self.state { country = newValue }
   UpdateInput Phone newValue ->
-    Update self.state { phone = Just newValue }
+    Update self.state { phone = newValue }
   UpdateInput EmailAddress newValue ->
-    Update self.state { emailAddress = Just newValue }
+    Update self.state { emailAddress = newValue }
   UpdateInput Password newValue ->
-    Update self.state { password = Just newValue }
+    Update self.state { password = newValue }
 
   PasswordMissmatch validation ->
     Update self.state { inputValidations { password = validation } }
@@ -159,7 +164,7 @@ render self =
         isFormValid = self.state.inputValidations.password == Valid
         submit = Console.log "SUBMIT"
 
-    inputFieldUpdate :: RegistrationInputField -> String -> Effect Unit
+    inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
     inputFieldUpdate field newInputValue = do
       send self (UpdateInput field newInputValue)
 
@@ -232,17 +237,13 @@ render self =
       DOM.div
         { className: inCaseOfMissmatch "registration--invalid-form-field"
         , children:
-            [ React.element
-                InputField.component
-                  { type_: "password"
-                  , required: true
-                  , children: []
-                  , defaultValue: Nothing
-                  , onChange: (\_ -> pure unit)
-                  , onBlur: comparePasswords
-                  , placeholder: "Bekräfta lösenord"
-                  , name: "confirm-password"
-                  }
+            [ DOM.input
+                { type: "password"
+                , required: true
+                , onBlur: handler targetValue comparePasswords
+                , placeholder: "Bekräfta lösenord"
+                , name: "confirm-password"
+                }
             , inCaseOfMissmatch
                 DOM.div
                   { className: "left mt1 registration--invalid-form-text"
@@ -256,10 +257,29 @@ render self =
           case self.state.inputValidations.password of
             Invalid -> invalidAction
             Valid   -> mempty
-        currentPassword = fromMaybe "" self.state.password
         comparePasswords confirmedPassword
-          | confirmedPassword /= currentPassword = send self (PasswordMissmatch Invalid)
+          | confirmedPassword /= self.state.password = send self (PasswordMissmatch Invalid)
           | otherwise = send self (PasswordMissmatch Valid)
+
+    countryDropdown :: JSX
+    countryDropdown =
+      dropdown
+        [ "FI", "AX", "SV", "NO", "DK" ]
+        [ "Finland", "Åland", "Sverige", "Norge", "Danmark" ]
+
+    dropdown :: Array String -> Array String -> JSX
+    dropdown options descriptions =
+      DOM.select
+        { className: ""
+        , children: zipWith createOption options descriptions
+        , onChange: handler targetValue $ inputFieldUpdate Country
+        }
+      where
+        createOption value description =
+          DOM.option
+            { value
+            , children: [ DOM.text description ]
+            }
 
 registrationTitle :: JSX
 registrationTitle =
@@ -344,26 +364,6 @@ halfInputRow children =
     , children
     }
 
-countryDropdown :: JSX
-countryDropdown =
-  dropdown
-    [ "FI", "AX", "SV", "NO", "DK" ]
-    [ "Finland", "Åland", "Sverige", "Norge", "Danmark" ]
-
-dropdown :: Array String -> Array String -> JSX
-dropdown options descriptions =
-  DOM.select
-    { className: ""
-    , children: zipWith createOption options descriptions
-    }
-  where
-    createOption value description =
-      DOM.option
-        { value
-        , children: [ DOM.text description ]
-        }
-
-
 createTextInput :: InputAttributes -> JSX
 createTextInput inputAttrs =
   createInput inputAttrs "text"
@@ -374,14 +374,10 @@ createPasswordInput inputAttrs =
 
 createInput :: InputAttributes -> InputType -> JSX
 createInput { placeholder, name, onChange } type_ =
-  React.element
-    InputField.component
-      { type_
-      , required: true
-      , children: []
-      , defaultValue: Nothing
-      , onChange
-      , onBlur: (\_ -> pure unit)
-      , placeholder
-      , name
-      }
+  DOM.input
+    { type: type_
+    , required: true
+    , onChange: handler targetValue onChange
+    , placeholder
+    , name
+    }
