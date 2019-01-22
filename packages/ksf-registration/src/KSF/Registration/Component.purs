@@ -4,21 +4,18 @@ import Prelude
 
 import Data.Array (zipWith)
 import Data.Either (Either)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String (length)
+import Data.Foldable (all)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Effect.Exception (Error)
-import KSF.Button.Component as Button
-import KSF.InputField.Component as InputField
-import KSF.Registration.View as View
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (handler)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
 
@@ -66,6 +63,8 @@ type InputType = String
 
 data Validation = Valid | Invalid
 derive instance eqValidation :: Eq Validation
+
+type Pattern = String
 
 data Action =
   UpdateInput RegistrationInputField (Maybe String)
@@ -162,7 +161,7 @@ render self =
             (\_ -> when isFormValid do submit)
         }
       where
-        isFormValid = self.state.inputValidations.password == Valid
+        isFormValid = all (eq Valid) [ self.state.inputValidations.password ]
         submit = do
           let maybeUser =
                 newUser
@@ -229,19 +228,27 @@ render self =
 
     zipInput :: JSX
     zipInput =
-      createTextInput
+      createPatternInput
         { placeholder: "Postnummer"
         , name: "zip"
         , onChange: inputFieldUpdate Zip
         }
+        zipRegexPattern
+      where
+        -- Allows only digits
+        zipRegexPattern = "\\d+"
 
     phoneInput :: JSX
     phoneInput =
-      createTextInput
+      createPatternInput
         { placeholder: "Telefon"
         , name: "phone"
         , onChange: inputFieldUpdate Phone
         }
+        phoneRegexPattern
+      where
+       --  Allows digits, "+" and whitespaces
+       phoneRegexPattern = "[\\d|\\+|\\s]+"
 
     emailInput :: JSX
     emailInput =
@@ -398,6 +405,17 @@ createTextInput inputAttrs =
 createPasswordInput :: InputAttributes -> JSX
 createPasswordInput inputAttrs =
   createInput inputAttrs "password"
+
+createPatternInput :: InputAttributes -> Pattern -> JSX
+createPatternInput { placeholder, name, onChange } pattern =
+  DOM.input
+    { type: "text"
+    , required: true
+    , onChange: handler targetValue onChange
+    , placeholder
+    , name
+    , pattern
+    }
 
 createInput :: InputAttributes -> InputType -> JSX
 createInput { placeholder, name, onChange } type_ =
