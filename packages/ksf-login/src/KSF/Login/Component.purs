@@ -92,6 +92,7 @@ type State =
               , googleAuthInit :: Maybe Google.Error
               }
   , merge :: Maybe MergeInfo
+  , loginViewStep :: View.LoginViewStep
   }
 
 data Action =
@@ -101,6 +102,8 @@ data Action =
   | FormPassword String
   | MergeCancel
   | SetMergeInfo (Maybe MergeInfo)
+  | SetViewStep View.LoginViewStep
+
 
 initialState :: State
 initialState =
@@ -108,6 +111,7 @@ initialState =
   , formPassword: ""
   , errors: { login: Nothing, social: Nothing, googleAuthInit: Nothing }
   , merge: Nothing
+  , loginViewStep: View.Login
   }
 
 type InputFieldAttributes =
@@ -186,6 +190,8 @@ update self = case _ of
         }
   SetMergeInfo mergeInfo ->
     Update self.state { merge = mergeInfo }
+  SetViewStep step ->
+    Update self.state { loginViewStep = step }
 
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
@@ -208,6 +214,13 @@ render self@{ props, state } =
             }
         , onEmailValueChange
         , onPasswordValueChange
+        , loginViewStep: state.loginViewStep
+        , showRegistration: send self (SetViewStep View.Registration)
+        , onRegister:
+            case _ of
+              Right loginResponse ->
+                props.launchAff_ $ finalizeLogin props loginResponse
+              Left err -> Console.error "err"
         }
     Just mergeInfo ->
       View.merge

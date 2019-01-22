@@ -3,20 +3,24 @@ module KSF.Login.View where
 import Prelude
 
 import Data.Array (foldMap)
+import Data.Either (Either)
 import Data.Foldable (surround)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Exception (Error)
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
+import KSF.Registration.Component as Registration
 import Persona as Persona
 import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
@@ -42,6 +46,9 @@ type LoginAttributes =
   , errors :: Errors
   , onEmailValueChange :: String -> Effect Unit
   , onPasswordValueChange :: String -> Effect Unit
+  , loginViewStep :: LoginViewStep
+  , showRegistration :: Effect Unit
+  , onRegister :: Either Error Persona.LoginResponse -> Effect Unit
   }
 
 type Providers =
@@ -58,24 +65,32 @@ type MergeAttributes =
   , userEmail :: String
   }
 
+data LoginViewStep = Login | Registration
 
 login :: LoginAttributes -> JSX
 login attrs =
     React.Extended.requireStyle
       loginStyles
-      $ DOM.div
-          { className: "login-form pt2"
-          , children:
-              [ foldMap formatErrorMessage attrs.errors.social
-              , loginForm
-              , forgotPassword
-              , facebookLogin attrs.login.onFacebookLogin
-              , googleLogin
-                attrs.login.onGoogleLogin
-                attrs.login.onGoogleFailure
-                attrs.login.googleFallbackOnClick
-              ]
-          }
+      $ case attrs.loginViewStep of
+          Login -> renderLogin attrs
+          Registration -> renderRegistration attrs
+
+renderLogin :: LoginAttributes -> JSX
+renderLogin attrs =
+  DOM.div
+    { className: "login-form pt2"
+    , children:
+        [ foldMap formatErrorMessage attrs.errors.social
+        , loginForm
+        , forgotPassword
+        , facebookLogin attrs.login.onFacebookLogin
+        , googleLogin
+          attrs.login.onGoogleLogin
+          attrs.login.onGoogleFailure
+          attrs.login.googleFallbackOnClick
+        , register
+        ]
+    }
   where
     loginForm :: JSX
     loginForm =
@@ -100,6 +115,25 @@ login attrs =
         }
       where
         onSubmit = Events.handler preventDefault $ \event -> attrs.login.onLogin
+
+    register :: JSX
+    register =
+      DOM.div
+        { className: "mt3"
+        , children:
+            [ DOM.text "Inget konto? "
+            , DOM.a
+                { className: ""
+                , href: "#"
+                , children: [ DOM.strong_ [ DOM.text "Registrera dig!" ] ]
+                , onClick: handler_ attrs.showRegistration
+                }
+            ]
+        }
+
+renderRegistration :: LoginAttributes -> JSX
+renderRegistration { onRegister } =
+  Registration.registration { onRegister }
 
 merge :: MergeAttributes -> JSX
 merge attrs =
