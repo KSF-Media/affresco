@@ -127,6 +127,9 @@ type TokenInvalid = PersonaError
 type InvalidCredentials = PersonaError
   ( invalid_credentials :: { description :: String } )
 
+type InvalidFormFields = PersonaError
+  ( invalid_form_fields :: { description :: String } )
+
 errorData
   :: forall fields
    . ReadForeign (PersonaError fields)

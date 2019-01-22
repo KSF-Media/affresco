@@ -3,13 +3,11 @@ module KSF.Registration.Component where
 import Prelude
 
 import Data.Array (zipWith)
-import Data.Either (Either)
 import Data.Foldable (all)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import Effect.Aff as Aff
+import Effect.Aff (Aff)
 import Effect.Class.Console as Console
-import Effect.Exception (Error)
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
@@ -23,10 +21,10 @@ foreign import registrationStyles :: Style
 
 type Self = React.Self Props State Void
 type Props =
-  { onRegister :: Either Error Persona.LoginResponse -> Effect Unit }
+  { onRegister :: Aff Persona.LoginResponse -> Effect Unit }
 
 type JSProps =
-  { onRegister :: Either Error Persona.LoginResponse -> Effect Unit }
+  { onRegister :: Aff Persona.LoginResponse -> Effect Unit }
 
 type State =
   { firstName :: Maybe String
@@ -175,7 +173,7 @@ render self =
                 <*> self.state.country
                 <*> self.state.phone
           case maybeUser of
-            Just user -> Aff.runAff_ self.props.onRegister $ Persona.register user
+            Just user -> self.props.onRegister $ Persona.register user
             Nothing   -> Console.error "Not all registration fields were filled."
 
         newUser

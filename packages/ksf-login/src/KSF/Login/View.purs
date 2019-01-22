@@ -7,6 +7,7 @@ import Data.Either (Either)
 import Data.Foldable (surround)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Exception (Error)
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
@@ -48,7 +49,7 @@ type LoginAttributes =
   , onPasswordValueChange :: String -> Effect Unit
   , loginViewStep :: LoginViewStep
   , showRegistration :: Effect Unit
-  , onRegister :: Either Error Persona.LoginResponse -> Effect Unit
+  , onRegister :: Aff Persona.LoginResponse -> Effect Unit
   }
 
 type Providers =
