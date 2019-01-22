@@ -247,7 +247,8 @@ render self =
         }
         phoneRegexPattern
       where
-       --  Allows digits, "+" and whitespaces
+       -- Allows digits, "+" and whitespaces,
+       -- e.g. 040 1231234, +358 04 1231234
        phoneRegexPattern = "[\\d|\\+|\\s]+"
 
     emailInput :: JSX
@@ -406,6 +407,7 @@ createPasswordInput :: InputAttributes -> JSX
 createPasswordInput inputAttrs =
   createInput inputAttrs "password"
 
+-- TODO: Validation error message to the user is not specific
 createPatternInput :: InputAttributes -> Pattern -> JSX
 createPatternInput { placeholder, name, onChange } pattern =
   DOM.input
