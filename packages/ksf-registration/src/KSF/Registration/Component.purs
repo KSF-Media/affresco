@@ -2,6 +2,7 @@ module KSF.Registration.Component where
 
 import Prelude
 
+import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (zipWith)
 import Data.Foldable (all)
 import Data.Maybe (Maybe(..))
@@ -20,12 +21,8 @@ import React.Basic.Extended as React.Extended
 foreign import registrationStyles :: Style
 
 type Self = React.Self Props State Void
-type Props =
-  { onRegister :: Aff Persona.LoginResponse -> Effect Unit
-  , onCancelRegistration :: Effect Unit
-  }
 
-type JSProps =
+type Props =
   { onRegister :: Aff Persona.LoginResponse -> Effect Unit
   , onCancelRegistration :: Effect Unit
   }
@@ -72,9 +69,6 @@ data Action =
   UpdateInput RegistrationInputField (Maybe String)
   | PasswordMissmatch Validation
 
-jsComponent :: React.ReactComponent JSProps
-jsComponent = React.toReactComponent fromJSProps component { initialState, render, update }
-
 registration :: Props -> JSX
 registration = make component { initialState, render, update }
 
@@ -92,9 +86,6 @@ initialState =
   , inputValidations:
      { password: Valid }
   }
-
-fromJSProps :: JSProps -> Props
-fromJSProps jsProps = jsProps
 
 component :: React.Component Props
 component = React.createComponent "Registration"
@@ -159,8 +150,7 @@ render self =
       DOM.form
         { className: ""
         , children
-        , onSubmit: handler preventDefault
-            (\_ -> when isFormValid do submit)
+        , onSubmit: handler preventDefault (\_ -> when isFormValid do submit)
         }
       where
         isFormValid = all (eq Valid) [ self.state.inputValidations.password ]
@@ -177,7 +167,15 @@ render self =
                 <*> self.state.country
                 <*> self.state.phone
           case maybeUser of
-            Just user -> self.props.onRegister $ Persona.register user
+            Just user -> do
+              self.props.onRegister $ Persona.register user `catchError` case _ of
+                 err | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+                         Console.error errData.invalid_form_fields.description
+                        -- liftEffect $ send self (LoginError Login.InvalidCredentials)
+                         throwError err
+                     | otherwise -> do
+                         Console.error "An unexpected error occurred during registration"
+                         throwError err
             Nothing   -> Console.error "Not all registration fields were filled."
 
         newUser

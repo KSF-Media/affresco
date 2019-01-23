@@ -219,19 +219,8 @@ render self@{ props, state } =
         , showRegistration: send self (SetViewStep View.Registration)
         , registrationComponent:
             Registration.registration
-              { onRegister: \register -> props.launchAff_ do
-                   loginResponse <- register `catchError` case _ of
-                     err | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
-                             Console.error errData.invalid_form_fields.description
-                             liftEffect $ send self (LoginError Login.InvalidCredentials)
-                             throwError err
-                         | Just serverError <- Persona.internalServerError err -> do
-                             Console.error "Something went wrong with registration"
-                             liftEffect $ send self (LoginError Login.SomethingWentWrong)
-                             throwError err
-                         | otherwise -> do
-                             Console.error "An unexpected error occurred during traditional login"
-                             throwError err
+              { onRegister: \registration -> props.launchAff_ do
+                   loginResponse <- registration
                    finalizeLogin props loginResponse
               , onCancelRegistration: do
                    send self (SetViewStep View.Login)
