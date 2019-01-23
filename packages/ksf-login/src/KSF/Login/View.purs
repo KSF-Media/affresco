@@ -49,7 +49,7 @@ type LoginAttributes =
   , onPasswordValueChange :: String -> Effect Unit
   , loginViewStep :: LoginViewStep
   , showRegistration :: Effect Unit
-  , onRegister :: Aff Persona.LoginResponse -> Effect Unit
+  , registrationComponent :: JSX
   }
 
 type Providers =
@@ -74,7 +74,7 @@ login attrs =
       loginStyles
       $ case attrs.loginViewStep of
           Login -> renderLogin attrs
-          Registration -> renderRegistration attrs
+          Registration -> attrs.registrationComponent
 
 renderLogin :: LoginAttributes -> JSX
 renderLogin attrs =
@@ -126,15 +126,11 @@ renderLogin attrs =
             , DOM.a
                 { className: ""
                 , href: "#"
-                , children: [ DOM.strong_ [ DOM.text "Registrera dig!" ] ]
+                , children: [ DOM.text "Registrera dig!" ]
                 , onClick: handler_ attrs.showRegistration
                 }
             ]
         }
-
-renderRegistration :: LoginAttributes -> JSX
-renderRegistration { onRegister } =
-  Registration.registration { onRegister }
 
 merge :: MergeAttributes -> JSX
 merge attrs =

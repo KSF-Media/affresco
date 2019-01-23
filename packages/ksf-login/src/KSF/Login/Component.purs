@@ -25,6 +25,7 @@ import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import KSF.Login.View as View
+import KSF.Registration.Component as Registration
 import LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
@@ -216,21 +217,25 @@ render self@{ props, state } =
         , onPasswordValueChange
         , loginViewStep: state.loginViewStep
         , showRegistration: send self (SetViewStep View.Registration)
-        , onRegister: \register -> props.launchAff_ do
-            loginResponse <- register `catchError` case _ of
-              err | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
-                      Console.error errData.invalid_form_fields.description
-                      liftEffect $ send self (LoginError Login.InvalidCredentials)
-                      throwError err
-                  | Just serverError <- Persona.internalServerError err -> do
-                      Console.error "Something went wrong with registration"
-                      liftEffect $ send self (LoginError Login.SomethingWentWrong)
-                      throwError err
-                  | otherwise -> do
-                      Console.error "An unexpected error occurred during traditional login"
-                      throwError err
-
-            finalizeLogin props loginResponse
+        , registrationComponent:
+            Registration.registration
+              { onRegister: \register -> props.launchAff_ do
+                   loginResponse <- register `catchError` case _ of
+                     err | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+                             Console.error errData.invalid_form_fields.description
+                             liftEffect $ send self (LoginError Login.InvalidCredentials)
+                             throwError err
+                         | Just serverError <- Persona.internalServerError err -> do
+                             Console.error "Something went wrong with registration"
+                             liftEffect $ send self (LoginError Login.SomethingWentWrong)
+                             throwError err
+                         | otherwise -> do
+                             Console.error "An unexpected error occurred during traditional login"
+                             throwError err
+                   finalizeLogin props loginResponse
+              , onCancelRegistration: do
+                   send self (SetViewStep View.Login)
+              }
         }
     Just mergeInfo ->
       View.merge
