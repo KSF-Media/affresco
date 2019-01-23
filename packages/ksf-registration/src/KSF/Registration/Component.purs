@@ -21,10 +21,14 @@ foreign import registrationStyles :: Style
 
 type Self = React.Self Props State Void
 type Props =
-  { onRegister :: Aff Persona.LoginResponse -> Effect Unit }
+  { onRegister :: Aff Persona.LoginResponse -> Effect Unit
+  , onCancelRegistration :: Effect Unit
+  }
 
 type JSProps =
-  { onRegister :: Aff Persona.LoginResponse -> Effect Unit }
+  { onRegister :: Aff Persona.LoginResponse -> Effect Unit
+  , onCancelRegistration :: Effect Unit
+  }
 
 type State =
   { firstName :: Maybe String
@@ -314,63 +318,64 @@ render self =
             , children: [ DOM.text description ]
             }
 
+    confirm :: Array JSX
+    confirm =
+      [ acceptTermsText
+      , confirmButton
+      , cancelText
+      ]
+
+    confirmButton :: JSX
+    confirmButton =
+      DOM.input
+        { type: "submit"
+        , className: "registration--create-button mt2"
+        , value: "Skapa konto"
+        }
+
+    acceptTermsText :: JSX
+    acceptTermsText =
+      DOM.div
+        { className: "registration--accept-terms"
+        , children:
+            [ DOM.text "Genom att klicka på \"Fortsätt\", accepterar du våra "
+            , DOM.a
+                { href: termsUrl
+                , target: "_blank"
+                , children: [ DOM.text "användarvillkor" ]
+                }
+            , DOM.text " och bekräftar att ha läst och förstått vår "
+            , DOM.a
+                { href: privacyPolicyUrl
+                , target: "_blank"
+                , children: [ DOM.text "integritetspolicy." ]
+                }
+            ]
+        }
+      where
+        termsUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.33626213.557863145.1547627789-663578572.1543831809#terms"
+        privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.233133274.557863145.1547627789-663578572.1543831809#privacy"
+
+    cancelText :: JSX
+    cancelText =
+      DOM.div
+        { className: "mt2"
+        , children:
+            [ DOM.text "Eller "
+            , DOM.a
+                { href: ""
+                , onClick: handler preventDefault (\_ -> self.props.onCancelRegistration)
+                , children: [ DOM.text "avbryt." ]
+                }
+            ]
+        }
+
 registrationTitle :: JSX
 registrationTitle =
   DOM.div
     { className: "col-12 mx-auto"
     , children:
         [ DOM.h1_ [ DOM.text "Skapa din konto" ] ]
-    }
-
-confirm :: Array JSX
-confirm =
-  [ acceptTermsText
-  , confirmButton
-  , cancelText
-  ]
-
-confirmButton :: JSX
-confirmButton =
-  DOM.input
-    { type: "submit"
-    , className: "registration--create-button mt2"
-    , value: "Skapa konto"
-    }
-
-acceptTermsText :: JSX
-acceptTermsText =
-  DOM.div
-    { className: "registration--accept-terms"
-    , children:
-        [ DOM.text "Genom att klicka på \"Fortsätt\", accepterar du våra "
-        , DOM.a
-            { href: termsUrl
-            , target: "_blank"
-            , children: [ DOM.text "användarvillkor" ]
-            }
-        , DOM.text " och bekräftar att ha läst och förstått vår "
-        , DOM.a
-            { href: privacyPolicyUrl
-            , target: "_blank"
-            , children: [ DOM.text "integritetspolicy." ]
-            }
-        ]
-    }
-  where
-    termsUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.33626213.557863145.1547627789-663578572.1543831809#terms"
-    privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.233133274.557863145.1547627789-663578572.1543831809#privacy"
-
-cancelText :: JSX
-cancelText =
-  DOM.div
-    { className: "mt2"
-    , children:
-        [ DOM.text "Eller "
-        , DOM.a
-            { href: ""
-            , children: [ DOM.text "avbryt." ]
-            }
-        ]
     }
 
 inputRow :: JSX -> JSX -> JSX
