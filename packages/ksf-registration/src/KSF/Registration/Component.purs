@@ -43,6 +43,7 @@ type State =
   , confirmPassword :: Maybe String
   , inputValidations ::
        { password :: Validation
+       , passwordConfirm :: Validation
        , emailAddress :: EmailValidation
        }
   }
@@ -100,6 +101,7 @@ initialState =
   , confirmPassword: Nothing
   , inputValidations:
      { password: Valid
+     , passwordConfirm: Valid
      , emailAddress: Validation Valid
      }
   }
@@ -131,13 +133,14 @@ update self = case _ of
     Update self.state { confirmPassword = newValue }
 
   PasswordMismatch validation ->
-    Update self.state { inputValidations { password = validation } }
+    Update self.state { inputValidations { passwordConfirm = validation } }
   EmailInUse ->
     Update self.state { inputValidations { emailAddress = InUse } }
 
   FormFieldInvalid fieldName ->
     case fieldName of
       "emailAddress" -> Update self.state { inputValidations { emailAddress = Validation Invalid } }
+      "password"     -> Update self.state { inputValidations { password = Invalid } }
       _ -> NoUpdate
 
 render :: Self -> JSX
@@ -302,19 +305,29 @@ render self =
 
     passwordInput :: JSX
     passwordInput =
-      DOM.input
-        { type: "password"
-        , placeholder: "Lösenord"
-        , name: "password"
-        , required: true
-        , onChange: handler targetValue $ inputFieldUpdate Password
-        , value: fromMaybe "" self.state.password
-        , pattern: ".{6,}"
-        }
+      case self.state.inputValidations.password of
+        Valid   -> passwordField
+        Invalid -> withValidationError passwordInvalidMsg passwordField
+      where
+        passwordField =
+          DOM.input
+            { type: "password"
+            , placeholder: "Lösenord"
+            , name: "password"
+            , required: true
+            , onChange: handler targetValue $ inputFieldUpdate Password
+            , value: fromMaybe "" self.state.password
+            , pattern: ".{6,}"
+            }
+        -- TODO: Probably not always the case.
+        -- The problem of displaying error message directly from Janrain
+        -- is for example the language used (e.g. Swedish for Finnish users).
+        -- Also, the error might be gibberish.
+        passwordInvalidMsg = "Lösenordet måste ha minst 6 tecken."
 
     confirmPasswordInput :: JSX
     confirmPasswordInput =
-      case self.state.inputValidations.password of
+      case self.state.inputValidations.passwordConfirm of
         Valid   -> confirmPasswordField
         Invalid -> withValidationError passwordMismatchMsg confirmPasswordField
       where
