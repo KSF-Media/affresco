@@ -4,12 +4,14 @@ import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (zipWith)
-import Data.Foldable (all)
-import Data.Maybe (Maybe(..))
+import Data.Foldable (all, traverse_)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Foreign.Object (Object)
+import Foreign.Object as Object
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
@@ -38,11 +40,14 @@ type State =
   , phone :: Maybe String
   , emailAddress :: Maybe String
   , password :: Maybe String
+  , confirmPassword :: Maybe String
   , inputValidations ::
        { password :: Validation
        , emailAddress :: EmailValidation
        }
   }
+
+type RegistrationInputFieldError = Object (Array String)
 
 data RegistrationInputField =
   FirstName
@@ -54,11 +59,13 @@ data RegistrationInputField =
   | Phone
   | EmailAddress
   | Password
+  | ConfirmPassword
 
 type InputAttributes =
   { placeholder :: String
   , name :: String
-  , onChange :: (Maybe String -> Effect Unit)
+  , onChange :: Maybe String -> Effect Unit
+  , value :: Maybe String
   }
 
 type InputType = String
@@ -72,8 +79,9 @@ type Pattern = String
 
 data Action =
   UpdateInput RegistrationInputField (Maybe String)
-  | PasswordMissmatch Validation
+  | PasswordMismatch Validation
   | EmailInUse
+  | FormFieldInvalid String
 
 registration :: Props -> JSX
 registration = make component { initialState, render, update }
@@ -89,6 +97,7 @@ initialState =
   , phone: Nothing
   , emailAddress: Nothing
   , password: Nothing
+  , confirmPassword: Nothing
   , inputValidations:
      { password: Valid
      , emailAddress: Validation Valid
@@ -118,11 +127,18 @@ update self = case _ of
     Update self.state { emailAddress = newValue }
   UpdateInput Password newValue ->
     Update self.state { password = newValue }
+  UpdateInput ConfirmPassword newValue ->
+    Update self.state { confirmPassword = newValue }
 
-  PasswordMissmatch validation ->
+  PasswordMismatch validation ->
     Update self.state { inputValidations { password = validation } }
   EmailInUse ->
     Update self.state { inputValidations { emailAddress = InUse } }
+
+  FormFieldInvalid fieldName ->
+    case fieldName of
+      "emailAddress" -> Update self.state { inputValidations { emailAddress = Validation Invalid } }
+      _ -> NoUpdate
 
 render :: Self -> JSX
 render self =
@@ -186,12 +202,15 @@ render self =
                          throwError err
                      | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
                          Console.error errData.invalid_form_fields.description
-                        -- liftEffect $ send self (LoginError Login.InvalidCredentials)
+                         liftEffect $ handleErrs errData.invalid_form_fields.errors
                          throwError err
                      | otherwise -> do
                          Console.error "An unexpected error occurred during registration"
                          throwError err
             Nothing -> Console.error "Not all registration fields were filled."
+
+    handleErrs :: RegistrationInputFieldError -> Effect Unit
+    handleErrs errs = traverse_ (send self <<< FormFieldInvalid) $ Object.keys errs
 
     inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
     inputFieldUpdate field newInputValue = do
@@ -203,6 +222,7 @@ render self =
         { placeholder: "Förnamn"
         , name: "firstName"
         , onChange: inputFieldUpdate FirstName
+        , value: self.state.firstName
         }
 
     lastNameInput :: JSX
@@ -211,6 +231,7 @@ render self =
         { placeholder: "Efternamn"
         , name: "lastName"
         , onChange: inputFieldUpdate LastName
+        , value: self.state.lastName
         }
 
     addressInput :: JSX
@@ -219,6 +240,7 @@ render self =
         { placeholder: "Adress"
         , name: "address"
         , onChange: inputFieldUpdate StreetAddress
+        , value: self.state.streetAddress
         }
 
     cityInput :: JSX
@@ -227,6 +249,7 @@ render self =
         { placeholder: "Stad"
         , name: "city"
         , onChange: inputFieldUpdate City
+        , value: self.state.city
         }
 
     zipInput :: JSX
@@ -235,6 +258,7 @@ render self =
         { placeholder: "Postnummer"
         , name: "zip"
         , onChange: inputFieldUpdate Zip
+        , value: self.state.zip
         }
         zipRegexPattern
       where
@@ -247,6 +271,7 @@ render self =
         { placeholder: "Telefon"
         , name: "phone"
         , onChange: inputFieldUpdate Phone
+        , value: self.state.phone
         }
         phoneRegexPattern
       where
@@ -262,10 +287,11 @@ render self =
         InUse              -> withValidationError emailInUseMsg emailField
       where
         emailField =
-          createEmailInput
+          createTextInput
             { placeholder: "E-postadress"
             , name: "email"
             , onChange: inputFieldUpdate EmailAddress
+            , value: self.state.emailAddress
             }
         emailInUseMsg =
           """E-postadressen är redan i bruk.
@@ -280,6 +306,7 @@ render self =
         { placeholder: "Lösenord"
         , name: "password"
         , onChange: inputFieldUpdate Password
+        , value: self.state.password
         }
 
     confirmPasswordInput :: JSX
@@ -295,11 +322,13 @@ render self =
             , onBlur: handler targetValue comparePasswords
             , placeholder: "Bekräfta lösenord"
             , name: "confirm-password"
+            , onChange: handler targetValue $ inputFieldUpdate ConfirmPassword
+            , value: fromMaybe "" self.state.confirmPassword
             }
 
         comparePasswords confirmedPassword
-          | confirmedPassword /= self.state.password = send self (PasswordMissmatch Invalid)
-          | otherwise = send self (PasswordMissmatch Valid)
+          | confirmedPassword /= self.state.password = send self (PasswordMismatch Invalid)
+          | otherwise = send self (PasswordMismatch Valid)
 
         passwordMismatchMsg = "Lösenorden överensstämmer inte med varandra."
 
@@ -328,6 +357,7 @@ render self =
         { className: ""
         , children: zipWith createOption options descriptions
         , onChange: handler targetValue $ inputFieldUpdate Country
+        , value: fromMaybe "FI" self.state.country
         }
       where
         createOption value description =
@@ -445,11 +475,12 @@ createPatternInput { placeholder, name, onChange } pattern =
     }
 
 createInput :: InputAttributes -> InputType -> JSX
-createInput { placeholder, name, onChange } type_ =
+createInput { placeholder, name, onChange, value } type_ =
   DOM.input
     { type: type_
     , required: true
     , onChange: handler targetValue onChange
     , placeholder
     , name
+    , value: fromMaybe "" value
     }

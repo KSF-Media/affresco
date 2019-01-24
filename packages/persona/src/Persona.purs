@@ -19,6 +19,7 @@ import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
+import Foreign.Object (Object)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
@@ -128,7 +129,11 @@ type InvalidCredentials = PersonaError
   ( invalid_credentials :: { description :: String } )
 
 type InvalidFormFields = PersonaError
-  ( invalid_form_fields :: { description :: String } )
+  ( invalid_form_fields ::
+       { description :: String
+       , errors :: Object (Array String)
+       }
+  )
 
 type EmailAddressInUseRegistration = PersonaError
   ( email_address_in_use_registration :: { description :: String } )
