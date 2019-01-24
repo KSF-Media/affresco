@@ -3,19 +3,15 @@ module KSF.Login.View where
 import Prelude
 
 import Data.Array (foldMap)
-import Data.Either (Either)
 import Data.Foldable (surround)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import Effect.Aff (Aff)
-import Effect.Exception (Error)
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
-import KSF.Registration.Component as Registration
 import Persona as Persona
 import React.Basic (JSX)
 import React.Basic as React
