@@ -155,17 +155,18 @@ render self =
       where
         isFormValid = all (eq Valid) [ self.state.inputValidations.password ]
         submit = do
-          let maybeUser =
-                newUser
-                <$> self.state.firstName
-                <*> self.state.lastName
-                <*> self.state.emailAddress
-                <*> self.state.password
-                <*> self.state.streetAddress
-                <*> self.state.city
-                <*> self.state.zip
-                <*> self.state.country
-                <*> self.state.phone
+          let maybeUser = do
+                firstName     <- self.state.firstName
+                lastName      <- self.state.lastName
+                emailAddress  <- self.state.emailAddress
+                password      <- self.state.password
+                streetAddress <- self.state.streetAddress
+                city          <- self.state.city
+                zipCode       <- self.state.zip
+                country       <- self.state.country
+                phone         <- self.state.phone
+                pure { firstName, lastName, emailAddress, password, streetAddress, city, zipCode, country, phone }
+
           case maybeUser of
             Just user -> do
               self.props.onRegister $ Persona.register user `catchError` case _ of
@@ -177,18 +178,6 @@ render self =
                          Console.error "An unexpected error occurred during registration"
                          throwError err
             Nothing   -> Console.error "Not all registration fields were filled."
-
-        newUser
-          firstName
-          lastName
-          emailAddress
-          password
-          streetAddress
-          city
-          zipCode
-          country
-          phone =
-            { firstName, lastName, emailAddress, password, streetAddress, city, zipCode, country, phone }
 
     inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
     inputFieldUpdate field newInputValue = do
