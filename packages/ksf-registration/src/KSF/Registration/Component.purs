@@ -368,7 +368,7 @@ registrationTitle =
 inputRow :: JSX -> JSX -> JSX
 inputRow leftInput rightInput =
   DOM.div
-    { className: "clearfix flex justify-center mt2"
+    { className: "clearfix flex justify-around registration--input-row"
     , children: [ leftInput, rightInput ]
     }
 
@@ -385,7 +385,7 @@ input inputField label =
 halfInputRow :: Array JSX -> JSX
 halfInputRow children =
   DOM.div
-    { className: "col col-4 registration--input ml4"
+    { className: "col sm-col-12 md-col-5 registration--input"
     , children
     }
 

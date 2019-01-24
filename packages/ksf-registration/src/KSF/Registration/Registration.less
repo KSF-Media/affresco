@@ -1,7 +1,9 @@
 @import (reference) 'ksf-colors';
+@import (reference) 'ksf-variables';
 @icon-triangle-down: '../images/icon-triangle-down.svg';
 
 .registration--input {
+    margin-top: 1em;
     input[type=text], input[type=password], select {
         width: 100%;
         border-style: solid;
@@ -19,10 +21,18 @@
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
-        padding: 8px 36px 8px 8px;
+        padding: 4px 36px 8px 8px;
         background: url(@icon-triangle-down) no-repeat @white;
         background-position: right 15px center;
         background-size: 8px;
+    }
+    @media @to-medium {
+        margin-left: 1em;
+        margin-right: 1em;
+    }
+    @media @to-small {
+        margin-left: 2em;
+        margin-right: 2em;
     }
 }
 
@@ -56,4 +66,10 @@
 .registration--invalid-form-text {
     text-align: left;
     color: red;
+}
+
+.registration--input-row {
+    @media @to-small {
+        flex-direction: column;
+    }
 }
