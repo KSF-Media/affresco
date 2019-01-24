@@ -302,11 +302,14 @@ render self =
 
     passwordInput :: JSX
     passwordInput =
-      createPasswordInput
-        { placeholder: "Lösenord"
+      DOM.input
+        { type: "password"
+        , placeholder: "Lösenord"
         , name: "password"
-        , onChange: inputFieldUpdate Password
-        , value: self.state.password
+        , required: true
+        , onChange: handler targetValue $ inputFieldUpdate Password
+        , value: fromMaybe "" self.state.password
+        , pattern: ".{6,}"
         }
 
     confirmPasswordInput :: JSX
@@ -453,10 +456,6 @@ halfInputRow children =
 createTextInput :: InputAttributes -> JSX
 createTextInput inputAttrs =
   createInput inputAttrs "text"
-
-createPasswordInput :: InputAttributes -> JSX
-createPasswordInput inputAttrs =
-  createInput inputAttrs "password"
 
 createEmailInput :: InputAttributes -> JSX
 createEmailInput inputAttrs =
