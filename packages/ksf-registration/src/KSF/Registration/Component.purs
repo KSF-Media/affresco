@@ -8,6 +8,7 @@ import Data.Foldable (all)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, send)
@@ -38,7 +39,9 @@ type State =
   , emailAddress :: Maybe String
   , password :: Maybe String
   , inputValidations ::
-       { password :: Validation }
+       { password :: Validation
+       , emailAddress :: EmailValidation
+       }
   }
 
 data RegistrationInputField =
@@ -63,11 +66,14 @@ type InputType = String
 data Validation = Valid | Invalid
 derive instance eqValidation :: Eq Validation
 
+data EmailValidation = InUse | Validation Validation
+
 type Pattern = String
 
 data Action =
   UpdateInput RegistrationInputField (Maybe String)
   | PasswordMissmatch Validation
+  | EmailInUse
 
 registration :: Props -> JSX
 registration = make component { initialState, render, update }
@@ -84,7 +90,9 @@ initialState =
   , emailAddress: Nothing
   , password: Nothing
   , inputValidations:
-     { password: Valid }
+     { password: Valid
+     , emailAddress: Validation Valid
+     }
   }
 
 component :: React.Component Props
@@ -113,6 +121,8 @@ update self = case _ of
 
   PasswordMissmatch validation ->
     Update self.state { inputValidations { password = validation } }
+  EmailInUse ->
+    Update self.state { inputValidations { emailAddress = InUse } }
 
 render :: Self -> JSX
 render self =
@@ -170,14 +180,18 @@ render self =
           case maybeUser of
             Just user -> do
               self.props.onRegister $ Persona.register user `catchError` case _ of
-                 err | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+                 err | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
+                         Console.error errData.email_address_in_use_registration.description
+                         liftEffect $ send self EmailInUse
+                         throwError err
+                     | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
                          Console.error errData.invalid_form_fields.description
                         -- liftEffect $ send self (LoginError Login.InvalidCredentials)
                          throwError err
                      | otherwise -> do
                          Console.error "An unexpected error occurred during registration"
                          throwError err
-            Nothing   -> Console.error "Not all registration fields were filled."
+            Nothing -> Console.error "Not all registration fields were filled."
 
     inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
     inputFieldUpdate field newInputValue = do
@@ -242,11 +256,23 @@ render self =
 
     emailInput :: JSX
     emailInput =
-      createTextInput
-        { placeholder: "E-postadress"
-        , name: "email"
-        , onChange: inputFieldUpdate EmailAddress
-        }
+      case self.state.inputValidations.emailAddress of
+        Validation Valid   -> emailField
+        Validation Invalid -> withValidationError emailInvalidMsg emailField
+        InUse              -> withValidationError emailInUseMsg emailField
+      where
+        emailField =
+          createEmailInput
+            { placeholder: "E-postadress"
+            , name: "email"
+            , onChange: inputFieldUpdate EmailAddress
+            }
+        emailInUseMsg =
+          """E-postadressen är redan i bruk.
+             Har du redan ett konto hos Hufvudstadsbladet, Västra Nyland eller Östnyland?
+             Då kan du använda samma inloggning.
+             Du kan också skapa konto med en annan adress."""
+        emailInvalidMsg = "Ogiltig E-postadress."
 
     passwordInput :: JSX
     passwordInput =
@@ -258,32 +284,37 @@ render self =
 
     confirmPasswordInput :: JSX
     confirmPasswordInput =
-      DOM.div
-        { className: inCaseOfMissmatch "registration--invalid-form-field"
-        , children:
-            [ DOM.input
-                { type: "password"
-                , required: true
-                , onBlur: handler targetValue comparePasswords
-                , placeholder: "Bekräfta lösenord"
-                , name: "confirm-password"
-                }
-            , inCaseOfMissmatch
-                DOM.div
-                  { className: "mt1 registration--invalid-form-text"
-                  , children: [ DOM.text "Lösenorden överensstämmer inte med varandra." ]
-                  }
-            ]
-        }
+      case self.state.inputValidations.password of
+        Valid   -> confirmPasswordField
+        Invalid -> withValidationError passwordMismatchMsg confirmPasswordField
       where
-        inCaseOfMissmatch :: forall a. Monoid a => a -> a
-        inCaseOfMissmatch invalidAction =
-          case self.state.inputValidations.password of
-            Invalid -> invalidAction
-            Valid   -> mempty
+        confirmPasswordField =
+          DOM.input
+            { type: "password"
+            , required: true
+            , onBlur: handler targetValue comparePasswords
+            , placeholder: "Bekräfta lösenord"
+            , name: "confirm-password"
+            }
+
         comparePasswords confirmedPassword
           | confirmedPassword /= self.state.password = send self (PasswordMissmatch Invalid)
           | otherwise = send self (PasswordMissmatch Valid)
+
+        passwordMismatchMsg = "Lösenorden överensstämmer inte med varandra."
+
+    withValidationError :: String -> JSX -> JSX
+    withValidationError msg inputField =
+      DOM.div
+        { className: "registration--invalid-form-field"
+        , children:
+            [ inputField
+            , DOM.div
+                { className: "mt1 registration--invalid-form-text"
+                , children: [ DOM.text msg ]
+                }
+            ]
+        }
 
     countryDropdown :: JSX
     countryDropdown =
@@ -396,6 +427,10 @@ createTextInput inputAttrs =
 createPasswordInput :: InputAttributes -> JSX
 createPasswordInput inputAttrs =
   createInput inputAttrs "password"
+
+createEmailInput :: InputAttributes -> JSX
+createEmailInput inputAttrs =
+  createInput inputAttrs "email"
 
 -- TODO: Validation error message to the user is not specific
 createPatternInput :: InputAttributes -> Pattern -> JSX

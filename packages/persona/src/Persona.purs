@@ -130,6 +130,9 @@ type InvalidCredentials = PersonaError
 type InvalidFormFields = PersonaError
   ( invalid_form_fields :: { description :: String } )
 
+type EmailAddressInUseRegistration = PersonaError
+  ( email_address_in_use_registration :: { description :: String } )
+
 errorData
   :: forall fields
    . ReadForeign (PersonaError fields)
