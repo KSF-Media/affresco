@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (zipWith)
-import Data.Foldable (all, traverse_)
+import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
