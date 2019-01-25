@@ -179,10 +179,12 @@ render self =
       DOM.form
         { className: ""
         , children
-        , onSubmit: handler preventDefault (\_ -> when isFormValid do submit)
+        , onSubmit: handler preventDefault (\_ -> when canSubmit submit)
         }
       where
-        isFormValid = all (eq Valid) [ self.state.inputValidations.password ]
+        -- We want to only check that the passwords match
+        canSubmit = self.state.inputValidations.passwordConfirm == Valid
+
         submit = do
           let maybeUser = do
                 firstName     <- self.state.firstName
