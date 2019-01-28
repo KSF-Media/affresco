@@ -222,6 +222,7 @@ type NewUser =
   , lastName :: String
   , emailAddress :: String
   , password :: String
+  , confirmPassword :: String
   , streetAddress :: String
   , zipCode :: String
   , city :: String

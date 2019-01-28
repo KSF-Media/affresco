@@ -178,16 +178,17 @@ render self =
 
         submit = do
           let maybeUser = do
-                firstName     <- self.state.firstName
-                lastName      <- self.state.lastName
-                emailAddress  <- self.state.emailAddress
-                password      <- self.state.password
-                streetAddress <- self.state.streetAddress
-                city          <- self.state.city
-                zipCode       <- self.state.zip
-                country       <- self.state.country
-                phone         <- self.state.phone
-                pure { firstName, lastName, emailAddress, password, streetAddress, city, zipCode, country, phone }
+                firstName      <- self.state.firstName
+                lastName       <- self.state.lastName
+                emailAddress   <- self.state.emailAddress
+                password       <- self.state.password
+                confirmPassword <- self.state.confirmPassword
+                streetAddress  <- self.state.streetAddress
+                city           <- self.state.city
+                zipCode        <- self.state.zip
+                country        <- self.state.country
+                phone          <- self.state.phone
+                pure { firstName, lastName, emailAddress, password, confirmPassword, streetAddress, city, zipCode, country, phone }
 
           case maybeUser of
             Just user -> do
