@@ -214,6 +214,7 @@ type User =
   , address :: Nullable Address
   , cusno :: String
   , subs :: Array Subscription
+  , consent :: Array GdprConsent
   }
 
 type NewUser =
@@ -330,6 +331,7 @@ type SubscriptionDates =
   }
 
 type GdprConsent =
-  { key :: String
-  , val :: Boolean
+  { brand      :: String
+  , consentKey :: String
+  , value      :: Boolean
   }

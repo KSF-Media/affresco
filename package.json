@@ -14,6 +14,7 @@
   },
   "scripts": {
     "install-all": "yarn install && spago install && lerna bootstrap",
+    "spago-install": "spago install",
     "build-purs": "spago build --path \"packages/*/src/**/*.purs\" --path \"apps/*/src/**/*.purs\"  && ./build-purs.rb",
     "clean": "rm -rf .cache .spago .psci_modules node_modules output dist .yarn-cache"
   },
