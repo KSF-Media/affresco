@@ -50,8 +50,8 @@ type State =
 
 type RegistrationInputFieldError = Object (Array String)
 
-data RegistrationInputField =
-  FirstName
+data RegistrationInputField
+  = FirstName
   | LastName
   | StreetAddress
   | City
@@ -78,8 +78,8 @@ data EmailValidation = InUse | Validation Validation
 
 type Pattern = String
 
-data Action =
-  UpdateInput RegistrationInputField (Maybe String)
+data Action
+  = UpdateInput RegistrationInputField (Maybe String)
   | PasswordMismatch Validation
   | EmailInUse
   | FormFieldInvalid String
@@ -111,27 +111,18 @@ component = React.createComponent "Registration"
 
 update :: Self -> Action -> StateUpdate Props State Action
 update self = case _ of
-  UpdateInput FirstName newValue ->
-    Update self.state { firstName = newValue }
-  UpdateInput LastName newValue ->
-    Update self.state { lastName = newValue }
-  UpdateInput StreetAddress newValue ->
-    Update self.state { streetAddress = newValue }
-  UpdateInput City newValue ->
-    Update self.state { city = newValue }
-  UpdateInput Zip newValue ->
-    Update self.state { zip = newValue }
-  UpdateInput Country newValue ->
-    Update self.state { country = newValue }
-  UpdateInput Phone newValue ->
-    Update self.state { phone = newValue }
-  UpdateInput EmailAddress newValue ->
-    Update self.state { emailAddress = newValue }
-  UpdateInput Password newValue ->
-    Update self.state { password = newValue }
-  UpdateInput ConfirmPassword newValue ->
-    Update self.state { confirmPassword = newValue }
-
+  UpdateInput attr newValue -> Update do
+    case attr of
+      FirstName       -> self.state { firstName = newValue }
+      LastName        -> self.state { lastName = newValue }
+      StreetAddress   -> self.state { streetAddress = newValue }
+      City            -> self.state { city = newValue }
+      Zip             -> self.state { zip = newValue }
+      Country         -> self.state { country = newValue }
+      Phone           -> self.state { phone = newValue }
+      EmailAddress    -> self.state { emailAddress = newValue }
+      Password        -> self.state { password = newValue }
+      ConfirmPassword -> self.state { confirmPassword = newValue }
   PasswordMismatch validation ->
     Update self.state { inputValidations { passwordConfirm = validation } }
   EmailInUse ->
