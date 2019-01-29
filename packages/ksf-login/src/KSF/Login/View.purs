@@ -17,6 +17,7 @@ import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
@@ -42,6 +43,9 @@ type LoginAttributes =
   , errors :: Errors
   , onEmailValueChange :: String -> Effect Unit
   , onPasswordValueChange :: String -> Effect Unit
+  , loginViewStep :: LoginViewStep
+  , showRegistration :: Effect Unit
+  , registrationComponent :: JSX
   }
 
 type Providers =
@@ -58,24 +62,32 @@ type MergeAttributes =
   , userEmail :: String
   }
 
+data LoginViewStep = Login | Registration
 
 login :: LoginAttributes -> JSX
 login attrs =
     React.Extended.requireStyle
       loginStyles
-      $ DOM.div
-          { className: "login-form pt2"
-          , children:
-              [ foldMap formatErrorMessage attrs.errors.social
-              , loginForm
-              , forgotPassword
-              , facebookLogin attrs.login.onFacebookLogin
-              , googleLogin
-                attrs.login.onGoogleLogin
-                attrs.login.onGoogleFailure
-                attrs.login.googleFallbackOnClick
-              ]
-          }
+      $ case attrs.loginViewStep of
+          Login -> renderLogin attrs
+          Registration -> attrs.registrationComponent
+
+renderLogin :: LoginAttributes -> JSX
+renderLogin attrs =
+  DOM.div
+    { className: "login-form pt2"
+    , children:
+        [ foldMap formatErrorMessage attrs.errors.social
+        , loginForm
+        , forgotPassword
+        , facebookLogin attrs.login.onFacebookLogin
+        , googleLogin
+          attrs.login.onGoogleLogin
+          attrs.login.onGoogleFailure
+          attrs.login.googleFallbackOnClick
+        , register
+        ]
+    }
   where
     loginForm :: JSX
     loginForm =
@@ -100,6 +112,21 @@ login attrs =
         }
       where
         onSubmit = Events.handler preventDefault $ \event -> attrs.login.onLogin
+
+    register :: JSX
+    register =
+      DOM.div
+        { className: "mt3"
+        , children:
+            [ DOM.text "Inget konto? "
+            , DOM.a
+                { className: ""
+                , href: "#"
+                , children: [ DOM.text "Registrera dig!" ]
+                , onClick: handler_ attrs.showRegistration
+                }
+            ]
+        }
 
 merge :: MergeAttributes -> JSX
 merge attrs =

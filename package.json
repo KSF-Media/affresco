@@ -21,5 +21,8 @@
   "workspaces": [
     "packages/*",
     "apps/*"
-  ]
+  ],
+  "engines": {
+    "yarn": "^1.13.0"
+  }
 }

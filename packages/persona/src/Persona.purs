@@ -19,6 +19,7 @@ import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
+import Foreign.Object (Object)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
@@ -63,6 +64,10 @@ logout uuid token =
   callApi loginApi "loginUuidDelete" [ unsafeToForeign uuid ] { authorization }
   where
     authorization = oauthToken token
+
+register :: NewUser -> Aff LoginResponse
+register newUser =
+  callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
@@ -122,6 +127,16 @@ type TokenInvalid = PersonaError
 
 type InvalidCredentials = PersonaError
   ( invalid_credentials :: { description :: String } )
+
+type InvalidFormFields = PersonaError
+  ( invalid_form_fields ::
+       { description :: String
+       , errors :: Object (Array String)
+       }
+  )
+
+type EmailAddressInUseRegistration = PersonaError
+  ( email_address_in_use_registration :: { description :: String } )
 
 errorData
   :: forall fields
@@ -200,6 +215,19 @@ type User =
   , cusno :: String
   , subs :: Array Subscription
   , consent :: Array GdprConsent
+  }
+
+type NewUser =
+  { firstName :: String
+  , lastName :: String
+  , emailAddress :: String
+  , password :: String
+  , confirmPassword :: String
+  , streetAddress :: String
+  , zipCode :: String
+  , city :: String
+  , country :: String
+  , phone :: String
   }
 
 type Address =

@@ -141,6 +141,8 @@ loginComponent self =
     , Login.login
         { onMerge: pure unit
         , onMergeCancelled: pure unit
+        , onRegister: pure unit
+        , onRegisterCancelled: pure unit
         , onUserFetch:
             case _ of
               Left err -> Console.log $ unsafeCoerce err

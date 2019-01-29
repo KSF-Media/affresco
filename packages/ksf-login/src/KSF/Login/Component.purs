@@ -25,6 +25,7 @@ import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import KSF.Login.View as View
+import KSF.Registration.Component as Registration
 import LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
@@ -38,15 +39,17 @@ foreign import facebookAppId :: String
 type Self = React.Self Props State Action
 
 type JSProps =
-  { onMerge            :: Nullable (Effect Unit)
-  , onMergeCancelled   :: Nullable (Effect Unit)
+  { onMerge             :: Nullable (Effect Unit)
+  , onMergeCancelled    :: Nullable (Effect Unit)
+  , onRegister          :: Nullable (Effect Unit)
+  , onRegisterCancelled :: Nullable (Effect Unit)
 -- TODO:
 --  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
 --  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
-  , onUserFetchFail    :: Nullable (EffectFn1 Error Unit)
-  , onUserFetchSuccess :: Nullable (EffectFn1 Persona.User Unit)
-  , onLoading          :: Nullable (Effect Unit)
-  , onLoadingEnd       :: Nullable (Effect Unit)
+  , onUserFetchFail     :: Nullable (EffectFn1 Error Unit)
+  , onUserFetchSuccess  :: Nullable (EffectFn1 Persona.User Unit)
+  , onLoading           :: Nullable (Effect Unit)
+  , onLoadingEnd        :: Nullable (Effect Unit)
   }
 
 jsComponent :: React.ReactComponent JSProps
@@ -56,6 +59,8 @@ fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { onMerge: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMerge
   , onMergeCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMergeCancelled
+  , onRegister: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
+  , onRegisterCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
   , onUserFetch:
       either
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchFail)
@@ -71,6 +76,8 @@ fromJSProps jsProps =
 type Props =
   { onMerge :: Effect Unit
   , onMergeCancelled :: Effect Unit
+  , onRegister :: Effect Unit
+  , onRegisterCancelled :: Effect Unit
 -- TODO:
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
   , onUserFetch :: Either Error Persona.User -> Effect Unit
@@ -92,6 +99,7 @@ type State =
               , googleAuthInit :: Maybe Google.Error
               }
   , merge :: Maybe MergeInfo
+  , loginViewStep :: View.LoginViewStep
   }
 
 data Action =
@@ -101,6 +109,8 @@ data Action =
   | FormPassword String
   | MergeCancel
   | SetMergeInfo (Maybe MergeInfo)
+  | SetViewStep View.LoginViewStep
+
 
 initialState :: State
 initialState =
@@ -108,6 +118,7 @@ initialState =
   , formPassword: ""
   , errors: { login: Nothing, social: Nothing, googleAuthInit: Nothing }
   , merge: Nothing
+  , loginViewStep: View.Login
   }
 
 type InputFieldAttributes =
@@ -186,6 +197,8 @@ update self = case _ of
         }
   SetMergeInfo mergeInfo ->
     Update self.state { merge = mergeInfo }
+  SetViewStep step ->
+    Update self.state { loginViewStep = step }
 
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
@@ -208,6 +221,19 @@ render self@{ props, state } =
             }
         , onEmailValueChange
         , onPasswordValueChange
+        , loginViewStep: state.loginViewStep
+        , showRegistration: do
+            props.onRegister
+            send self (SetViewStep View.Registration)
+        , registrationComponent:
+            Registration.registration
+              { onRegister: \registration -> props.launchAff_ do
+                   loginResponse <- registration
+                   finalizeLogin props loginResponse
+              , onCancelRegistration: do
+                   props.onRegisterCancelled
+                   send self (SetViewStep View.Login)
+              }
         }
     Just mergeInfo ->
       View.merge

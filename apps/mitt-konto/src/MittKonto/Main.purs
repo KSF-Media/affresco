@@ -313,8 +313,10 @@ loginView { state, setState } = React.fragment
   where
     loginForm =
         Login.login
-          { onMerge:          setState \s -> s { showWelcome = false }
-          , onMergeCancelled: setState \s -> s { showWelcome = true }
+          { onMerge:             setState \s -> s { showWelcome = false }
+          , onMergeCancelled:    setState \s -> s { showWelcome = true }
+          , onRegister:          setState \s -> s { showWelcome = false }
+          , onRegisterCancelled: setState \s -> s { showWelcome = true }
           , onUserFetch:
             case _ of
               Left err -> do
