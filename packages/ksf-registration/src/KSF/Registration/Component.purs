@@ -284,7 +284,7 @@ render self =
         InUse              -> withValidationError emailInUseMsg emailField
       where
         emailField =
-          createTextInput
+          createEmailInput
             { placeholder: "E-postadress"
             , name: "email"
             , onChange: inputFieldUpdate EmailAddress
