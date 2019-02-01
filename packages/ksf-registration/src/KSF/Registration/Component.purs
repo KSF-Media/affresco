@@ -312,6 +312,7 @@ render self =
             , onChange: handler targetValue $ inputFieldUpdate Password
             , value: fromMaybe "" self.state.password
             , pattern: ".{6,}"
+            , title: "Lösenordet måste ha minst 6 tecken"
             }
         -- TODO: Probably not always the case.
         -- The problem of displaying error message directly from Janrain
