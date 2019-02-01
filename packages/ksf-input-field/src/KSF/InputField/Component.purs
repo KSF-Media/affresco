@@ -2,13 +2,13 @@ module KSF.InputField.Component where
 
 import Prelude
 
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe, fromMaybe, isJust)
 import Effect (Effect)
 import KSF.InputField.View as View
-import React.Basic (JSX)
-import React.Basic as React
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events as Events
+import React.Basic.Extended (JSX)
+import React.Basic.Extended as React
 
 type Props =
   { type_ :: String
@@ -16,6 +16,7 @@ type Props =
   , name :: String
   , required :: Boolean
   , children :: Array JSX
+  , defaultValue :: Maybe String
   , onChange :: String -> Effect Unit
   }
 
@@ -35,7 +36,8 @@ type SetState = (State -> State) -> Effect Unit
 component :: React.Component Props
 component = React.component { displayName: "InputField", render, receiveProps, initialState }
   where
-    receiveProps _ = pure unit
+    receiveProps { props, setState } = when (isJust props.defaultValue) do
+      setState \s -> s { inputValue = fromMaybe "" props.defaultValue }
 
     initialState :: State
     initialState = { inputValue: "" }

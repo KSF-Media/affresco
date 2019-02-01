@@ -6,16 +6,18 @@ import Data.DateTime (adjust)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String (trim)
 import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
-import Persona as Persona
 import KSF.Subscription.View as View
-import React.Basic (JSX)
+import Persona as Persona
+import React.Basic (JSX, make)
 import React.Basic as React
+
+type Self = React.Self Props {} Void
 
 type Props =
   { subscription :: Persona.Subscription }
@@ -41,15 +43,26 @@ formatDate date = format formatter <$> toDateTime date
       ]
 
 component :: React.Component Props
-component = React.stateless { displayName: "Subscription", render }
+component = React.createComponent "Subscription"
 
-render :: Props -> JSX
-render { subscription } =
+subscription :: Props -> JSX
+subscription = make component
+  { initialState: {}
+  , render
+  }
+
+render :: Self -> JSX
+render { props } =
   View.subscription
-    { product: subscription.package.name
-    , status: translateStatus subscription.state
-    , nextBillingDate: trim $ fromMaybe "" $ formatDate =<< addOneDay subscription.dates.end
+    { product: props.subscription.package.name
+    , status: translateStatus props.subscription.state
+    , nextBillingDate: nextBillingDate
     }
+  where
+    nextBillingDate
+      | Persona.isSubscriptionCanceled props.subscription = Nothing
+      | otherwise =
+          map trim $ formatDate =<< addOneDay props.subscription.dates.end
 
 addOneDay :: Nullable JSDate -> Maybe JSDate
 addOneDay date = do

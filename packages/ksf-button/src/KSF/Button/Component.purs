@@ -8,7 +8,7 @@ import Effect (Effect)
 import Effect.Class.Console as Console
 import Effect.Exception as Error
 import KSF.Button.View as View
-import React.Basic (JSX)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Web.DOM as Web.DOM
@@ -21,17 +21,25 @@ type Props =
   }
 
 component :: React.Component Props
-component = React.component { displayName: "Button", render, initialState: {}, receiveProps }
-  where
-    receiveProps { instance_, props, isFirstMount } = when isFirstMount do
-      mountedNode <- DOM.findDOMNode instance_
-      case mountedNode of
-        Left err -> do
-          Console.error $ "Button component: " <> Error.message err
-        Right node -> do
-          props.onLoad node
+component = React.createComponent "Button"
 
-render :: forall r. { props :: Props | r } -> JSX
+button :: Props -> JSX
+button = make component
+  { initialState: {}
+  , render
+  , didMount
+  }
+
+didMount :: React.Self Props {} Void -> Effect Unit
+didMount { instance_, props } = do
+  mountedNode <- DOM.findDOMNode instance_
+  case mountedNode of
+    Left err -> do
+      Console.error $ "Button component: " <> Error.message err
+    Right node -> do
+      props.onLoad node
+
+render :: React.Self Props {} Void -> JSX
 render { props } =
   View.button
     { description: props.description

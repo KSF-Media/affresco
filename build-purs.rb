@@ -11,7 +11,9 @@ purs_modules = [
   PursModule.new('KSF.Navbar.Component', 'packages/ksf-navbar'),
   PursModule.new('KSF.DescriptionList.Component', 'packages/ksf-description-list'),
   PursModule.new('KSF.Subscription.Component', 'packages/ksf-subscription'),
+  PursModule.new('KSF.Alert.Component', 'packages/ksf-alert'),
   PursModule.new('MittKonto.Main', 'apps/mitt-konto'),
+  PursModule.new('Prenumerera.Main', 'apps/prenumerera'),
 ]
 
 # Name of the modules can be given as an argument as well:
@@ -24,6 +26,6 @@ purs_modules_given =
   end
 
 purs_modules_given.each do |mod|
-  %x[purp make-module -m #{mod.name} -t #{mod.path}/index.js]
+  %x[spago make-module -m #{mod.name} -t #{mod.path}/index.js]
   puts "Built #{mod.name}"
 end

@@ -13,11 +13,14 @@ import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import Persona as Persona
+import React.Basic (JSX)
+import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import React.Basic.Extended (JSX, Style)
-import React.Basic.Extended as React
+import React.Basic.Extended (Style)
+import React.Basic.Extended as React.Extended
 import Web.DOM.Node as Web.DOM
 
 foreign import loginStyles :: Style
@@ -40,6 +43,9 @@ type LoginAttributes =
   , errors :: Errors
   , onEmailValueChange :: String -> Effect Unit
   , onPasswordValueChange :: String -> Effect Unit
+  , loginViewStep :: LoginViewStep
+  , showRegistration :: Effect Unit
+  , registrationComponent :: JSX
   }
 
 type Providers =
@@ -56,36 +62,40 @@ type MergeAttributes =
   , userEmail :: String
   }
 
+data LoginViewStep = Login | Registration
 
 login :: LoginAttributes -> JSX
 login attrs =
-    React.requireStyle
+    React.Extended.requireStyle
       loginStyles
-      $ DOM.div
-          { className: "login-form pt2"
-          , children:
-              [ foldMap formatErrorMessage attrs.errors.social
-              , facebookLogin attrs.login.onFacebookLogin
-              , googleLogin
-                attrs.login.onGoogleLogin
-                attrs.login.onGoogleFailure
-                attrs.login.googleFallbackOnClick
-              , loginForm
-              , forgotPassword
-              ]
-          }
+      $ case attrs.loginViewStep of
+          Login -> renderLogin attrs
+          Registration -> attrs.registrationComponent
+
+renderLogin :: LoginAttributes -> JSX
+renderLogin attrs =
+  DOM.div
+    { className: "login-form pt2"
+    , children:
+        [ foldMap formatErrorMessage attrs.errors.social
+        , loginForm
+        , forgotPassword
+        , facebookLogin attrs.login.onFacebookLogin
+        , googleLogin
+          attrs.login.onGoogleLogin
+          attrs.login.onGoogleFailure
+          attrs.login.googleFallbackOnClick
+        , register
+        ]
+    }
   where
     loginForm :: JSX
     loginForm =
       DOM.form
         { onSubmit
-        , className: "pt2 pb2"
+        , className: "pb2"
         , children:
-            [ DOM.div
-                { className: "login--login-with-email pb1"
-                , children: [ DOM.text "ELLER LOGGA IN MED E-POST:" ]
-                }
-            , foldMap formatErrorMessage attrs.errors.login
+            [ foldMap formatErrorMessage attrs.errors.login
             , createInputField
                 { inputAttributes: emailAttributes
                 , className: "email-wrapper"
@@ -102,6 +112,21 @@ login attrs =
         }
       where
         onSubmit = Events.handler preventDefault $ \event -> attrs.login.onLogin
+
+    register :: JSX
+    register =
+      DOM.div
+        { className: "mt3"
+        , children:
+            [ DOM.text "Inget konto? "
+            , DOM.a
+                { className: ""
+                , href: "#"
+                , children: [ DOM.text "Registrera dig!" ]
+                , onClick: handler_ attrs.showRegistration
+                }
+            ]
+        }
 
 merge :: MergeAttributes -> JSX
 merge attrs =
@@ -212,13 +237,12 @@ someLoginButton { className, description, onClick, onLoad } =
   DOM.div
   { className: className <> surround " " additionalClasses
   , children:
-    [ React.element
-        Button.component
-          { description
-          , destination: Nothing
-          , onClick
-          , onLoad
-          }
+    [ Button.button
+        { description
+        , destination: Nothing
+        , onClick
+        , onLoad
+        }
     ]
   }
   where
@@ -243,6 +267,7 @@ createInputField { inputAttributes, className, children, onChange } =
               , required: inputAttributes.required
               , children
               , onChange
+              , defaultValue: Nothing
               }
         ]
     }
@@ -277,11 +302,11 @@ forgotPasswordUrl = "https://www.hbl.fi/losenord/"
 forgotPassword :: JSX
 forgotPassword =
   DOM.div
-    { className: "underline center"
+    { className: "underline center mb3"
     , children:
         [ DOM.a
             { href: forgotPasswordUrl
-            , children: [ DOM.text "Glömt lösenord?" ]
+            , children: [ DOM.text "Glömt lösenordet?" ]
             }
         ]
     }
@@ -313,3 +338,5 @@ formatErrorMessage err =
                 }
             , DOM.text "."
             ]
+        Login.SomethingWentWrong ->
+          DOM.text "Något gick fel vid inloggningen. Vänligen försök om en stund igen."

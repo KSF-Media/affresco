@@ -30,7 +30,7 @@ dd {
     margin-left: 0;
 }
 
-.mitt-konto--heading {
+h1, .mitt-konto--heading {
     color: @grey-dark;
     font-family: 'Duplex Serif Web', serif;
     font-weight: 700;
@@ -41,7 +41,6 @@ dd {
 h2.mitt-konto---heading {
     font-size: 1.75rem;
 }
-
 
 .mitt-konto--component-heading {
     color: @grey-mediumlight;
@@ -140,6 +139,10 @@ h2.mitt-konto---heading {
     padding-top: 3px;
 }
 
+.mitt-konto--cancel-subscription {
+    .format-edit-subscription-block('ui-cross-2.svg');
+}
+
 .mitt-konto--account-edit-container {
     a {
         color: @grey-dark;
@@ -213,4 +216,8 @@ h2.mitt-konto---heading {
     @media @to-medium {
         display: block;
     }
+}
+
+.mitt-konto--canceled-subscription {
+    opacity: 0.5;
 }

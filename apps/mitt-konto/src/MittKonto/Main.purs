@@ -2,9 +2,9 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Array ((:))
-import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Array (snoc, sortBy, (:))
+import Data.Either (Either(..), either)
+import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
@@ -13,8 +13,10 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Effect.Exception (error)
+import Effect.Exception (Error, error)
 import Effect.Unsafe (unsafePerformEffect)
+import KSF.Alert.Component (Alert)
+import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
@@ -23,7 +25,7 @@ import KSF.Profile.Component as Profile
 import KSF.Subscription.Component as Subscription
 import Persona as Persona
 import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
 
@@ -37,6 +39,7 @@ type State =
   , loggedInUser :: Maybe Persona.User
   , loading :: Maybe Loading
   , showWelcome :: Boolean
+  , alert :: Maybe Alert
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -44,6 +47,9 @@ setLoading loading = _ { loading = loading }
 
 setLoggedInUser :: Maybe Persona.User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
+
+setAlert :: Maybe Alert -> State -> State
+setAlert alert = _ { alert = alert }
 
 data Loading = Loading
 
@@ -57,6 +63,7 @@ app = React.component
       , loggedInUser: Nothing
       , loading: Nothing
       , showWelcome: true
+      , alert: Nothing
       }
   , receiveProps
   , render
@@ -68,7 +75,9 @@ app = React.component
     render { state, setState } =
       React.fragment
         [ navbarView { state, setState }
-        , classy DOM.div "clearfix"
+        , classy DOM.div "mt4 mb4"
+            [ foldMap alertView state.alert ]
+        , classy DOM.div "mt4 mb4 clearfix"
             [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
                 [ mittKonto ]
             ]
@@ -76,7 +85,7 @@ app = React.component
         ]
      where
        mittKonto =
-         classy DOM.div "mitt-konto--container clearfix mt4"
+         classy DOM.div "mitt-konto--container clearfix"
            [ foldMap loadingIndicator state.loading
            , case state.loggedInUser of
                Just user -> userView { user }
@@ -130,8 +139,7 @@ withSpinner setLoadingState action = do
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: { state :: State, setState :: SetState } -> JSX
 navbarView { state, setState } =
-  React.element
-    Navbar.component
+    Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
@@ -140,10 +148,13 @@ navbarView { state, setState } =
             liftEffect $ setState $ setLoggedInUser Nothing
       }
 
+alertView :: Alert -> JSX
+alertView alert =
+  classy DOM.div "col-4 mx-auto center"
+    [ Alert.alert alert ]
+
 footerView :: React.JSX
-footerView =
-  React.element
-    Footer.component {}
+footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: { user :: Persona.User } -> JSX
@@ -161,27 +172,42 @@ userView { user } = React.fragment
         [ profileComponentBlock
         , break
         , editAccount
-        , break
-        , feedbackForm
         , disappearingBreak
         ]
       where
-        profileComponentBlock = componentBlockContent $ React.element Profile.component { profile: user }
+        profileComponentBlock = componentBlockContent $ Profile.profile { profile: user }
 
     subscriptionsView =
-      componentBlock "Mina prenumerationer:" blockContent
+      componentBlock "Mina prenumerationer:" $ subscriptions <> [ break, subscribeImage ]
       where
-        noSubscriptions =
-          case user.subs of
-            [] -> componentBlockContent noSubscriptionsText
-            _  -> React.empty
+        subscriptions =
+          -- Sort the canceled subscriptions to the end of the list
+          case sortBy (comparing _.state) user.subs of
+            []   -> [ componentBlockContent noSubscriptionsText ]
+            subs -> do
+              map subscriptionComponentBlockContent subs `snoc` cancelSubscription
+              where
+                subscriptionView subscription = Subscription.subscription { subscription }
+                subscriptionComponentBlockContent subscription
+                  -- If the subscription has a canceled state, we want to add extra css to it.
+                  | Persona.isSubscriptionCanceled subscription =
+                      DOM.div
+                        { className: "mitt-konto--canceled-subscription"
+                        , children: [ componentBlockContent $ subscriptionView subscription ]
+                        }
+                  | otherwise = componentBlockContent $ subscriptionView subscription
 
-        subscriptionBlocks = map (componentBlockContent <<< subscriptionView) user.subs
-
-        blockContent = noSubscriptions : subscriptionBlocks <> [ break, subscribeImage ]
-
-    subscriptionView subscription =
-      React.element Subscription.component { subscription }
+    cancelSubscription =
+      DOM.div
+        { className: "mt2"
+        , children:
+            [ formatIconLink
+                { href: "https://ksfmedia1.typeform.com/to/zbh3kU"
+                , description: "Avsluta din prenumeration"
+                , className: "mitt-konto--cancel-subscription"
+                }
+            ]
+        }
 
     subscribeImage =
       DOM.div
@@ -206,14 +232,6 @@ userView { user } = React.fragment
         , children:
             componentHeader "Mina inställningar:"
             : accountEditLinks
-        }
-
-    feedbackForm :: JSX
-    feedbackForm =
-      formatIconLink
-        { href: "https://goo.gl/forms/DAEPPgskTofooCFF3"
-        , description: "Ge oss feedback om Mitt konto"
-        , className: "mitt-konto--feedback"
         }
 
     componentBlock headerText content =
@@ -294,10 +312,11 @@ loginView { state, setState } = React.fragment
   ]
   where
     loginForm =
-      React.element
-        Login.component
-          { onMerge:          setState \s -> s { showWelcome = false }
-          , onMergeCancelled: setState \s -> s { showWelcome = true }
+        Login.login
+          { onMerge:             setState \s -> s { showWelcome = false }
+          , onMergeCancelled:    setState \s -> s { showWelcome = true }
+          , onRegister:          setState \s -> s { showWelcome = false }
+          , onRegisterCancelled: setState \s -> s { showWelcome = true }
           , onUserFetch:
             case _ of
               Left err -> do
@@ -306,7 +325,9 @@ loginView { state, setState } = React.fragment
               Right user -> do
                 log "Fetching user succeeded"
                 setState $ setLoggedInUser $ Just user
-          , launchAff_: Aff.launchAff_ <<< withSpinner (setState <<< setLoading)
+          , launchAff_:
+              Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
+                <<< withSpinner (setState <<< setLoading)
           }
 
     heading =
@@ -330,6 +351,21 @@ loginView { state, setState } = React.fragment
             , anchor "https://www.hbl.fi/kundservice/" "Kundservice" []
             ]
         ]
+
+errorAlert :: Error -> Maybe Alert
+errorAlert err = oneOf
+  [ do { method, url } <- Persona.networkError err
+       pure
+         { level: Alert.danger
+         , title: "Anslutningen misslyckades."
+         , message: "Vänligen kontrollera din internetanslutning och försök om en stund igen."
+         }
+  , pure
+      { level: Alert.warning
+      , title: "Något gick fel vid inloggningen."
+      , message: "Vänligen försök om en stund igen."
+      }
+  ]
 
 break :: JSX
 break = DOM.hr { className: "mitt-konto--break" }

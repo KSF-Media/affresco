@@ -3,20 +3,23 @@ module Persona where
 import Prelude
 
 import Control.Monad.Except (runExcept)
-import Data.Either (hush)
+import Control.MonadPlus (guard)
+import Data.Either (Either(..), hush)
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe, isNothing)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
+import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
-import Foreign (unsafeToForeign)
+import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
-import Foreign.Index as Foreign
+import Foreign.Index (readProp) as Foreign
+import Foreign.Object (Object)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
@@ -33,23 +36,38 @@ foreign import callApi_
        { | opts }
        (EffectFnAff res)
 
-callApi :: forall req res opts. Api -> String -> req -> { | opts } -> Aff res
+callApi :: forall res opts. Api -> String -> Array Foreign -> { | opts } -> Aff res
 callApi api methodName req opts =
   fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
 login :: LoginData -> Aff LoginResponse
-login loginData = callApi loginApi "loginPost" loginData {}
+login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
 
 loginSome :: LoginDataSome -> Aff LoginResponse
-loginSome loginData = callApi loginApi "loginSomePost" loginData {}
+loginSome loginData = callApi loginApi "loginSomePost" [ unsafeToForeign loginData ] {}
 
 loginSso :: LoginDataSso -> Aff LoginResponse
-loginSso loginData = callApi loginApi "loginSsoPost" loginData {}
+loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
 getUser :: UUID -> Token -> Aff User
-getUser uuid token = callApi usersApi "usersUuidGet" uuid { authorization }
+getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { authorization }
   where
     authorization = oauthToken token
+
+updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
+updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
+  where
+    authorization = oauthToken token
+
+logout :: UUID -> Token -> Aff Unit
+logout uuid token =
+  callApi loginApi "loginUuidDelete" [ unsafeToForeign uuid ] { authorization }
+  where
+    authorization = oauthToken token
+
+register :: NewUser -> Aff LoginResponse
+register newUser =
+  callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
@@ -102,8 +120,23 @@ type EmailAddressInUse = PersonaError
     }
   )
 
+type TokenInvalid = PersonaError
+  ( login_token_expired ::
+    { description :: String }
+  )
+
 type InvalidCredentials = PersonaError
   ( invalid_credentials :: { description :: String } )
+
+type InvalidFormFields = PersonaError
+  ( invalid_form_fields ::
+       { description :: String
+       , errors :: Object (Array String)
+       }
+  )
+
+type EmailAddressInUseRegistration = PersonaError
+  ( email_address_in_use_registration :: { description :: String } )
 
 errorData
   :: forall fields
@@ -116,6 +149,40 @@ errorData =
     <<< runExcept
           <<< Foreign.readProp "data"
           <<< unsafeToForeign
+
+-- | Matches internal server error produced by superagent.
+--   Checks that it has `status` field that's 5XX.
+internalServerError :: Error -> Maybe { status :: Int }
+internalServerError err = do
+  status <- err # errorField "status"
+  guard $ status >= 500 && status <= 599
+  pure { status }
+
+-- | Matches network error produced by superagent.
+--   Checks that it has `method` and `url` fields, but no `status`.
+networkError :: Error -> Maybe { method :: String, url :: String }
+networkError err = do
+  method <- errorField "method" err
+  url <- errorField "url" err
+  guard $ isNothing $ errorField "status" err :: Maybe Foreign
+  pure { method, url }
+
+-- | Check if an error has some field and it's not null or undefined.
+errorField :: forall a. ReadForeign a => String -> Error -> Maybe a
+errorField field =
+  join <<< hush
+    <<< (traverse JSON.read =<< _)
+    <<< runExcept
+    <<< do readNullOrUndefined <=< Foreign.readProp field
+    <<< unsafeToForeign
+
+isSubscriptionCanceled :: Subscription -> Boolean
+isSubscriptionCanceled s = isSubscriptionStateCanceled s.state
+
+isSubscriptionStateCanceled :: SubscriptionState -> Boolean
+isSubscriptionStateCanceled (SubscriptionState "Canceled") = true
+isSubscriptionStateCanceled _ = false
+
 data Provider
   = Facebook
   | GooglePlus
@@ -147,6 +214,20 @@ type User =
   , address :: Nullable Address
   , cusno :: String
   , subs :: Array Subscription
+  , consent :: Array GdprConsent
+  }
+
+type NewUser =
+  { firstName :: String
+  , lastName :: String
+  , emailAddress :: String
+  , password :: String
+  , confirmPassword :: String
+  , streetAddress :: String
+  , zipCode :: String
+  , city :: String
+  , country :: String
+  , phone :: String
   }
 
 type Address =
@@ -178,6 +259,14 @@ newtype SubscriptionState = SubscriptionState String
 derive instance genericSubscriptionState :: Generic SubscriptionState _
 instance readForeignSubscriptionState :: ReadForeign SubscriptionState where
   readImpl f = map SubscriptionState (readImpl f)
+derive instance eqSubscriptionState :: Eq SubscriptionState
+instance ordSubscriptionState :: Ord SubscriptionState where
+  compare =
+    comparing
+      \s@(SubscriptionState st) ->
+        if isSubscriptionStateCanceled s
+        then Right st
+        else Left st
 
 type ModelPackage =
   { id          :: String
@@ -240,4 +329,10 @@ type SubscriptionDates =
   , invoicingStart      :: Nullable JSDate
   , paidUntil           :: Nullable JSDate
   , suspend             :: Nullable JSDate
+  }
+
+type GdprConsent =
+  { brand      :: String
+  , consentKey :: String
+  , value      :: Boolean
   }
