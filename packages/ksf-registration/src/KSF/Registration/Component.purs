@@ -434,7 +434,7 @@ registrationTitle =
   DOM.div
     { className: "col-12 mx-auto"
     , children:
-        [ DOM.h1_ [ DOM.text "Skapa din konto" ] ]
+        [ DOM.h1_ [ DOM.text "Skapa ditt konto" ] ]
     }
 
 inputRow :: JSX -> JSX -> JSX
