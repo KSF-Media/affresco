@@ -259,8 +259,8 @@ render self =
         }
         zipRegexPattern
       where
-        -- Allows only digits
-        zipRegexPattern = "\\d+"
+        -- Allows word characters (a-z, A-Z, 0-9, _) and whitespaces
+        zipRegexPattern = "[\\s|\\w]+"
 
     phoneInput :: JSX
     phoneInput =
