@@ -432,7 +432,7 @@ render self =
 registrationTitle :: JSX
 registrationTitle =
   DOM.div
-    { className: "col-12 mx-auto"
+    { className: "col-12 mx-auto center"
     , children:
         [ DOM.h1_ [ DOM.text "Skapa ditt konto" ] ]
     }

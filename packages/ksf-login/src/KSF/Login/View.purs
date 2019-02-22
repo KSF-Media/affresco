@@ -116,7 +116,7 @@ renderLogin attrs =
     register :: JSX
     register =
       DOM.div
-        { className: "mt3"
+        { className: "mt3 center"
         , children:
             [ DOM.text "Inget konto? "
             , DOM.a
