@@ -60,7 +60,7 @@ fromJSProps jsProps =
   { onMerge: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMerge
   , onMergeCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMergeCancelled
   , onRegister: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
-  , onRegisterCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
+  , onRegisterCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegisterCancelled
   , onUserFetch:
       either
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchFail)
