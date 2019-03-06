@@ -178,16 +178,16 @@ render self =
 
         submit = do
           let maybeUser = do
-                firstName      <- self.state.firstName
-                lastName       <- self.state.lastName
-                emailAddress   <- self.state.emailAddress
-                password       <- self.state.password
+                firstName       <- self.state.firstName
+                lastName        <- self.state.lastName
+                emailAddress    <- self.state.emailAddress
+                password        <- self.state.password
                 confirmPassword <- self.state.confirmPassword
-                streetAddress  <- self.state.streetAddress
-                city           <- self.state.city
-                zipCode        <- self.state.zip
-                country        <- self.state.country
-                phone          <- self.state.phone
+                streetAddress   <- self.state.streetAddress
+                city            <- self.state.city
+                zipCode         <- self.state.zip
+                country         <- self.state.country
+                phone           <- self.state.phone
                 pure { firstName, lastName, emailAddress, password, confirmPassword, streetAddress, city, zipCode, country, phone }
 
           case maybeUser of
@@ -323,19 +323,28 @@ render self =
     confirmPasswordInput :: JSX
     confirmPasswordInput =
       case self.state.inputValidations.passwordConfirm of
-        Valid   -> confirmPasswordField
-        Invalid -> withValidationError passwordMismatchMsg confirmPasswordField
+        Valid   -> confirmPasswordField Valid
+        Invalid -> withValidationError passwordMismatchMsg (confirmPasswordField Invalid)
       where
-        confirmPasswordField =
+        confirmPasswordField :: Validation -> JSX
+        confirmPasswordField isValid =
           DOM.input
             { type: "password"
             , required: true
             , onBlur: handler targetValue comparePasswords
             , placeholder: "Bekräfta lösenord"
             , name: "confirm-password"
-            , onChange: handler targetValue $ inputFieldUpdate ConfirmPassword
+            , onChange: handler targetValue (onConfirmPasswordChange isValid)
             , value: fromMaybe "" self.state.confirmPassword
             }
+
+        -- If the passwords do not match (Invalid state),
+        -- validate input while the user is trying to correct it
+        -- to give immediate response.
+        onConfirmPasswordChange Valid = inputFieldUpdate ConfirmPassword
+        onConfirmPasswordChange Invalid = \pw -> do
+          comparePasswords pw
+          inputFieldUpdate ConfirmPassword pw
 
         comparePasswords confirmedPassword
           | confirmedPassword /= self.state.password = send self (PasswordMismatch Invalid)
