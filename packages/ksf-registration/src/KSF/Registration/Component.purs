@@ -368,7 +368,7 @@ render self =
     countryDropdown :: JSX
     countryDropdown =
       dropdown
-        [ "FI", "AX", "SV", "NO", "DK" ]
+        [ "FI", "AX", "SE", "NO", "DK" ]
         [ "Finland", "Åland", "Sverige", "Norge", "Danmark" ]
 
     dropdown :: Array String -> Array String -> JSX
