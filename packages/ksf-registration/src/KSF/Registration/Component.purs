@@ -6,6 +6,7 @@ import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (zipWith)
 import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (length)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -82,7 +83,7 @@ data Action
   = UpdateInput RegistrationInputField (Maybe String)
   | PasswordMismatch Validation
   | EmailInUse
-  | FormFieldInvalid String
+  | FormFieldValidation Validation String
 
 registration :: Props -> JSX
 registration = make component { initialState, render, update }
@@ -128,10 +129,10 @@ update self = case _ of
   EmailInUse ->
     Update self.state { inputValidations { emailAddress = InUse } }
 
-  FormFieldInvalid fieldName ->
+  FormFieldValidation validation fieldName ->
     case fieldName of
-      "emailAddress" -> Update self.state { inputValidations { emailAddress = Validation Invalid } }
-      "password"     -> Update self.state { inputValidations { password = Invalid } }
+      "emailAddress" -> Update self.state { inputValidations { emailAddress = Validation validation } }
+      "password"     -> Update self.state { inputValidations { password = validation } }
       _ -> NoUpdate
 
 render :: Self -> JSX
@@ -207,7 +208,7 @@ render self =
             Nothing -> Console.error "Not all registration fields were filled."
 
     handleErrs :: RegistrationInputFieldError -> Effect Unit
-    handleErrs errs = traverse_ (send self <<< FormFieldInvalid) $ Object.keys errs
+    handleErrs errs = traverse_ (send self <<< (FormFieldValidation Invalid)) $ Object.keys errs
 
     inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
     inputFieldUpdate field newInputValue = do
@@ -310,6 +311,7 @@ render self =
             , name: "password"
             , required: true
             , onChange: handler targetValue $ inputFieldUpdate Password
+            , onBlur: handler targetValue validatePassword
             , value: fromMaybe "" self.state.password
             , pattern: ".{6,}"
             , title: "Lösenordet måste ha minst 6 tecken"
@@ -319,6 +321,12 @@ render self =
         -- is for example the language used (e.g. Swedish for Finnish users).
         -- Also, the error might be gibberish.
         passwordInvalidMsg = "Lösenordet måste ha minst 6 tecken."
+
+        validatePassword password
+          | Just pw <- password
+          , length pw >= 6
+          = send self (FormFieldValidation Valid "password")
+          | otherwise = send self (FormFieldValidation Invalid "password")
 
     confirmPasswordInput :: JSX
     confirmPasswordInput =
