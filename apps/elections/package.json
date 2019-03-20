@@ -1,0 +1,16 @@
+{
+  "name": "@affresco/elections",
+  "version": "1.0.0",
+  "description": "Frontend for elections",
+  "main": "index.js",
+  "author": "KSF Media",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^16.8.4",
+    "react-dom": "^16.8.4"
+  },
+  "scripts": {
+    "start": "parcel index.html -p 8000",
+    "build": "parcel build index.html --no-cache"
+  }
+}
