@@ -1,7 +1,9 @@
 import React from 'react';
 
+import Table from './Table.js';
+
 const App = () => (
-  <h1>Elections</h1>
+  <Table />
 )
 
 export default App;
