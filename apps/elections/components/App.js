@@ -2,6 +2,11 @@ import React from 'react';
 import render from 'react-dom';
 
 import Table from './Table.js';
+
+import '../less/ksf-colors.less';
+import '../less/ksf-fonts.less';
+import '../assets/less/table.less';
+
 import testData from './TestData';
 
 export default class App extends React.Component {
@@ -14,9 +19,11 @@ export default class App extends React.Component {
   render(){
     const { data } = this.state;
     return (
-      <Table 
-        data={data}
-      />
+      <div className="ksf-elections">
+        <Table
+          data={data}
+        />
+      </div>
     )
   }
 }
