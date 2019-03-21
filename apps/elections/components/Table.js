@@ -59,6 +59,7 @@ export default class Table extends React.Component{
                 accessor: 'status'
               },
           ]}
+          className="-striped -highlight"
         />
       </div>
     )
