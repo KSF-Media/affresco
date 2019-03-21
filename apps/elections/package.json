@@ -8,7 +8,8 @@
   "dependencies": {
     "parcel-bundler": "^1.12.3",
     "react": "^16.8.4",
-    "react-dom": "^16.8.4"
+    "react-dom": "^16.8.4",
+    "react-table": "^6.9.2"
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
