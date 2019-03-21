@@ -54,6 +54,15 @@ export default class Table extends React.Component{
               },
           ]}
           className="-striped -highlight"
+          previousText="Föregående"
+          nextText="Nästa"
+          loadingText="Laddar..."
+          noDataText="Inga rader hittades"
+          pageText="Sida"
+          ofText="av"
+          rowsText="rader"
+          pageJumpText="Gå till sida"
+          rowsSelectorText="rader per sida"
         />
       </div>
     )
