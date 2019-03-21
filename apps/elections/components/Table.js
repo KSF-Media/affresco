@@ -3,20 +3,14 @@ import { render } from 'react-dom';
 import ReactTable from 'react-table';
 import 'react-table/react-table.css';
 
-import testData from './TestData.js'
-
 export default class Table extends React.Component{
 
   constructor(props) {
     super(props);
-    this.state = {
-      data: testData
-    }
-    console.log(this.state);
   }
 
   render() {
-    const { data } = this.state;
+    const { data } = this.props;
     return (
       <div>
         <ReactTable
