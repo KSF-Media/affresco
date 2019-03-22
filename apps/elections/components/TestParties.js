@@ -1,4 +1,4 @@
-const testParties = {
+const testSeats = {
   'kesk': {
     'seats': 50,
     'colour': '#01954b'
@@ -13,4 +13,4 @@ const testParties = {
   }
 };
 
-export default testParties;
+export default testSeats;

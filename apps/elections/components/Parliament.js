@@ -10,8 +10,8 @@ export default class Parliament extends React.Component {
   render() {
     const parliamentSVG = require('parliament-svg');
     const toStr = require('virtual-dom-stringify');
-    const { parties } = this.props;
-    const svg = parliamentSVG(parties, false);
+    const { seats } = this.props;
+    const svg = parliamentSVG(seats, false);
     const getSvg = () => {
         return {
           __html: toStr(svg)
