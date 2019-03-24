@@ -3628,6 +3628,10 @@ ee-first@1.1.1:
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
+"election@https://github.com/KSF-Media/election-javascript-promise-es6-client":
+  version "0.0.0"
+  resolved "https://github.com/KSF-Media/election-javascript-promise-es6-client#4c9ca09ed8ae468dd4d2257feef27ca6162dcdbe"
+
 electron-to-chromium@^1.2.7, electron-to-chromium@^1.3.103:
   version "1.3.108"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.108.tgz#2e79a6fcaa4b3e7c75abf871505bda8e268c910e"
