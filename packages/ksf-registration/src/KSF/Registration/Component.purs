@@ -157,7 +157,7 @@ update self = case _ of
       Password        -> self.state { password = newValue }
       ConfirmPassword -> self.state { confirmPassword = newValue }
   PasswordMismatch validation ->
-    Update self.state { inputValidations { passwordConfirm = validation } }
+    Update self.state { inputValidations2 = insert ConfirmPassword validation self.state.inputValidations2 }
   EmailInUse ->
     Update self.state { inputValidations { emailAddress = InUse } }
 
@@ -200,11 +200,9 @@ render self =
       DOM.form
         { className: ""
         , children
-        , onSubmit: handler preventDefault (\_ -> when canSubmit submit)
+        , onSubmit: handler preventDefault (\_ -> when isFormValid submit) --TODO: run validations
         }
       where
-        canSubmit = self.state.inputValidations.passwordConfirm == Valid
-
         submit = do
           let maybeUser = do
                 firstName       <- self.state.firstName
@@ -249,8 +247,10 @@ render self =
 
         setFormInvalid key
           | Just inputFieldName <- toRegistrationInputField key =
-              -- FIX: what about email in use?
-              send self (FormFieldValidation Invalid inputFieldName)
+              let invalidType = case inputFieldName of
+                    EmailAddress -> InvalidEmailInUse
+                    _            -> Invalid
+              in send self (FormFieldValidation invalidType inputFieldName)
           | otherwise = pure unit
 
     inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
@@ -259,7 +259,7 @@ render self =
 
     firstNameInput :: JSX
     firstNameInput = do
-      withValidationError'' inputField FirstName [(Tuple InvalidEmpty "Förnamn krävs")]
+      withValidationErrors inputField FirstName [(Tuple InvalidEmpty "Förnamn krävs")]
       where
         inputField =
           createTextInput
@@ -272,8 +272,7 @@ render self =
 
     lastNameInput :: JSX
     lastNameInput =
-      withValidationError' LastName Invalid inputField "Efternamn krävs."
-      <> inputField
+      withValidationErrors inputField LastName [(Tuple InvalidEmpty "Efternamn krävs.")]
       where
         inputField =
           createTextInput
@@ -292,8 +291,7 @@ render self =
 
     addressInput :: JSX
     addressInput =
-      withValidationError' StreetAddress InvalidEmpty inputField "Adress krävs."
-      <> inputField
+      withValidationErrors inputField StreetAddress [(Tuple InvalidEmpty "Adress krävs.")]
       where
         inputField =
           createTextInput
@@ -306,8 +304,7 @@ render self =
 
     cityInput :: JSX
     cityInput =
-      withValidationError' City InvalidEmpty inputField "Stad krävs."
-      <> inputField
+      withValidationErrors inputField City [(Tuple InvalidEmpty "Stad krävs.")]
       where
         inputField =
           createTextInput
@@ -320,7 +317,7 @@ render self =
 
     zipInput :: JSX
     zipInput =
-      withValidationError'' inputField Zip [(Tuple InvalidEmpty "Postnummer krävs."), (Tuple InvalidPatternFailure"Postnummerfältet kan bara innehålla siffror och bokstäver.")]
+      withValidationErrors inputField Zip [(Tuple InvalidEmpty "Postnummer krävs."), (Tuple InvalidPatternFailure "Postnummerfältet kan bara innehålla siffror och bokstäver.")]
       where
         -- Allows word characters (a-z, A-Z, 0-9, _), dashes and whitespaces
         zipRegexPattern = "^[\\s|\\w|-]+$"
@@ -338,31 +335,35 @@ render self =
 
     phoneInput :: JSX
     phoneInput =
-      createTextInput
-        { placeholder: "Telefon"
-        , name: "phone"
-        , onChange: inputFieldUpdate Phone
-        , value: self.state.phone
-        , validate: [validateEmptyField Phone, validateInputWithRegex Phone phoneRegexPattern]
-        }
+      withValidationErrors phoneInputField Phone [(Tuple InvalidEmpty "Telefon krävs."), (Tuple InvalidPatternFailure "Telefonnummer kan bara innehålla nummer.")]
       where
        -- Allows digits, "+" and whitespaces,
        -- e.g. 040 1231234, +358 04 1231234
-       phoneRegexPattern = "[\\d|\\+|\\s|-|\\(|\\)]+"
+       phoneRegexPattern = "^[\\d|\\+|\\s|-|\\(|\\)]+$"
+       phoneInputField =
+         createTextInput
+           { placeholder: "Telefon"
+           , name: "phone"
+           , onChange: inputFieldUpdate Phone
+           , value: self.state.phone
+           , validate: [validateEmptyField Phone, validateInputWithRegex Phone phoneRegexPattern]
+           }
 
     emailInput :: JSX
     emailInput =
-      case lookup EmailAddress self.state.inputValidations2 of
-        Just Invalid           -> validationErrorText emailField emailInvalidMsg
-        Just InvalidEmailInUse -> validationErrorText emailField emailInUseMsg
-        _                      -> emailField
+      withValidationErrors emailField EmailAddress emailValidations
       where
+        emailValidations =
+          [ (Tuple InvalidEmpty          "E-postadress krävs.")
+          , (Tuple InvalidPatternFailure emailInvalidMsg)
+          , (Tuple InvalidEmailInUse     emailInUseMsg)
+          ]
         emailField =
           createEmailInput
             { placeholder: "E-postadress"
             , name: "email"
             , onChange: inputFieldUpdate EmailAddress
-            , validate: [validateInputWithRegex EmailAddress emailRegex]
+            , validate: [validateEmptyField EmailAddress, validateInputWithRegex EmailAddress emailRegex]
             , value: self.state.emailAddress
             }
         emailInUseMsg =
@@ -385,21 +386,17 @@ render self =
 
     passwordInput :: JSX
     passwordInput =
-      withValidationError' Password Invalid passwordField passwordInvalidMsg
-      <> passwordField
+      withValidationErrors passwordField Password [(Tuple Invalid passwordInvalidMsg)]
       where
         passwordField =
-          DOM.input
-            { type: "password"
-            , placeholder: "Lösenord (minst 6 tecken)"
+          createInput
+            { placeholder: "Lösenord (minst 6 tecken)"
             , name: "password"
-            , required: true
-            , onChange: handler targetValue $ inputFieldUpdate Password
-            , onBlur: handler targetValue validatePassword
-            , value: fromMaybe "" self.state.password
-            , pattern: ".{6,}"
-            , title: "Lösenordet måste ha minst 6 tecken"
+            , onChange: inputFieldUpdate Password
+            , validate: [validatePassword]
+            , value: self.state.password
             }
+            "password"
         -- TODO: Probably not always the case.
         -- The problem of displaying error message directly from Janrain
         -- is for example the language used (e.g. Swedish for Finnish users).
@@ -409,19 +406,11 @@ render self =
         validatePassword password
           | Just pw <- password
           , length pw >= 6
-          = send self (FormFieldValidation Valid Password)
-          | otherwise = send self (FormFieldValidation Invalid Password)
+          = pure Valid <* send self (FormFieldValidation Valid Password)
+          | otherwise = pure Invalid <* send self (FormFieldValidation Invalid Password)
 
-    withValidationError' :: RegistrationInputField -> Validation -> JSX -> String -> JSX
-    withValidationError' fieldName validationType inputField err
-      | Just validationState <- lookup fieldName self.state.inputValidations2
-      , validationState == validationType
-      = validationErrorText inputField err
-      | otherwise = mempty
-
-
-    withValidationError'' :: JSX -> RegistrationInputField -> Array (Tuple Validation String) -> JSX
-    withValidationError'' inputField fieldName validations =
+    withValidationErrors :: JSX -> RegistrationInputField -> Array (Tuple Validation String) -> JSX
+    withValidationErrors inputField fieldName validations =
       case oneOf $ map wät validations of
         Just lol -> lol
         _ -> inputField
@@ -448,31 +437,28 @@ render self =
 
     confirmPasswordInput :: JSX
     confirmPasswordInput =
-      withValidationError' Password Invalid (confirmPasswordField Invalid) passwordMismatchMsg
-      <> (confirmPasswordField Valid)
+      withValidationErrors confirmPasswordField ConfirmPassword [(Tuple Invalid passwordMismatchMsg)]
       where
-        confirmPasswordField :: Validation -> JSX
-        confirmPasswordField isValid =
-          DOM.input
-            { type: "password"
-            , onBlur: handler targetValue comparePasswords
-            , placeholder: "Bekräfta lösenord"
+        confirmPasswordField =
+          createInput
+            { placeholder: "Bekräfta lösenord"
             , name: "confirm-password"
-            , onChange: handler targetValue (onConfirmPasswordChange isValid)
-            , value: fromMaybe "" self.state.confirmPassword
+            , onChange: onConfirmPasswordChange
+            , validate: [comparePasswords]
+            , value: self.state.confirmPassword
             }
+          "password"
 
         -- If the passwords do not match (Invalid state),
         -- validate input while the user is trying to correct it
         -- to give immediate response.
-        onConfirmPasswordChange Valid = inputFieldUpdate ConfirmPassword
-        onConfirmPasswordChange _ = \pw -> do
-          comparePasswords pw
-          inputFieldUpdate ConfirmPassword pw
+        onConfirmPasswordChange
+          | isFieldValid ConfirmPassword = inputFieldUpdate ConfirmPassword
+          | otherwise = \pw -> inputFieldUpdate ConfirmPassword pw <* comparePasswords pw
 
         comparePasswords confirmedPassword
-          | confirmedPassword /= self.state.password = send self (PasswordMismatch Invalid)
-          | otherwise = send self (PasswordMismatch Valid)
+          | confirmedPassword /= self.state.password = pure Invalid <* send self (PasswordMismatch Invalid)
+          | otherwise = pure Valid <* send self (PasswordMismatch Valid)
 
         passwordMismatchMsg = "Lösenorden överensstämmer inte med varandra."
 
