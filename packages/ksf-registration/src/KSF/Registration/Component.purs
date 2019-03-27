@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt (alt, (<|>))
 import Control.Monad.Error.Class (catchError, throwError)
+import Control.Monad.List.Trans (ListT(..))
 import Data.Array (all, foldMap, foldl, snoc, zipWith)
 import Data.Either (Either(..))
 import Data.Foldable (fold, for_, oneOf, traverse_)
@@ -101,8 +102,6 @@ type Pattern = String
 
 data Action
   = UpdateInput RegistrationInputField (Maybe String)
-  | PasswordMismatch Validation
-  | EmailInUse
   | FormFieldValidation Validation RegistrationInputField
 
 registration :: Props -> JSX
@@ -156,10 +155,6 @@ update self = case _ of
       EmailAddress    -> self.state { emailAddress = newValue }
       Password        -> self.state { password = newValue }
       ConfirmPassword -> self.state { confirmPassword = newValue }
-  PasswordMismatch validation ->
-    Update self.state { inputValidations2 = insert ConfirmPassword validation self.state.inputValidations2 }
-  EmailInUse ->
-    Update self.state { inputValidations { emailAddress = InUse } }
 
   FormFieldValidation validation fieldName ->
     Update self.state { inputValidations2 = insert fieldName validation self.state.inputValidations2 }
@@ -222,7 +217,7 @@ render self =
               self.props.onRegister $ Persona.register user `catchError` case _ of
                  err | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
                          Console.error errData.email_address_in_use_registration.description
-                         liftEffect $ send self EmailInUse
+                         liftEffect $ send self $ FormFieldValidation InvalidEmailInUse EmailAddress
                          throwError err
                      | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
                          Console.error errData.invalid_form_fields.description
@@ -247,10 +242,7 @@ render self =
 
         setFormInvalid key
           | Just inputFieldName <- toRegistrationInputField key =
-              let invalidType = case inputFieldName of
-                    EmailAddress -> InvalidEmailInUse
-                    _            -> Invalid
-              in send self (FormFieldValidation invalidType inputFieldName)
+              send self (FormFieldValidation Invalid inputFieldName)
           | otherwise = pure unit
 
     inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
@@ -457,8 +449,8 @@ render self =
           | otherwise = \pw -> inputFieldUpdate ConfirmPassword pw <* comparePasswords pw
 
         comparePasswords confirmedPassword
-          | confirmedPassword /= self.state.password = pure Invalid <* send self (PasswordMismatch Invalid)
-          | otherwise = pure Valid <* send self (PasswordMismatch Valid)
+          | confirmedPassword /= self.state.password = pure Invalid <* send self (FormFieldValidation Invalid ConfirmPassword)
+          | otherwise = pure Valid <* send self (FormFieldValidation Valid ConfirmPassword)
 
         passwordMismatchMsg = "Lösenorden överensstämmer inte med varandra."
 
@@ -625,14 +617,12 @@ createInput { placeholder, name, onChange, validate, value } type_ =
     }
   where
     runValidations fieldValue =
-      pure unit <* foldl (noniin fieldValue) (pure Valid) validate
+      pure unit <* foldl (runUntilInvalid fieldValue) (pure Valid) validate
 
     -- | Run validations until an `Invalid` computation is made by a validation function.
-    noniin :: Maybe String -> Effect Validation -> (Maybe String -> Effect Validation) -> Effect Validation
-    noniin v b fn = do
-      bb <- b
+    runUntilInvalid :: Maybe String -> Effect Validation -> (Maybe String -> Effect Validation) -> Effect Validation
+    runUntilInvalid fieldValue valid validationFn = do
+      bb <- valid
       if bb == Invalid
-        then b
-        else fn v
-    wat fieldValue =
-      traverse_ (\fn -> fn fieldValue) validate
+        then valid
+        else validationFn fieldValue
