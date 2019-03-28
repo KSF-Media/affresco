@@ -193,11 +193,9 @@ render self =
       DOM.form
         { className: ""
         , children
-        , onSubmit: handler preventDefault
-          (\_ -> do
-              runValidations
-              submit
-          )
+        , onSubmit: handler preventDefault (\_ -> do
+                                               validateForm
+                                               submit)
         }
       where
         submit = when isFormValid do
@@ -261,7 +259,7 @@ render self =
       , phone:           [validateEmptyField Phone,        validateInputWithRegex Phone phoneRegexPattern]
       , emailAddress:    [validateEmptyField EmailAddress, validateInputWithRegex EmailAddress emailRegex]
       , password:        [validatePassword]
-      , confirmPassword: [comparePasswords]
+      , confirmPassword: [validateEmptyField ConfirmPassword, comparePasswords]
       }
       where
         -- Allows word characters (a-z, A-Z, 0-9, _), dashes and whitespaces
@@ -274,20 +272,21 @@ render self =
         -- From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email#Basic_validation
         emailRegex = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
 
-    runValidations :: Effect Unit
-    runValidations = do
-       validate self.state.firstName formValidations.firstName
-       validate self.state.lastName formValidations.lastName
-       validate self.state.streetAddress formValidations.streetAddress
-       validate self.state.city formValidations.city
-       validate self.state.zip formValidations.zip
-       validate self.state.phone formValidations.phone
-       validate self.state.emailAddress formValidations.emailAddress
-       validate self.state.password formValidations.password
-       validate self.state.confirmPassword formValidations.confirmPassword
+
+    -- | Runs validation functions against values of the current state
+    validateForm :: Effect Unit
+    validateForm = do
+      runValidations formValidations.firstName self.state.firstName
+      runValidations formValidations.lastName self.state.lastName
+      runValidations formValidations.streetAddress self.state.streetAddress
+      runValidations formValidations.city self.state.city
+      runValidations formValidations.zip self.state.zip
+      runValidations formValidations.phone self.state.phone
+      runValidations formValidations.emailAddress self.state.emailAddress
+      runValidations formValidations.password self.state.password
+      runValidations formValidations.confirmPassword self.state.confirmPassword
       where
-        validate value validationFns =
-          void $ traverse_ (_ $ value) validationFns
+        validate value validationFns = runValidations validationFns value
 
     isFormValid :: Boolean
     isFormValid = all (_ == Valid) $ values self.state.inputValidations
@@ -427,7 +426,10 @@ render self =
 
     confirmPasswordInput :: JSX
     confirmPasswordInput =
-      withValidationErrors confirmPasswordField ConfirmPassword [Tuple Invalid passwordMismatchMsg]
+      withValidationErrors confirmPasswordField ConfirmPassword
+        [ Tuple Invalid passwordMismatchMsg
+        , Tuple InvalidEmpty "Lösenord krävs."
+        ]
       where
         confirmPasswordField =
           createInput
@@ -628,19 +630,20 @@ createInput { placeholder, name, onChange, validations, value } inputType =
   DOM.input
     { type: inputType
     , onChange: handler targetValue onChange
-    , onBlur: handler targetValue runValidations
+    , onBlur: handler targetValue $ runValidations validations
     , placeholder
     , name
     , value: fromMaybe "" value
     }
-  where
-    runValidations fieldValue =
-      void $ foldl (runUntilInvalid fieldValue) (pure Valid) validations
 
-    -- | Run validations until an `Invalid` computation is made by a validation function.
+runValidations :: Array (ValidationFn) -> Maybe String -> Effect Unit
+runValidations validationFns fieldValue =
+  void $ foldl (runUntilInvalid fieldValue) (pure Valid) validationFns
+  where
+     -- | Run validations until an `Invalid` computation is made by a validation function.
     runUntilInvalid :: Maybe String -> Effect Validation -> (Maybe String -> Effect Validation) -> Effect Validation
-    runUntilInvalid fieldValue validation validationFn = do
+    runUntilInvalid value validation validationFn = do
       validationState <- validation
       if validationState == Invalid
         then pure Invalid
-        else validationFn fieldValue
+        else validationFn value
