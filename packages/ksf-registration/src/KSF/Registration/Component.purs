@@ -2,23 +2,18 @@ module KSF.Registration.Component where
 
 import Prelude
 
-import Control.Alt (alt, (<|>))
 import Control.Monad.Error.Class (catchError, throwError)
-import Control.Monad.List.Trans (ListT(..))
-import Data.Array (all, foldMap, foldl, snoc, zipWith)
+import Data.Array (all, foldl, zipWith)
 import Data.Either (Either(..))
-import Data.Foldable (fold, for_, oneOf, traverse_)
-import Data.Map (Map, fromFoldable, insert, lookup, values)
+import Data.Foldable (oneOf, traverse_)
+import Data.Map (Map, insert, lookup, values)
 import Data.Map.Internal as Map
-import Data.Maybe (Maybe(..), fromJust, fromMaybe, isJust, maybe)
-import Data.Monoid (guard, mempty)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (length)
-import Data.String.Regex (regex)
 import Data.String.Regex as Regex
-import Data.String.Regex.Flags (RegexFlags(..), noFlags)
 import Data.String.Regex.Flags as Regex.Flags
 import Data.Tuple (Tuple(..))
-import Effect (Effect, forE)
+import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
