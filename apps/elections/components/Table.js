@@ -60,10 +60,10 @@ export default class Table extends React.Component {
                 Header: 'Status',
                 id: 'status',
                 accessor: ({status}) =>
-                    status === Status.ELECTED     ? "Elected"
-                  : status === Status.SUBSTITUTE  ? "Substitute"
-                  : status === Status.NOT_ELECTED ? "Not Elected"
-                  : status === Status.INELIGIBLE  ? "Ineligible"
+                    status === Status.ELECTED     ? "Invald"
+                  : status === Status.SUBSTITUTE  ? "Suppleant"
+                  : status === Status.NOT_ELECTED ? "Ej invald"
+                  : status === Status.INELIGIBLE  ? "Ej valbar"
                   : status
               },
           ]}
