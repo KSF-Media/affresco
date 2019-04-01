@@ -112,7 +112,7 @@ initialState =
     -- Allows digits, "+" and whitespaces,
     -- e.g. 040 1231234, +358 04 1231234
     phoneRegexPattern = "^[\\d|\\+|\\s|-|\\(|\\)]+$"
-    phoneRegexFailure = "Telefonnummer kan bara innehålla nummer."
+    phoneRegexFailure = "Telefonnummer kan bara bestå av siffror, mellanslag och +-tecken."
 
     -- From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email#Basic_validation
     emailRegex = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
