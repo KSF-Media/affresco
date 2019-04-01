@@ -4,16 +4,13 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (all, any, foldl, snoc, some, zipWith)
+import Data.Array (all, any, foldl, snoc, zipWith)
 import Data.Either (Either(..))
-import Data.Foldable (oneOf, traverse_)
-import Data.Map (Map, insert, lookup, values)
-import Data.Map.Internal as Map
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Foldable (traverse_)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String (length)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
-import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -25,7 +22,7 @@ import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (EventHandler, handler, handler_)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
 
@@ -75,15 +72,6 @@ derive instance ordRegistrationInputField :: Ord RegistrationInputField
 
 type ValidationFn = Maybe String -> Maybe ValidationError
 
-type InputAttributes =
-  { placeholder :: String
-  , name :: String
-  , onChange :: Maybe String -> Effect Unit
-  , validations :: Array ValidationFn
-  , value :: Maybe String
-  , type_ :: String
-  }
-
 data ValidationError
   = Invalid String
   | InvalidEmpty String
@@ -96,7 +84,6 @@ data Action
   = UpdateInput RegistrationInputField (Maybe String)
   | FormFieldValidation RegistrationInputField
   | SetServerValidationError RegistrationInputField ValidationError
-  -- | ValidateMatchingPasswords
 
 registration :: Props -> JSX
 registration = make component { initialState, render, update }
@@ -184,6 +171,7 @@ update self = case _ of
       EmailAddress    -> self.state { emailAddress { validationError = validate self.state.emailAddress } }
       Password        -> self.state { password { validationError = validate self.state.password } }
       ConfirmPassword ->
+        -- Adds a validation function that compares the confirmed password input with the password input
         let confirmPasswordWithCompareFn = self.state.confirmPassword { validationFns = self.state.confirmPassword.validationFns `snoc` comparePasswords self.state.password.value }
         in self.state { confirmPassword { validationError = validate confirmPasswordWithCompareFn } }
 
@@ -233,7 +221,7 @@ validationErrorMessageOf = case _ of
   InvalidEmpty err -> err
   InvalidPatternFailure err -> err
   InvalidEmailInUse err -> err
-  _ -> ""
+  InvalidNotInitialized -> ""
 
 render :: Self -> JSX
 render self =
@@ -324,9 +312,11 @@ render self =
             Just Password     -> send self $ SetServerValidationError Password $ Invalid passwordInvalidMsg
             _                 -> pure unit
 
-    inputFieldUpdate :: RegistrationInputField -> Maybe String -> Effect Unit
-    inputFieldUpdate field newInputValue = do
-      send self (UpdateInput field newInputValue)
+    inputFieldUpdate :: RegistrationInputField -> EventHandler
+    inputFieldUpdate field = handler targetValue (\val -> send self $ UpdateInput field val)
+
+    inputFieldValidation :: RegistrationInputField -> EventHandler
+    inputFieldValidation field = handler_ $ send self $ FormFieldValidation field
 
     -- | Runs validation functions against values of the current state
     validateForm :: Effect Unit
@@ -372,148 +362,140 @@ render self =
       withValidationErrorText inputField self.state.firstName.validationError
       where
         inputField =
-          createInput
+          DOM.input
             { placeholder: "Förnamn"
             , name: "firstName"
             , onChange: inputFieldUpdate FirstName
-            , validations: self.state.firstName.validationFns
-            , value: self.state.firstName.value
-            , type_: "text"
+            , onBlur: inputFieldValidation FirstName
+            , value: fromMaybe "" self.state.firstName.value
+            , type: "text"
             }
-            FirstName
 
     lastNameInput :: JSX
     lastNameInput =
       withValidationErrorText inputField self.state.lastName.validationError
       where
         inputField =
-          createInput
+          DOM.input
             { placeholder: "Efternamn"
             , name: "lastName"
             , onChange: inputFieldUpdate LastName
-            , validations: self.state.lastName.validationFns
-            , value: self.state.lastName.value
-            , type_: "text"
+            , onBlur: inputFieldValidation LastName
+            , value: fromMaybe "" self.state.lastName.value
+            , type: "text"
             }
-            LastName
 
     addressInput :: JSX
     addressInput =
       withValidationErrorText inputField self.state.streetAddress.validationError
       where
         inputField =
-          createInput
+          DOM.input
             { placeholder: "Adress"
             , name: "address"
             , onChange: inputFieldUpdate StreetAddress
-            , validations: self.state.streetAddress.validationFns
-            , value: self.state.streetAddress.value
-            , type_: "text"
+            , onBlur: inputFieldValidation StreetAddress
+            , value: fromMaybe "" self.state.streetAddress.value
+            , type: "text"
             }
-            StreetAddress
 
     cityInput :: JSX
     cityInput =
       withValidationErrorText inputField self.state.city.validationError
       where
         inputField =
-          createInput
+          DOM.input
             { placeholder: "Stad"
             , name: "city"
             , onChange: inputFieldUpdate City
-            , validations: self.state.city.validationFns
-            , value: self.state.city.value
-            , type_: "text"
+            , onBlur: inputFieldValidation City
+            , value: fromMaybe "" self.state.city.value
+            , type: "text"
             }
-            City
 
     zipInput :: JSX
     zipInput =
       withValidationErrorText inputField self.state.zip.validationError
       where
         inputField =
-            createInput
+            DOM.input
               { placeholder: "Postnummer"
               , name: "zip"
               , onChange: inputFieldUpdate Zip
-              , validations: self.state.zip.validationFns
-              , value: self.state.zip.value
-              , type_: "text"
+              , onBlur: inputFieldValidation Zip
+              , value: fromMaybe "" self.state.zip.value
+              , type: "text"
               }
-              Zip
 
     phoneInput :: JSX
     phoneInput =
       withValidationErrorText phoneInputField self.state.phone.validationError
       where
        phoneInputField =
-         createInput
+         DOM.input
            { placeholder: "Telefon"
            , name: "phone"
            , onChange: inputFieldUpdate Phone
-           , value: self.state.phone.value
-           , validations: self.state.phone.validationFns
-           , type_: "text"
+           , onBlur: inputFieldValidation Phone
+           , value: fromMaybe "" self.state.phone.value
+           , type: "text"
            }
-           Phone
 
     emailInput :: JSX
     emailInput =
       withValidationErrorText emailField self.state.emailAddress.validationError
       where
         emailField =
-          createInput
+          DOM.input
             { placeholder: "E-postadress"
             , name: "email"
             , onChange: inputFieldUpdate EmailAddress
-            , validations: self.state.emailAddress.validationFns
-            , value: self.state.emailAddress.value
-            , type_: "email"
+            , onBlur: inputFieldValidation EmailAddress
+            , value: fromMaybe "" self.state.emailAddress.value
+            , type: "email"
             }
-            EmailAddress
 
     passwordInput :: JSX
     passwordInput =
       withValidationErrorText passwordField self.state.password.validationError
       where
         passwordField =
-          createInput
+          DOM.input
             { placeholder: "Lösenord (minst 6 tecken)"
             , name: "password"
             , onChange: inputFieldUpdate Password
-            , validations: self.state.password.validationFns
-            , value: self.state.password.value
-            , type_: "password"
+            , onBlur: inputFieldValidation Password
+            , value: fromMaybe "" self.state.password.value
+            , type: "password"
             }
-            Password
 
     confirmPasswordInput :: JSX
     confirmPasswordInput =
       withValidationErrorText confirmPasswordField self.state.confirmPassword.validationError
       where
         confirmPasswordField =
-          createInput
+          DOM.input
             { placeholder: "Bekräfta lösenord"
             , name: "confirm-password"
-            , onChange: onConfirmPasswordChange
-            , validations: self.state.confirmPassword.validationFns
-            , value: self.state.confirmPassword.value
-            , type_: "password"
+            , onChange: handler targetValue onConfirmPasswordChange
+            , onBlur: inputFieldValidation ConfirmPassword
+            , value: fromMaybe "" self.state.confirmPassword.value
+            , type: "password"
             }
-            ConfirmPassword
 
         -- If the passwords do not match (Invalid state),
         -- validate input while the user is trying to correct it
         -- to give immediate response.
         onConfirmPasswordChange
-          | isNothing self.state.confirmPassword.validationError = inputFieldUpdate ConfirmPassword
+          | isNothing self.state.confirmPassword.validationError = \pw -> send self $ UpdateInput ConfirmPassword pw
           | otherwise = \pw -> do
-            inputFieldUpdate ConfirmPassword pw
-            send self $ FormFieldValidation ConfirmPassword
+              send self $ UpdateInput ConfirmPassword pw
+              send self $ FormFieldValidation ConfirmPassword
 
     withValidationErrorText :: JSX -> Maybe ValidationError -> JSX
     withValidationErrorText inputField validationError =
       case validationError of
+        Nothing -> inputField
         -- Initially, we don't want to show any errors in UI
         Just InvalidNotInitialized -> inputField
         Just err ->
@@ -527,7 +509,6 @@ render self =
                     }
                 ]
             }
-        Nothing -> inputField
 
     countryDropdown :: JSX
     countryDropdown =
@@ -540,7 +521,7 @@ render self =
       DOM.select
         { className: ""
         , children: zipWith createOption options descriptions
-        , onChange: handler targetValue $ inputFieldUpdate Country
+        , onChange: inputFieldUpdate Country
         , value: fromMaybe "FI" self.state.country.value
         }
       where
@@ -569,7 +550,7 @@ render self =
 
     validationErrorMessage :: JSX
     validationErrorMessage
-      | isFormValid = mempty
+      | not isFormInitializedInvalid = mempty
       | otherwise =
           DOM.div
             { className: "registration--invalid-form-generic-message mt2"
@@ -611,17 +592,6 @@ render self =
                 , children: [ DOM.text "avbryt." ]
                 }
             ]
-        }
-
-    createInput :: InputAttributes -> RegistrationInputField -> JSX
-    createInput { placeholder, name, onChange, value, type_ } fieldName =
-      DOM.input
-        { type: type_
-        , onChange: handler targetValue onChange
-        , onBlur: handler_ $ send self $ FormFieldValidation fieldName
-        , placeholder
-        , name
-        , value: fromMaybe "" value
         }
 
 registrationTitle :: JSX
