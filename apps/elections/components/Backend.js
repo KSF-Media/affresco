@@ -1,9 +1,30 @@
 import Election from 'election';
+import { AreaType } from 'election';
 
 const api = makeApiClient();
 
 export function getArea(identifier) {
   return api.areasIdentifierGet(identifier);
+}
+
+export function getElectoralDistricts() {
+  return api.areasGet({
+    "type": [ Election.AreaType.ELECTORAL_DISTRICT ]
+  });
+}
+
+export function getMunicipalities(electoralDistrict) {
+  return api.areasGet({
+    "type": [ Election.AreaType.MUNICIPALITY ],
+    "parent": electoralDistrict ? [ electoralDistrict ] : null
+  });
+}
+
+export function getPollingDistricts(municipality) {
+  return api.areasGet({
+    "type": [ Election.AreaType.POLLING_DISTRICT ],
+    "parent": municipality ? [ municipality ] : null
+  });
 }
 
 function makeApiClient() {

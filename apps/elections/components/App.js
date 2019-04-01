@@ -3,6 +3,7 @@ import render from 'react-dom';
 
 import Table from './Table.js';
 import Parliament from './Parliament.js';
+import AreaPicker from './AreaPicker.js'
 
 import '../assets/less/app.less';
 
@@ -33,6 +34,9 @@ export default class App extends React.Component {
       <div className="ksf-elections">
         <Parliament
           seats={seats}
+        />
+        <AreaPicker
+          onSelection={(option) => console.log("SELECTION", option) }
         />
         <Table
           areaResponse={selectedAreaResponse}
