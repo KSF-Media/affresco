@@ -52,6 +52,7 @@ let Selector = function(props) {
       isDisabled  = { props.state.status == DISABLED }
       isLoading   = { props.state.status == LOADING }
       onChange    = { props.onChange }
+      isClearable = { true }
     />
   )
 }
@@ -92,6 +93,27 @@ export default class AreaPicker extends React.Component {
   }
   // called whenever user updates some of the selectors
   onSelection(type, selection) {
+    // means that the "clear" button was pressed and selector is reset
+    if (selection === null) {
+      this.onSelectorClear(type);
+    } else {
+      this.onSelectorSelection(type, selection);
+    }
+  }
+  // called when user clears the selector (by pressing the 'X' button)
+  onSelectorClear(type) {
+    this.resetSelector(type, this.state[type].options);
+    if (this.props.onSelection) {
+      let parentSelection
+            = type === AreaType.POLLING_DISTRICT ? this.state[AreaType.MUNICIPALITY].selection
+            : type === AreaType.MUNICIPALITY     ? this.state[AreaType.ELECTORAL_DISTRICT].selection
+            : type === AreaType.ELECTORAL_DISTRICT ? null
+            : null
+      this.props.onSelection(parentSelection);
+    }
+  }
+  // called when the user picks a value in a selector
+  onSelectorSelection(type, selection) {
     // call the props.onSelection callback
     if (this.props.onSelection) { this.props.onSelection(selection); };
     // update the state of the selected selector
@@ -126,13 +148,18 @@ export default class AreaPicker extends React.Component {
   }
   // resetting the selector either to an empty selection with options or to disabled state
   resetSelector(type, options) {
+    // electoral district and municipality must be selected before selecting polling district
+    if (type === AreaType.ELECTORAL_DISTRICT) {
+      this.disableSelector(AreaType.MUNICIPALITY);
+    }
+    // municipality must be selected before selecting polling district
     if (type === AreaType.ELECTORAL_DISTRICT || type === AreaType.MUNICIPALITY) {
-      // electoral district and municipality must be selected before selecting polling district
       this.disableSelector(AreaType.POLLING_DISTRICT);
     }
+    // if options are provided the selector is ready to be selected
     if (options) {
       this.setState({ [type]: selector.notSelected(options) });
-    } else {
+    } else { // otherwise we have to disable it
       this.disableSelector(type);
     }
   }
