@@ -3,26 +3,34 @@ import { render } from 'react-dom';
 import ReactTable from 'react-table';
 import 'react-table/react-table.css';
 
-export default class Table extends React.Component{
+import { AreaResponse, Nominator, Status } from 'election';
 
+export default class Table extends React.Component {
   constructor(props) {
     super(props);
   }
-
   render() {
-    const { data } = this.props;
+    const { areaResponse } = this.props;
+    const data = areaResponse === null ? null : areaResponseData(areaResponse);
     return (
       <div>
         <ReactTable
-          data={data}
+          loading={ areaResponse === null }
+          data={data || []}
           columns={[
               {
                 Header: '#',
-                accessor: 'id'
+                accessor: 'candidateNumber'
               },
               {
                 Header: 'Parti',
-                accessor: 'party'
+                // TODO: when hovering over that cell, we could show a box with extended party info
+                id: 'nominator.abbreviation',
+                accessor: ({ nominator }) =>
+                  // ???: Self-nominated candidates have 'E<candidateNumber>' abbreviation
+                  //      We could render some text instead of that.
+                  nominator.abbreviation.swedish
+                    || nominator.abbreviation.finnish
               },
               {
                 Header: 'Förnamn',
@@ -34,15 +42,15 @@ export default class Table extends React.Component{
               },
               {
                 Header: 'Röster Totalt',
-                accessor: 'votesTotal'
+                accessor: 'votes.totalVotes'
               },
               {
                 Header: 'Förhandsröster',
-                accessor: 'votesAdvance'
+                accessor: 'votes.advanceVotes'
               },
               {
                 Header: 'Valdagsröster',
-                accessor: 'votesElectionDay'
+                accessor: 'votes.electionDayVotes'
               },
               {
                 Header: 'Jämförelsetal',
@@ -50,7 +58,13 @@ export default class Table extends React.Component{
               },
               {
                 Header: 'Status',
-                accessor: 'status'
+                id: 'status',
+                accessor: ({status}) =>
+                    status === Status.ELECTED     ? "Invald"
+                  : status === Status.SUBSTITUTE  ? "Suppleant"
+                  : status === Status.NOT_ELECTED ? "Ej invald"
+                  : status === Status.INELIGIBLE  ? "Ej valbar"
+                  : status
               },
           ]}
           className="-striped -highlight"
@@ -67,5 +81,20 @@ export default class Table extends React.Component{
       </div>
     )
   }
+}
 
+// Converts 'AreaResponse' into table data format
+function areaResponseData(areaResponse) {
+  return areaResponse.nominators.reduce(
+    (rows, nominator) => rows.concat(nominatorRows(nominator)),
+    []
+  );
+}
+
+// Turns a 'Nominator' into an array of candidate rows.
+function nominatorRows({candidates, ...nominator}) {
+  return (candidates || []).map(candidate => {
+    candidate.nominator = nominator;
+    return candidate;
+  });
 }
