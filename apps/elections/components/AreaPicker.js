@@ -1,139 +1,151 @@
 import React from 'react';
 import Select from 'react-select';
 
-import { getElectoralDistricts, getMunicipalities, getPollingDistricts } from './Backend.js'
+import { getElectoralDistricts, getMunicipalities, getPollingDistricts } from './Backend.js';
+import { AreaType } from 'election';
 
 "use strict";
 
+// Individual selector statuses
 const NOT_SELECTED = "NOT_SELECTED";
 const LOADING = "LOADING";
 const DISABLED = "DISABLED";
 const SELECTED = "SELECTED";
 
-function selector() {
-  return {
-    status: DISABLED,
-    selection: null,
-    options: []
+// Data constructors for all possible states of individual selector
+let selector = {
+  disabled: function() {
+    return {
+      status: DISABLED,
+      selection: null,
+      options: []
+    }
+  },
+  loading: function() {
+    return {
+      status: LOADING,
+      selection: null,
+      options: []
+    }
+  },
+  notSelected: function(options) {
+    return {
+      status: NOT_SELECTED,
+      selection: null,
+      options
+    }
+  },
+  selected: function(selection, options) {
+    return {
+      status: SELECTED,
+      selection,
+      options
+    }
   }
 }
 
+let Selector = function(props) {
+  return (
+    <Select
+      value       = { props.state.selection }
+      options     = { props.state.options }
+      isDisabled  = { props.state.status == DISABLED }
+      isLoading   = { props.state.status == LOADING }
+      onChange    = { props.onChange }
+    />
+  )
+}
+
 export default class AreaPicker extends React.Component {
+  // called when creating the component
   constructor(props) {
     super(props);
+    // initially all selectors are disabled
     this.state = {
-      electoralDistrict: selector,
-      municipality: selector,
-      pollingDistrict: selector,
+      [AreaType.ELECTORAL_DISTRICT]: selector.disabled(),
+      [AreaType.MUNICIPALITY]: selector.disabled(),
+      [AreaType.POLLING_DISTRICT]: selector.disabled(),
     }
   }
+  // called when component is loaded
   componentDidMount() {
-    getElectoralDistricts()
-      .then(({ areas }) => {
-        this.setState({
-          electoralDistrict: {
-            status: NOT_SELECTED,
-            value: null,
-            options: areas.map(areaOption)
-          }
-        })
-      });
-  }
-  onSelection(selection) {
-    if (this.props.onSelection) {
-      this.props.onSelection(selection);
-    }
-  }
-  onSelectedElectoralDistrict(electoralDistrict) {
-    this.onSelection(electoralDistrict);
-    this.setState({
-      electoralDistrict: {
-        status: SELECTED,
-        selection: electoralDistrict,
-        options: this.state.electoralDistrict.options
-      },
-      municipality: {
-        selection: null,
-        options: [],
-        status: LOADING
-      }
-    });
-    getMunicipalities(electoralDistrict.value).then(({ areas } ) => {
-      this.setState({
-        // reset the children selectors        
-        municipality: {
-          status: NOT_SELECTED,
-          selection: null,
-          options: areas.map(areaOption)
-        },
-        pollingDistrict: {
-          status: DISABLED,
-          selection: null,
-          options: []
-        }
-      });
-    });
-  }
-  onSelectedMunicipality(municipality) {
-    this.setState({
-      municipality: {
-        ...this.state.municipality,
-        selection: municipality
-      }
-    });
-    this.onSelection(municipality);
-    getPollingDistricts(municipality.value).then(({ areas } ) => {
-      this.setState({
-        pollingDistrict: {
-          status: NOT_SELECTED,
-          selection: null,
-          options: areas.map(areaOption)
-        }
-      });
-    });
-  }
-  onSelectedPollingDistrict(pollingDistrict) {
-    this.setState( { pollingDistrict: {
-      selection: pollingDistrict,
-      status: SELECTED,
-      options: this.state.pollingDistrict.options
-    }});
-    this.onSelection(pollingDistrict);
+    // load top-level areas for the first selector
+    this.getSelectorOptions(AreaType.ELECTORAL_DISTRICT);
   }
   render() {
     return (
       <div>
-        <Select
-          value={ this.state.electoralDistrict.selection }
-          options={ this.state.electoralDistrict.options }
-          isDisabled={ this.state.electoralDistrict.status == "DISABLED" }
-          isLoading={ this.state.electoralDistrict.status == "LOADING" }
-          onChange={ (option) => this.onSelectedElectoralDistrict(option) }
+        <Selector
+          state    = { this.state[AreaType.ELECTORAL_DISTRICT] }
+          onChange = { (option) => this.onSelection(AreaType.ELECTORAL_DISTRICT, option) }
         />
-        <Select
-          value={ this.state.municipality.selection }      
-          isDisabled={ this.state.municipality.status == "DISABLED" }
-          isLoading={ this.state.municipality.status == "LOADING" }
-          options={ this.state.municipality.options }
-          onChange={ (option) => this.onSelectedMunicipality(option) }
+        <Selector
+          state    = { this.state[AreaType.MUNICIPALITY] }
+          onChange = { (option) => this.onSelection(AreaType.MUNICIPALITY, option) }
         />
-        <Select
-          value={ this.state.pollingDistrict.selection }
-          isDisabled={ this.state.pollingDistrict.status == "DISABLED" }
-          isLoading={ this.state.pollingDistrict.status == "LOADING" }
-          options={ this.state.pollingDistrict.options || [] }
-          onChange={ (option) => this.onSelectedPollingDistrict(option) }      
+        <Selector
+          state    = { this.state[AreaType.POLLING_DISTRICT] }
+          onChange = { (option) => this.onSelection(AreaType.POLLING_DISTRICT, option) }
         />
       </div>
     )
+  }
+  // called whenever user updates some of the selectors
+  onSelection(type, selection) {
+    // call the props.onSelection callback
+    if (this.props.onSelection) { this.props.onSelection(selection); };
+    // update the state of the selected selector
+    this.setState({
+      [type]: selector.selected(selection, this.state[type].options),
+    })
+    // if there's a child we want to provide it with corresponding options
+    let childType
+          = type === AreaType.ELECTORAL_DISTRICT ? AreaType.MUNICIPALITY
+          : type === AreaType.MUNICIPALITY       ? AreaType.POLLING_DISTRICT
+          : null
+    if (childType) {
+      this.getSelectorOptions(childType, selection);
+    }
+  }
+  // gets options for the specified selector which correspond to specified parent
+  getSelectorOptions(type, parent) {
+    // switch to loading mode
+    this.setState({ [type]: selector.loading() });
+    // pick the right method for fetching the corresponding areas
+    let getAreas
+          = type === AreaType.ELECTORAL_DISTRICT ? getElectoralDistricts()
+          : type === AreaType.MUNICIPALITY       ? getMunicipalities(parent.info.identifier)
+          : type === AreaType.POLLING_DISTRICT   ? getPollingDistricts(parent.info.identifier)
+          : null;
+    if (getAreas) {
+      getAreas.then(({ areas }) => {
+        // update selector's state and provide the fetched options
+        this.resetSelector(type, areas.map(areaOption))
+      })
+    }
+  }
+  // resetting the selector either to an empty selection with options or to disabled state
+  resetSelector(type, options) {
+    if (type === AreaType.ELECTORAL_DISTRICT || type === AreaType.MUNICIPALITY) {
+      // electoral district and municipality must be selected before selecting polling district
+      this.disableSelector(AreaType.POLLING_DISTRICT);
+    }
+    if (options) {
+      this.setState({ [type]: selector.notSelected(options) });
+    } else {
+      this.disableSelector(type);
+    }
+  }
+  // disables the specified selector
+  disableSelector(type) {
+    this.setState({ [type]: selector.disabled() });
   }
 }
 
 function areaOption(area) {
   return {
+    ...area,
     value: area.info.identifier,
     label: area.info.name.swedish || area.info.name.finnish,
-    info: area.info,
-    parent: area.parent
   }
 }
