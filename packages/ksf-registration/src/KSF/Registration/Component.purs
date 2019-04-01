@@ -177,10 +177,10 @@ update self = case _ of
 
   -- For setting the invalid states according to response from the server
   SetServerValidationError fieldName invalidState ->
-    Update case fieldName of
-      EmailAddress -> self.state { emailAddress { validationError = Just $ invalidState } }
-      Password     -> self.state { password { validationError = Just $ invalidState } }
-      _            -> self.state
+    case fieldName of
+      EmailAddress -> Update self.state { emailAddress { validationError = Just $ invalidState } }
+      Password     -> Update self.state { password { validationError = Just $ invalidState } }
+      _            -> NoUpdate
 
 validateEmptyField :: RegistrationInputField -> String -> Maybe String -> Maybe ValidationError
 validateEmptyField fieldName validationErrorMsg fieldValue
