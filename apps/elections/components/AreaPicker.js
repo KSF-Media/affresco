@@ -53,6 +53,8 @@ let Selector = function(props) {
       isLoading   = { props.state.status == LOADING }
       onChange    = { props.onChange }
       isClearable = { true }
+      loadingMessage = { () => props.loadingMessage }
+      placeholder    = { props.placeholder }
     />
   )
 }
@@ -79,14 +81,20 @@ export default class AreaPicker extends React.Component {
         <Selector
           state    = { this.state[AreaType.ELECTORAL_DISTRICT] }
           onChange = { (option) => this.onSelection(AreaType.ELECTORAL_DISTRICT, option) }
+          placeholder    = "Select electoral district…"
+          loadingMessage = "Getting electoral districts…"
         />
         <Selector
           state    = { this.state[AreaType.MUNICIPALITY] }
           onChange = { (option) => this.onSelection(AreaType.MUNICIPALITY, option) }
+          placeholder    = "Select municipality…"
+          loadingMessage = "Getting municipalities…"
         />
         <Selector
           state    = { this.state[AreaType.POLLING_DISTRICT] }
           onChange = { (option) => this.onSelection(AreaType.POLLING_DISTRICT, option) }
+          placeholder    = "Select polling district…"
+          loadingMessage = "Getting polling districts…"
         />
       </div>
     )
