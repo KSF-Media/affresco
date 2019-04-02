@@ -4,6 +4,7 @@ import render from 'react-dom';
 import Table from './Table.js';
 import Parliament from './Parliament.js';
 import AreaPicker from './AreaPicker.js'
+import Status from './Status.js';
 
 import '../assets/less/app.less';
 
@@ -32,6 +33,9 @@ export default class App extends React.Component {
 
     return (
       <div className="ksf-elections">
+        <Status
+          percentage={78}
+        />
         <Parliament
           seats={seats}
         />
