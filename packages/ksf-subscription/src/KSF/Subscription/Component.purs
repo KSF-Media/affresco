@@ -3,6 +3,7 @@ module KSF.Subscription.Component where
 import Prelude
 
 import Data.DateTime (adjust)
+import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
@@ -12,15 +13,29 @@ import Data.Nullable as Nullable
 import Data.String (trim)
 import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
+import KSF.DescriptionList.Component as DescriptionList
+import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.Subscription.View as View
 import Persona as Persona
-import React.Basic (JSX, make)
+import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
+import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
+import React.Basic.Extended (Style)
+import React.Basic.Extended as ReactExt
 
-type Self = React.Self Props {} Void
+foreign import subscriptionStyles :: Style
+
+type Self = React.Self Props State Void
 
 type Props =
   { subscription :: Persona.Subscription }
+
+type State =
+  { pauseSubscription :: Boolean }
+
+data Action
+  = ShowPauseSubscription Boolean
 
 type Subscription =
   { package :: { name :: String
@@ -47,18 +62,59 @@ component = React.createComponent "Subscription"
 
 subscription :: Props -> JSX
 subscription = make component
-  { initialState: {}
+  { initialState: { pauseSubscription: false }
   , render
+  , update
   }
 
+update :: Self -> Action -> StateUpdate Props State Action
+update self = case _ of
+  ShowPauseSubscription show -> Update $ self.state { pauseSubscription = show }
+
 render :: Self -> JSX
-render { props } =
-  View.subscription
-    { product: props.subscription.package.name
-    , status: translateStatus props.subscription.state
-    , nextBillingDate: nextBillingDate
-    }
+render self@{ props } =
+  ReactExt.requireStyle
+    subscriptionStyles
+    $ React.element
+        DescriptionList.component
+          { definitions:
+              [ { term: "Produkt:"
+                , descriptions: [ props.subscription.package.name ]
+                }
+              , { term: "Status:"
+                , descriptions: [ translateStatus props.subscription.state ]
+                }
+              ]
+              <> foldMap billingDateTerm nextBillingDate
+          }
+          <> pauseSubscription
   where
+    billingDateTerm date =
+      [ { term: "Nästa faktureringsdatum:"
+        , descriptions: [ date ]
+        }
+      ]
+
+    pauseSubscription :: JSX
+    pauseSubscription =
+      DOM.div
+        { className: "subscription--pause-subscription mt2"
+        , children:
+            [ if self.state.pauseSubscription
+              then pauseSubscriptionComponent
+              else DOM.a
+                     { children: [ DOM.text "Gör uppehåll" ]
+                     , onClick: handler_ $ send self $ ShowPauseSubscription true
+                     }
+            ]
+        }
+
+    pauseSubscriptionComponent =
+        PauseSubscription.pauseSubscription
+          { subsno: props.subscription.subsno
+          , onCancel: send self $ ShowPauseSubscription false
+          }
+
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
       | otherwise =
