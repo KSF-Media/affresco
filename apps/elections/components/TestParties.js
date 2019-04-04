@@ -8,7 +8,7 @@ const testSeats = {
     'colour': '#006288'
   },
   'other': {
-    'seats': 190,
+    'seats': 3,
     'colour': '#eee'
   }
 };

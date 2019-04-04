@@ -28,7 +28,8 @@ export function getPollingDistricts(municipality) {
 }
 
 function makeApiClient() {
-  Election.ApiClient.instance.basePath = process.env.ELECTION_BACKEND_URL;
+  Election.ApiClient.instance.basePath = "https://election.staging.ksfmedia.fi/v1";
+  // Election.ApiClient.instance.basePath = process.env.ELECTION_BACKEND_URL;
   console.info("Loaded API client configuration", Election.ApiClient.instance)
 
   var api = new Election.DefaultApi(Election.ApiClient.instance);
