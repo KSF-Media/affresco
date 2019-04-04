@@ -9,8 +9,6 @@ import Chart from './Chart.js';
 
 import '../assets/less/app.less';
 
-import testData from './TestData';
-import testSeats from './TestParties.js';
 import { getArea } from './Backend';
 
 export default class App extends React.Component {
