@@ -98,13 +98,14 @@ render self@{ props } =
     pauseSubscription :: JSX
     pauseSubscription =
       DOM.div
-        { className: "subscription--pause-subscription mt2"
+        { className: "mt2"
         , children:
             [ if self.state.pauseSubscription
               then pauseSubscriptionComponent
-              else DOM.a
+              else DOM.span
                      { children: [ DOM.text "Gör uppehåll" ]
                      , onClick: handler_ $ send self $ ShowPauseSubscription true
+                     , className: "subscription--pause-subscription"
                      }
             ]
         }

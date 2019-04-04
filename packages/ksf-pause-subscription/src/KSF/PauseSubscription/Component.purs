@@ -66,8 +66,10 @@ render self =
           , children:
               [ startDayInput
               , endDayInput
-              , submitFormButton
-              , cancelPausing
+              , DOM.div
+                  { children: [ submitFormButton, cancelPausing ]
+                  , className: "mt2 clearfix"
+                  }
               ]
           }
 
@@ -80,7 +82,7 @@ render self =
                   , children: [ DOM.text "Börjar från" ]
                   }
               , DOM.input
-                  { className: "col col-3" -- TODO: narrower views
+                  { className: "col col-5" -- TODO: narrower views
                   , required: true
                   , onChange: handler targetValue $ SetStartDay >>> send self
                   , name: "startDate"
@@ -89,14 +91,14 @@ render self =
             }
     endDayInput =
         DOM.div
-          { className: "clearfix"
+          { className: "mt2 clearfix"
           , children:
               [ DOM.label
                   { className: "col col-12"
                   , children: [ DOM.text "Skall starta igen" ]
                   }
               , DOM.input
-                  { className: "col col-3" -- TODO: narrower views
+                  { className: "col col-5" -- TODO: narrower views
                   , required: true
                   , onChange: handler targetValue $ SetEndDay >>> send self
                   , name: "endDate"
@@ -108,11 +110,12 @@ render self =
         DOM.input
           { type: "submit"
           , value: "Skicka"
+          , className: "col col-3"
           }
 
     cancelPausing =
       DOM.div
-        { className: ""
+        { className: "ml1 col col-3 pause-subscription--cancel"
         , children: [ DOM.text "Avbryt" ]
         , onClick: handler_ self.props.onCancel
         }
