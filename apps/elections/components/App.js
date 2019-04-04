@@ -5,6 +5,7 @@ import Table from './Table.js';
 import Parliament from './Parliament.js';
 import AreaPicker from './AreaPicker.js'
 import Status from './Status.js';
+import Chart from './Chart.js';
 
 import '../assets/less/app.less';
 
@@ -18,32 +19,46 @@ export default class App extends React.Component {
     this.state = {
       selectedAreaId: "001",
       selectedAreaResponse: null,
-      seats: testSeats
+      seats: {},
+      votesInArea: [],
     };
   }
   componentDidMount() {
     getArea(this.state.selectedAreaId)
       .then(areaResponse => {
-        this.setState({selectedAreaResponse: areaResponse})
+
+        // Get data for selected area
+        this.setState({selectedAreaResponse: areaResponse});
+        this.setState({votesInArea: areaResponse.nominators});
+
+        // Make object for the parliamentSVG
+        let s = { seats: areaResponse.nominators.map(
+          nominator => {
+            return {[nominator.abbreviation.finnish]: {
+              'seats': nominator.seats
+            }}
+          }
+        )};
+        this.setState({ seats: Object.assign(...s.seats) });
       });
   }
   render(){
-    const { selectedAreaResponse } = this.state;
-    const { seats } = this.state;
-
     return (
       <div className="ksf-elections">
         <Status
           percentage={78}
         />
         <Parliament
-          seats={seats}
+          seats={this.state.seats}
         />
         <AreaPicker
           onSelection={(option) => console.log("SELECTION", option) }
         />
+        <Chart
+          areaResponse={this.state.selectedAreaResponse}
+        />
         <Table
-          areaResponse={selectedAreaResponse}
+          areaResponse={this.state.selectedAreaResponse}
         />
       </div>
     )
