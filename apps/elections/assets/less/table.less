@@ -1,5 +1,8 @@
 .ksf-elections{
   font: 1rem 'Roboto', sans-serif;
+  .ReactTable{
+    font-size: .9rem;
+  }
   .ReactTable .rt-thead.-header {
     box-shadow: none;
     background: #eceae6;
@@ -18,5 +21,52 @@
   .ReactTable .-pagination .-btn {
     color: rgba(0,0,0,0.6);
     background: #eceae6;
+  }
+  .ReactTable .rt-thead .rt-th.-sort-desc,
+  .ReactTable .rt-thead .rt-td.-sort-desc{
+    box-shadow: none;
+    div{
+      &:before{
+        content: '➤';
+        opacity: .5;
+        transform: rotate(90deg);
+        display: inline-block;
+        margin-right: 5px;
+        transition: transform .3s ease;
+      }
+    }
+  }
+  .ReactTable .rt-thead .rt-th.-sort-asc,
+  .ReactTable .rt-thead .rt-td.-sort-asc{
+    box-shadow: none;
+    div{
+      &:before{
+        content: '➤';
+        opacity: .5;
+        transform: rotate(-90deg);
+        display: inline-block;
+        margin-right: 5px;
+        transition: transform .3s ease
+      }
+    }
+  }
+  .ReactTable .rt-td{
+    svg{
+      width: 10px;
+      height: 10px;
+      margin-right: 3px;
+      rect{
+        fill: #999;
+      }
+    }
+  }
+  .invald{
+    color: #a4ab47;
+  }
+  .ejvalbar{
+    color: #f9423a;
+  }
+  .suppleant{
+    color: #666;
   }
 }
