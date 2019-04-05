@@ -20,7 +20,8 @@ export default class Table extends React.Component {
           columns={[
               {
                 Header: '#',
-                accessor: 'candidateNumber'
+                accessor: 'candidateNumber',
+                style: {width: '50px'}
               },
               {
                 Header: 'Parti',
@@ -30,7 +31,22 @@ export default class Table extends React.Component {
                   // ???: Self-nominated candidates have 'E<candidateNumber>' abbreviation
                   //      We could render some text instead of that.
                   nominator.abbreviation.swedish
-                    || nominator.abbreviation.finnish
+                    || nominator.abbreviation.finnish,
+                Cell: row => {
+                  const className = row.value ? 'fill-'+row.value : '';
+                  return (
+                    <span>
+                      <svg>
+                        <rect
+                          className={className}
+                          width="11"
+                          height="12"
+                        />
+                      </svg>
+                      {row.value}
+                    </span>
+                  )
+                }    
               },
               {
                 Header: 'Förnamn',
@@ -41,20 +57,28 @@ export default class Table extends React.Component {
                 accessor: 'lastName'
               },
               {
-                Header: 'Röster Totalt',
-                accessor: 'votes.totalVotes'
+                Header: 'Röster',
+                accessor: 'votes.totalVotes',
               },
               {
-                Header: 'Förhandsröster',
+                Header: 'Förhand',
                 accessor: 'votes.advanceVotes'
               },
               {
-                Header: 'Valdagsröster',
+                Header: 'Valdag',
                 accessor: 'votes.electionDayVotes'
               },
               {
                 Header: 'Jämförelsetal',
-                accessor: 'comparativeIndex'
+                accessor: 'comparativeIndex',
+                Cell: row => {
+                  const val = row.value ? row.value.toFixed(2) : null;
+                  return (
+                    <span>
+                      {val}
+                    </span>
+                  )
+                }
               },
               {
                 Header: 'Status',
@@ -62,10 +86,27 @@ export default class Table extends React.Component {
                 accessor: ({status}) =>
                     status === Status.ELECTED     ? "Invald"
                   : status === Status.SUBSTITUTE  ? "Suppleant"
-                  : status === Status.NOT_ELECTED ? "Ej invald"
+                  : status === Status.NOT_ELECTED ? ""
                   : status === Status.INELIGIBLE  ? "Ej valbar"
-                  : status
+                  : status,
+                Cell: row => {
+                  const className = row.value ? row.value.toLowerCase().replace(/\s+/g, '') : '';
+                  return(
+                    <span
+                      className={className}
+                    >
+                    {row.value}
+                    </span>
+                  )
+                }
               },
+          ]}
+          resizable={false}
+          defaultSorted={[
+            {
+              id: "votes.totalVotes",
+              desc: true
+            }
           ]}
           className="-striped -highlight"
           previousText="Föregående"
