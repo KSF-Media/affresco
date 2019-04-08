@@ -109,26 +109,26 @@ let additions =
 -}
 
 let mkPackage =
-      https://raw.githubusercontent.com/spacchetti/spacchetti/20181209/src/mkPackage.dhall sha256:8e1c6636f8a089f972b21cde0cef4b33fa36a2e503ad4c77928aabf92d2d4ec9
+      https://raw.githubusercontent.com/purescript/package-sets/psc-0.12.3-20190403/src/mkPackage.dhall sha256:0b197efa1d397ace6eb46b243ff2d73a3da5638d8d0ac8473e8e4a8fc528cf57
 
 let upstream =
-      https://raw.githubusercontent.com/spacchetti/spacchetti/20181209/src/packages.dhall sha256:c63285af67ae74feb2f6eb67521712441928d2726ea10e2040774849ca765027
+      https://raw.githubusercontent.com/purescript/package-sets/psc-0.12.3-20190403/src/packages.dhall sha256:53f95298ca7734c037a0ebfd2ce982c004d8377ebc01cc3387f5a61508c6b8ac
 
 let overrides = {=}
 
 let additions =
-  { facebook =
-      mkPackage
-        [ "console"
-		, "aff"
-		, "prelude"
-		, "foreign"
-		, "foreign-generic"
-		, "errors"
-		, "effect"
-        ]
-		"https://github.com/Unisay/purescript-facebook.git"
-        "v0.3.0"
-  }
+      { facebook =
+          mkPackage
+          [ "console"
+          , "aff"
+          , "prelude"
+          , "foreign"
+          , "foreign-generic"
+          , "errors"
+          , "effect"
+          ]
+          "https://github.com/Unisay/purescript-facebook.git"
+          "v0.3.0"
+      }
 
-in  upstream ⫽ overrides ⫽ additions
+in  upstream // overrides // additions

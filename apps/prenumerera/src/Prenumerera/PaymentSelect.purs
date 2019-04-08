@@ -9,18 +9,18 @@ import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (Foreign)
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), element, make, monitor_, send)
+import Prenumerera.Confirm as Confirm
+import Prenumerera.Prenumerera (Product)
+import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
-import React.Basic.Events (handler)
+import React.Basic.Events (EventHandler, handler)
 import Router (Match, Location)
 import Router as Router
-import Prenumerera.Confirm as Confirm
-import Prenumerera.Prenumerera (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
-type Self = React.Self Props State Action
+type Self = React.Self Props State
 type Props = { match :: Maybe Match, location :: Location (Maybe LocationState) }
 type State =
   { user :: Maybe Persona.User
@@ -78,10 +78,10 @@ fromJsProps { match, location: { key, pathname, search, hash, state } } =
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
-  React.toReactComponent fromJsProps component { initialState, render, didMount, update, didUpdate }
+  React.toReactComponent fromJsProps component { initialState, render, didMount, didUpdate }
 
 paymentSelect :: Props -> JSX
-paymentSelect props = make component { initialState, render, didMount, update, didUpdate } props
+paymentSelect props = make component { initialState, render, didMount, didUpdate } props
 
 didMount :: Self -> Effect Unit
 didMount self@{ props: { location: { state: Just state } } } = do
@@ -106,7 +106,7 @@ initialState =
   , payment: { paymentMethod: Nothing, surcharge: Just 5.0 }
   }
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   AcceptTerms ->
     Update self.state { termsAccepted = not self.state.termsAccepted }
@@ -116,6 +116,12 @@ update self = case _ of
     Update self.state { product = Just p }
   PaymentMethod pm ->
     Update self.state { payment { paymentMethod = Just pm } }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
+
+monitor_ :: Self -> Action -> EventHandler
+monitor_ self action = handler identity \_ -> send self action
 
 render :: Self -> JSX
 render self =

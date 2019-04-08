@@ -1,13 +1,12 @@
 module KSF.Navbar.Collapsed.Component where
 
-import Data.Void (Void)
 import KSF.Navbar.Collapsed.View as View
 import React.Basic (JSX, make)
 import React.Basic as React
 
 data Visibility = Visible | Hidden
 
-type Self = React.Self Props {} Void
+type Self = React.Self Props {}
 
 type Props =
   { visibility :: Visibility

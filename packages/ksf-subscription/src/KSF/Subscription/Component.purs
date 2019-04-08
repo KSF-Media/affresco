@@ -17,7 +17,7 @@ import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 
-type Self = React.Self Props {} Void
+type Self = React.Self Props {}
 
 type Props =
   { subscription :: Persona.Subscription }

@@ -2,7 +2,6 @@ module Prenumerera.Confirm where
 
 import Prelude
 
-import Control.Comonad ((<<=))
 import Data.Array (catMaybes)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), maybe)
@@ -11,7 +10,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), element, make, send)
+import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Router (Location)
@@ -19,7 +18,7 @@ import Router as Router
 import Prenumerera.Prenumerera (Product)
 import Unsafe.Coerce (unsafeCoerce)
 
-type Self = React.Self Props State Action
+type Self = React.Self Props State
 
 type Props = { location ::  Location (Maybe LocationState) }
 
@@ -78,13 +77,12 @@ component = React.createComponent "Confirm"
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
-  React.toReactComponent fromJSProps component { initialState, render, update, didMount }
+  React.toReactComponent fromJSProps component { initialState, render, didMount }
 
 confirm :: Props -> JSX
 confirm = make component
   { initialState
   , render
-  , update
   , didMount
   }
 
@@ -201,7 +199,7 @@ confirmButton =
           }
     button = DOM.span_ [ DOM.text "Godkänn" ]
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   SetProduct p ->
     Update self.state { product = Just p }
@@ -209,6 +207,9 @@ update self = case _ of
     Update self.state { user = Just u }
   SetPayment p ->
     Update self.state { payment = Just p }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 column :: String -> String -> JSX -> JSX
 column header description list =

@@ -13,7 +13,7 @@ import Effect.Class.Console as Console
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, send)
+import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
@@ -23,7 +23,7 @@ import React.Basic.Extended as React.Extended
 
 foreign import registrationStyles :: Style
 
-type Self = React.Self Props State Void
+type Self = React.Self Props State
 
 type Props =
   { onRegister :: Aff Persona.LoginResponse -> Effect Unit
@@ -85,7 +85,7 @@ data Action
   | FormFieldInvalid String
 
 registration :: Props -> JSX
-registration = make component { initialState, render, update }
+registration = make component { initialState, render }
 
 initialState :: State
 initialState =
@@ -109,7 +109,7 @@ initialState =
 component :: React.Component Props
 component = React.createComponent "Registration"
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   UpdateInput attr newValue -> Update do
     case attr of
@@ -133,6 +133,9 @@ update self = case _ of
       "emailAddress" -> Update self.state { inputValidations { emailAddress = Validation Invalid } }
       "password"     -> Update self.state { inputValidations { password = Invalid } }
       _ -> NoUpdate
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 render :: Self -> JSX
 render self =
