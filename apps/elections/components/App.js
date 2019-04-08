@@ -9,20 +9,31 @@ import Chart from './Chart.js';
 
 import '../assets/less/app.less';
 
-import { getArea } from './Backend';
+import { getArea, getCountry } from './Backend';
 
 export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedAreaId: "001",
+      selectedArea: null,
       selectedAreaResponse: null,
       seats: {},
       votesInArea: [],
     };
   }
   componentDidMount() {
-    getArea(this.state.selectedAreaId)
+    this.onAreaSelection();
+  }
+  onAreaSelection(area) {
+    console.info("onAreaSelection", area);
+    if (!area) { // if no area was provided (e.g. on start or reset)
+      return getCountry().then(area => { // get the whole country
+        if (area) { return this.onAreaSelection(area) } // and roll with that instead
+      })
+    }
+    let selectedArea = area;
+    this.setState({ selectedArea })
+    return getArea(selectedArea.info.identifier)
       .then(areaResponse => {
 
         // Get data for selected area
@@ -50,7 +61,7 @@ export default class App extends React.Component {
           seats={this.state.seats}
         />
         <AreaPicker
-          onSelection={(option) => console.log("SELECTION", option) }
+          onSelection={ (area) => this.onAreaSelection(area) }
         />
         <Chart
           areaResponse={this.state.selectedAreaResponse}
