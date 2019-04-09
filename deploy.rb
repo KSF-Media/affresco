@@ -16,16 +16,19 @@ env_variables = {
 # A hash of apps with their configuration
 apps = {
   "mitt-konto" => {
+    "packages" => [ 'MittKonto.Main' ],
     "env_variables" =>
     env_variables["social_login"] +
     env_variables["persona"]
   },
   "prenumerera" => {
+    "packages" => [ 'Prenumerera.Main' ],
     "env_variables" =>
     env_variables["social_login"] +
     env_variables["persona"]
   },
   "elections" => {
+    "packages" => [ 'KSF.Login.Component' ],
     "env_variables" => %w[]
   }
 }
@@ -57,11 +60,13 @@ def run_command(command)
   system(command) or abort("'#{command}' failed.")
 end
 
+modules_to_build = apps[app_name]["packages"].map {|x| "'" + x + "'"}.join(" ")
+
 build_commands = [
   'yarn run clean',
   'yarn install --pure-lockfile --cache-folder=.yarn-cache',
   'lerna clean --yes',
-  'yarn run --cache-folder=.yarn-cache build-purs',
+  "yarn run --cache-folder=.yarn-cache build-purs #{modules_to_build}",
   'lerna bootstrap',
   "lerna run --cache-folder=.yarn-cache --scope='@affresco/#{app_name}'  build"
 ]
