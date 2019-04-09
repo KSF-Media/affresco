@@ -96,7 +96,7 @@ navbar { onLogout, toggleCollapsedNav, paperInfo, collapsedNav } =
                     , DOM.div_
                         [ DOM.text "Ring vår kundservice, "
                         , formatTelAnchorTag paperInfo.phoneNumber
-                        , DOM.text " (vard. kl 8-19)"
+                        , DOM.text " (vard. kl 8-16.30)"
                         ]
                     , DOM.div_ [ formatMailtoAnchorTag paperInfo.email ]
                     ]

@@ -44,6 +44,7 @@
 }
 
 .registration--create-button {
+    &:disabled { background: grey }
     background: green;
     color: @white;
     width: 100%;
@@ -65,6 +66,10 @@
 
 .registration--invalid-form-text {
     text-align: left;
+    color: red;
+}
+
+.registration--invalid-form-generic-message {
     color: red;
 }
 
