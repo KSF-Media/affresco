@@ -58,14 +58,12 @@ def run_command(command)
 end
 
 build_commands = [
-  'npm run clean',
-  'npm install yarn',
+  'yarn run clean',
   'yarn install --pure-lockfile --cache-folder=.yarn-cache',
-  'spago install',
   'lerna clean --yes',
   'yarn run --cache-folder=.yarn-cache build-purs',
   'lerna bootstrap',
-  'lerna run --cache-folder=.yarn-cache build'
+  "lerna run --cache-folder=.yarn-cache --scope='@affresco/#{app_name}'  build"
 ]
 
 build_commands.each { |c| run_command(c) }
