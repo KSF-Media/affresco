@@ -7053,7 +7053,7 @@ punycode@^2.1.0, punycode@^2.1.1:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
-purescript@^0.12.3:
+purescript@^0.12.4:
   version "0.12.4"
   resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.12.4.tgz#885a82f02270cb7ffdd1fda8ddf5e6071c86c6b2"
   integrity sha512-VwIKmjcVQzk9cHuzu1ESyjKpZr+mRIjEhZbk5q8N7G17Deog/eJ3EZ/7s8Z/x9rmeYQmd2WPgRN0W5MpWPcvug==
