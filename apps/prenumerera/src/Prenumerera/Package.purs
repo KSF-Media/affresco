@@ -5,12 +5,12 @@ import Prelude
 import Data.Foldable (fold)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import React.Basic (JSX, StateUpdate(..), make, send)
+import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Prenumerera.Prenumerera (Package)
 
-type Self = React.Self Props State Void
+type Self = React.Self Props State
 
 type Props =
   { package :: Package
@@ -28,7 +28,7 @@ component :: React.Component Props
 component = React.createComponent "Package"
 
 package :: Props -> JSX
-package = make component { initialState, render, didMount, update }
+package = make component { initialState, render, didMount }
 
 initialState :: State
 initialState =
@@ -38,10 +38,13 @@ didMount :: Self -> Effect Unit
 didMount self =
   send self (SetPackage self.props.package)
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   SetPackage p ->
     Update self.state { package = Just p }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 render :: Self -> JSX
 render self@{ state: { package: Just thisPackage } } =

@@ -2,14 +2,12 @@ module Prenumerera.Main where
 
 import Prelude
 
-import Data.Function.Uncurried (runFn1)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Uncurried (EffectFn1)
 import KSF.Footer.Component as Footer
 import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
@@ -19,15 +17,13 @@ import Prenumerera.Confirm as Confirm
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.ProductSelect as ProductSelect
 import Prenumerera.User as User
-import React.Basic (JSX, StateUpdate(..), element, make, send)
+import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Record (merge)
 import Router as Router
 
-foreign import startNavigation :: EffectFn1 (String -> Effect Unit) Unit
 
-type Self = React.Self Props State Action
+type Self = React.Self Props State
 type Props = {}
 
 type State =
@@ -52,7 +48,6 @@ app = make component
       , loggedInUser: Nothing
       }
   , render
-  , update
   }
 
 render :: Self -> JSX
@@ -102,10 +97,13 @@ render self  =
           , render: ProductSelect.productSelect <<< ProductSelect.fromJsProps
           }
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   SetUser u ->
     Update self.state { loggedInUser = u }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 renderUser :: Self -> User.JSProps -> JSX
 renderUser self { location, match } =

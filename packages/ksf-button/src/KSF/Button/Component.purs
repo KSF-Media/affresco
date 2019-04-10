@@ -30,7 +30,7 @@ button = make component
   , didMount
   }
 
-didMount :: React.Self Props {} Void -> Effect Unit
+didMount :: React.Self Props {} -> Effect Unit
 didMount { instance_, props } = do
   mountedNode <- DOM.findDOMNode instance_
   case mountedNode of
@@ -39,7 +39,7 @@ didMount { instance_, props } = do
     Right node -> do
       props.onLoad node
 
-render :: React.Self Props {} Void -> JSX
+render :: React.Self Props {} -> JSX
 render { props } =
   View.button
     { description: props.description
