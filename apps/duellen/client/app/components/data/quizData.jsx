@@ -5,7 +5,7 @@ export const quizIntro = {
   week: 'Vecka 1',
   title: 'Jämn Nyårsduell!',
   description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin eu est nisl.',
-}
+};
 
 // Question 1
 export const first = {
@@ -17,7 +17,7 @@ export const first = {
   hint3: 'Det tar 3 år för frukten att mogna helt och hållet.',
   hint2: 'På spanska heter frukten “piña”.',
   hint1: 'Frukten fick dess ursprungliga namn efter det lika utseendet till kottar.',
-}
+};
 
 // Question 2
 export const second = {
@@ -29,7 +29,7 @@ export const second = {
   hint3: 'Finns listat på teknologibörsen Nasdac.',
   hint2: 'Konkurrerar med bl.a. MSN Microsoft, Yahoo och AOL.',
   hint1: 'Det är fråga om världens mes använda sökmaskin på internet.',
-}
+};
 
 // Question 3
 export const third = {
@@ -41,7 +41,7 @@ export const third = {
   hint3: 'Cirka 5mm lång och platt.',
   hint2: 'Många tycker att den är en synnerligen obehaglig insekt.',
   hint1: 'Stort däggdjur + vanlig surrande insekt = svaret.',
-}
+};
 
 // Question 4
 export const fourth = {
@@ -53,7 +53,7 @@ export const fourth = {
   hint3: 'Föddes på godset Jasnaja Poljana, dog i Astopovo.',
   hint2: 'En av de stora ryska klassikerna.',
   hint1: 'Mannen skrev såväl Anna Karenina som Krig och fred.',
-}
+};
 
 // Question 5
 export const fifth = {
@@ -65,4 +65,4 @@ export const fifth = {
   hint3: 'Var gift med Anna Elise de la Chapelle.',
   hint2: 'En av hans kändaste tavlor är Drottning Blanka.',
   hint1: 'Gjorde illustrationer till Fenrik Ståls sägner.',
-}
+};
