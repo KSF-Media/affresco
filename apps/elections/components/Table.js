@@ -23,7 +23,7 @@ export default class Table extends React.Component {
               {
                 Header: '#',
                 accessor: 'candidateNumber',
-                style: {width: '50px'}
+                width: 50
               },
               {
                 Header: 'Parti',
@@ -48,29 +48,30 @@ export default class Table extends React.Component {
                       {row.value}
                     </span>
                   )
-                }
+                },
+                width: 80
               },
               {
-                Header: 'Efternamn',
-                accessor: 'lastName'
-              },
-              {
-                Header: 'Förnamn',
-                accessor: 'firstName'
+                Header: 'Namn',
+                id: 'name',
+                accessor: row => row.lastName + ", " + row.firstName,
               },
               {
                 Header: 'Röster',
                 accessor: 'votes.totalVotes',
+                maxWidth: 100
               },
               {
                 Header: 'Förhand',
                 accessor: 'votes.advanceVotes',
-                show: !isMobile
+                show: !isMobile,
+                maxWidth: 100
               },
               {
                 Header: 'Valdag',
                 accessor: 'votes.electionDayVotes',
-                show: !isMobile
+                show: !isMobile,
+                maxWidth: 100
               },
               {
                 Header: 'Jämförelsetal',
@@ -113,7 +114,6 @@ export default class Table extends React.Component {
               desc: true
             }
           ]}
-          className="-striped -highlight"
           previousText="Föregående"
           nextText="Nästa"
           loadingText="Laddar..."
