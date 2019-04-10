@@ -9,7 +9,7 @@ export default class Chart extends React.Component{
   }
 
   render(){
-    const relevantParties = ['CENT', 'SAML', 'BLÅ', 'SDP', 'SANNF', 'GRÖNA', 'VF', 'SFP'];
+    const relevantParties = ['CENT', 'SAML', 'BLÅ', 'SDP', 'SAF', 'GRÖNA', 'VÄNST', 'SFP', 'KD'];
 
     const { areaResponse } = this.props;
     const data = areaResponse === null ? null : areaResponseData(areaResponse);
