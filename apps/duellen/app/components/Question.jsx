@@ -9,6 +9,7 @@ import LinearProgress from 'material-ui/LinearProgress';
 import Resultat from './Resultat.jsx';
 import $ from 'jquery';
 import ReactGA from 'react-ga';
+import {backendURL} from '../backend.js'
 
 const red = '#EF5350';
 const green = '#66BB6A';
@@ -42,7 +43,7 @@ export default class Question extends React.Component {
   async componentDidMount() {
     ReactGA.pageview(window.location.pathname + window.location.search);
    try {
-     const res = await fetch('/duellen/api/' + this.props.match.params.id + '/');
+     const res = await fetch(backendURL + 'duellen/api/' + this.props.match.params.id + '/');
      const quizData = await res.json();
      this.setState({
        quizData,

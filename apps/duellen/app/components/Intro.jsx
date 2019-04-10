@@ -5,6 +5,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {quizIntro} from './data/quizData.jsx';
 import EmailDialog from './EmailDialog.jsx';
 import ReactGA from 'react-ga';
+import {backendURL} from '../backend.js'
 
 const styles = {
 listStyle: 'none',
@@ -33,26 +34,26 @@ export default class Intro extends React.Component{
   };
 
   async componentDidMount() {
-     ReactGA.pageview(window.location.pathname + window.location.search);
-   try {
-     const res = await fetch('/duellen/api/' + this.props.match.params.id + '/');
-     const quizData = await res.json();
-     this.setState({
-       quizData,
-     });
-     this.setState({
-       player1_img: this.state.quizData.player1_img,
-       player2_img: this.state.quizData.player2_img
-     });
-     }catch (e) {
+    ReactGA.pageview(window.location.pathname + window.location.search);
+    try {
+      const res = await fetch(backendURL + 'duellen/api/' + this.props.match.params.id + '/');
+      const quizData = await res.json();
+      this.setState({
+        quizData,
+      });
+      this.setState({
+        player1_img: this.state.quizData.player1_img,
+        player2_img: this.state.quizData.player2_img
+      });
+    } catch (e) {
       console.log(e);
-     }
-     if(this.state.quizData.sponsor === ''){
-       this.setState({sponsor: ''});
-     }else{
-       this.setState({sponsor: 'Veckans pris är sponsrat av ' + this.state.quizData.sponsor});
-     }
-   }
+    }
+    if(this.state.quizData.sponsor === ''){
+      this.setState({sponsor: ''});
+    }else{
+      this.setState({sponsor: 'Veckans pris är sponsrat av ' + this.state.quizData.sponsor});
+    }
+  }
 
   handleClick(e){
     e.preventDefault();

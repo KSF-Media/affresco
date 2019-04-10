@@ -4,6 +4,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {quizIntro} from './data/quizData.jsx';
 import ReactGA from 'react-ga';
+import {backendURL} from '../backend.js'
 
 const styles = {
 };
@@ -32,7 +33,7 @@ export default class Start extends React.Component {
     async componentDidMount() {
        ReactGA.pageview(window.location.pathname + window.location.search);
      try {
-       const res = await fetch('/duellen/api/');
+       const res = await fetch(backendURL + 'duellen/api/');
        const quizData = await res.json();
        this.setState({
          quizData,
