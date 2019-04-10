@@ -38,9 +38,9 @@ export default class Start extends React.Component {
          quizData,
        });
        this.setState({
-         weeklyQuiz: this.state.quizData[0]
+           weeklyQuiz: this.state.quizData[0]
        });
-       }catch (e) {
+       } catch (e) {
         console.log(e);
        }
        if(this.state.weeklyQuiz.price === ''){

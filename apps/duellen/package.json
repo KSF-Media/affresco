@@ -1,20 +1,19 @@
 {
-  "name": "duellen",
+  "name": "@affresco/duellen",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "ksfgit:digitala-medier/duellen.git",
-  "author": "Joakim Ekroos <joakim.ekroos@ksfmedia.fi>",
+  "author": "KSF Media",
   "license": "MIT",
   "scripts": {
-    "start": "webpack-dev-server --open --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js"
+    "start": "parcel index.html -p 8000",
+    "build": "parcel build index.html --no-cache"
   },
   "dependencies": {
-    "@babel/core": "^7.0.0-beta.46",
     "jquery": "^3.3.1",
     "jsonp": "^0.2.1",
     "material-ui": "^0.20.0",
     "material-ui-superselectfield": "^1.9.0",
+    "parcel-bundler": "^1.12.3",
     "path": "^0.12.7",
     "react": "^16.2.0",
     "react-autosuggest": "^9.3.4",
@@ -27,14 +26,14 @@
     "react-swipeable-views": "^0.12.12"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.0.0-beta.46",
-    "@babel/preset-react": "^7.0.0-beta.46",
-    "babel-loader": "^8.0.0-beta.2",
-    "clean-webpack-plugin": "^0.1.19",
-    "html-webpack-plugin": "^2.30.1",
-    "uglifyjs-webpack-plugin": "^1.2.5",
-    "webpack": "^3.11.0",
-    "webpack-dev-server": "^2.11.2",
-    "webpack-merge": "^4.1.2"
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.5",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-runtime": "^6.26.0",
+    "polyfill": "^0.1.0"
   }
 }
