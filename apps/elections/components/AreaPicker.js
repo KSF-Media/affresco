@@ -87,14 +87,14 @@ export default class AreaPicker extends React.Component {
         <Selector
           state    = { this.state[AreaType.MUNICIPALITY] }
           onChange = { (option) => this.onSelection(AreaType.MUNICIPALITY, option) }
-          placeholder    = "Röstningsområde"
+          placeholder    = "Kommun"
           loadingMessage = "Laddar kommuner…"
         />
         <Selector
           state    = { this.state[AreaType.POLLING_DISTRICT] }
           onChange = { (option) => this.onSelection(AreaType.POLLING_DISTRICT, option) }
-          placeholder    = "Vallokal"
-          loadingMessage = "Laddar vallokaler…"
+          placeholder    = "Röstningsområde"
+          loadingMessage = "Laddar röstningsområden…"
         />
       </div>
     )
