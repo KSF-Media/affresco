@@ -9,15 +9,33 @@ export default class Chart extends React.Component{
   }
 
   render(){
+    const relevantParties = ['CENT', 'SAML', 'BLÅ', 'SDP', 'SAF', 'GRÖNA', 'VÄNST', 'SFP', 'KD'];
+
     const { areaResponse } = this.props;
     const data = areaResponse === null ? null : areaResponseData(areaResponse);
-    const getRows = (data) => {
-      console.log("GetRows: ", data);
-      return data.map(
+
+    const getParties = (data) => {
+      const relevantData = data.filter( val => relevantParties.includes(val.abbreviation.swedish) );
+      const relevantPartyVotes = relevantData.reduce((total, val) => {
+        return parseFloat(total + val.votes.totalPercent)
+      }, 0);
+      const relevantAndOthers = relevantData.concat([
+        {
+          'abbreviation': {
+            'swedish': 'Övriga'
+          },
+          'votes': {
+            'totalPercent': 100 - relevantPartyVotes
+          }
+        }
+      ])
+
+      return relevantAndOthers.map(
         (obj, i) => {
+          let countStarted = relevantPartyVotes > 0;
           let votes = obj.votes ? obj.votes.totalPercent : 0;
           let name = obj.abbreviation.swedish || obj.abbreviation.finnish;
-          if(votes){
+          if(votes && countStarted){
             return(
               <div
                 key={i}
@@ -32,9 +50,10 @@ export default class Chart extends React.Component{
         }
       );
     }
+
     return(
       <div className="chart">
-        {getRows(data || [])}
+        {getParties(data || [])}
       </div>
     )
   }
