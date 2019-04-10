@@ -36,8 +36,9 @@ export default class Parliament extends React.Component {
     return (
       <div
         className="parliament-spread"
-        dangerouslySetInnerHTML={getSvg()}
       >
+        <div dangerouslySetInnerHTML={getSvg()}></div>
+        <h2>Riksdagens<br />fördelning just nu</h2>
       </div>
     )
   }
