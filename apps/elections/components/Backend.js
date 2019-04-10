@@ -7,6 +7,12 @@ export function getArea(identifier) {
   return api.areasIdentifierGet(identifier);
 }
 
+export function getCountry() {
+  return api.areasGet({
+    "type": [ Election.AreaType.COUNTRY ]
+  }).then(({ areas }) => areas[0]);
+}
+
 export function getElectoralDistricts() {
   return api.areasGet({
     "type": [ Election.AreaType.ELECTORAL_DISTRICT ]
