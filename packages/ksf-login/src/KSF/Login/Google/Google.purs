@@ -5,7 +5,6 @@ import Control.Promise as Promise
 import Data.Unit (Unit)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Aff as Aff
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import Web.DOM as DOM
 

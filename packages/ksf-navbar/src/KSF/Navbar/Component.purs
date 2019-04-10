@@ -12,10 +12,10 @@ import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Navbar.View as View
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, send)
+import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
 
-type Self = React.Self Props State Void
+type Self = React.Self Props State
 
 type Props =
   { paper :: Paper
@@ -55,14 +55,14 @@ initialState :: State
 initialState = { collapsedNavVisibility: Hidden }
 
 jsComponent :: React.ReactComponent JSProps
-jsComponent = React.toReactComponent fromJSProps component { initialState, render, update }
+jsComponent = React.toReactComponent fromJSProps component { render }
 
 component :: React.Component Props
 component = React.createComponent "Navbar"
 
 navbar :: Props -> JSX
 navbar = make component
-  { initialState, render, update }
+  { initialState, render }
 
 render :: Self -> JSX
 render self@{ props, state } =
@@ -90,10 +90,13 @@ render self@{ props, state } =
       , phoneNumber: paperPhoneNumber props.paper
       }
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   CollapsedNavVisibility v ->
     Update self.state { collapsedNavVisibility = v }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 data Paper = HBL | ON | VN | LS | HTHL | KSF
 derive instance eqPaper :: Eq Paper
