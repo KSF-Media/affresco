@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from 'react-dom';
 import ReactTable from 'react-table';
 import 'react-table/react-table.css';
+import { isMobile } from 'react-device-detect';
 
 import { AreaResponse, Nominator, Status } from 'election';
 
@@ -12,6 +13,7 @@ export default class Table extends React.Component {
   render() {
     const { areaResponse } = this.props;
     const data = areaResponse === null ? null : areaResponseData(areaResponse);
+    // console.log("isMobile: ", isMobile);
     return (
       <div>
         <ReactTable
@@ -46,15 +48,15 @@ export default class Table extends React.Component {
                       {row.value}
                     </span>
                   )
-                }    
-              },
-              {
-                Header: 'Förnamn',
-                accessor: 'firstName'
+                }
               },
               {
                 Header: 'Efternamn',
                 accessor: 'lastName'
+              },
+              {
+                Header: 'Förnamn',
+                accessor: 'firstName'
               },
               {
                 Header: 'Röster',
@@ -62,15 +64,18 @@ export default class Table extends React.Component {
               },
               {
                 Header: 'Förhand',
-                accessor: 'votes.advanceVotes'
+                accessor: 'votes.advanceVotes',
+                show: !isMobile
               },
               {
                 Header: 'Valdag',
-                accessor: 'votes.electionDayVotes'
+                accessor: 'votes.electionDayVotes',
+                show: !isMobile
               },
               {
                 Header: 'Jämförelsetal',
                 accessor: 'comparativeIndex',
+                show: !isMobile,
                 Cell: row => {
                   const val = row.value ? row.value.toFixed(2) : null;
                   return (
