@@ -1,9 +1,31 @@
 .parliament-spread{
-  padding: 30px;
+  padding: 0 30px;
+  margin: 30px 0;
+  position: relative;
   circle{
     fill: #333;
     &.unfilled{
       fill: #eee;
+    }
+  }
+  h2{
+    margin: 0;
+    width: 20vw;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    text-align: center;
+    margin-bottom: 6px;
+    font-size: .75rem;
+    @media screen and (min-width: 768px){
+      font-size: 1rem;
+    }
+    @media screen and (min-width: 992px){
+      font-size: 1.5rem;
+    }
+    @media screen and (min-width: 1200px){
+      font-size: 2rem;
     }
   }
 }
