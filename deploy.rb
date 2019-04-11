@@ -10,6 +10,9 @@ env_variables = {
   ],
   "persona" => %w[
     PRODUCTION_PERSONA_URL
+  ],
+  "duellen" => %w[
+    PRODUCTION_DUELLEN_URL
   ]
 }
 
@@ -30,6 +33,10 @@ apps = {
   "elections" => {
     "packages" => [ ],
     "env_variables" => %w[]
+  },
+  "duellen" => {
+    "packages" => [ ],
+    "env_variables" => env_variables["duellen"]
   }
 }
 
