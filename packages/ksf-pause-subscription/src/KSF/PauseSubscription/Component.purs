@@ -2,11 +2,15 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
+import Data.DateTime (DateTime(..))
+import Data.Function.Uncurried (Fn0, runFn0)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Class.Console as Console
+import Effect.Now as Now
+import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import KSF.Grid as Grid
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic (JSX, ReactComponent, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
@@ -15,6 +19,13 @@ import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
 
 foreign import pauseSubscriptionStyles :: Style
+foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
+
+type DatePickerProps =
+  { onChange :: Effect Unit
+  , className :: String
+  , value :: Maybe DateTime
+  }
 
 type Self = React.Self Props State
 
@@ -26,11 +37,13 @@ type Props =
 type State =
   { startDay :: Maybe String
   , endDay   :: Maybe String
+  , now :: DateTime
   }
 
 data Action
   = SetStartDay (Maybe String)
   | SetEndDay (Maybe String)
+  | SetNow DateTime
 
 pauseSubscription :: Props -> JSX
 pauseSubscription = make component { initialState, render }
@@ -42,15 +55,22 @@ initialState :: State
 initialState =
   { startDay: Nothing
   , endDay: Nothing
+  , now: Nothing
   }
 
 update :: Self -> Action -> StateUpdate Props State
 update self action = Update $ case action of
   SetStartDay newStartDay -> self.state { startDay = newStartDay }
   SetEndDay newEndDay -> self.state { endDay = newEndDay }
+  SetNow now -> self.state { now = now }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  now <- Now.nowDateTime
+  send self $ SetNow $ Just now
 
 render :: Self -> JSX
 render self =
@@ -68,6 +88,11 @@ render self =
                    })
                 Nothing
             , pauseForm
+            , element datePicker
+                        { onChange: Console.log "waaat"
+                        , className: "yolo"
+                        , value: self.state.now -- Nullable?
+                        }
             ]
         }
   where
@@ -113,3 +138,6 @@ submitForm :: Maybe String -> Maybe String -> Int -> Effect Unit
 submitForm (Just startDay) (Just endDay) subsno =
   Console.log $ startDay
 submitForm _ _ _ = pure unit
+
+datePicker :: ReactComponent DatePickerProps
+datePicker = runFn0 datePicker_
