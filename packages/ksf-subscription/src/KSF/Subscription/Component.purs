@@ -13,11 +13,12 @@ import Data.Nullable as Nullable
 import Data.String (trim)
 import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
+import Effect (Effect)
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.Subscription.View as View
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, send)
+import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
@@ -26,7 +27,7 @@ import React.Basic.Extended as ReactExt
 
 foreign import subscriptionStyles :: Style
 
-type Self = React.Self Props State Void
+type Self = React.Self Props State
 
 type Props =
   { subscription :: Persona.Subscription }
@@ -64,12 +65,14 @@ subscription :: Props -> JSX
 subscription = make component
   { initialState: { pauseSubscription: false }
   , render
-  , update
   }
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   ShowPauseSubscription show -> Update $ self.state { pauseSubscription = show }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 render :: Self -> JSX
 render self@{ props } =

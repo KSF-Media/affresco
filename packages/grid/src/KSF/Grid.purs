@@ -2,6 +2,7 @@ module KSF.Grid where
 
 import Prelude
 
+import Data.Array ((:))
 import Data.Maybe (Maybe(..))
 import Data.String (joinWith)
 import React.Basic (JSX)
@@ -13,23 +14,32 @@ type RowOptions =
 -- | Row with two columns
 row2 :: JSX -> JSX -> Maybe RowOptions -> JSX
 row2 leftElem rightElem opts =
+  row [ columnHalf leftElem, columnHalf rightElem ] opts
+
+
+row :: Array JSX -> Maybe RowOptions -> JSX
+row children opts =
   DOM.div
     { className: classes
-    , children:
-        [ column2 [ leftElem ]
-        , column2 [ rightElem ]
-        ]
+    , children
     }
   where
     classes =
-      let baseClass = "clearfix"
-      in case opts of
-        Just o  -> baseClass <> joinWith " " o.extraClasses
-        Nothing -> baseClass
+      let baseClasses = [ "clearfix" ]
+      in joinWith " "
+         case opts of
+           Just o  -> baseClasses <> o.extraClasses
+           Nothing -> baseClasses
 
-column2 :: Array JSX -> JSX
-column2 children =
+columnHalf :: JSX -> JSX
+columnHalf = column "col-6"
+
+columnThird :: JSX -> JSX
+columnThird = column "col-4"
+
+column :: String -> JSX -> JSX
+column widthClass child =
   DOM.div
-    { className: "col col-6"
-    , children
+    { className: "col " <> widthClass
+    , children: [ child ]
     }

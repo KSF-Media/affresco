@@ -1,7 +1,12 @@
 @import (reference) 'ksf-colors';
+@import 'ksf-utils';
 
 .pause-subscription--container {
     h3 { margin-top: 0 };
+    input[type=text] {
+        box-sizing: border-box;
+        width: 100%;
+    }
     border-style: solid;
     padding: 10px;
     border-width: 3px;
@@ -11,6 +16,9 @@
     border-top: 0;
 }
 
-.pause-subscription--cancel {
-    cursor: pointer;
+.pause-subscription--close-icon {
+    justify-content: right;
+    .close-icon {
+        cursor: pointer;
+    }
 }
