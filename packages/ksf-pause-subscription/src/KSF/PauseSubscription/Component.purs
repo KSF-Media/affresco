@@ -5,6 +5,7 @@ import Prelude
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Class.Console as Console
+import KSF.Grid as Grid
 import React.Basic (JSX, StateUpdate(..), make, send)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -55,7 +56,10 @@ render self =
     $ DOM.div
         { className: "clearfix pause-subscription--container"
         , children:
-            [ DOM.h3_ [ DOM.text "Uppehåll på prenumarationen" ]
+            [ Grid.row2
+                (DOM.h3_ [ DOM.text "Uppehåll på prenumarationen" ])
+                mempty
+                Nothing
             , pauseForm
             ]
         }
