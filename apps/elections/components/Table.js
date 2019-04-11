@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from 'react-dom';
 import ReactTable from 'react-table';
 import 'react-table/react-table.css';
+import { isMobile } from 'react-device-detect';
 
 import { AreaResponse, Nominator, Status } from 'election';
 
@@ -12,6 +13,7 @@ export default class Table extends React.Component {
   render() {
     const { areaResponse } = this.props;
     const data = areaResponse === null ? null : areaResponseData(areaResponse);
+    // console.log("isMobile: ", isMobile);
     return (
       <div>
         <ReactTable
@@ -20,7 +22,8 @@ export default class Table extends React.Component {
           columns={[
               {
                 Header: '#',
-                accessor: 'candidateNumber'
+                accessor: 'candidateNumber',
+                width: 50
               },
               {
                 Header: 'Parti',
@@ -30,31 +33,58 @@ export default class Table extends React.Component {
                   // ???: Self-nominated candidates have 'E<candidateNumber>' abbreviation
                   //      We could render some text instead of that.
                   nominator.abbreviation.swedish
-                    || nominator.abbreviation.finnish
+                    || nominator.abbreviation.finnish,
+                Cell: row => {
+                  const className = row.value ? 'fill-'+row.value : '';
+                  return (
+                    <span>
+                      <svg>
+                        <rect
+                          className={className}
+                          width="11"
+                          height="12"
+                        />
+                      </svg>
+                      {row.value}
+                    </span>
+                  )
+                },
+                width: 80
               },
               {
-                Header: 'Förnamn',
-                accessor: 'firstName'
+                Header: 'Namn',
+                id: 'name',
+                accessor: row => row.lastName + ", " + row.firstName,
               },
               {
-                Header: 'Efternamn',
-                accessor: 'lastName'
+                Header: 'Röster',
+                accessor: 'votes.totalVotes',
+                maxWidth: 100
               },
               {
-                Header: 'Röster Totalt',
-                accessor: 'votes.totalVotes'
+                Header: 'Förhand',
+                accessor: 'votes.advanceVotes',
+                show: !isMobile,
+                maxWidth: 100
               },
               {
-                Header: 'Förhandsröster',
-                accessor: 'votes.advanceVotes'
-              },
-              {
-                Header: 'Valdagsröster',
-                accessor: 'votes.electionDayVotes'
+                Header: 'Valdag',
+                accessor: 'votes.electionDayVotes',
+                show: !isMobile,
+                maxWidth: 100
               },
               {
                 Header: 'Jämförelsetal',
-                accessor: 'comparativeIndex'
+                accessor: 'comparativeIndex',
+                show: !isMobile,
+                Cell: row => {
+                  const val = row.value ? row.value.toFixed(2) : null;
+                  return (
+                    <span>
+                      {val}
+                    </span>
+                  )
+                }
               },
               {
                 Header: 'Status',
@@ -62,12 +92,28 @@ export default class Table extends React.Component {
                 accessor: ({status}) =>
                     status === Status.ELECTED     ? "Invald"
                   : status === Status.SUBSTITUTE  ? "Suppleant"
-                  : status === Status.NOT_ELECTED ? "Ej invald"
+                  : status === Status.NOT_ELECTED ? ""
                   : status === Status.INELIGIBLE  ? "Ej valbar"
-                  : status
+                  : status,
+                Cell: row => {
+                  const className = row.value ? row.value.toLowerCase().replace(/\s+/g, '') : '';
+                  return(
+                    <span
+                      className={className}
+                    >
+                    {row.value}
+                    </span>
+                  )
+                }
               },
           ]}
-          className="-striped -highlight"
+          resizable={false}
+          defaultSorted={[
+            {
+              id: "votes.totalVotes",
+              desc: true
+            }
+          ]}
           previousText="Föregående"
           nextText="Nästa"
           loadingText="Laddar..."

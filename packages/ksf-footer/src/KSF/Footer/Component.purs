@@ -1,12 +1,10 @@
 module KSF.Footer.Component where
 
-import Prelude
-
 import KSF.Footer.View as View
-import React.Basic (JSX, createComponent, make, makeStateless)
+import React.Basic (JSX, createComponent, make)
 import React.Basic as React
 
-type Self = React.Self Props {} Void
+type Self = React.Self Props {}
 type Props = {}
 
 jsComponent :: React.Component Props

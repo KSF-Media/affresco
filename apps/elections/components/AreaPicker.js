@@ -77,24 +77,24 @@ export default class AreaPicker extends React.Component {
   }
   render() {
     return (
-      <div>
+      <div className="selectors">
         <Selector
           state    = { this.state[AreaType.ELECTORAL_DISTRICT] }
           onChange = { (option) => this.onSelection(AreaType.ELECTORAL_DISTRICT, option) }
-          placeholder    = "Select electoral district…"
-          loadingMessage = "Getting electoral districts…"
+          placeholder    = "Valkrets"
+          loadingMessage = "Laddar valkretser…"
         />
         <Selector
           state    = { this.state[AreaType.MUNICIPALITY] }
           onChange = { (option) => this.onSelection(AreaType.MUNICIPALITY, option) }
-          placeholder    = "Select municipality…"
-          loadingMessage = "Getting municipalities…"
+          placeholder    = "Kommun"
+          loadingMessage = "Laddar kommuner…"
         />
         <Selector
           state    = { this.state[AreaType.POLLING_DISTRICT] }
           onChange = { (option) => this.onSelection(AreaType.POLLING_DISTRICT, option) }
-          placeholder    = "Select polling district…"
-          loadingMessage = "Getting polling districts…"
+          placeholder    = "Röstningsområde"
+          loadingMessage = "Laddar röstningsområden…"
         />
       </div>
     )
@@ -149,6 +149,7 @@ export default class AreaPicker extends React.Component {
           : null;
     if (getAreas) {
       getAreas.then(({ areas }) => {
+        console.log(areas);
         // update selector's state and provide the fetched options
         this.resetSelector(type, areas.map(areaOption))
       })

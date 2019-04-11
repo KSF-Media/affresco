@@ -12,18 +12,16 @@ import Effect.Class.Console as Console
 import Foreign (unsafeFromForeign)
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), element, make, send)
-import React.Basic as React
-import React.Basic.Compat as React.Compat
-import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler, handler_)
-import Router (Match, Location)
-import Router as Router
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.Prenumerera (Product)
+import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic as React
+import React.Basic.DOM as DOM
+import Router (Match, Location)
+import Router as Router
 import Unsafe.Coerce (unsafeCoerce)
 
-type Self = React.Self Props State Void
+type Self = React.Self Props State
 
 type Props = { match :: Match, location :: Location (Maybe LocationState), onUserLogin :: (Maybe Persona.User -> Effect Unit) }
 type State =
@@ -75,10 +73,10 @@ component = React.createComponent "User"
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
-  React.toReactComponent fromJsProps component { initialState, render, didMount, update }
+  React.toReactComponent fromJsProps component { initialState, render, didMount }
 
 user :: Props -> JSX
-user = make component { initialState, didMount, render, update }
+user = make component { initialState, didMount, render }
 
 initialState :: State
 initialState =
@@ -102,12 +100,15 @@ product { params } =
   where
     p = unsafeFromForeign params
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   SetProduct newProduct ->
     Update self.state { product = Just newProduct }
   SetUser newUser ->
     Update self.state { loggedInUser = Just newUser }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 render :: Self -> JSX
 render self =
@@ -147,7 +148,7 @@ loginComponent self =
             case _ of
               Left err -> Console.log $ unsafeCoerce err
               Right u  -> do
-                send { props: self.props, state: self.state, instance_: self.instance_ } $ SetUser u
+                send self $ SetUser u
                 self.props.onUserLogin (Just u)
         , launchAff_: \a -> do
             _ <- Aff.launchAff a
@@ -205,6 +206,7 @@ controlProfile self@{ state: { loggedInUser: (Just personaUser) } } =
     valueOf s = fromMaybe "" $ toMaybe s
 controlProfile _ = mempty
 
+inputField :: String -> String -> JSX
 inputField description inputValue =
   DOM.div
    { className: "col col-6 prenumerera--input"
@@ -217,6 +219,7 @@ inputField description inputValue =
        ]
    }
 
+userDataRow :: Array JSX -> JSX
 userDataRow children =
   DOM.div
     { className: "clearfix prenumerera--input-row"

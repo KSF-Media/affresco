@@ -10,23 +10,33 @@ env_variables = {
   ],
   "persona" => %w[
     PRODUCTION_PERSONA_URL
+  ],
+  "duellen" => %w[
+    PRODUCTION_DUELLEN_URL
   ]
 }
 
 # A hash of apps with their configuration
 apps = {
   "mitt-konto" => {
+    "packages" => [ 'MittKonto.Main' ],
     "env_variables" =>
     env_variables["social_login"] +
     env_variables["persona"]
   },
   "prenumerera" => {
+    "packages" => [ 'Prenumerera.Main' ],
     "env_variables" =>
     env_variables["social_login"] +
     env_variables["persona"]
   },
   "elections" => {
+    "packages" => [ ],
     "env_variables" => %w[]
+  },
+  "duellen" => {
+    "packages" => [ ],
+    "env_variables" => env_variables["duellen"]
   }
 }
 
@@ -57,15 +67,15 @@ def run_command(command)
   system(command) or abort("'#{command}' failed.")
 end
 
+modules_to_build = apps[app_name]["packages"].map {|x| "'" + x + "'"}
+
 build_commands = [
-  'npm run clean',
-  'npm install yarn',
-  'yarn install --pure-lockfile --cache-folder=.yarn-cache',
-  'spago install',
-  'lerna clean --yes',
-  'yarn run --cache-folder=.yarn-cache build-purs',
-  'lerna bootstrap',
-  'lerna run --cache-folder=.yarn-cache build'
-]
+  "yarn run clean",
+  "yarn install --pure-lockfile --cache-folder=.yarn-cache",
+  "lerna clean --yes",
+  modules_to_build.empty? ? nil : "yarn run --cache-folder=.yarn-cache build-purs #{modules_to_build.join(' ')}",
+  "lerna bootstrap",
+  "lerna run --cache-folder=.yarn-cache --scope='@affresco/#{app_name}' build"
+].compact
 
 build_commands.each { |c| run_command(c) }

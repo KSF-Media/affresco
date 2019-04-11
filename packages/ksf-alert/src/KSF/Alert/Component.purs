@@ -11,7 +11,7 @@ foreign import alertStyles :: React.Extended.Style
 
 newtype Level = Level String
 
-type Self = React.Self Props {} Void
+type Self = React.Self Props {}
 
 danger :: Level
 danger = Level "danger"
