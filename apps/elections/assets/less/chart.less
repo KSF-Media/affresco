@@ -1,18 +1,41 @@
 .chart{
   display: flex;
-  margin: 30px 0;
-  > div{
-    height: 40px;
-    background-color: #888;
+  align-items: flex-end;
+  justify-content: space-around;
+  margin: 50px 0 10px 0;
+  .party{
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    .name{
-      font-weight: 600;
+    flex-basis: 100%;
+    margin: 0 1px;
+    > div {
     }
-    .votes{
-      font-size: .75rem;
+    .bar{
+      max-width: 60px;
+      background-color: @other;
+      transition: height .5s;
+    }
+    .info{
+      position: relative;
+      > div{
+        position: absolute;
+        top: -30px;
+        @media screen and (min-width: 768px) {
+          top: -35px;
+        }
+        display: flex;
+        flex-direction: column;
+      }
+      .name{
+        font-weight: 600;
+        font-size: .75rem;
+        @media screen and (min-width: 768px) {
+          font-size: 1rem;
+        }
+      }
+      .votes{
+        font-size: .75rem;
+      }
     }
   }
 }

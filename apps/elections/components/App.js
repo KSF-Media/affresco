@@ -1,5 +1,7 @@
 import React from 'react';
 import render from 'react-dom';
+import { HashRouter as Router, Route } from "react-router-dom";
+import { isMobile } from 'react-device-detect';
 
 import Table from './Table.js';
 import Parliament from './Parliament.js';
@@ -53,7 +55,7 @@ export default class App extends React.Component {
   }
   render(){
     return (
-      <div className="ksf-elections">
+      <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
         <Status
           percentage={78}
         />
