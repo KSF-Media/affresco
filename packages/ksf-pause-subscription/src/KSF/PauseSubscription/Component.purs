@@ -3,7 +3,9 @@ module KSF.PauseSubscription.Component where
 import Prelude
 
 import Data.Date (Date)
+import Data.DateTime (DateTime)
 import Data.Function.Uncurried (Fn0, runFn0)
+import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
@@ -14,20 +16,22 @@ import KSF.Grid as Grid
 import React.Basic (JSX, ReactComponent, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault, targetValue)
+import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import pauseSubscriptionStyles :: Style
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
 
 type DatePickerProps =
-  { onChange  :: EffectFn1 Date Unit
+  { onChange  :: EffectFn1 JSDate Unit
   , className :: String
-  , value     :: Nullable Date
-  , format :: String
-  , required :: Boolean
+  , value     :: Nullable JSDate
+  , format    :: String
+  , required  :: Boolean
+  , minDate   :: Nullable JSDate
   }
 
 type Self = React.Self Props State
@@ -38,36 +42,41 @@ type Props =
   }
 
 type State =
-  { startDay :: Maybe String
-  , endDay   :: Maybe String
-  , startDate :: Maybe Date
-  , endDate :: Maybe Date
-  , now      :: Maybe Date
+  { startDate :: Maybe DateTime
+  , minStartDate :: Maybe DateTime
+  , endDate :: Maybe DateTime
+  , minEndDate :: Maybe Date
   }
 
 data Action
-  = SetStartDate Date
-  | SetEndDate Date
+  = SetStartDate (Maybe DateTime)
+  | SetMinStartDate (Maybe DateTime)
+  | SetEndDate (Maybe DateTime)
 
 pauseSubscription :: Props -> JSX
-pauseSubscription = make component { initialState, render }
+pauseSubscription = make component { initialState, render, didMount }
 
 component :: React.Component Props
 component = React.createComponent "PauseSubscription"
 
 initialState :: State
 initialState =
-  { startDay: Nothing
-  , endDay: Nothing
-  , startDate: Nothing
+  { startDate: Nothing
+  , minStartDate: Nothing
   , endDate: Nothing
-  , now: Nothing
+  , minEndDate: Nothing
   }
 
 update :: Self -> Action -> StateUpdate Props State
 update self action = Update $ case action of
-  SetStartDate newStartDate -> self.state { startDate = Just newStartDate }
-  SetEndDate newEndDate -> self.state { endDate = Just newEndDate }
+  SetStartDate newStartDate -> self.state { startDate = newStartDate }
+  SetEndDate newEndDate -> self.state { endDate = newEndDate }
+  SetMinStartDate newMinStartDate -> self.state { minStartDate = newMinStartDate }
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  now <- Now.nowDateTime
+  send self $ SetMinStartDate (Just now)
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
@@ -93,7 +102,7 @@ render self =
   where
     pauseForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm self.state.startDay self.state.endDay self.props.subsno)
+          { onSubmit: handler preventDefault (\_ -> submitForm self.state.startDate self.state.endDate self.props.subsno)
           , children:
               [ startDayInput
               , endDayInput
@@ -107,20 +116,21 @@ render self =
     startDayInput = dateInput self.state.startDate "Börjar från" SetStartDate
     endDayInput   = dateInput self.state.endDate "Skall starta igen" SetEndDate
 
-    dateInput :: Maybe Date -> String -> (Date -> Action) -> JSX
-    dateInput date labelText setDate =
+    dateInput :: Maybe DateTime -> String -> (Maybe DateTime -> Action) -> JSX
+    dateInput inputDate labelText setDate =
       Grid.row
         [ Grid.row [ DOM.label_ [ DOM.text labelText ] ] Nothing
         , Grid.columnThird
           $ element
               datePicker
-                { onChange: mkEffectFn1 \pickedDate -> send self $ setDate pickedDate
+                { onChange: mkEffectFn1 \pickedDate -> do
+                     send self $ setDate $ toDateTime pickedDate
                 , className: "pause-subscription--date-picker"
-                , value: toNullable date
+                , value: toNullable $ fromDateTime <$> inputDate
                 , format: "d.M.yyyy"
                 , required: true
+                , minDate: toNullable $ fromDateTime <$> self.state.minStartDate
                 }
-
         ]
         $ Just { extraClasses: [ "mt2" ] }
 
@@ -132,9 +142,9 @@ render self =
           , className: "button-green"
           }
 
-submitForm :: Maybe String -> Maybe String -> Int -> Effect Unit
+submitForm :: Maybe DateTime -> Maybe DateTime -> Int -> Effect Unit
 submitForm (Just startDay) (Just endDay) subsno =
-  Console.log $ startDay
+  Console.log $ unsafeCoerce startDay
 submitForm _ _ _ = pure unit
 
 datePicker :: ReactComponent DatePickerProps
