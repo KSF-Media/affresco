@@ -13,10 +13,6 @@ ReactDOM.render(
       exact path="/"
       component={App}>
     </Route>
-    <Route
-      path="/"
-      component={App}>
-    </Route>
   </Router>
   , document.getElementById('root')
 );
