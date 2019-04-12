@@ -17,6 +17,7 @@ import Effect (Effect)
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.Subscription.View as View
+import KSF.Grid as Grid
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
@@ -76,11 +77,13 @@ send = runUpdate update
 
 render :: Self -> JSX
 render self@{ props } =
-  ReactExt.requireStyle
-    subscriptionStyles
-    $ React.element
-        DescriptionList.component
-          { definitions:
+  Grid.row_
+       [ ReactExt.requireStyle
+        subscriptionStyles
+        $ Grid.row2
+          (React.element
+            DescriptionList.component
+            { definitions:
               [ { term: "Produkt:"
                 , descriptions: [ props.subscription.package.name ]
                 }
@@ -89,8 +92,11 @@ render self@{ props } =
                 }
               ]
               <> foldMap billingDateTerm nextBillingDate
-          }
-          <> pauseSubscription
+            })
+          pauseSubscription
+          Nothing
+       ]
+
   where
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
@@ -105,11 +111,7 @@ render self@{ props } =
         , children:
             [ if self.state.pauseSubscription
               then pauseSubscriptionComponent
-              else DOM.span
-                     { children: [ DOM.text "Gör uppehåll" ]
-                     , onClick: handler_ $ send self $ ShowPauseSubscription true
-                     , className: "subscription--pause-subscription"
-                     }
+              else pauseIcon
             ]
         }
 
@@ -118,6 +120,28 @@ render self@{ props } =
           { subsno: props.subscription.subsno
           , onCancel: send self $ ShowPauseSubscription false
           }
+
+    pauseIcon =
+      DOM.div
+        { className: "pause-subscription--pause-container flex"
+        , children:
+            [ DOM.div
+                { className: "pause-subscription--pause-icon circle"
+                , onClick: togglePauseView
+                }
+            , DOM.span
+                { className: "pause-subscription--pause-text"
+                , children:
+                    [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
+                , onClick: togglePauseView
+                }
+            ]
+         }
+        where
+          togglePauseView = handler_ $ send self
+            $ case self.state.pauseSubscription of
+                false -> ShowPauseSubscription true
+                true  -> ShowPauseSubscription false
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing

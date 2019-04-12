@@ -119,9 +119,9 @@ render self =
     dateInput :: Maybe DateTime -> String -> (Maybe DateTime -> Action) -> JSX
     dateInput inputDate labelText setDate =
       Grid.row
-        [ Grid.row [ DOM.label_ [ DOM.text labelText ] ] Nothing
-        , Grid.columnThird
-          $ element
+        [ Grid.row_ [ DOM.label_ [ DOM.text labelText ] ]
+        , Grid.row_
+           [ element
               datePicker
                 { onChange: mkEffectFn1 \pickedDate -> do
                      send self $ setDate $ toDateTime pickedDate
@@ -131,6 +131,7 @@ render self =
                 , required: true
                 , minDate: toNullable $ fromDateTime <$> self.state.minStartDate
                 }
+           ]
         ]
         $ Just { extraClasses: [ "mt2" ] }
 
