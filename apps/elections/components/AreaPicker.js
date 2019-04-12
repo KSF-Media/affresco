@@ -72,9 +72,60 @@ export default class AreaPicker extends React.Component {
   }
   // called when component is loaded
   componentDidMount() {
-    // load top-level areas for the first selector
-    this.getSelectorOptions(AreaType.ELECTORAL_DISTRICT);
+    this.onUpdate(this.props.selection);
   }
+  componentDidUpdate(prevProps) {
+    // console.log("AreaPickerUpdate", prevProps.selection);
+    // console.log("AreaPickerUpdate", this.props.selection);
+    if (prevProps.selection && prevProps.selection !== this.props.selection) {
+      // this.onUpdate(this.props.selection);
+    }
+  }
+  
+  onUpdate(selection) {
+    console.log(selection);
+    console.log("AreaPicker: ", this.props);
+    if( selection && selection !== 'MAA') {
+      const [e,m,p] = selection.split("-");
+      console.log("emp: ", e,m,p);
+      if(e) {
+        this.getSelectorOptions(AreaType.ELECTORAL_DISTRICT).then(
+          (areas) => {
+            // console.log("Areas: ", areas);
+            const e_area = areas.filter(a => (a.info.identifier === e))[0];
+            if (e_area) {
+              this.onSelection(AreaType.ELECTORAL_DISTRICT, areaOption(e_area));
+              if(m) {
+                this.getSelectorOptions(AreaType.MUNICIPALITY, e_area).then(
+                  (areas) => {
+                    // console.log("Areas: ", areas);
+                    const m_area = areas.filter(a => (a.info.identifier === e + '-' + m))[0];
+                    if (m_area){
+                      this.onSelection(AreaType.MUNICIPALITY, areaOption(m_area));
+                      if(p) {
+                        this.getSelectorOptions(AreaType.POLLING_DISTRICT, m_area).then(
+                          (areas) => {
+                            // console.log("Areas: ", areas);
+                            const p_area = areas.filter(a => (a.info.identifier === e + '-' + m + '-' + p))[0];
+                            if (p_area)
+                            this.onSelection(AreaType.POLLING_DISTRICT, areaOption(p_area));
+                          }
+                        );
+                      }
+                    }
+                  }
+                );
+              }
+            }
+          }
+        );
+      }
+    } else {
+      // load top-level areas for the first selector
+      this.getSelectorOptions(AreaType.ELECTORAL_DISTRICT);
+    }
+  }
+  
   render() {
     return (
       <div className="selectors">
@@ -148,10 +199,11 @@ export default class AreaPicker extends React.Component {
           : type === AreaType.POLLING_DISTRICT   ? getPollingDistricts(parent.info.identifier)
           : null;
     if (getAreas) {
-      getAreas.then(({ areas }) => {
+      return getAreas.then(({ areas }) => {
         console.log(areas);
         // update selector's state and provide the fetched options
         this.resetSelector(type, areas.map(areaOption))
+        return areas;
       })
     }
   }
