@@ -1,6 +1,5 @@
 import React from 'react';
 import render from 'react-dom';
-import { HashRouter as Router, Route } from "react-router-dom";
 import { isMobile } from 'react-device-detect';
 
 import Table from './Table.js';
@@ -17,27 +16,35 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedArea: null,
+      // selectedArea: null,
       selectedAreaResponse: null,
       seats: {},
       votesInArea: [],
+      selectedAreaId: null
     };
   }
-  componentDidMount() {
-    this.onAreaSelection();
+  componentDidMount(){
+    this.onAreaSelection(this.props.selection);
   }
-  onAreaSelection(area) {
-    console.info("onAreaSelection", area);
-    if (!area) { // if no area was provided (e.g. on start or reset)
+  componentDidUpdate(prevProps) {
+    if (prevProps.match.params.areaId !== this.props.match.params.areaId){
+      this.onAreaSelection(this.props.match.params.areaId);
+    }
+  }
+  onAreaSelection(areaId) {
+    console.log("state: ", this.state);
+    console.info("onAreaSelection", areaId);
+
+    if (!areaId) { // if no area was provided (e.g. on start or reset)
       return getCountry().then(area => { // get the whole country
-        if (area) { return this.onAreaSelection(area) } // and roll with that instead
+        if (area) { return this.onAreaSelection(area.info.identifier) } // and roll with that instead
       })
     }
-    let selectedArea = area;
-    this.setState({ selectedArea })
-    return getArea(selectedArea.info.identifier)
+    
+    return getArea(areaId)
       .then(areaResponse => {
 
+        
         // Get data for selected area
         this.setState({selectedAreaResponse: areaResponse});
         this.setState({votesInArea: areaResponse.nominators});
@@ -63,7 +70,14 @@ export default class App extends React.Component {
           seats={this.state.seats}
         />
         <AreaPicker
-          onSelection={ (area) => this.onAreaSelection(area) }
+          onSelection={ (area) => {
+            if (area === null) {
+              this.props.history.push('/')
+            } else {
+              this.props.history.push('/area/' + area.info.identifier)  
+            }
+          }}
+          selection={this.props.match.params.areaId}
         />
         <Chart
           areaResponse={this.state.selectedAreaResponse}
