@@ -2,13 +2,14 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
-import Data.DateTime (DateTime(..))
+import Data.Date (Date)
 import Data.Function.Uncurried (Fn0, runFn0)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
-import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
+import Effect.Uncurried (EffectFn1, mkEffectFn1)
 import KSF.Grid as Grid
 import React.Basic (JSX, ReactComponent, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
@@ -22,28 +23,31 @@ foreign import pauseSubscriptionStyles :: Style
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
 
 type DatePickerProps =
-  { onChange :: Effect Unit
+  { onChange  :: EffectFn1 Date Unit
   , className :: String
-  , value :: Maybe DateTime
+  , value     :: Nullable Date
+  , format :: String
+  , required :: Boolean
   }
 
 type Self = React.Self Props State
 
 type Props =
-  { subsno :: Int
+  { subsno   :: Int
   , onCancel :: Effect Unit
   }
 
 type State =
   { startDay :: Maybe String
   , endDay   :: Maybe String
-  , now :: DateTime
+  , startDate :: Maybe Date
+  , endDate :: Maybe Date
+  , now      :: Maybe Date
   }
 
 data Action
-  = SetStartDay (Maybe String)
-  | SetEndDay (Maybe String)
-  | SetNow DateTime
+  = SetStartDate Date
+  | SetEndDate Date
 
 pauseSubscription :: Props -> JSX
 pauseSubscription = make component { initialState, render }
@@ -55,22 +59,18 @@ initialState :: State
 initialState =
   { startDay: Nothing
   , endDay: Nothing
+  , startDate: Nothing
+  , endDate: Nothing
   , now: Nothing
   }
 
 update :: Self -> Action -> StateUpdate Props State
 update self action = Update $ case action of
-  SetStartDay newStartDay -> self.state { startDay = newStartDay }
-  SetEndDay newEndDay -> self.state { endDay = newEndDay }
-  SetNow now -> self.state { now = now }
+  SetStartDate newStartDate -> self.state { startDate = Just newStartDate }
+  SetEndDate newEndDate -> self.state { endDate = Just newEndDate }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
-
-didMount :: Self -> Effect Unit
-didMount self = do
-  now <- Now.nowDateTime
-  send self $ SetNow $ Just now
 
 render :: Self -> JSX
 render self =
@@ -88,11 +88,6 @@ render self =
                    })
                 Nothing
             , pauseForm
-            , element datePicker
-                        { onChange: Console.log "waaat"
-                        , className: "yolo"
-                        , value: self.state.now -- Nullable?
-                        }
             ]
         }
   where
@@ -109,20 +104,23 @@ render self =
               ]
           }
 
-    startDayInput = dateInput "startDate" "Börjar från" SetStartDay
-    endDayInput   = dateInput "endDate" "Skall starta igen" SetEndDay
+    startDayInput = dateInput self.state.startDate "Börjar från" SetStartDate
+    endDayInput   = dateInput self.state.endDate "Skall starta igen" SetEndDate
 
-    dateInput :: String -> String -> (Maybe String -> Action) -> JSX
-    dateInput name labelText action =
+    dateInput :: Maybe Date -> String -> (Date -> Action) -> JSX
+    dateInput date labelText setDate =
       Grid.row
         [ Grid.row [ DOM.label_ [ DOM.text labelText ] ] Nothing
-        , Grid.columnThird $
-            DOM.input
-              { type: "text"
-              , required: true
-              , onChange: handler targetValue $ action >>> send self
-              , name
-              }
+        , Grid.columnThird
+          $ element
+              datePicker
+                { onChange: mkEffectFn1 \pickedDate -> send self $ setDate pickedDate
+                , className: "pause-subscription--date-picker"
+                , value: toNullable date
+                , format: "d.M.yyyy"
+                , required: true
+                }
+
         ]
         $ Just { extraClasses: [ "mt2" ] }
 
