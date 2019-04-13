@@ -18,6 +18,7 @@
     "react-router-dom": "^5.0.0",
     "react-select": "^2.4.2",
     "react-table": "^6.9.2",
+    "react-timeago": "^4.4.0",
     "virtual-dom-stringify": "^3.0.1"
   },
   "scripts": {
