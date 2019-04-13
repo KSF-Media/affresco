@@ -6,7 +6,7 @@
   "author": "KSF Media",
   "license": "MIT",
   "dependencies": {
-    "election": "https://github.com/KSF-Media/election-javascript-client#4365a60cfe470d8e3812de7f45c1a267f360e677",
+    "election": "https://github.com/KSF-Media/election-javascript-client#0ccc2c5f6d6a68b4f747c57c8ca14529ca2133d8",
     "lodash": "^4.17.11",
     "parcel-bundler": "^1.12.3",
     "parliament-svg": "^2.1.3",
