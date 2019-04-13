@@ -1,7 +1,7 @@
 import React from 'react';
 import PieChart from 'react-minimal-pie-chart'
 
-const Status = (props) => (
+const Status = (props) => !props.percentage ? <div className="status"></div> : (
   <div className="status">
     <div className="percentage">
       <PieChart
