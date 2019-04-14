@@ -8,6 +8,7 @@ import AreaPicker from './AreaPicker.js'
 import Status from './Status.js';
 import Chart from './Chart.js';
 import Timestamp from './Timestamp.js';
+import AreaInfo from './AreaInfo.js';
 
 import '../assets/less/app.less';
 
@@ -43,7 +44,6 @@ export default class App extends React.Component {
     }
     return getArea(areaId)
       .then(areaResponse => {
-        
         // Get data for selected area
         this.setState({selectedAreaResponse: areaResponse});
         this.setState({votesInArea: areaResponse.nominators});
@@ -86,6 +86,9 @@ export default class App extends React.Component {
             }
           }}
           selection={this.props.match.params.areaId}
+        />
+        <AreaInfo
+          areaResponse={this.state.selectedAreaResponse}
         />
         <Chart
           areaResponse={this.state.selectedAreaResponse}
