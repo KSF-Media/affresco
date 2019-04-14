@@ -222,9 +222,6 @@ export default class AreaPicker extends React.Component {
     // if options are provided the selector is ready to be selected
     if (options) {
       this.setState({ [type]: selector.notSelected(options) });
-      if (options.length === 1) {
-        this.onSelection(type, options[0]);
-      }
     } else { // otherwise we have to disable it
       this.disableSelector(type);
     }
