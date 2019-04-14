@@ -18,15 +18,16 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      // selectedArea: null,
       selectedAreaResponse: null,
       seats: {},
       votesInArea: [],
-      selectedAreaId: null
+      selectedAreaId: null,
+      countryResponse: null
     };
   }
   componentDidMount(){
     this.onAreaSelection(this.props.match.params.areaId);
+    this.getCountryData();
   }
   componentDidUpdate(prevProps) {
     if (prevProps.match.params.areaId !== this.props.match.params.areaId){
@@ -34,9 +35,6 @@ export default class App extends React.Component {
     }
   }
   onAreaSelection(areaId) {
-    console.log("state: ", this.state);
-    console.info("onAreaSelection", areaId);
-
     if (!areaId) { // if no area was provided (e.g. on start or reset)
       return getCountry().then(area => { // get the whole country
         if (area) { return this.onAreaSelection(area.info.identifier) } // and roll with that instead
@@ -47,31 +45,36 @@ export default class App extends React.Component {
         // Get data for selected area
         this.setState({selectedAreaResponse: areaResponse});
         this.setState({votesInArea: areaResponse.nominators});
-
-        // Make object for the parliamentSVG
-        let s = { seats: areaResponse.nominators.map(
-          nominator => {
-            return {[nominator.abbreviation.swedish]: {
-              'seats': nominator.seats
-            }}
-          }
-        )};
-        this.setState({ seats: Object.assign(...s.seats) });
       });
+  }
+  getCountryData() {
+    return getArea("MAA").then(countryResponse => {
+      this.setState({countryResponse: countryResponse});
+      // Make object for the parliamentSVG
+      console.log("countryResponse: ", countryResponse);
+      let s = { seats: countryResponse.nominators.map(
+        nominator => {
+          return {[nominator.abbreviation.swedish]: {
+            'seats': nominator.seats
+          }}
+        }
+      )};
+      this.setState({ seats: Object.assign(...s.seats) });
+    })
   }
   render(){
     return (
       <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
         <Status
           percentage={
-            this.state.selectedAreaResponse
-              ? this.state.selectedAreaResponse.area.info.calculationStatus
+            this.state.countryResponse
+              ? this.state.countryResponse.area.info.calculationStatus
               : null
           }
         />
         <Timestamp timestamp={
-          this.state.selectedAreaResponse
-            ? this.state.selectedAreaResponse.timestamp
+          this.state.countryResponse
+            ? this.state.countryResponse.timestamp
             : null
         }/>
         <Parliament
