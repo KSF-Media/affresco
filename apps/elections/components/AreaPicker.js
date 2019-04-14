@@ -1,5 +1,6 @@
 import React from 'react';
 import Select from 'react-select';
+import { sortBy } from 'lodash';
 
 import { getElectoralDistricts, getMunicipalities, getPollingDistricts } from './Backend.js';
 import { AreaType } from 'election';
@@ -201,9 +202,10 @@ export default class AreaPicker extends React.Component {
     if (getAreas) {
       return getAreas.then(({ areas }) => {
         console.log(areas);
+        let sortedAreas = sortBy(areas, item => item.info.identifier);
         // update selector's state and provide the fetched options
-        this.resetSelector(type, areas.map(areaOption))
-        return areas;
+        this.resetSelector(type, sortedAreas.map(areaOption))
+        return sortedAreas;
       })
     }
   }
