@@ -62,20 +62,32 @@ export default class App extends React.Component {
       this.setState({ seats: Object.assign(...s.seats) });
     })
   }
-  render(){
-    return (
-      <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
+  render() {
+    if(this.props.match.path === "/compact") {
+      return (
+        <div className={isMobile ? 'mobile ' : '' + 'ksf-elections compact'}>
+          <AreaInfo
+            areaResponse={this.state.selectedAreaResponse}
+          />
+          <Chart
+            areaResponse={this.state.selectedAreaResponse}
+          />
+        </div>
+      )
+    } else {
+      return (
+        <div className={isMobile ? 'mobile ' : '' + 'ksf-elections'}>
         <Status
-          percentage={
-            this.state.countryResponse
-              ? this.state.countryResponse.area.info.calculationStatus
-              : null
-          }
+        percentage={
+          this.state.countryResponse
+          ? this.state.countryResponse.area.info.calculationStatus
+          : null
+        }
         />
         <Timestamp timestamp={
           this.state.countryResponse
-            ? this.state.countryResponse.timestamp
-            : null
+          ? this.state.countryResponse.timestamp
+          : null
         }/>
         <Parliament
           seats={this.state.seats}
@@ -99,7 +111,8 @@ export default class App extends React.Component {
         <Table
           areaResponse={this.state.selectedAreaResponse}
         />
-      </div>
-    )
+        </div>
+      )
+    }
   }
 }

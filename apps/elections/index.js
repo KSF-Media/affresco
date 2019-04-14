@@ -13,6 +13,10 @@ ReactDOM.render(
       exact path="/"
       component={App}>
     </Route>
+    <Route
+      exact path="/compact"
+      component={App}>
+    </Route>
   </Router>
   , document.getElementById('root')
 );
