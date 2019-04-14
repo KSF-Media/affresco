@@ -7,6 +7,7 @@ import Parliament from './Parliament.js';
 import AreaPicker from './AreaPicker.js'
 import Status from './Status.js';
 import Chart from './Chart.js';
+import Timestamp from './Timestamp.js';
 import AreaInfo from './AreaInfo.js';
 
 import '../assets/less/app.less';
@@ -68,6 +69,11 @@ export default class App extends React.Component {
               : null
           }
         />
+        <Timestamp timestamp={
+          this.state.selectedAreaResponse
+            ? this.state.selectedAreaResponse.timestamp
+            : null
+        }/>
         <Parliament
           seats={this.state.seats}
         />
@@ -76,7 +82,7 @@ export default class App extends React.Component {
             if (area === null) {
               this.props.history.push('/')
             } else {
-              this.props.history.push('/area/' + area.info.identifier)  
+              this.props.history.push('/area/' + area.info.identifier)
             }
           }}
           selection={this.props.match.params.areaId}
