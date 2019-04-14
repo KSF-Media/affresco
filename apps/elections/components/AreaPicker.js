@@ -202,10 +202,10 @@ export default class AreaPicker extends React.Component {
     if (getAreas) {
       return getAreas.then(({ areas }) => {
         console.log(areas);
+        let sortedAreas = sortBy(areas, item => item.info.identifier);
         // update selector's state and provide the fetched options
-        this.resetSelector(type, areas.map(areaOption))
-        // return areas;
-        return sortBy(areas, item => item.info.identifier );
+        this.resetSelector(type, sortedAreas.map(areaOption))
+        return sortedAreas;
       })
     }
   }
