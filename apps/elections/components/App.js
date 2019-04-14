@@ -25,7 +25,7 @@ export default class App extends React.Component {
     };
   }
   componentDidMount(){
-    this.onAreaSelection(this.props.selection);
+    this.onAreaSelection(this.props.match.params.areaId);
   }
   componentDidUpdate(prevProps) {
     if (prevProps.match.params.areaId !== this.props.match.params.areaId){
@@ -41,10 +41,8 @@ export default class App extends React.Component {
         if (area) { return this.onAreaSelection(area.info.identifier) } // and roll with that instead
       })
     }
-    
     return getArea(areaId)
       .then(areaResponse => {
-
         // Get data for selected area
         this.setState({selectedAreaResponse: areaResponse});
         this.setState({votesInArea: areaResponse.nominators});
@@ -64,7 +62,11 @@ export default class App extends React.Component {
     return (
       <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
         <Status
-          percentage={78}
+          percentage={
+            this.state.selectedAreaResponse
+              ? this.state.selectedAreaResponse.area.info.calculationStatus
+              : null
+          }
         />
         <Parliament
           seats={this.state.seats}
