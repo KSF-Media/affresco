@@ -51,7 +51,7 @@ export default class App extends React.Component {
         // Make object for the parliamentSVG
         let s = { seats: areaResponse.nominators.map(
           nominator => {
-            return {[nominator.abbreviation.finnish]: {
+            return {[nominator.abbreviation.swedish]: {
               'seats': nominator.seats
             }}
           }
