@@ -36,9 +36,7 @@ export default class App extends React.Component {
   }
   onAreaSelection(areaId) {
     if (!areaId) { // if no area was provided (e.g. on start or reset)
-      return getCountry().then(area => { // get the whole country
-        if (area) { return this.onAreaSelection(area.info.identifier) } // and roll with that instead
-      })
+      return this.onAreaSelection("MAA")
     }
     return getArea(areaId)
       .then(areaResponse => {
