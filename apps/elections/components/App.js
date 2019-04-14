@@ -65,7 +65,7 @@ export default class App extends React.Component {
   render() {
     if(this.props.match.path === "/compact") {
       return (
-        <div className={isMobile ? 'mobile ' : '' + 'ksf-elections compact'}>
+        <div className={isMobile ? 'mobile ksf-elections compact' : 'ksf-elections compact'}>
           <AreaInfo
             areaResponse={this.state.selectedAreaResponse}
           />
@@ -76,7 +76,7 @@ export default class App extends React.Component {
       )
     } else {
       return (
-        <div className={isMobile ? 'mobile ' : '' + 'ksf-elections'}>
+        <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
         <Status
         percentage={
           this.state.countryResponse
