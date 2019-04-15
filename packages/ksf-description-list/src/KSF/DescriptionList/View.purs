@@ -17,8 +17,10 @@ type Attributes =
 
 descriptionList :: Attributes -> JSX
 descriptionList attrs =
-  DOM.dl_ $ foldl mkDescriptionList [] attrs.definitions
-
+  DOM.dl
+    { className: "description-list--container"
+    , children: foldl mkDescriptionList [] attrs.definitions
+    }
 mkDescriptionList :: Array JSX -> Definition -> Array JSX
 mkDescriptionList dList d = dList <> mkDescription d
 
