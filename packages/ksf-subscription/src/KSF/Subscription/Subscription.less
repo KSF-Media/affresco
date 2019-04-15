@@ -4,7 +4,8 @@
     text-align: left;
 }
 
-.subscription--container.subscription--pause-visible {
+.subscription--container {
+    margin-top: 0;
     > .grid--column-half {
         @media @to-xlarge {
             width: 100%;
@@ -33,6 +34,16 @@
 .subscription--pause-container {
     align-items: center;
     justify-content: flex-end;
+        margin-top: 0;
+        @media @to-xlarge {
+            margin-top: 1.5em;
+        }
+        @media @to-medium {
+            margin-top: 0;
+        }
+        @media @to-xsmall {
+            margin-top: 1.5em;
+        }
 }
 
 .subscription--pause-icon {

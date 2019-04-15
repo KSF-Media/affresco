@@ -7,7 +7,7 @@ import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Maybe (Maybe(..), isJust)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String (trim)
@@ -95,16 +95,8 @@ render self@{ props } =
                <> foldMap billingDateTerm nextBillingDate
            })
       pauseSubscription
-      $ Just { extraClasses }
+      $ Just { extraClasses: [ "subscription--container" ] }
   where
-    extraClasses =
-      [ "subscription--container"
-      , pauseVisibilityClass
-      ]
-
-    pauseVisibilityClass =
-      maybe mempty (\_ -> "subscription--pause-visible") self.state.pauseSubscriptionVisible
-
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
         , descriptions: [ date ]
