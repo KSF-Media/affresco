@@ -117,7 +117,7 @@ render self =
             [ Grid.row_
                 [ DOM.div
                     { className: "col col-11"
-                    , children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumarationen" ] ]
+                    , children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumerationen" ] ]
                     }
                 , DOM.div
                     { className: "col-1 flex pause-subscription--close-icon"
