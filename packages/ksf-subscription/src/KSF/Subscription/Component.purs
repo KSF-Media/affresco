@@ -77,26 +77,23 @@ send = runUpdate update
 
 render :: Self -> JSX
 render self@{ props } =
-  Grid.row_
-       [ ReactExt.requireStyle
-        subscriptionStyles
-        $ Grid.row2
-          (React.element
-            DescriptionList.component
-            { definitions:
-              [ { term: "Produkt:"
-                , descriptions: [ props.subscription.package.name ]
-                }
-              , { term: "Status:"
-                , descriptions: [ translateStatus props.subscription.state ]
-                }
-              ]
-              <> foldMap billingDateTerm nextBillingDate
-            })
-          pauseSubscription
-          Nothing
-       ]
-
+  ReactExt.requireStyle
+    subscriptionStyles
+    $ Grid.row2
+      (React.element
+         DescriptionList.component
+           { definitions:
+               [ { term: "Produkt:"
+                 , descriptions: [ props.subscription.package.name ]
+                 }
+               , { term: "Status:"
+                 , descriptions: [ translateStatus props.subscription.state ]
+                 }
+               ]
+               <> foldMap billingDateTerm nextBillingDate
+           })
+      pauseSubscription
+      Nothing
   where
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
@@ -123,14 +120,14 @@ render self@{ props } =
 
     pauseIcon =
       DOM.div
-        { className: "pause-subscription--pause-container flex"
+        { className: "subscription--pause-container flex"
         , children:
             [ DOM.div
-                { className: "pause-subscription--pause-icon circle"
+                { className: "subscription--pause-icon circle"
                 , onClick: togglePauseView
                 }
             , DOM.span
-                { className: "pause-subscription--pause-text"
+                { className: "subscription--pause-text"
                 , children:
                     [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
                 , onClick: togglePauseView
