@@ -25,6 +25,7 @@ import Unsafe.Coerce (unsafeCoerce)
 foreign import pauseSubscriptionStyles :: Style
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
 
+-- TODO: Move this into a separate package/component
 type DatePickerProps =
   { onChange  :: EffectFn1 (Nullable JSDate) Unit
   , className :: String
@@ -44,11 +45,11 @@ type Props =
   }
 
 type State =
-  { startDate :: Maybe DateTime
+  { startDate    :: Maybe DateTime
   , minStartDate :: Maybe DateTime
-  , endDate :: Maybe DateTime
-  , minEndDate :: Maybe DateTime
-  , maxEndDate :: Maybe DateTime
+  , endDate      :: Maybe DateTime
+  , minEndDate   :: Maybe DateTime
+  , maxEndDate   :: Maybe DateTime
   }
 
 data Action
@@ -142,43 +143,25 @@ render self =
 
     startDayInput =
       dateInput
-        "Börjar från"
-        $ element
-          datePicker
-            { onChange: mkEffectFn1 \pickedDate -> do
-                 send self $ SetStartDate $ toDateTime =<< toMaybe pickedDate
-            , className: "pause-subscription--date-picker"
-            , value: toNullable $ fromDateTime <$> self.state.startDate
-            , format: "d.M.yyyy"
-            , required: true
-            , minDate: toNullable $ fromDateTime <$> self.state.minStartDate
-            , maxDate: toNullable Nothing
-            , disabled: false
-            }
+        self
+        { action: SetStartDate
+        , value: self.state.startDate
+        , minDate: self.state.minStartDate
+        , maxDate: Nothing
+        , disabled: false
+        , label: "Börjar från"
+        }
 
     endDayInput =
       dateInput
-        "Skall starta igen"
-        $ element
-            datePicker
-              { onChange: mkEffectFn1 \pickedDate -> do
-                   send self $ SetEndDate $ toDateTime =<< toMaybe pickedDate
-              , className: "pause-subscription--date-picker"
-              , value: toNullable $ fromDateTime <$> self.state.endDate
-              , format: "d.M.yyyy"
-              , required: true
-              , minDate: toNullable $ fromDateTime <$> self.state.minEndDate
-              , maxDate: toNullable $ fromDateTime <$> self.state.maxEndDate
-              , disabled: isNothing self.state.startDate
-              }
-
-    dateInput :: String -> JSX -> JSX
-    dateInput labelText inputElem =
-      Grid.row
-        [ Grid.row_ [ DOM.label_ [ DOM.text labelText ] ]
-        , Grid.row_ [ inputElem ]
-        ]
-        $ Just { extraClasses: [ "mt2" ] }
+        self
+        { action: SetEndDate
+        , value: self.state.endDate
+        , minDate: self.state.minEndDate
+        , maxDate: self.state.maxEndDate
+        , disabled: isNothing self.state.startDate
+        , label: "Skall starta igen"
+        }
 
     submitFormButton =
       Grid.columnThird $
@@ -187,6 +170,35 @@ render self =
           , children: [ DOM.text "Skicka" ]
           , className: "button-green"
           }
+
+type DateInputField =
+  { action   :: Maybe DateTime -> Action
+  , value    :: Maybe DateTime
+  , minDate  :: Maybe DateTime
+  , maxDate  :: Maybe DateTime
+  , disabled :: Boolean
+  , label    :: String
+  }
+
+dateInput :: Self -> DateInputField -> JSX
+dateInput self { action, value, minDate, maxDate, disabled, label } =
+  Grid.row
+    [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
+    , Grid.row_
+        [ element
+            datePicker
+              { onChange: mkEffectFn1 \pickedDate -> do
+                   send self $ action $ toDateTime =<< toMaybe pickedDate
+              , className: "pause-subscription--date-picker"
+              , value: toNullable $ fromDateTime <$> value
+              , format: "d.M.yyyy"
+              , required: true
+              , minDate: toNullable $ fromDateTime <$> minDate
+              , maxDate: toNullable $ fromDateTime <$> maxDate
+              , disabled
+              } ]
+    ]
+    $ Just { extraClasses: [ "mt2" ] }
 
 submitForm :: Maybe DateTime -> Maybe DateTime -> Int -> Effect Unit
 submitForm (Just startDay) (Just endDay) subsno =
