@@ -4,8 +4,8 @@
     text-align: left;
 }
 
-.subscription--container {
-    .grid--column-half {
+.subscription--container.subscription--pause-visible {
+    > .grid--column-half {
         @media @to-xlarge {
             width: 100%;
         }
@@ -14,6 +14,18 @@
         }
         @media @to-xsmall {
             width: 100%;
+        }
+    }
+    .pause-subscription--container {
+        margin-top: 0;
+        @media @to-xlarge {
+            margin-top: 1.5em;
+        }
+        @media @to-medium {
+            margin-top: 0;
+        }
+        @media @to-xsmall {
+            margin-top: 1.5em;
         }
     }
 }

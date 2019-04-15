@@ -88,14 +88,17 @@ render self =
     $ DOM.div
         { className: "clearfix pause-subscription--container"
         , children:
-            [ Grid.row2
-                (DOM.h3_ [ DOM.text "Uppehåll på prenumarationen" ])
-                (DOM.div
-                   { className: "flex pause-subscription--close-icon"
-                   , children: [ DOM.div { className: "close-icon" } ]
-                   , onClick: handler_ self.props.onCancel
-                   })
-                Nothing
+            [ Grid.row_
+                [ DOM.div
+                    { className: "col col-11"
+                    , children: [DOM.h3_ [ DOM.text "Uppehåll på prenumarationen" ]]
+                    }
+                , DOM.div
+                    { className: "col-1 flex pause-subscription--close-icon"
+                    , children: [ DOM.div { className: "close-icon" } ]
+                    , onClick: handler_ self.props.onCancel
+                    }
+                ]
             , pauseForm
             ]
         }

@@ -1,5 +1,7 @@
 @import (reference) 'ksf-colors';
 @import 'ksf-utils';
+@import 'ksf-grid';
+
 
 .pause-subscription--container {
     h3 { margin: 0 };
@@ -7,17 +9,13 @@
         box-sizing: border-box;
         width: 100%;
     }
-    border-style: solid;
-    padding: 10px;
-    border-width: 3px;
-    border-color: @grey-almostlight;
-    border-right: 0;
-    border-bottom: 0;
-    border-top: 0;
+    justify-content: flex-end;
 }
 
 .pause-subscription--close-icon {
     justify-content: right;
+    align-items: center;
+    height: 1.5em;
     .close-icon {
         cursor: pointer;
     }

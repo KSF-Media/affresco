@@ -7,7 +7,7 @@ import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String (trim)
@@ -15,9 +15,9 @@ import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
 import KSF.DescriptionList.Component as DescriptionList
+import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.Subscription.View as View
-import KSF.Grid as Grid
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
@@ -34,10 +34,12 @@ type Props =
   { subscription :: Persona.Subscription }
 
 type State =
-  { pauseSubscription :: Boolean }
+  { pauseSubscriptionVisible :: Maybe Visible }
+
+data Visible = Visible
 
 data Action
-  = ShowPauseSubscription Boolean
+  = ShowPauseSubscription (Maybe Visible)
 
 type Subscription =
   { package :: { name :: String
@@ -64,13 +66,13 @@ component = React.createComponent "Subscription"
 
 subscription :: Props -> JSX
 subscription = make component
-  { initialState: { pauseSubscription: false }
+  { initialState: { pauseSubscriptionVisible: Nothing }
   , render
   }
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
-  ShowPauseSubscription show -> Update $ self.state { pauseSubscription = show }
+  ShowPauseSubscription show -> Update $ self.state { pauseSubscriptionVisible = show }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
@@ -93,8 +95,16 @@ render self@{ props } =
                <> foldMap billingDateTerm nextBillingDate
            })
       pauseSubscription
-      $ Just { extraClasses: [ "subscription--container" ] }
+      $ Just { extraClasses }
   where
+    extraClasses =
+      [ "subscription--container"
+      , pauseVisibilityClass
+      ]
+
+    pauseVisibilityClass =
+      maybe mempty (\_ -> "subscription--pause-visible") self.state.pauseSubscriptionVisible
+
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
         , descriptions: [ date ]
@@ -106,7 +116,7 @@ render self@{ props } =
       DOM.div
         { className: ""
         , children:
-            [ if self.state.pauseSubscription
+            [ if isJust self.state.pauseSubscriptionVisible
               then pauseSubscriptionComponent
               else pauseIcon
             ]
@@ -115,7 +125,7 @@ render self@{ props } =
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
-          , onCancel: send self $ ShowPauseSubscription false
+          , onCancel: send self $ ShowPauseSubscription Nothing
           }
 
     pauseIcon =
@@ -136,9 +146,9 @@ render self@{ props } =
          }
         where
           togglePauseView = handler_ $ send self
-            $ case self.state.pauseSubscription of
-                false -> ShowPauseSubscription true
-                true  -> ShowPauseSubscription false
+            $ case self.state.pauseSubscriptionVisible of
+                Nothing -> ShowPauseSubscription $ Just Visible
+                _       -> ShowPauseSubscription Nothing
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
