@@ -35,6 +35,7 @@ type DatePickerProps =
   , minDate   :: Nullable JSDate
   , maxDate   :: Nullable JSDate
   , disabled  :: Boolean
+  , locale    :: String
   }
 
 type Self = React.Self Props State
@@ -196,6 +197,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
               , minDate: toNullable $ fromDateTime <$> minDate
               , maxDate: toNullable $ fromDateTime <$> maxDate
               , disabled
+              , locale: "sv-SV"
               } ]
     ]
     $ Just { extraClasses: [ "mt2" ] }
