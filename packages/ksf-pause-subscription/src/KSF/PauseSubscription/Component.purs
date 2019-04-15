@@ -99,7 +99,8 @@ calcMaxEndDate (Just startDate) = do
 didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
-  send self $ SetMinStartDate (Just now)
+  let tomorrow = adjust (Time.Duration.Days 1.0) now
+  send self $ SetMinStartDate tomorrow
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
