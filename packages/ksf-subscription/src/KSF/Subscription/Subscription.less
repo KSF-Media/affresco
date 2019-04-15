@@ -1,5 +1,21 @@
+@import (reference) '../less/ksf-variables';
+
 .subscription--paper-name {
     text-align: left;
+}
+
+.subscription--container {
+    .grid--column-half {
+        @media @to-xlarge {
+            width: 100%;
+        }
+        @media @to-medium {
+            width: calc(6/12 * 100%);
+        }
+        @media @to-xsmall {
+            width: 100%;
+        }
+    }
 }
 
 .subscription--pause-container {

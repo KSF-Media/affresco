@@ -93,7 +93,7 @@ render self@{ props } =
                <> foldMap billingDateTerm nextBillingDate
            })
       pauseSubscription
-      Nothing
+      $ Just { extraClasses: [ "subscription--container" ] }
   where
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
@@ -104,7 +104,7 @@ render self@{ props } =
     pauseSubscription :: JSX
     pauseSubscription =
       DOM.div
-        { className: "mt2"
+        { className: ""
         , children:
             [ if self.state.pauseSubscription
               then pauseSubscriptionComponent
