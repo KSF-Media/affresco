@@ -187,7 +187,7 @@ userView { user } = React.fragment
             subs -> do
               map subscriptionComponentBlockContent subs `snoc` cancelSubscription
               where
-                subscriptionView subscription = Subscription.subscription { subscription }
+                subscriptionView subscription = Subscription.subscription { subscription, user }
                 subscriptionComponentBlockContent subscription
                   -- If the subscription has a canceled state, we want to add extra css to it.
                   | Persona.isSubscriptionCanceled subscription =

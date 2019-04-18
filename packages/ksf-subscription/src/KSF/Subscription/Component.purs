@@ -31,7 +31,9 @@ foreign import subscriptionStyles :: Style
 type Self = React.Self Props State
 
 type Props =
-  { subscription :: Persona.Subscription }
+  { subscription :: Persona.Subscription
+  , user :: Persona.User
+  }
 
 type State =
   { pauseSubscriptionVisible :: Maybe Visible }
@@ -117,6 +119,7 @@ render self@{ props } =
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
+          , userUuid: props.user.uuid
           , onCancel: send self $ ShowPauseSubscription Nothing
           }
 
