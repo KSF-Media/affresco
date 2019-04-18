@@ -2,17 +2,22 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
-import Data.DateTime (DateTime, adjust)
+import Data.DateTime (DateTime, adjust, date)
 import Data.Function.Uncurried (Fn0, runFn0)
-import Data.JSDate (JSDate, fromDateTime, toDateTime)
+import Data.JSDate (JSDate, fromDateTime, toDateString, toDateTime, toISOString)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Class as Aff
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import Effect.Uncurried (EffectFn1, mkEffectFn1)
 import KSF.Grid as Grid
+import KSF.Login.Component as Login
+import Persona as Persona
 import React.Basic (JSX, ReactComponent, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -42,6 +47,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno   :: Int
+  , userUuid :: Persona.UUID
   , onCancel :: Effect Unit
   }
 
@@ -131,7 +137,7 @@ render self =
   where
     pauseForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm self.state.startDate self.state.endDate self.props.subsno)
+          { onSubmit: handler preventDefault (\_ -> submitForm self.state self.props)
           , children:
               [ startDayInput
               , endDayInput
@@ -202,10 +208,14 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     ]
     $ Just { extraClasses: [ "mt2" ] }
 
-submitForm :: Maybe DateTime -> Maybe DateTime -> Int -> Effect Unit
-submitForm (Just startDay) (Just endDay) subsno =
-  Console.log $ unsafeCoerce startDay
-submitForm _ _ _ = pure unit
+submitForm :: State -> Props -> Effect Unit
+submitForm { startDate: Just start, endDate: Just end } { userUuid, subsno } = do
+  loginResponse <- Login.loadToken
+  case loginResponse of
+    Just { token } -> Aff.launchAff_ $ Persona.pauseSubscription userUuid subsno start end token
+    Nothing ->  Console.error "Did not find token in local storage."
+submitForm _ _ = pure unit
+
 
 datePicker :: ReactComponent DatePickerProps
 datePicker = runFn0 datePicker_

@@ -4,17 +4,20 @@ import Prelude
 
 import Control.Monad.Except (runExcept)
 import Control.MonadPlus (guard)
+import Data.Date (Date)
+import Data.DateTime (DateTime(..))
 import Data.Either (Either(..), hush)
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.JSDate (JSDate)
+import Data.JSDate (JSDate, fromDateTime, toISOString)
 import Data.Maybe (Maybe, isNothing)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
+import Effect.Class (liftEffect)
 import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
@@ -68,6 +71,22 @@ logout uuid token =
 register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
+
+pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Unit
+pauseSubscription uuid subsno startDate endDate token = do
+  startDateISO <- liftEffect $ dateToISO startDate
+  endDateISO   <- liftEffect $ dateToISO endDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoPausePost"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+    dateToISO date = do
+      let jsDate = fromDateTime date
+      toISOString jsDate
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
