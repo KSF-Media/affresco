@@ -5,7 +5,6 @@ import Prelude
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import Effect.Console (log)
 import KSF.Grid as Grid
 import KSF.InputField.Component as Input
 import React.Basic (JSX, runUpdate)
@@ -18,12 +17,12 @@ foreign import editableStyles :: Style
 
 type Props =
   { values :: Array String
-  , onSave :: Maybe (Array (Maybe String)) -> Effect Unit
+  , onSave :: Maybe (Array String) -> Effect Unit
   }
 
 
 type State =
-  { changes :: Maybe (Array (Maybe String)) }
+  { changes :: Maybe (Array String) }
 
 
 data Action
@@ -46,8 +45,8 @@ component = React.createComponent "EditableField"
 
 update :: Self -> Action -> React.StateUpdate Props State
 update self = case _ of
-  StartEdit -> React.Update self.state { changes = Just (map (const $ Nothing) self.props.values) }
-  Change i v -> React.Update self.state { changes = join $ map (Array.updateAt i (Just v)) self.state.changes }
+  StartEdit -> React.Update self.state { changes = Just self.props.values }
+  Change i v -> React.Update self.state { changes = join $ map (Array.updateAt i v) self.state.changes }
   Undo -> React.Update self.state { changes = Nothing }
   Save ->
     let state' = self.state { changes = Nothing }
@@ -101,8 +100,5 @@ render self@{ state, props } =
       , defaultValue: Just v
       , required: true
       , children: []
-      , onChange: \v' -> do
-          log $ show i
-          log v'
-          send self $ Change i v'
+      , onChange: send self <<< Change i
       }
