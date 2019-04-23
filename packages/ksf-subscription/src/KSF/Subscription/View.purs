@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Array (foldMap)
 import Data.Maybe (Maybe)
+import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import React.Basic.Extended (JSX, Style)
 import React.Basic.Extended as React
@@ -24,10 +25,10 @@ subscription { product, status, nextBillingDate } =
         DescriptionList.component
           { definitions:
               [ { term: "Produkt:"
-                , descriptions: [ product ]
+                , description: Static [ product ]
                 }
               , { term: "Status:"
-                , descriptions: [ status ]
+                , description: Static [ status ]
                 }
               ]
               <> foldMap billingDateTerm nextBillingDate
@@ -35,6 +36,6 @@ subscription { product, status, nextBillingDate } =
   where
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
-        , descriptions: [ date ]
+        , description: Static [ date ]
         }
       ]

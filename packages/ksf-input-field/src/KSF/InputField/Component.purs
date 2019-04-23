@@ -6,10 +6,9 @@ import Data.Maybe (Maybe, fromMaybe, isJust)
 import Effect (Effect)
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events as Events
-import React.Basic.Extended (JSX)
-import React.Basic.Extended as React
+import React.Basic (JSX)
+import React.Basic as React
 import Data.Array ((:))
-import Effect.Uncurried (EffectFn1)
 import React.Basic.DOM as DOM
 
 type Props =
@@ -35,27 +34,36 @@ type InputFieldAttributes =
 
 type SetState = (State -> State) -> Effect Unit
 
-component :: React.Component Props
-component = React.component { displayName: "InputField", render, receiveProps, initialState }
+inputField :: Props -> JSX
+inputField = React.make component
+  { render, didMount, initialState }
   where
-    receiveProps { props, setState } = when (isJust props.defaultValue) do
+    didMount { props, setState } = when (isJust props.defaultValue) do
       setState \s -> s { inputValue = fromMaybe "" props.defaultValue }
 
     initialState :: State
     initialState = { inputValue: "" }
 
+component :: React.Component Props
+component = React.createComponent "InputField"
+
 render :: forall r. { props :: Props, state :: State, setState :: SetState | r } -> JSX
 render { state, setState, props } =
-  inputField
-    { type_: props.type_
-    , placeholder: props.placeholder
-    , name: props.name
-    , value: state.inputValue
-    , required: props.required
-    , children: props.children
-    , onChange
+  DOM.div
+    { className: "input-field"
+    , children: input : props.children
     }
   where
+    input =
+      DOM.input
+        { type: props.type_
+        , placeholder: props.placeholder
+        , name: props.name
+        , value: state.inputValue
+        , required: props.required
+        , onChange
+        }
+
     onChange =
       Events.handler
         (preventDefault >>> Events.merge { targetValue })
@@ -63,31 +71,3 @@ render { state, setState, props } =
           let newValue = fromMaybe "" targetValue
           setState _ { inputValue = newValue }
           props.onChange newValue
-
-
-type Attributes =
-  { type_ :: String
-  , placeholder :: String
-  , name :: String
-  , value :: String
-  , required :: Boolean
-  , onChange :: EffectFn1 Events.SyntheticEvent Unit
-  , children :: Array JSX
-  }
-
-inputField :: Attributes -> JSX
-inputField attrs =
-  DOM.div
-    { className: "input-field"
-    , children: input : attrs.children
-    }
-  where
-    input =
-      DOM.input
-        { type: attrs.type_
-        , placeholder: attrs.placeholder
-        , name: attrs.name
-        , value: attrs.value
-        , required: attrs.required
-        , onChange: attrs.onChange
-        }

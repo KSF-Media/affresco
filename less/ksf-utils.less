@@ -1,0 +1,36 @@
+@import (reference) 'ksf-colors';
+
+.make-icon(@icon-name) {
+    display: block;
+    width: 14px;
+    height: 14px;
+    background-position: center;
+    background-repeat: no-repeat, repeat;
+    background-image: url('../images/@{icon-name}.svg');
+    background-size: 30px;
+}
+
+.button-green {
+    &:disabled { background: grey }
+    background: green;
+    color: @white;
+    width: 100%;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+
+.close-icon {
+    .make-icon('icon-close-lg');
+}
+
+.edit-icon {
+    .make-icon('edit');
+}
+
+.success-icon {
+    .make-icon('success');
+}

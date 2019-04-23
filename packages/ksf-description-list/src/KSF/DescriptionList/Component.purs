@@ -11,9 +11,13 @@ import React.Basic.DOM as DOM
 type Props =
   { definitions :: Array Definition }
 
+data Description
+  = Static (Array String)
+  | Editable JSX
+
 type Definition =
   { term :: String
-  , descriptions :: Array String
+  , description :: Description
   }
 
 component :: React.Component Props
@@ -27,12 +31,14 @@ render { definitions } =
     mkDescriptionList dList d = dList <> mkDescription d
 
     mkDescription :: Definition -> Array JSX
-    mkDescription { term, descriptions } =
-      DOM.dt_ [ DOM.text term ] : map description descriptions
+    mkDescription { term, description } =
+      DOM.dt_ [ DOM.text term ] : case description of
+        Static descs -> map mkStaticDescription descs
+        Editable jsx -> [jsx]
       where
-        description = DOM.dd_ <<< Array.singleton <<< DOM.text
+        mkStaticDescription = DOM.dd_ <<< Array.singleton <<< DOM.text
 
 -- | If there are no descriptions, just show a hyphen there.
 handleEmptyDescriptions :: Definition -> Definition
-handleEmptyDescriptions d@{ descriptions: [] } = d { descriptions = [ "-" ] }
+handleEmptyDescriptions d@{ description: Static [] } = d { description = Static [ "-" ] }
 handleEmptyDescriptions d = d

@@ -5,15 +5,19 @@ import Prelude
 import Data.Array (catMaybes, (:))
 import Data.Foldable (fold)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Nullable as Nullable
 import Data.Nullable (Nullable)
+import Data.Nullable as Nullable
 import Data.String (trim)
+import Effect (Effect)
+import Effect.Console (log)
+import KSF.DescriptionList.Component (Description(..))
+import KSF.DescriptionList.Component as DescriptionList
+import KSF.Editable.Component as Editable
 import Persona as Persona
 import React.Basic (make, StateUpdate(..), runUpdate)
 import React.Basic as React
-import KSF.DescriptionList.Component as DescriptionList
 import React.Basic.Extended (JSX, Style, requireStyle)
-import Effect (Effect)
+import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State
 type Props =
@@ -80,6 +84,9 @@ displayName { firstName, lastName } =
     , fromMaybe "" $ Nullable.toMaybe firstName
     ]
 
+-- | I'm sorry
+fixNullable :: Nullable String -> String
+fixNullable a = fromMaybe "" $ Nullable.toMaybe a
 
 update :: Self -> Action -> StateUpdate Props State
 update self action = case action of
@@ -108,9 +115,12 @@ profileView { email, customerNumber, address, firstName, lastName } =
     $ React.element
         DescriptionList.component
           { definitions:
-            [ { term: "Namn:", descriptions: [ displayName { firstName, lastName } ] }
-            , { term: "Adress:", descriptions: address }
-            , { term: "E-postadress:", descriptions: [ email ] }
-            , { term: "Kundnummer:", descriptions: [ customerNumber ] }
+            [ { term: "Namn:"
+              , description: Editable $ Editable.editable
+                { values: [ fixNullable firstName, fixNullable lastName ], onSave: \a -> log $ unsafeCoerce a }
+              }
+            , { term: "Adress:", description: Static address }
+            , { term: "E-postadress:", description: Static [ email ] }
+            , { term: "Kundnummer:", description: Static [ customerNumber ] }
             ]
           }
