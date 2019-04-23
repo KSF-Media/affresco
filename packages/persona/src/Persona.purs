@@ -4,17 +4,17 @@ import Prelude
 
 import Control.Monad.Except (runExcept)
 import Control.MonadPlus (guard)
-import Data.Date (Date)
-import Data.DateTime (DateTime(..))
+import Data.DateTime (DateTime)
 import Data.Either (Either(..), hush)
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.JSDate (JSDate, fromDateTime, toISOString)
+import Data.Int (ceil)
+import Data.JSDate (JSDate, fromDateTime, getDate, getFullYear, getMonth)
 import Data.Maybe (Maybe, isNothing)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
-import Data.Traversable (traverse)
+import Data.Traversable (intercalate, traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Class (liftEffect)
@@ -74,8 +74,8 @@ register newUser =
 
 pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Unit
 pauseSubscription uuid subsno startDate endDate token = do
-  startDateISO <- liftEffect $ dateToISO startDate
-  endDateISO   <- liftEffect $ dateToISO endDate
+  startDateISO <- liftEffect $ dateToString startDate
+  endDateISO   <- liftEffect $ dateToString endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoPausePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
@@ -84,9 +84,24 @@ pauseSubscription uuid subsno startDate endDate token = do
     { authorization }
   where
     authorization = oauthToken token
-    dateToISO date = do
+
+    -- Returns e.g. "2019-04-23"
+    dateToString date = do
       let jsDate = fromDateTime date
-      toISOString jsDate
+      year  <- getFullYear jsDate
+      month <- getMonth jsDate
+      day   <- getDate jsDate
+
+      -- Returns a string with at least two digits
+      -- E.g. 4 -> "04"
+      let numToString n
+            | n < 10 = "0" <> show n
+            | otherwise = show n
+
+      pure $
+        intercalate "-" $
+          -- The `ceil` is used to convert a Number to an Int
+          map (numToString <<< ceil) [ year, month + 1.0, day ]
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
