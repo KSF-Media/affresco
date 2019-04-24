@@ -2,6 +2,7 @@ module KSF.Subscription.Component where
 
 import Prelude
 
+import AsyncWrapper as AsyncWrapper
 import Data.DateTime (adjust)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
@@ -42,10 +43,11 @@ data PauseSubscription
   | PauseSubscriptionError
 
 type State =
-  { pauseSubscription :: Maybe PauseSubscription }
+  { wrapper :: AsyncWrapper.WrapperState
+  }
 
 data Action
-  = PauseSubscription (Maybe PauseSubscription)
+  = SetWrapper AsyncWrapper.WrapperState
 
 type Subscription =
   { package :: { name :: String
@@ -72,13 +74,13 @@ component = React.createComponent "Subscription"
 
 subscription :: Props -> JSX
 subscription = make component
-  { initialState: { pauseSubscription: Nothing }
+  { initialState: { wrapper: AsyncWrapper.Ready }
   , render
   }
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
-  PauseSubscription pauseSubscriptionAction -> Update $ self.state { pauseSubscription = pauseSubscriptionAction }
+  SetWrapper wrapperState -> Update $ self.state { wrapper = wrapperState }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
@@ -113,25 +115,26 @@ render self@{ props } =
     pauseSubscription =
       DOM.div
         { className: ""
-        , children: [ pauseSubscriptionMode ]
+        , children: [ wrapper ]
         }
         where
-          pauseSubscriptionMode =
-            case self.state.pauseSubscription of
-              Just PauseSubscriptionEditing -> pauseSubscriptionComponent
-              Just PauseSubscriptionLoading -> pauseContainer loadingSpinner
-              Just PauseSubscriptionSuccess -> pauseContainer [ DOM.text "DONE!" ]
-              Just PauseSubscriptionError   -> pauseContainer [ DOM.text "Error :(" ]
-              Nothing                       -> pauseContainer pauseIcon
+          wrapper = AsyncWrapper.asyncWrapper
+                    { wrapperState: self.state.wrapper
+                    , views:
+                        { readyView: pauseContainer pauseIcon
+                        , editingView: pauseSubscriptionComponent
+                        , errorView: pauseContainer [ DOM.text "Error :(" ]
+                        }
+                    }
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
           , userUuid: props.user.uuid
-          , onCancel: send self $ PauseSubscription Nothing
-          , onLoading: send self $ PauseSubscription $ Just PauseSubscriptionLoading
-          , onSuccess: send self $ PauseSubscription $ Just PauseSubscriptionSuccess
-          , onError: send self $ PauseSubscription $ Just PauseSubscriptionError
+          , onCancel: send self $ SetWrapper AsyncWrapper.Ready
+          , onLoading: send self $ SetWrapper AsyncWrapper.Loading
+          , onSuccess: pure unit
+          , onError: send self $ SetWrapper AsyncWrapper.Error
           }
 
     pauseContainer children =
@@ -153,9 +156,9 @@ render self@{ props } =
       ]
       where
         togglePauseView = handler_ $ send self
-          $ case self.state.pauseSubscription of
-              Nothing -> PauseSubscription $ Just PauseSubscriptionEditing
-              _       -> PauseSubscription Nothing
+          $ case self.state.wrapper of
+              AsyncWrapper.Ready -> SetWrapper AsyncWrapper.Editing
+              _       -> SetWrapper AsyncWrapper.Ready
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
