@@ -61,11 +61,15 @@ render props@{ profile: user } =
           { definitions:
             [ { term: "Namn:"
               , description: Editable $ editable
-                { values: [ fixNullable user.firstName, fixNullable user.lastName ], onSave: saveName }
+                { values: [ fixNullable user.firstName, fixNullable user.lastName ]
+                , onSave: saveName
+                }
               }
             , { term: "Adress:"
               , description: Editable $ editable
-                { values: address, onSave: saveAddress }
+                { values: address
+                , onSave: saveAddress
+                }
               }
             , { term: "E-postadress:", description: Static [ user.email ] }
             , { term: "Kundnummer:", description: Static [ user.cusno ] }

@@ -17,13 +17,21 @@ foreign import editableStyles :: Style
 
 type Props =
   { values :: Array String
-  , onSave :: Maybe (Array String) -> Effect Unit
+  , onSave :: Array String  -> Effect Unit
   }
 
 
 type State =
-  { changes :: Maybe (Array String) }
+  { content :: Progress (Array String) }
 
+
+data Progress a
+  = Ready
+  | Editing a
+  | Loading a
+  | Error
+
+derive instance functorProgress :: Functor Progress
 
 data Action
   = StartEdit
@@ -38,19 +46,30 @@ type Self = React.Self Props State
 editable :: Props -> JSX
 editable = React.make component { render, initialState }
   where
-    initialState = { changes: Nothing }
+    initialState = { content: Ready }
 
 component :: React.Component Props
 component = React.createComponent "EditableField"
 
+
+
+
 update :: Self -> Action -> React.StateUpdate Props State
 update self = case _ of
-  StartEdit -> React.Update self.state { changes = Just self.props.values }
-  Change i v -> React.Update self.state { changes = join $ map (Array.updateAt i v) self.state.changes }
-  Undo -> React.Update self.state { changes = Nothing }
-  Save ->
-    let state' = self.state { changes = Nothing }
-    in React.UpdateAndSideEffects state' (const $ self.props.onSave self.state.changes)
+  StartEdit -> React.Update self.state { content = Editing self.props.values }
+  Change i v -> React.Update self.state
+    { content = case self.state.content of
+         Editing values -> case Array.updateAt i v values of
+           Nothing -> Ready -- TODO: what do here
+           Just newValues -> Editing newValues
+         _ -> Ready
+    }
+  Undo -> React.Update self.state { content = Ready }
+  Save -> case self.state.content of
+    Editing values ->
+      let state' = self.state { content = Loading values }
+      in React.UpdateAndSideEffects state' (const $ self.props.onSave values)
+    _ -> React.Update self.state { content = Error }
 
 
 send :: Self -> Action -> Effect Unit
@@ -63,9 +82,15 @@ render self@{ state, props } =
     editableStyles
     $ DOM.div
       { className: "editable"
-      , children: Array.singleton $ case state.changes of
-          Nothing -> renderRow (map mkString props.values) [ iconEdit ]
-          Just _vals -> renderRow (Array.mapWithIndex mkInput props.values) [ iconSuccess, iconClose ] -- TODO: is this right? like, do we need to merge the props with the state?
+      , children:
+        let
+          staticValues = map mkString props.values
+
+        in Array.singleton $ case state.content of
+          Ready -> renderRow staticValues [ iconEdit ]
+          Editing values -> renderRow (Array.mapWithIndex mkInput values) [ iconSuccess, iconClose ]
+          Loading values -> renderRow (map mkString values) [ DOM.text "some loading icon" ] -- TODO
+          Error -> renderRow staticValues [ DOM.text "some error", iconClose ] -- TODO
       }
   where
     renderRow items icons = Grid.row_
