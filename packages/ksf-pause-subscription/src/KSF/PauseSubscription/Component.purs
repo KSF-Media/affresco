@@ -2,6 +2,7 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
+import Control.Monad.Error.Class (catchError, throwError)
 import Data.DateTime (DateTime, adjust, date)
 import Data.Function.Uncurried (Fn0, runFn0)
 import Data.JSDate (JSDate, fromDateTime, toDateString, toDateTime, toISOString)
@@ -46,9 +47,12 @@ type DatePickerProps =
 type Self = React.Self Props State
 
 type Props =
-  { subsno   :: Int
-  , userUuid :: Persona.UUID
-  , onCancel :: Effect Unit
+  { subsno    :: Int
+  , userUuid  :: Persona.UUID
+  , onCancel  :: Effect Unit
+  , onLoading :: Effect Unit
+  , onSuccess :: Effect Unit
+  , onError   :: Effect Unit
   }
 
 type State =
@@ -209,12 +213,20 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     $ Just { extraClasses: [ "mt2" ] }
 
 submitForm :: State -> Props -> Effect Unit
-submitForm { startDate: Just start, endDate: Just end } { userUuid, subsno } = do
+submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
   loginResponse <- Login.loadToken
   case loginResponse of
-    Just { token } -> Aff.launchAff_ $ Persona.pauseSubscription userUuid subsno start end token
-    Nothing ->  Console.error "Did not find token in local storage."
-submitForm _ _ = pure unit
+    Just { token } -> do
+      props.onLoading
+      Aff.launchAff_ do
+        Persona.pauseSubscription userUuid subsno start end token `catchError` case _ of
+          err -> do
+            Console.error "Unexpected error when pausing subscription."
+            liftEffect props.onError
+            throwError err
+        liftEffect props.onSuccess
+    Nothing -> Console.error "Did not find token in local storage."
+submitForm _ _ = Console.error "Pause subscription dates were not defined."
 
 
 datePicker :: ReactComponent DatePickerProps

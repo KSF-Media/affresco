@@ -7,7 +7,7 @@ import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String (trim)
@@ -35,13 +35,17 @@ type Props =
   , user :: Persona.User
   }
 
-type State =
-  { pauseSubscriptionVisible :: Maybe Visible }
+data PauseSubscription
+  = PauseSubscriptionEditing
+  | PauseSubscriptionLoading
+  | PauseSubscriptionSuccess
+  | PauseSubscriptionError
 
-data Visible = Visible
+type State =
+  { pauseSubscription :: Maybe PauseSubscription }
 
 data Action
-  = ShowPauseSubscription (Maybe Visible)
+  = PauseSubscription (Maybe PauseSubscription)
 
 type Subscription =
   { package :: { name :: String
@@ -68,13 +72,13 @@ component = React.createComponent "Subscription"
 
 subscription :: Props -> JSX
 subscription = make component
-  { initialState: { pauseSubscriptionVisible: Nothing }
+  { initialState: { pauseSubscription: Nothing }
   , render
   }
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
-  ShowPauseSubscription show -> Update $ self.state { pauseSubscriptionVisible = show }
+  PauseSubscription pauseSubscriptionAction -> Update $ self.state { pauseSubscription = pauseSubscriptionAction }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
@@ -109,41 +113,49 @@ render self@{ props } =
     pauseSubscription =
       DOM.div
         { className: ""
-        , children:
-            [ if isJust self.state.pauseSubscriptionVisible
-              then pauseSubscriptionComponent
-              else pauseIcon
-            ]
+        , children: [ pauseSubscriptionMode ]
         }
+        where
+          pauseSubscriptionMode =
+            case self.state.pauseSubscription of
+              Just PauseSubscriptionEditing -> pauseSubscriptionComponent
+              Just PauseSubscriptionLoading -> pauseContainer loadingSpinner
+              Just PauseSubscriptionSuccess -> pauseContainer [ DOM.text "DONE!" ]
+              Just PauseSubscriptionError   -> pauseContainer [ DOM.text "Error :(" ]
+              Nothing                       -> pauseContainer pauseIcon
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
           , userUuid: props.user.uuid
-          , onCancel: send self $ ShowPauseSubscription Nothing
+          , onCancel: send self $ PauseSubscription Nothing
+          , onLoading: send self $ PauseSubscription $ Just PauseSubscriptionLoading
+          , onSuccess: send self $ PauseSubscription $ Just PauseSubscriptionSuccess
+          , onError: send self $ PauseSubscription $ Just PauseSubscriptionError
           }
 
+    pauseContainer children =
+      DOM.div { className: "subscription--pause-container flex", children }
+
+    loadingSpinner = [ DOM.div { className: "tiny-spinner" } ]
+
     pauseIcon =
-      DOM.div
-        { className: "subscription--pause-container flex"
-        , children:
-            [ DOM.div
-                { className: "subscription--pause-icon circle"
-                , onClick: togglePauseView
-                }
-            , DOM.span
-                { className: "subscription--pause-text"
-                , children:
-                    [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
-                , onClick: togglePauseView
-                }
-            ]
-         }
-        where
-          togglePauseView = handler_ $ send self
-            $ case self.state.pauseSubscriptionVisible of
-                Nothing -> ShowPauseSubscription $ Just Visible
-                _       -> ShowPauseSubscription Nothing
+      [ DOM.div
+          { className: "subscription--pause-icon circle"
+          , onClick: togglePauseView
+          }
+      , DOM.span
+          { className: "subscription--pause-text"
+          , children:
+              [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
+          , onClick: togglePauseView
+          }
+      ]
+      where
+        togglePauseView = handler_ $ send self
+          $ case self.state.pauseSubscription of
+              Nothing -> PauseSubscription $ Just PauseSubscriptionEditing
+              _       -> PauseSubscription Nothing
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
