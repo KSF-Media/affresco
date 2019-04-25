@@ -1,11 +1,14 @@
 import React from 'react';
 import render from 'react-dom';
+import { isMobile } from 'react-device-detect';
 
 import Table from './Table.js';
 import Parliament from './Parliament.js';
 import AreaPicker from './AreaPicker.js'
 import Status from './Status.js';
 import Chart from './Chart.js';
+import Timestamp from './Timestamp.js';
+import AreaInfo from './AreaInfo.js';
 
 import '../assets/less/app.less';
 
@@ -15,53 +18,90 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedArea: null,
       selectedAreaResponse: null,
       seats: {},
       votesInArea: [],
+      selectedAreaId: null,
+      countryResponse: null
     };
   }
-  componentDidMount() {
-    this.onAreaSelection();
+  componentDidMount(){
+    this.onAreaSelection(this.props.match.params.areaId);
+    this.getCountryData();
   }
-  onAreaSelection(area) {
-    console.info("onAreaSelection", area);
-    if (!area) { // if no area was provided (e.g. on start or reset)
-      return getCountry().then(area => { // get the whole country
-        if (area) { return this.onAreaSelection(area) } // and roll with that instead
-      })
+  componentDidUpdate(prevProps) {
+    if (prevProps.match.params.areaId !== this.props.match.params.areaId){
+      this.onAreaSelection(this.props.match.params.areaId);
     }
-    let selectedArea = area;
-    this.setState({ selectedArea })
-    return getArea(selectedArea.info.identifier)
+  }
+  onAreaSelection(areaId) {
+    if (!areaId) { // if no area was provided (e.g. on start or reset)
+      return this.onAreaSelection("MAA")
+    }
+    return getArea(areaId)
       .then(areaResponse => {
-
         // Get data for selected area
         this.setState({selectedAreaResponse: areaResponse});
         this.setState({votesInArea: areaResponse.nominators});
-
-        // Make object for the parliamentSVG
-        let s = { seats: areaResponse.nominators.map(
-          nominator => {
-            return {[nominator.abbreviation.finnish]: {
-              'seats': nominator.seats
-            }}
-          }
-        )};
-        this.setState({ seats: Object.assign(...s.seats) });
       });
   }
-  render(){
-    return (
-      <div className="ksf-elections">
+  getCountryData() {
+    return getArea("MAA").then(countryResponse => {
+      this.setState({countryResponse: countryResponse});
+      // Make object for the parliamentSVG
+      console.log("countryResponse: ", countryResponse);
+      let s = { seats: countryResponse.nominators.map(
+        nominator => {
+          return {[nominator.abbreviation.swedish]: {
+            'seats': nominator.seats
+          }}
+        }
+      )};
+      this.setState({ seats: Object.assign(...s.seats) });
+    })
+  }
+  render() {
+    if(this.props.match.path === "/compact") {
+      return (
+        <div className={isMobile ? 'mobile ksf-elections compact' : 'ksf-elections compact'}>
+          <AreaInfo
+            areaResponse={this.state.selectedAreaResponse}
+          />
+          <Chart
+            areaResponse={this.state.selectedAreaResponse}
+          />
+        </div>
+      )
+    } else {
+      return (
+        <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
         <Status
-          percentage={78}
+        percentage={
+          this.state.countryResponse
+          ? this.state.countryResponse.area.info.calculationStatus
+          : null
+        }
         />
+        <Timestamp timestamp={
+          this.state.countryResponse
+          ? this.state.countryResponse.timestamp
+          : null
+        }/>
         <Parliament
           seats={this.state.seats}
         />
         <AreaPicker
-          onSelection={ (area) => this.onAreaSelection(area) }
+          onSelection={ (area) => {
+            if (area === null) {
+              this.props.history.push('/')
+            } else {
+              this.props.history.push('/area/' + area.info.identifier)
+            }
+          }}
+          selection={this.props.match.params.areaId}
+        />
+        <AreaInfo
+          areaResponse={this.state.selectedAreaResponse}
         />
         <Chart
           areaResponse={this.state.selectedAreaResponse}
@@ -69,7 +109,8 @@ export default class App extends React.Component {
         <Table
           areaResponse={this.state.selectedAreaResponse}
         />
-      </div>
-    )
+        </div>
+      )
+    }
   }
 }

@@ -13,7 +13,6 @@ export default class Table extends React.Component {
   render() {
     const { areaResponse } = this.props;
     const data = areaResponse === null ? null : areaResponseData(areaResponse);
-    // console.log("isMobile: ", isMobile);
     return (
       <div>
         <ReactTable
@@ -98,11 +97,11 @@ export default class Table extends React.Component {
                 Cell: row => {
                   const className = row.value ? row.value.toLowerCase().replace(/\s+/g, '') : '';
                   return(
-                    <span
-                      className={className}
+                    <div
+                      className={className + ' status-cell'}
                     >
                     {row.value}
-                    </span>
+                    </div>
                   )
                 }
               },
