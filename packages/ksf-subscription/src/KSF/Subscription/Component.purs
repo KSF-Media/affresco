@@ -18,7 +18,6 @@ import Effect (Effect)
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
-import KSF.Subscription.View as View
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
