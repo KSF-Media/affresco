@@ -1,33 +1,31 @@
-module AsyncWrapper where
+module KSF.AsyncWrapper where
+
+import Prelude
 
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
-type Props =
-  { wrapperState :: Progress
+type Props a =
+  { wrapperState :: Progress a
   , readyView    :: JSX
-  , editingView  :: JSX
-  , errorView    :: JSX
+  , editingView  :: a -> JSX
+  , errorView    :: String -> JSX
   }
 
-data Progress
+data Progress a
   = Ready
-  | Editing
-  | Loading
-  | Error
+  | Editing a
+  | Loading a
+  | Error String
 
-type Views =
-  { readyView :: JSX
-  , editingView :: JSX
-  , errorView :: JSX
-  }
+derive instance functorProgress :: Functor Progress
 
-asyncWrapper :: Props -> JSX
+asyncWrapper :: forall a. Props a -> JSX
 asyncWrapper props = case props.wrapperState of
-  Ready   -> props.readyView
-  Editing -> props.editingView
-  Loading -> loadingSpinner
-  Error   -> props.errorView
+  Ready     -> props.readyView
+  Editing a -> props.editingView a
+  Loading a -> loadingSpinner
+  Error str -> props.errorView str
 
 loadingSpinner :: JSX
 loadingSpinner = DOM.div { className: "tiny-spinner right" }

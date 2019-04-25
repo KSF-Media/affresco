@@ -2,14 +2,20 @@ module KSF.Profile.Component where
 
 import Prelude
 
+import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (catMaybes, (:))
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
+import Effect (Effect)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Console (log)
 import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Editable.Component (editable)
+import KSF.Login.Component as Login
 import Persona as Persona
 import React.Basic as React
 import React.Basic.Extended (JSX, Style, requireStyle)
@@ -18,8 +24,11 @@ import Unsafe.Coerce (unsafeCoerce)
 foreign import profileStyles :: Style
 
 type Self = React.Self Props State
+
 type Props =
-  { profile :: Persona.User }
+  { profile :: Persona.User
+  , onUpdate :: Persona.User -> Effect Unit
+  }
 
 type State =
   { name :: Maybe Name
@@ -82,9 +91,21 @@ render props@{ profile: user } =
 
     address = fromMaybe [] $ addressArray <$> Nullable.toMaybe user.address
 
-    -- TODO: persona
-    saveName arr = log $ unsafeCoerce arr
+    saveName :: Effect Unit -> Array String -> Effect Unit
+    saveName onError arr = do
+      loginResponse <- Login.loadToken
+      case loginResponse, arr of
+        Just { token }, [firstName, lastName] -> do
+          let body = Persona.UpdateName { firstName, lastName }
+          Aff.launchAff_ do
+            newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
+              Console.error "Unexpected error when updating name."
+              liftEffect $ onError
+              throwError err
+            liftEffect $ props.onUpdate newUser
+        _, _ -> Console.error "Did not find token in local storage."
 
     -- TODO: persona
     -- TODO: remember to pass the country code back
-    saveAddress arr = log $ unsafeCoerce arr
+    saveAddress onError arr = Aff.launchAff_ do
+      liftEffect $ log $ unsafeCoerce arr

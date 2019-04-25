@@ -54,6 +54,16 @@ getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { 
   where
     authorization = oauthToken token
 
+updateUser :: UUID -> Token -> UserUpdate -> Aff User
+updateUser uuid token update =
+  let
+    authorization = oauthToken token
+    body = case update of
+      UpdateName names      -> unsafeToForeign names
+      UpdateAddress address -> unsafeToForeign { address }
+  in
+   callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
+
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
   where
@@ -105,6 +115,10 @@ type LoginDataSso =
   { uuid :: UUID
   , accessToken :: Token
   }
+
+data UserUpdate
+  = UpdateName { firstName :: String, lastName :: String }
+  | UpdateAddress { countryCode :: String, zipCode :: String, streetAddress :: String }
 
 type PersonaError extraFields =
   { http_status :: String
