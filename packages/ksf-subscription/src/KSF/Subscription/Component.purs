@@ -135,20 +135,17 @@ render self@{ props } =
     pauseIcon =
       [ DOM.div
           { className: "subscription--pause-icon circle"
-          , onClick: togglePauseView
+          , onClick: showPauseView
           }
       , DOM.span
           { className: "subscription--pause-text"
           , children:
               [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
-          , onClick: togglePauseView
+          , onClick: showPauseView
           }
       ]
       where
-        togglePauseView = handler_ $ send self
-          $ case self.state.wrapperProgress of
-              AsyncWrapper.Ready -> SetWrapperProgress AsyncWrapper.Editing
-              _                  -> SetWrapperProgress AsyncWrapper.Ready
+        showPauseView = handler_ $ send self $ SetWrapperProgress AsyncWrapper.Editing
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
