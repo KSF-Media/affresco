@@ -4,20 +4,20 @@ import Prelude
 
 import Control.Monad.Except (runExcept)
 import Control.MonadPlus (guard)
+import Data.List (fromFoldable)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..), hush)
+import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Int (ceil)
-import Data.JSDate (JSDate, fromDateTime, getDate, getFullYear, getMonth)
+import Data.JSDate (JSDate)
 import Data.Maybe (Maybe, isNothing)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
-import Data.Traversable (intercalate, traverse)
+import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
-import Effect.Class (liftEffect)
 import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
@@ -74,8 +74,8 @@ register newUser =
 
 pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Unit
 pauseSubscription uuid subsno startDate endDate token = do
-  startDateISO <- liftEffect $ dateToString startDate
-  endDateISO   <- liftEffect $ dateToString endDate
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoPausePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
@@ -85,23 +85,17 @@ pauseSubscription uuid subsno startDate endDate token = do
   where
     authorization = oauthToken token
 
-    -- Returns e.g. "2019-04-23"
-    dateToString date = do
-      let jsDate = fromDateTime date
-      year  <- getFullYear jsDate
-      month <- getMonth jsDate
-      day   <- getDate jsDate
-
-      -- Returns a string with at least two digits
-      -- E.g. 4 -> "04"
-      let numToString n
-            | n < 10 = "0" <> show n
-            | otherwise = show n
-
-      pure $
-        intercalate "-" $
-          -- The `ceil` is used to convert a Number to an Int
-          map (numToString <<< ceil) [ year, month + 1.0, day ]
+    formatDate :: DateTime -> String
+    formatDate = format formatter
+      where
+        dash = Placeholder "-"
+        formatter = fromFoldable
+          [ YearFull
+          , dash
+          , MonthTwoDigits
+          , dash
+          , DayOfMonthTwoDigits
+          ]
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
