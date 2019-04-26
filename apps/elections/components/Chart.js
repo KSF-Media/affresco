@@ -1,5 +1,6 @@
 import React from 'react';
 import render from 'react-dom';
+import { sortBy } from 'lodash'
 
 import { AreaResponse, Nominator, Status } from 'election';
 
@@ -14,12 +15,25 @@ export default class Chart extends React.Component{
     const { areaResponse } = this.props;
     const data = areaResponse === null ? null : areaResponseData(areaResponse);
 
+
     const getParties = (data) => {
+
+      // Include data only for parties defined in relevatParties
       const relevantData = data.filter( val => relevantParties.includes(val.abbreviation.swedish) );
+
+      // Sort the data by totalPercent
+      let relevantDataSorted = []
+      if(relevantData.length !== 0) {
+        relevantDataSorted = sortBy( relevantData, obj => obj.votes.totalPercent ).reverse();
+      }
+
+      // Calculate sum of all vote percentage of the relevant parties
       const relevantPartyVotes = relevantData.reduce((total, val) => {
         return parseFloat(total + val.votes.totalPercent)
       }, 0);
-      const relevantAndOthers = relevantData.concat([
+
+      // Append others
+      const relevantAndOthers = relevantDataSorted.concat([
         {
           'abbreviation': {
             'swedish': 'Övriga'
@@ -37,13 +51,20 @@ export default class Chart extends React.Component{
           let name = obj.abbreviation.swedish || obj.abbreviation.finnish;
           if(votes && countStarted){
             return(
-              <div
+              <div className="party"
                 key={i}
-                className={'background-'+name}
-                style={{color: 'white', width: votes+'%'}}
               >
-                <span className="name">{name}</span>
-                <span className="votes">{votes.toFixed(1)}%</span>
+                <div className="info">
+                  <div>
+                    <span className="name">{name}</span>
+                    <span className="votes">{votes.toFixed(1)}%</span>
+                  </div>
+                </div>
+                <div
+                  className={'bar background-'+name}
+                  style={{height: votes * 5 +'px'}}
+                >
+                </div>
               </div>
             )
           }

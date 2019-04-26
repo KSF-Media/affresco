@@ -2,7 +2,6 @@ module KSF.Grid where
 
 import Prelude
 
-import Data.Array ((:))
 import Data.Maybe (Maybe(..))
 import Data.String (joinWith)
 import React.Basic (JSX)
@@ -35,10 +34,27 @@ row_ :: Array JSX -> JSX
 row_ children = row children Nothing
 
 columnHalf :: JSX -> JSX
-columnHalf = column [ "grid--column-half" ]
+columnHalf = col6
 
 columnThird :: JSX -> JSX
 columnThird = column [ "col-4" ]
+
+col10 :: JSX -> JSX
+col10 = column [ "col-10" ]
+
+
+col8 :: JSX -> JSX
+col8 = column [ "col-8" ]
+
+col6 :: JSX -> JSX
+col6 = column [ "grid--column-half" ]
+
+col4 :: JSX -> JSX
+col4 = column [ "col-4" ]
+
+col2 :: JSX -> JSX
+col2 = column [ "col-2" ]
+
 
 column :: Array String -> JSX -> JSX
 column classes child =
