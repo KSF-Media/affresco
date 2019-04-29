@@ -7,6 +7,7 @@ type Props =
   { wrapperState :: Progress
   , readyView    :: JSX
   , editingView  :: JSX
+  , successView  :: JSX
   , errorView    :: JSX
   }
 
@@ -14,6 +15,7 @@ data Progress
   = Ready
   | Editing
   | Loading
+  | Success
   | Error
 
 type Views =
@@ -27,6 +29,7 @@ asyncWrapper props = case props.wrapperState of
   Ready   -> props.readyView
   Editing -> props.editingView
   Loading -> loadingSpinner
+  Success -> props.successView
   Error   -> props.errorView
 
 loadingSpinner :: JSX
