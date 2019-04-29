@@ -3,18 +3,20 @@ module KSF.Subscription.Component where
 import Prelude
 
 import AsyncWrapper as AsyncWrapper
-import Data.DateTime (adjust)
+import Data.Array (filter, mapMaybe)
+import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.String (trim)
 import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
+import Effect.Now as Now
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
@@ -36,10 +38,13 @@ type Props =
   }
 
 type State =
-  { wrapperProgress :: AsyncWrapper.Progress }
+  { wrapperProgress :: AsyncWrapper.Progress
+  , now :: Maybe DateTime
+  }
 
 data Action
   = SetWrapperProgress AsyncWrapper.Progress
+  | SetNow DateTime
 
 type Subscription =
   { package :: { name :: String
@@ -66,19 +71,25 @@ component = React.createComponent "Subscription"
 
 subscription :: Props -> JSX
 subscription = make component
-  { initialState: { wrapperProgress: AsyncWrapper.Ready }
+  { initialState: { wrapperProgress: AsyncWrapper.Ready, now: Nothing }
   , render
   }
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  now <- Now.nowDateTime
+  send self $ SetNow now
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   SetWrapperProgress progress -> Update $ self.state { wrapperProgress = progress }
+  SetNow now -> Update $ self.state { now = Just now }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
 
 render :: Self -> JSX
-render self@{ props } =
+render self@{ props: props@{ subscription: { package } } } =
   ReactExt.requireStyle
     subscriptionStyles
     $ Grid.row2
@@ -86,15 +97,19 @@ render self@{ props } =
          DescriptionList.component
            { definitions:
                [ { term: "Produkt:"
-                 , descriptions: [ props.subscription.package.name ]
+                 , descriptions: [ package.name ]
                  }
                , { term: "Status:"
-                 , descriptions: [ translateStatus props.subscription.state ]
+                 , descriptions:
+                     [ translateStatus props.subscription.state ]
+                     <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ toMaybe props.subscription.paused)
                  }
                ]
                <> foldMap billingDateTerm nextBillingDate
            })
-      pauseSubscription
+      (if package.digitalOnly
+       then mempty
+       else pauseSubscription)
       $ Just { extraClasses: [ "subscription--container" ] }
   where
     billingDateTerm date =
@@ -102,6 +117,11 @@ render self@{ props } =
         , descriptions: [ date ]
         }
       ]
+
+    filterExpiredPausePeriods pausedSubs =
+      case self.state.now of
+        Nothing  -> pausedSubs
+        Just now -> filter (isPauseExpired now) pausedSubs
 
     pauseSubscription :: JSX
     pauseSubscription =
@@ -176,3 +196,16 @@ translateStatus (Persona.SubscriptionState englishStatus) = do
     "DeactivatedRecently"       -> "Förnyad tillsvidare"
     "Unknown"                   -> "Okänd"
     _                           -> englishStatus
+
+isPauseExpired :: DateTime -> Persona.PausedSubscription -> Boolean
+isPauseExpired baseDate { endDate } =
+  let endDateTime = toDateTime endDate
+  in maybe true (_ < baseDate) endDateTime
+
+showPausedDates :: Array Persona.PausedSubscription -> Array String
+showPausedDates pausedSubs =
+  let formatDateString = \({ startDate, endDate }) -> do
+        startString <- formatDate startDate
+        endString   <- formatDate endDate
+        Just $ "Uppehåll: " <> startString <> " – " <> endString
+  in mapMaybe formatDateString pausedSubs
