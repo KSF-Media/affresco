@@ -4,7 +4,6 @@ import Prelude
 
 import Control.Monad.Except (runExcept)
 import Control.MonadPlus (guard)
-import Data.List (fromFoldable)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..), hush)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
@@ -12,6 +11,7 @@ import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
+import Data.List (fromFoldable)
 import Data.Maybe (Maybe, isNothing)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
@@ -280,6 +280,12 @@ type Subscription =
   , package    :: ModelPackage
   , dates      :: SubscriptionDates
   , campaign   :: Campaign
+  , paused     :: Nullable (Array PausedSubscription)
+  }
+
+type PausedSubscription =
+  { startDate :: JSDate
+  , endDate   :: JSDate
   }
 
 newtype SubscriptionState = SubscriptionState String
@@ -305,6 +311,7 @@ type ModelPackage =
   , campaigns   :: Array Campaign
   , nextDelivery :: Nullable JSDate
   , description  :: Nullable PackageDescription
+  , digitalOnly :: Boolean
   }
 
 type PackageDescription =
