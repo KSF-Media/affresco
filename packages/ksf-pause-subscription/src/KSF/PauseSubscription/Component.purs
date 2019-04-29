@@ -51,7 +51,7 @@ type Props =
   , userUuid  :: Persona.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
-  , onSuccess :: Effect Unit
+  , onSuccess :: Persona.Subscription -> Effect Unit
   , onError   :: Effect Unit
   }
 
@@ -219,12 +219,12 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
     Just { token } -> do
       props.onLoading
       Aff.launchAff_ do
-        Persona.pauseSubscription userUuid subsno start end token `catchError` case _ of
+        pausedSub <- Persona.pauseSubscription userUuid subsno start end token `catchError` case _ of
           err -> do
             Console.error "Unexpected error when pausing subscription."
             liftEffect props.onError
             throwError err
-        liftEffect props.onSuccess
+        liftEffect $ props.onSuccess pausedSub
     Nothing -> Console.error "Did not find token in local storage."
 submitForm _ _ = Console.error "Pause subscription dates were not defined."
 

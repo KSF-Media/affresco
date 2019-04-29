@@ -9,13 +9,14 @@ import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.String (trim)
 import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
+import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -27,6 +28,7 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as ReactExt
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import subscriptionStyles :: Style
 
@@ -39,12 +41,14 @@ type Props =
 
 type State =
   { wrapperProgress :: AsyncWrapper.Progress
+  , pausedSubscriptions :: Array Persona.PausedSubscription
   , now :: Maybe DateTime
   }
 
 data Action
   = SetWrapperProgress AsyncWrapper.Progress
   | SetNow DateTime
+  | SetPausedSubscriptions (Array Persona.PausedSubscription)
 
 type Subscription =
   { package :: { name :: String
@@ -71,19 +75,26 @@ component = React.createComponent "Subscription"
 
 subscription :: Props -> JSX
 subscription = make component
-  { initialState: { wrapperProgress: AsyncWrapper.Ready, now: Nothing }
+  { initialState:
+      { wrapperProgress: AsyncWrapper.Ready
+      , pausedSubscriptions: []
+      , now: Nothing
+      }
   , render
+  , didMount
   }
 
 didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
   send self $ SetNow now
+  send self $ SetPausedSubscriptions $ fromMaybe [] $ toMaybe self.props.subscription.paused
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   SetWrapperProgress progress -> Update $ self.state { wrapperProgress = progress }
   SetNow now -> Update $ self.state { now = Just now }
+  SetPausedSubscriptions subs -> Update $ self.state { pausedSubscriptions = subs }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
@@ -102,7 +113,7 @@ render self@{ props: props@{ subscription: { package } } } =
                , { term: "Status:"
                  , descriptions:
                      [ translateStatus props.subscription.state ]
-                     <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ toMaybe props.subscription.paused)
+                     <> (showPausedDates $ filterExpiredPausePeriods self.state.pausedSubscriptions)
                  }
                ]
                <> foldMap billingDateTerm nextBillingDate
@@ -134,7 +145,8 @@ render self@{ props: props@{ subscription: { package } } } =
             { wrapperState: self.state.wrapperProgress
             , readyView: pauseContainer pauseIcon
             , editingView: pauseSubscriptionComponent
-            , errorView: pauseContainer [ DOM.text "Error :(" ]
+            , successView: pauseContainer [ DOM.text "✔️" ]
+            , errorView: pauseContainer [ DOM.text "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst." ]
             }
 
     pauseSubscriptionComponent =
@@ -143,7 +155,10 @@ render self@{ props: props@{ subscription: { package } } } =
           , userUuid: props.user.uuid
           , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
           , onLoading: send self $ SetWrapperProgress AsyncWrapper.Loading
-          , onSuccess: pure unit -- send self $ SetWrapperProgress PauseSubscriptionSuccess
+          , onSuccess: \pausedSubscription -> do
+                         send self $ SetWrapperProgress AsyncWrapper.Success
+                         send self $ SetPausedSubscriptions $ fromMaybe [] $ toMaybe pausedSubscription.paused
+
           , onError: send self $ SetWrapperProgress AsyncWrapper.Error
           }
 

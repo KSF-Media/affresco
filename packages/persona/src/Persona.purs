@@ -72,7 +72,7 @@ register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
 
-pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Unit
+pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Subscription
 pauseSubscription uuid subsno startDate endDate token = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
