@@ -16,7 +16,6 @@ import Data.String (trim)
 import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
-import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -28,7 +27,6 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as ReactExt
-import Unsafe.Coerce (unsafeCoerce)
 
 foreign import subscriptionStyles :: Style
 
@@ -41,14 +39,14 @@ type Props =
 
 type State =
   { wrapperProgress :: AsyncWrapper.Progress
-  , pausedSubscriptions :: Array Persona.PausedSubscription
+  , pausedSubscriptions :: Maybe (Array Persona.PausedSubscription)
   , now :: Maybe DateTime
   }
 
 data Action
   = SetWrapperProgress AsyncWrapper.Progress
   | SetNow DateTime
-  | SetPausedSubscriptions (Array Persona.PausedSubscription)
+  | SetPausedSubscriptions (Maybe (Array Persona.PausedSubscription))
 
 type Subscription =
   { package :: { name :: String
@@ -77,7 +75,7 @@ subscription :: Props -> JSX
 subscription = make component
   { initialState:
       { wrapperProgress: AsyncWrapper.Ready
-      , pausedSubscriptions: []
+      , pausedSubscriptions: Nothing
       , now: Nothing
       }
   , render
@@ -88,7 +86,7 @@ didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
   send self $ SetNow now
-  send self $ SetPausedSubscriptions $ fromMaybe [] $ toMaybe self.props.subscription.paused
+  send self $ SetPausedSubscriptions $ toMaybe self.props.subscription.paused
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
@@ -113,7 +111,7 @@ render self@{ props: props@{ subscription: { package } } } =
                , { term: "Status:"
                  , descriptions:
                      [ translateStatus props.subscription.state ]
-                     <> (showPausedDates $ filterExpiredPausePeriods self.state.pausedSubscriptions)
+                     <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                  }
                ]
                <> foldMap billingDateTerm nextBillingDate
@@ -132,7 +130,7 @@ render self@{ props: props@{ subscription: { package } } } =
     filterExpiredPausePeriods pausedSubs =
       case self.state.now of
         Nothing  -> pausedSubs
-        Just now -> filter (isPauseExpired now) pausedSubs
+        Just now -> filter (not isPauseExpired now) pausedSubs
 
     pauseSubscription :: JSX
     pauseSubscription =
@@ -167,7 +165,7 @@ render self@{ props: props@{ subscription: { package } } } =
           , onLoading: send self $ SetWrapperProgress AsyncWrapper.Loading
           , onSuccess: \pausedSubscription -> do
                          send self $ SetWrapperProgress AsyncWrapper.Success
-                         send self $ SetPausedSubscriptions $ fromMaybe [] $ toMaybe pausedSubscription.paused
+                         send self $ SetPausedSubscriptions $ toMaybe pausedSubscription.paused
 
           , onError: send self $ SetWrapperProgress AsyncWrapper.Error
           }
