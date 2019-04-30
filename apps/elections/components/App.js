@@ -61,56 +61,89 @@ export default class App extends React.Component {
     })
   }
   render() {
-    if(this.props.match.path === "/compact") {
-      return (
-        <div className={isMobile ? 'mobile ksf-elections compact' : 'ksf-elections compact'}>
-          <AreaInfo
+    switch(this.props.match.path) {
+      case "/compact":
+        return (
+          <div className={isMobile ? 'mobile ksf-elections compact' : 'ksf-elections compact'}>
+            <AreaInfo
             areaResponse={this.state.selectedAreaResponse}
-          />
-          <Chart
+            />
+            <Chart
             areaResponse={this.state.selectedAreaResponse}
-          />
-        </div>
-      )
-    } else {
-      return (
-        <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
-        <Status
-        percentage={
-          this.state.countryResponse
-          ? this.state.countryResponse.area.info.calculationStatus
-          : null
-        }
-        />
-        <Timestamp timestamp={
-          this.state.countryResponse
-          ? this.state.countryResponse.timestamp
-          : null
-        }/>
-        <Parliament
-          seats={this.state.seats}
-        />
-        <AreaPicker
-          onSelection={ (area) => {
-            if (area === null) {
-              this.props.history.push('/')
-            } else {
-              this.props.history.push('/area/' + area.info.identifier)
-            }
-          }}
-          selection={this.props.match.params.areaId}
-        />
-        <AreaInfo
-          areaResponse={this.state.selectedAreaResponse}
-        />
-        <Chart
-          areaResponse={this.state.selectedAreaResponse}
-        />
-        <Table
-          areaResponse={this.state.selectedAreaResponse}
-        />
-        </div>
-      )
+            />
+          </div>
+        )
+      case "/eu":
+        return (
+          <div className={isMobile ? 'mobile ksf-elections eu' : 'ksf-elections eu'}>
+            <div className="status">
+            {this.state.countryResponse ? this.state.countryResponse.area.info.calculationStatus : 0}% Räknat
+            </div>
+            <Timestamp timestamp={
+              this.state.countryResponse
+              ? this.state.countryResponse.timestamp
+              : null
+            }/>
+            <AreaPicker
+            onSelection={ (area) => {
+              if (area === null) {
+                this.props.history.push('/')
+              } else {
+                this.props.history.push('/area/' + area.info.identifier)
+              }
+            }}
+            selection={this.props.match.params.areaId}
+            />
+            <AreaInfo
+            areaResponse={this.state.selectedAreaResponse}
+            />
+            <Chart
+            areaResponse={this.state.selectedAreaResponse}
+            />
+            <Table
+            areaResponse={this.state.selectedAreaResponse}
+            />
+          </div>
+        )
+      default:
+          return (
+            <div className={isMobile ? 'mobile ksf-elections' : 'ksf-elections'}>
+              <Status
+              percentage={
+                this.state.countryResponse
+                ? this.state.countryResponse.area.info.calculationStatus
+                : null
+              }
+              />
+              <Timestamp timestamp={
+                this.state.countryResponse
+                ? this.state.countryResponse.timestamp
+                : null
+              }/>
+              <Parliament
+              seats={this.state.seats}
+              />
+              <AreaPicker
+              onSelection={ (area) => {
+                if (area === null) {
+                  this.props.history.push('/')
+                } else {
+                  this.props.history.push('/area/' + area.info.identifier)
+                }
+              }}
+              selection={this.props.match.params.areaId}
+              />
+              <AreaInfo
+              areaResponse={this.state.selectedAreaResponse}
+              />
+              <Chart
+              areaResponse={this.state.selectedAreaResponse}
+              />
+              <Table
+              areaResponse={this.state.selectedAreaResponse}
+              />
+            </div>
+          )
     }
   }
 }
