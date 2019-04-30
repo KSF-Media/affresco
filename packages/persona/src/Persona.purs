@@ -57,6 +57,12 @@ getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { 
   where
     authorization = oauthToken token
 
+bustUserCache :: UUID -> Token -> Aff Unit
+bustUserCache uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { authorization, cacheControl }
+  where
+    authorization = oauthToken token
+    cacheControl = "max-age=0"
+
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
   where
