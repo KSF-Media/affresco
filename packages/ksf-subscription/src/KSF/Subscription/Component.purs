@@ -146,8 +146,18 @@ render self@{ props: props@{ subscription: { package } } } =
             , readyView: pauseContainer pauseIcon
             , editingView: pauseSubscriptionComponent
             , successView: pauseContainer [ DOM.text "✔️" ]
-            , errorView: pauseContainer [ DOM.text "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst." ]
+            , errorView: pauseContainer [ errorMessage ]
             }
+
+          errorMessage =
+            DOM.div
+              { className: "error-text"
+              , children:
+                  [ DOM.text  "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra."
+                  , DOM.br {}
+                  , DOM.text " Vänligen kontakta vår kundtjänst."
+                  ]
+              }
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
