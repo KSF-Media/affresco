@@ -10,11 +10,11 @@ ReactDOM.render(
       component={App}>
     </Route>
     <Route
-      exact path="/"
+      exact path="/compact"
       component={App}>
     </Route>
     <Route
-      exact path="/compact"
+      exact path="/"
       component={App}>
     </Route>
   </Router>

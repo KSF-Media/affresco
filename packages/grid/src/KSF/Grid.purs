@@ -59,4 +59,4 @@ column classes child =
     , children: [ child ]
     }
   where
-columnBaseClasses = [ "col", "grid--column"]
+    columnBaseClasses = [ "col", "grid--column"]
