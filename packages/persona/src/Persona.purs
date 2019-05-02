@@ -285,7 +285,7 @@ type Subscription =
 
 type PausedSubscription =
   { startDate :: JSDate
-  , endDate   :: JSDate
+  , endDate   :: Nullable JSDate
   }
 
 newtype SubscriptionState = SubscriptionState String

@@ -9,7 +9,7 @@ import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.String (trim)
@@ -222,13 +222,17 @@ translateStatus (Persona.SubscriptionState englishStatus) = do
 
 isPauseExpired :: DateTime -> Persona.PausedSubscription -> Boolean
 isPauseExpired baseDate { endDate } =
-  let endDateTime = toDateTime endDate
-  in maybe true (_ < baseDate) endDateTime
+  case toMaybe endDate of
+    -- If there's no end date, the pause is ongoing
+    Nothing   -> false
+    Just date ->
+      let endDateTime = toDateTime date
+      in maybe true (_ < baseDate) endDateTime
 
 showPausedDates :: Array Persona.PausedSubscription -> Array String
 showPausedDates pausedSubs =
   let formatDateString = \({ startDate, endDate }) -> do
         startString <- formatDate startDate
-        endString   <- formatDate endDate
+        let endString = fromMaybe "" $ formatDate =<< toMaybe endDate
         Just $ "Uppehåll: " <> startString <> " – " <> endString
   in mapMaybe formatDateString pausedSubs
