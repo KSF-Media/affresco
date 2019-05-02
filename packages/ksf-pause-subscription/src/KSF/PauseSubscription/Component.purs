@@ -224,7 +224,6 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
             Console.error "Unexpected error when pausing subscription."
             liftEffect props.onError
             throwError err
-        Persona.bustUserCache userUuid token
         liftEffect $ props.onSuccess pausedSub
     Nothing -> Console.error "Did not find token in local storage."
 submitForm _ _ = Console.error "Pause subscription dates were not defined."
