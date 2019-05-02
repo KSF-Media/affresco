@@ -9,7 +9,7 @@ import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.String (trim)
@@ -143,7 +143,7 @@ render self@{ props: props@{ subscription: { package } } } =
             { wrapperState: self.state.wrapperProgress
             , readyView: pauseContainer pauseIcon
             , editingView: pauseSubscriptionComponent
-            , successView: pauseContainer [ DOM.text "✔️" ]
+            , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
             , errorView: pauseContainer [ errorMessage ]
             }
 
