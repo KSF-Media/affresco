@@ -1,1 +1,48 @@
 @import 'ksf-utils';
+@import (reference) 'ksf-variables';
+
+.editable--container {
+    margin-top: 0;
+    > .grid--column-half {
+        @media @to-xlarge {
+            width: 100%;
+        }
+        @media @to-medium {
+            width: calc(6/12 * 100%);
+        }
+        @media @to-xsmall {
+            width: 100%;
+        }
+    }
+    .pause-subscription--container {
+        margin-top: 0;
+        @media @to-xlarge {
+            margin-top: 1.5em;
+        }
+        @media @to-medium {
+            margin-top: 0;
+        }
+        @media @to-xsmall {
+            margin-top: 1.5em;
+        }
+    }
+}
+
+.editable--edit-container {
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 0;
+    @media @to-xlarge {
+        margin-top: 1.5em;
+    }
+    @media @to-medium {
+        margin-top: 0;
+    }
+    @media @to-xsmall {
+        margin-top: 1.5em;
+    }
+}
+
+.editable--edit-text {
+    cursor: pointer;
+}

@@ -5,22 +5,24 @@ import Prelude
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
+import Effect.Aff as Aff
+import KSF.AsyncWrapper (Progress(..))
+import KSF.AsyncWrapper as Wrapper
+import KSF.Grid as Grid
+import KSF.InputField.Component as Input
 import React.Basic (JSX, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events as React.Events
 import React.Basic.Extended (Style, requireStyle)
 
-import KSF.AsyncWrapper (Progress(..))
-import KSF.AsyncWrapper as Wrapper
-import KSF.Grid as Grid
-import KSF.InputField.Component as Input
-
 foreign import editableStyles :: Style
 
 type Props =
   { values :: Array String
-  , onSave :: Effect Unit -> Array String -> Effect Unit
+  , onSave :: (String -> Effect Unit) -> Array String -> Aff Unit
   }
 
 type State =
@@ -29,7 +31,7 @@ type State =
 data Action
   = StartEdit
   | Change Int String
-  | Undo
+  | Undo (Maybe String)
   | Save
 
 type SetState = (State -> State) -> Effect Unit
@@ -58,12 +60,17 @@ send = runUpdate update
                Just newValues -> Editing newValues
              _ -> Ready
         }
-      Undo -> React.Update self.state { content = Ready }
+      Undo Nothing -> React.Update self.state { content = Ready }
+      Undo (Just err) -> React.Update self.state { content = Error err }
       Save -> case self.state.content of
         Editing values ->
           let
             state' = self.state { content = Loading values }
-          in React.UpdateAndSideEffects state' (\_ -> self.props.onSave (send self Undo) values)
+            onError = send self <<< Undo <<< Just
+            sideEffect _ = Aff.launchAff_ do
+              self.props.onSave onError values
+              liftEffect $ send self (Undo Nothing)
+          in React.UpdateAndSideEffects state' sideEffect
         _ -> React.Update self.state { content = Ready }
 
 
@@ -81,33 +88,42 @@ render self@{ state, props } =
       }
   where
     renderRow items = Grid.row_
-      [ Grid.col10 $ DOM.div_ items
-      , Grid.col2 $ DOM.div
-        { className: "right"
-        , children: [ Wrapper.asyncWrapper
+      [ Grid.col8 $ DOM.div_ items
+      , Grid.col4 $ Wrapper.asyncWrapper
           { wrapperState: state.content
-          , readyView: iconEdit
-          , editingView: \_ -> DOM.div_ [ iconSuccess, iconClose ]
-          , errorView: \err -> DOM.div_ [ DOM.text err, iconClose ]
-          } ]
-        }
+          , readyView: editButton
+          , editingView: \_ -> flexDiv { children: [ iconSuccess, iconClose ], className: "" }
+          , errorView: \err -> flexDiv { children: [ DOM.text err, iconClose ], className: "" }
+          }
       ]
 
-    iconEdit = DOM.div
-      { className: "edit-icon"
-      , children: []
-      , onClick: React.Events.capture_ $ send self StartEdit
+    flexDiv ps = DOM.div (ps { className = "editable--edit-container flex" })
+
+    editButton = flexDiv
+      { children:
+        [ DOM.div
+          { className: "edit-icon circle"
+          , onClick: handler
+          }
+        , DOM.span
+          { className: "editable--edit-text"
+          , onClick: handler
+          , children:
+            [ DOM.u_ [ DOM.text "Ändra" ] ]
+          }
+        ]
+      , className: ""
       }
+      where
+        handler = React.Events.capture_ $ send self StartEdit
 
     iconClose = DOM.div
       { className: "close-icon"
-      , children: []
-      , onClick: React.Events.capture_ $ send self Undo
+      , onClick: React.Events.capture_ $ send self (Undo Nothing)
       }
 
     iconSuccess = DOM.div
       { className: "success-icon"
-      , children: []
       , onClick: React.Events.capture_ $ send self Save
       }
 

@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Effect (Effect)
-import Effect.Aff as Aff
+import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Console (log)
@@ -91,21 +91,21 @@ render props@{ profile: user } =
 
     address = fromMaybe [] $ addressArray <$> Nullable.toMaybe user.address
 
-    saveName :: Effect Unit -> Array String -> Effect Unit
+    saveName :: (String -> Effect Unit) -> Array String -> Aff Unit
     saveName onError arr = do
-      loginResponse <- Login.loadToken
+      loginResponse <- liftEffect $ Login.loadToken
       case loginResponse, arr of
         Just { token }, [firstName, lastName] -> do
           let body = Persona.UpdateName { firstName, lastName }
-          Aff.launchAff_ do
-            newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
-              Console.error "Unexpected error when updating name."
-              liftEffect $ onError
-              throwError err
-            liftEffect $ props.onUpdate newUser
+          newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
+            Console.error "Unexpected error when updating name."
+            liftEffect $ onError "Error :("
+            throwError err
+          liftEffect $ props.onUpdate newUser
+       -- TODO: this should also show an error message
         _, _ -> Console.error "Did not find token in local storage."
 
     -- TODO: persona
     -- TODO: remember to pass the country code back
-    saveAddress onError arr = Aff.launchAff_ do
+    saveAddress onError arr = do
       liftEffect $ log $ unsafeCoerce arr
