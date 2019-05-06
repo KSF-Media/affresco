@@ -166,11 +166,15 @@ render self@{ props: props@{ subscription: { package } } } =
 
           , onError: \err ->
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+                  startDateError = "Din begäran om uppehåll i beställningen misslyckades. Uppehåll kan endast påbörjas fr.o.m. följande dag."
+                  lengthError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehålls perioden är för kort eller lång. Uppehållsperioden bör vara mellan 7 dagar och 3 månader långt."
+                  overlappingError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet går över ett annat uppehåll. Det måste vara minst en vecka mellan uppehållsperioderna."
+                  tooRecentError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet är för nära en annan uppehållsperiod. Det måste vara minst en vecka mellan uppehållsperioderna."
                   errMsg = case err of
-                    PauseInvalidStartDate   -> "PauseInvalidStartDate"
-                    PauseInvalidLength      -> "PauseInvalidLength"
-                    PauseInvalidOverlapping -> "PauseInvalidOverLapping"
-                    PauseInvalidTooRecent   -> "PauseInvalidTooRecent"
+                    PauseInvalidStartDate   -> startDateError
+                    PauseInvalidLength      -> lengthError
+                    PauseInvalidOverlapping -> overlappingError
+                    PauseInvalidTooRecent   -> tooRecentError
                     PauseInvalidUnexpected  -> unexpectedError
               in send self $ SetWrapperProgress $ AsyncWrapper.Error errMsg
           }
