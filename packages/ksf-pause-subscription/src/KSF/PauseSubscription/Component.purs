@@ -18,7 +18,7 @@ import Effect.Uncurried (mkEffectFn1)
 import KSF.Grid as Grid
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
