@@ -145,13 +145,19 @@ render self@{ props: props@{ subscription: { package } } } =
             , readyView: pauseContainer pauseIcon
             , editingView: identity
             , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
-            , errorView: \err -> pauseContainer [ errorMessage err ]
+            , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             }
 
           errorMessage msg =
             DOM.div
               { className: "error-text"
               , children: [ DOM.text msg ]
+              }
+          tryAgain =
+            DOM.span
+              { className: "subscription--try-pause-again"
+              , children: [ DOM.text "Försök igen" ]
+              , onClick: handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
               }
 
     pauseSubscriptionComponent =
@@ -181,6 +187,9 @@ render self@{ props: props@{ subscription: { package } } } =
 
     pauseContainer children =
       DOM.div { className: "subscription--pause-container flex", children }
+
+    errorContainer children =
+      DOM.div { className: "subscription--error-container flex", children }
 
     loadingSpinner = [ DOM.div { className: "tiny-spinner" } ]
 
