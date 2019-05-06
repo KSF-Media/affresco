@@ -39,13 +39,13 @@ type Props =
   }
 
 type State =
-  { wrapperProgress :: AsyncWrapper.Progress
+  { wrapperProgress :: AsyncWrapper.Progress JSX
   , pausedSubscriptions :: Maybe (Array Persona.PausedSubscription)
   , now :: Maybe DateTime
   }
 
 data Action
-  = SetWrapperProgress AsyncWrapper.Progress
+  = SetWrapperProgress (AsyncWrapper.Progress JSX)
   | SetNow DateTime
   | SetPausedSubscriptions (Maybe (Array Persona.PausedSubscription))
 
@@ -143,7 +143,7 @@ render self@{ props: props@{ subscription: { package } } } =
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
             , readyView: pauseContainer pauseIcon
-            , editingView: pauseSubscriptionComponent
+            , editingView: identity
             , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
             , errorView: \err -> pauseContainer [ errorMessage err ]
             }
@@ -159,7 +159,7 @@ render self@{ props: props@{ subscription: { package } } } =
           { subsno: props.subscription.subsno
           , userUuid: props.user.uuid
           , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
-          , onLoading: send self $ SetWrapperProgress AsyncWrapper.Loading
+          , onLoading: send self $ SetWrapperProgress $ AsyncWrapper.Loading mempty
           , onSuccess: \pausedSubscription -> do
                          send self $ SetWrapperProgress AsyncWrapper.Success
                          send self $ SetPausedSubscriptions $ toMaybe pausedSubscription.paused
@@ -193,7 +193,7 @@ render self@{ props: props@{ subscription: { package } } } =
           }
       ]
       where
-        showPauseView = handler_ $ send self $ SetWrapperProgress AsyncWrapper.Editing
+        showPauseView = handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing

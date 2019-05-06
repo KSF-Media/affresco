@@ -3,26 +3,26 @@ module AsyncWrapper where
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
-type Props =
-  { wrapperState :: Progress
+type Props a =
+  { wrapperState :: Progress a
   , readyView    :: JSX
-  , editingView  :: JSX
+  , editingView  :: a -> JSX
   , successView  :: JSX
   , errorView    :: String -> JSX
   }
 
-data Progress
+data Progress a
   = Ready
-  | Editing
-  | Loading
+  | Editing a
+  | Loading a
   | Success
   | Error String
 
-asyncWrapper :: Props -> JSX
+asyncWrapper :: forall a. Props a -> JSX
 asyncWrapper props = case props.wrapperState of
   Ready     -> props.readyView
-  Editing   -> props.editingView
-  Loading   -> loadingSpinner
+  Editing a -> props.editingView a
+  Loading a -> loadingSpinner
   Success   -> props.successView
   Error msg -> props.errorView msg
 
