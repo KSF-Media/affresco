@@ -2,6 +2,7 @@ module Persona where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Except (runExcept)
 import Control.MonadPlus (guard)
 import Data.DateTime (DateTime)
@@ -20,7 +21,7 @@ import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
-import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
+import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
@@ -161,6 +162,23 @@ type InvalidFormFields = PersonaError
        { description :: String
        , errors :: Object (Array String)
        }
+  )
+
+data InvalidPauseDateError
+  = PauseInvalidStartDate
+  | PauseInvalidLength
+  | PauseInvalidOverlapping
+  | PauseInvalidTooRecent
+  -- Persona never returns PauseInvalidUnexpected
+  -- We use it here only to indicate an unexpected error message
+  | PauseInvalidUnexpected
+derive instance genericInvalidPauseDateError :: Generic InvalidPauseDateError _
+instance readInvalidPauseDateError :: ReadForeign InvalidPauseDateError where
+  readImpl a = genericDecodeEnum defaultGenericEnumOptions a <|> pure PauseInvalidUnexpected
+
+type InvalidPauseDates = PersonaError
+  ( invalid_pause_dates ::
+    { message :: InvalidPauseDateError }
   )
 
 type EmailAddressInUseRegistration = PersonaError

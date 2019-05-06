@@ -3,16 +3,15 @@ module KSF.PauseSubscription.Component where
 import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.DateTime (DateTime, adjust, date)
+import Data.DateTime (DateTime, adjust)
 import Data.Function.Uncurried (Fn0, runFn0)
-import Data.JSDate (JSDate, fromDateTime, toDateString, toDateTime, toISOString)
+import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class as Aff
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import Effect.Uncurried (EffectFn1, mkEffectFn1)
@@ -26,7 +25,6 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
-import Unsafe.Coerce (unsafeCoerce)
 
 foreign import pauseSubscriptionStyles :: Style
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
@@ -52,7 +50,7 @@ type Props =
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: Persona.Subscription -> Effect Unit
-  , onError   :: Effect Unit
+  , onError   :: Persona.InvalidPauseDateError -> Effect Unit
   }
 
 type State =
@@ -220,10 +218,13 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
       props.onLoading
       Aff.launchAff_ do
         pausedSub <- Persona.pauseSubscription userUuid subsno start end token `catchError` case _ of
-          err -> do
-            Console.error "Unexpected error when pausing subscription."
-            liftEffect props.onError
-            throwError err
+          err | Just (errData :: Persona.InvalidPauseDates) <- Persona.errorData err -> do
+                  liftEffect $ props.onError errData.invalid_pause_dates.message
+                  throwError err
+              | otherwise -> do
+                  Console.error "Unexpected error when pausing subscription."
+                  liftEffect $ props.onError Persona.PauseInvalidUnexpected
+                  throwError err
         liftEffect $ props.onSuccess pausedSub
     Nothing -> Console.error "Did not find token in local storage."
 submitForm _ _ = Console.error "Pause subscription dates were not defined."

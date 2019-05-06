@@ -20,6 +20,7 @@ import Effect.Now as Now
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
+import Persona (InvalidPauseDateError(..))
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
@@ -144,17 +145,13 @@ render self@{ props: props@{ subscription: { package } } } =
             , readyView: pauseContainer pauseIcon
             , editingView: pauseSubscriptionComponent
             , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
-            , errorView: pauseContainer [ errorMessage ]
+            , errorView: \err -> pauseContainer [ errorMessage err ]
             }
 
-          errorMessage =
+          errorMessage msg =
             DOM.div
               { className: "error-text"
-              , children:
-                  [ DOM.text  "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra."
-                  , DOM.br {}
-                  , DOM.text " Vänligen kontakta vår kundtjänst."
-                  ]
+              , children: [ DOM.text msg ]
               }
 
     pauseSubscriptionComponent =
@@ -167,7 +164,15 @@ render self@{ props: props@{ subscription: { package } } } =
                          send self $ SetWrapperProgress AsyncWrapper.Success
                          send self $ SetPausedSubscriptions $ toMaybe pausedSubscription.paused
 
-          , onError: send self $ SetWrapperProgress AsyncWrapper.Error
+          , onError: \err ->
+              let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+                  errMsg = case err of
+                    PauseInvalidStartDate   -> "PauseInvalidStartDate"
+                    PauseInvalidLength      -> "PauseInvalidLength"
+                    PauseInvalidOverlapping -> "PauseInvalidOverLapping"
+                    PauseInvalidTooRecent   -> "PauseInvalidTooRecent"
+                    PauseInvalidUnexpected  -> unexpectedError
+              in send self $ SetWrapperProgress $ AsyncWrapper.Error errMsg
           }
 
     pauseContainer children =
