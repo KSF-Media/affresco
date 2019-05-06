@@ -8,7 +8,7 @@ type Props =
   , readyView    :: JSX
   , editingView  :: JSX
   , successView  :: JSX
-  , errorView    :: JSX
+  , errorView    :: String -> JSX
   }
 
 data Progress
@@ -16,21 +16,15 @@ data Progress
   | Editing
   | Loading
   | Success
-  | Error
-
-type Views =
-  { readyView :: JSX
-  , editingView :: JSX
-  , errorView :: JSX
-  }
+  | Error String
 
 asyncWrapper :: Props -> JSX
 asyncWrapper props = case props.wrapperState of
-  Ready   -> props.readyView
-  Editing -> props.editingView
-  Loading -> loadingSpinner
-  Success -> props.successView
-  Error   -> props.errorView
+  Ready     -> props.readyView
+  Editing   -> props.editingView
+  Loading   -> loadingSpinner
+  Success   -> props.successView
+  Error msg -> props.errorView msg
 
 loadingSpinner :: JSX
 loadingSpinner = DOM.div { className: "tiny-spinner right" }
