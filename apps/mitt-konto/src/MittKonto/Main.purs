@@ -187,7 +187,7 @@ userView { user } = React.fragment
             subs -> do
               map subscriptionComponentBlockContent subs `snoc` cancelSubscription
               where
-                subscriptionView subscription = Subscription.subscription { subscription }
+                subscriptionView subscription = Subscription.subscription { subscription, user }
                 subscriptionComponentBlockContent subscription
                   -- If the subscription has a canceled state, we want to add extra css to it.
                   | Persona.isSubscriptionCanceled subscription =
@@ -256,11 +256,6 @@ userView { user } = React.fragment
           , className: passwordChangeClass
           }
       , formatIconLink
-          { href: "https://www.hbl.fi/uppehall/"
-          , description: "Gör uppehåll"
-          , className: pauseSubscriptionClass
-          }
-      , formatIconLink
           { href: "https://www.hbl.fi/tillfallig-adressandring/"
           , description: "Gör tillfällig adressändring"
           , className: temporaryAddressChangeClass
@@ -273,7 +268,6 @@ userView { user } = React.fragment
       ]
       where
         passwordChangeClass         = "mitt-konto--password-change"
-        pauseSubscriptionClass      = "mitt-konto--pause-subscription"
         temporaryAddressChangeClass = "mitt-konto--temporary-address-change"
         permanentAddressChangeClass = "mitt-konto--permanent-address-change"
 
