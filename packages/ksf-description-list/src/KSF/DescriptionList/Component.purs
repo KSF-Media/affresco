@@ -25,7 +25,10 @@ component = React.stateless { displayName: "DescriptionList", render }
 
 render :: Props -> JSX
 render { definitions } =
-  DOM.dl_ $ foldl mkDescriptionList [] $ map handleEmptyDescriptions definitions
+  DOM.dl
+    { className: "description-list--container"
+    , children: foldl mkDescriptionList [] $ map handleEmptyDescriptions definitions
+    }
   where
     mkDescriptionList :: Array JSX -> Definition -> Array JSX
     mkDescriptionList dList d = dList <> mkDescription d

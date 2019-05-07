@@ -20,6 +20,7 @@ You can edit this file as you like.
 	, "ordered-collections"
 	, "simple-json"
 	, "facebook"
+	, "now"
 	]
 , packages =
     ./packages.dhall

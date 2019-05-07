@@ -2,13 +2,17 @@ module Persona where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Except (runExcept)
 import Control.MonadPlus (guard)
+import Data.DateTime (DateTime)
 import Data.Either (Either(..), hush)
+import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
+import Data.List (fromFoldable)
 import Data.Maybe (Maybe, isNothing)
 import Data.Nullable (Nullable)
 import Data.String (toLower)
@@ -17,7 +21,7 @@ import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
-import Foreign.Generic.EnumEncoding (genericDecodeEnum, genericEncodeEnum)
+import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
@@ -78,6 +82,31 @@ logout uuid token =
 register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
+
+pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Subscription
+pauseSubscription uuid subsno startDate endDate token = do
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoPausePost"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
+    formatDate :: DateTime -> String
+    formatDate = format formatter
+      where
+        dash = Placeholder "-"
+        formatter = fromFoldable
+          [ YearFull
+          , dash
+          , MonthTwoDigits
+          , dash
+          , DayOfMonthTwoDigits
+          ]
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
@@ -147,6 +176,23 @@ type InvalidFormFields = PersonaError
        { description :: String
        , errors :: Object (Array String)
        }
+  )
+
+data InvalidPauseDateError
+  = PauseInvalidStartDate
+  | PauseInvalidLength
+  | PauseInvalidOverlapping
+  | PauseInvalidTooRecent
+  -- Persona never returns PauseInvalidUnexpected
+  -- We use it here only to indicate an unexpected error message
+  | PauseInvalidUnexpected
+derive instance genericInvalidPauseDateError :: Generic InvalidPauseDateError _
+instance readInvalidPauseDateError :: ReadForeign InvalidPauseDateError where
+  readImpl a = genericDecodeEnum defaultGenericEnumOptions a <|> pure PauseInvalidUnexpected
+
+type InvalidPauseDates = PersonaError
+  ( invalid_pause_dates ::
+    { message :: InvalidPauseDateError }
   )
 
 type EmailAddressInUseRegistration = PersonaError
@@ -266,6 +312,12 @@ type Subscription =
   , package    :: ModelPackage
   , dates      :: SubscriptionDates
   , campaign   :: Campaign
+  , paused     :: Nullable (Array PausedSubscription)
+  }
+
+type PausedSubscription =
+  { startDate :: JSDate
+  , endDate   :: Nullable JSDate
   }
 
 newtype SubscriptionState = SubscriptionState String
@@ -291,6 +343,7 @@ type ModelPackage =
   , campaigns   :: Array Campaign
   , nextDelivery :: Nullable JSDate
   , description  :: Nullable PackageDescription
+  , digitalOnly :: Boolean
   }
 
 type PackageDescription =

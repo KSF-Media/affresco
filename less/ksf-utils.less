@@ -11,6 +11,16 @@
     cursor: pointer;
 }
 
+.check-icon {
+    display: block;
+    width: 14px;
+    height: 14px;
+    background-position: center;
+    background-repeat: no-repeat, repeat;
+    background-image: url('../images/check.svg');
+    background-size: 30px;
+}
+
 .button-green {
     &:disabled {
         background: grey;
@@ -50,4 +60,8 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.error-text {
+    color: red;
 }

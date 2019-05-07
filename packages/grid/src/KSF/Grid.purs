@@ -36,6 +36,9 @@ row_ children = row children Nothing
 columnHalf :: JSX -> JSX
 columnHalf = col6
 
+columnThird :: JSX -> JSX
+columnThird = column [ "col-4" ]
+
 col10 :: JSX -> JSX
 col10 = column [ "col-10" ]
 
@@ -51,6 +54,7 @@ col4 = column [ "col-4" ]
 
 col2 :: JSX -> JSX
 col2 = column [ "col-2" ]
+
 
 column :: Array String -> JSX -> JSX
 column classes child =
