@@ -19,7 +19,6 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 import React.Basic.Extended (requireStyle, Style)
-import React.Basic as React
 import Web.DOM.Node as Web.DOM
 
 foreign import loginStyles :: Style

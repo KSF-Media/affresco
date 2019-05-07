@@ -85,6 +85,7 @@ render self@{ state, props } =
           Editing values -> renderRow (Array.mapWithIndex mkInput values)
           Loading values -> renderRow (map mkString values)
           Error _err     -> renderRow (map mkString props.values)
+          Success        -> mempty
       }
   where
     renderRow items = Grid.row_
@@ -94,6 +95,7 @@ render self@{ state, props } =
           , readyView: editButton
           , editingView: \_ -> flexDiv { children: [ iconSuccess, iconClose ], className: "" }
           , errorView: \err -> flexDiv { children: [ DOM.text err, iconClose ], className: "" }
+          , successView: mempty
           }
       ]
 

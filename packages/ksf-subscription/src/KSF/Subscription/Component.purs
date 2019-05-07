@@ -2,7 +2,6 @@ module KSF.Subscription.Component where
 
 import Prelude
 
-import AsyncWrapper as AsyncWrapper
 import Data.Array (filter, mapMaybe)
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
@@ -17,8 +16,9 @@ import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
 import Effect.Now as Now
-import KSF.DescriptionList.Component as DescriptionList
+import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component (Description(..))
+import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
 import Persona (InvalidPauseDateError(..))
@@ -111,7 +111,7 @@ render self@{ props: props@{ subscription: { package } } } =
                  , description: Static [ package.name ]
                  }
                , { term: "Status:"
-                 , description: Static
+                 , description: Static $
                      [ translateStatus props.subscription.state ]
                      <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                  }
@@ -125,7 +125,7 @@ render self@{ props: props@{ subscription: { package } } } =
   where
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
-        , descriptions: [ date ]
+        , description: Static [ date ]
         }
       ]
 
