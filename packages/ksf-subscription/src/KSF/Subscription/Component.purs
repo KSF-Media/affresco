@@ -20,6 +20,7 @@ import Effect.Now as Now
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
+import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import Persona (InvalidPauseDateError(..))
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
@@ -135,14 +136,11 @@ render self@{ props: props@{ subscription: { package } } } =
 
     pauseSubscription :: JSX
     pauseSubscription =
-      DOM.div
-        { className: ""
-        , children: [ asyncWrapper ]
-        }
+        Grid.row_ [ asyncWrapper ]
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: pauseContainer pauseIcon
+            , readyView: pauseContainer [ pauseIcon, temporaryAddressChangeIcon ]
             , editingView: identity
             , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
@@ -159,6 +157,9 @@ render self@{ props: props@{ subscription: { package } } } =
               , children: [ DOM.text "Försök igen" ]
               , onClick: handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
               }
+
+    temporaryAddressChangeComponent =
+      TemporaryAddressChange.temporaryAddressChange {}
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
@@ -194,19 +195,43 @@ render self@{ props: props@{ subscription: { package } } } =
     loadingSpinner = [ DOM.div { className: "tiny-spinner" } ]
 
     pauseIcon =
-      [ DOM.div
-          { className: "subscription--pause-icon circle"
-          , onClick: showPauseView
-          }
-      , DOM.span
-          { className: "subscription--pause-text"
-          , children:
-              [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
-          , onClick: showPauseView
-          }
-      ]
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--pause-icon circle"
+              , onClick: showPauseView
+              }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
+              , onClick: showPauseView
+              }
+          ]
+        }
       where
         showPauseView = handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
+
+
+    temporaryAddressChangeIcon =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+            [ DOM.div
+                { className: "subscription--temporary-address-change-icon circle"
+                , onClick: showTemporaryAddressChange
+                }
+            , DOM.span
+                { className: "subscription--update-action-text"
+                , children:
+                    [ DOM.u_ [ DOM.text "Gör tillfällig adressändring" ] ]
+                , onClick: showTemporaryAddressChange
+                }
+            ]
+        }
+        where
+          showTemporaryAddressChange = handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing temporaryAddressChangeComponent)
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing

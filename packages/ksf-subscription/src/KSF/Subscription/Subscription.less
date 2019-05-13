@@ -34,16 +34,17 @@
 .subscription--pause-container {
     align-items: center;
     justify-content: flex-end;
+    flex-direction: column;
+    margin-top: 0;
+    @media @to-xlarge {
+        margin-top: 1.5em;
+    }
+    @media @to-medium {
         margin-top: 0;
-        @media @to-xlarge {
-            margin-top: 1.5em;
-        }
-        @media @to-medium {
-            margin-top: 0;
-        }
-        @media @to-xsmall {
-            margin-top: 1.5em;
-        }
+    }
+    @media @to-xsmall {
+        margin-top: 1.5em;
+    }
 }
 
 .subscription--pause-icon {
@@ -57,7 +58,19 @@
     cursor: pointer;
 }
 
-.subscription--pause-text {
+.subscription--temporary-address-change-icon {
+    display: block;
+    width: 30px;
+    height: 30px;
+    background-position: center;
+    background-repeat: no-repeat, repeat;
+    background-image: url('../images/loc-point-map.svg');
+    background-size: 20px;
+    cursor: pointer;
+}
+
+
+.subscription--update-action-text {
     cursor: pointer;
 }
 
@@ -73,4 +86,15 @@
 
 .subscription--error-container {
     flex-direction: column;
+}
+
+.subscription--action-container {
+    flex-direction: column;
+}
+
+.subscription--action-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
 }
