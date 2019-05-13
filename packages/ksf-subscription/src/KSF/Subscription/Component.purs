@@ -145,13 +145,19 @@ render self@{ props: props@{ subscription: { package } } } =
             , readyView: pauseContainer pauseIcon
             , editingView: identity
             , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
-            , errorView: \err -> pauseContainer [ errorMessage err ]
+            , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             }
 
           errorMessage msg =
             DOM.div
               { className: "error-text"
               , children: [ DOM.text msg ]
+              }
+          tryAgain =
+            DOM.span
+              { className: "subscription--try-pause-again"
+              , children: [ DOM.text "Försök igen" ]
+              , onClick: handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
               }
 
     pauseSubscriptionComponent =
@@ -166,17 +172,24 @@ render self@{ props: props@{ subscription: { package } } } =
 
           , onError: \err ->
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+                  startDateError = "Din begäran om uppehåll i beställningen misslyckades. Uppehåll kan endast påbörjas fr.o.m. följande dag."
+                  lengthError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehålls perioden är för kort eller lång. Uppehållsperioden bör vara mellan 7 dagar och 3 månader långt."
+                  overlappingError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet går över ett annat uppehåll. Det måste vara minst en vecka mellan uppehållsperioderna."
+                  tooRecentError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet är för nära en annan uppehållsperiod. Det måste vara minst en vecka mellan uppehållsperioderna."
                   errMsg = case err of
-                    PauseInvalidStartDate   -> "PauseInvalidStartDate"
-                    PauseInvalidLength      -> "PauseInvalidLength"
-                    PauseInvalidOverlapping -> "PauseInvalidOverLapping"
-                    PauseInvalidTooRecent   -> "PauseInvalidTooRecent"
+                    PauseInvalidStartDate   -> startDateError
+                    PauseInvalidLength      -> lengthError
+                    PauseInvalidOverlapping -> overlappingError
+                    PauseInvalidTooRecent   -> tooRecentError
                     PauseInvalidUnexpected  -> unexpectedError
               in send self $ SetWrapperProgress $ AsyncWrapper.Error errMsg
           }
 
     pauseContainer children =
       DOM.div { className: "subscription--pause-container flex", children }
+
+    errorContainer children =
+      DOM.div { className: "subscription--error-container flex", children }
 
     loadingSpinner = [ DOM.div { className: "tiny-spinner" } ]
 

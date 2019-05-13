@@ -3,8 +3,32 @@
   height: 80px;
   position: absolute;
   left: 10px;
+  display: flex;
+  p{
+    align-items: center;
+    font-size: .5rem;
+    @media screen and (min-width: 768px){
+      font-size: .75rem;
+    }
+  }
   @media screen and (min-width: 768px){
     width: 150px;
     height: 150px;
+  }
+  time{
+    display: inline-block;
+    text-align: center;
+  }
+}
+
+.eu .timestamp{
+  position: static;
+  float: left;
+  @media screen and (min-width: 768px){
+    width: auto;
+    height: auto;
+  }
+  p {
+    margin: 0 0 10px 0;
   }
 }
