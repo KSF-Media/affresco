@@ -75,7 +75,7 @@ export default class Question extends React.Component {
              const children = (
                <div>
                  <h4 style={{marginBottom: '-30px'}}>{title}</h4>
-                 <p style={{fontSize:'14px', color: '#808080'}}>{extract}</p>
+                 <p style={{fontSize:'16px', color: '#808080'}}>{extract}</p>
                </div>
              );
              const dataSourceItem = {

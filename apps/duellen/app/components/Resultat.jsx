@@ -10,7 +10,7 @@ import ReactGA from 'react-ga';
 
 const styles = {
   headline: {
-    fontSize: 24,
+    fontSize: 26,
     paddingTop: 16,
     marginBottom: 12,
     fontWeight: 400,
