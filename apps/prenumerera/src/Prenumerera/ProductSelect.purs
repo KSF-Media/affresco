@@ -6,9 +6,11 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Foreign (Foreign, unsafeFromForeign)
 import KSF.Navbar.Component (Paper(..))
-import React.Basic (JSX, StateUpdate(..), capture_, element, make)
+import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
+import Effect (Effect)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (EventHandler)
 import Router (Match)
 import Router as Router
@@ -18,7 +20,7 @@ import Prenumerera.User as User
 
 foreign import images :: { hblTotal :: String }
 
-type Self = React.Self Props State Action
+type Self = React.Self Props State
 type Props = { paper :: Paper, match :: Maybe Match, onClick :: EventHandler }
 type State =
   { paper :: Paper
@@ -44,7 +46,7 @@ type JSProps =
 -- | For javascript FFI needs
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
-  React.toReactComponent fromJsProps component { initialState, render, update }
+  React.toReactComponent fromJsProps component { initialState, render }
 
 fromJsProps :: JSProps -> Props
 fromJsProps jsProps =
@@ -67,16 +69,19 @@ fromJsProps jsProps =
         }
 
 productSelect :: Props -> JSX
-productSelect = make component { initialState, render, update }
+productSelect = make component { initialState, render }
 
 initialState :: State
 initialState = { paper: HBL }
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self =
   case _ of
     ChangePaper paper ->
       Update self.state { paper = paper }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 render :: Self -> JSX
 render self@{ props, state } =
@@ -116,7 +121,7 @@ render self@{ props, state } =
         { className: "m2" <> " " <> path <> " " <> active
         , href: "/#/" <> path
         , children: [ DOM.text description ]
-        , onClick: capture_ self $ ChangePaper paper
+        , onClick: capture_ (send self $ ChangePaper paper)
         }
         where
           active = if state.paper == paper then "active" else ""

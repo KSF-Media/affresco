@@ -29,14 +29,14 @@ import KSF.Registration.Component as Registration
 import LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, send)
+import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import facebookAppId :: String
 
-type Self = React.Self Props State Action
+type Self = React.Self Props State
 
 type JSProps =
   { onMerge             :: Nullable (Effect Unit)
@@ -53,14 +53,14 @@ type JSProps =
   }
 
 jsComponent :: React.ReactComponent JSProps
-jsComponent = React.toReactComponent fromJSProps component { initialState, render, didMount, update }
+jsComponent = React.toReactComponent fromJSProps component { initialState, render, didMount }
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { onMerge: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMerge
   , onMergeCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onMergeCancelled
   , onRegister: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
-  , onRegisterCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
+  , onRegisterCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegisterCancelled
   , onUserFetch:
       either
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchFail)
@@ -139,7 +139,6 @@ login = make component
   { initialState
   , render
   , didMount
-  , update
   }
 
 didMount :: Self -> Effect Unit
@@ -179,7 +178,7 @@ didMount self@{ props, state } = do
                   finalizeLogin props loginResponse
             }
 
-update :: Self -> Action -> StateUpdate Props State Action
+update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
   LoginError err ->
     Update self.state { errors { login = Just err } }
@@ -199,6 +198,9 @@ update self = case _ of
     Update self.state { merge = mergeInfo }
   SetViewStep step ->
     Update self.state { loginViewStep = step }
+
+send :: Self -> Action -> Effect Unit
+send = runUpdate update
 
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId

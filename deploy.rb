@@ -1,29 +1,56 @@
-env_variables = %w[
-  PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
-  PRODUCTION_JANRAIN_SSO_SERVER
-  PRODUCTION_JANRAIN_FLOW_VERSION
-  PRODUCTION_JANRAIN_XD_RECEIVER_PATH
-  PRODUCTION_PERSONA_URL
-  PRODUCTION_GOOGLE_CLIENT_ID
-  PRODUCTION_FACEBOOK_APP_ID
-]
+# Common env variables groupped by their purpose
+env_variables = {
+  "social_login" => %w[
+    PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
+    PRODUCTION_JANRAIN_SSO_SERVER
+    PRODUCTION_JANRAIN_FLOW_VERSION
+    PRODUCTION_JANRAIN_XD_RECEIVER_PATH
+    PRODUCTION_GOOGLE_CLIENT_ID
+    PRODUCTION_FACEBOOK_APP_ID
+  ],
+  "persona" => %w[
+    PRODUCTION_PERSONA_URL
+  ],
+  "duellen" => %w[
+    PRODUCTION_DUELLEN_URL
+  ]
+}
 
-apps = %w[
-  mitt-konto
-  prenumerera
-]
+# A hash of apps with their configuration
+apps = {
+  "mitt-konto" => {
+    "packages" => [ 'MittKonto.Main' ],
+    "env_variables" =>
+    env_variables["social_login"] +
+    env_variables["persona"]
+  },
+  "prenumerera" => {
+    "packages" => [ 'Prenumerera.Main' ],
+    "env_variables" =>
+    env_variables["social_login"] +
+    env_variables["persona"]
+  },
+  "elections" => {
+    "packages" => [ ],
+    "env_variables" => %w[]
+  },
+  "duellen" => {
+    "packages" => [ ],
+    "env_variables" => env_variables["duellen"]
+  }
+}
 
 app_name = ARGV.first
 
-abort("Invalid app name: #{app_name}") if !apps.include?(app_name)
+abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
 if ENV['HEAD'] == 'master'
-  env_variables.each do |v|
+  apps[app_name]["env_variables"].each do |v|
     abort("Did not find #{v} in the environment variables") if ENV[v].nil?
   end
 
   File.open("apps/#{app_name}/.env.production", 'a') do |f|
-    env_variables.each do |v|
+    apps[app_name]["env_variables"].each do |v|
       # Strip 'PRODUCTION_' from the variable name
       env_var_name = v.sub(/^PRODUCTION_/, '')
       f.puts("#{env_var_name}=#{ENV[v]}")
@@ -40,15 +67,15 @@ def run_command(command)
   system(command) or abort("'#{command}' failed.")
 end
 
+modules_to_build = apps[app_name]["packages"].map {|x| "'" + x + "'"}
+
 build_commands = [
-  'npm run clean',
-  'npm install yarn',
-  'yarn install --pure-lockfile --cache-folder=.yarn-cache',
-  'spago install',
-  'lerna clean --yes',
-  'yarn run --cache-folder=.yarn-cache build-purs',
-  'lerna bootstrap',
-  'lerna run --cache-folder=.yarn-cache build'
-]
+  "yarn run clean",
+  "yarn install --pure-lockfile --cache-folder=.yarn-cache",
+  "lerna clean --yes",
+  modules_to_build.empty? ? nil : "yarn run --cache-folder=.yarn-cache build-purs #{modules_to_build.join(' ')}",
+  "lerna bootstrap",
+  "lerna run --cache-folder=.yarn-cache --scope='@affresco/#{app_name}' build"
+].compact
 
 build_commands.each { |c| run_command(c) }

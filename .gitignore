@@ -10,7 +10,9 @@ package-lock.json
 
 packages/*/index.js
 apps/*/index.js
+!apps/elections/index.js
 .env.production
 yarn-error.log
 .yarn-cache/
 .spago/
+.tern-port
