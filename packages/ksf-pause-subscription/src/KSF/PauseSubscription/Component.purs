@@ -4,21 +4,21 @@ import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.DateTime (DateTime, adjust)
-import Data.Function.Uncurried (Fn0, runFn0)
-import Data.JSDate (JSDate, fromDateTime, toDateTime)
+import Data.JSDate (fromDateTime, toDateTime)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Nullable (toMaybe, toNullable)
 import Data.Time.Duration as Time.Duration
+import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
-import Effect.Uncurried (EffectFn1, mkEffectFn1)
+import Effect.Uncurried (mkEffectFn1)
 import KSF.Grid as Grid
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (JSX, ReactComponent, StateUpdate(..), element, make, runUpdate)
+import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -27,20 +27,6 @@ import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
 
 foreign import pauseSubscriptionStyles :: Style
-foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
-
--- TODO: Move this into a separate package/component
-type DatePickerProps =
-  { onChange  :: EffectFn1 (Nullable JSDate) Unit
-  , className :: String
-  , value     :: Nullable JSDate
-  , format    :: String
-  , required  :: Boolean
-  , minDate   :: Nullable JSDate
-  , maxDate   :: Nullable JSDate
-  , disabled  :: Boolean
-  , locale    :: String
-  }
 
 type Self = React.Self Props State
 
@@ -194,19 +180,19 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
-        [ element
-            datePicker
-              { onChange: mkEffectFn1 \pickedDate -> do
-                   send self $ action $ toDateTime =<< toMaybe pickedDate
-              , className: "pause-subscription--date-picker"
-              , value: toNullable $ fromDateTime <$> value
-              , format: "d.M.yyyy"
-              , required: true
-              , minDate: toNullable $ fromDateTime <$> minDate
-              , maxDate: toNullable $ fromDateTime <$> maxDate
-              , disabled
-              , locale: "sv-SV"
-              } ]
+        [ DatePicker.datePicker
+            { onChange: mkEffectFn1 \pickedDate -> do
+                send self $ action $ toDateTime =<< toMaybe pickedDate
+            , className: "pause-subscription--date-picker"
+            , value: toNullable $ fromDateTime <$> value
+            , format: "d.M.yyyy"
+            , required: true
+            , minDate: toNullable $ fromDateTime <$> minDate
+            , maxDate: toNullable $ fromDateTime <$> maxDate
+            , disabled
+            , locale: "sv-SV"
+            }
+        ]
     ]
     $ Just { extraClasses: [ "mt2" ] }
 
@@ -228,7 +214,3 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
         liftEffect $ props.onSuccess pausedSub
     Nothing -> Console.error "Did not find token in local storage."
 submitForm _ _ = Console.error "Pause subscription dates were not defined."
-
-
-datePicker :: ReactComponent DatePickerProps
-datePicker = runFn0 datePicker_
