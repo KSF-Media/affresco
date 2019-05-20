@@ -5,10 +5,16 @@ import Prelude
 import Data.DateTime (DateTime)
 import Data.Maybe (Maybe)
 import Effect (Effect)
+import KSF.Grid as Grid
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
+import React.Basic.Extended (Style)
+import React.Basic.Extended as React.Extended
+
+foreign import temporaryAddressChangeStyles :: Style
 
 type State = {}
   -- { startDate    :: Maybe DateTime
@@ -20,7 +26,9 @@ type State = {}
 
 type Self = React.Self Props State
 
-type Props = {}
+type Props =
+  { onCancel :: Effect Unit
+  }
   -- { subsno    :: Int
   -- , userUuid  :: Persona.UUID
   -- , onCancel  :: Effect Unit
@@ -44,4 +52,23 @@ component :: React.Component Props
 component = React.createComponent "TemporaryAddressChange"
 
 render :: Self -> JSX
-render self = DOM.text "COOLIO"
+render self =
+  DOM.div
+    { className: "clearfix temporary-address-change--container"
+    , children:
+        [ Grid.row_
+           [ DOM.div
+               { className: "col col-11"
+               , children: [ DOM.h3_ [ DOM.text "Gör tillfällig adressändring" ] ]
+               }
+           , DOM.div
+               { className: "col-1 flex temporary-address-change--close-icon"
+               , children: [ DOM.div { className: "close-icon" } ]
+               , onClick: handler_ self.props.onCancel
+               }
+           ]
+        ]
+    }
+
+withStyles :: JSX -> JSX
+withStyles = React.Extended.requireStyle temporaryAddressChangeStyles
