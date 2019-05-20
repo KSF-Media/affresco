@@ -52,7 +52,7 @@ component :: React.Component Props
 component = React.createComponent "TemporaryAddressChange"
 
 render :: Self -> JSX
-render self =
+render self = withStyles $
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
