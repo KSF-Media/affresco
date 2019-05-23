@@ -116,12 +116,8 @@ render self@{ props: props@{ subscription: { package } } } =
                      [ translateStatus props.subscription.state ]
                      <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                  }
-               ] <> if package.digitalOnly
-                    then mempty
-                    else Array.singleton
-                           { term: "Leveransadress:"
-                           , descriptions: currentDeliveryAddress
-                           }
+               ]
+               <> deliveryAddress
                <> foldMap billingDateTerm nextBillingDate
            })
       (if package.digitalOnly
@@ -129,6 +125,13 @@ render self@{ props: props@{ subscription: { package } } } =
        else pauseSubscription)
       $ Just { extraClasses: [ "subscription--container" ] }
   where
+    deliveryAddress =
+       if package.digitalOnly
+       then mempty
+       else Array.singleton
+              { term: "Leveransadress:"
+              , descriptions: currentDeliveryAddress
+              }
     billingDateTerm date =
       [ { term: "Nästa faktureringsdatum:"
         , descriptions: [ date ]
