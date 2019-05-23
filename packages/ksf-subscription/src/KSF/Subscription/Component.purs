@@ -44,12 +44,18 @@ type State =
   { wrapperProgress :: AsyncWrapper.Progress JSX
   , pausedSubscriptions :: Maybe (Array Persona.PausedSubscription)
   , now :: Maybe DateTime
+  , updateAction :: Maybe SubscriptionUpdateAction
   }
+
+data SubscriptionUpdateAction
+  = PauseSubscription
+  | TemporaryAddressChange
 
 data Action
   = SetWrapperProgress (AsyncWrapper.Progress JSX)
   | SetNow DateTime
   | SetPausedSubscriptions (Maybe (Array Persona.PausedSubscription))
+  | SetTryAgainAction SubscriptionUpdateAction
 
 type Subscription =
   { package :: { name :: String
@@ -80,6 +86,7 @@ subscription = make component
       { wrapperProgress: AsyncWrapper.Ready
       , pausedSubscriptions: Nothing
       , now: Nothing
+      , updateAction: Nothing
       }
   , render
   , didMount
@@ -96,6 +103,7 @@ update self = case _ of
   SetWrapperProgress progress -> Update $ self.state { wrapperProgress = progress }
   SetNow now -> Update $ self.state { now = Just now }
   SetPausedSubscriptions subs -> Update $ self.state { pausedSubscriptions = subs }
+  SetTryAgainAction updateAction -> Update $ self.state { updateAction = Just updateAction }
 
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
@@ -122,7 +130,7 @@ render self@{ props: props@{ subscription: { package } } } =
            })
       (if package.digitalOnly
        then mempty
-       else pauseSubscription)
+       else subscriptionUpdates)
       $ Just { extraClasses: [ "subscription--container" ] }
   where
     deliveryAddress =
@@ -143,15 +151,15 @@ render self@{ props: props@{ subscription: { package } } } =
         Nothing  -> pausedSubs
         Just now -> filter (not isPauseExpired now) pausedSubs
 
-    pauseSubscription :: JSX
-    pauseSubscription =
+    subscriptionUpdates :: JSX
+    subscriptionUpdates =
         Grid.row_ [ asyncWrapper ]
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
             , readyView: pauseContainer [ pauseIcon, temporaryAddressChangeIcon ]
             , editingView: identity
-            , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
+            , successView: pauseContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             }
 
@@ -162,10 +170,16 @@ render self@{ props: props@{ subscription: { package } } } =
               }
           tryAgain =
             DOM.span
-              { className: "subscription--try-pause-again"
+              { className: "subscription--try-update-again"
               , children: [ DOM.text "Försök igen" ]
-              , onClick: handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
+              , onClick: handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing updateActionComponent)
               }
+            where
+              updateActionComponent =
+                case self.state.updateAction of
+                  Just PauseSubscription -> pauseSubscriptionComponent
+                  Just TemporaryAddressChange -> temporaryAddressChangeComponent
+                  Nothing -> mempty
 
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
@@ -174,7 +188,7 @@ render self@{ props: props@{ subscription: { package } } } =
         , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
         , onLoading: send self $ SetWrapperProgress $ AsyncWrapper.Loading mempty
         , onSuccess: \_ -> send self $ SetWrapperProgress AsyncWrapper.Success
-        , onError: \err -> pure unit
+        , onError: \err -> send self $ SetWrapperProgress $ AsyncWrapper.Error "error :-("
         }
 
     pauseSubscriptionComponent =
@@ -227,8 +241,9 @@ render self@{ props: props@{ subscription: { package } } } =
           ]
         }
       where
-        showPauseView = handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
-
+        showPauseView = handler_ $ do
+          send self $ SetTryAgainAction TemporaryAddressChange
+          send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
 
     temporaryAddressChangeIcon =
       DOM.div
@@ -247,7 +262,9 @@ render self@{ props: props@{ subscription: { package } } } =
             ]
         }
         where
-          showTemporaryAddressChange = handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing temporaryAddressChangeComponent)
+          showTemporaryAddressChange = handler_ $ do
+            send self $ SetTryAgainAction TemporaryAddressChange
+            send self $ SetWrapperProgress (AsyncWrapper.Editing temporaryAddressChangeComponent)
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
