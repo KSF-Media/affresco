@@ -338,18 +338,25 @@ type Address =
   , apartment     :: Nullable String
   }
 
+type DeliveryAddress =
+  { streetAddress :: String
+  , zipcode       :: String
+  , city          :: String
+  }
+
 type Subscription =
-  { subsno     :: Int
-  , extno      :: Int
-  , cusno      :: Int
-  , paycusno   :: Int
-  , kind       :: String
-  , state      :: SubscriptionState
-  , pricegroup :: String
-  , package    :: ModelPackage
-  , dates      :: SubscriptionDates
-  , campaign   :: Campaign
-  , paused     :: Nullable (Array PausedSubscription)
+  { subsno          :: Int
+  , extno           :: Int
+  , cusno           :: Int
+  , paycusno        :: Int
+  , kind            :: String
+  , state           :: SubscriptionState
+  , pricegroup      :: String
+  , package         :: ModelPackage
+  , dates           :: SubscriptionDates
+  , campaign        :: Campaign
+  , paused          :: Nullable (Array PausedSubscription)
+  , deliveryAddress :: Nullable DeliveryAddress
   }
 
 type PausedSubscription =

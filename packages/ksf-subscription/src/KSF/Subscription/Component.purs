@@ -4,6 +4,7 @@ import Prelude
 
 import AsyncWrapper as AsyncWrapper
 import Data.Array (filter, mapMaybe)
+import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
@@ -115,7 +116,12 @@ render self@{ props: props@{ subscription: { package } } } =
                      [ translateStatus props.subscription.state ]
                      <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                  }
-               ]
+               ] <> if package.digitalOnly
+                    then mempty
+                    else Array.singleton
+                           { term: "Leveransadress:"
+                           , descriptions: currentDeliveryAddress
+                           }
                <> foldMap billingDateTerm nextBillingDate
            })
       (if package.digitalOnly
@@ -244,6 +250,17 @@ render self@{ props: props@{ subscription: { package } } } =
       | Persona.isSubscriptionCanceled props.subscription = Nothing
       | otherwise =
           map trim $ formatDate =<< addOneDay props.subscription.dates.end
+
+    currentDeliveryAddress :: Array String
+    currentDeliveryAddress
+      | Just { streetAddress, zipcode, city } <- toMaybe props.subscription.deliveryAddress
+      = [ streetAddress, zipcode, city ]
+      | Just { streetAddress, zipCode, city } <- toMaybe props.user.address
+      = [ streetAddress
+        , fromMaybe "-" $ toMaybe zipCode
+        , fromMaybe "-" $ toMaybe city
+        ]
+      | otherwise = []
 
 addOneDay :: Nullable JSDate -> Maybe JSDate
 addOneDay date = do
