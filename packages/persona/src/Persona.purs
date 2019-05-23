@@ -98,6 +98,39 @@ pauseSubscription uuid subsno startDate endDate token = do
           , DayOfMonthTwoDigits
           ]
 
+temporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> String
+  -> String
+  -> Token
+  -> Aff Subscription
+temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode token = do
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
+    formatDate :: DateTime -> String
+    formatDate = format formatter
+      where
+        dash = Placeholder "-"
+        formatter = fromFoldable
+          [ YearFull
+          , dash
+          , MonthTwoDigits
+          , dash
+          , DayOfMonthTwoDigits
+          ]
+
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
 derive newtype instance readforeignToken :: ReadForeign Token
@@ -179,6 +212,24 @@ instance readInvalidPauseDateError :: ReadForeign InvalidPauseDateError where
 type InvalidPauseDates = PersonaError
   ( invalid_pause_dates ::
     { message :: InvalidPauseDateError }
+  )
+
+data InvalidDateInput
+  = InvalidStartDate
+  | InvalidLength
+  | InvalidOverlapping
+  | InvalidTooRecent
+  -- Persona never returns InvalidUnexpected
+  -- We use it here only to indicate an unexpected error message
+  | InvalidUnexpected
+
+derive instance genericInvaliDateInput :: Generic InvalidDateInput _
+instance readInvalidDateInput :: ReadForeign InvalidDateInput where
+  readImpl a = genericDecodeEnum defaultGenericEnumOptions a <|> pure InvalidUnexpected
+
+type InvalidDates = PersonaError
+  ( invalid_param ::
+    { message :: InvalidDateInput }
   )
 
 type EmailAddressInUseRegistration = PersonaError

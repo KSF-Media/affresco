@@ -159,7 +159,14 @@ render self@{ props: props@{ subscription: { package } } } =
               }
 
     temporaryAddressChangeComponent =
-      TemporaryAddressChange.temporaryAddressChange { onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready }
+      TemporaryAddressChange.temporaryAddressChange
+        { subsno: props.subscription.subsno
+        , userUuid: props.user.uuid
+        , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
+        , onLoading: send self $ SetWrapperProgress $ AsyncWrapper.Loading mempty
+        , onSuccess: \_ -> send self $ SetWrapperProgress AsyncWrapper.Success
+        , onError: \err -> pure unit
+        }
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
