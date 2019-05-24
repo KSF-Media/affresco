@@ -344,19 +344,26 @@ type DeliveryAddress =
   , city          :: String
   }
 
+type PendingAddressChange =
+  { address   :: DeliveryAddress
+  , startDate :: JSDate
+  , endDate   :: JSDate
+  }
+
 type Subscription =
-  { subsno          :: Int
-  , extno           :: Int
-  , cusno           :: Int
-  , paycusno        :: Int
-  , kind            :: String
-  , state           :: SubscriptionState
-  , pricegroup      :: String
-  , package         :: ModelPackage
-  , dates           :: SubscriptionDates
-  , campaign        :: Campaign
-  , paused          :: Nullable (Array PausedSubscription)
-  , deliveryAddress :: Nullable DeliveryAddress
+  { subsno                :: Int
+  , extno                 :: Int
+  , cusno                 :: Int
+  , paycusno              :: Int
+  , kind                  :: String
+  , state                 :: SubscriptionState
+  , pricegroup            :: String
+  , package               :: ModelPackage
+  , dates                 :: SubscriptionDates
+  , campaign              :: Campaign
+  , paused                :: Nullable (Array PausedSubscription)
+  , deliveryAddress       :: Nullable DeliveryAddress
+  , pendingAddressChanges :: Nullable (Array PendingAddressChange)
   }
 
 type PausedSubscription =

@@ -9,7 +9,7 @@ import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
-import Data.List (fromFoldable)
+import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
@@ -126,6 +126,7 @@ render self@{ props: props@{ subscription: { package } } } =
                  }
                ]
                <> deliveryAddress
+               <> foldMap pendingAddressChanges (toMaybe props.subscription.pendingAddressChanges)
                <> foldMap billingDateTerm nextBillingDate
            })
       (if package.digitalOnly
@@ -138,13 +139,21 @@ render self@{ props: props@{ subscription: { package } } } =
        then mempty
        else Array.singleton
               { term: "Leveransadress:"
-              , descriptions: currentDeliveryAddress
+              , descriptions: [ currentDeliveryAddress ]
               }
-    billingDateTerm date =
-      [ { term: "Nästa faktureringsdatum:"
-        , descriptions: [ date ]
-        }
-      ]
+
+    pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
+    pendingAddressChanges pendingChanges = Array.singleton $
+      { term: "Tillfällig  adressändringar:"
+      , descriptions: map showPendingAddressChange pendingChanges
+      }
+
+    billingDateTerm :: String -> Array DescriptionList.Definition
+    billingDateTerm date = Array.singleton $
+      { term: "Nästa faktureringsdatum:"
+      , descriptions: [ date ]
+      }
+
 
     filterExpiredPausePeriods pausedSubs =
       case self.state.now of
@@ -271,16 +280,20 @@ render self@{ props: props@{ subscription: { package } } } =
       | otherwise =
           map trim $ formatDate =<< addOneDay props.subscription.dates.end
 
-    currentDeliveryAddress :: Array String
+    currentDeliveryAddress :: String
     currentDeliveryAddress
-      | Just { streetAddress, zipcode, city } <- toMaybe props.subscription.deliveryAddress
-      = [ streetAddress, zipcode, city ]
+      | Just address <- toMaybe props.subscription.deliveryAddress
+      = formatAddress address
       | Just { streetAddress, zipCode, city } <- toMaybe props.user.address
-      = [ streetAddress
-        , fromMaybe "-" $ toMaybe zipCode
-        , fromMaybe "-" $ toMaybe city
-        ]
-      | otherwise = []
+      = intercalate ", "
+          [ streetAddress
+          , fromMaybe "-" $ toMaybe zipCode
+          , fromMaybe "-" $ toMaybe city
+          ]
+      | otherwise = "-"
+
+formatAddress :: Persona.DeliveryAddress -> String
+formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, city ]
 
 addOneDay :: Nullable JSDate -> Maybe JSDate
 addOneDay date = do
@@ -318,8 +331,18 @@ isPauseExpired baseDate { endDate } =
 
 showPausedDates :: Array Persona.PausedSubscription -> Array String
 showPausedDates pausedSubs =
-  let formatDateString = \({ startDate, endDate }) -> do
-        startString <- formatDate startDate
-        let endString = fromMaybe "" $ formatDate =<< toMaybe endDate
-        Just $ "Uppehåll: " <> startString <> " – " <> endString
-  in mapMaybe formatDateString pausedSubs
+  let formatDates { startDate, endDate } = formatDateString startDate $ toMaybe endDate
+  in map (((<>) "Uppehåll: ") <<< formatDates) pausedSubs
+
+showPendingAddressChange :: Persona.PendingAddressChange -> String
+showPendingAddressChange { address, startDate, endDate } =
+  let addressString = formatAddress address
+      pendingPeriod = formatDateString startDate (Just endDate)
+  in addressString <> " (" <> pendingPeriod <> ")"
+
+formatDateString :: JSDate -> Maybe JSDate -> String
+formatDateString startDate endDate
+  | Just startString <- formatDate startDate =
+    let endString = fromMaybe "" $ formatDate =<< endDate
+    in startString <> " – " <> endString
+  | otherwise = mempty
