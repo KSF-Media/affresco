@@ -3,7 +3,7 @@ module KSF.Subscription.Component where
 import Prelude
 
 import AsyncWrapper as AsyncWrapper
-import Data.Array (filter, mapMaybe)
+import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
@@ -43,6 +43,7 @@ type Props =
 type State =
   { wrapperProgress :: AsyncWrapper.Progress JSX
   , pausedSubscriptions :: Maybe (Array Persona.PausedSubscription)
+  , pendingAddressChanges :: Maybe (Array Persona.PendingAddressChange)
   , now :: Maybe DateTime
   , updateAction :: Maybe SubscriptionUpdateAction
   }
@@ -85,6 +86,7 @@ subscription = make component
   { initialState:
       { wrapperProgress: AsyncWrapper.Ready
       , pausedSubscriptions: Nothing
+      , pendingAddressChanges: Nothing
       , now: Nothing
       , updateAction: Nothing
       }
@@ -97,6 +99,7 @@ didMount self = do
   now <- Now.nowDateTime
   send self $ SetNow now
   send self $ SetPausedSubscriptions $ toMaybe self.props.subscription.paused
+  self.setState _ { pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges }
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
@@ -126,7 +129,7 @@ render self@{ props: props@{ subscription: { package } } } =
                  }
                ]
                <> deliveryAddress
-               <> foldMap pendingAddressChanges (toMaybe props.subscription.pendingAddressChanges)
+               <> foldMap pendingAddressChanges self.state.pendingAddressChanges
                <> foldMap billingDateTerm nextBillingDate
            })
       (if package.digitalOnly
@@ -145,7 +148,7 @@ render self@{ props: props@{ subscription: { package } } } =
     pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
       { term: "Tillfällig  adressändringar:"
-      , descriptions: map showPendingAddressChange pendingChanges
+      , descriptions: map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
       }
 
     billingDateTerm :: String -> Array DescriptionList.Definition
@@ -154,11 +157,17 @@ render self@{ props: props@{ subscription: { package } } } =
       , descriptions: [ date ]
       }
 
-
+    filterExpiredPausePeriods :: Array Persona.PausedSubscription -> Array Persona.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
       case self.state.now of
         Nothing  -> pausedSubs
-        Just now -> filter (not isPauseExpired now) pausedSubs
+        Just now -> filter (not isPeriodExpired now <<< toMaybe <<< _.endDate) pausedSubs
+
+    filterExpiredPendingChanges :: Array Persona.PendingAddressChange -> Array Persona.PendingAddressChange
+    filterExpiredPendingChanges pendingChanges =
+      case self.state.now of
+        Nothing  -> pendingChanges
+        Just now -> filter (not isPeriodExpired now <<< Just <<< _.endDate) pendingChanges
 
     subscriptionUpdates :: JSX
     subscriptionUpdates =
@@ -196,7 +205,10 @@ render self@{ props: props@{ subscription: { package } } } =
         , userUuid: props.user.uuid
         , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
         , onLoading: send self $ SetWrapperProgress $ AsyncWrapper.Loading mempty
-        , onSuccess: \_ -> send self $ SetWrapperProgress AsyncWrapper.Success
+        , onSuccess: \{ pendingAddressChanges: newPendingChanges } -> do
+                       send self $ SetWrapperProgress AsyncWrapper.Success
+                       self.setState \s -> s { pendingAddressChanges = toMaybe newPendingChanges }
+
         , onError: \err -> send self $ SetWrapperProgress $ AsyncWrapper.Error "error :-("
         }
 
@@ -320,10 +332,10 @@ translateStatus (Persona.SubscriptionState englishStatus) = do
     "Unknown"                   -> "Okänd"
     _                           -> englishStatus
 
-isPauseExpired :: DateTime -> Persona.PausedSubscription -> Boolean
-isPauseExpired baseDate { endDate } =
-  case toMaybe endDate of
-    -- If there's no end date, the pause is ongoing
+isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
+isPeriodExpired baseDate endDate =
+  case endDate of
+    -- If there's no end date, the period is ongoing
     Nothing   -> false
     Just date ->
       let endDateTime = toDateTime date
