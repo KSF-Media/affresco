@@ -19,7 +19,7 @@ import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -70,20 +70,7 @@ initialState =
 component :: React.Component Props
 component = React.createComponent "TemporaryAddressChange"
 
-send :: Self -> Action -> Effect Unit
-send = runUpdate update
-
-update :: Self -> Action -> StateUpdate Props State
-update self action = Update $ case action of
-  SetStartDate newStartDate ->
-    self.state
-      { startDate = newStartDate
-      , minEndDate = calcMinEndDate newStartDate
-      }
-  SetEndDate newEndDate -> self.state { endDate = newEndDate }
-  SetMinStartDate newMinStartDate -> self.state { minStartDate = newMinStartDate }
-
--- | Minimum pause period is one week
+-- | Minimum temporary address change period is one week
 calcMinEndDate :: Maybe DateTime -> Maybe DateTime
 calcMinEndDate Nothing = Nothing
 calcMinEndDate (Just startDate) = do
@@ -94,7 +81,7 @@ didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
   let tomorrow = adjust (Time.Duration.Days 1.0) now
-  send self $ SetMinStartDate tomorrow
+  self.setState _ { minStartDate = tomorrow }
 
 render :: Self -> JSX
 render self = withStyles $
@@ -134,7 +121,11 @@ render self = withStyles $
     startDayInput =
       dateInput
         self
-        { action: SetStartDate
+        { action: \newStartDate ->
+                    self.setState _
+                      { startDate = newStartDate
+                      , minEndDate = calcMinEndDate newStartDate
+                      }
         , value: self.state.startDate
         , minDate: self.state.minStartDate
         , maxDate: Nothing
@@ -145,7 +136,7 @@ render self = withStyles $
     endDayInput =
       dateInput
         self
-        { action: SetEndDate
+        { action: \newEndDate -> self.setState _ { endDate = newEndDate }
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: Nothing
@@ -198,7 +189,7 @@ render self = withStyles $
           }
 
 type DateInputField =
-  { action   :: Maybe DateTime -> Action
+  { action   :: Maybe DateTime -> Effect Unit
   , value    :: Maybe DateTime
   , minDate  :: Maybe DateTime
   , maxDate  :: Maybe DateTime
@@ -212,8 +203,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
         [ DatePicker.datePicker
-            { onChange: mkEffectFn1 \pickedDate -> do
-                send self $ action $ toDateTime =<< toMaybe pickedDate
+            { onChange: mkEffectFn1 \pickedDate -> action $ toDateTime =<< toMaybe pickedDate
             , className: "temporary-address-change--date-picker"
             , value: toNullable $ fromDateTime <$> value
             , format: "d.M.yyyy"

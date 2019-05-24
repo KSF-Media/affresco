@@ -8,7 +8,7 @@ import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, fromDateTime, toDateTime)
+import Data.JSDate (JSDate, fromDateTime, now, toDateTime)
 import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
@@ -52,12 +52,6 @@ data SubscriptionUpdateAction
   = PauseSubscription
   | TemporaryAddressChange
 
-data Action
-  = SetWrapperProgress (AsyncWrapper.Progress JSX)
-  | SetNow DateTime
-  | SetPausedSubscriptions (Maybe (Array Persona.PausedSubscription))
-  | SetTryAgainAction SubscriptionUpdateAction
-
 type Subscription =
   { package :: { name :: String
                , paper :: { name :: String }
@@ -97,19 +91,11 @@ subscription = make component
 didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
-  send self $ SetNow now
-  send self $ SetPausedSubscriptions $ toMaybe self.props.subscription.paused
-  self.setState _ { pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges }
-
-update :: Self -> Action -> StateUpdate Props State
-update self = case _ of
-  SetWrapperProgress progress -> Update $ self.state { wrapperProgress = progress }
-  SetNow now -> Update $ self.state { now = Just now }
-  SetPausedSubscriptions subs -> Update $ self.state { pausedSubscriptions = subs }
-  SetTryAgainAction updateAction -> Update $ self.state { updateAction = Just updateAction }
-
-send :: Self -> Action -> Effect Unit
-send = runUpdate update
+  self.setState _
+    { now = Just now
+    , pausedSubscriptions = toMaybe self.props.subscription.paused
+    , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
+    }
 
 render :: Self -> JSX
 render self@{ props: props@{ subscription: { package } } } =
@@ -190,7 +176,7 @@ render self@{ props: props@{ subscription: { package } } } =
             DOM.span
               { className: "subscription--try-update-again"
               , children: [ DOM.text "Försök igen" ]
-              , onClick: handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing updateActionComponent)
+              , onClick: handler_ $ self.setState _ { wrapperProgress = AsyncWrapper.Editing updateActionComponent }
               }
             where
               updateActionComponent =
@@ -203,11 +189,13 @@ render self@{ props: props@{ subscription: { package } } } =
       TemporaryAddressChange.temporaryAddressChange
         { subsno: props.subscription.subsno
         , userUuid: props.user.uuid
-        , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
-        , onLoading: send self $ SetWrapperProgress $ AsyncWrapper.Loading mempty
-        , onSuccess: \{ pendingAddressChanges: newPendingChanges } -> do
-                       send self $ SetWrapperProgress AsyncWrapper.Success
-                       self.setState \s -> s { pendingAddressChanges = toMaybe newPendingChanges }
+        , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+        , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+        , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
+                       self.setState _
+                         { pendingAddressChanges = toMaybe newPendingChanges
+                         , wrapperProgress = AsyncWrapper.Success
+                         }
 
         , onError: \(err :: Persona.InvalidDateInput) ->
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
@@ -217,18 +205,20 @@ render self@{ props: props@{ subscription: { package } } } =
                     InvalidStartDate   -> startDateError
                     InvalidLength      -> lengthError
                     _                  -> unexpectedError
-              in send self $ SetWrapperProgress $ AsyncWrapper.Error errMsg
+              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
           , userUuid: props.user.uuid
-          , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
-          , onLoading: send self $ SetWrapperProgress $ AsyncWrapper.Loading mempty
-          , onSuccess: \pausedSubscription -> do
-                         send self $ SetWrapperProgress AsyncWrapper.Success
-                         send self $ SetPausedSubscriptions $ toMaybe pausedSubscription.paused
+          , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+          , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+          , onSuccess: \pausedSubscription ->
+                         self.setState _
+                           { pausedSubscriptions = toMaybe pausedSubscription.paused
+                           , wrapperProgress = AsyncWrapper.Success
+                           }
 
           , onError: \err ->
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
@@ -242,7 +232,7 @@ render self@{ props: props@{ subscription: { package } } } =
                     PauseInvalidOverlapping -> overlappingError
                     PauseInvalidTooRecent   -> tooRecentError
                     PauseInvalidUnexpected  -> unexpectedError
-              in send self $ SetWrapperProgress $ AsyncWrapper.Error errMsg
+              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
     pauseContainer children =
@@ -270,9 +260,11 @@ render self@{ props: props@{ subscription: { package } } } =
           ]
         }
       where
-        showPauseView = handler_ $ do
-          send self $ SetTryAgainAction TemporaryAddressChange
-          send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
+        showPauseView = handler_ $
+          self.setState _
+            { updateAction = Just PauseSubscription
+            , wrapperProgress = AsyncWrapper.Editing pauseSubscriptionComponent
+            }
 
     temporaryAddressChangeIcon =
       DOM.div
@@ -292,8 +284,10 @@ render self@{ props: props@{ subscription: { package } } } =
         }
         where
           showTemporaryAddressChange = handler_ $ do
-            send self $ SetTryAgainAction TemporaryAddressChange
-            send self $ SetWrapperProgress (AsyncWrapper.Editing temporaryAddressChangeComponent)
+            self.setState _
+              { updateAction = Just TemporaryAddressChange
+              , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
+              }
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
