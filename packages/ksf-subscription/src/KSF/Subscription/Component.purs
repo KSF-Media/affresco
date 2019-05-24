@@ -22,7 +22,7 @@ import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
-import Persona (InvalidPauseDateError(..))
+import Persona (InvalidDateInput(..), InvalidPauseDateError(..))
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
@@ -209,7 +209,15 @@ render self@{ props: props@{ subscription: { package } } } =
                        send self $ SetWrapperProgress AsyncWrapper.Success
                        self.setState \s -> s { pendingAddressChanges = toMaybe newPendingChanges }
 
-        , onError: \err -> send self $ SetWrapperProgress $ AsyncWrapper.Error "error :-("
+        , onError: \(err :: Persona.InvalidDateInput) ->
+              let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+                  startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
+                  lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
+                  errMsg = case err of
+                    InvalidStartDate   -> startDateError
+                    InvalidLength      -> lengthError
+                    _                  -> unexpectedError
+              in send self $ SetWrapperProgress $ AsyncWrapper.Error errMsg
         }
 
     pauseSubscriptionComponent =
