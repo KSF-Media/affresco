@@ -86,18 +86,6 @@ pauseSubscription uuid subsno startDate endDate token = do
   where
     authorization = oauthToken token
 
-    formatDate :: DateTime -> String
-    formatDate = format formatter
-      where
-        dash = Placeholder "-"
-        formatter = fromFoldable
-          [ YearFull
-          , dash
-          , MonthTwoDigits
-          , dash
-          , DayOfMonthTwoDigits
-          ]
-
 temporaryAddressChange
   :: UUID
   -> Int
@@ -119,17 +107,17 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode token
   where
     authorization = oauthToken token
 
-    formatDate :: DateTime -> String
-    formatDate = format formatter
-      where
-        dash = Placeholder "-"
-        formatter = fromFoldable
-          [ YearFull
-          , dash
-          , MonthTwoDigits
-          , dash
-          , DayOfMonthTwoDigits
-          ]
+formatDate :: DateTime -> String
+formatDate = format formatter
+  where
+    dash = Placeholder "-"
+    formatter = fromFoldable
+      [ YearFull
+      , dash
+      , MonthTwoDigits
+      , dash
+      , DayOfMonthTwoDigits
+      ]
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
