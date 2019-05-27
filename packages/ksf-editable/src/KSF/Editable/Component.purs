@@ -6,8 +6,8 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
 import Effect.Aff as Aff
+import Effect.Class (liftEffect)
 import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as Wrapper
 import KSF.Grid as Grid
@@ -15,7 +15,9 @@ import KSF.InputField.Component as Input
 import React.Basic (JSX, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events as React.Events
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events(capture_) as React.Events
+import React.Basic.Events (handler) as React.Events
 import React.Basic.Extended (Style, requireStyle)
 
 foreign import editableStyles :: Style
@@ -89,13 +91,19 @@ render self@{ state, props } =
       }
   where
     renderRow items = Grid.row_
-      [ Grid.col8 $ DOM.div_ items
-      , Grid.col4 $ Wrapper.asyncWrapper
-          { wrapperState: state.content
-          , readyView: editButton
-          , editingView: \_ -> flexDiv { children: [ iconSuccess, iconClose ], className: "" }
-          , errorView: \err -> flexDiv { children: [ DOM.text err, iconClose ], className: "" }
-          , successView: mempty
+      [ DOM.form
+          { className: "editable--form"
+          , onSubmit: React.Events.handler preventDefault (\_ -> send self Save)
+          , children:
+              [ Grid.col8 $ DOM.div_ items
+              , Grid.col4 $ Wrapper.asyncWrapper
+                  { wrapperState: state.content
+                  , readyView: editButton
+                  , editingView: \_ -> flexDiv { children: [ iconSuccess, iconClose ], className: "" }
+                  , errorView: \err -> flexDiv { children: [ DOM.text err, iconClose ], className: "" }
+                  , successView: mempty
+                  }
+              ]
           }
       ]
 
@@ -105,11 +113,11 @@ render self@{ state, props } =
       { children:
         [ DOM.div
           { className: "edit-icon circle"
-          , onClick: handler
+          , onClick: startEdit
           }
         , DOM.span
           { className: "editable--edit-text"
-          , onClick: handler
+          , onClick: startEdit
           , children:
             [ DOM.u_ [ DOM.text "Ändra" ] ]
           }
@@ -117,16 +125,16 @@ render self@{ state, props } =
       , className: ""
       }
       where
-        handler = React.Events.capture_ $ send self StartEdit
+        startEdit = React.Events.capture_ $ send self StartEdit
 
     iconClose = DOM.div
       { className: "close-icon"
       , onClick: React.Events.capture_ $ send self (Undo Nothing)
       }
 
-    iconSuccess = DOM.div
-      { className: "success-icon"
-      , onClick: React.Events.capture_ $ send self Save
+    iconSuccess = DOM.button
+      { className: "editable--submit success-icon"
+      , type: "submit"
       }
 
     mkString = Grid.row_ <<< Array.singleton <<< DOM.text

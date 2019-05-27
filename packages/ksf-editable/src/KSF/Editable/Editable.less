@@ -1,7 +1,10 @@
 @import 'ksf-utils';
 @import (reference) 'ksf-variables';
 
-.editable--container {
+.editable {
+    input {
+        margin-bottom: .5em;
+    }
     margin-top: 0;
     > .grid--column-half {
         @media @to-xlarge {
@@ -45,4 +48,11 @@
 
 .editable--edit-text {
     cursor: pointer;
+}
+
+// Override default button styles
+.editable--submit {
+    border: 0;
+    padding: 0;
+    background: none;
 }
