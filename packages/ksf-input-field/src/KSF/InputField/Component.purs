@@ -2,14 +2,17 @@ module KSF.InputField.Component where
 
 import Prelude
 
+import Data.Array ((:))
 import Data.Maybe (Maybe, fromMaybe, isJust)
 import Effect (Effect)
-import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events as Events
 import React.Basic (JSX)
 import React.Basic as React
-import Data.Array ((:))
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (preventDefault, targetValue)
+import React.Basic.Events as Events
+import React.Basic.Extended (Style, requireStyle)
+
+foreign import inputFieldStyles :: Style
 
 type Props =
   { type_ :: String
@@ -48,7 +51,7 @@ component :: React.Component Props
 component = React.createComponent "InputField"
 
 render :: forall r. { props :: Props, state :: State, setState :: SetState | r } -> JSX
-render { state, setState, props } =
+render { state, setState, props } = requireStyle inputFieldStyles $
   DOM.div
     { className: "input-field"
     , children: input : props.children
