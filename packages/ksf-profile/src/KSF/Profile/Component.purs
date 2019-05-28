@@ -99,13 +99,23 @@ render props@{ profile: user } =
           let body = Persona.UpdateName { firstName, lastName }
           newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
             Console.error "Unexpected error when updating name."
-            liftEffect $ onError "Error :("
+            liftEffect $ onError "Något gick fel."
             throwError err
           liftEffect $ props.onUpdate newUser
-       -- TODO: this should also show an error message
+        -- TODO: this should also show an error message
         _, _ -> Console.error "Did not find token in local storage."
 
-    -- TODO: persona
-    -- TODO: remember to pass the country code back
     saveAddress onError arr = do
-      liftEffect $ log $ unsafeCoerce arr
+      loginResponse <- liftEffect $ Login.loadToken
+      case loginResponse, arr of
+        Just { token }, [ streetAddress, zipCode, _city ] -> do
+          let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
+              -- TODO: There should be a country select list in the UI
+              countryCode = "FI"
+          newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
+            Console.error "Unexpected error when updating address."
+            liftEffect $ onError "Något gick fel."
+            throwError err
+          liftEffect $ props.onUpdate newUser
+        -- TODO: this should also show an error message
+        _, _ -> Console.error "Did not find token in local storage."
