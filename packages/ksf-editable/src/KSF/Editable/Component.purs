@@ -17,7 +17,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.DOM.Events(capture_) as React.Events
-import React.Basic.Events (handler) as React.Events
+import React.Basic.Events (handler, handler_) as React.Events
 import React.Basic.Extended (Style, requireStyle)
 
 foreign import editableStyles :: Style
@@ -100,12 +100,24 @@ render self@{ state, props } =
                   { wrapperState: state.content
                   , readyView: editButton
                   , editingView: \_ -> flexDiv { children: [ iconSuccess, iconClose ], className: "" }
-                  , errorView: \err -> flexDiv { children: [ DOM.text err, iconClose ], className: "" }
+                  , errorView: \err -> flexDiv { children: [ errText err, tryAgain ], className: "" }
                   , successView: mempty
                   }
               ]
           }
       ]
+
+    errText errMsg =
+      DOM.div
+        { className: "editable--error-text"
+        , children: [ DOM.text errMsg ]
+        }
+    tryAgain =
+      DOM.span
+        { className: "editable--try-again"
+        , children: [ DOM.text "Försök igen" ]
+        , onClick: React.Events.handler_ $ send self (Undo Nothing)
+        }
 
     flexDiv ps = DOM.div (ps { className = "editable--edit-container flex" })
 
