@@ -1,6 +1,6 @@
 import React from 'react';
 import Dialog from 'material-ui/Dialog';
-import FlatButton from 'material-ui/FlatButton';
+import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {withRouter} from 'react-router';
 
@@ -29,16 +29,8 @@ class ExitDialog extends React.Component {
 
   render() {
     const actions = [
-      <FlatButton
-        label="Lämna spelet"
-        primary={true}
-        onClick={this.handleBack}
-      />,
-      <FlatButton
-        label="Fortsätt spela"
-        primary={true}
-        onClick={this.handleClose}
-      />,
+      <Button primary={true} onClick={this.handleBack}>Lämna spelet</Button>,
+      <Button primary={true} onClick={this.handleClose}>Fortsätt spela</Button>,
     ];
 
     return (

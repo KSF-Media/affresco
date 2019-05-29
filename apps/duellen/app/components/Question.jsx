@@ -2,7 +2,7 @@ import React from 'react';
 import AutoComplete from 'material-ui/AutoComplete';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import MenuItem from 'material-ui/MenuItem';
-import RaisedButton from 'material-ui/RaisedButton';
+import Button from '@material-ui/core/Button';
 import {withRouter} from 'react-router';
 import ExitDialog from './ExitDialog.jsx';
 import LinearProgress from 'material-ui/LinearProgress';
@@ -293,8 +293,8 @@ export default class Question extends React.Component {
 
         <MuiThemeProvider>
           <span>
-            <RaisedButton onClick={this.handleClick} label="Hoppa över" primary={true} style={{paddingRight: '1%', width: '50%', boxShadow: 'none',}} />
-            <RaisedButton onClick={this.handleClick} label="Svara" primary={true} style={{paddingLeft: '1%', width: '50%', boxShadow: 'none',}}/>
+            <Button variant="contained"onClick={this.handleClick} primary={true} style={{paddingRight: '1%', width: '50%', boxShadow: 'none',}}>Hoppa över</Button>
+            <Button variant="contained" onClick={this.handleClick} primary={true} style={{paddingLeft: '1%', width: '50%', boxShadow: 'none',}}>Svara</Button>
           </span>
         </MuiThemeProvider>
 
