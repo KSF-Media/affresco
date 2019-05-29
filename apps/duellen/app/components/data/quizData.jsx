@@ -2,7 +2,7 @@ import React from 'react';
 
 // Quiz Intro text
 export const quizIntro = {
-  week: 'Vecka 1',
+  week: 'Vecka 20',
   title: 'Jämn Nyårsduell!',
   description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin eu est nisl.',
 };
