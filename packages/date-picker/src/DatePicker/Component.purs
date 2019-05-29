@@ -16,8 +16,12 @@ import Effect.Uncurried (EffectFn1)
 import Math (abs)
 import React.Basic (JSX, ReactComponent)
 import React.Basic as React
+import React.Basic.DOM as DOM
+import React.Basic.Extended (Style)
+import React.Basic.Extended as React.Extended
 
 foreign import datePicker_ :: Fn0 (ReactComponent Props)
+foreign import datePickerStyles :: Style
 
 type Props =
   { onChange  :: EffectFn1 (Nullable JSDate) Unit
@@ -32,7 +36,13 @@ type Props =
   }
 
 datePicker :: Props -> JSX
-datePicker = React.element $ runFn0 datePicker_
+datePicker props = React.Extended.requireStyle datePickerStyles $
+  DOM.div
+    { className: "date-picker--wrapper"
+    , children: [ picker ]
+    }
+  where
+    picker = React.element (runFn0 datePicker_) props
 
 -- | Glues current timezone to the JS date we get here.
 --   Context:
