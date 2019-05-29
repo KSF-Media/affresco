@@ -1,6 +1,6 @@
 import React from 'react';
 import Intro from './Intro.jsx';
-import RaisedButton from 'material-ui/RaisedButton';
+import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {quizIntro} from './data/quizData.jsx';
 import ReactGA from 'react-ga';
@@ -10,7 +10,7 @@ const styles = {
 };
 
 const btnstyles ={
-  height: 60,
+  height: 80,
   marginBottom: 20,
 };
 
@@ -59,25 +59,30 @@ export default class Start extends React.Component {
 
 
   render() {
-
+//console.log("Moi".this.state)
     return (
-
+    <div class="duellen--button-container">
       <MuiThemeProvider>
         <div>
           <div>
             <h1>Duellen</h1>
             <p><b>{this.state.price}</b></p>
             <p className="header">Veckans Quiz</p>
-            <a href={'/Intro/' + this.state.weeklyQuiz.id}><RaisedButton label={this.state.weeklyQuiz.title} fullWidth={true} primary={true} style={btnstyles} /></a>
+            <a href={'/Intro/' + this.state.weeklyQuiz.id}>
+              <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}> {this.state.weeklyQuiz.title}</Button>
+            </a>
               <p className="header">Tidigare Quiz</p>
             {this.state.quizData.map(item => (
               <div key={item.id} style={styles}>
-                <a href={'/Intro/' + item.id}><RaisedButton label={item.title} fullWidth={true} primary={true} style={btnstyles} /></a>
+                <a href={'/Intro/' + item.id}>
+                  <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}> {item.title} </Button>
+                </a>
               </div>
             ))}
           </div>
         </div>
       </MuiThemeProvider>
+    </div>
 
     );
   }

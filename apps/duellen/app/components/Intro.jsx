@@ -1,6 +1,6 @@
 import React from 'react';
 import BackBtn from './BackBtn.jsx';
-import RaisedButton from 'material-ui/RaisedButton';
+import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {quizIntro} from './data/quizData.jsx';
 import EmailDialog from './EmailDialog.jsx';
@@ -12,7 +12,7 @@ listStyle: 'none',
 };
 
 const btnstyles ={
-  height: 60,
+  height: 80,
   marginBottom: 20,
   marginTop: '3em',
 };
@@ -74,18 +74,18 @@ export default class Intro extends React.Component{
         <h2>{this.state.quizData.title}</h2>
           <div className="players">
             <div style={{float: 'left', width: '50%',textAlign: 'center'}}>
-              <img src={this.state.player1_img} style={{objectFit: 'cover', width:160, height:160, borderRadius: '50%'}}></img>
+              <img src={this.state.player1_img} style={{objectFit: 'cover', width:200, height:200, borderRadius: '50%'}}></img>
               <p>{this.state.quizData.player1}</p>
             </div>
             <div style={{float: 'left', width: '50%', textAlign: 'center'}}>
-              <img src={this.state.player2_img} style={{objectFit: 'cover', width:160, height:160, borderRadius: '50%'}}></img>
+              <img src={this.state.player2_img} style={{objectFit: 'cover', width:200, height:200, borderRadius: '50%'}}></img>
               <p>{this.state.quizData.player2}</p>
             </div>
           </div>
         <p>{this.state.quizData.description}</p>
         <p><b>{this.state.sponsor}</b></p>
         <MuiThemeProvider>
-            <RaisedButton onClick={this.handleClick} label="Börja" fullWidth={true} primary={true} style={btnstyles} />
+            <Button variant="contained" onClick={this.handleClick} fullWidth={true} primary={true} style={btnstyles}> Börja </Button>
         </MuiThemeProvider>
       </div>
     );
