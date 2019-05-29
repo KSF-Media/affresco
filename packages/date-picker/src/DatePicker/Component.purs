@@ -4,10 +4,16 @@ module DatePicker.Component where
 
 import Prelude
 
+import Data.DateTime (DateTime, adjust)
 import Data.Function.Uncurried (Fn0, runFn0)
-import Data.JSDate (JSDate)
-import Data.Nullable (Nullable)
+import Data.JSDate (JSDate, toDateTime)
+import Data.JSDate as JSDate
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
+import Data.Time.Duration (Minutes(..))
+import Effect (Effect)
 import Effect.Uncurried (EffectFn1)
+import Math (abs)
 import React.Basic (JSX, ReactComponent)
 import React.Basic as React
 
@@ -27,3 +33,19 @@ type Props =
 
 datePicker :: Props -> JSX
 datePicker = React.element $ runFn0 datePicker_
+
+-- | Glues current timezone to the JS date we get here.
+--   Context:
+--   The react-date-picker calls `Date​.prototype​.get​Time()` when processing the dates
+--   in the calendar, and `Date​.prototype​.get​Time()` uses UTC for time representation.
+--   Apparently this is not a bug, but a feature, of the react-date-picker:
+--   https://github.com/wojtekmaj/react-calendar/issues/174#issuecomment-472108379
+adjustTimezone :: Nullable JSDate -> Effect (Maybe DateTime)
+adjustTimezone date
+  | Just pickedDate <- toMaybe date
+  , Just pickedDateTime <- toDateTime pickedDate
+  = do
+  offset <- JSDate.getTimezoneOffset pickedDate
+  let offsetMinutes = Minutes (abs offset)
+  pure $ adjust offsetMinutes pickedDateTime
+  | otherwise = pure Nothing

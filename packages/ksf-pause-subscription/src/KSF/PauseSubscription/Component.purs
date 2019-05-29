@@ -4,9 +4,9 @@ import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.DateTime (DateTime, adjust)
-import Data.JSDate (fromDateTime, toDateTime)
+import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (toMaybe, toNullable)
+import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -182,7 +182,8 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     , Grid.row_
         [ DatePicker.datePicker
             { onChange: mkEffectFn1 \pickedDate -> do
-                send self $ action $ toDateTime =<< toMaybe pickedDate
+                dateWithTimezone <- DatePicker.adjustTimezone pickedDate
+                send self $ action dateWithTimezone
             , className: "pause-subscription--date-picker"
             , value: toNullable $ fromDateTime <$> value
             , format: "d.M.yyyy"
@@ -190,7 +191,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             , minDate: toNullable $ fromDateTime <$> minDate
             , maxDate: toNullable $ fromDateTime <$> maxDate
             , disabled
-            , locale: "sv-SV"
+            , locale: "sv-FI"
             }
         ]
     ]
