@@ -47,11 +47,6 @@ type State =
   , maxEndDate   :: Maybe DateTime
   }
 
-data Action
-  = SetStartDate (Maybe DateTime)
-  | SetMinStartDate (Maybe DateTime)
-  | SetEndDate (Maybe DateTime)
-
 pauseSubscription :: Props -> JSX
 pauseSubscription = make component { initialState, render, didMount }
 
@@ -66,17 +61,6 @@ initialState =
   , minEndDate: Nothing
   , maxEndDate: Nothing
   }
-
-update :: Self -> Action -> StateUpdate Props State
-update self action = Update $ case action of
-  SetStartDate newStartDate ->
-    self.state
-      { startDate = newStartDate
-      , minEndDate = calcMinEndDate newStartDate
-      , maxEndDate = calcMaxEndDate newStartDate
-      }
-  SetEndDate newEndDate -> self.state { endDate = newEndDate }
-  SetMinStartDate newMinStartDate -> self.state { minStartDate = newMinStartDate }
 
 -- | Minimum pause period is one week
 calcMinEndDate :: Maybe DateTime -> Maybe DateTime
@@ -96,10 +80,7 @@ didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
   let tomorrow = adjust (Time.Duration.Days 1.0) now
-  send self $ SetMinStartDate tomorrow
-
-send :: Self -> Action -> Effect Unit
-send = runUpdate update
+  self.setState _ { minStartDate = tomorrow }
 
 render :: Self -> JSX
 render self =
