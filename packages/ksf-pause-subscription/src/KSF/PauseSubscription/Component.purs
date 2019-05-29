@@ -139,7 +139,7 @@ render self =
     startDayInput =
       dateInput
         self
-        { action: SetStartDate
+        { action: onStartDateChange
         , value: self.state.startDate
         , minDate: self.state.minStartDate
         , maxDate: Nothing
@@ -150,7 +150,7 @@ render self =
     endDayInput =
       dateInput
         self
-        { action: SetEndDate
+        { action: \newEndDate -> self.setState _ { endDate = newEndDate }
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: self.state.maxEndDate
@@ -166,8 +166,15 @@ render self =
           , className: "button-green"
           }
 
+    onStartDateChange newStartDate =
+      self.setState _
+        { startDate = newStartDate
+        , minEndDate = calcMinEndDate newStartDate
+        , maxEndDate = calcMaxEndDate newStartDate
+        }
+
 type DateInputField =
-  { action   :: Maybe DateTime -> Action
+  { action   :: Maybe DateTime -> Effect Unit
   , value    :: Maybe DateTime
   , minDate  :: Maybe DateTime
   , maxDate  :: Maybe DateTime
@@ -181,9 +188,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
         [ DatePicker.datePicker
-            { onChange: mkEffectFn1 \pickedDate -> do
-                dateWithTimezone <- DatePicker.adjustTimezone pickedDate
-                send self $ action dateWithTimezone
+            { onChange: (action =<< _)
             , className: "pause-subscription--date-picker"
             , value: toNullable $ fromDateTime <$> value
             , format: "d.M.yyyy"

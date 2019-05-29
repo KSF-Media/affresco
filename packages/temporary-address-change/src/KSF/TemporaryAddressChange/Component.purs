@@ -203,7 +203,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
         [ DatePicker.datePicker
-            { onChange: mkEffectFn1 \pickedDate -> action $ toDateTime =<< toMaybe pickedDate
+            { onChange: (action =<< _)
             , className: "temporary-address-change--date-picker"
             , value: toNullable $ fromDateTime <$> value
             , format: "d.M.yyyy"
