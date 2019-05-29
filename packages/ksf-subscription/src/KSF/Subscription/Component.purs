@@ -8,7 +8,7 @@ import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, fromDateTime, now, toDateTime)
+import Data.JSDate (JSDate, fromDateTime, toDateTime)
 import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
@@ -24,7 +24,7 @@ import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import Persona (InvalidDateInput(..), InvalidPauseDateError(..))
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
