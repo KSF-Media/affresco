@@ -293,7 +293,7 @@ loginView { state, setState } = React.fragment
       case state.showWelcome of
         false -> []
         true  ->
-          [ classy DOM.div "pb3 center" [ heading ]
+          [ classy DOM.div "pb2 center" [ heading ]
           , classy DOM.div "center"     [ pageDescription ]
           ]
   , classy DOM.div "center" [ loginForm ]
@@ -322,9 +322,31 @@ loginView { state, setState } = React.fragment
       classy DOM.h1 "mitt-konto--heading"
         [ DOM.text "Välkommen till KSF Media’s Mitt Konto" ]
 
+    frequentIssues =
+      classy DOM.p "mitt-konto--faq"
+        [ DOM.a
+            { href: "https://www.hbl.fi/fragor-och-svar/"
+            , children: [ DOM.text "Frågor och svar" ]
+            , target: "_blank"
+            }
+        , DOM.text " * "
+        , DOM.a
+            { href: "https://www.hbl.fi/ingen-tidning/"
+            , children: [ DOM.text "Ingen tidning" ]
+            , target: "_blank"
+            }
+        , DOM.text " * "
+        , DOM.a
+            { href: "https://www.hbl.fi/epaper/"
+            , children: [ DOM.text "Läs e-tidning" ]
+            , target: "_blank"
+            }
+        ]
+
     pageDescription =
       classy DOM.div "mitt-konto--description"
-        [ DOM.p_
+        [ frequentIssues
+        , DOM.p_
             [ DOM.text
                 """Här kan du göra tillfällig eller permanent
                    adressändring eller göra uppehåll i tidningsutdelningen.
