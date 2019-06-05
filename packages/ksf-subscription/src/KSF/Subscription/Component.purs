@@ -3,12 +3,13 @@ module KSF.Subscription.Component where
 import Prelude
 
 import AsyncWrapper as AsyncWrapper
-import Data.Array (filter, mapMaybe)
+import Data.Array (filter)
+import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, fromDateTime, toDateTime)
-import Data.List (fromFoldable)
+import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
@@ -20,9 +21,10 @@ import Effect.Now as Now
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
-import Persona (InvalidPauseDateError(..))
+import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
+import Persona (InvalidDateInput(..), InvalidPauseDateError(..))
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
@@ -41,13 +43,14 @@ type Props =
 type State =
   { wrapperProgress :: AsyncWrapper.Progress JSX
   , pausedSubscriptions :: Maybe (Array Persona.PausedSubscription)
+  , pendingAddressChanges :: Maybe (Array Persona.PendingAddressChange)
   , now :: Maybe DateTime
+  , updateAction :: Maybe SubscriptionUpdateAction
   }
 
-data Action
-  = SetWrapperProgress (AsyncWrapper.Progress JSX)
-  | SetNow DateTime
-  | SetPausedSubscriptions (Maybe (Array Persona.PausedSubscription))
+data SubscriptionUpdateAction
+  = PauseSubscription
+  | TemporaryAddressChange
 
 type Subscription =
   { package :: { name :: String
@@ -77,7 +80,9 @@ subscription = make component
   { initialState:
       { wrapperProgress: AsyncWrapper.Ready
       , pausedSubscriptions: Nothing
+      , pendingAddressChanges: Nothing
       , now: Nothing
+      , updateAction: Nothing
       }
   , render
   , didMount
@@ -86,17 +91,11 @@ subscription = make component
 didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
-  send self $ SetNow now
-  send self $ SetPausedSubscriptions $ toMaybe self.props.subscription.paused
-
-update :: Self -> Action -> StateUpdate Props State
-update self = case _ of
-  SetWrapperProgress progress -> Update $ self.state { wrapperProgress = progress }
-  SetNow now -> Update $ self.state { now = Just now }
-  SetPausedSubscriptions subs -> Update $ self.state { pausedSubscriptions = subs }
-
-send :: Self -> Action -> Effect Unit
-send = runUpdate update
+  self.setState _
+    { now = Just now
+    , pausedSubscriptions = toMaybe self.props.subscription.paused
+    , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
+    }
 
 render :: Self -> JSX
 render self@{ props: props@{ subscription: { package } } } =
@@ -115,36 +114,56 @@ render self@{ props: props@{ subscription: { package } } } =
                      <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                  }
                ]
+               <> deliveryAddress
+               <> foldMap pendingAddressChanges self.state.pendingAddressChanges
                <> foldMap billingDateTerm nextBillingDate
            })
       (if package.digitalOnly
        then mempty
-       else pauseSubscription)
+       else subscriptionUpdates)
       $ Just { extraClasses: [ "subscription--container" ] }
   where
-    billingDateTerm date =
-      [ { term: "Nästa faktureringsdatum:"
-        , descriptions: [ date ]
-        }
-      ]
+    deliveryAddress =
+       if package.digitalOnly
+       then mempty
+       else Array.singleton
+              { term: "Leveransadress:"
+              , descriptions: [ currentDeliveryAddress ]
+              }
 
+    pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
+    pendingAddressChanges pendingChanges = Array.singleton $
+      { term: "Tillfällig  adressändringar:"
+      , descriptions: map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
+      }
+
+    billingDateTerm :: String -> Array DescriptionList.Definition
+    billingDateTerm date = Array.singleton $
+      { term: "Nästa faktureringsdatum:"
+      , descriptions: [ date ]
+      }
+
+    filterExpiredPausePeriods :: Array Persona.PausedSubscription -> Array Persona.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
       case self.state.now of
         Nothing  -> pausedSubs
-        Just now -> filter (not isPauseExpired now) pausedSubs
+        Just now -> filter (not isPeriodExpired now <<< toMaybe <<< _.endDate) pausedSubs
 
-    pauseSubscription :: JSX
-    pauseSubscription =
-      DOM.div
-        { className: ""
-        , children: [ asyncWrapper ]
-        }
+    filterExpiredPendingChanges :: Array Persona.PendingAddressChange -> Array Persona.PendingAddressChange
+    filterExpiredPendingChanges pendingChanges =
+      case self.state.now of
+        Nothing  -> pendingChanges
+        Just now -> filter (not isPeriodExpired now <<< Just <<< _.endDate) pendingChanges
+
+    subscriptionUpdates :: JSX
+    subscriptionUpdates =
+        Grid.row_ [ asyncWrapper ]
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: pauseContainer pauseIcon
+            , readyView: pauseContainer [ pauseIcon, temporaryAddressChangeIcon ]
             , editingView: identity
-            , successView: pauseContainer [ DOM.div { className: "subscription--pause-success check-icon" } ]
+            , successView: pauseContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             }
 
@@ -155,20 +174,51 @@ render self@{ props: props@{ subscription: { package } } } =
               }
           tryAgain =
             DOM.span
-              { className: "subscription--try-pause-again"
+              { className: "subscription--try-update-again"
               , children: [ DOM.text "Försök igen" ]
-              , onClick: handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
+              , onClick: handler_ $ self.setState _ { wrapperProgress = AsyncWrapper.Editing updateActionComponent }
               }
+            where
+              updateActionComponent =
+                case self.state.updateAction of
+                  Just PauseSubscription -> pauseSubscriptionComponent
+                  Just TemporaryAddressChange -> temporaryAddressChangeComponent
+                  Nothing -> mempty
+
+    temporaryAddressChangeComponent =
+      TemporaryAddressChange.temporaryAddressChange
+        { subsno: props.subscription.subsno
+        , userUuid: props.user.uuid
+        , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+        , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+        , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
+                       self.setState _
+                         { pendingAddressChanges = toMaybe newPendingChanges
+                         , wrapperProgress = AsyncWrapper.Success
+                         }
+
+        , onError: \(err :: Persona.InvalidDateInput) ->
+              let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+                  startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
+                  lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
+                  errMsg = case err of
+                    InvalidStartDate   -> startDateError
+                    InvalidLength      -> lengthError
+                    _                  -> unexpectedError
+              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+        }
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
           , userUuid: props.user.uuid
-          , onCancel: send self $ SetWrapperProgress AsyncWrapper.Ready
-          , onLoading: send self $ SetWrapperProgress $ AsyncWrapper.Loading mempty
-          , onSuccess: \pausedSubscription -> do
-                         send self $ SetWrapperProgress AsyncWrapper.Success
-                         send self $ SetPausedSubscriptions $ toMaybe pausedSubscription.paused
+          , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+          , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+          , onSuccess: \pausedSubscription ->
+                         self.setState _
+                           { pausedSubscriptions = toMaybe pausedSubscription.paused
+                           , wrapperProgress = AsyncWrapper.Success
+                           }
 
           , onError: \err ->
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
@@ -182,7 +232,7 @@ render self@{ props: props@{ subscription: { package } } } =
                     PauseInvalidOverlapping -> overlappingError
                     PauseInvalidTooRecent   -> tooRecentError
                     PauseInvalidUnexpected  -> unexpectedError
-              in send self $ SetWrapperProgress $ AsyncWrapper.Error errMsg
+              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
     pauseContainer children =
@@ -194,24 +244,70 @@ render self@{ props: props@{ subscription: { package } } } =
     loadingSpinner = [ DOM.div { className: "tiny-spinner" } ]
 
     pauseIcon =
-      [ DOM.div
-          { className: "subscription--pause-icon circle"
-          , onClick: showPauseView
-          }
-      , DOM.span
-          { className: "subscription--pause-text"
-          , children:
-              [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
-          , onClick: showPauseView
-          }
-      ]
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--pause-icon circle"
+              , onClick: showPauseView
+              }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
+              , onClick: showPauseView
+              }
+          ]
+        }
       where
-        showPauseView = handler_ $ send self $ SetWrapperProgress (AsyncWrapper.Editing pauseSubscriptionComponent)
+        showPauseView = handler_ $
+          self.setState _
+            { updateAction = Just PauseSubscription
+            , wrapperProgress = AsyncWrapper.Editing pauseSubscriptionComponent
+            }
+
+    temporaryAddressChangeIcon =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+            [ DOM.div
+                { className: "subscription--temporary-address-change-icon circle"
+                , onClick: showTemporaryAddressChange
+                }
+            , DOM.span
+                { className: "subscription--update-action-text"
+                , children:
+                    [ DOM.u_ [ DOM.text "Gör tillfällig adressändring" ] ]
+                , onClick: showTemporaryAddressChange
+                }
+            ]
+        }
+        where
+          showTemporaryAddressChange = handler_ $ do
+            self.setState _
+              { updateAction = Just TemporaryAddressChange
+              , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
+              }
 
     nextBillingDate
       | Persona.isSubscriptionCanceled props.subscription = Nothing
       | otherwise =
           map trim $ formatDate =<< addOneDay props.subscription.dates.end
+
+    currentDeliveryAddress :: String
+    currentDeliveryAddress
+      | Just address <- toMaybe props.subscription.deliveryAddress
+      = formatAddress address
+      | Just { streetAddress, zipCode, city } <- toMaybe props.user.address
+      = intercalate ", "
+          [ streetAddress
+          , fromMaybe "-" $ toMaybe zipCode
+          , fromMaybe "-" $ toMaybe city
+          ]
+      | otherwise = "-"
+
+formatAddress :: Persona.DeliveryAddress -> String
+formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, city ]
 
 addOneDay :: Nullable JSDate -> Maybe JSDate
 addOneDay date = do
@@ -238,10 +334,10 @@ translateStatus (Persona.SubscriptionState englishStatus) = do
     "Unknown"                   -> "Okänd"
     _                           -> englishStatus
 
-isPauseExpired :: DateTime -> Persona.PausedSubscription -> Boolean
-isPauseExpired baseDate { endDate } =
-  case toMaybe endDate of
-    -- If there's no end date, the pause is ongoing
+isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
+isPeriodExpired baseDate endDate =
+  case endDate of
+    -- If there's no end date, the period is ongoing
     Nothing   -> false
     Just date ->
       let endDateTime = toDateTime date
@@ -249,8 +345,18 @@ isPauseExpired baseDate { endDate } =
 
 showPausedDates :: Array Persona.PausedSubscription -> Array String
 showPausedDates pausedSubs =
-  let formatDateString = \({ startDate, endDate }) -> do
-        startString <- formatDate startDate
-        let endString = fromMaybe "" $ formatDate =<< toMaybe endDate
-        Just $ "Uppehåll: " <> startString <> " – " <> endString
-  in mapMaybe formatDateString pausedSubs
+  let formatDates { startDate, endDate } = formatDateString startDate $ toMaybe endDate
+  in map (((<>) "Uppehåll: ") <<< formatDates) pausedSubs
+
+showPendingAddressChange :: Persona.PendingAddressChange -> String
+showPendingAddressChange { address, startDate, endDate } =
+  let addressString = formatAddress address
+      pendingPeriod = formatDateString startDate (Just endDate)
+  in addressString <> " (" <> pendingPeriod <> ")"
+
+formatDateString :: JSDate -> Maybe JSDate -> String
+formatDateString startDate endDate
+  | Just startString <- formatDate startDate =
+    let endString = fromMaybe "" $ formatDate =<< endDate
+    in startString <> " – " <> endString
+  | otherwise = mempty

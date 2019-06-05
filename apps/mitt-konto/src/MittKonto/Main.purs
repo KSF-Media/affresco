@@ -256,11 +256,6 @@ userView { user } = React.fragment
           , className: passwordChangeClass
           }
       , formatIconLink
-          { href: "https://www.hbl.fi/tillfallig-adressandring/"
-          , description: "Gör tillfällig adressändring"
-          , className: temporaryAddressChangeClass
-          }
-      , formatIconLink
           { href: "https://www.hbl.fi/permanent-adressandring/"
           , description: "Gör permanent adressändring"
           , className: permanentAddressChangeClass
@@ -268,7 +263,6 @@ userView { user } = React.fragment
       ]
       where
         passwordChangeClass         = "mitt-konto--password-change"
-        temporaryAddressChangeClass = "mitt-konto--temporary-address-change"
         permanentAddressChangeClass = "mitt-konto--permanent-address-change"
 
     formatIconLink :: { href :: String, description :: String, className :: String } -> JSX
