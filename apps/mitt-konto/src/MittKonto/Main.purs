@@ -172,6 +172,7 @@ userView { user } = React.fragment
         [ profileComponentBlock
         , break
         , editAccount
+        , needHelp
         , disappearingBreak
         ]
       where
@@ -233,6 +234,36 @@ userView { user } = React.fragment
             componentHeader "Mina inställningar:"
             : accountEditLinks
         }
+
+    needHelp :: JSX
+    needHelp =
+      DOM.div
+        { className: "mitt-konto--need-help"
+        , children:
+            componentHeader "Behöver du hjälp?"
+            : frequentIssues
+        }
+      where
+        frequentIssues =
+          [ DOM.dl_
+              [ DOM.dt_ [ DOM.text "Frågor och svar" ]
+              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/fragor-och-svar/" ]
+              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/fragor-och-svar/" ]
+              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/ingen-tidning/" ]
+              ]
+          ,  DOM.dl_
+              [ DOM.dt_ [ DOM.text "Ingen tidning?" ]
+              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/ingen-tidning/" ]
+              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/ingen-tidning/" ]
+              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/ingen-tidning/" ]
+              ]
+          ]
+        issueLink description href =
+          DOM.a
+            { children: [ DOM.text description ]
+            , href
+            , target: "_blank"
+            }
 
     componentBlock headerText content =
       DOM.div
