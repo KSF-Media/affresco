@@ -329,7 +329,7 @@ type Address =
 type DeliveryAddress =
   { streetAddress :: String
   , zipcode       :: String
-  , city          :: String
+  , city          :: Nullable String
   }
 
 type PendingAddressChange =

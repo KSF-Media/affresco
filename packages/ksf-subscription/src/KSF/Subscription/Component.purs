@@ -307,7 +307,7 @@ render self@{ props: props@{ subscription: { package } } } =
       | otherwise = "-"
 
 formatAddress :: Persona.DeliveryAddress -> String
-formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, city ]
+formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
 
 addOneDay :: Nullable JSDate -> Maybe JSDate
 addOneDay date = do
