@@ -9,15 +9,16 @@
     "build": "parcel build index.html --no-cache"
   },
   "dependencies": {
+    "@material-ui/core": "^3.9.3",
     "jquery": "^3.3.1",
     "jsonp": "^0.2.1",
     "material-ui": "^0.20.0",
     "material-ui-superselectfield": "^1.9.0",
     "parcel-bundler": "^1.12.3",
     "path": "^0.12.7",
-    "react": "^16.2.0",
+    "react": "^16.3.0",
     "react-autosuggest": "^9.3.4",
-    "react-dom": "^16.2.0",
+    "react-dom": "^16.3.0",
     "react-ga": "^2.5.2",
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",

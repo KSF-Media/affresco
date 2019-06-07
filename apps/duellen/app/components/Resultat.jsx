@@ -10,7 +10,7 @@ import ReactGA from 'react-ga';
 
 const styles = {
   headline: {
-    fontSize: 24,
+    fontSize: 26,
     paddingTop: 16,
     marginBottom: 12,
     fontWeight: 400,
@@ -60,7 +60,7 @@ export default class Resultat extends React.Component{
     return (
       <MuiThemeProvider>
         <div>
-          <div style={{backgroundColor:'#00BCD4',padding: 10}}>
+          <div style={{backgroundColor:'#f07e26',padding: 10}}>
             <BackBtn />
           </div>
 

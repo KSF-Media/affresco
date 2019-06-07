@@ -172,6 +172,7 @@ userView { user, setState } = React.fragment
         [ profileComponentBlock
         , break
         , editAccount
+        , needHelp
         , disappearingBreak
         ]
       where
@@ -237,6 +238,36 @@ userView { user, setState } = React.fragment
             : accountEditLinks
         }
 
+    needHelp :: JSX
+    needHelp =
+      DOM.div
+        { className: "mitt-konto--need-help"
+        , children:
+            componentHeader "Behöver du hjälp?"
+            : frequentIssues
+        }
+      where
+        frequentIssues =
+          [ DOM.dl_
+              [ DOM.dt_ [ DOM.text "Frågor och svar" ]
+              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/fragor-och-svar/" ]
+              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/fragor-och-svar/" ]
+              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/ingen-tidning/" ]
+              ]
+          ,  DOM.dl_
+              [ DOM.dt_ [ DOM.text "Ingen tidning?" ]
+              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/ingen-tidning/" ]
+              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/ingen-tidning/" ]
+              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/ingen-tidning/" ]
+              ]
+          ]
+        issueLink description href =
+          DOM.a
+            { children: [ DOM.text description ]
+            , href
+            , target: "_blank"
+            }
+
     componentBlock headerText content =
       DOM.div
         { className: "mitt-konto--component-block-container"
@@ -258,15 +289,9 @@ userView { user, setState } = React.fragment
           , description: "Byt lösenord"
           , className: passwordChangeClass
           }
-      , formatIconLink
-          { href: "https://www.hbl.fi/tillfallig-adressandring/"
-          , description: "Gör tillfällig adressändring"
-          , className: temporaryAddressChangeClass
-          }
       ]
       where
-        passwordChangeClass         = "mitt-konto--password-change"
-        temporaryAddressChangeClass = "mitt-konto--temporary-address-change"
+        passwordChangeClass = "mitt-konto--password-change"
 
     formatIconLink :: { href :: String, description :: String, className :: String } -> JSX
     formatIconLink { href, description, className } =
@@ -296,7 +321,7 @@ loginView { state, setState } = React.fragment
       case state.showWelcome of
         false -> []
         true  ->
-          [ classy DOM.div "pb3 center" [ heading ]
+          [ classy DOM.div "pb2 center" [ heading ]
           , classy DOM.div "center"     [ pageDescription ]
           ]
   , classy DOM.div "center" [ loginForm ]
@@ -325,9 +350,31 @@ loginView { state, setState } = React.fragment
       classy DOM.h1 "mitt-konto--heading"
         [ DOM.text "Välkommen till KSF Media’s Mitt Konto" ]
 
+    frequentIssues =
+      classy DOM.p "mitt-konto--faq"
+        [ DOM.a
+            { href: "https://www.hbl.fi/fragor-och-svar/"
+            , children: [ DOM.text "Frågor och svar" ]
+            , target: "_blank"
+            }
+        , DOM.text " * "
+        , DOM.a
+            { href: "https://www.hbl.fi/ingen-tidning/"
+            , children: [ DOM.text "Ingen tidning" ]
+            , target: "_blank"
+            }
+        , DOM.text " * "
+        , DOM.a
+            { href: "https://www.hbl.fi/epaper/"
+            , children: [ DOM.text "Läs e-tidning" ]
+            , target: "_blank"
+            }
+        ]
+
     pageDescription =
       classy DOM.div "mitt-konto--description"
-        [ DOM.p_
+        [ frequentIssues
+        , DOM.p_
             [ DOM.text
                 """Här kan du göra tillfällig eller permanent
                    adressändring eller göra uppehåll i tidningsutdelningen.
