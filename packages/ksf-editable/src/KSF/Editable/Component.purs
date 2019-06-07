@@ -100,7 +100,7 @@ render self@{ state, props } =
                   { wrapperState: state.content
                   , readyView: editButton
                   , editingView: \_ -> flexDiv { children: [ iconSuccess, iconClose ], className: "" }
-                  , errorView: \err -> flexDiv { children: [ errText err, tryAgain ], className: "" }
+                  , errorView: \err -> flexDiv { children: [ errText err, DOM.br {}, tryAgain ], className: "" }
                   , successView: mempty
                   }
               ]
