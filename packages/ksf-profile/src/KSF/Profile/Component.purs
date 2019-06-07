@@ -3,23 +3,28 @@ module KSF.Profile.Component where
 import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (catMaybes, (:))
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Nullable (Nullable)
+import Data.Array (catMaybes, filter, intercalate, (:))
+import Data.Array as Array
+import Data.DateTime (DateTime)
+import Data.Formatter.DateTime (FormatterCommand(..), format)
+import Data.JSDate (JSDate, toDateTime)
+import Data.List (fromFoldable)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Console (log)
+import Effect.Now as Now
 import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Editable.Component (editable)
 import KSF.Login.Component as Login
 import Persona as Persona
+import React.Basic (make)
 import React.Basic as React
 import React.Basic.Extended (JSX, Style, requireStyle)
-import Unsafe.Coerce (unsafeCoerce)
 
 foreign import profileStyles :: Style
 
@@ -33,6 +38,7 @@ type Props =
 type State =
   { name :: Maybe Name
   , address :: Maybe Address
+  , now :: Maybe DateTime
   }
 
 type Name =
@@ -53,16 +59,28 @@ component :: React.Component Props
 component = React.createComponent "Profile"
 
 profile :: Props -> JSX
-profile = React.makeStateless component render
+profile = make component
+  { initialState:
+      { name: Nothing
+      , address: Nothing
+      , now: Nothing
+      }
+  , render
+  , didMount
+  }
 
 addressArray :: Persona.Address -> Array String
 addressArray { streetAddress, zipCode, city } = do
   let takeJust = catMaybes <<< map Nullable.toMaybe
   streetAddress : takeJust [ zipCode, city ]
 
+didMount :: Self -> Effect Unit
+didMount self = do
+  now <- Now.nowDateTime
+  self.setState _ { now = Just now }
 
-render :: Props -> JSX
-render props@{ profile: user } =
+render :: Self -> JSX
+render self@{ props: { profile: user } } =
   requireStyle
     profileStyles
     $ React.element
@@ -83,6 +101,12 @@ render props@{ profile: user } =
             , { term: "E-postadress:", description: Static [ user.email ] }
             , { term: "Kundnummer:", description: Static [ user.cusno ] }
             ]
+            <> case toMaybe user.pendingAddressChanges of
+              Just pendingChanges -> Array.singleton $
+                { term: "Addressändrig:"
+                , description: Static $ map showPendingAddressChange $ filter (isUpcomingPendingChange self.state.now) pendingChanges
+                }
+              _ -> mempty
           }
   where
     -- | I'm sorry
@@ -101,7 +125,7 @@ render props@{ profile: user } =
             Console.error "Unexpected error when updating name."
             liftEffect $ onError "Något gick fel."
             throwError err
-          liftEffect $ props.onUpdate newUser
+          liftEffect $ self.props.onUpdate newUser
         -- TODO: this should also show an error message
         _, _ -> Console.error "Did not find token in local storage."
 
@@ -116,6 +140,37 @@ render props@{ profile: user } =
             Console.error "Unexpected error when updating address."
             liftEffect $ onError "Något gick fel."
             throwError err
-          liftEffect $ props.onUpdate newUser
+          liftEffect $ self.props.onUpdate newUser
         -- TODO: this should also show an error message
         _, _ -> Console.error "Did not find token in local storage."
+
+isUpcomingPendingChange :: Maybe DateTime -> Persona.PendingAddressChange -> Boolean
+isUpcomingPendingChange Nothing _ = true
+isUpcomingPendingChange (Just now) { startDate } =
+  maybe true (_ > now) $ toDateTime startDate
+
+showPendingAddressChange :: Persona.PendingAddressChange -> String
+showPendingAddressChange { address, startDate, endDate } =
+  let addressString = formatAddress address
+      pendingPeriod = formatDateString startDate
+  in addressString <> " (fr.o.m. " <> pendingPeriod <> ")"
+
+formatAddress :: Persona.DeliveryAddress -> String
+formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
+
+formatDateString :: JSDate -> String
+formatDateString startDate
+  | Just startString <- formatDate startDate = startString
+  | otherwise = mempty
+
+formatDate :: JSDate -> Maybe String
+formatDate date = format formatter <$> toDateTime date
+  where
+    dot = Placeholder "."
+    formatter = fromFoldable
+      [ DayOfMonthTwoDigits
+      , dot
+      , MonthTwoDigits
+      , dot
+      , YearFull
+      ]

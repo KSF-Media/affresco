@@ -314,6 +314,7 @@ type User =
   , cusno :: String
   , subs :: Array Subscription
   , consent :: Array GdprConsent
+  , pendingAddressChanges :: Nullable (Array PendingAddressChange)
   }
 
 type NewUser =
