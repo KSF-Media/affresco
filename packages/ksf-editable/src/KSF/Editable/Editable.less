@@ -35,26 +35,24 @@
     align-items: center;
     justify-content: flex-end;
     margin-top: 0;
-    @media @to-xlarge {
-        margin-top: 1.5em;
-    }
-    @media @to-medium {
-        margin-top: 0;
-    }
-    @media @to-xsmall {
-        margin-top: 1.5em;
-    }
 }
 
 .editable--edit-text {
     cursor: pointer;
 }
 
-// Override default button styles
 .editable--submit {
+    // Override default button styles
     border: 0;
     padding: 0;
     background: none;
+
+    width: 80px;
+    min-width: 60px;
+    margin-right: .5em;
+    @media @to-xlarge {
+        margin-left: .3em;
+    }
 }
 
 .editable--try-again {

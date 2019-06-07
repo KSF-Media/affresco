@@ -144,9 +144,15 @@ render self@{ state, props } =
       , onClick: React.Events.capture_ $ send self (Undo Nothing)
       }
 
-    iconSuccess = DOM.button
-      { className: "editable--submit success-icon"
-      , type: "submit"
+    iconSuccess = DOM.div
+      { className: "editable--submit"
+      , children:
+          [ DOM.button
+              { type: "submit"
+              , children: [ DOM.text "Skicka" ]
+              , className: "button-green"
+              }
+          ]
       }
 
     mkString = Grid.row_ <<< Array.singleton <<< DOM.text
