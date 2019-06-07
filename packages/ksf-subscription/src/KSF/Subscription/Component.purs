@@ -2,7 +2,7 @@ module KSF.Subscription.Component where
 
 import Prelude
 
-import AsyncWrapper as AsyncWrapper
+import KSF.AsyncWrapper as AsyncWrapper
 import Data.Array (filter, mapMaybe)
 import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
@@ -130,19 +130,19 @@ render self@{ props: props@{ subscription: { package } } } =
        then mempty
        else Array.singleton
               { term: "Leveransadress:"
-              , descriptions: [ currentDeliveryAddress ]
+              , description: Static $ [ currentDeliveryAddress ]
               }
 
     pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
-      { term: "Tillfällig  adressändringar:"
-      , descriptions: map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
+      { term: "Tillfällig  adressändring:"
+      , description: Static $ map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
       }
 
     billingDateTerm :: String -> Array DescriptionList.Definition
     billingDateTerm date = Array.singleton $
       { term: "Nästa faktureringsdatum:"
-      , descriptions: [ date ]
+      , description: Static $ [ date ]
       }
 
     filterExpiredPausePeriods :: Array Persona.PausedSubscription -> Array Persona.PausedSubscription
