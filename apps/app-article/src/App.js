@@ -2,7 +2,6 @@ import React, {Component} from 'react';
 import Lightbox from 'react-image-lightbox';
 import {jsComponent as Login, jsLogout as LogOut} from '@affresco/ksf-login';
 import articleApi from './article-service';
-import '../node_modules/basscss/css/basscss-cp.min.css';
 import 'react-image-lightbox/style.css';
 import './assets/css/bootstrap.min.css';
 import {isUserLoggedIn} from "./helper";
@@ -371,12 +370,12 @@ class App extends Component {
         }
     }
 
-    showLogin = (e) => {
+    showLogin(e) {
         e.preventDefault();
         this.setState({appearLogin: true, showBuyOption: false});
     };
 
-    increaseFontSize = () => {
+    increaseFontSize() {
         let increaseTextSize = parseFloat(this.state.fontSize) + parseFloat(this.state.fontSizeIncrementalValue);
         this.setState({fontSize: increaseTextSize}, () => {
             localStorage.setItem("fontSize", this.state.fontSize);
@@ -409,7 +408,7 @@ class App extends Component {
         }
     }
 
-    showHighResolutionImage = (imgSrc, caption) => {
+    showHighResolutionImage(imgSrc, caption) {
         this.setState({isImageModalOpen: true, modalImage: imgSrc, modalCaption: caption})
     };
 
