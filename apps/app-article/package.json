@@ -1,36 +1,20 @@
 {
   "name": "@affresco/app-article",
   "version": "0.1.0",
-  "private": true,
   "dependencies": {
     "basscss": "^8.0.4",
-    "html-to-react": "^1.3.4",
     "react": "^16.8.3",
     "react-dom": "^16.8.3",
-    "react-image-lightbox": "^5.1.0",
-    "react-scripts": "2.1.5",
-    "webpack-merge": "^4.2.1"
+    "react-image-lightbox": "^5.1.0"
   },
   "scripts": {
-    "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
-    "test": "react-app-rewired test --env=jsdom",
-    "eject": "react-scripts eject",
-    "deploy": "gh-pages -d build",
+    "start": "parcel src/index.html -p 8000",
     "buildLogin": "cd ../.. && spago bundle-module -m KSF.Login.Component -t packages/ksf-login/index.js --path \"packages/*/src/**/*.purs\" ",
-    "buildParcel": "parcel public/index.html"
+    "build": "parcel build src/index.html --no-cache && cp src/xd_receiver.html ./dist",
+    "clean": "rm -rf .cache dist node_modules"
   },
-  "eslintConfig": {},
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ],
   "devDependencies": {
-    "customize-cra": "^0.2.12",
-    "gh-pages": "^2.0.1",
-    "react-app-rewire-eslint": "^0.2.3",
-    "react-app-rewired": "^2.1.1"
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4"
   }
 }

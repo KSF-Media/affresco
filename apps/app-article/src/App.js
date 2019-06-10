@@ -16,10 +16,6 @@ import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
 
-
-let HtmlToReactParser = require('html-to-react').Parser;
-let htmlToReactParser = new HtmlToReactParser();
-
 class App extends Component {
     constructor(props) {
         super(props);
@@ -370,12 +366,12 @@ class App extends Component {
         }
     }
 
-    showLogin(e) {
+    showLogin = (e) =>  {
         e.preventDefault();
         this.setState({appearLogin: true, showBuyOption: false});
     };
 
-    increaseFontSize() {
+    increaseFontSize = () => {
         let increaseTextSize = parseFloat(this.state.fontSize) + parseFloat(this.state.fontSizeIncrementalValue);
         this.setState({fontSize: increaseTextSize}, () => {
             localStorage.setItem("fontSize", this.state.fontSize);
@@ -408,7 +404,7 @@ class App extends Component {
         }
     }
 
-    showHighResolutionImage(imgSrc, caption) {
+    showHighResolutionImage = (imgSrc, caption) => {
         this.setState({isImageModalOpen: true, modalImage: imgSrc, modalCaption: caption})
     };
 
