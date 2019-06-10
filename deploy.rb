@@ -37,6 +37,10 @@ apps = {
   "duellen" => {
     "packages" => [ ],
     "env_variables" => env_variables["duellen"]
+  },
+  "app-article" => {
+    "packages" => [ 'KSF.Login' ],
+    "env_variables" => env_variables["social_login"] + env_variables["persona"]
   }
 }
 
