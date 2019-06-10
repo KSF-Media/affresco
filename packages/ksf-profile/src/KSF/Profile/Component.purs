@@ -121,7 +121,7 @@ render self@{ props: { profile: user } } =
           let body = Persona.UpdateName { firstName, lastName }
           newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
             Console.error "Unexpected error when updating name."
-            liftEffect $ onError "Något gick fel."
+            liftEffect $ onError "Namnändringen misslyckades."
             throwError err
           liftEffect $ self.props.onUpdate newUser
         -- TODO: this should also show an error message
