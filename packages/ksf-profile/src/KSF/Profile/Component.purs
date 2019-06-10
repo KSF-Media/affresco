@@ -133,7 +133,8 @@ render self@{ props: { profile: user } } =
         Just { token }, [ streetAddress, zipCode, _city ] -> do
           let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
               -- TODO: There should be a country select list in the UI
-              countryCode = "FI"
+              -- Use country code found in current address until then.
+              countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
           newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
             Console.error "Unexpected error when updating address."
             liftEffect $ onError "Adressändringen misslyckades."
