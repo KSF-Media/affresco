@@ -3,7 +3,7 @@ import Lightbox from 'react-image-lightbox';
 import {jsComponent as Login, jsLogout as LogOut} from '@affresco/ksf-login';
 import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
-import './assets/css/bootstrap.min.css';
+import 'bootstrap-css-only/css/bootstrap.min.css';
 import {isUserLoggedIn} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
