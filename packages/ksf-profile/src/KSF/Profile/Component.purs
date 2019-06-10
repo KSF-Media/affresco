@@ -146,6 +146,8 @@ render self@{ props: { profile: user } } =
     showPendingAddressChanges =
       case toMaybe user.pendingAddressChanges of
         Just pendingChanges
+          -- In the pendingChanges array, we might have changes that have already happened.
+          -- These should not be shown to the user.
           | upcomingChanges <- filter (isUpcomingPendingChange self.state.now) pendingChanges
           , not $ null upcomingChanges -> Array.singleton
             { term: "Addressändrig:"
