@@ -135,7 +135,7 @@ render self@{ props: props@{ subscription: { package } } } =
 
     pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
-      { term: "Tillfällig  adressändring:"
+      { term: "Tillfällig adressändring:"
       , description: Static $ map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
       }
 
