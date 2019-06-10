@@ -3,7 +3,7 @@ module KSF.Profile.Component where
 import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (catMaybes, filter, intercalate, (:))
+import Data.Array (catMaybes, filter, intercalate, null, (:))
 import Data.Array as Array
 import Data.DateTime (DateTime)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
@@ -19,7 +19,7 @@ import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
-import KSF.Editable.Component (editable)
+import KSF.Editable.Component (editable, ChangeType(..))
 import KSF.Login.Component as Login
 import Persona as Persona
 import React.Basic (make)
@@ -90,23 +90,21 @@ render self@{ props: { profile: user } } =
               , description: Editable $ editable
                 { values: [ fixNullable user.firstName, fixNullable user.lastName ]
                 , onSave: saveName
+                , changeType: ImmediateChange
                 }
               }
             , { term: "Adress:"
               , description: Editable $ editable
                 { values: address
                 , onSave: saveAddress
+                , changeType: PendingChange
                 }
               }
-            , { term: "E-postadress:", description: Static [ user.email ] }
+            ]
+            <> showPendingAddressChanges <>
+            [ { term: "E-postadress:", description: Static [ user.email ] }
             , { term: "Kundnummer:", description: Static [ user.cusno ] }
             ]
-            <> case toMaybe user.pendingAddressChanges of
-              Just pendingChanges -> Array.singleton $
-                { term: "Addressändrig:"
-                , description: Static $ map showPendingAddressChange $ filter (isUpcomingPendingChange self.state.now) pendingChanges
-                }
-              _ -> mempty
           }
   where
     -- | I'm sorry
@@ -138,19 +136,29 @@ render self@{ props: { profile: user } } =
               countryCode = "FI"
           newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
             Console.error "Unexpected error when updating address."
-            liftEffect $ onError "Något gick fel."
+            liftEffect $ onError "Adressändringen misslyckades."
             throwError err
           liftEffect $ self.props.onUpdate newUser
         -- TODO: this should also show an error message
         _, _ -> Console.error "Did not find token in local storage."
+
+    showPendingAddressChanges =
+      case toMaybe user.pendingAddressChanges of
+        Just pendingChanges
+          | upcomingChanges <- filter (isUpcomingPendingChange self.state.now) pendingChanges
+          , not $ null upcomingChanges -> Array.singleton
+            { term: "Addressändrig:"
+            , description: Static $ map pendingAddressChangeText upcomingChanges
+            }
+        _ -> mempty
 
 isUpcomingPendingChange :: Maybe DateTime -> Persona.PendingAddressChange -> Boolean
 isUpcomingPendingChange Nothing _ = true
 isUpcomingPendingChange (Just now) { startDate } =
   maybe true (_ > now) $ toDateTime startDate
 
-showPendingAddressChange :: Persona.PendingAddressChange -> String
-showPendingAddressChange { address, startDate, endDate } =
+pendingAddressChangeText :: Persona.PendingAddressChange -> String
+pendingAddressChangeText { address, startDate, endDate } =
   let addressString = formatAddress address
       pendingPeriod = formatDateString startDate
   in addressString <> " (fr.o.m. " <> pendingPeriod <> ")"

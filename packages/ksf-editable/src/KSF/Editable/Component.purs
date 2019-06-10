@@ -25,7 +25,12 @@ foreign import editableStyles :: Style
 type Props =
   { values :: Array String
   , onSave :: (String -> Effect Unit) -> Array String -> Aff Unit
+  , changeType :: ChangeType
   }
+
+data ChangeType
+  = ImmediateChange
+  | PendingChange
 
 type State =
   { content :: Progress (Array String) }
@@ -48,7 +53,6 @@ editable = React.make component { render, initialState }
 component :: React.Component Props
 component = React.createComponent "EditableField"
 
-
 send :: Self -> Action -> Effect Unit
 send = runUpdate update
   where
@@ -67,7 +71,11 @@ send = runUpdate update
       Save -> case self.state.content of
         Editing values ->
           let
-            state' = self.state { content = Loading values }
+            -- If the changeType is Immediate, show new values for the user before
+            -- the response from the server.
+            state' = case self.props.changeType of
+              ImmediateChange -> self.state { content = Loading values }
+              PendingChange   -> self.state { content = Loading self.props.values }
             onError = send self <<< Undo <<< Just
             sideEffect _ = Aff.launchAff_ do
               self.props.onSave onError values
