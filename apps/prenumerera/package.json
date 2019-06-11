@@ -13,6 +13,7 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "parcel build index.html --no-cache && cp xd_receiver.html ./dist"
+    "build-purs": "cd ../.. && spago bundle-module -m Prenumerera.Main -t apps/prenumerera/index.js --path \"packages/*/src/**/*.purs\" --path \"apps/*/src/**/*.purs\" ",
+    "build": "yarn build-purs && parcel build index.html --no-cache && cp xd_receiver.html ./dist"
   }
 }
