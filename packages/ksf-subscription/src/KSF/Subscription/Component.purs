@@ -2,8 +2,8 @@ module KSF.Subscription.Component where
 
 import Prelude
 
-import AsyncWrapper as AsyncWrapper
-import Data.Array (filter)
+import KSF.AsyncWrapper as AsyncWrapper
+import Data.Array (filter, mapMaybe)
 import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
@@ -18,6 +18,8 @@ import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
 import Effect.Now as Now
+import KSF.AsyncWrapper as AsyncWrapper
+import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
@@ -106,10 +108,10 @@ render self@{ props: props@{ subscription: { package } } } =
          DescriptionList.component
            { definitions:
                [ { term: "Produkt:"
-                 , descriptions: [ package.name ]
+                 , description: Static [ package.name ]
                  }
                , { term: "Status:"
-                 , descriptions:
+                 , description: Static $
                      [ translateStatus props.subscription.state ]
                      <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                  }
@@ -128,19 +130,19 @@ render self@{ props: props@{ subscription: { package } } } =
        then mempty
        else Array.singleton
               { term: "Leveransadress:"
-              , descriptions: [ currentDeliveryAddress ]
+              , description: Static $ [ currentDeliveryAddress ]
               }
 
     pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
       { term: "Tillfällig adressändring:"
-      , descriptions: map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
+      , description: Static $ map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
       }
 
     billingDateTerm :: String -> Array DescriptionList.Definition
     billingDateTerm date = Array.singleton $
       { term: "Nästa faktureringsdatum:"
-      , descriptions: [ date ]
+      , description: Static $ [ date ]
       }
 
     filterExpiredPausePeriods :: Array Persona.PausedSubscription -> Array Persona.PausedSubscription

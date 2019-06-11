@@ -1,4 +1,6 @@
-module AsyncWrapper where
+module KSF.AsyncWrapper where
+
+import Prelude
 
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -17,6 +19,9 @@ data Progress a
   | Loading a
   | Success
   | Error String
+
+derive instance functorProgress :: Functor Progress
+
 
 asyncWrapper :: forall a. Props a -> JSX
 asyncWrapper props = case props.wrapperState of

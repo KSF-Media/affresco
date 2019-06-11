@@ -4,6 +4,15 @@
 
 Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful apps are contained in this repo.
 
+| App | Deploy status |
+| --- | --- |
+| Mitt Konto | [![Netlify Status](https://api.netlify.com/api/v1/badges/078bfa8b-14c4-45f2-8866-5176e7e25d08/deploy-status)](https://app.netlify.com/sites/mitt-konto/deploys) |
+| Prenumerera | [![Netlify Status](https://api.netlify.com/api/v1/badges/4b9be1bf-389a-457f-8cbf-a39662efca3f/deploy-status)](https://app.netlify.com/sites/prenumerera/deploys) |
+| KSF National Elections | [![Netlify Status](https://api.netlify.com/api/v1/badges/5e80eb03-8a93-4e4e-94f4-966b63e761e5/deploy-status)](https://app.netlify.com/sites/ksf-elections/deploys) |
+| KSF EU Elections | [![Netlify Status](https://api.netlify.com/api/v1/badges/4c33a8b4-0409-44b0-91e5-7d20c36a3095/deploy-status)](https://app.netlify.com/sites/ksf-elections-eu/deploys) |
+| Duellen | [![Netlify Status](https://api.netlify.com/api/v1/badges/7984db0a-22d1-49f1-badf-660d9ac3ad3b/deploy-status)](https://app.netlify.com/sites/duellen/deploys) |
+| App Article View | [![Netlify Status](https://api.netlify.com/api/v1/badges/1754f1af-5065-4ebb-b498-97ace58a8817/deploy-status)](https://app.netlify.com/sites/app-article/deploys) |
+
 ## Initializing
 
 For initializing the repo, run:
