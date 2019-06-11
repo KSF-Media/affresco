@@ -14,13 +14,11 @@ import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import Persona as Persona
 import React.Basic (JSX)
-import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import React.Basic.Extended (Style)
-import React.Basic.Extended as React.Extended
+import React.Basic.Extended (requireStyle, Style)
 import Web.DOM.Node as Web.DOM
 
 foreign import loginStyles :: Style
@@ -66,7 +64,7 @@ data LoginViewStep = Login | Registration
 
 login :: LoginAttributes -> JSX
 login attrs =
-    React.Extended.requireStyle
+    requireStyle
       loginStyles
       $ case attrs.loginViewStep of
           Login -> renderLogin attrs
@@ -259,16 +257,15 @@ createInputField { inputAttributes, className, children, onChange } =
   DOM.div
     { className
     , children:
-        [ React.element
-            InputField.component
-              { type_: inputAttributes.type_
-              , placeholder: inputAttributes.placeholder
-              , name: inputAttributes.name
-              , required: inputAttributes.required
-              , children
-              , onChange
-              , defaultValue: Nothing
-              }
+        [ InputField.inputField
+            { type_: inputAttributes.type_
+            , placeholder: inputAttributes.placeholder
+            , name: inputAttributes.name
+            , required: inputAttributes.required
+            , children
+            , onChange
+            , defaultValue: Nothing
+            }
         ]
     }
 

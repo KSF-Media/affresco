@@ -4,9 +4,9 @@ import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.DateTime (DateTime, adjust)
-import Data.JSDate (fromDateTime, toDateTime)
+import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (toMaybe, toNullable)
+import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -14,7 +14,6 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
-import Effect.Uncurried (mkEffectFn1)
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.Login.Component as Login
@@ -148,8 +147,7 @@ render self = withStyles $
       Grid.row
         [ Grid.row_ [ DOM.label_ [ DOM.text "Adress*" ] ]
         , Grid.row_
-            [ React.element
-              InputField.component
+            [ InputField.inputField
               { type_: "text"
               , placeholder: "Adress"
               , name: "address"
@@ -166,8 +164,7 @@ render self = withStyles $
       Grid.row
         [ Grid.row_ [ DOM.label_ [ DOM.text "Postnummer*" ] ]
         , Grid.row_
-            [ React.element
-              InputField.component
+            [ InputField.inputField
               { type_: "text"
               , placeholder: "Postnummer"
               , name: "zipCode"
