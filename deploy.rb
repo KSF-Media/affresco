@@ -66,8 +66,6 @@ def run_command(command)
   system(command) or abort("'#{command}' failed.")
 end
 
-modules_to_build = apps[app_name]["packages"].map {|x| "'" + x + "'"}
-
 build_commands = [
   "yarn run clean",
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
