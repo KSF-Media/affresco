@@ -158,7 +158,7 @@ render self@{ state, props } =
       , children:
           [ DOM.button
               { type: "submit"
-              , children: [ DOM.text "Skicka" ]
+              , children: [ DOM.text "Spara" ]
               , className: "button-green"
               }
           ]
