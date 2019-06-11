@@ -1,13 +1,15 @@
 @import (reference) 'ksf-colors';
 
-.close-icon {
+.make-icon(@icon-name) {
     display: block;
-    width: 14px;
-    height: 14px;
+    width: 30px;
+    min-width: 20px;
+    height: 30px;
     background-position: center;
     background-repeat: no-repeat, repeat;
-    background-image: url('../images/icon-close-lg.svg');
-    background-size: 30px;
+    background-image: url('../images/@{icon-name}.svg');
+    background-size: 20px;
+    cursor: pointer;
 }
 
 .check-icon {
@@ -33,6 +35,14 @@
     padding: 10px;
     font-weight: 500;
     cursor: pointer;
+}
+
+.close-icon {
+    .make-icon('icon-close-lg');
+}
+
+.edit-icon {
+    .make-icon('edit');
 }
 
 .tiny-spinner {

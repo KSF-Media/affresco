@@ -1,0 +1,70 @@
+@import 'ksf-utils';
+@import (reference) 'ksf-variables';
+
+.editable {
+    input {
+        margin-bottom: .5em;
+    }
+    margin-top: 0;
+    > .grid--column-half {
+        @media @to-xlarge {
+            width: 100%;
+        }
+        @media @to-medium {
+            width: calc(6/12 * 100%);
+        }
+        @media @to-xsmall {
+            width: 100%;
+        }
+    }
+    .pause-subscription--container {
+        margin-top: 0;
+        @media @to-xlarge {
+            margin-top: 1.5em;
+        }
+        @media @to-medium {
+            margin-top: 0;
+        }
+        @media @to-xsmall {
+            margin-top: 1.5em;
+        }
+    }
+}
+
+.editable--edit-container {
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 0;
+}
+
+.editable--edit-text {
+    cursor: pointer;
+}
+
+.editable--submit {
+    // Override default button styles
+    border: 0;
+    padding: 0;
+    background: none;
+
+    width: 80px;
+    min-width: 60px;
+    margin-right: .5em;
+    @media @to-xlarge {
+        margin-left: .3em;
+    }
+}
+
+.editable--try-again {
+    color: red;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.editable--error-text {
+    color: red;
+}
+
+.editable--error-container {
+    flex-direction: column;
+}

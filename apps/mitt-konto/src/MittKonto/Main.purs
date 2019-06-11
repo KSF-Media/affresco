@@ -88,7 +88,7 @@ app = React.component
          classy DOM.div "mitt-konto--container clearfix"
            [ foldMap loadingIndicator state.loading
            , case state.loggedInUser of
-               Just user -> userView { user }
+               Just user -> userView { user, setState }
                Nothing   -> loginView { state, setState }
            ]
 
@@ -157,8 +157,8 @@ footerView :: React.JSX
 footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: { user :: Persona.User } -> JSX
-userView { user } = React.fragment
+userView :: forall r. { user :: Persona.User, setState :: SetState | r } -> JSX
+userView { user, setState } = React.fragment
   [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -176,7 +176,10 @@ userView { user } = React.fragment
         , disappearingBreak
         ]
       where
-        profileComponentBlock = componentBlockContent $ Profile.profile { profile: user }
+        profileComponentBlock = componentBlockContent $ Profile.profile
+          { profile: user
+          , onUpdate: setState <<< setLoggedInUser <<< Just
+          }
 
     subscriptionsView =
       componentBlock "Mina prenumerationer:" $ subscriptions <> [ break, subscribeImage ]
@@ -286,15 +289,9 @@ userView { user } = React.fragment
           , description: "Byt lösenord"
           , className: passwordChangeClass
           }
-      , formatIconLink
-          { href: "https://www.hbl.fi/permanent-adressandring/"
-          , description: "Gör permanent adressändring"
-          , className: permanentAddressChangeClass
-          }
       ]
       where
-        passwordChangeClass         = "mitt-konto--password-change"
-        permanentAddressChangeClass = "mitt-konto--permanent-address-change"
+        passwordChangeClass = "mitt-konto--password-change"
 
     formatIconLink :: { href :: String, description :: String, className :: String } -> JSX
     formatIconLink { href, description, className } =
