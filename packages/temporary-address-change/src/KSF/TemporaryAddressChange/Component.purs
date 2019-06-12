@@ -140,7 +140,7 @@ render self = withStyles $
         , minDate: self.state.minEndDate
         , maxDate: Nothing
         , disabled: isNothing self.state.startDate
-        , label: "Skall starta igen"
+        , label: "Avslutas"
         }
 
     addressInput =

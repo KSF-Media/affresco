@@ -136,7 +136,7 @@ render self =
         , minDate: self.state.minEndDate
         , maxDate: self.state.maxEndDate
         , disabled: isNothing self.state.startDate
-        , label: "Skall starta igen"
+        , label: "Avslutas"
         }
 
     submitFormButton =
