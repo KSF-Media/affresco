@@ -1,9 +1,10 @@
 import React, {Component} from 'react';
 import Lightbox from 'react-image-lightbox';
-import {jsComponent as Login, jsLogout as LogOut} from '@affresco/ksf-login';
+import {jsComponent as Login, jsLogout as LogOut} from './affresco-master/packages/ksf-login';
 import articleApi from './article-service';
+import '../node_modules/basscss/css/basscss-cp.min.css';
 import 'react-image-lightbox/style.css';
-import 'bootstrap-css-only/css/bootstrap.min.css';
+import './assets/css/bootstrap.min.css';
 import {isUserLoggedIn} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
@@ -15,6 +16,10 @@ import Content from "./components/article-content";
 import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
+
+
+let HtmlToReactParser = require('html-to-react').Parser;
+let htmlToReactParser = new HtmlToReactParser();
 
 class App extends Component {
     constructor(props) {
@@ -169,6 +174,7 @@ class App extends Component {
                     this.setState({
                         isLoading: false,
                         showBuyOption: true,
+                        appearLogin: false,
                         mainImage: data.not_entitled.articlePreview.mainImage,
                         uuid: data.not_entitled.articlePreview.uuid,
                         title: data.not_entitled.articlePreview.title,
@@ -354,19 +360,10 @@ class App extends Component {
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
         let urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('uuid')) {
-            if (this.checkCache(urlParams.get('uuid'))) {
-                this.fetchArticleFromCache(urlParams.get('uuid'));
-            } else {
-                this.fetchArticleFromApi(urlParams.get('uuid'));
-            }
-        } else {
-            console.log("no uuid found!")
-            // TODO:: handle this part
-        }
+        this.fetchArticleFromApi(urlParams.get('uuid'));
     }
 
-    showLogin = (e) =>  {
+    showLogin = (e) => {
         e.preventDefault();
         this.setState({appearLogin: true, showBuyOption: false});
     };
@@ -473,7 +470,12 @@ class App extends Component {
                             </div>
                         </div>
                         <div id="MOBNER"></div>
-                        <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
+                        {
+                            this.state.relatedArticles.length > 0 ?
+                                <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
+                                :
+                                ''
+                        }
                         <RelatedArticles latestArticles={this.state.latestArticles}/>
                     </React.Fragment>
                 </div>

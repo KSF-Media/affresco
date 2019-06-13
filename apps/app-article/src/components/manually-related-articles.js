@@ -80,7 +80,7 @@ class ManuallyRelatedArticles extends Component {
             <div className={"relatedArticles"}>
                 <div className={"row"}>
                     <div className={"col-12"}>
-                        <h3 className={"latest"}>Läs ocksa:</h3>
+                        <h3 className={"latest"}>Läs ocksa</h3>
                     </div>
                 </div>
                 {latestArticles}

@@ -439,7 +439,7 @@ body {
 }
 
 .relatedArticles .latest {
-    font-family: "Duplex-Serif-Web-Bold", sans-serif;
+    font-family: "Duplex Sans Bold", sans-serif;
 }
 
 .relatedArticlesItem, .relatedArticlesItem:hover, .relatedArticlesItem:active, .relatedArticlesItem:visited, .relatedArticlesItem:focus {

@@ -22,6 +22,14 @@ class RelatedArticles extends Component {
         return newPublishingDate;
     }
 
+    getTag(tags){
+        let tag = '';
+        if (tags.length > 0) {
+            tag = tags[0];
+        }
+        return tag;
+    }
+
 
 
     render() {
@@ -46,7 +54,7 @@ class RelatedArticles extends Component {
                                     </a>
                                 </div>
                                 <div className={"articleItemDetails"}>
-                                    <div className={"category"}>{item.articleType}</div>
+                                    <div className={"category"}>{this.getTag(item.tags)}</div>
                                     <div className={"date"}>{this.formatTime(item.publishingTime)}</div>
                                 </div>
                             </div>
@@ -73,7 +81,7 @@ class RelatedArticles extends Component {
             <div className={"relatedArticles"}>
                 <div className={"row"}>
                     <div className={"col-12"}>
-                        <h3 className={"latest"}>Mest lästa:</h3>
+                        <h3 className={"latest"}>Mest lästa</h3>
                     </div>
                 </div>
                 {latestArticles}
