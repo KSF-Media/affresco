@@ -169,6 +169,7 @@ class App extends Component {
                     this.setState({
                         isLoading: false,
                         showBuyOption: true,
+                        appearLogin: false,
                         mainImage: data.not_entitled.articlePreview.mainImage,
                         uuid: data.not_entitled.articlePreview.uuid,
                         title: data.not_entitled.articlePreview.title,
@@ -354,19 +355,10 @@ class App extends Component {
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
         let urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('uuid')) {
-            if (this.checkCache(urlParams.get('uuid'))) {
-                this.fetchArticleFromCache(urlParams.get('uuid'));
-            } else {
-                this.fetchArticleFromApi(urlParams.get('uuid'));
-            }
-        } else {
-            console.log("no uuid found!")
-            // TODO:: handle this part
-        }
+        this.fetchArticleFromApi(urlParams.get('uuid'));
     }
 
-    showLogin = (e) =>  {
+    showLogin = (e) => {
         e.preventDefault();
         this.setState({appearLogin: true, showBuyOption: false});
     };
@@ -473,7 +465,12 @@ class App extends Component {
                             </div>
                         </div>
                         <div id="MOBNER"></div>
-                        <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
+                        {
+                            this.state.relatedArticles.length > 0 ?
+                                <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
+                                :
+                                ''
+                        }
                         <RelatedArticles latestArticles={this.state.latestArticles}/>
                     </React.Fragment>
                 </div>
