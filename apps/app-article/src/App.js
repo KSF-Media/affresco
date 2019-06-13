@@ -16,10 +16,6 @@ import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
 
-
-let HtmlToReactParser = require('html-to-react').Parser;
-let htmlToReactParser = new HtmlToReactParser();
-
 class App extends Component {
     constructor(props) {
         super(props);
