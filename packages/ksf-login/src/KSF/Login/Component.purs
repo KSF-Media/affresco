@@ -17,7 +17,7 @@ import Effect.Aff as Aff
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
 import Effect.Class.Console as Log
-import Effect.Exception (Error)
+import Effect.Exception (Error, throw)
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import JanrainSSO as JanrainSSO
@@ -507,11 +507,17 @@ saveToken { token, ssoCode, uuid } = liftEffect do
   LocalStorage.setItem "token" case token of Persona.Token a -> a
   LocalStorage.setItem "uuid" case uuid of Persona.UUID a -> a
 
-loadToken :: Effect (Maybe Persona.LoginResponse)
-loadToken = runMaybeT do
+loadToken :: forall m. MonadEffect m => m (Maybe Persona.LoginResponse)
+loadToken = liftEffect $ runMaybeT do
   token <- map Persona.Token $ MaybeT $ LocalStorage.getItem "token"
   uuid <- map Persona.UUID $ MaybeT $ LocalStorage.getItem "uuid"
   pure { token, ssoCode: Nullable.toNullable Nothing, uuid }
+
+requireToken :: forall m. MonadEffect m => m Persona.LoginResponse
+requireToken =
+  loadToken >>= case _ of
+    Nothing -> liftEffect $ throw "Did not find uuid/token in local storage."
+    Just loginResponse -> pure loginResponse
 
 deleteToken :: Effect Unit
 deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid" ]
