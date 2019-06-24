@@ -177,7 +177,7 @@ render self = withStyles $
                     (preventDefault >>> Events.merge { targetValue })
                     \{ targetValue: newZip } -> self.setState _ { zipCode = fromMaybe "" newZip }
               , pattern: "\\d+"
-              , title: "Postnummer kan bara bestå av siffror"
+              , title: "Endast siffror"
               }
             ]
         ]
