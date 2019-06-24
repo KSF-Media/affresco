@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.DateTime (DateTime, adjust)
 import Data.JSDate (fromDateTime)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import DatePicker.Component as DatePicker
@@ -21,8 +21,9 @@ import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler, handler_)
+import React.Basic.Events as Events
 import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
 
@@ -110,6 +111,7 @@ render self = withStyles $
               , endDayInput
               , addressInput
               , zipInput
+              , cityInput
               , DOM.div
                   { children: [ submitFormButton ]
                   , className: "mt2 clearfix"
@@ -145,11 +147,11 @@ render self = withStyles $
 
     addressInput =
       Grid.row
-        [ Grid.row_ [ DOM.label_ [ DOM.text "Adress*" ] ]
+        [ Grid.row_ [ DOM.label_ [ DOM.text "Gatuadress*" ] ]
         , Grid.row_
             [ InputField.inputField
               { type_: "text"
-              , placeholder: "Adress"
+              , placeholder: "Gatuadress"
               , name: "address"
               , required: true
               , children: []
@@ -164,13 +166,36 @@ render self = withStyles $
       Grid.row
         [ Grid.row_ [ DOM.label_ [ DOM.text "Postnummer*" ] ]
         , Grid.row_
-            [ InputField.inputField
-              { type_: "text"
+            [ DOM.input
+              { type: "text"
               , placeholder: "Postnummer"
               , name: "zipCode"
               , required: true
+              , value: self.state.zipCode
+              , onChange:
+                  Events.handler
+                    (preventDefault >>> Events.merge { targetValue })
+                    \{ targetValue: newZip } -> self.setState _ { zipCode = fromMaybe "" newZip }
+              , pattern: "\\d+"
+              , title: "Endast siffror"
+              }
+            ]
+        ]
+        $ Just { extraClasses: [ "mt2" ] }
+
+    -- A dummy input field for UX pleasure
+    -- NOTE: The correct city will be eventually inferred by the zip code
+    cityInput =
+      Grid.row
+        [ Grid.row_ [ DOM.label_ [ DOM.text "Stad" ] ]
+        , Grid.row_
+            [ InputField.inputField
+              { type_: "text"
+              , placeholder: "Stad"
+              , name: "city"
+              , required: false
               , children: []
-              , onChange: \newZip -> self.setState _ { zipCode = newZip }
+              , onChange: \_ -> pure unit
               , defaultValue: Nothing
               }
             ]
@@ -208,7 +233,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             , minDate: toNullable $ fromDateTime <$> minDate
             , maxDate: toNullable $ fromDateTime <$> maxDate
             , disabled
-            , locale: "sv-SV"
+            , locale: "sv-FI"
             }
         ]
     ]

@@ -3,7 +3,7 @@ module KSF.Subscription.Component where
 import Prelude
 
 import KSF.AsyncWrapper as AsyncWrapper
-import Data.Array (filter, mapMaybe)
+import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime, adjust)
 import Data.Foldable (foldMap)
@@ -18,7 +18,6 @@ import Data.Time.Duration (Days)
 import Data.Time.Duration as Time.Duration
 import Effect (Effect)
 import Effect.Now as Now
-import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
