@@ -62,13 +62,13 @@ class RelatedArticles extends Component {
                                 window.location.href = "?uuid=" + item.uuid;
                             }} style={{padding: '0px'}}>
                                 {
-                                    item.mainImage === null ?
+                                    item.listImage === null ?
                                         <img className="card-img-top"
                                              src={hblDefaultImage}
                                               alt=""/>
                                         :
                                         <img className="card-img-top"
-                                             src={item.mainImage.url + "&width=120&height=100&function=hardcrop"}
+                                             src={item.listImage.url + "&width=120&height=100&function=hardcrop"}
                                               alt=""/>
                                 }
                             </div>
