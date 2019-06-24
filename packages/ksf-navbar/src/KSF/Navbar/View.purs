@@ -80,24 +80,15 @@ navbar { onLogout, toggleCollapsedNav, paperInfo, collapsedNav } =
     customerService :: JSX
     customerService =
       DOM.div
-        { className: "nav--customer-service-container flex items-center"
+        { className: "nav--customer-service-container flex items-center mr3"
         , children:
-            [ DOM.img
-                { className: "nav--phone-symbol"
-                , src: icons.phone
-                }
-            , DOM.div
-                { className: "nav--contact-info col-4 ml1"
+            [ DOM.div
+                { className: "nav--contact-info ml1"
                 , children:
                     [ DOM.div
                         { className: "nav--need-help"
                         , children: [ DOM.strong_ [ DOM.text "Behöver du hjälp?" ] ]
                         }
-                    , DOM.div_
-                        [ DOM.text "Ring vår kundservice, "
-                        , formatTelAnchorTag paperInfo.phoneNumber
-                        , DOM.text " (vard. kl 8-16.30)"
-                        ]
                     , DOM.div_ [ formatMailtoAnchorTag paperInfo.email ]
                     ]
                 }

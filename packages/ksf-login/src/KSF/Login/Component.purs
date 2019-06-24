@@ -151,7 +151,12 @@ didMount self@{ props, state } = do
         finalizeLogin props token
       Nothing -> liftEffect do
         Console.log "Couldn't load the saved token, giving SSO a try"
-        loginConfig <- JanrainSSO.loadConfig
+        config <- JanrainSSO.loadConfig
+        case Nullable.toMaybe config of
+          Nothing -> Console.log "sso_lite.js script is not loaded, giving up"
+          Just conf -> checkSsoSession conf
+  where
+    checkSsoSession loginConfig = do
         JanrainSSO.checkSession $ Record.merge
              loginConfig
              { callback_failure: mkEffectFn1 \a -> do
@@ -177,6 +182,7 @@ didMount self@{ props, state } = do
                               throwError err
                   finalizeLogin props loginResponse
             }
+
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
@@ -490,9 +496,10 @@ logoutJanrain = do
     -- the JanrainSSO.endSession will hang.
     -- So call JanrainSSO.checkSession first just to be safe.
     config <- liftEffect $ JanrainSSO.loadConfig
-    liftEffect $ JanrainSSO.checkSession config
-    JanrainSSO.endSession
-    Console.log "Ended Janrain session"
+    for_ (Nullable.toMaybe config) \conf -> do
+      liftEffect $ JanrainSSO.checkSession conf
+      JanrainSSO.endSession
+      Console.log "Ended Janrain session"
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
 saveToken { token, ssoCode, uuid } = liftEffect do

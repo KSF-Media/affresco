@@ -22,7 +22,8 @@ export default class App extends React.Component {
       seats: {},
       votesInArea: [],
       selectedAreaId: null,
-      countryResponse: null
+      countryResponse: null,
+      fuse: null
     };
   }
   componentDidMount(){
@@ -30,11 +31,16 @@ export default class App extends React.Component {
     this.getCountryData();
   }
   componentDidUpdate(prevProps) {
+    // console.log("componentDidUpdate");
     if (prevProps.match.params.areaId !== this.props.match.params.areaId){
       this.onAreaSelection(this.props.match.params.areaId);
     }
   }
+  componentWillUnmount() {
+    this.stopFuse();
+  }
   onAreaSelection(areaId) {
+    this.stopFuse();
     if (!areaId) { // if no area was provided (e.g. on start or reset)
       return this.onAreaSelection("MAA")
     }
@@ -43,6 +49,7 @@ export default class App extends React.Component {
         // Get data for selected area
         this.setState({selectedAreaResponse: areaResponse});
         this.setState({votesInArea: areaResponse.nominators});
+        this.startFuse();
       });
   }
   getCountryData() {
@@ -59,6 +66,19 @@ export default class App extends React.Component {
       )};
       this.setState({ seats: Object.assign(...s.seats) });
     })
+  }
+  startFuse() {
+    this.stopFuse();
+    var timeOut = setTimeout(() => {
+      this.onAreaSelection(this.props.match.params.areaId);
+      this.getCountryData();
+    }, 2*60*1000);
+    this.setState({fuse: timeOut});
+    // console.log('Timeout: ' + timeOut + ' is set');
+  }
+  stopFuse() {
+    clearTimeout(this.state.fuse);
+    // console.log('Timeout: ' + this.state.fuse + ' cleared');
   }
   render() {
     switch(this.props.match.path) {
@@ -114,7 +134,7 @@ export default class App extends React.Component {
               />
               </div>
             )
-          case 'EU':  
+          case 'EU':
             return (
               <div className={isMobile ? 'mobile ksf-elections eu' : 'ksf-elections eu'}>
               <div className="status">

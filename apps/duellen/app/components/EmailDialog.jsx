@@ -1,7 +1,6 @@
 import React from 'react';
 import Dialog from 'material-ui/Dialog';
-import FlatButton from 'material-ui/FlatButton';
-import RaisedButton from 'material-ui/RaisedButton';
+import Button from '@material-ui/core/Button';
 import TextField from 'material-ui/TextField';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
@@ -53,24 +52,15 @@ export default class EmailDialog extends React.Component {
 
   render() {
     const actions = [
-      <FlatButton
-        label="Ångra"
-        primary={true}
-        onClick={this.handleClose}
-      />,
-      <FlatButton
-        label="Skicka"
-        primary={true}
-        disabled={this.state.disabled}
-        onClick={this.handleSubmit}
-      />,
+      <Button primary={true} onClick={this.handleClose}>Ångra</Button>,
+      <Button primary={true} disabled={this.state.disabled} onClick={this.handleSubmit}>Skicka</Button>,
     ];
 
     return (
       <div>
         <MuiThemeProvider>
           <div>
-            <RaisedButton fullWidth={true} primary={true} label='Delta i veckans utlottning här!' onClick={this.handleOpen} />
+            <Button variant="contained" fullWidth={true} primary={true} onClick={this.handleOpen}>Delta i veckans utlottning här!</Button>
             <Dialog
               style={{textAlign:'center', margin: 'auto'}}
               actions={actions}

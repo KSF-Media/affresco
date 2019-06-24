@@ -16,6 +16,9 @@ export default class Table extends React.Component {
     return (
       <div>
         <ReactTable
+          showPagination={ true }
+          pageSizeOptions={ [20, 50, 100] }
+          showPageJump={ false }
           loading={ areaResponse === null }
           data={data || []}
           columns={[

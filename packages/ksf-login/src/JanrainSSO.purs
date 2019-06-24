@@ -15,7 +15,7 @@ import Effect.Uncurried (EffectFn1, runEffectFn1)
 import LocalStorage as LocalStorage
 import Unsafe.Coerce (unsafeCoerce)
 
-foreign import loadConfig :: Effect Config
+foreign import loadConfig :: Effect (Nullable Config)
 
 setSsoSuccess :: Effect Unit
 setSsoSuccess = do

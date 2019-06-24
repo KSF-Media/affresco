@@ -1,4 +1,4 @@
-exports.sso = JANRAIN.SSO;
+exports.sso = window.JANRAIN ? window.JANRAIN.SSO : null;
 
 exports.loadConfig = function() {
   var baseUrl = window.location.protocol + "//" + window.location.host;
@@ -12,5 +12,5 @@ exports.loadConfig = function() {
     xd_receiver: baseUrl + process.env.JANRAIN_XD_RECEIVER_PATH
   };
   console.log("SSO config", config);
-  return config;
+  return window.JANRAIN ? config : null;
 }
