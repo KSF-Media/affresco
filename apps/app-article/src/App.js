@@ -36,6 +36,7 @@ class App extends Component {
             updateTime: null,
             category: null,
             relatedArticles: [],
+            shareUrl: null,
             infogram: {
                 html: null
             },
@@ -52,7 +53,7 @@ class App extends Component {
             modalCaption: '',
             latestArticles: [],
             errorFetching: false,
-            errorFetchingLatestArticles: false
+            errorFetchingLatestArticles: false,
         };
     }
 
@@ -142,6 +143,7 @@ class App extends Component {
                         relatedArticles: article.relatedArticles,
                         publishingTime: article.publishingTime,
                         updateTime: article.updateTime,
+                        shareUrl: article.shareUrl,
                     }, () => {
                         if (article.externalScripts != null) {
                             this.appendThirdPartyScript(article.externalScripts);
@@ -182,6 +184,7 @@ class App extends Component {
                         relatedArticles: data.not_entitled.articlePreview.relatedArticles,
                         publishingTime: data.not_entitled.articlePreview.publishingTime,
                         updateTime: data.not_entitled.articlePreview.updateTime,
+                        shareUrl: data.not_entitled.articlePreview.shareUrl,
                     }, () => {
                         this.resizeText(this.state.fontSize);
                         if (data.not_entitled.articlePreview.externalScripts != null) {
@@ -202,6 +205,7 @@ class App extends Component {
                         relatedArticles: data.relatedArticles,
                         publishingTime: data.publishingTime,
                         updateTime: data.updateTime,
+                        shareUrl: data.shareUrl,
                     }, () => {
                         if (data.externalScripts != null) {
                             this.appendThirdPartyScript(data.externalScripts);
@@ -310,7 +314,7 @@ class App extends Component {
             push_data.content_id = article.uuid;
             push_data.is_authenticated = isUserLoggedIn();
             push_data.is_premium = article.premium ? 'PREMIUM' : 'FREE';
-            // push_data.url = "http://www.app.hbl.fi/artikel/" + article.title;
+            push_data.url = article.shareUrl;
         }
 
         window.dataLayer.push(push_data);
