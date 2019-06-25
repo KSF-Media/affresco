@@ -5,17 +5,14 @@ import Prelude
 import KSF.AsyncWrapper as AsyncWrapper
 import Data.Array (filter)
 import Data.Array as Array
-import Data.DateTime (DateTime, adjust)
+import Data.DateTime (DateTime)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, fromDateTime, toDateTime)
+import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Nullable (Nullable, toMaybe)
-import Data.Nullable as Nullable
+import Data.Nullable (toMaybe)
 import Data.String (trim)
-import Data.Time.Duration (Days)
-import Data.Time.Duration as Time.Duration
 import Effect (Effect)
 import Effect.Now as Now
 import KSF.DescriptionList.Component (Description(..))
@@ -117,7 +114,7 @@ render self@{ props: props@{ subscription: { package } } } =
                ]
                <> deliveryAddress
                <> foldMap pendingAddressChanges self.state.pendingAddressChanges
-               <> foldMap billingDateTerm nextBillingDate
+               <> foldMap billingDateTerm billingPeriodEndDate
            })
       (if package.digitalOnly
        then mempty
@@ -140,7 +137,7 @@ render self@{ props: props@{ subscription: { package } } } =
 
     billingDateTerm :: String -> Array DescriptionList.Definition
     billingDateTerm date = Array.singleton $
-      { term: "Nästa faktureringsdatum:"
+      { term: "Faktureringsperioden upphör:"
       , description: Static $ [ date ]
       }
 
@@ -290,10 +287,8 @@ render self@{ props: props@{ subscription: { package } } } =
               , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
               }
 
-    nextBillingDate
-      | Persona.isSubscriptionCanceled props.subscription = Nothing
-      | otherwise =
-          map trim $ formatDate =<< addOneDay props.subscription.dates.end
+    billingPeriodEndDate =
+          map trim $ formatDate =<< toMaybe props.subscription.dates.end
 
     currentDeliveryAddress :: String
     currentDeliveryAddress
@@ -309,14 +304,6 @@ render self@{ props: props@{ subscription: { package } } } =
 
 formatAddress :: Persona.DeliveryAddress -> String
 formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
-
-addOneDay :: Nullable JSDate -> Maybe JSDate
-addOneDay date = do
-  oneDayAdded <- adjust oneDay =<< toDateTime =<< Nullable.toMaybe date
-  Just $ fromDateTime oneDayAdded
-  where
-    oneDay :: Days
-    oneDay = Time.Duration.Days 1.0
 
 -- | Translates English status to Swedish.
 -- | Described in https://git.ksfmedia.fi/taco/faro/blob/master/kayak-api-details.md
