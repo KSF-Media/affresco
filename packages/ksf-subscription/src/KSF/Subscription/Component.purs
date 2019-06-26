@@ -303,7 +303,7 @@ render self@{ props: props@{ subscription: { package } } } =
       | otherwise = "-"
 
 formatAddress :: Persona.DeliveryAddress -> String
-formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
+formatAddress { streetAddress, zipcode, city } = intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
 
 -- | Translates English status to Swedish.
 -- | Described in https://git.ksfmedia.fi/taco/faro/blob/master/kayak-api-details.md
