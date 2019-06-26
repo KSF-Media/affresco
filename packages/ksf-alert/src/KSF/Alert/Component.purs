@@ -5,9 +5,6 @@ import Prelude
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as JSX
-import React.Basic.Extended as React.Extended
-
-foreign import alertStyles :: React.Extended.Style
 
 newtype Level = Level String
 
@@ -42,7 +39,7 @@ component = React.createComponent "Alert"
 alert :: Props -> JSX
 alert = make component
   { initialState: {}
-  , render: React.Extended.requireStyle alertStyles <<< render
+  , render
   }
 
 

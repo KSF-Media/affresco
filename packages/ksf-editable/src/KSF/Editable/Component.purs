@@ -18,9 +18,6 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.DOM.Events(capture_) as React.Events
 import React.Basic.Events (handler, handler_) as React.Events
-import React.Basic.Extended (Style, requireStyle)
-
-foreign import editableStyles :: Style
 
 type Props =
   { values :: Array String
@@ -86,17 +83,15 @@ send = runUpdate update
 
 render :: Self -> JSX
 render self@{ state, props } =
-  requireStyle
-    editableStyles
-    $ DOM.div
-      { className: "editable"
-      , children: Array.singleton $ case state.content of
-          Ready          -> renderRow (map mkString props.values)
-          Editing values -> renderRow (Array.mapWithIndex mkInput values)
-          Loading values -> renderRow (map mkString values)
-          Error _err     -> renderRow (map mkString props.values)
-          Success        -> mempty
-      }
+  DOM.div
+    { className: "editable"
+    , children: Array.singleton $ case state.content of
+        Ready          -> renderRow (map mkString props.values)
+        Editing values -> renderRow (Array.mapWithIndex mkInput values)
+        Loading values -> renderRow (map mkString values)
+        Error _err     -> renderRow (map mkString props.values)
+        Success        -> mempty
+    }
   where
     renderRow items = Grid.row_
       [ DOM.form

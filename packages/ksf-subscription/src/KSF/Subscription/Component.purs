@@ -26,10 +26,6 @@ import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
-import React.Basic.Extended (Style)
-import React.Basic.Extended as ReactExt
-
-foreign import subscriptionStyles :: Style
 
 type Self = React.Self Props State
 
@@ -97,25 +93,23 @@ didMount self = do
 
 render :: Self -> JSX
 render self@{ props: props@{ subscription: { package } } } =
-  ReactExt.requireStyle
-    subscriptionStyles
-    $ Grid.row2
-      (React.element
-         DescriptionList.component
-           { definitions:
-               [ { term: "Produkt:"
-                 , description: Static [ package.name ]
-                 }
-               , { term: "Status:"
-                 , description: Static $
-                     [ translateStatus props.subscription.state ]
-                     <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
-                 }
-               ]
-               <> deliveryAddress
-               <> foldMap pendingAddressChanges self.state.pendingAddressChanges
-               <> foldMap billingDateTerm billingPeriodEndDate
-           })
+  Grid.row2
+    (React.element
+       DescriptionList.component
+         { definitions:
+             [ { term: "Produkt:"
+               , description: Static [ package.name ]
+               }
+             , { term: "Status:"
+               , description: Static $
+                   [ translateStatus props.subscription.state ]
+                   <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
+               }
+             ]
+             <> deliveryAddress
+             <> foldMap pendingAddressChanges self.state.pendingAddressChanges
+             <> foldMap billingDateTerm billingPeriodEndDate
+         })
       (if package.digitalOnly
        then mempty
        else subscriptionUpdates)

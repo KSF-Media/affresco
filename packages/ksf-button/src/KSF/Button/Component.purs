@@ -3,14 +3,15 @@ module KSF.Button.Component where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Effect.Exception as Error
-import KSF.Button.View as View
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events as Event
+import Record (merge)
 import Web.DOM as Web.DOM
 
 type Props =
@@ -41,8 +42,13 @@ didMount { instance_, props } = do
 
 render :: React.Self Props {} -> JSX
 render { props } =
-  View.button
-    { description: props.description
-    , destination: props.destination
-    , onClick: props.onClick
-    }
+  case props.destination of
+    Just href -> DOM.a $ merge attrs { href, target: "_blank" }
+    _ -> DOM.a attrs
+  where
+    attrs =
+      { className: "button--blank-button button--noselect"
+      , children:
+          [ DOM.text props.description ]
+      , onClick: Event.handler_ props.onClick
+      }

@@ -23,10 +23,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import React.Basic.Extended (Style)
 import React.Basic.Extended as React.Extended
-
-foreign import pauseSubscriptionStyles :: Style
 
 type Self = React.Self Props State
 
@@ -84,25 +81,23 @@ didMount self = do
 
 render :: Self -> JSX
 render self =
-  React.Extended.requireStyle
-    pauseSubscriptionStyles
-    $ DOM.div
-        { className: "clearfix pause-subscription--container"
-        , children:
-            [ Grid.row_
-                [ DOM.div
-                    { className: "col col-11"
-                    , children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumerationen" ] ]
-                    }
-                , DOM.div
-                    { className: "col-1 flex pause-subscription--close-icon"
-                    , children: [ DOM.div { className: "close-icon" } ]
-                    , onClick: handler_ self.props.onCancel
-                    }
-                ]
-            , pauseForm
+  DOM.div
+    { className: "clearfix pause-subscription--container"
+    , children:
+        [ Grid.row_
+            [ DOM.div
+                { className: "col col-11"
+                , children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumerationen" ] ]
+                }
+            , DOM.div
+                { className: "col-1 flex pause-subscription--close-icon"
+                , children: [ DOM.div { className: "close-icon" } ]
+                , onClick: handler_ self.props.onCancel
+                }
             ]
-        }
+        , pauseForm
+        ]
+    }
   where
     pauseForm =
       DOM.form

@@ -8,10 +8,8 @@ import Data.String as String
 import Effect (Effect)
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
-import React.Basic.Extended (JSX, Style)
-import React.Basic.Extended as React
+import React.Basic.Extended (JSX)
 
-foreign import navbarStyles :: Style
 foreign import icons ::
   { signOut :: String
   , phone :: String
@@ -32,41 +30,39 @@ type Attributes =
 
 navbar :: Attributes -> JSX
 navbar { onLogout, toggleCollapsedNav, paperInfo, collapsedNav } =
-  React.requireStyle
-    navbarStyles
-    $ DOM.div
-        { className: "nav--nav-container"
-        , children:
-            [ DOM.div
-                { className: "nav--navbar clearfix pt2 pb2"
-                , children:
-                    [ DOM.div
-                        { className: "nav--logo-container col col-3 pb2 pt1"
-                        , children:
-                            [ DOM.img
-                                { className: "nav--paper-logo"
-                                , src: paperInfo.logo
-                                }
-                            ]
-                        }
-                    , DOM.div
-                        { className: "nav--right-container col-9 pt1 flex justify-center"
-                        , children:
-                            [ DOM.div
-                                { className: "nav--right-uncollapsed-content flex"
-                                , children:
-                                    [ customerService
-                                    , logoutButton
-                                    ]
-                                }
-                            , DOM.div_ [ hamburgerButton ]
-                            ]
-                        }
-                    ]
-                }
-            , collapsedNav [ logoutButton, customerService ]
-            ]
-        }
+  DOM.div
+    { className: "nav--nav-container"
+    , children:
+        [ DOM.div
+            { className: "nav--navbar clearfix pt2 pb2"
+            , children:
+                [ DOM.div
+                    { className: "nav--logo-container col col-3 pb2 pt1"
+                    , children:
+                        [ DOM.img
+                            { className: "nav--paper-logo"
+                            , src: paperInfo.logo
+                            }
+                        ]
+                    }
+                , DOM.div
+                    { className: "nav--right-container col-9 pt1 flex justify-center"
+                    , children:
+                        [ DOM.div
+                            { className: "nav--right-uncollapsed-content flex"
+                            , children:
+                                [ customerService
+                                , logoutButton
+                                ]
+                            }
+                        , DOM.div_ [ hamburgerButton ]
+                        ]
+                    }
+                ]
+            }
+        , collapsedNav [ logoutButton, customerService ]
+        ]
+    }
   where
     logoutButton = foldMap signOutButton onLogout
 

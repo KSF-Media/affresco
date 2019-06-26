@@ -1,8 +1,10 @@
 module KSF.Navbar.Collapsed.Component where
 
-import KSF.Navbar.Collapsed.View as View
+import Prelude
+
 import React.Basic (JSX, make)
 import React.Basic as React
+import React.Basic.DOM as DOM
 
 data Visibility = Visible | Hidden
 
@@ -24,9 +26,20 @@ collapsed = make component
 
 render :: Self -> JSX
 render { props } =
-  View.collapsed
-    { isHidden: isHidden props.visibility
-    , navItems: props.navItems
+  DOM.div
+    { className: "collapsed-nav--content clearfix"
+    , style: DOM.css
+      if isHidden props.visibility
+      then { "transform": "translateY(0)" }
+      else { "transform": "translateY(100%)" }
+    , children: map collapsedNavRow props.navItems
+    }
+
+collapsedNavRow :: JSX -> JSX
+collapsedNavRow menuItem =
+  DOM.div
+    { className: "collapsed-nav--menu-row flex items-center ml2 pb1"
+    , children: [ menuItem ]
     }
 
 isHidden :: Visibility -> Boolean
