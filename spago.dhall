@@ -6,22 +6,24 @@ You can edit this file as you like.
     "affresco"
 , dependencies =
     [ "effect"
-	, "console"
-	, "aff"
-	, "aff-promise"
-	, "formatters"
-	, "datetime"
-	, "react-basic"
-	, "psci-support"
-	, "prelude"
-	, "js-date"
-	, "foreign-generic"
-	, "generics-rep"
-	, "ordered-collections"
-	, "simple-json"
-	, "facebook"
-	, "now"
-	]
+    , "console"
+    , "aff"
+    , "aff-promise"
+    , "formatters"
+    , "datetime"
+    , "react-basic"
+    , "psci-support"
+    , "prelude"
+    , "js-date"
+    , "foreign-generic"
+    , "generics-rep"
+    , "ordered-collections"
+    , "simple-json"
+    , "facebook"
+    , "now"
+    ]
 , packages =
     ./packages.dhall
+, sources =
+    [ "packages/*/src/**/*.purs", "apps/*/src/**/*.purs" ]
 }
