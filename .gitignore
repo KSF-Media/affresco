@@ -11,6 +11,7 @@ package-lock.json
 packages/*/index.js
 apps/*/index.js
 !apps/elections/index.js
+!apps/mitt-konto/index.js
 .env.production
 yarn-error.log
 .yarn-cache/
