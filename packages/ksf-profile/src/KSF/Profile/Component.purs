@@ -163,7 +163,7 @@ pendingAddressChangeText { address, startDate, endDate } =
   in addressString <> " (fr.o.m. " <> pendingPeriod <> ")"
 
 formatAddress :: Persona.DeliveryAddress -> String
-formatAddress { streetAddress, zipcode, city } = intercalate ", " [ streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
+formatAddress { streetAddress, zipcode, city } = intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
 
 formatDateString :: JSDate -> String
 formatDateString startDate

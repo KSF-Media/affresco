@@ -342,7 +342,7 @@ type Address =
   }
 
 type DeliveryAddress =
-  { streetAddress :: String
+  { streetAddress :: Nullable String
   , zipcode       :: String
   , city          :: Nullable String
   }
