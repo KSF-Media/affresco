@@ -2,6 +2,7 @@
   "name": "@affresco/app-article",
   "version": "0.1.0",
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
     "basscss": "^8.0.4",
     "bootstrap-css-only": "^4.3.1",
     "react": "^16.8.3",
@@ -15,7 +16,6 @@
     "clean": "rm -rf .cache dist node_modules"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.5",
-    "@babel/plugin-proposal-class-properties": "^7.4.4"
+    "@babel/core": "^7.4.5"
   }
 }
