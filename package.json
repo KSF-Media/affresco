@@ -2,7 +2,6 @@
   "private": true,
   "name": "affresco",
   "dependencies": {
-    "lerna": "^3.3.2",
     "parcel-bundler": "^1.10.3",
     "purescript": "^0.12.4",
     "spago": "^0.8.5",
@@ -13,7 +12,7 @@
     "npmClient": "yarn"
   },
   "scripts": {
-    "install-all": "yarn install && spago build && lerna bootstrap",
+    "install-all": "yarn install && spago install",
     "clean": "rm -rf .cache .psci_modules node_modules output dist"
   },
   "workspaces": [

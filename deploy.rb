@@ -69,9 +69,7 @@ end
 build_commands = [
   "yarn run clean",
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "lerna clean --yes",
-  "lerna bootstrap",
-  "lerna run --cache-folder=.yarn-cache --scope='@affresco/#{app_name}' build"
+  "yarn --cwd './apps/#{app_name}/' run build"
 ]
 
 build_commands.each { |c| run_command(c) }
