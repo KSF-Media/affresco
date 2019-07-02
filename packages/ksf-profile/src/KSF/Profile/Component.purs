@@ -114,34 +114,30 @@ render self@{ props: { profile: user } } =
     address = fromMaybe [] $ addressArray <$> Nullable.toMaybe user.address
 
     saveName :: (String -> Effect Unit) -> Array String -> Aff Unit
-    saveName onError arr = do
-      loginResponse <- liftEffect $ Login.loadToken
-      case loginResponse, arr of
-        Just { token }, [firstName, lastName] -> do
-          let body = Persona.UpdateName { firstName, lastName }
-          newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
-            Console.error "Unexpected error when updating name."
-            liftEffect $ onError "Namnändringen misslyckades."
-            throwError err
-          liftEffect $ self.props.onUpdate newUser
-        -- TODO: this should also show an error message
-        _, _ -> Console.error "Did not find token in local storage."
+    saveName onError [firstName, lastName] = do
+      { token } <- Login.requireToken
+      let body = Persona.UpdateName { firstName, lastName }
+      newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
+        Console.error "Unexpected error when updating name."
+        liftEffect $ onError "Namnändringen misslyckades."
+        throwError err
+      liftEffect $ self.props.onUpdate newUser
+    saveName onError args =
+      Console.error $ "saveName: unexpected number of arguments: " <> show args
 
-    saveAddress onError arr = do
-      loginResponse <- liftEffect $ Login.loadToken
-      case loginResponse, arr of
-        Just { token }, [ streetAddress, zipCode, _city ] -> do
-          let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
-              -- TODO: There should be a country select list in the UI
-              -- Use country code found in current address until then.
-              countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
-          newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
-            Console.error "Unexpected error when updating address."
-            liftEffect $ onError "Adressändringen misslyckades."
-            throwError err
-          liftEffect $ self.props.onUpdate newUser
-        -- TODO: this should also show an error message
-        _, _ -> Console.error "Did not find token in local storage."
+    saveAddress onError [ streetAddress, zipCode, _city ] = do
+      { token } <- Login.requireToken
+      let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
+          -- TODO: There should be a country select list in the UI
+          -- Use country code found in current address until then.
+          countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
+      newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
+        Console.error "Unexpected error when updating address."
+        liftEffect $ onError "Adressändringen misslyckades."
+        throwError err
+      liftEffect $ self.props.onUpdate newUser
+    saveAddress onError args =
+      Console.error $ "saveName: Unexpected number of arguments: " <> show args
 
     showPendingAddressChanges =
       case toMaybe user.pendingAddressChanges of
