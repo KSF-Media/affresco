@@ -8,7 +8,7 @@ import Data.String as String
 import Effect (Effect)
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
-import React.Basic.Extended (JSX)
+import React.Basic (JSX)
 
 foreign import icons ::
   { signOut :: String

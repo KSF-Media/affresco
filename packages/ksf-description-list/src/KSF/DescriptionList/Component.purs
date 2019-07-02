@@ -2,8 +2,8 @@ module KSF.DescriptionList.Component where
 
 import Prelude
 
-import React.Basic.Extended (JSX)
-import React.Basic.Extended as React
+import React.Basic (JSX)
+import React.Basic.Compat as React.Compat
 import Data.Array (foldl, (:))
 import Data.Array as Array
 import React.Basic.DOM as DOM
@@ -20,8 +20,8 @@ type Definition =
   , description :: Description
   }
 
-component :: React.Component Props
-component = React.stateless { displayName: "DescriptionList", render }
+component :: React.Compat.Component Props
+component = React.Compat.stateless { displayName: "DescriptionList", render }
 
 render :: Props -> JSX
 render { definitions } =

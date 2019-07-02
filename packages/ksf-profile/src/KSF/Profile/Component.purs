@@ -22,9 +22,8 @@ import KSF.DescriptionList.Component as DescriptionList
 import KSF.Editable.Component (editable, ChangeType(..))
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (make)
+import React.Basic (make, JSX)
 import React.Basic as React
-import React.Basic.Extended (JSX)
 
 type Self = React.Self Props State
 
