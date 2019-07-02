@@ -263,7 +263,7 @@ networkError :: Error -> Maybe { method :: String, url :: String }
 networkError err = do
   method <- errorField "method" err
   url <- errorField "url" err
-  guard $ isNothing $ errorField "status" err :: Maybe Foreign
+  guard $ isNothing (errorField "status" err :: Maybe Foreign)
   pure { method, url }
 
 -- | Check if an error has some field and it's not null or undefined.
