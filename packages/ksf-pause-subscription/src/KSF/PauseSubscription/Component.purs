@@ -14,16 +14,14 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
-import Effect.Uncurried (mkEffectFn1)
 import KSF.Grid as Grid
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import React.Basic.Extended as React.Extended
 
 type Self = React.Self Props State
 

@@ -23,7 +23,6 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (EventHandler, handler, handler_)
-import React.Basic.Extended as React.Extended
 
 type Self = React.Self Props State
 
