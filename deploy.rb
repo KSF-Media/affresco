@@ -69,6 +69,7 @@ end
 build_commands = [
   "yarn run clean",
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
+  "spago build",
   "yarn --cwd './apps/#{app_name}/' run build"
 ]
 
