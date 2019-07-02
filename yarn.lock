@@ -7365,10 +7365,10 @@ source-map@^0.7.2:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
-spago@^0.8.3:
-  version "0.8.3"
-  resolved "https://registry.yarnpkg.com/spago/-/spago-0.8.3.tgz#50af59e1665c8d56b2abf181f46f3097dd8fc3e7"
-  integrity sha512-NF/SfsLo7eozMwbSLVIm0LVGkFt8lSmKHmIFMYIeGYwbnxKhv9mVu6Xy1C+sEsPsc9kgCkB21o+6MCvBJgkyBw==
+spago@^0.8.5:
+  version "0.8.5"
+  resolved "https://registry.yarnpkg.com/spago/-/spago-0.8.5.tgz#57175fb47d9275292159ce0bb288db42a945f7b3"
+  integrity sha512-/pTULM/rYRLeyNotJ7eLfoz0coHGTLv9feWxjDYiSWiJC2+5GzeMVj0UEcZRMij8eX9GNTqotSwfXr/kvYGGhg==
   dependencies:
     follow-redirects "^1.7.0"
     tar "^4.4.8"

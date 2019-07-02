@@ -14,19 +14,14 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
-import Effect.Uncurried (mkEffectFn1)
 import KSF.Grid as Grid
 import KSF.Login.Component as Login
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import React.Basic.Extended (Style)
-import React.Basic.Extended as React.Extended
-
-foreign import pauseSubscriptionStyles :: Style
 
 type Self = React.Self Props State
 
@@ -84,25 +79,23 @@ didMount self = do
 
 render :: Self -> JSX
 render self =
-  React.Extended.requireStyle
-    pauseSubscriptionStyles
-    $ DOM.div
-        { className: "clearfix pause-subscription--container"
-        , children:
-            [ Grid.row_
-                [ DOM.div
-                    { className: "col col-11"
-                    , children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumerationen" ] ]
-                    }
-                , DOM.div
-                    { className: "col-1 flex pause-subscription--close-icon"
-                    , children: [ DOM.div { className: "close-icon" } ]
-                    , onClick: handler_ self.props.onCancel
-                    }
-                ]
-            , pauseForm
+  DOM.div
+    { className: "clearfix pause-subscription--container"
+    , children:
+        [ Grid.row_
+            [ DOM.div
+                { className: "col col-11"
+                , children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumerationen" ] ]
+                }
+            , DOM.div
+                { className: "col-1 flex pause-subscription--close-icon"
+                , children: [ DOM.div { className: "close-icon" } ]
+                , onClick: handler_ self.props.onCancel
+                }
             ]
-        }
+        , pauseForm
+        ]
+    }
   where
     pauseForm =
       DOM.form

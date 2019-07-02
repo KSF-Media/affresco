@@ -1,11 +1,4 @@
 var googleClientId = process.env.GOOGLE_CLIENT_ID;
-exports.load_ = function() {
-  return gapi.auth2.init({
-    client_id: googleClientId + ".apps.googleusercontent.com",
-    cookiepolicy: 'single_host_origin'
-  })
-};
-
 exports.attachClickHandler_ = function(args) {
   gapi.load('auth2', function() {
     var auth2 = gapi.auth2.init({

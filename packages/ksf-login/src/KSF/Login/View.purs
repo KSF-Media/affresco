@@ -18,10 +18,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import React.Basic.Extended (requireStyle, Style)
 import Web.DOM.Node as Web.DOM
-
-foreign import loginStyles :: Style
 
 type LoginCallbacks =
   { onLogin :: Effect Unit
@@ -64,11 +61,9 @@ data LoginViewStep = Login | Registration
 
 login :: LoginAttributes -> JSX
 login attrs =
-    requireStyle
-      loginStyles
-      $ case attrs.loginViewStep of
-          Login -> renderLogin attrs
-          Registration -> attrs.registrationComponent
+  case attrs.loginViewStep of
+    Login -> renderLogin attrs
+    Registration -> attrs.registrationComponent
 
 renderLogin :: LoginAttributes -> JSX
 renderLogin attrs =

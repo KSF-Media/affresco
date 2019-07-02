@@ -17,11 +17,8 @@ import Math (abs)
 import React.Basic (JSX, ReactComponent)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.Extended (Style)
-import React.Basic.Extended as React.Extended
 
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
-foreign import datePickerStyles :: Style
 
 type Props =
   { onChange  :: Effect (Maybe DateTime) -> Effect Unit
@@ -48,7 +45,7 @@ type DatePickerProps =
   }
 
 datePicker :: Props -> JSX
-datePicker props = React.Extended.requireStyle datePickerStyles $
+datePicker props =
   DOM.div
     { className: "date-picker--wrapper"
     , children: [ picker ]

@@ -24,9 +24,7 @@ import KSF.Login.Component as Login
 import Persona as Persona
 import React.Basic (make)
 import React.Basic as React
-import React.Basic.Extended (JSX, Style, requireStyle)
-
-foreign import profileStyles :: Style
+import React.Basic.Extended (JSX)
 
 type Self = React.Self Props State
 
@@ -81,31 +79,29 @@ didMount self = do
 
 render :: Self -> JSX
 render self@{ props: { profile: user } } =
-  requireStyle
-    profileStyles
-    $ React.element
-        DescriptionList.component
-          { definitions:
-            [ { term: "Namn:"
-              , description: Editable $ editable
+  React.element
+    DescriptionList.component
+      { definitions:
+          [ { term: "Namn:"
+            , description: Editable $ editable
                 { values: [ fixNullable user.firstName, fixNullable user.lastName ]
                 , onSave: saveName
                 , changeType: ImmediateChange
                 }
-              }
-            , { term: "Adress:"
-              , description: Editable $ editable
+            }
+          , { term: "Adress:"
+            , description: Editable $ editable
                 { values: address
                 , onSave: saveAddress
                 , changeType: PendingChange
                 }
-              }
-            ]
-            <> showPendingAddressChanges <>
-            [ { term: "E-postadress:", description: Static [ user.email ] }
-            , { term: "Kundnummer:", description: Static [ user.cusno ] }
-            ]
-          }
+            }
+          ]
+          <> showPendingAddressChanges <>
+          [ { term: "E-postadress:", description: Static [ user.email ] }
+          , { term: "Kundnummer:", description: Static [ user.cusno ] }
+          ]
+      }
   where
     -- | I'm sorry
     fixNullable :: Nullable String -> String

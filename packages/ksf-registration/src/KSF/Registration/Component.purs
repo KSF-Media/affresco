@@ -23,10 +23,6 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (EventHandler, handler, handler_)
-import React.Basic.Extended (Style)
-import React.Basic.Extended as React.Extended
-
-foreign import registrationStyles :: Style
 
 type Self = React.Self Props State
 
@@ -228,34 +224,32 @@ send = runUpdate update
 
 render :: Self -> JSX
 render self =
-  React.Extended.requireStyle
-    registrationStyles
-    $ DOM.div
-        { className: "registration--container clearfix"
-        , children:
-            [ form
-                [ registrationTitle
-                , inputRow
-                    (input firstNameInput "Förnamn*")
-                    (input lastNameInput "Efternamn*")
-                , inputRow
-                    (input addressInput "Adress*")
-                    (input cityInput "Stad*")
-                , inputRow
-                    (input zipInput "Postnummer*")
-                    (input countryDropdown "Land*")
-                , inputRow
-                    (input phoneInput "Telefon*")
-                    (input emailInput "E-postadress*")
-                , inputRow
-                    (input passwordInput "Lösenord*")
-                    (input confirmPasswordInput "Bekräfta lösenord*")
-                , inputRow
-                    (halfInputRow [ DOM.text "* = obligatoriskt fält" ])
-                    (halfInputRow confirm)
-                ]
+  DOM.div
+    { className: "registration--container clearfix"
+    , children:
+        [ form
+            [ registrationTitle
+            , inputRow
+                (input firstNameInput "Förnamn*")
+                (input lastNameInput "Efternamn*")
+            , inputRow
+                (input addressInput "Adress*")
+                (input cityInput "Stad*")
+            , inputRow
+                (input zipInput "Postnummer*")
+                (input countryDropdown "Land*")
+            , inputRow
+                (input phoneInput "Telefon*")
+                (input emailInput "E-postadress*")
+            , inputRow
+                (input passwordInput "Lösenord*")
+                (input confirmPasswordInput "Bekräfta lösenord*")
+            , inputRow
+                (halfInputRow [ DOM.text "* = obligatoriskt fält" ])
+                (halfInputRow confirm)
             ]
-        }
+        ]
+    }
   where
     form :: Array JSX -> JSX
     form children =

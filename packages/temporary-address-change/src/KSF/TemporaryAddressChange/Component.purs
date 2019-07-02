@@ -24,10 +24,6 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler, handler_)
 import React.Basic.Events as Events
-import React.Basic.Extended (Style)
-import React.Basic.Extended as React.Extended
-
-foreign import temporaryAddressChangeStyles :: Style
 
 type State =
   { startDate     :: Maybe DateTime
@@ -84,7 +80,7 @@ didMount self = do
   self.setState _ { minStartDate = tomorrow }
 
 render :: Self -> JSX
-render self = withStyles $
+render self =
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
@@ -238,9 +234,6 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
         ]
     ]
     $ Just { extraClasses: [ "mt2" ] }
-
-withStyles :: JSX -> JSX
-withStyles = React.Extended.requireStyle temporaryAddressChangeStyles
 
 submitForm :: State -> Props -> Effect Unit
 submitForm { startDate: Just start, endDate: Just end, streetAddress, zipCode } props@{ userUuid, subsno } = do
