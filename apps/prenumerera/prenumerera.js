@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router } from "react-router-dom";
+import 'basscss/css/basscss-cp.css';
 
 // yup, welcome to react 16
 import createReactClass from 'create-react-class';
