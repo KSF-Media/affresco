@@ -178,19 +178,16 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
 
 submitForm :: State -> Props -> Effect Unit
 submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
-  loginResponse <- Login.loadToken
-  case loginResponse of
-    Just { token } -> do
-      props.onLoading
-      Aff.launchAff_ do
-        pausedSub <- Persona.pauseSubscription userUuid subsno start end token `catchError` case _ of
-          err | Just (errData :: Persona.InvalidPauseDates) <- Persona.errorData err -> do
-                  liftEffect $ props.onError errData.invalid_pause_dates.message
-                  throwError err
-              | otherwise -> do
-                  Console.error "Unexpected error when pausing subscription."
-                  liftEffect $ props.onError Persona.PauseInvalidUnexpected
-                  throwError err
-        liftEffect $ props.onSuccess pausedSub
-    Nothing -> Console.error "Did not find token in local storage."
+  { token } <- Login.requireToken
+  props.onLoading
+  Aff.launchAff_ do
+    pausedSub <- Persona.pauseSubscription userUuid subsno start end token `catchError` case _ of
+      err | Just (errData :: Persona.InvalidPauseDates) <- Persona.errorData err -> do
+              liftEffect $ props.onError errData.invalid_pause_dates.message
+              throwError err
+          | otherwise -> do
+              Console.error "Unexpected error when pausing subscription."
+              liftEffect $ props.onError Persona.PauseInvalidUnexpected
+              throwError err
+    liftEffect $ props.onSuccess pausedSub
 submitForm _ _ = Console.error "Pause subscription dates were not defined."
