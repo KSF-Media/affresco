@@ -3224,7 +3224,7 @@ dotenv@^5.0.0:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-5.0.1.tgz#a5317459bd3d79ab88cff6e44057a6a3fbb1fcef"
   integrity sha512-4As8uPrjfwb7VXC+WnLCbXK7y+Ueb2B3zgNCePYfhxS1PYeaO1YTeplffTEcbfLhvFNGLAz90VvJs9yomG7bow==
 
-download-or-build-purescript@0.3.4, download-or-build-purescript@^0.3.1:
+download-or-build-purescript@^0.3.4:
   version "0.3.4"
   resolved "https://registry.yarnpkg.com/download-or-build-purescript/-/download-or-build-purescript-0.3.4.tgz#0f0f09b0848e16d1649f1d8ee4b2bfd0268a0758"
   integrity sha512-8P4vNgbLTZi07s3uRnUCI+kE7lAERyIexVYwAHsAw7AQhooFnVbypq/yiP1vSZVibQ4Fl74LdOWnJKbqe9Mnow==
@@ -3647,17 +3647,6 @@ feint@^1.0.2:
   integrity sha512-PC77rn63FAMGcmHEkuGh4AdofqI6/c/YGjyvLo60mGLcCOHUUzCnKFzoij062piVgBblkl/KlN1vHGVJsK88cg==
   dependencies:
     append-type "^1.0.1"
-
-file-to-npm-cache@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/file-to-npm-cache/-/file-to-npm-cache-0.1.0.tgz#b290065fee8fb9f4ad8ee2ded8ff1f720556ce69"
-  integrity sha512-2/aq3BD1pkd6b4pafmTaO8EzRCiQKfFmJxg+zKAdDMAcqqJMC0nQYcuCU29say0ZTzXxafKXcJB50N+yb0WIoQ==
-  dependencies:
-    inspect-with-kind "^1.0.5"
-    is-plain-obj "^1.1.0"
-    npcache "^1.0.0"
-    pump "^3.0.0"
-    tar "^4.4.6"
 
 filesize@^3.6.0:
   version "3.6.1"
@@ -4231,16 +4220,16 @@ inspect-with-kind@^1.0.4, inspect-with-kind@^1.0.5:
   dependencies:
     kind-of "^6.0.2"
 
-install-purescript-cli@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/install-purescript-cli/-/install-purescript-cli-0.4.0.tgz#8324dccbb0bb24e393c3f2d9de0da9878d2ed783"
-  integrity sha512-P2DB3MxXSZZCIVXCt+OMIhA4Jvqkwz7zLA4WXzjsRC3Zyjg5vS4Fxk9oKIIDRLOSSr+hS5bKNO8Iw2XheXz9Pw==
+install-purescript-cli@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/install-purescript-cli/-/install-purescript-cli-0.5.0.tgz#89de485ef77b882819b5f05bd800d164b031a22d"
+  integrity sha512-72BkCL3C92R/SBfJ5AFXkqh84unJh4ZBLuS70MmyZY63TSJ5qfZRPrbWgBBOxEarRDrMJtLXGv7patoU2bUMCA==
   dependencies:
     chalk "^2.4.2"
-    download-or-build-purescript "0.3.4"
-    install-purescript "^0.6.1"
-    log-symbols "^2.2.0"
-    log-update "^3.1.0"
+    filesize "^4.1.2"
+    install-purescript "0.8.0-0"
+    log-symbols "^3.0.0"
+    log-update "^3.2.0"
     minimist "^1.2.0"
     ms "^2.1.1"
     neat-stack "^1.0.1"
@@ -4253,21 +4242,20 @@ install-purescript-cli@^0.4.0:
     tty-width-frame "^1.0.2"
     vertical-meter "^1.0.0"
 
-install-purescript@^0.6.1:
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/install-purescript/-/install-purescript-0.6.1.tgz#6c6038db0e15c81f347cafcab64a9b583977ad39"
-  integrity sha512-72y0446jKDZXm7R4/uwTPnxNVvBlqZqXMFfQylWvmqvnw327cEINxAhI21dhJb+04XJcUSZpXf4A03GzSR1Xxw==
+install-purescript@0.8.0-0:
+  version "0.8.0-0"
+  resolved "https://registry.yarnpkg.com/install-purescript/-/install-purescript-0.8.0-0.tgz#f3837d978f232f7373f2b540a0863d76d2e19499"
+  integrity sha512-aWg52jIOPfzH98UYlrPnXdvqc4o4lon10LCVplKss8kvEIKzn6r8HX5qcRNTsmdPUyCTHd1G/Qrin+KwTQLjZQ==
   dependencies:
     arch "^2.1.1"
-    download-or-build-purescript "^0.3.1"
-    file-to-npm-cache "^0.1.0"
+    download-or-build-purescript "^0.3.4"
     inspect-with-kind "^1.0.5"
     is-plain-obj "^1.1.0"
     npcache "^1.0.2"
     pump "^3.0.0"
     run-in-dir "^0.3.0"
     tar "^4.4.8"
-    zen-observable "^0.8.13"
+    zen-observable "^0.8.14"
 
 invariant@^2.2.2, invariant@^2.2.4:
   version "2.2.4"
@@ -4911,7 +4899,14 @@ log-symbols@^2.2.0:
   dependencies:
     chalk "^2.0.1"
 
-log-update@^3.1.0:
+log-symbols@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/log-symbols/-/log-symbols-3.0.0.tgz#f3a08516a5dea893336a7dee14d18a1cfdab77c4"
+  integrity sha512-dSkNGuI7iG3mfvDzUuYZyvk5dD9ocYCYzNU6CYDE6+Xqd+gwme6Z00NS3dUh8mq/73HaEtT7m6W+yUPtU6BZnQ==
+  dependencies:
+    chalk "^2.4.2"
+
+log-update@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/log-update/-/log-update-3.2.0.tgz#719f24293250d65d0165f4e2ec2ed805ff062eec"
   integrity sha512-KJ6zAPIHWo7Xg1jYror6IUDFJBq1bQ4Bi4wAEp2y/0ScjBBVi/g0thr0sUVhuvuXauWzczt7T2QHghPDNnKBuw==
@@ -5326,7 +5321,7 @@ normalize-url@^3.0.0:
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-3.3.0.tgz#b2e1c4dc4f7c6d57743df733a4f5978d18650559"
   integrity sha512-U+JJi7duF1o+u2pynbp2zXDW2/PADgC30f0GsHZtRh+HOcXHnw137TrNlyxxRvWW5fjKd3bcLHPxofWuCjaeZg==
 
-npcache@^1.0.0, npcache@^1.0.2:
+npcache@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/npcache/-/npcache-1.0.2.tgz#2f00c5d7fd0210180ef595bafe4d79f0503012a9"
   integrity sha512-h42LqKZvSbykPoCyAwEKbJAXUpt1SZ7O8GvA0XRqb26VtWQuKLJtp+Rt4jqkq1Y+ZRErINdyeZ3Ijc5lDtqkSg==
@@ -5836,12 +5831,6 @@ performance-now@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
-
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b":
-  version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
-  dependencies:
-    superagent "3.7.0"
 
 physical-cpu-count@^2.0.0:
   version "2.0.0"
@@ -6354,12 +6343,12 @@ punycode@^2.1.0, punycode@^2.1.1:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
-purescript@^0.12.4:
-  version "0.12.4"
-  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.12.4.tgz#885a82f02270cb7ffdd1fda8ddf5e6071c86c6b2"
-  integrity sha512-VwIKmjcVQzk9cHuzu1ESyjKpZr+mRIjEhZbk5q8N7G17Deog/eJ3EZ/7s8Z/x9rmeYQmd2WPgRN0W5MpWPcvug==
+purescript@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.13.0.tgz#188d16f2fbe75f438b054aab8b8a6a995438dead"
+  integrity sha512-KrhVO8sBLWiMlDqmqyXNV3FieL/wO/V7aokpqs81gmuQ4s/avDKNiZO3SXPG8VQ1i/ZbUfp7jatar/T2FLR8Nw==
   dependencies:
-    install-purescript-cli "^0.4.0"
+    install-purescript-cli "^0.5.0"
 
 q@^1.1.2:
   version "1.5.1"
@@ -6485,7 +6474,7 @@ react-device-detect@^1.6.2:
   resolved "https://registry.yarnpkg.com/react-device-detect/-/react-device-detect-1.6.2.tgz#2587e4d1dc15bdfce7a1bf5417624ecd2a2fc31f"
   integrity sha512-XIBgwIfpGAknm7tXe/YNbx4ieIR7IyFI3KNfSQk4UjHVy97UHe/nB7iJj8R/dDsI+I/ZzPR4HJ39Gh5tI4nhxw==
 
-react-dom@>=15.5, "react-dom@^15.0.0 || ^16.0.0", react-dom@^16.3.0, react-dom@^16.4.1, react-dom@^16.5.2, react-dom@^16.8.3:
+react-dom@>=15.5, "react-dom@^15.0.0 || ^16.0.0", react-dom@^16.3.0, react-dom@^16.5.2, react-dom@^16.8.3:
   version "16.8.6"
   resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.8.6.tgz#71d6303f631e8b0097f56165ef608f051ff6e10f"
   integrity sha512-1nL7PIq9LTL3fthPqwkvr2zY7phIPjYrT0jp4HjyEQrEROnw4dG41VVwi/wfoCneoleqrNX7iAD+pXebJZwrwA==
@@ -6746,7 +6735,7 @@ react-transition-group@^2.2.1:
     prop-types "^15.6.2"
     react-lifecycles-compat "^3.0.4"
 
-react@>=15.5, "react@^15.0.0 || ^16.0.0", react@^16.3.0, react@^16.4.1, react@^16.5.2, react@^16.8.3:
+react@>=15.5, "react@^15.0.0 || ^16.0.0", react@^16.3.0, react@^16.5.2, react@^16.8.3:
   version "16.8.6"
   resolved "https://registry.yarnpkg.com/react/-/react-16.8.6.tgz#ad6c3a9614fd3a4e9ef51117f54d888da01f2bbe"
   integrity sha512-pC0uMkhLaHm11ZSJULfOBqV4tIZkx87ZLvbbQYunNixAAvjnC+snJCg0XQXn9VIsttVsbZP/H/ewzgsd5fxKXw==
@@ -8224,3 +8213,8 @@ zen-observable@^0.8.13, zen-observable@^0.8.9:
   version "0.8.13"
   resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.8.13.tgz#a9f1b9dbdfd2d60a08761ceac6a861427d44ae2e"
   integrity sha512-fa+6aDUVvavYsefZw0zaZ/v3ckEtMgCFi30sn91SEZea4y/6jQp05E3omjkX91zV6RVdn15fqnFZ6RKjRGbp2g==
+
+zen-observable@^0.8.14:
+  version "0.8.14"
+  resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.8.14.tgz#d33058359d335bc0db1f0af66158b32872af3bf7"
+  integrity sha512-kQz39uonEjEESwh+qCi83kcC3rZJGh4mrZW7xjkSQYXkq//JZHTtKo+6yuVloTgMtzsIWOJrjIrKvk/dqm0L5g==

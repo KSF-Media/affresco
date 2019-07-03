@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (isJust)
 import Effect (Effect)
-import LocalStorage as LocalStorage
+import KSF.LocalStorage as LocalStorage
 
 successKey :: String
 successKey = "KSF_FACEBOOK_LOGIN_SUCCESS"

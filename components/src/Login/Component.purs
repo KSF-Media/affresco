@@ -20,13 +20,13 @@ import Effect.Class.Console as Log
 import Effect.Exception (Error, throw)
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
-import JanrainSSO as JanrainSSO
+import KSF.JanrainSSO as JanrainSSO
 import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import KSF.Login.View as View
 import KSF.Registration.Component as Registration
-import LocalStorage as LocalStorage
+import KSF.LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)

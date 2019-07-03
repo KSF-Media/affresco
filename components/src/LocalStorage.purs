@@ -1,4 +1,4 @@
-module LocalStorage where
+module KSF.LocalStorage where
 
 import Prelude
 

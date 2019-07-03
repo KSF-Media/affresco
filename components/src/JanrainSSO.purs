@@ -1,4 +1,4 @@
-module JanrainSSO where
+module KSF.JanrainSSO where
 
 import Prelude
 
@@ -12,7 +12,7 @@ import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Effect.Exception as Exception
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import LocalStorage as LocalStorage
+import KSF.LocalStorage as LocalStorage
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import loadConfig :: Effect (Nullable Config)
