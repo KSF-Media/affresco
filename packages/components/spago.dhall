@@ -1,5 +1,5 @@
 { name =
-    "ksf-components"
+    "affresco-components"
 , dependencies =
     [ "effect"
     , "console"
@@ -19,7 +19,7 @@
     , "now"
     ]
 , packages =
-    ../packages.dhall
+    ../../packages.dhall
 , sources =
     [ "src/**/*.purs" ]
 }

@@ -129,6 +129,10 @@ let additions =
           ]
           "https://github.com/KSF-Media/purescript-facebook.git"
           "e765b3fb5585b2d774cc6a12c412891be51ca5ed"
+      , affresco-components =
+          ./packages/components/spago.dhall as Location
+      , affresco-login =
+          ./packages/login/spago.dhall as Location
       }
 
 in  upstream // overrides // additions
