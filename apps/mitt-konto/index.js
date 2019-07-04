@@ -5,7 +5,7 @@ import 'basscss/css/basscss-cp.css';
 // yup, welcome to react 16
 import createReactClass from 'create-react-class';
 React.createClass = createReactClass;
-var Main = require('../../output/MittKonto.Main/index.js');
+var Main = require('./output/MittKonto.Main/index.js');
 
 function main() {
   const myComponent = (
