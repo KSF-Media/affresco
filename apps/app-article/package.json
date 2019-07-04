@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "parcel src/index.html -p 8000",
-    "build-purs": "cd ../../components && spago bundle-module -m KSF.Login.Component -t ../apps/app-article/src/login.js",
+    "build-purs": "cd ../../packages/login && spago bundle-module -m KSF.Login.Component -t index.js",
     "build": "yarn build-purs && parcel build src/index.html --no-cache && cp src/xd_receiver.html ./dist",
     "clean": "rm -rf .cache dist node_modules"
   },
