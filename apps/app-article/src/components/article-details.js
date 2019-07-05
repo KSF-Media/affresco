@@ -40,7 +40,7 @@ const ArticleDetails = (props) => {
                                                 <div className={"mb-1"} key={index}>
                                                     <img  style={{borderRadius: '50%'}} width={"38px"}
                                                          height={"38px"}
-                                                         src={author.authorImage}
+                                                         src={author.image}
                                                          alt=""/>
                                                 </div>
                                             )
@@ -60,7 +60,7 @@ const ArticleDetails = (props) => {
                                         props.authors.map((author, index) => {
                                             return (
                                                 <div className={"mb-2"} key={index}>
-                                                    <div className={"author"}> {author.authorByline} </div>
+                                                    <div className={"author"}> {author.byline} </div>
                                                     <div className={"author-title"} style={{marginTop: "-3px"}}>Reporter</div>
                                                 </div>
                                             )
@@ -84,7 +84,7 @@ const ArticleDetails = (props) => {
                                             props.authors.map((author, index) => {
                                                 return (
                                                     <div key={index}>
-                                                        <div className={"author"}> {author.authorByline} </div>
+                                                        <div className={"author"}> {author.byline} </div>
                                                     </div>
                                                 )
                                             })
