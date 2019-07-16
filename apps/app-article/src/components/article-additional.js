@@ -20,20 +20,13 @@ class Additional extends Component {
         return(
             <div className={"row"}>
                 <div className="col-8">
-                    {/*{*/}
-                    {/*    <a href="javascript:void(0)" onClick={() => {*/}
-                    {/*        this.onShare()*/}
-                    {/*    }} id={"shareLink"}>*/}
-                    {/*        <img style={{marginTop: '4px'}} className={"shareIcon"} src={shareIcon}*/}
-                    {/*             alt="Share"/></a>*/}
-                    {/*}*/}
+
                 </div>
                 <div className="col-2">
-                    {/*<span onClick={() => this.props.increaseFontSize()}> <SvgIcon name="textsize"/> </span>*/}
+
                 </div>
                 <div className="col-2">
                     <span onClick={() => this.props.increaseFontSize()}> <SvgIcon name="textsize"/> </span>
-                    {/*<img src={soundIcon} width={"35px"} alt=""/>*/}
                 </div>
             </div>
         )
