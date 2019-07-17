@@ -61,7 +61,6 @@ const ArticleDetails = (props) => {
                                             return (
                                                 <div className={"mb-2"} key={index}>
                                                     <div className={"author"}> {author.byline} </div>
-                                                    <div className={"author-title"} style={{marginTop: "-3px"}}>Reporter</div>
                                                 </div>
                                             )
                                         })
@@ -105,8 +104,8 @@ const ArticleDetails = (props) => {
 
                 <div className="col-5 pubDate text-right"
                      style={{paddingLeft: "0px", paddingRight: "0px"}}>
-                    <div>Publicerad. {newPublishingDate}</div>
-                    <div style={{marginTop: "-3px"}}>Uppdatera. {newUpdateDate}</div>
+                    <div>Pub. {newPublishingDate}</div>
+                    <div style={{marginTop: "-3px"}}>Uppd. {newUpdateDate}</div>
                 </div>
             </div>
         </div>
