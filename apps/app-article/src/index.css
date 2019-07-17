@@ -93,7 +93,13 @@ body {
 }
 
 .loading {
-    margin: 100px auto;
+    display: block;
+    margin: 150px auto;
+    width: 50%;
+}
+
+.loading img {
+    width: 200px;
 }
 
 /*Ads*/
