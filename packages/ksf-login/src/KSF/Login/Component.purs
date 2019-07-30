@@ -31,8 +31,8 @@ import Persona (Token(..))
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
-import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
+import Record as Record
 
 foreign import facebookAppId :: String
 
@@ -498,12 +498,14 @@ logoutJanrain = do
     config <- liftEffect $ JanrainSSO.loadConfig
     for_ (Nullable.toMaybe config) \conf -> do
       liftEffect $ JanrainSSO.checkSession conf
-      JanrainSSO.endSession
+      JanrainSSO.endSession conf
       Console.log "Ended Janrain session"
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
 saveToken { token, ssoCode, uuid } = liftEffect do
-  for_ (Nullable.toMaybe ssoCode) JanrainSSO.setSession
+  for_ (Nullable.toMaybe ssoCode) $ \code -> do
+    config <- JanrainSSO.loadConfig
+    for_ (Nullable.toMaybe config) \conf -> JanrainSSO.setSession conf code
   LocalStorage.setItem "token" case token of Persona.Token a -> a
   LocalStorage.setItem "uuid" case uuid of Persona.UUID a -> a
 

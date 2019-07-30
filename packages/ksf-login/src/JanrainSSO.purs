@@ -15,7 +15,7 @@ import Effect.Uncurried (EffectFn1, runEffectFn1)
 import LocalStorage as LocalStorage
 import Unsafe.Coerce (unsafeCoerce)
 
-foreign import loadConfig :: Effect (Nullable Config)
+foreign import loadConfig :: Effect (Nullable (Config ()))
 
 setSsoSuccess :: Effect Unit
 setSsoSuccess = do
@@ -43,19 +43,19 @@ foreign import sso ::
   , end_session :: EffectFn1 (Nullable (Effect Unit)) Unit
   }
 
-checkSession :: forall params . { | params } -> Effect Unit
-checkSession params = do
+checkSession :: forall params. Config params -> Effect Unit
+checkSession config = do
   Console.log "Calling SSO.check_session"
-  Console.log $ unsafeCoerce params
-  runEffectFn1 sso.check_session params
+  Console.log $ unsafeCoerce config
+  runEffectFn1 sso.check_session config
 
-setSession :: String -> Effect Unit
-setSession session = do
+setSession :: forall params. Config params -> String -> Effect Unit
+setSession _config session = do
   Console.log $ "Calling SSO.set_session " <> session
   runEffectFn1 sso.set_session session
 
-endSession :: Aff Unit
-endSession = Aff.makeAff \callback -> do
+endSession :: forall params. Config params -> Aff Unit
+endSession _config = Aff.makeAff \callback -> do
   Exception.catchException
     (\err -> do
       Console.error $ "JanrainSSO.end_session failed: " <> Exception.message err
@@ -66,7 +66,7 @@ endSession = Aff.makeAff \callback -> do
           callback $ Right unit)
   pure Aff.nonCanceler
 
-type Config =
+type Config params =
   { client_id    :: String
   , flow_name    :: String
   , flow_version :: String
@@ -74,4 +74,5 @@ type Config =
   , redirect_uri :: String
   , sso_server   :: String
   , xd_receiver  :: String
+  | params
   }
