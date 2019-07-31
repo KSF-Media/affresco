@@ -13,6 +13,6 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "spago build && parcel build index.html --experimental-scope-hoisting --no-cache && cp xd_receiver.html ./dist"
+    "build": "spago build && parcel build index.html --no-cache && cp xd_receiver.html ./dist"
   }
 }
