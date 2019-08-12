@@ -2,8 +2,13 @@
 @import (reference) 'ksf-variables';
 @icon-triangle-down: '../images/icon-triangle-down.svg';
 
-.registration--input {
-    margin-top: 1em;
+.registration--container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr [registration-input]);
+    grid-template-rows: auto;
+    // grid-column-gap: 20px;
+   // grid-row-gap: auto;
+    //margin-top: 1em;
     input[type=text], input[type=password], input[type=email], select {
         width: 100%;
         font-size: 1em;
@@ -13,6 +18,7 @@
         padding: 8px 10px 8px;
         background: @white;
         box-sizing: border-box;
+        height: 30px;
     }
     select {
         max-width: 100%;
@@ -26,21 +32,27 @@
         background-position: right 15px center;
         background-size: 8px;
     }
-    @media @to-medium {
-        margin-left: 1em;
-        margin-right: 1em;
-    }
-    @media @to-small {
-        margin-left: 2em;
-        margin-right: 2em;
-    }
+    // @media @to-medium {
+    //     margin-left: 1em;
+    //     margin-right: 1em;
+    // }
+    // @media @to-small {
+    //     margin-left: 2em;
+    //     margin-right: 2em;
+    // }
+}
+
+.registration--input-field {
+    display: grid;
 }
 
 .registration--input-label {
     text-align: left;
     font-size: 0.9em;
     font-weight: 500;
+    justify-self: start;
     margin-bottom: 0.5em;
+    height: 5px;
 }
 
 .registration--create-button {
