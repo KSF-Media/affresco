@@ -2,7 +2,7 @@ module KSF.Registration where
 
 import Prelude
 
-import Data.Array (intercalate)
+import Data.Array (any, intercalate)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
@@ -80,6 +80,7 @@ render self =
     { className: "registration--container"
     , children:
         [ firstNameInput self, lastNameInput self
+        , streetAddressInput self
         ]
     }
   ]
@@ -148,6 +149,19 @@ lastNameInput self =
         , onChange: handler targetValue (\val -> self.setState _ { lastName = val })
         }
 
+streetAddressInput :: Self -> JSX
+streetAddressInput self =
+  withValidationErrorText (inputField "Adress*" input) (validateStreetAddress self.state.streetAddress)
+  where
+    input =
+      DOM.input
+        { type: "text"
+        , placeholder: "Adress*"
+        , name: "streetAddress"
+        , value: fromMaybe "" self.state.streetAddress
+        , onChange: handler targetValue (\val -> self.setState _ { streetAddress = val })
+        }
+
 passwordInput :: Self -> JSX
 passwordInput self =
   DOM.input
@@ -160,9 +174,9 @@ passwordInput self =
 
 confirmPasswordInput :: Self -> JSX
 confirmPasswordInput self =
-  withValidationErrorText inputField (validatePasswordComparison self.state.password self.state.confirmPassword)
+  withValidationErrorText input (validatePasswordComparison self.state.password self.state.confirmPassword)
   where
-    inputField =
+    input =
       DOM.input
         { placeholder: "Bekräfta lösenord"
         , name: "confirm-password"
@@ -180,7 +194,7 @@ formValidations :: Self -> ValidatedForm FormData
 formValidations self =
   { firstName:        _
   , lastName:         _
-  , streetAddress:    Nothing
+  , streetAddress:    _
   , city:             Nothing
   , country:          Nothing
   , zip:              _
@@ -191,6 +205,7 @@ formValidations self =
   }
   <$> validateFirstName self.state.firstName
   <*> validateLastName self.state.lastName
+  <*> validateStreetAddress self.state.streetAddress
   <*> validateEmptyZip self.state.zip `andThen` validateZipPattern
   <*> validatePasswordLength self.state.password
   <*> validatePasswordComparison self.state.password initialState.confirmPassword
@@ -200,6 +215,9 @@ validateFirstName = validateEmptyField FirstName "Förnamn krävs."
 
 validateLastName :: Maybe String -> ValidatedForm (Maybe String)
 validateLastName = validateEmptyField LastName "Efternamn krävs."
+
+validateStreetAddress :: Maybe String -> ValidatedForm (Maybe String)
+validateStreetAddress = validateEmptyField StreetAddress "Adress krävs."
 
 validateEmptyZip :: Maybe String -> ValidatedForm (Maybe String)
 validateEmptyZip = validateEmptyField Zip "Postnummer krävs."
@@ -236,20 +254,22 @@ validateInputWithRegex fieldName regexString errMsg inputValue
   | otherwise = invalid $ pure $ InvalidPatternFailure fieldName errMsg
 
 withValidationErrorText :: JSX -> ValidatedForm (Maybe String) -> JSX
-withValidationErrorText inputField = unV
-  (\errs ->
-    DOM.div
-      { className: "registration--invalid-form-field"
-      , children:
-          [ inputField
-          , DOM.div
-              { className: "mt1 registration--invalid-form-text"
-              , children: [ DOM.text $ validationErrorMessageOf $ head errs ]
-              }
-          ]
-      })
-  (\_ -> inputField)
-
+withValidationErrorText input = unV handleInvalidField (\_ -> input)
+  where
+    handleInvalidField errs
+      -- If field is not initialized, do not show error
+      | InvalidNotInitialized <- head errs = input
+      | otherwise =
+        DOM.div
+          { className: "registration--invalid-form-field"
+          , children:
+              [ input
+              , DOM.div
+                  { className: "mt1 registration--invalid-form-text"
+                  , children: [ DOM.text $ validationErrorMessageOf $ head errs ]
+                  }
+              ]
+          }
 validationErrorMessageOf :: ValidationError -> String
 validationErrorMessageOf = case _ of
   Invalid _ err               -> err
@@ -257,3 +277,7 @@ validationErrorMessageOf = case _ of
   InvalidPatternFailure _ err -> err
   InvalidEmailInUse err       -> err
   InvalidNotInitialized       -> ""
+
+isNotInitialized :: ValidationError -> Boolean
+isNotInitialized InvalidNotInitialized = true
+isNotInitialized _ = false
