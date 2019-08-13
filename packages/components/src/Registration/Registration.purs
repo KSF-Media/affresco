@@ -2,15 +2,15 @@ module KSF.Registration where
 
 import Prelude
 
-import Data.Array (intercalate, snoc)
+import Data.Array (all, any, intercalate, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.List.NonEmpty (NonEmptyList, head)
+import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
-import Data.Validation.Semigroup (V, andThen, invalid, unV)
+import Data.Validation.Semigroup (V, andThen, invalid, isValid, toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console as Console
@@ -20,6 +20,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler)
+import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props FormData
 
@@ -83,6 +84,7 @@ render self =
           , zipCodeInput self, countryDropdown self
           , phoneInput self, emailAddressInput self
           , passwordInput self, confirmPasswordInput self
+         , confirm self
           ]
       }
   ]
@@ -91,7 +93,7 @@ render self =
     registrationForm children =
       DOM.form
         { children
-        , onSubmit: handler preventDefault $ (\_ -> submitForm $ formValidations self)
+        , onSubmit: handler preventDefault $ (\_ -> submitForm self $ formValidations self)
         }
 
 initialState :: FormData
@@ -100,7 +102,7 @@ initialState =
   , lastName:        Nothing
   , streetAddress:   Nothing
   , city:            Nothing
-  , country:         Nothing
+  , country:         Just "FI"
   , zipCode:         Nothing
   , phone:           Nothing
   , emailAddress:    Nothing
@@ -290,9 +292,85 @@ confirmPasswordInput self = inputField
     , validatedInput: validatePasswordComparison self.state.password self.state.confirmPassword
     }
 
-submitForm :: ValidatedForm FormData -> Effect Unit
-submitForm = unV
-  (\errors   -> Console.log $ intercalate ", " $ map validationErrorMessageOf errors)
+
+confirm :: Self -> JSX
+confirm self =
+  DOM.div
+    { className: "registration--submit"
+    , children:
+        [ acceptTermsText
+        , validationErrorMessage
+        , confirmButton
+        , cancelText
+        ]
+    }
+  where
+    cancelText :: JSX
+    cancelText =
+      DOM.div
+        { className: "mt2"
+        , children:
+            [ DOM.text "Eller "
+            , DOM.a
+                { href: ""
+                , onClick: handler preventDefault (\_ -> self.props.onCancelRegistration)
+                , children: [ DOM.text "avbryt." ]
+                }
+            ]
+        }
+
+    isFormInvalid
+      | Left errs <- toEither $ formValidations self
+      = not $ all isNotInitialized errs
+      | otherwise = false
+
+    confirmButton :: JSX
+    confirmButton =
+      DOM.input
+        { type: "submit"
+        , className: "registration--create-button mt2"
+        , disabled: if isFormInvalid then true else false
+        , value: "Skapa konto"
+        }
+
+    validationErrorMessage :: JSX
+    validationErrorMessage
+      | not isFormInvalid = mempty
+      | otherwise =
+          DOM.div
+            { className: "registration--invalid-form-generic-message mt2"
+            , children: [ DOM.text "Alla obligatoriska fält är inte korrekt ifyllda, kontrollera uppgifterna." ]
+            }
+
+    acceptTermsText :: JSX
+    acceptTermsText =
+      DOM.div
+        { className: "registration--accept-terms"
+        , children:
+            [ DOM.text "Genom att klicka på \"Fortsätt\", accepterar du våra "
+            , DOM.a
+                { href: termsUrl
+                , target: "_blank"
+                , children: [ DOM.text "användarvillkor" ]
+                }
+            , DOM.text " och bekräftar att ha läst och förstått vår "
+            , DOM.a
+                { href: privacyPolicyUrl
+                , target: "_blank"
+                , children: [ DOM.text "integritetspolicy." ]
+                }
+            ]
+        }
+      where
+        termsUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.33626213.557863145.1547627789-663578572.1543831809#terms"
+        privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.233133274.557863145.1547627789-663578572.1543831809#privacy"
+
+
+submitForm :: Self -> ValidatedForm FormData -> Effect Unit
+submitForm self = unV
+  (\errors   -> do
+      Console.log $ unsafeCoerce self.state
+      Console.log $ intercalate ", " $ map validationErrorMessageOf errors)
   (\formData -> Console.log "Everything is fine!")
 
 formValidations :: Self -> ValidatedForm FormData
@@ -318,7 +396,7 @@ formValidations self =
   <*> validatePhone self.state.phone
   <*> validateEmailAddress self.state.emailAddress
   <*> validatePasswordLength self.state.password
-  <*> validatePasswordComparison self.state.password initialState.confirmPassword
+  <*> validatePasswordComparison self.state.password self.state.confirmPassword
 
 validateFirstName :: Maybe String -> ValidatedForm (Maybe String)
 validateFirstName = validateEmptyField FirstName "Förnamn krävs."
@@ -393,7 +471,7 @@ inputFieldErrorMessage :: ValidatedForm (Maybe String) -> Maybe String
 inputFieldErrorMessage = unV handleInvalidField (\_ -> Nothing)
   where
     handleInvalidField errs
-      -- If field is not initialized, it's concidered to be valid
+      -- If field is not initialized, it's considered to be valid
       | InvalidNotInitialized <- head errs = Nothing
       | otherwise = Just $ validationErrorMessageOf $ head errs
 
@@ -403,7 +481,7 @@ validationErrorMessageOf = case _ of
   InvalidEmpty _ err          -> err
   InvalidPatternFailure _ err -> err
   InvalidEmailInUse err       -> err
-  InvalidNotInitialized       -> ""
+  InvalidNotInitialized       -> "NotInitialized"
 
 isNotInitialized :: ValidationError -> Boolean
 isNotInitialized InvalidNotInitialized = true

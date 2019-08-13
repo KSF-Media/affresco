@@ -4,7 +4,8 @@
 
 .registration--container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr) [registration-input]);
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(6, auto);
     grid-column-gap: 20px;
     grid-row-gap: auto;
     input[type=text], input[type=password], input[type=email], select {
@@ -29,6 +30,15 @@
         background: url(@icon-triangle-down) no-repeat @white;
         background-position: right 15px center;
         background-size: 8px;
+    }
+    @media @to-medium {
+        margin-left: 1em;
+        margin-right: 1em;
+        grid-template-columns: 1fr;
+    }
+    @media @to-small {
+        margin-left: 2em;
+        margin-right: 2em;
     }
 }
 
@@ -71,4 +81,11 @@
 
 .registration--invalid-form-generic-message {
     color: red;
+}
+
+.registration--submit {
+    grid-column-start: 2;
+    @media @to-medium {
+        grid-column-start: 1;
+    }
 }
