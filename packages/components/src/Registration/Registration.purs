@@ -38,7 +38,7 @@ type FormData =
   , streetAddress      :: Maybe String
   , city               :: Maybe String
   , country            :: Maybe String
-  , zip                :: Maybe String
+  , zipCode            :: Maybe String
   , phone              :: Maybe String
   , emailAddress       :: Maybe String
   , password           :: Maybe String
@@ -80,7 +80,10 @@ render self =
     { className: "registration--container"
     , children:
         [ firstNameInput self, lastNameInput self
-      --  , streetAddressInput self
+        , streetAddressInput self, cityInput self
+        , zipCodeInput self, countryDropdown self
+        , phoneInput self, emailAddressInput self
+        , passwordInput self, confirmPasswordInput self
         ]
     }
   ]
@@ -94,16 +97,16 @@ render self =
 
 initialState :: FormData
 initialState =
-  { firstName:        Nothing
-  , lastName:         Nothing
-  , streetAddress:    Nothing
-  , city:             Nothing
-  , country:          Nothing
-  , zip:              Nothing
-  , phone:            Nothing
-  , emailAddress:     Nothing
-  , password:         Nothing
-  , confirmPassword:  Nothing
+  { firstName:       Nothing
+  , lastName:        Nothing
+  , streetAddress:   Nothing
+  , city:            Nothing
+  , country:         Nothing
+  , zipCode:         Nothing
+  , phone:           Nothing
+  , emailAddress:    Nothing
+  , password:        Nothing
+  , confirmPassword: Nothing
   }
 
 inputLabel :: String -> String -> JSX
@@ -152,7 +155,7 @@ inputField a =
 firstNameInput :: Self -> JSX
 firstNameInput self = inputField
   { type_: "text"
-  , label: "Förnamn*"
+  , label: "Förnamn"
   , name: "firstName"
   , onChange: (\val -> self.setState _ { firstName = val })
   , validatedInput: validateFirstName self.state.firstName
@@ -162,7 +165,7 @@ firstNameInput self = inputField
 lastNameInput :: Self -> JSX
 lastNameInput self = inputField
   { type_: "text"
-  , label: "Efternamn*"
+  , label: "Efternamn"
   , name: "lastName"
   , onChange: (\val -> self.setState _ { lastName = val })
   , validatedInput: validateLastName self.state.lastName
@@ -172,11 +175,78 @@ lastNameInput self = inputField
 streetAddressInput :: Self -> JSX
 streetAddressInput self = inputField
   { type_: "text"
-  , label: "Adress*"
+  , label: "Adress"
   , name: "streetAddress"
   , onChange: (\val -> self.setState _ { streetAddress = val })
   , validatedInput: validateStreetAddress self.state.streetAddress
   , value: self.state.streetAddress
+  }
+
+cityInput :: Self -> JSX
+cityInput self = inputField
+  { type_: "text"
+  , label: "Stad"
+  , name: "city"
+  , onChange: (\val -> self.setState _ { city = val })
+  , validatedInput: validateCity self.state.city
+  , value: self.state.city
+  }
+
+zipCodeInput :: Self -> JSX
+zipCodeInput self = inputField
+  { type_: "text"
+  , label: "Postnummer"
+  , name: "zipCode"
+  , onChange: (\val -> self.setState _ { zipCode = val })
+  , validatedInput: validateZipCode self.state.zipCode
+  , value: self.state.zipCode
+  }
+
+countryDropdown :: Self -> JSX
+countryDropdown self =
+  DOM.div
+    { className: "registration--input-container"
+    , children:
+        [ inputLabel "Land" "country"
+        , DOM.select
+            { children: map createOption countries
+            , onChange: handler targetValue (\val -> self.setState _ { country = val })
+            , value: fromMaybe "FI" self.state.country
+            }
+        ]
+    }
+  where
+    createOption { countryCode, countryName } =
+      DOM.option
+        { value: countryCode
+        , children: [ DOM.text countryName ]
+        }
+    countries =
+      [ { countryCode: "FI", countryName: "Finland" }
+      , { countryCode: "AX", countryName: "Åland" }
+      , { countryCode: "SE", countryName: "Sverige" }
+      , { countryCode: "NO", countryName: "Norge" }
+      , { countryCode: "DK", countryName: "Danmark" }
+      ]
+
+phoneInput :: Self -> JSX
+phoneInput self = inputField
+  { type_: "text"
+  , label: "Telefon"
+  , name: "phone"
+  , onChange: (\val -> self.setState _ { phone = val })
+  , validatedInput: validatePhone self.state.phone
+  , value: self.state.phone
+  }
+
+emailAddressInput :: Self -> JSX
+emailAddressInput self = inputField
+  { type_: "email"
+  , label: "E-postadress."
+  , name: "emailAddress"
+  , onChange: (\val -> self.setState _ { emailAddress = val })
+  , validatedInput: validateEmailAddress self.state.emailAddress
+  , value: self.state.emailAddress
   }
 
 passwordInput :: Self -> JSX
@@ -184,7 +254,8 @@ passwordInput self =
   DOM.input
     { placeholder: "Lösenord (minst 6 tecken)"
     , name: "password"
-    , onChange: handler targetValue (\val -> self.setState _ { password = val })
+    , onBlur: handler targetValue (\val -> self.setState _ { password = val }) -- handler_ $ Console.log "lol"
+--    , onChange: pure unit
     , value: fromMaybe "" self.state.password
     , type: "password"
     }
@@ -212,18 +283,22 @@ formValidations self =
   { firstName:        _
   , lastName:         _
   , streetAddress:    _
-  , city:             Nothing
-  , country:          Nothing
-  , zip:              _
-  , phone:            Nothing
-  , emailAddress:     Nothing
+  , city:             _
+  , country:          _
+  , zipCode:          _
+  , phone:            _
+  , emailAddress:     _
   , password:         _
   , confirmPassword:  _
   }
   <$> validateFirstName self.state.firstName
   <*> validateLastName self.state.lastName
   <*> validateStreetAddress self.state.streetAddress
-  <*> validateEmptyZip self.state.zip `andThen` validateZipPattern
+  <*> validateCity self.state.city
+  <*> validateCountry self.state.country
+  <*> validateZipCode self.state.zipCode
+  <*> validatePhone self.state.phone
+  <*> validateEmailAddress self.state.emailAddress
   <*> validatePasswordLength self.state.password
   <*> validatePasswordComparison self.state.password initialState.confirmPassword
 
@@ -236,24 +311,48 @@ validateLastName = validateEmptyField LastName "Efternamn krävs."
 validateStreetAddress :: Maybe String -> ValidatedForm (Maybe String)
 validateStreetAddress = validateEmptyField StreetAddress "Adress krävs."
 
-validateEmptyZip :: Maybe String -> ValidatedForm (Maybe String)
-validateEmptyZip = validateEmptyField Zip "Postnummer krävs."
+validateCity :: Maybe String -> ValidatedForm (Maybe String)
+validateCity = validateEmptyField City "Stad krävs."
 
-validateZipPattern :: Maybe String -> ValidatedForm (Maybe String)
-validateZipPattern = validateInputWithRegex Password "^[\\s|\\w|-]+$" "Postnummerfältet kan bara innehålla siffror och bokstäver."
+validateCountry :: Maybe String -> ValidatedForm (Maybe String)
+validateCountry = validateEmptyField Country "Land krävs."
+
+validateZipCode :: Maybe String -> ValidatedForm (Maybe String)
+validateZipCode zipCode =
+  validateEmptyField Zip "Postnummer krävs." zipCode `andThen`
+  validateInputWithRegex Password "^[\\s|\\w|-]+$" "Postnummerfältet kan bara innehålla siffror och bokstäver."
+
+validatePhone :: Maybe String -> ValidatedForm (Maybe String)
+validatePhone phone =
+  validateEmptyField Phone "Telefon krävs." phone `andThen`
+  validateInputWithRegex Phone "^[\\d|\\+|\\s|-|\\(|\\)]+$" "Telefonnummer kan bara bestå av siffror, mellanslag och +-tecken."
+
+validateEmailAddress :: Maybe String -> ValidatedForm (Maybe String)
+validateEmailAddress email =
+  validateEmptyField EmailAddress "E-postadress krävs." email `andThen`
+  validateInputWithRegex EmailAddress emailRegex "Ogiltig E-postadress."
+  where
+    -- From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email#Basic_validation
+    emailRegex = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+
+validatePassword :: Maybe String -> ValidatedForm (Maybe String)
+validatePassword password = validateEmptyField Password "Lösenord krävs." password `andThen` validatePasswordLength
 
 validatePasswordLength :: Maybe String -> ValidatedForm (Maybe String)
+validatePasswordLength Nothing = invalid $ pure $ InvalidNotInitialized
 validatePasswordLength password
   | Just pw <- password, length pw >= 6 = pure $ Just pw
   | otherwise = invalid $ pure $ Invalid Password "Lösenordet måste ha minst 6 tecken."
 
 validatePasswordComparison :: Maybe String -> Maybe String -> ValidatedForm (Maybe String)
+validatePasswordComparison Nothing Nothing = invalid $ pure $ InvalidNotInitialized
 validatePasswordComparison password confirmedPassword
   | Just pw <- password
   , Just confirmedPw <- confirmedPassword
   , pw == confirmedPw
   = pure $ Just pw
   | otherwise = invalid $ pure $ Invalid ConfirmPassword "Lösenorden överensstämmer inte med varandra."
+
 
 validateEmptyField :: RegistrationInputField -> String -> Maybe String -> ValidatedForm (Maybe String)
 validateEmptyField _ _ Nothing = invalid $ pure $ InvalidNotInitialized
