@@ -2,17 +2,15 @@ module KSF.Registration where
 
 import Prelude
 
-import Data.Array (any, intercalate, snoc)
-import Data.Array as Array
+import Data.Array (intercalate, snoc)
 import Data.Either (Either(..))
-import Data.Foldable (foldMap, traverse_)
-import Data.List.NonEmpty (NonEmptyList(..), head, zipWith)
-import Data.List.NonEmpty as NonEmptyList
+import Data.Foldable (foldMap)
+import Data.List.NonEmpty (NonEmptyList, head)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
-import Data.Validation.Semigroup (V(..), andThen, invalid, isValid, unV)
+import Data.Validation.Semigroup (V, andThen, invalid, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console as Console
@@ -21,7 +19,7 @@ import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (handler)
 
 type Self = React.Self Props FormData
 
@@ -33,16 +31,17 @@ type Props =
   }
 
 type FormData =
-  { firstName          :: Maybe String
-  , lastName           :: Maybe String
-  , streetAddress      :: Maybe String
-  , city               :: Maybe String
-  , country            :: Maybe String
-  , zipCode            :: Maybe String
-  , phone              :: Maybe String
-  , emailAddress       :: Maybe String
-  , password           :: Maybe String
-  , confirmPassword    :: Maybe String
+  { firstName           :: Maybe String
+  , lastName            :: Maybe String
+  , streetAddress       :: Maybe String
+  , city                :: Maybe String
+  , country             :: Maybe String
+  , zipCode             :: Maybe String
+  , phone               :: Maybe String
+  , emailAddress        :: Maybe String
+  , password            :: Maybe String
+  , unvalidatedPassword :: Maybe String
+  , confirmPassword     :: Maybe String
   }
 
 data RegistrationInputField
@@ -76,16 +75,16 @@ component = React.createComponent "Registration"
 render :: Self -> JSX
 render self =
   registrationForm
-  [  DOM.div
-    { className: "registration--container"
-    , children:
-        [ firstNameInput self, lastNameInput self
-        , streetAddressInput self, cityInput self
-        , zipCodeInput self, countryDropdown self
-        , phoneInput self, emailAddressInput self
-        , passwordInput self, confirmPasswordInput self
-        ]
-    }
+  [ DOM.div
+      { className: "registration--container"
+      , children:
+          [ firstNameInput self, lastNameInput self
+          , streetAddressInput self, cityInput self
+          , zipCodeInput self, countryDropdown self
+          , phoneInput self, emailAddressInput self
+          , passwordInput self, confirmPasswordInput self
+          ]
+      }
   ]
   where
     registrationForm :: Array JSX -> JSX
@@ -106,6 +105,7 @@ initialState =
   , phone:           Nothing
   , emailAddress:    Nothing
   , password:        Nothing
+  , unvalidatedPassword: Nothing
   , confirmPassword: Nothing
   }
 
@@ -118,11 +118,13 @@ inputLabel labelText labelFor =
     }
 
 type InputFieldAttributes =
-  { label :: String
-  , type_ :: String
-  , name  :: String
-  , value :: Maybe String
-  , onChange :: Maybe String -> Effect Unit
+  { label          :: String
+  , type_          :: String
+  , name           :: String
+  , placeholder    :: String
+  , value          :: Maybe String
+  , onChange       :: Maybe String -> Effect Unit
+  , onBlur         :: Maybe (Maybe String -> Effect Unit)
   , validatedInput :: ValidatedForm (Maybe String)
   }
 
@@ -138,6 +140,7 @@ inputField a =
             , name: a.name
             , value: fromMaybe "" a.value
             , onChange: handler targetValue a.onChange
+            , onBlur: handler targetValue $ fromMaybe (\_ -> pure unit) a.onBlur
             , className:
               if isJust $ inputFieldErrorMessage a.validatedInput
                 then "registration--invalid-form-field"
@@ -157,7 +160,9 @@ firstNameInput self = inputField
   { type_: "text"
   , label: "Förnamn"
   , name: "firstName"
+  , placeholder: "Förnamn"
   , onChange: (\val -> self.setState _ { firstName = val })
+  , onBlur: Nothing
   , validatedInput: validateFirstName self.state.firstName
   , value: self.state.firstName
   }
@@ -167,7 +172,9 @@ lastNameInput self = inputField
   { type_: "text"
   , label: "Efternamn"
   , name: "lastName"
+  , placeholder: "Efternamn"
   , onChange: (\val -> self.setState _ { lastName = val })
+  , onBlur: Nothing
   , validatedInput: validateLastName self.state.lastName
   , value: self.state.lastName
   }
@@ -177,7 +184,9 @@ streetAddressInput self = inputField
   { type_: "text"
   , label: "Adress"
   , name: "streetAddress"
+  , placeholder: "Adress"
   , onChange: (\val -> self.setState _ { streetAddress = val })
+  , onBlur: Nothing
   , validatedInput: validateStreetAddress self.state.streetAddress
   , value: self.state.streetAddress
   }
@@ -187,7 +196,9 @@ cityInput self = inputField
   { type_: "text"
   , label: "Stad"
   , name: "city"
+  , placeholder: "Stad"
   , onChange: (\val -> self.setState _ { city = val })
+  , onBlur: Nothing
   , validatedInput: validateCity self.state.city
   , value: self.state.city
   }
@@ -197,7 +208,9 @@ zipCodeInput self = inputField
   { type_: "text"
   , label: "Postnummer"
   , name: "zipCode"
+  , placeholder: "Postnummer"
   , onChange: (\val -> self.setState _ { zipCode = val })
+  , onBlur: Nothing
   , validatedInput: validateZipCode self.state.zipCode
   , value: self.state.zipCode
   }
@@ -234,7 +247,9 @@ phoneInput self = inputField
   { type_: "text"
   , label: "Telefon"
   , name: "phone"
+  , placeholder: "Telefon"
   , onChange: (\val -> self.setState _ { phone = val })
+  , onBlur: Nothing
   , validatedInput: validatePhone self.state.phone
   , value: self.state.phone
   }
@@ -242,36 +257,38 @@ phoneInput self = inputField
 emailAddressInput :: Self -> JSX
 emailAddressInput self = inputField
   { type_: "email"
-  , label: "E-postadress."
+  , label: "E-postadress"
   , name: "emailAddress"
+  , placeholder: "E-postadress"
   , onChange: (\val -> self.setState _ { emailAddress = val })
+  , onBlur: Nothing
   , validatedInput: validateEmailAddress self.state.emailAddress
   , value: self.state.emailAddress
   }
 
 passwordInput :: Self -> JSX
-passwordInput self =
-  DOM.input
+passwordInput self = inputField
     { placeholder: "Lösenord (minst 6 tecken)"
+    , type_: "password"
+    , label: "Lösenord"
     , name: "password"
-    , onBlur: handler targetValue (\val -> self.setState _ { password = val }) -- handler_ $ Console.log "lol"
---    , onChange: pure unit
-    , value: fromMaybe "" self.state.password
-    , type: "password"
+    , onBlur: Just (\val -> self.setState _ { password = val })
+    , onChange: \val -> self.setState _ { unvalidatedPassword = val }
+    , value: self.state.unvalidatedPassword
+    , validatedInput: validatePassword self.state.password
     }
 
 confirmPasswordInput :: Self -> JSX
-confirmPasswordInput self =
-  withValidationErrorText input (validatePasswordComparison self.state.password self.state.confirmPassword)
-  where
-    input =
-      DOM.input
-        { placeholder: "Bekräfta lösenord"
-        , name: "confirm-password"
-        , onChange: handler targetValue (\val -> self.setState _ { confirmPassword = val })
-        , value: fromMaybe "" self.state.confirmPassword
-        , type: "password"
-        }
+confirmPasswordInput self = inputField
+    { placeholder: "Bekräfta lösenord"
+    , type_: "password"
+    , label: "Bekräfta lösenord"
+    , name: "confirmPassword"
+    , onBlur: Nothing
+    , onChange: \val -> self.setState _ { confirmPassword = val }
+    , value: self.state.confirmPassword
+    , validatedInput: validatePasswordComparison self.state.password self.state.confirmPassword
+    }
 
 submitForm :: ValidatedForm FormData -> Effect Unit
 submitForm = unV
@@ -289,6 +306,7 @@ formValidations self =
   , phone:            _
   , emailAddress:     _
   , password:         _
+  , unvalidatedPassword: Nothing
   , confirmPassword:  _
   }
   <$> validateFirstName self.state.firstName
@@ -339,13 +357,13 @@ validatePassword :: Maybe String -> ValidatedForm (Maybe String)
 validatePassword password = validateEmptyField Password "Lösenord krävs." password `andThen` validatePasswordLength
 
 validatePasswordLength :: Maybe String -> ValidatedForm (Maybe String)
-validatePasswordLength Nothing = invalid $ pure $ InvalidNotInitialized
+validatePasswordLength Nothing = notInitialized
 validatePasswordLength password
   | Just pw <- password, length pw >= 6 = pure $ Just pw
   | otherwise = invalid $ pure $ Invalid Password "Lösenordet måste ha minst 6 tecken."
 
 validatePasswordComparison :: Maybe String -> Maybe String -> ValidatedForm (Maybe String)
-validatePasswordComparison Nothing Nothing = invalid $ pure $ InvalidNotInitialized
+validatePasswordComparison Nothing Nothing = notInitialized
 validatePasswordComparison password confirmedPassword
   | Just pw <- password
   , Just confirmedPw <- confirmedPassword
@@ -353,9 +371,8 @@ validatePasswordComparison password confirmedPassword
   = pure $ Just pw
   | otherwise = invalid $ pure $ Invalid ConfirmPassword "Lösenorden överensstämmer inte med varandra."
 
-
 validateEmptyField :: RegistrationInputField -> String -> Maybe String -> ValidatedForm (Maybe String)
-validateEmptyField _ _ Nothing = invalid $ pure $ InvalidNotInitialized
+validateEmptyField _ _ Nothing = notInitialized
 validateEmptyField fieldName validationErr (Just value) =
   if null value
     then invalid $ pure $ InvalidEmpty fieldName validationErr
@@ -369,23 +386,8 @@ validateInputWithRegex fieldName regexString errMsg inputValue
   = pure $ Just val
   | otherwise = invalid $ pure $ InvalidPatternFailure fieldName errMsg
 
-withValidationErrorText :: JSX -> ValidatedForm (Maybe String) -> JSX
-withValidationErrorText input = unV handleInvalidField (\_ -> input)
-  where
-    handleInvalidField errs
-      -- If field is not initialized, do not show error
-      | InvalidNotInitialized <- head errs = input
-      | otherwise =
-        DOM.div
-          { className: "registration--invalid-form-field"
-          , children:
-              [ input
-              , DOM.div
-                  { className: "registration--invalid-form-text"
-                  , children: [ DOM.text $ validationErrorMessageOf $ head errs ]
-                  }
-              ]
-          }
+notInitialized :: ValidatedForm (Maybe String)
+notInitialized = invalid $ pure $ InvalidNotInitialized
 
 inputFieldErrorMessage :: ValidatedForm (Maybe String) -> Maybe String
 inputFieldErrorMessage = unV handleInvalidField (\_ -> Nothing)
