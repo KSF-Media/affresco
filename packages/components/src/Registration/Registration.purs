@@ -2,9 +2,10 @@ module KSF.Registration where
 
 import Prelude
 
-import Data.Array (all, any, intercalate, snoc)
+import Control.Monad.Error.Class (catchError, throwError)
+import Data.Array (all, any, cons, intercalate, snoc)
 import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Foldable (foldMap, traverse_)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (length, null)
@@ -13,7 +14,10 @@ import Data.String.Regex.Flags as Regex.Flags
 import Data.Validation.Semigroup (V, andThen, invalid, isValid, toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Foreign.Object as Object
+import KSF.Registration.Component (RegistrationInputFieldError, emailInUseMsg)
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -43,6 +47,7 @@ type FormData =
   , password            :: Maybe String
   , unvalidatedPassword :: Maybe String
   , confirmPassword     :: Maybe String
+  , serverErrors        :: Array ValidationError
   }
 
 data RegistrationInputField
@@ -74,8 +79,7 @@ component :: React.Component Props
 component = React.createComponent "Registration"
 
 render :: Self -> JSX
-render self =
-  registrationForm
+render self = registrationForm
   [ DOM.div
       { className: "registration--container"
       , children:
@@ -84,7 +88,7 @@ render self =
           , zipCodeInput self, countryDropdown self
           , phoneInput self, emailAddressInput self
           , passwordInput self, confirmPasswordInput self
-         , confirm self
+          , confirm self
           ]
       }
   ]
@@ -371,21 +375,84 @@ submitForm self = unV
   (\errors   -> do
       Console.log $ unsafeCoerce self.state
       Console.log $ intercalate ", " $ map validationErrorMessageOf errors)
-  (\formData -> Console.log "Everything is fine!")
+  createUser
+  where
+    -- TODO: Clear self.state.serverErrors
+    createUser formData
+      | Just user <- mkNewUser formData = do
+          self.props.onRegister $ Persona.register user `catchError` case _ of
+            err | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
+                    Console.error errData.email_address_in_use_registration.description
+                    liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse emailInUseMsg `cons` self.state.serverErrors }
+                    throwError err
+                | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+                    Console.error errData.invalid_form_fields.description
+                    liftEffect $ handleServerErrs errData.invalid_form_fields.errors
+                    throwError err
+                | otherwise -> do
+                    Console.error "An unexpected error occurred during registration"
+                    throwError err
+      | otherwise = Console.error "Not all registration fields were filled."
+
+    emailInUseMsg :: String
+    emailInUseMsg =
+      """E-postadressen är redan i bruk.
+         Har du redan ett konto hos Hufvudstadsbladet, Västra Nyland eller Östnyland?
+         Då kan du använda samma inloggning.
+         Du kan också skapa konto med en annan adress."""
+
+    handleServerErrs :: RegistrationInputFieldError -> Effect Unit
+    handleServerErrs errs = do
+      traverse_ setFormInvalid $ Object.keys errs
+      where
+        setFormInvalid key =
+          -- NOTE & TODO:
+          -- The "must have at least 6 chars" error is probably not always the case.
+          -- The problem of displaying error message directly from Janrain
+          -- is for example the language used (e.g. Swedish for Finnish users).
+          -- Also, the error might be gibberish.
+          case key of
+            "emailAddress" -> self.setState _ { serverErrors = Invalid EmailAddress "Ogiltig E-postadress." `cons` self.state.serverErrors }
+            "password"     -> self.setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` self.state.serverErrors }
+            _              -> pure unit
+
+mkNewUser :: FormData -> Maybe Persona.NewUser
+mkNewUser f =
+  { firstName: _
+  , lastName: _
+  , emailAddress: _
+  , password: _
+  , confirmPassword: _
+  , streetAddress: _
+  , city: _
+  , zipCode: _
+  , country: _
+  , phone: _
+  }
+  <$> f.firstName
+  <*> f.lastName
+  <*> f.emailAddress
+  <*> f.password
+  <*> f.confirmPassword
+  <*> f.streetAddress
+  <*> f.city
+  <*> f.zipCode
+  <*> f.country
+  <*> f.phone
 
 formValidations :: Self -> ValidatedForm FormData
 formValidations self =
-  { firstName:        _
-  , lastName:         _
+  { firstName: _
+  , lastName: _
   , streetAddress:    _
-  , city:             _
-  , country:          _
-  , zipCode:          _
-  , phone:            _
-  , emailAddress:     _
-  , password:         _
+  , city: _
+  , country: _
+  , zipCode: _
+  , phone: _
+  , emailAddress: _
+  , password: _
   , unvalidatedPassword: Nothing
-  , confirmPassword:  _
+  , confirmPassword: _
   }
   <$> validateFirstName self.state.firstName
   <*> validateLastName self.state.lastName
