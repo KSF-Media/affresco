@@ -2,13 +2,13 @@ module KSF.Registration where
 
 import Prelude
 
-import Data.Array (any, intercalate)
+import Data.Array (any, intercalate, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (traverse_)
+import Data.Foldable (foldMap, traverse_)
 import Data.List.NonEmpty (NonEmptyList(..), head, zipWith)
 import Data.List.NonEmpty as NonEmptyList
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
@@ -68,7 +68,7 @@ data ValidationError
 derive instance eqValidationError :: Eq ValidationError
 
 registration :: Props -> JSX
-registration  = make component { initialState, render }
+registration = make component { initialState, render }
 
 component :: React.Component Props
 component = React.createComponent "Registration"
@@ -80,7 +80,7 @@ render self =
     { className: "registration--container"
     , children:
         [ firstNameInput self, lastNameInput self
-        , streetAddressInput self
+      --  , streetAddressInput self
         ]
     }
   ]
@@ -106,61 +106,78 @@ initialState =
   , confirmPassword:  Nothing
   }
 
-inputField :: String -> JSX -> JSX
-inputField labelText input =
-  DOM.div
-    { className: "registration--input-field"
-    , children:
-        [ inputLabel labelText
-        , input
-        ]
-    }
-
-inputLabel :: String -> JSX
-inputLabel labelText =
-  DOM.span
+inputLabel :: String -> String -> JSX
+inputLabel labelText labelFor =
+  DOM.label
     { className: "registration--input-label"
     , children: [ DOM.text labelText ]
+    , htmlFor: labelFor
     }
 
-firstNameInput :: Self -> JSX
-firstNameInput self =
-  withValidationErrorText (inputField "Förnamn*" input) (validateFirstName self.state.firstName)
+type InputFieldAttributes =
+  { label :: String
+  , type_ :: String
+  , name  :: String
+  , value :: Maybe String
+  , onChange :: Maybe String -> Effect Unit
+  , validatedInput :: ValidatedForm (Maybe String)
+  }
+
+inputField :: InputFieldAttributes -> JSX
+inputField a =
+  DOM.div
+    { className: "registration--input-container"
+    , children:
+        [ inputLabel a.label a.name
+        , DOM.input
+            { type: a.type_
+            , placeholder: a.label
+            , name: a.name
+            , value: fromMaybe "" a.value
+            , onChange: handler targetValue a.onChange
+            , className:
+              if isJust $ inputFieldErrorMessage a.validatedInput
+                then "registration--invalid-form-field"
+                else ""
+            }
+        ] `snoc` foldMap errorMessage (inputFieldErrorMessage a.validatedInput)
+    }
   where
-    input =
-       DOM.input
-         { type: "text"
-         , placeholder: "Förnamn*"
-         , name: "firstName"
-         , value: fromMaybe "" self.state.firstName
-         , onChange: handler targetValue (\val -> self.setState _ { firstName = val })
-         }
+    errorMessage e =
+      DOM.span
+        { className: "registration--invalid-form-text"
+        , children: [ DOM.text e ]
+        }
+
+firstNameInput :: Self -> JSX
+firstNameInput self = inputField
+  { type_: "text"
+  , label: "Förnamn*"
+  , name: "firstName"
+  , onChange: (\val -> self.setState _ { firstName = val })
+  , validatedInput: validateFirstName self.state.firstName
+  , value: self.state.firstName
+  }
 
 lastNameInput :: Self -> JSX
-lastNameInput self =
-  withValidationErrorText (inputField "Efternamn*" input) (validateLastName self.state.lastName)
-  where
-    input =
-      DOM.input
-        { type: "text"
-        , placeholder: "Efternamn*"
-        , name: "lastName"
-        , value: fromMaybe "" self.state.lastName
-        , onChange: handler targetValue (\val -> self.setState _ { lastName = val })
-        }
+lastNameInput self = inputField
+  { type_: "text"
+  , label: "Efternamn*"
+  , name: "lastName"
+  , onChange: (\val -> self.setState _ { lastName = val })
+  , validatedInput: validateLastName self.state.lastName
+  , value: self.state.lastName
+  }
 
 streetAddressInput :: Self -> JSX
-streetAddressInput self =
-  withValidationErrorText (inputField "Adress*" input) (validateStreetAddress self.state.streetAddress)
-  where
-    input =
-      DOM.input
-        { type: "text"
-        , placeholder: "Adress*"
-        , name: "streetAddress"
-        , value: fromMaybe "" self.state.streetAddress
-        , onChange: handler targetValue (\val -> self.setState _ { streetAddress = val })
-        }
+streetAddressInput self = inputField
+  { type_: "text"
+  , label: "Adress*"
+  , name: "streetAddress"
+  , onChange: (\val -> self.setState _ { streetAddress = val })
+  , validatedInput: validateStreetAddress self.state.streetAddress
+  , value: self.state.streetAddress
+  }
 
 passwordInput :: Self -> JSX
 passwordInput self =
@@ -265,11 +282,20 @@ withValidationErrorText input = unV handleInvalidField (\_ -> input)
           , children:
               [ input
               , DOM.div
-                  { className: "mt1 registration--invalid-form-text"
+                  { className: "registration--invalid-form-text"
                   , children: [ DOM.text $ validationErrorMessageOf $ head errs ]
                   }
               ]
           }
+
+inputFieldErrorMessage :: ValidatedForm (Maybe String) -> Maybe String
+inputFieldErrorMessage = unV handleInvalidField (\_ -> Nothing)
+  where
+    handleInvalidField errs
+      -- If field is not initialized, it's concidered to be valid
+      | InvalidNotInitialized <- head errs = Nothing
+      | otherwise = Just $ validationErrorMessageOf $ head errs
+
 validationErrorMessageOf :: ValidationError -> String
 validationErrorMessageOf = case _ of
   Invalid _ err               -> err
