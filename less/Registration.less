@@ -4,7 +4,7 @@
 
 .registration--container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr) [registration-input]);
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr) [registration-input]);
     grid-column-gap: 20px;
     grid-row-gap: auto;
     input[type=text], input[type=password], input[type=email], select {
@@ -37,7 +37,6 @@
     // Rows are 1) input label, 2) input field, 3) error message
     grid-template-rows: auto auto 20px;
     grid-row-gap: .3em;
-
 }
 
 .registration--input-label {
@@ -72,10 +71,4 @@
 
 .registration--invalid-form-generic-message {
     color: red;
-}
-
-.registration--input-row {
-    @media @to-small {
-        flex-direction: column;
-    }
 }
