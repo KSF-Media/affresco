@@ -26,13 +26,18 @@ import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler)
 import Unsafe.Coerce (unsafeCoerce)
 
-type Self = React.Self Props FormData
+type Self = React.Self Props State
 
 type ValidatedForm a = V (NonEmptyList ValidationError) a
 
 type Props =
   { onRegister :: Aff Persona.LoginResponse -> Effect Unit
   , onCancelRegistration :: Effect Unit
+  }
+
+type State =
+  { serverErrors :: Array ValidationError
+  , formData :: FormData
   }
 
 type FormData =
@@ -47,7 +52,6 @@ type FormData =
   , password            :: Maybe String
   , unvalidatedPassword :: Maybe String
   , confirmPassword     :: Maybe String
-  , serverErrors        :: Array ValidationError
   }
 
 data RegistrationInputField
@@ -100,19 +104,22 @@ render self = registrationForm
         , onSubmit: handler preventDefault $ (\_ -> submitForm self $ formValidations self)
         }
 
-initialState :: FormData
+initialState :: State
 initialState =
-  { firstName:       Nothing
-  , lastName:        Nothing
-  , streetAddress:   Nothing
-  , city:            Nothing
-  , country:         Just "FI"
-  , zipCode:         Nothing
-  , phone:           Nothing
-  , emailAddress:    Nothing
-  , password:        Nothing
-  , unvalidatedPassword: Nothing
-  , confirmPassword: Nothing
+  { formData:
+      { firstName:       Nothing
+      , lastName:        Nothing
+      , streetAddress:   Nothing
+      , city:            Nothing
+      , country:         Just "FI"
+      , zipCode:         Nothing
+      , phone:           Nothing
+      , emailAddress:    Nothing
+      , password:        Nothing
+      , unvalidatedPassword: Nothing
+      , confirmPassword: Nothing
+      }
+  , serverErrors: []
   }
 
 inputLabel :: String -> String -> JSX
@@ -162,75 +169,75 @@ inputField a =
         }
 
 firstNameInput :: Self -> JSX
-firstNameInput self = inputField
+firstNameInput self@{ state: { formData }} = inputField
   { type_: "text"
   , label: "Förnamn"
   , name: "firstName"
   , placeholder: "Förnamn"
-  , onChange: (\val -> self.setState _ { firstName = val })
+  , onChange: (\val -> self.setState _ { formData { firstName = val } })
   , onBlur: Nothing
-  , validatedInput: validateFirstName self.state.firstName
-  , value: self.state.firstName
+  , validatedInput: validateFirstName formData.firstName
+  , value: formData.firstName
   }
 
 lastNameInput :: Self -> JSX
-lastNameInput self = inputField
+lastNameInput self@{ state: { formData }} = inputField
   { type_: "text"
   , label: "Efternamn"
   , name: "lastName"
   , placeholder: "Efternamn"
-  , onChange: (\val -> self.setState _ { lastName = val })
+  , onChange: (\val -> self.setState _ { formData { lastName = val }})
   , onBlur: Nothing
-  , validatedInput: validateLastName self.state.lastName
-  , value: self.state.lastName
+  , validatedInput: validateLastName formData.lastName
+  , value: formData.lastName
   }
 
 streetAddressInput :: Self -> JSX
-streetAddressInput self = inputField
+streetAddressInput self@{ state: { formData }} = inputField
   { type_: "text"
   , label: "Adress"
   , name: "streetAddress"
   , placeholder: "Adress"
-  , onChange: (\val -> self.setState _ { streetAddress = val })
+  , onChange: (\val -> self.setState _ { formData { streetAddress = val } })
   , onBlur: Nothing
-  , validatedInput: validateStreetAddress self.state.streetAddress
-  , value: self.state.streetAddress
+  , validatedInput: validateStreetAddress formData.streetAddress
+  , value: formData.streetAddress
   }
 
 cityInput :: Self -> JSX
-cityInput self = inputField
+cityInput self@{ state: { formData }} = inputField
   { type_: "text"
   , label: "Stad"
   , name: "city"
   , placeholder: "Stad"
-  , onChange: (\val -> self.setState _ { city = val })
+  , onChange: (\val -> self.setState _ { formData { city = val } })
   , onBlur: Nothing
-  , validatedInput: validateCity self.state.city
-  , value: self.state.city
+  , validatedInput: validateCity formData.city
+  , value: formData.city
   }
 
 zipCodeInput :: Self -> JSX
-zipCodeInput self = inputField
+zipCodeInput self@{ state: { formData }} = inputField
   { type_: "text"
   , label: "Postnummer"
   , name: "zipCode"
   , placeholder: "Postnummer"
-  , onChange: (\val -> self.setState _ { zipCode = val })
+  , onChange: (\val -> self.setState _ { formData { zipCode = val } })
   , onBlur: Nothing
-  , validatedInput: validateZipCode self.state.zipCode
-  , value: self.state.zipCode
+  , validatedInput: validateZipCode formData.zipCode
+  , value: formData.zipCode
   }
 
 countryDropdown :: Self -> JSX
-countryDropdown self =
+countryDropdown self@{ state: { formData }} =
   DOM.div
     { className: "registration--input-container"
     , children:
         [ inputLabel "Land" "country"
         , DOM.select
             { children: map createOption countries
-            , onChange: handler targetValue (\val -> self.setState _ { country = val })
-            , value: fromMaybe "FI" self.state.country
+            , onChange: handler targetValue (\val -> self.setState _ { formData { country = val } })
+            , value: fromMaybe "FI" formData.country
             }
         ]
     }
@@ -249,27 +256,27 @@ countryDropdown self =
       ]
 
 phoneInput :: Self -> JSX
-phoneInput self = inputField
+phoneInput self@{ state: { formData }} = inputField
   { type_: "text"
   , label: "Telefon"
   , name: "phone"
   , placeholder: "Telefon"
-  , onChange: (\val -> self.setState _ { phone = val })
+  , onChange: (\val -> self.setState _ { formData { phone = val } })
   , onBlur: Nothing
-  , validatedInput: validatePhone self.state.phone
-  , value: self.state.phone
+  , validatedInput: validatePhone formData.phone
+  , value: formData.phone
   }
 
 emailAddressInput :: Self -> JSX
-emailAddressInput self = inputField
+emailAddressInput self@{ state: { formData }} = inputField
   { type_: "email"
   , label: "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
-  , onChange: (\val -> self.setState _ { emailAddress = val })
+  , onChange: (\val -> self.setState _ { formData { emailAddress = val } })
   , onBlur: Nothing
-  , validatedInput: validateEmailAddress self.state.emailAddress
-  , value: self.state.emailAddress
+  , validatedInput: validateEmailAddress formData.emailAddress
+  , value: formData.emailAddress
   }
 
 passwordInput :: Self -> JSX
@@ -278,22 +285,23 @@ passwordInput self = inputField
     , type_: "password"
     , label: "Lösenord"
     , name: "password"
-    , onBlur: Just (\val -> self.setState _ { password = val })
-    , onChange: \val -> self.setState _ { unvalidatedPassword = val }
-    , value: self.state.unvalidatedPassword
-    , validatedInput: validatePassword self.state.password
+    -- We only validate the password when the user clicks out from the input field
+    , onBlur: Just (\val -> self.setState _ { formData { password = val } })
+    , onChange: \val -> self.setState _ { formData { unvalidatedPassword = val } }
+    , value: self.state.formData.unvalidatedPassword
+    , validatedInput: validatePassword self.state.formData.password
     }
 
 confirmPasswordInput :: Self -> JSX
-confirmPasswordInput self = inputField
+confirmPasswordInput self@{ state: { formData }} = inputField
     { placeholder: "Bekräfta lösenord"
     , type_: "password"
     , label: "Bekräfta lösenord"
     , name: "confirmPassword"
     , onBlur: Nothing
-    , onChange: \val -> self.setState _ { confirmPassword = val }
-    , value: self.state.confirmPassword
-    , validatedInput: validatePasswordComparison self.state.password self.state.confirmPassword
+    , onChange: \val -> self.setState _ { formData { confirmPassword = val } }
+    , value: formData.confirmPassword
+    , validatedInput: validatePasswordComparison formData.password formData.confirmPassword
     }
 
 
@@ -441,7 +449,7 @@ mkNewUser f =
   <*> f.phone
 
 formValidations :: Self -> ValidatedForm FormData
-formValidations self =
+formValidations { state: { formData } } =
   { firstName: _
   , lastName: _
   , streetAddress:    _
@@ -454,16 +462,16 @@ formValidations self =
   , unvalidatedPassword: Nothing
   , confirmPassword: _
   }
-  <$> validateFirstName self.state.firstName
-  <*> validateLastName self.state.lastName
-  <*> validateStreetAddress self.state.streetAddress
-  <*> validateCity self.state.city
-  <*> validateCountry self.state.country
-  <*> validateZipCode self.state.zipCode
-  <*> validatePhone self.state.phone
-  <*> validateEmailAddress self.state.emailAddress
-  <*> validatePasswordLength self.state.password
-  <*> validatePasswordComparison self.state.password self.state.confirmPassword
+  <$> validateFirstName formData.firstName
+  <*> validateLastName formData.lastName
+  <*> validateStreetAddress formData.streetAddress
+  <*> validateCity formData.city
+  <*> validateCountry formData.country
+  <*> validateZipCode formData.zipCode
+  <*> validatePhone formData.phone
+  <*> validateEmailAddress formData.emailAddress
+  <*> validatePasswordLength formData.password
+  <*> validatePasswordComparison formData.password formData.confirmPassword
 
 validateFirstName :: Maybe String -> ValidatedForm (Maybe String)
 validateFirstName = validateEmptyField FirstName "Förnamn krävs."
