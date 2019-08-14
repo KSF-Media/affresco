@@ -102,9 +102,11 @@ render self = registrationForm
     registrationForm :: Array JSX -> JSX
     registrationForm children =
       DOM.form
-        { children
+        { children: formTitle `cons` children
         , onSubmit: handler preventDefault $ (\_ -> submitForm self $ formValidations self)
         }
+      where
+        formTitle = DOM.h1_ [ DOM.text "Skapa ditt konto" ]
 
 initialState :: State
 initialState =
