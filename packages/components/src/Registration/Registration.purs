@@ -359,7 +359,7 @@ confirm self =
       DOM.div
         { className: "registration--accept-terms"
         , children:
-            [ DOM.text "Genom att klicka på \"Fortsätt\", accepterar du våra "
+            [ DOM.text "Genom att klicka på \"Skapa konto\", accepterar du våra "
             , DOM.a
                 { href: termsUrl
                 , target: "_blank"
