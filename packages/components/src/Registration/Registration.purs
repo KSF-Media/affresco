@@ -374,8 +374,8 @@ confirm self =
             ]
         }
       where
-        termsUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.33626213.557863145.1547627789-663578572.1543831809#terms"
-        privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/?_ga=2.233133274.557863145.1547627789-663578572.1543831809#privacy"
+        termsUrl         = "https://www.hbl.fi/bruksvillkor/#terms"
+        privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/#privacy"
 
 
 submitForm :: Self -> ValidatedForm FormData -> Effect Unit
