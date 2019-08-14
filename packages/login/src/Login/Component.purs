@@ -25,7 +25,7 @@ import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import KSF.Login.View as View
-import KSF.Registration as Registration
+import KSF.Registration.Component as Registration
 import KSF.LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
