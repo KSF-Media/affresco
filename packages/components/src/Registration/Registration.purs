@@ -329,6 +329,46 @@ confirm self =
         ]
     }
   where
+    acceptTermsText :: JSX
+    acceptTermsText =
+      let termsUrl         = "https://www.hbl.fi/bruksvillkor/#terms"
+          privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/#privacy"
+      in DOM.div
+        { className: "registration--accept-terms"
+        , children:
+            [ DOM.text "Genom att klicka på \"Skapa konto\", accepterar du våra "
+            , DOM.a
+                { href: termsUrl
+                , target: "_blank"
+                , children: [ DOM.text "användarvillkor" ]
+                }
+            , DOM.text " och bekräftar att ha läst och förstått vår "
+            , DOM.a
+                { href: privacyPolicyUrl
+                , target: "_blank"
+                , children: [ DOM.text "integritetspolicy." ]
+                }
+            ]
+        }
+
+    validationErrorMessage :: JSX
+    validationErrorMessage
+      | not isFormInvalid = mempty
+      | otherwise =
+          DOM.div
+            { className: "registration--invalid-form-generic-message mt2"
+            , children: [ DOM.text "Alla obligatoriska fält är inte korrekt ifyllda, kontrollera uppgifterna." ]
+            }
+
+    confirmButton :: JSX
+    confirmButton =
+      DOM.input
+        { type: "submit"
+        , className: "registration--create-button mt2"
+        , disabled: isFormInvalid
+        , value: "Skapa konto"
+        }
+
     cancelText :: JSX
     cancelText =
       DOM.div
@@ -347,48 +387,6 @@ confirm self =
       | Left errs <- toEither $ formValidations self
       = not $ all isNotInitialized errs
       | otherwise = false
-
-    confirmButton :: JSX
-    confirmButton =
-      DOM.input
-        { type: "submit"
-        , className: "registration--create-button mt2"
-        , disabled: if isFormInvalid then true else false
-        , value: "Skapa konto"
-        }
-
-    validationErrorMessage :: JSX
-    validationErrorMessage
-      | not isFormInvalid = mempty
-      | otherwise =
-          DOM.div
-            { className: "registration--invalid-form-generic-message mt2"
-            , children: [ DOM.text "Alla obligatoriska fält är inte korrekt ifyllda, kontrollera uppgifterna." ]
-            }
-
-    acceptTermsText :: JSX
-    acceptTermsText =
-      DOM.div
-        { className: "registration--accept-terms"
-        , children:
-            [ DOM.text "Genom att klicka på \"Skapa konto\", accepterar du våra "
-            , DOM.a
-                { href: termsUrl
-                , target: "_blank"
-                , children: [ DOM.text "användarvillkor" ]
-                }
-            , DOM.text " och bekräftar att ha läst och förstått vår "
-            , DOM.a
-                { href: privacyPolicyUrl
-                , target: "_blank"
-                , children: [ DOM.text "integritetspolicy." ]
-                }
-            ]
-        }
-      where
-        termsUrl         = "https://www.hbl.fi/bruksvillkor/#terms"
-        privacyPolicyUrl = "https://www.hbl.fi/bruksvillkor/#privacy"
-
 
 submitForm :: Self -> ValidatedForm FormData -> Effect Unit
 submitForm self@{ state: { formData } } = unV
