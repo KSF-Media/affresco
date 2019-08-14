@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (all, any, cons, find, intercalate, snoc)
+import Data.Array (all, any, cons, filter, find, intercalate, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, traverse_)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
@@ -90,7 +90,7 @@ render self = registrationForm
       , children:
           [ firstNameInput self, lastNameInput self
           , streetAddressInput self, cityInput self
-          , zipCodeInput self, countryDropdown self
+          , zipCodeInput self, countryInput self
           , phoneInput self, emailAddressInput self
           , passwordInput self, confirmPasswordInput self
           , confirm self
@@ -229,8 +229,8 @@ zipCodeInput self@{ state: { formData }} = inputField
   , value: formData.zipCode
   }
 
-countryDropdown :: Self -> JSX
-countryDropdown self@{ state: { formData }} =
+countryInput :: Self -> JSX
+countryInput self@{ state: { formData }} =
   DOM.div
     { className: "registration--input-container"
     , children:
@@ -274,23 +274,29 @@ emailAddressInput self@{ state: { formData }} = inputField
   , label: "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
-  , onChange: (\val -> self.setState _ { formData { emailAddress = val } })
+  , onChange: (\val -> self.setState _ { formData { emailAddress = val }
+                                         -- Clear server errors of EmailAddress when typing
+                                       , serverErrors = removeServerErrors EmailAddress self.state.serverErrors
+                                       })
   , onBlur: Nothing
   , validatedInput: validateEmailAddress formData.emailAddress self.state.serverErrors
   , value: formData.emailAddress
   }
 
 passwordInput :: Self -> JSX
-passwordInput self = inputField
+passwordInput self@{ state: { formData }} = inputField
     { placeholder: "Lösenord (minst 6 tecken)"
     , type_: "password"
     , label: "Lösenord"
     , name: "password"
     -- We only validate the password when the user clicks out from the input field
-    , onBlur: Just (\val -> self.setState _ { formData { password = val } })
-    , onChange: \val -> self.setState _ { formData { unvalidatedPassword = val } }
-    , value: self.state.formData.unvalidatedPassword
-    , validatedInput: validatePassword self.state.formData.password
+    , onBlur: Just \val -> self.setState _ { formData { password = val } }
+    , onChange: \val -> self.setState _ { formData { unvalidatedPassword = val }
+                                         -- Clear server errors of Password when typing
+                                        , serverErrors = removeServerErrors Password self.state.serverErrors
+                                        }
+    , value: formData.unvalidatedPassword
+    , validatedInput: validatePassword formData.password self.state.serverErrors
     }
 
 confirmPasswordInput :: Self -> JSX
@@ -300,11 +306,16 @@ confirmPasswordInput self@{ state: { formData }} = inputField
     , label: "Bekräfta lösenord"
     , name: "confirmPassword"
     , onBlur: Nothing
-    , onChange: \val -> self.setState _ { formData { confirmPassword = val } }
+    , onChange: \val -> self.setState _ { formData { confirmPassword = val
+                                                   -- This is because of a possible browser form auto fill:
+                                                   -- If auto fill happens, the password is in `unvalidatedPassword`,
+                                                   -- as we don't get an onBlur hook to validate the password.
+                                                   , password = formData.password <|> formData.unvalidatedPassword
+                                                   }
+                                        }
     , value: formData.confirmPassword
     , validatedInput: validatePasswordComparison formData.password formData.confirmPassword
     }
-
 
 confirm :: Self -> JSX
 confirm self =
@@ -395,14 +406,13 @@ submitForm self@{ state: { formData } } = unV
             , zipCode         = formData.zipCode         <|> Just ""
             , country         = formData.country         <|> Just ""
             , phone           = formData.phone           <|> Just ""
-            , password        = formData.password        <|> Just ""
+            , password        = formData.password        <|> formData.unvalidatedPassword <|> Just ""
             , confirmPassword = formData.confirmPassword <|> Just ""
             }
         }
   )
   createUser
   where
-    -- TODO: Clear self.state.serverErrors
     createUser form
       | Just user <- mkNewUser form = do
           self.props.onRegister $ Persona.register user `catchError` case _ of
@@ -524,8 +534,11 @@ validateEmailAddress email serverErrors =
     -- From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email#Basic_validation
     emailRegex = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
 
-validatePassword :: Maybe String -> ValidatedForm (Maybe String)
-validatePassword password = validateEmptyField Password "Lösenord krävs." password `andThen` validatePasswordLength
+validatePassword :: Maybe String -> Array ValidationError -> ValidatedForm (Maybe String)
+validatePassword password serverErrors =
+  validateServerError Password serverErrors password `andThen`
+  validateEmptyField Password "Lösenord krävs." `andThen`
+  validatePasswordLength
 
 validatePasswordLength :: Maybe String -> ValidatedForm (Maybe String)
 validatePasswordLength Nothing = notInitialized Password
@@ -558,7 +571,7 @@ validateInputWithRegex fieldName regexString errMsg inputValue
   | otherwise = invalid $ pure $ InvalidPatternFailure fieldName errMsg
 
 -- | NOTE: Even though `val` is not required by this function, it must be taken in and returned as is,
---         in order to keep chaining validation functions using `andThen` working.
+--         in order to keep chaining validation functions working.
 validateServerError :: RegistrationInputField -> Array ValidationError -> Maybe String -> ValidatedForm (Maybe String)
 validateServerError fieldName serverErrors val =
   case find ((_ == fieldName) <<< validationInputFieldOf) serverErrors of
@@ -595,3 +608,6 @@ validationInputFieldOf = case _ of
 isNotInitialized :: ValidationError -> Boolean
 isNotInitialized (InvalidNotInitialized _) = true
 isNotInitialized _ = false
+
+removeServerErrors :: RegistrationInputField -> Array ValidationError -> Array ValidationError
+removeServerErrors field serverErrors = filter ((field /= _) <<< validationInputFieldOf) serverErrors
