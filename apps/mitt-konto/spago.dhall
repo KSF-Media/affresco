@@ -23,7 +23,6 @@ You can edit this file as you like.
     , "simple-json"
     , "facebook"
     , "now"
-    , "validation"
     ]
 , packages =
     ../../packages.dhall
