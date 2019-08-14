@@ -2,8 +2,9 @@ module KSF.Registration where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (all, any, cons, intercalate, snoc)
+import Data.Array (all, any, cons, find, intercalate, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, traverse_)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
@@ -73,7 +74,7 @@ data ValidationError
   | InvalidEmpty RegistrationInputField String
   | InvalidPatternFailure RegistrationInputField String
   | InvalidEmailInUse String
-  | InvalidNotInitialized -- Fictional state only to be set when the form is first rendered
+  | InvalidNotInitialized RegistrationInputField -- Fictional state only to be set when the form is first rendered
 derive instance eqValidationError :: Eq ValidationError
 
 registration :: Props -> JSX
@@ -275,7 +276,7 @@ emailAddressInput self@{ state: { formData }} = inputField
   , placeholder: "E-postadress"
   , onChange: (\val -> self.setState _ { formData { emailAddress = val } })
   , onBlur: Nothing
-  , validatedInput: validateEmailAddress formData.emailAddress
+  , validatedInput: validateEmailAddress formData.emailAddress self.state.serverErrors
   , value: formData.emailAddress
   }
 
@@ -379,15 +380,31 @@ confirm self =
 
 
 submitForm :: Self -> ValidatedForm FormData -> Effect Unit
-submitForm self = unV
+submitForm self@{ state: { formData } } = unV
   (\errors   -> do
-      Console.log $ unsafeCoerce self.state
-      Console.log $ intercalate ", " $ map validationErrorMessageOf errors)
+      -- Show validation errors to user (if not shown):
+      -- As we don't show error messages when an input field is InvalidNotinitialized (when the value is Nothing),
+      -- let's set all of the Nothing values to Just empty strings to vizualise errors to the user, when the submit button is clicked.
+      -- We need to do this, because we don't want to show validation errors straight when the user comes to the registration page.
+      self.setState _
+        { formData
+            { firstName       = formData.firstName       <|> Just ""
+            , lastName        = formData.lastName        <|> Just ""
+            , streetAddress   = formData.streetAddress   <|> Just ""
+            , city            = formData.city            <|> Just ""
+            , zipCode         = formData.zipCode         <|> Just ""
+            , country         = formData.country         <|> Just ""
+            , phone           = formData.phone           <|> Just ""
+            , password        = formData.password        <|> Just ""
+            , confirmPassword = formData.confirmPassword <|> Just ""
+            }
+        }
+  )
   createUser
   where
     -- TODO: Clear self.state.serverErrors
-    createUser formData
-      | Just user <- mkNewUser formData = do
+    createUser form
+      | Just user <- mkNewUser form = do
           self.props.onRegister $ Persona.register user `catchError` case _ of
             err | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
                     Console.error errData.email_address_in_use_registration.description
@@ -449,7 +466,7 @@ mkNewUser f =
   <*> f.phone
 
 formValidations :: Self -> ValidatedForm FormData
-formValidations { state: { formData } } =
+formValidations self@{ state: { formData } } =
   { firstName: _
   , lastName: _
   , streetAddress:    _
@@ -469,7 +486,7 @@ formValidations { state: { formData } } =
   <*> validateCountry formData.country
   <*> validateZipCode formData.zipCode
   <*> validatePhone formData.phone
-  <*> validateEmailAddress formData.emailAddress
+  <*> validateEmailAddress formData.emailAddress self.state.serverErrors
   <*> validatePasswordLength formData.password
   <*> validatePasswordComparison formData.password formData.confirmPassword
 
@@ -498,9 +515,10 @@ validatePhone phone =
   validateEmptyField Phone "Telefon krävs." phone `andThen`
   validateInputWithRegex Phone "^[\\d|\\+|\\s|-|\\(|\\)]+$" "Telefonnummer kan bara bestå av siffror, mellanslag och +-tecken."
 
-validateEmailAddress :: Maybe String -> ValidatedForm (Maybe String)
-validateEmailAddress email =
-  validateEmptyField EmailAddress "E-postadress krävs." email `andThen`
+validateEmailAddress :: Maybe String -> Array ValidationError -> ValidatedForm (Maybe String)
+validateEmailAddress email serverErrors =
+  validateServerError EmailAddress serverErrors email `andThen`
+  validateEmptyField EmailAddress "E-postadress krävs." `andThen`
   validateInputWithRegex EmailAddress emailRegex "Ogiltig E-postadress."
   where
     -- From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email#Basic_validation
@@ -510,13 +528,13 @@ validatePassword :: Maybe String -> ValidatedForm (Maybe String)
 validatePassword password = validateEmptyField Password "Lösenord krävs." password `andThen` validatePasswordLength
 
 validatePasswordLength :: Maybe String -> ValidatedForm (Maybe String)
-validatePasswordLength Nothing = notInitialized
+validatePasswordLength Nothing = notInitialized Password
 validatePasswordLength password
   | Just pw <- password, length pw >= 6 = pure $ Just pw
   | otherwise = invalid $ pure $ Invalid Password "Lösenordet måste ha minst 6 tecken."
 
 validatePasswordComparison :: Maybe String -> Maybe String -> ValidatedForm (Maybe String)
-validatePasswordComparison Nothing Nothing = notInitialized
+validatePasswordComparison Nothing Nothing = notInitialized Password
 validatePasswordComparison password confirmedPassword
   | Just pw <- password
   , Just confirmedPw <- confirmedPassword
@@ -525,7 +543,7 @@ validatePasswordComparison password confirmedPassword
   | otherwise = invalid $ pure $ Invalid ConfirmPassword "Lösenorden överensstämmer inte med varandra."
 
 validateEmptyField :: RegistrationInputField -> String -> Maybe String -> ValidatedForm (Maybe String)
-validateEmptyField _ _ Nothing = notInitialized
+validateEmptyField field _ Nothing = notInitialized field
 validateEmptyField fieldName validationErr (Just value) =
   if null value
     then invalid $ pure $ InvalidEmpty fieldName validationErr
@@ -539,15 +557,23 @@ validateInputWithRegex fieldName regexString errMsg inputValue
   = pure $ Just val
   | otherwise = invalid $ pure $ InvalidPatternFailure fieldName errMsg
 
-notInitialized :: ValidatedForm (Maybe String)
-notInitialized = invalid $ pure $ InvalidNotInitialized
+-- | NOTE: Even though `val` is not required by this function, it must be taken in and returned as is,
+--         in order to keep chaining validation functions using `andThen` working.
+validateServerError :: RegistrationInputField -> Array ValidationError -> Maybe String -> ValidatedForm (Maybe String)
+validateServerError fieldName serverErrors val =
+  case find ((_ == fieldName) <<< validationInputFieldOf) serverErrors of
+    Just err -> invalid $ pure err
+    Nothing  -> pure $ val
+
+notInitialized :: RegistrationInputField -> ValidatedForm (Maybe String)
+notInitialized field = invalid $ pure $ InvalidNotInitialized field
 
 inputFieldErrorMessage :: ValidatedForm (Maybe String) -> Maybe String
 inputFieldErrorMessage = unV handleInvalidField (\_ -> Nothing)
   where
     handleInvalidField errs
       -- If field is not initialized, it's considered to be valid
-      | InvalidNotInitialized <- head errs = Nothing
+      | (InvalidNotInitialized _) <- head errs = Nothing
       | otherwise = Just $ validationErrorMessageOf $ head errs
 
 validationErrorMessageOf :: ValidationError -> String
@@ -556,8 +582,16 @@ validationErrorMessageOf = case _ of
   InvalidEmpty _ err          -> err
   InvalidPatternFailure _ err -> err
   InvalidEmailInUse err       -> err
-  InvalidNotInitialized       -> "NotInitialized"
+  InvalidNotInitialized _     -> "NotInitialized"
+
+validationInputFieldOf :: ValidationError -> RegistrationInputField
+validationInputFieldOf = case _ of
+  Invalid f _               -> f
+  InvalidEmpty f _          -> f
+  InvalidPatternFailure f _ -> f
+  InvalidEmailInUse _       -> EmailAddress
+  InvalidNotInitialized f   -> f
 
 isNotInitialized :: ValidationError -> Boolean
-isNotInitialized InvalidNotInitialized = true
+isNotInitialized (InvalidNotInitialized _) = true
 isNotInitialized _ = false
