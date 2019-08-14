@@ -4,28 +4,27 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (all, any, cons, filter, find, intercalate, snoc)
+import Data.Array (all, cons, filter, find, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, traverse_)
-import Data.List.NonEmpty (NonEmptyList, head, toList)
+import Data.List.NonEmpty (NonEmptyList, head)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
-import Data.Validation.Semigroup (V, andThen, invalid, isValid, toEither, unV)
+import Data.Validation.Semigroup (V, andThen, invalid, toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Foreign.Object (Object)
 import Foreign.Object as Object
-import KSF.Registration.Component (RegistrationInputFieldError, emailInUseMsg)
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler)
-import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State
 
@@ -76,6 +75,8 @@ data ValidationError
   | InvalidEmailInUse String
   | InvalidNotInitialized RegistrationInputField -- Fictional state only to be set when the form is first rendered
 derive instance eqValidationError :: Eq ValidationError
+
+type ValidationServerError = Object (Array String)
 
 registration :: Props -> JSX
 registration = make component { initialState, render }
@@ -434,7 +435,7 @@ submitForm self@{ state: { formData } } = unV
          Då kan du använda samma inloggning.
          Du kan också skapa konto med en annan adress."""
 
-    handleServerErrs :: RegistrationInputFieldError -> Effect Unit
+    handleServerErrs :: ValidationServerError -> Effect Unit
     handleServerErrs errs = do
       traverse_ setFormInvalid $ Object.keys errs
       where
