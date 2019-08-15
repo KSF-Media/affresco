@@ -2,16 +2,17 @@
 @import (reference) 'ksf-variables';
 @icon-triangle-down: '../images/icon-triangle-down.svg';
 
+.registration--form-title {
+    margin-bottom: 1em;
+    text-align: center;
+}
+
 .registration--container {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: repeat(6, auto);
     grid-column-gap: 20px;
     grid-row-gap: auto;
-    h1 {
-        margin-bottom: 1em;
-        text-align: center;
-    }
     input[type=text], input[type=password], input[type=email], select {
         width: 100%;
         font-size: 1em;

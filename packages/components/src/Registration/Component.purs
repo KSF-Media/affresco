@@ -112,7 +112,7 @@ render self = registrationForm
         , onSubmit: handler preventDefault $ (\_ -> submitForm self $ formValidations self)
         }
       where
-        formTitle = DOM.h1_ [ DOM.text "Skapa ditt konto" ]
+        formTitle = DOM.h1 { className: "registration--form-title", children: [ DOM.text "Skapa ditt konto" ] }
 
 initialState :: State
 initialState =
