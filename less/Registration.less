@@ -2,8 +2,17 @@
 @import (reference) 'ksf-variables';
 @icon-triangle-down: '../images/icon-triangle-down.svg';
 
-.registration--input {
-    margin-top: 1em;
+.registration--form-title {
+    margin-bottom: 1em;
+    text-align: center;
+}
+
+.registration--container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(6, auto);
+    grid-column-gap: 20px;
+    grid-row-gap: auto;
     input[type=text], input[type=password], input[type=email], select {
         width: 100%;
         font-size: 1em;
@@ -29,6 +38,7 @@
     @media @to-medium {
         margin-left: 1em;
         margin-right: 1em;
+        grid-template-columns: 1fr;
     }
     @media @to-small {
         margin-left: 2em;
@@ -36,11 +46,17 @@
     }
 }
 
+.registration--input-container {
+    display: grid;
+    // Rows are 1) input label, 2) input field, 3) error message
+    grid-template-rows: auto auto minmax(20px, max-content);
+    grid-row-gap: .3em;
+}
+
 .registration--input-label {
     text-align: left;
     font-size: 0.9em;
     font-weight: 500;
-    margin-bottom: 0.5em;
 }
 
 .registration--create-button {
@@ -59,9 +75,7 @@
 }
 
 .registration--invalid-form-field {
-    input {
-        border-color: red !important;
-    }
+    border-color: red !important;
 }
 
 .registration--invalid-form-text {
@@ -73,8 +87,9 @@
     color: red;
 }
 
-.registration--input-row {
-    @media @to-small {
-        flex-direction: column;
+.registration--submit {
+    grid-column-start: 2;
+    @media @to-medium {
+        grid-column-start: 1;
     }
 }

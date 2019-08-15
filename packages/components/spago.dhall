@@ -17,6 +17,7 @@
     , "simple-json"
     , "facebook"
     , "now"
+    , "validation"
     ]
 , packages =
     ../../packages.dhall
