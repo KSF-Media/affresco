@@ -158,10 +158,9 @@ inputField a =
             , value: fromMaybe "" a.value
             , onChange: handler targetValue a.onChange
             , onBlur: handler targetValue $ fromMaybe (\_ -> pure unit) a.onBlur
-            , className:
-              if isJust $ inputFieldErrorMessage a.validatedInput
-                then "registration--invalid-form-field"
-                else ""
+            , className: if isValidOrNotInitialized a.validatedInput
+                           then ""
+                           else "registration--invalid-form-field"
             }
         ] `snoc` foldMap errorMessage (inputFieldErrorMessage a.validatedInput)
     }
@@ -589,6 +588,9 @@ inputFieldErrorMessage = unV handleInvalidField (\_ -> Nothing)
       -- If field is not initialized, it's considered to be valid
       | (InvalidNotInitialized _) <- head errs = Nothing
       | otherwise = Just $ validationErrorMessageOf $ head errs
+
+isValidOrNotInitialized :: ValidatedForm (Maybe String) -> Boolean
+isValidOrNotInitialized = isNothing <<< inputFieldErrorMessage
 
 validationErrorMessageOf :: ValidationError -> String
 validationErrorMessageOf = case _ of
