@@ -8,7 +8,7 @@ import Data.Array (all, cons, filter, find, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, traverse_)
 import Data.List.NonEmpty (NonEmptyList, head)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
@@ -40,6 +40,12 @@ type State =
   , formData :: FormData
   }
 
+-- NOTE: We have two passwords in the state, `password` and `unvalidatedPassword`.
+-- `unvalidatedPassword` is the real input value (shown to user), and `password` is used to validate that value (this is sent to the server).
+-- This is because we want the password input field to behave differently from the other inputs.
+-- In other inputs, we want to validate the values while they're being typed, but with the password,
+-- we only validate its value when the focus taken out of that field (onBlur event).
+-- TODO: Figure out better ways of doing this.
 type FormData =
   { firstName           :: Maybe String
   , lastName            :: Maybe String
@@ -111,17 +117,17 @@ render self = registrationForm
 initialState :: State
 initialState =
   { formData:
-      { firstName:       Nothing
-      , lastName:        Nothing
-      , streetAddress:   Nothing
-      , city:            Nothing
-      , country:         Just "FI"
-      , zipCode:         Nothing
-      , phone:           Nothing
-      , emailAddress:    Nothing
-      , password:        Nothing
+      { firstName:           Nothing
+      , lastName:            Nothing
+      , streetAddress:       Nothing
+      , city:                Nothing
+      , country:             Just "FI"
+      , zipCode:             Nothing
+      , phone:               Nothing
+      , emailAddress:        Nothing
+      , password:            Nothing
       , unvalidatedPassword: Nothing
-      , confirmPassword: Nothing
+      , confirmPassword:     Nothing
       }
   , serverErrors: []
   }
