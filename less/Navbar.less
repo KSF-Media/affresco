@@ -5,30 +5,8 @@
 @z-index-navbar: 3;
 @nav-box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.1);
 
-.nav--need-help {
-    padding-bottom: 5px;
-}
-
 .nav--phone-symbol, .nav--user-symbol, .nav--sign-out-symbol {
     width: 35px;
-}
-
-.nav--language-select {
-    select {
-        max-width: 100%;
-        font-weight: 400;
-        font-family: 'Duplex Sans', sans-serif;
-        font-size: 1em;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        padding: 8px 36px 8px 8px;
-        background: url(@icon-triangle-down) no-repeat @nude;
-        background-position: right 24px center;
-        background-size: 8px;
-        border: none;
-        border-radius: 5px;
-    }
 }
 
 .nav--navbar {
@@ -76,6 +54,7 @@
     cursor: pointer;
     @media @to-medium { display: block; }
     @media @to-xsmall { margin-right: 1em; }
+    justify-self: end;
 }
 
 .nav--hamburger-stripe {
@@ -107,13 +86,10 @@
     @media @to-medium { display: none; }
 }
 
-// .nav--nav-container {
-//     position: relative;
-// }
-
 .nav--nav-container {
+    @media @to-medium { display: none; }
     display: grid;
-    grid-template-columns: [margin-left] 21% [logo] 1fr [need-help] 1fr [logout-button] 100px [margin-right] 21%;
+    grid-template-columns: [margin-left] 21% [logo] 1fr [need-help] 1fr [logout-button] minmax(min-content, auto) [margin-right] 21%;
     grid-column-gap: 2em;
     align-items: center;
     height: 100px;
@@ -121,9 +97,23 @@
     width: 100%;
     position: relative;
     z-index: @z-index-navbar;
-    @media @from-medium {
-        box-shadow: @nav-box-shadow;
+    box-shadow: @nav-box-shadow;
+}
+
+.nav--collapsed-container {
+    display: none;
+    @media @to-medium {
+        display: grid;
+        grid-template-columns: [margin-left] 21% [logo] 1fr [hamburger] 1fr [margin-right] 21%;
+        grid-column-gap: 2em;
+        align-items: center;
     }
+    height: 100px;
+    background: @white;
+    width: 100%;
+    position: relative;
+    z-index: @z-index-navbar;
+    box-shadow: @nav-box-shadow;
 }
 
 .nav--paper-logo {
@@ -140,10 +130,7 @@
 
 .nav--logout-button {
     grid-column-start: logout-button;
-    // align-self: center; // Vertical position on grid
     justify-self: end; // Horizontal position on grid
-    // display: grid;
-    // grid-auto-flow: column; /* default */
     img { width: 35px; }
 
     display: flex;
@@ -151,4 +138,5 @@
 
     font-size: 1.2em;
     font-weight: 400;
+    cursor: pointer;
 }

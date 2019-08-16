@@ -2,6 +2,7 @@ module KSF.Navbar.Component where
 
 import Prelude
 
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), isJust)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
@@ -36,9 +37,6 @@ type JSProps =
   , onLogout :: Effect Unit
   }
 
-data Action =
-  CollapsedNavVisibility Visibility
-
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { paper
@@ -72,30 +70,7 @@ navbar = make component
   { initialState, render }
 
 render :: Self -> JSX
-render self@{ props, state } = nav self
-  -- View.navbar
-  --   { onLogout:
-  --       if isJust props.loggedInUser
-  --       then Just do
-  --            props.logout
-  --            send self (CollapsedNavVisibility Hidden)
-  --       else Nothing
-  --   , paperInfo
-  --   , toggleCollapsedNav:
-  --       send self (CollapsedNavVisibility $ negateVisibility state.collapsedNavVisibility)
-  --   , collapsedNav:
-  --       \items ->
-  --         Collapsed.collapsed
-  --           { visibility: state.collapsedNavVisibility
-  --           , navItems: items
-  --           }
-  --   }
-  -- where
-  --   paperInfo =
-  --     { logo: paperLogoUrl props.paper
-  --     , email: paperEmail props.paper
-  --     , phoneNumber: paperPhoneNumber props.paper
-  --     }
+render self@{ props, state } = nav self <> collapsedNav self
 
 nav :: Self -> JSX
 nav self@{ props, state } =
@@ -104,9 +79,26 @@ nav self@{ props, state } =
     , children:
         [ paperLogo props.paper
         , needHelp props.paper
-        , signOutButton props.logout
+        , foldMap signOutButton (onLogout self =<< props.loggedInUser)
         ]
     }
+
+collapsedNav :: Self -> JSX
+collapsedNav self@{ props, state } =
+  DOM.div
+    { className: "nav--collapsed-container"
+    , children:
+        [ paperLogo props.paper
+        , hamburgerButton self
+       -- , needHelp props.paper
+        --, foldMap signOutButton (onLogout self =<< props.loggedInUser)
+        ]
+    }
+
+onLogout :: Self -> Persona.User -> Maybe (Effect Unit)
+onLogout self _user = Just do
+  self.props.logout
+  self.setState _ { collapsedNavVisibility = Hidden }
 
 paperLogo :: Paper -> JSX
 paperLogo paper =
@@ -131,24 +123,24 @@ signOutButton logout =
     { className: "nav--logout-button"
     , onClick: Event.handler_ logout
     , children:
-        [ DOM.img
-            { className: ""
-            , src: icons.signOut
-            }
-        , DOM.div
-            { className: ""
-            , children: [ DOM.text "Logga ut" ]
-            }
+        [ DOM.img { src: icons.signOut }
+        , DOM.div_ [ DOM.text "Logga ut" ]
         ]
     }
 
-update :: Self -> Action -> StateUpdate Props State
-update self = case _ of
-  CollapsedNavVisibility v ->
-    Update self.state { collapsedNavVisibility = v }
-
-send :: Self -> Action -> Effect Unit
-send = runUpdate update
+hamburgerButton :: Self -> JSX
+hamburgerButton self =
+  DOM.div
+    { className: "col mr3 nav--hamburger-button"
+    , onClick: Event.handler_ $ self.setState _ { collapsedNavVisibility = negateVisibility self.state.collapsedNavVisibility }
+    , children:
+        [ hamburgerStripe
+        , hamburgerStripe
+        , hamburgerStripe
+        ]
+    }
+  where
+    hamburgerStripe = DOM.div { className: "nav--hamburger-stripe" }
 
 data Paper = HBL | ON | VN | LS | HTHL | KSF
 derive instance eqPaper :: Eq Paper
@@ -172,13 +164,3 @@ paperEmail paper =
     LS   -> "tilaukset@lovari.fi"
     HTHL -> "hangonlehti@hangotidningen.fi"
     KSF  -> paperEmail HBL
-
-paperPhoneNumber :: Paper -> String
-paperPhoneNumber paper =
-  case paper of
-    HBL  -> "09 125 3500"
-    ON   -> "020 7569 650"
-    VN   -> "019 222 866"
-    LS   -> "019 532 701"
-    HTHL -> "019 312 140"
-    KSF  -> paperPhoneNumber HBL
