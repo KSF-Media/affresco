@@ -10,10 +10,10 @@ import React.Basic.DOM as DOM
 import React.Basic.Events as Event
 import React.Basic (JSX)
 
-foreign import icons ::
-  { signOut :: String
-  , phone :: String
-  }
+-- foreign import icons ::
+--   { signOut :: String
+--   , phone :: String
+--   }
 
 type PaperInfo =
   { logo :: String
@@ -99,7 +99,7 @@ navbar { onLogout, toggleCollapsedNav, paperInfo, collapsedNav } =
         , children:
             [ DOM.img
                 { className: "nav--sign-out-symbol"
-                , src: icons.signOut
+             --   , src: icons.signOut
                 }
             , DOM.div
                 { className: "nav--sign-out ml1"

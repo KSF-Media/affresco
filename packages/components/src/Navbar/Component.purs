@@ -14,6 +14,13 @@ import KSF.Navbar.View as View
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
+import React.Basic.DOM as DOM
+import React.Basic.Events as Event
+
+foreign import icons ::
+  { signOut :: String
+  , phone :: String
+  }
 
 type Self = React.Self Props State
 
@@ -65,30 +72,75 @@ navbar = make component
   { initialState, render }
 
 render :: Self -> JSX
-render self@{ props, state } =
-  View.navbar
-    { onLogout:
-        if isJust props.loggedInUser
-        then Just do
-             props.logout
-             send self (CollapsedNavVisibility Hidden)
-        else Nothing
-    , paperInfo
-    , toggleCollapsedNav:
-        send self (CollapsedNavVisibility $ negateVisibility state.collapsedNavVisibility)
-    , collapsedNav:
-        \items ->
-          Collapsed.collapsed
-            { visibility: state.collapsedNavVisibility
-            , navItems: items
-            }
+render self@{ props, state } = nav self
+  -- View.navbar
+  --   { onLogout:
+  --       if isJust props.loggedInUser
+  --       then Just do
+  --            props.logout
+  --            send self (CollapsedNavVisibility Hidden)
+  --       else Nothing
+  --   , paperInfo
+  --   , toggleCollapsedNav:
+  --       send self (CollapsedNavVisibility $ negateVisibility state.collapsedNavVisibility)
+  --   , collapsedNav:
+  --       \items ->
+  --         Collapsed.collapsed
+  --           { visibility: state.collapsedNavVisibility
+  --           , navItems: items
+  --           }
+  --   }
+  -- where
+  --   paperInfo =
+  --     { logo: paperLogoUrl props.paper
+  --     , email: paperEmail props.paper
+  --     , phoneNumber: paperPhoneNumber props.paper
+  --     }
+
+nav :: Self -> JSX
+nav self@{ props, state } =
+  DOM.div
+    { className: "nav--nav-container"
+    , children:
+        [ paperLogo props.paper
+        , needHelp props.paper
+        , signOutButton props.logout
+        ]
     }
-  where
-    paperInfo =
-      { logo: paperLogoUrl props.paper
-      , email: paperEmail props.paper
-      , phoneNumber: paperPhoneNumber props.paper
-      }
+
+paperLogo :: Paper -> JSX
+paperLogo paper =
+  DOM.img { className: "nav--paper-logo", src: paperLogoUrl paper }
+
+needHelp :: Paper -> JSX
+needHelp paper =
+  DOM.div
+    { className: "nav--need-help"
+    , children:
+        [ DOM.strong_ [ DOM.text "Behöver du hjälp?" ]
+        , DOM.div_ [ formatMailtoAnchorTag $ paperEmail paper ]
+        ]
+    }
+    where
+      formatMailtoAnchorTag :: String -> JSX
+      formatMailtoAnchorTag email = DOM.a { href: "mailto:" <> email, children: [ DOM.text email ] }
+
+signOutButton :: (Effect Unit) -> JSX
+signOutButton logout =
+  DOM.div
+    { className: "nav--logout-button"
+    , onClick: Event.handler_ logout
+    , children:
+        [ DOM.img
+            { className: ""
+            , src: icons.signOut
+            }
+        , DOM.div
+            { className: ""
+            , children: [ DOM.text "Logga ut" ]
+            }
+        ]
+    }
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of

@@ -41,9 +41,9 @@
     }
 }
 
-.nav--paper-logo {
-    height: 38px;
-}
+// .nav--paper-logo {
+//     height: 38px;
+// }
 
 .nav--logo-container {
     text-align: right;
@@ -107,6 +107,48 @@
     @media @to-medium { display: none; }
 }
 
+// .nav--nav-container {
+//     position: relative;
+// }
+
 .nav--nav-container {
+    display: grid;
+    grid-template-columns: [margin-left] 21% [logo] 1fr [need-help] 1fr [logout-button] 100px [margin-right] 21%;
+    grid-column-gap: 2em;
+    align-items: center;
+    height: 100px;
+    background: @white;
+    width: 100%;
     position: relative;
+    z-index: @z-index-navbar;
+    @media @from-medium {
+        box-shadow: @nav-box-shadow;
+    }
+}
+
+.nav--paper-logo {
+    grid-column-start: logo;
+    align-self: center;
+    height: 38px;
+}
+
+.nav--need-help {
+    grid-column-start: need-help;
+    // align-self: center;
+    justify-self: end;
+}
+
+.nav--logout-button {
+    grid-column-start: logout-button;
+    // align-self: center; // Vertical position on grid
+    justify-self: end; // Horizontal position on grid
+    // display: grid;
+    // grid-auto-flow: column; /* default */
+    img { width: 35px; }
+
+    display: flex;
+    align-items: center; // Vertical position on flexbox
+
+    font-size: 1.2em;
+    font-weight: 400;
 }
