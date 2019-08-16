@@ -47,17 +47,16 @@ type State =
 -- we only validate its value when the focus taken out of that field (onBlur event).
 -- TODO: Figure out better ways of doing this.
 type FormData =
-  { firstName           :: Maybe String
-  , lastName            :: Maybe String
-  , streetAddress       :: Maybe String
-  , city                :: Maybe String
-  , country             :: Maybe String
-  , zipCode             :: Maybe String
-  , phone               :: Maybe String
-  , emailAddress        :: Maybe String
-  , password            :: Maybe String
-  , unvalidatedPassword :: Maybe String
-  , confirmPassword     :: Maybe String
+  { firstName       :: Maybe String
+  , lastName        :: Maybe String
+  , streetAddress   :: Maybe String
+  , city            :: Maybe String
+  , country         :: Maybe String
+  , zipCode         :: Maybe String
+  , phone           :: Maybe String
+  , emailAddress    :: Maybe String
+  , password        :: Maybe String
+  , confirmPassword :: Maybe String
   }
 
 data RegistrationInputField
@@ -126,7 +125,6 @@ initialState =
       , phone:               Nothing
       , emailAddress:        Nothing
       , password:            Nothing
-      , unvalidatedPassword: Nothing
       , confirmPassword:     Nothing
       }
   , serverErrors: []
@@ -147,7 +145,6 @@ type InputFieldAttributes =
   , placeholder    :: String
   , value          :: Maybe String
   , onChange       :: Maybe String -> Effect Unit
-  , onBlur         :: Maybe (Maybe String -> Effect Unit)
   , validatedInput :: ValidatedForm (Maybe String)
   }
 
@@ -163,7 +160,6 @@ inputField a =
             , name: a.name
             , value: fromMaybe "" a.value
             , onChange: handler targetValue a.onChange
-            , onBlur: handler targetValue $ fromMaybe (\_ -> pure unit) a.onBlur
             , className: if isValidOrNotInitialized a.validatedInput
                            then ""
                            else "registration--invalid-form-field"
@@ -184,7 +180,6 @@ firstNameInput self@{ state: { formData }} = inputField
   , name: "firstName"
   , placeholder: "Förnamn"
   , onChange: (\val -> self.setState _ { formData { firstName = val } })
-  , onBlur: Nothing
   , validatedInput: validateFirstName formData.firstName
   , value: formData.firstName
   }
@@ -196,7 +191,6 @@ lastNameInput self@{ state: { formData }} = inputField
   , name: "lastName"
   , placeholder: "Efternamn"
   , onChange: (\val -> self.setState _ { formData { lastName = val }})
-  , onBlur: Nothing
   , validatedInput: validateLastName formData.lastName
   , value: formData.lastName
   }
@@ -208,7 +202,6 @@ streetAddressInput self@{ state: { formData }} = inputField
   , name: "streetAddress"
   , placeholder: "Adress"
   , onChange: (\val -> self.setState _ { formData { streetAddress = val } })
-  , onBlur: Nothing
   , validatedInput: validateStreetAddress formData.streetAddress
   , value: formData.streetAddress
   }
@@ -220,7 +213,6 @@ cityInput self@{ state: { formData }} = inputField
   , name: "city"
   , placeholder: "Stad"
   , onChange: (\val -> self.setState _ { formData { city = val } })
-  , onBlur: Nothing
   , validatedInput: validateCity formData.city
   , value: formData.city
   }
@@ -232,7 +224,6 @@ zipCodeInput self@{ state: { formData }} = inputField
   , name: "zipCode"
   , placeholder: "Postnummer"
   , onChange: (\val -> self.setState _ { formData { zipCode = val } })
-  , onBlur: Nothing
   , validatedInput: validateZipCode formData.zipCode
   , value: formData.zipCode
   }
@@ -271,7 +262,6 @@ phoneInput self@{ state: { formData }} = inputField
   , name: "phone"
   , placeholder: "Telefon"
   , onChange: (\val -> self.setState _ { formData { phone = val } })
-  , onBlur: Nothing
   , validatedInput: validatePhone formData.phone
   , value: formData.phone
   }
@@ -286,7 +276,6 @@ emailAddressInput self@{ state: { formData }} = inputField
                                          -- Clear server errors of EmailAddress when typing
                                        , serverErrors = removeServerErrors EmailAddress self.state.serverErrors
                                        })
-  , onBlur: Nothing
   , validatedInput: validateEmailAddress formData.emailAddress self.state.serverErrors
   , value: formData.emailAddress
   }
@@ -297,13 +286,11 @@ passwordInput self@{ state: { formData }} = inputField
     , type_: "password"
     , label: "Lösenord"
     , name: "password"
-    -- We only validate the password when the user clicks out from the input field
-    , onBlur: Just \val -> self.setState _ { formData { password = val } }
-    , onChange: \val -> self.setState _ { formData { unvalidatedPassword = val }
+    , onChange: \val -> self.setState _ { formData { password = val }
                                          -- Clear server errors of Password when typing
                                         , serverErrors = removeServerErrors Password self.state.serverErrors
                                         }
-    , value: formData.unvalidatedPassword
+    , value: formData.password
     , validatedInput: validatePassword formData.password self.state.serverErrors
     }
 
@@ -313,14 +300,7 @@ confirmPasswordInput self@{ state: { formData }} = inputField
     , type_: "password"
     , label: "Bekräfta lösenord"
     , name: "confirmPassword"
-    , onBlur: Nothing
-    , onChange: \val -> self.setState _ { formData { confirmPassword = val
-                                                   -- This is because of a possible browser form auto fill:
-                                                   -- If auto fill happens, the password is in `unvalidatedPassword`,
-                                                   -- as we don't get an onBlur hook to validate the password.
-                                                   , password = formData.password <|> formData.unvalidatedPassword
-                                                   }
-                                        }
+    , onChange: \val -> self.setState _ { formData { confirmPassword = val } }
     , value: formData.confirmPassword
     , validatedInput: validatePasswordComparison formData.password formData.confirmPassword
     }
@@ -412,7 +392,7 @@ submitForm self@{ state: { formData } } = unV
             , zipCode         = formData.zipCode         <|> Just ""
             , country         = formData.country         <|> Just ""
             , phone           = formData.phone           <|> Just ""
-            , password        = formData.password        <|> formData.unvalidatedPassword <|> Just ""
+            , password        = formData.password        <|> Just ""
             , confirmPassword = formData.confirmPassword <|> Just ""
             }
         }
@@ -492,7 +472,6 @@ formValidations self@{ state: { formData } } =
   , phone: _
   , emailAddress: _
   , password: _
-  , unvalidatedPassword: Nothing
   , confirmPassword: _
   }
   <$> validateFirstName formData.firstName
