@@ -492,7 +492,7 @@ formValidations self@{ state: { formData } } =
   , phone: _
   , emailAddress: _
   , password: _
-  , unvalidatedPassword: Nothing
+  , unvalidatedPassword: formData.unvalidatedPassword
   , confirmPassword: _
   }
   <$> validateFirstName formData.firstName
