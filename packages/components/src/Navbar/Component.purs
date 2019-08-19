@@ -3,7 +3,7 @@ module KSF.Navbar.Component where
 import Prelude
 
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String as String
@@ -11,9 +11,8 @@ import Effect (Effect)
 import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
-import KSF.Navbar.View as View
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
@@ -70,29 +69,48 @@ navbar = make component
   { initialState, render }
 
 render :: Self -> JSX
-render self@{ props, state } = nav self <> collapsedNav self
+render self@{ props, state } =
+  DOM.div
+    { className: "nav--navbars"
+    , children:
+        [ fullNav self
+        , hamburgerNav self
+        , collapsedNav self
+        ]
+    }
 
-nav :: Self -> JSX
-nav self@{ props, state } =
+-- | Full width navbar
+fullNav :: Self -> JSX
+fullNav self@{ props, state } =
   DOM.div
     { className: "nav--nav-container"
     , children:
         [ paperLogo props.paper
         , needHelp props.paper
-        , foldMap signOutButton (onLogout self =<< props.loggedInUser)
+        , logoutButton self
         ]
     }
 
-collapsedNav :: Self -> JSX
-collapsedNav self@{ props, state } =
+logoutButton :: Self -> JSX
+logoutButton self = foldMap signOutButton (onLogout self =<< self.props.loggedInUser)
+
+-- | Narrow navbar with hamburger button
+hamburgerNav :: Self -> JSX
+hamburgerNav self@{ props, state } =
   DOM.div
-    { className: "nav--collapsed-container"
+    { className: "nav--hamburger-container"
     , children:
         [ paperLogo props.paper
         , hamburgerButton self
-       -- , needHelp props.paper
-        --, foldMap signOutButton (onLogout self =<< props.loggedInUser)
         ]
+    }
+
+-- | Items of hamburger nav
+collapsedNav :: Self -> JSX
+collapsedNav self =
+  Collapsed.collapsed
+    { visibility: self.state.collapsedNavVisibility
+    , navItems: [ logoutButton self, needHelp self.props.paper ]
     }
 
 onLogout :: Self -> Persona.User -> Maybe (Effect Unit)
@@ -131,7 +149,7 @@ signOutButton logout =
 hamburgerButton :: Self -> JSX
 hamburgerButton self =
   DOM.div
-    { className: "col mr3 nav--hamburger-button"
+    { className: "nav--hamburger-button"
     , onClick: Event.handler_ $ self.setState _ { collapsedNavVisibility = negateVisibility self.state.collapsedNavVisibility }
     , children:
         [ hamburgerStripe
