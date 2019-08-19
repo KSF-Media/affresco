@@ -2,8 +2,9 @@ module KSF.Navbar.Component where
 
 import Prelude
 
+import Data.Array (replicate)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String as String
@@ -92,7 +93,21 @@ fullNav self@{ props, state } =
     }
 
 logoutButton :: Self -> JSX
-logoutButton self = foldMap signOutButton (onLogout self =<< self.props.loggedInUser)
+logoutButton self@{ props: { logout, loggedInUser } } =
+  foldMap button loggedInUser
+  where
+    button _user =
+      DOM.div
+        { className: "nav--logout-button"
+        , onClick: Event.handler_ onLogout
+        , children:
+            [ DOM.img { src: icons.signOut }
+            , DOM.div_ [ DOM.text "Logga ut" ]
+            ]
+        }
+    onLogout = do
+      self.props.logout
+      self.setState _ { collapsedNavVisibility = Hidden }
 
 -- | Narrow navbar with hamburger button
 hamburgerNav :: Self -> JSX
@@ -113,11 +128,6 @@ collapsedNav self =
     , navItems: [ logoutButton self, needHelp self.props.paper ]
     }
 
-onLogout :: Self -> Persona.User -> Maybe (Effect Unit)
-onLogout self _user = Just do
-  self.props.logout
-  self.setState _ { collapsedNavVisibility = Hidden }
-
 paperLogo :: Paper -> JSX
 paperLogo paper =
   DOM.img { className: "nav--paper-logo", src: paperLogoUrl paper }
@@ -135,27 +145,12 @@ needHelp paper =
       formatMailtoAnchorTag :: String -> JSX
       formatMailtoAnchorTag email = DOM.a { href: "mailto:" <> email, children: [ DOM.text email ] }
 
-signOutButton :: (Effect Unit) -> JSX
-signOutButton logout =
-  DOM.div
-    { className: "nav--logout-button"
-    , onClick: Event.handler_ logout
-    , children:
-        [ DOM.img { src: icons.signOut }
-        , DOM.div_ [ DOM.text "Logga ut" ]
-        ]
-    }
-
 hamburgerButton :: Self -> JSX
 hamburgerButton self =
   DOM.div
     { className: "nav--hamburger-button"
     , onClick: Event.handler_ $ self.setState _ { collapsedNavVisibility = negateVisibility self.state.collapsedNavVisibility }
-    , children:
-        [ hamburgerStripe
-        , hamburgerStripe
-        , hamburgerStripe
-        ]
+    , children: replicate 3 hamburgerStripe
     }
   where
     hamburgerStripe = DOM.div { className: "nav--hamburger-stripe" }
