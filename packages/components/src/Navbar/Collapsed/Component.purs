@@ -27,7 +27,7 @@ collapsed = make component
 render :: Self -> JSX
 render { props } =
   DOM.div
-    { className: "collapsed-nav--content clearfix"
+    { className: "collapsed-nav--container"
     , style: DOM.css
       if isHidden props.visibility
       then { "transform": "translateY(0)" }
@@ -38,7 +38,7 @@ render { props } =
 collapsedNavRow :: JSX -> JSX
 collapsedNavRow menuItem =
   DOM.div
-    { className: "collapsed-nav--menu-row flex items-center ml2 pb1"
+    { className: "collapsed-nav--item"
     , children: [ menuItem ]
     }
 
