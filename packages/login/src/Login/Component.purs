@@ -12,6 +12,7 @@ import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
+import Data.String as String
 import Data.Traversable (for_)
 import Effect (Effect)
 import Effect.Aff (Aff, error)
@@ -52,7 +53,7 @@ type JSProps =
   , onUserFetchSuccess  :: Nullable (EffectFn1 Persona.User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
-  , disableSocialLogins :: Nullable (Array Login.SocialLoginOption)
+  , disableSocialLogins :: Nullable (Array String)
   }
 
 jsComponent :: React.ReactComponent JSProps
@@ -74,8 +75,13 @@ fromJSProps jsProps =
           (maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoading)
           (\loading -> maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoadingEnd)
           (\loading -> aff)
-  , disableSocialLogins: maybe Set.empty Set.fromFoldable $ Nullable.toMaybe jsProps.disableSocialLogins
+  , disableSocialLogins: maybe Set.empty (Set.mapMaybe readSocialLoginProvider <<< Set.fromFoldable) $ Nullable.toMaybe jsProps.disableSocialLogins
   }
+  where
+    readSocialLoginProvider p = case String.toUpper p of
+      "GOOGLE"   -> Just Login.Google
+      "FACEBOOK" -> Just Login.Facebook
+      _          -> Nothing
 
 type Props =
   { onMerge :: Effect Unit
