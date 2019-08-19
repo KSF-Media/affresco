@@ -10,6 +10,8 @@ import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
+import Data.Set (Set)
+import Data.Set as Set
 import Data.Traversable (for_)
 import Effect (Effect)
 import Effect.Aff (Aff, error)
@@ -21,18 +23,18 @@ import Effect.Exception (Error, throw)
 import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import KSF.JanrainSSO as JanrainSSO
+import KSF.LocalStorage as LocalStorage
 import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
 import KSF.Login.Login as Login
 import KSF.Login.View as View
 import KSF.Registration.Component as Registration
-import KSF.LocalStorage as LocalStorage
 import Persona (Token(..))
 import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic as React
-import Unsafe.Coerce (unsafeCoerce)
 import Record as Record
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import facebookAppId :: String
 
@@ -50,6 +52,7 @@ type JSProps =
   , onUserFetchSuccess  :: Nullable (EffectFn1 Persona.User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
+  , disableSocialLogins :: Nullable (Array Login.SocialLoginOption)
   }
 
 jsComponent :: React.ReactComponent JSProps
@@ -71,6 +74,7 @@ fromJSProps jsProps =
           (maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoading)
           (\loading -> maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoadingEnd)
           (\loading -> aff)
+  , disableSocialLogins: maybe Set.empty Set.fromFoldable $ Nullable.toMaybe jsProps.disableSocialLogins
   }
 
 type Props =
@@ -82,6 +86,7 @@ type Props =
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
   , onUserFetch :: Either Error Persona.User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
+  , disableSocialLogins :: Set Login.SocialLoginOption
   }
 
 type MergeInfo =
@@ -242,6 +247,7 @@ render self@{ props, state } =
                    props.onRegisterCancelled
                    send self (SetViewStep View.Login)
               }
+        , disableSocialLogins: props.disableSocialLogins
         }
     Just mergeInfo ->
       View.merge

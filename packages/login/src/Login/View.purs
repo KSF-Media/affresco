@@ -5,6 +5,8 @@ import Prelude
 import Data.Array (foldMap)
 import Data.Foldable (surround)
 import Data.Maybe (Maybe(..))
+import Data.Set (Set)
+import Data.Set as Set
 import Effect (Effect)
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
@@ -41,6 +43,7 @@ type LoginAttributes =
   , loginViewStep :: LoginViewStep
   , showRegistration :: Effect Unit
   , registrationComponent :: JSX
+  , disableSocialLogins :: Set Login.SocialLoginOption
   }
 
 type Providers =
@@ -73,8 +76,9 @@ renderLogin attrs =
         [ foldMap formatErrorMessage attrs.errors.social
         , loginForm
         , forgotPassword
-        , facebookLogin attrs.login.onFacebookLogin
+        , facebookLogin (Just attrs.disableSocialLogins) attrs.login.onFacebookLogin
         , googleLogin
+          (Just attrs.disableSocialLogins)
           attrs.login.onGoogleLogin
           attrs.login.onGoogleFailure
           attrs.login.googleFallbackOnClick
@@ -153,6 +157,7 @@ merge attrs =
       [ DOM.p_ [ DOM.text fbText ]
       , foldMap formatErrorMessage attrs.errors.social
       , googleLogin
+          Nothing
           attrs.login.onGoogleLogin
           attrs.login.onGoogleFailure
           attrs.login.googleFallbackOnClick
@@ -160,7 +165,7 @@ merge attrs =
     mergeActions Persona.GooglePlus =
       [ DOM.p_ [ DOM.text googText ]
       , foldMap formatErrorMessage attrs.errors.social
-      , facebookLogin attrs.login.onFacebookLogin
+      , facebookLogin Nothing attrs.login.onFacebookLogin
       ]
 
     cancelButton :: JSX
@@ -196,28 +201,34 @@ merge attrs =
         onSubmit = Events.handler preventDefault $ \event -> attrs.login.onLogin
 
 googleLogin
-  :: (Google.AuthResponse -> Effect Unit)
+  :: Maybe (Set Login.SocialLoginOption)
+  -> (Google.AuthResponse -> Effect Unit)
   -> (Google.Error -> Effect Unit)
   -> Effect Unit
   -> JSX
-googleLogin onSuccess onFailure fallbackOnClick =
-  someLoginButton
-    { className: "login--some-button-google"
-    , description: "Logga in med Google"
-    , onClick: fallbackOnClick
-    , onLoad
-    }
-  where
-    onLoad node = attachClickHandler { node, options: {}, onSuccess, onFailure }
+googleLogin disabledProviders onSuccess onFailure fallbackOnClick
+    | Just disabled <- disabledProviders
+    , not $ Set.member Login.Google disabled =
+        let onLoad node = attachClickHandler { node, options: {}, onSuccess, onFailure }
+        in someLoginButton
+          { className: "login--some-button-google"
+          , description: "Logga in med Google"
+          , onClick: fallbackOnClick
+          , onLoad
+          }
+    | otherwise = mempty
 
-facebookLogin :: Effect Unit -> JSX
-facebookLogin onSuccess =
-  someLoginButton
-    { className: "login--some-button-fb"
-    , description: "Logga in med Facebook"
-    , onClick: onSuccess
-    , onLoad: (\_ -> pure unit)
-    }
+facebookLogin :: Maybe (Set Login.SocialLoginOption) -> Effect Unit -> JSX
+facebookLogin disabledProviders onSuccess
+  | Just disabled <- disabledProviders
+  , not $ Set.member Login.Facebook disabled =
+      someLoginButton
+        { className: "login--some-button-fb"
+        , description: "Logga in med Facebook"
+        , onClick: onSuccess
+        , onLoad: (\_ -> pure unit)
+        }
+  | otherwise = mempty
 
 someLoginButton ::
   { className :: String
