@@ -13,7 +13,6 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "yarn build-purs && parcel build index.html --no-cache && cp xd_receiver.html ./dist",
-    "build-purs": "cd ../.. && spago bundle-module -m MittKonto.Main -t apps/mitt-konto/index.js --path \"packages/*/src/**/*.purs\" --path \"apps/*/src/**/*.purs\" "
+    "build": "spago build && parcel build index.html --no-cache && cp xd_receiver.html ./dist"
   }
 }

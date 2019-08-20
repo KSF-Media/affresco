@@ -9,8 +9,8 @@ package-lock.json
 .DS_Store
 
 packages/*/index.js
-apps/*/index.js
-!apps/elections/index.js
+apps/app-article/index.js
+apps/*/output
 .env.production
 yarn-error.log
 .yarn-cache/

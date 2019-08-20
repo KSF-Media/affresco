@@ -1,1 +1,95 @@
-../packages/ksf-navbar/src/KSF/Navbar/Navbar.less
+@import (reference) 'ksf-colors';
+@import (reference) 'ksf-variables';
+
+@z-index-navbar: 3;
+@nav-box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.1);
+
+.nav--hamburger-button {
+    cursor: pointer;
+    justify-self: end;
+}
+
+.nav--hamburger-stripe {
+    width: 25px;
+    height: 2px;
+    background-color: #333;
+    margin: 6px 0;
+}
+
+.nav--navbars {
+    position: relative;
+}
+
+.nav--nav-container {
+    @media @to-medium { display: none; }
+    display: grid;
+    grid-template-columns:
+        [margin-left] @page-full-margin
+        [logo] 1fr
+        [need-help] 1fr
+        [logout-button] minmax(min-content, auto)
+        [margin-right]  @page-full-margin;
+    grid-column-gap: 2em;
+    align-items: center;
+    height: 100px;
+    background: @white;
+    width: 100%;
+    position: relative;
+    z-index: @z-index-navbar;
+    @media @from-medium {
+        box-shadow: @nav-box-shadow;
+    }
+}
+
+.nav--hamburger-container {
+    display: none;
+    @media @to-medium {
+        display: grid;
+        grid-template-columns:
+            [margin-left] @page-small-margin
+            [logo] 1fr
+            [hamburger] 1fr
+            [margin-right] @page-small-margin;
+        grid-column-gap: 2em;
+        align-items: center;
+        height: 100px;
+        background: @white;
+        width: 100%;
+        position: relative;
+        z-index: @z-index-navbar;
+        @media @from-medium {
+            box-shadow: @nav-box-shadow;
+        }
+        @media @to-xsmall {
+            grid-template-columns:
+                [margin-left] @page-xsmall-margin
+                [logo] 1fr
+                [hamburger] 1fr
+                [margin-right] @page-xsmall-margin;
+        }
+    }
+}
+
+.nav--paper-logo {
+    grid-column-start: logo;
+    align-self: center;
+    height: 38px;
+}
+
+.nav--need-help {
+    grid-column-start: need-help;
+    justify-self: end;
+}
+
+.nav--logout-button {
+    grid-column-start: logout-button;
+    justify-self: end; // Horizontal position on grid
+    img { width: 35px; }
+
+    display: flex;
+    align-items: center; // Vertical position on flexbox
+
+    font-size: 1.2em;
+    font-weight: 400;
+    cursor: pointer;
+}

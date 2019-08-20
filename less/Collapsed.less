@@ -1,1 +1,35 @@
-../packages/ksf-navbar/src/KSF/Navbar/Collapsed/Collapsed.less
+@import (reference) 'ksf-colors';
+@import (reference) 'ksf-variables';
+
+@z-index-collapsed-menu: 2;
+@nav-box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.1);
+
+.collapsed-nav--container {
+    display: grid;
+    grid-template-rows: [need-help] auto [logout] auto;
+    grid-row-gap: 1em;
+    background: @white;
+    color: @grey-dark;
+    width: 100%;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    height: auto;
+    font-size: 0.9em;
+    transition: transform 0.5s;
+    transform: translateY(0);
+    transform-origin:top;
+    overflow: hidden;
+    position: absolute;
+    z-index: @z-index-collapsed-menu;
+    box-shadow: @nav-box-shadow;
+    @media @from-medium {
+        display: none;
+    }
+    &:last-child {
+        padding-bottom: 1.5em;
+    }
+    .collapsed-nav--item {
+        margin-left: 1.5em;
+    }
+}

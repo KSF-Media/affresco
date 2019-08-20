@@ -1,9 +1,10 @@
 import React, {Component} from 'react';
 import Lightbox from 'react-image-lightbox';
-import {jsComponent as Login, jsLogout as LogOut} from '@affresco/ksf-login';
+import {jsComponent as Login, jsLogout as LogOut} from '@affresco/login';
 import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
+import 'basscss/css/basscss-cp.css';
 import {isUserLoggedIn} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
@@ -36,6 +37,7 @@ class App extends Component {
             updateTime: null,
             category: null,
             relatedArticles: [],
+            shareUrl: null,
             infogram: {
                 html: null
             },
@@ -52,7 +54,7 @@ class App extends Component {
             modalCaption: '',
             latestArticles: [],
             errorFetching: false,
-            errorFetchingLatestArticles: false
+            errorFetchingLatestArticles: false,
         };
     }
 
@@ -142,6 +144,7 @@ class App extends Component {
                         relatedArticles: article.relatedArticles,
                         publishingTime: article.publishingTime,
                         updateTime: article.updateTime,
+                        shareUrl: article.shareUrl,
                     }, () => {
                         if (article.externalScripts != null) {
                             this.appendThirdPartyScript(article.externalScripts);
@@ -182,6 +185,7 @@ class App extends Component {
                         relatedArticles: data.not_entitled.articlePreview.relatedArticles,
                         publishingTime: data.not_entitled.articlePreview.publishingTime,
                         updateTime: data.not_entitled.articlePreview.updateTime,
+                        shareUrl: data.not_entitled.articlePreview.shareUrl,
                     }, () => {
                         this.resizeText(this.state.fontSize);
                         if (data.not_entitled.articlePreview.externalScripts != null) {
@@ -202,6 +206,7 @@ class App extends Component {
                         relatedArticles: data.relatedArticles,
                         publishingTime: data.publishingTime,
                         updateTime: data.updateTime,
+                        shareUrl: data.shareUrl,
                     }, () => {
                         if (data.externalScripts != null) {
                             this.appendThirdPartyScript(data.externalScripts);
@@ -310,7 +315,7 @@ class App extends Component {
             push_data.content_id = article.uuid;
             push_data.is_authenticated = isUserLoggedIn();
             push_data.is_premium = article.premium ? 'PREMIUM' : 'FREE';
-            // push_data.url = "http://www.app.hbl.fi/artikel/" + article.title;
+            push_data.url = article.shareUrl;
         }
 
         window.dataLayer.push(push_data);

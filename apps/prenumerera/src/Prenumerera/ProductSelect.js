@@ -1,5 +1,5 @@
 "use strict";
 
 exports.images = {
-  hblTotal: require('./resources/HBLTotal.png')
+  hblTotal: require('../../../../images/HBLTotal.png')
 };
