@@ -47,11 +47,6 @@ type State =
   , maxEndDate   :: Maybe DateTime
   }
 
-data Action
-  = SetStartDate (Maybe DateTime)
-  | SetMinStartDate (Maybe DateTime)
-  | SetEndDate (Maybe DateTime)
-
 pauseSubscription :: Props -> JSX
 pauseSubscription = make component { initialState, render, didMount }
 
@@ -66,17 +61,6 @@ initialState =
   , minEndDate: Nothing
   , maxEndDate: Nothing
   }
-
-update :: Self -> Action -> StateUpdate Props State
-update self action = Update $ case action of
-  SetStartDate newStartDate ->
-    self.state
-      { startDate = newStartDate
-      , minEndDate = calcMinEndDate newStartDate
-      , maxEndDate = calcMaxEndDate newStartDate
-      }
-  SetEndDate newEndDate -> self.state { endDate = newEndDate }
-  SetMinStartDate newMinStartDate -> self.state { minStartDate = newMinStartDate }
 
 -- | Minimum pause period is one week
 calcMinEndDate :: Maybe DateTime -> Maybe DateTime
@@ -96,10 +80,7 @@ didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
   let tomorrow = adjust (Time.Duration.Days 1.0) now
-  send self $ SetMinStartDate tomorrow
-
-send :: Self -> Action -> Effect Unit
-send = runUpdate update
+  self.setState _ { minStartDate = tomorrow }
 
 render :: Self -> JSX
 render self =
@@ -139,7 +120,7 @@ render self =
     startDayInput =
       dateInput
         self
-        { action: SetStartDate
+        { action: onStartDateChange
         , value: self.state.startDate
         , minDate: self.state.minStartDate
         , maxDate: Nothing
@@ -150,12 +131,12 @@ render self =
     endDayInput =
       dateInput
         self
-        { action: SetEndDate
+        { action: \newEndDate -> self.setState _ { endDate = newEndDate }
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: self.state.maxEndDate
         , disabled: isNothing self.state.startDate
-        , label: "Skall starta igen"
+        , label: "Avslutas"
         }
 
     submitFormButton =
@@ -166,8 +147,15 @@ render self =
           , className: "button-green"
           }
 
+    onStartDateChange newStartDate =
+      self.setState _
+        { startDate = newStartDate
+        , minEndDate = calcMinEndDate newStartDate
+        , maxEndDate = calcMaxEndDate newStartDate
+        }
+
 type DateInputField =
-  { action   :: Maybe DateTime -> Action
+  { action   :: Maybe DateTime -> Effect Unit
   , value    :: Maybe DateTime
   , minDate  :: Maybe DateTime
   , maxDate  :: Maybe DateTime
@@ -181,9 +169,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
         [ DatePicker.datePicker
-            { onChange: mkEffectFn1 \pickedDate -> do
-                dateWithTimezone <- DatePicker.adjustTimezone pickedDate
-                send self $ action dateWithTimezone
+            { onChange: (action =<< _)
             , className: "pause-subscription--date-picker"
             , value: toNullable $ fromDateTime <$> value
             , format: "d.M.yyyy"
