@@ -4,7 +4,10 @@
 @z-index-collapsed-menu: 2;
 @nav-box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.1);
 
-.collapsed-nav--content {
+.collapsed-nav--container {
+    display: grid;
+    grid-template-rows: [need-help] auto [logout] auto;
+    grid-row-gap: 1em;
     background: @white;
     color: @grey-dark;
     width: 100%;
@@ -24,12 +27,9 @@
         display: none;
     }
     &:last-child {
-        padding-bottom: 1em;
+        padding-bottom: 1.5em;
     }
-}
-
-.collapsed-nav--menu-row {
-    display: flex;
-    align-items: center;
-    margin-left: 1em;
+    .collapsed-nav--item {
+        margin-left: 1.5em;
+    }
 }
