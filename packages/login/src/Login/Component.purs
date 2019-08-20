@@ -276,6 +276,7 @@ render self@{ props, state } =
             , login: state.errors.login
             }
         , onMergeCancelled
+        , disableSocialLogins: props.disableSocialLogins
         }
   where
     onEmailValueChange email =

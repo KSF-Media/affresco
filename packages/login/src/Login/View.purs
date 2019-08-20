@@ -59,6 +59,7 @@ type MergeAttributes =
   , onMergeCancelled :: Effect Unit
   , providers :: Providers
   , userEmail :: String
+  , disableSocialLogins :: Set SocialLoginProvider
   }
 
 data LoginViewStep = Login | Registration
@@ -77,9 +78,9 @@ renderLogin attrs =
         [ foldMap formatErrorMessage attrs.errors.social
         , loginForm
         , forgotPassword
-        , facebookLogin (Just attrs.disableSocialLogins) attrs.login.onFacebookLogin
+        , facebookLogin attrs.disableSocialLogins attrs.login.onFacebookLogin
         , googleLogin
-          (Just attrs.disableSocialLogins)
+          attrs.disableSocialLogins
           attrs.login.onGoogleLogin
           attrs.login.onGoogleFailure
           attrs.login.googleFallbackOnClick
@@ -158,7 +159,7 @@ merge attrs =
       [ DOM.p_ [ DOM.text fbText ]
       , foldMap formatErrorMessage attrs.errors.social
       , googleLogin
-          Nothing
+          attrs.disableSocialLogins
           attrs.login.onGoogleLogin
           attrs.login.onGoogleFailure
           attrs.login.googleFallbackOnClick
@@ -166,7 +167,7 @@ merge attrs =
     mergeActions Persona.GooglePlus =
       [ DOM.p_ [ DOM.text googText ]
       , foldMap formatErrorMessage attrs.errors.social
-      , facebookLogin Nothing attrs.login.onFacebookLogin
+      , facebookLogin attrs.disableSocialLogins attrs.login.onFacebookLogin
       ]
 
     cancelButton :: JSX
@@ -202,14 +203,13 @@ merge attrs =
         onSubmit = Events.handler preventDefault $ \event -> attrs.login.onLogin
 
 googleLogin
-  :: Maybe (Set SocialLoginProvider)
+  :: Set SocialLoginProvider
   -> (Google.AuthResponse -> Effect Unit)
   -> (Google.Error -> Effect Unit)
   -> Effect Unit
   -> JSX
 googleLogin disabledProviders onSuccess onFailure fallbackOnClick
-    | Just disabled <- disabledProviders
-    , not $ Set.member Login.Google disabled =
+    | not $ Set.member Login.Google disabledProviders =
         let onLoad node = attachClickHandler { node, options: {}, onSuccess, onFailure }
         in someLoginButton
           { className: "login--some-button-google"
@@ -219,10 +219,9 @@ googleLogin disabledProviders onSuccess onFailure fallbackOnClick
           }
     | otherwise = mempty
 
-facebookLogin :: Maybe (Set SocialLoginProvider) -> Effect Unit -> JSX
+facebookLogin :: Set SocialLoginProvider -> Effect Unit -> JSX
 facebookLogin disabledProviders onSuccess
-  | Just disabled <- disabledProviders
-  , not $ Set.member Login.Facebook disabled =
+  | not $ Set.member Login.Facebook disabledProviders =
       someLoginButton
         { className: "login--some-button-fb"
         , description: "Logga in med Facebook"
