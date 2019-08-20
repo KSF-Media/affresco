@@ -27,7 +27,8 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.Login.Facebook.Success as Facebook.Success
 import KSF.Login.Google as Google
-import KSF.Login.Login as Login
+import KSF.Login.Types as Login
+import KSF.Login.Types (SocialLoginProvider (..))
 import KSF.Login.View as View
 import KSF.Registration.Component as Registration
 import Persona (Token(..))
@@ -79,8 +80,8 @@ fromJSProps jsProps =
   }
   where
     readSocialLoginProvider p = case String.toUpper p of
-      "GOOGLE"   -> Just Login.Google
-      "FACEBOOK" -> Just Login.Facebook
+      "GOOGLE"   -> Just Google
+      "FACEBOOK" -> Just Facebook
       _          -> Nothing
 
 type Props =
@@ -92,7 +93,7 @@ type Props =
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
   , onUserFetch :: Either Error Persona.User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
-  , disableSocialLogins :: Set Login.SocialLoginOption
+  , disableSocialLogins :: Set SocialLoginProvider
   }
 
 type MergeInfo =

@@ -19,8 +19,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
-import KSF.Login.Component as Login
-import KSF.Login.Login as Login
+import KSF.Login.Component (login, logout) as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.Profile.Component as Profile

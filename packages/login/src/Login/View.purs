@@ -13,7 +13,8 @@ import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
-import KSF.Login.Login as Login
+import KSF.Login.Types as Login
+import KSF.Login.Types (SocialLoginProvider)
 import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -43,7 +44,7 @@ type LoginAttributes =
   , loginViewStep :: LoginViewStep
   , showRegistration :: Effect Unit
   , registrationComponent :: JSX
-  , disableSocialLogins :: Set Login.SocialLoginOption
+  , disableSocialLogins :: Set SocialLoginProvider
   }
 
 type Providers =
@@ -201,7 +202,7 @@ merge attrs =
         onSubmit = Events.handler preventDefault $ \event -> attrs.login.onLogin
 
 googleLogin
-  :: Maybe (Set Login.SocialLoginOption)
+  :: Maybe (Set SocialLoginProvider)
   -> (Google.AuthResponse -> Effect Unit)
   -> (Google.Error -> Effect Unit)
   -> Effect Unit
@@ -218,7 +219,7 @@ googleLogin disabledProviders onSuccess onFailure fallbackOnClick
           }
     | otherwise = mempty
 
-facebookLogin :: Maybe (Set Login.SocialLoginOption) -> Effect Unit -> JSX
+facebookLogin :: Maybe (Set SocialLoginProvider) -> Effect Unit -> JSX
 facebookLogin disabledProviders onSuccess
   | Just disabled <- disabledProviders
   , not $ Set.member Login.Facebook disabled =
