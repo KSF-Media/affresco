@@ -6,6 +6,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
@@ -153,6 +154,7 @@ loginComponent self =
         , launchAff_: \a -> do
             _ <- Aff.launchAff a
             Console.log "fetched user"
+        , disableSocialLogins: Set.empty
         }
     ]
 

@@ -7,6 +7,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
+import Data.Set as Set
 import Data.String (toUpper)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -18,7 +19,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
-import KSF.Login.Component as Login
+import KSF.Login.Component (login, logout) as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.Profile.Component as Profile
@@ -344,6 +345,7 @@ loginView { state, setState } = React.fragment
           , launchAff_:
               Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)
+          , disableSocialLogins: Set.empty
           }
 
     heading =
