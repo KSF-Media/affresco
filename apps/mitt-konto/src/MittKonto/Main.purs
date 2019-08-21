@@ -29,6 +29,7 @@ import React.Basic (JSX)
 import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
+import KSF.User as U
 
 foreign import images :: { subscribe :: String }
 

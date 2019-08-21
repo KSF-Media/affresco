@@ -1,14 +1,7 @@
-{-
-Welcome to a Spago project!
-You can edit this file as you like.
--}
 { name =
-    "mitt-konto"
+    "affresco-user"
 , dependencies =
-    [ "affresco-components"
-    , "affresco-login"
-    , "affresco-user"
-    , "effect"
+    [ "effect"
     , "console"
     , "aff"
     , "aff-promise"
@@ -24,6 +17,8 @@ You can edit this file as you like.
     , "simple-json"
     , "facebook"
     , "now"
+    , "affresco-components"
+    , "affresco-login"
     ]
 , packages =
     ../../packages.dhall
