@@ -5,13 +5,16 @@ import Prelude
 import Data.Array (foldMap)
 import Data.Foldable (surround)
 import Data.Maybe (Maybe(..))
+import Data.Set (Set)
+import Data.Set as Set
 import Effect (Effect)
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
-import KSF.Login.Login as Login
+import KSF.Login.Types as Login
+import KSF.Login.Types (SocialLoginProvider)
 import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -41,6 +44,7 @@ type LoginAttributes =
   , loginViewStep :: LoginViewStep
   , showRegistration :: Effect Unit
   , registrationComponent :: JSX
+  , disableSocialLogins :: Set SocialLoginProvider
   }
 
 type Providers =
@@ -55,6 +59,7 @@ type MergeAttributes =
   , onMergeCancelled :: Effect Unit
   , providers :: Providers
   , userEmail :: String
+  , disableSocialLogins :: Set SocialLoginProvider
   }
 
 data LoginViewStep = Login | Registration
@@ -73,8 +78,9 @@ renderLogin attrs =
         [ foldMap formatErrorMessage attrs.errors.social
         , loginForm
         , forgotPassword
-        , facebookLogin attrs.login.onFacebookLogin
+        , facebookLogin attrs.disableSocialLogins attrs.login.onFacebookLogin
         , googleLogin
+          attrs.disableSocialLogins
           attrs.login.onGoogleLogin
           attrs.login.onGoogleFailure
           attrs.login.googleFallbackOnClick
@@ -153,6 +159,7 @@ merge attrs =
       [ DOM.p_ [ DOM.text fbText ]
       , foldMap formatErrorMessage attrs.errors.social
       , googleLogin
+          attrs.disableSocialLogins
           attrs.login.onGoogleLogin
           attrs.login.onGoogleFailure
           attrs.login.googleFallbackOnClick
@@ -160,7 +167,7 @@ merge attrs =
     mergeActions Persona.GooglePlus =
       [ DOM.p_ [ DOM.text googText ]
       , foldMap formatErrorMessage attrs.errors.social
-      , facebookLogin attrs.login.onFacebookLogin
+      , facebookLogin attrs.disableSocialLogins attrs.login.onFacebookLogin
       ]
 
     cancelButton :: JSX
@@ -196,28 +203,32 @@ merge attrs =
         onSubmit = Events.handler preventDefault $ \event -> attrs.login.onLogin
 
 googleLogin
-  :: (Google.AuthResponse -> Effect Unit)
+  :: Set SocialLoginProvider
+  -> (Google.AuthResponse -> Effect Unit)
   -> (Google.Error -> Effect Unit)
   -> Effect Unit
   -> JSX
-googleLogin onSuccess onFailure fallbackOnClick =
-  someLoginButton
-    { className: "login--some-button-google"
-    , description: "Logga in med Google"
-    , onClick: fallbackOnClick
-    , onLoad
-    }
-  where
-    onLoad node = attachClickHandler { node, options: {}, onSuccess, onFailure }
+googleLogin disabledProviders onSuccess onFailure fallbackOnClick
+    | not $ Set.member Login.Google disabledProviders =
+        let onLoad node = attachClickHandler { node, options: {}, onSuccess, onFailure }
+        in someLoginButton
+          { className: "login--some-button-google"
+          , description: "Logga in med Google"
+          , onClick: fallbackOnClick
+          , onLoad
+          }
+    | otherwise = mempty
 
-facebookLogin :: Effect Unit -> JSX
-facebookLogin onSuccess =
-  someLoginButton
-    { className: "login--some-button-fb"
-    , description: "Logga in med Facebook"
-    , onClick: onSuccess
-    , onLoad: (\_ -> pure unit)
-    }
+facebookLogin :: Set SocialLoginProvider -> Effect Unit -> JSX
+facebookLogin disabledProviders onSuccess
+  | not $ Set.member Login.Facebook disabledProviders =
+      someLoginButton
+        { className: "login--some-button-fb"
+        , description: "Logga in med Facebook"
+        , onClick: onSuccess
+        , onLoad: (\_ -> pure unit)
+        }
+  | otherwise = mempty
 
 someLoginButton ::
   { className :: String
