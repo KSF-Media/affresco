@@ -11,6 +11,9 @@ import Data.Foldable (for_, surround, traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
+import Data.Set (Set)
+import Data.Set as Set
+import Data.String as String
 import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
@@ -49,6 +52,9 @@ data LoginError =
   | GoogleAuthInitError
   | SomethingWentWrong
 
+data SocialLoginProvider = Facebook | Google
+derive instance eqSocialLoginOption :: Eq SocialLoginProvider
+derive instance ordSocialLoginOption :: Ord SocialLoginProvider
 
 type Errors =
   { login :: Maybe Login.Error
@@ -61,7 +67,6 @@ type Providers =
   }
 
 data LoginStep = Login | Registration
-
 
 type Self = React.Self Props State
 
@@ -77,6 +82,7 @@ type JSProps =
   , onUserFetchSuccess  :: Nullable (EffectFn1 Persona.User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
+  , disableSocialLogins :: Nullable (Array String)
   }
 
 jsComponent :: React.ReactComponent JSProps
@@ -98,7 +104,13 @@ fromJSProps jsProps =
           (maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoading)
           (\loading -> maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoadingEnd)
           (\loading -> aff)
+  , disableSocialLogins: maybe Set.empty (Set.mapMaybe readSocialLoginProvider <<< Set.fromFoldable) $ Nullable.toMaybe jsProps.disableSocialLogins
   }
+  where
+    readSocialLoginProvider p = case String.toUpper p of
+      "GOOGLE"   -> Just Google
+      "FACEBOOK" -> Just Facebook
+      _          -> Nothing
 
 type Props =
   { onMerge :: Effect Unit
@@ -109,6 +121,7 @@ type Props =
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
   , onUserFetch :: Either Error Persona.User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
+  , disableSocialLogins :: Set SocialLoginProvider
   }
 
 type MergeInfo =
@@ -525,14 +538,20 @@ renderMerge self@{ props } mergeInfo =
       where
         onSubmit = Events.handler preventDefault $ \event -> onLogin self
 
+isSocialLoginEnabled :: Set SocialLoginProvider -> SocialLoginProvider -> Boolean
+isSocialLoginEnabled disabledProviders provider = not $ Set.member provider disabledProviders
+
 googleLogin :: Self -> JSX
 googleLogin self =
-  someLoginButton
-    { className: "login--some-button-google"
-    , description: "Logga in med Google"
-    , onClick: googleFallbackOnClick
-    , onLoad
-    }
+  if not $ Set.member Google self.props.disableSocialLogins
+    then
+      someLoginButton
+        { className: "login--some-button-google"
+        , description: "Logga in med Google"
+        , onClick: googleFallbackOnClick
+        , onLoad
+        }
+    else mempty
   where
     onLoad node = attachClickHandler { node, options: {}, onSuccess: onGoogleLogin, onFailure: onGoogleFailure }
 
@@ -576,12 +595,14 @@ googleLogin self =
 
 facebookLogin :: Self -> JSX
 facebookLogin self =
-  someLoginButton
-    { className: "login--some-button-fb"
-    , description: "Logga in med Facebook"
-    , onClick: onFacebookLogin
-    , onLoad: (\_ -> pure unit)
-    }
+  if not $ Set.member Facebook self.props.disableSocialLogins
+    then someLoginButton
+      { className: "login--some-button-fb"
+      , description: "Logga in med Facebook"
+      , onClick: onFacebookLogin
+      , onLoad: (\_ -> pure unit)
+      }
+    else mempty
   where
     onFacebookLogin :: Effect Unit
     onFacebookLogin = self.props.launchAff_ do
