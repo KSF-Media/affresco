@@ -129,16 +129,6 @@ type State =
   , loginViewStep :: LoginStep
   }
 
--- data Action =
---   LoginError Login.Error
---   | GoogleAuthInitError Google.Error
---   | FormEmail String
---   | FormPassword String
---   | MergeCancel
---   | SetMergeInfo (Maybe MergeInfo)
---   | SetViewStep LoginStep
-
-
 initialState :: State
 initialState =
   { formEmail: ""
@@ -147,13 +137,6 @@ initialState =
   , merge: Nothing
   , loginViewStep: Login
   }
-
--- type InputFieldAttributes =
---   { type_ :: String
---   , name :: String
---   , placeholder :: String
---   , required :: Boolean
---   }
 
 component :: React.Component Props
 component = React.createComponent "Login"
