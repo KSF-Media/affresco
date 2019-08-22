@@ -31,7 +31,7 @@ import KSF.LocalStorage as LocalStorage
 import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Registration.Component as Registration
-import KSF.User.Facebook.Success as Facebook.Success
+import KSF.User.Login.Facebook.Success as Facebook.Success
 import Persona (Token(..))
 import Persona as Persona
 import React.Basic (JSX, make)
@@ -400,9 +400,9 @@ renderLogin self =
     Login        -> renderLoginForm self
     Registration ->
       Registration.registration
-        { onRegister: \newUser -> self.props.launchAff_ do
-             registeredUserResponse <- Persona.register newUser
-             finalizeLogin self.props registeredUserResponse
+       { onRegister: \registration -> self.props.launchAff_ do
+            loginResponse <- registration
+            finalizeLogin self.props loginResponse
         , onCancelRegistration: do
              self.props.onRegisterCancelled
              self.setState _ { loginViewStep = Login }

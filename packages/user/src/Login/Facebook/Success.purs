@@ -1,4 +1,4 @@
-module KSF.User.Facebook.Success where
+module KSF.User.Login.Facebook.Success where
 
 import           Prelude
 

@@ -31,7 +31,7 @@ type Self = React.Self Props State
 type ValidatedForm a = V (NonEmptyList ValidationError) a
 
 type Props =
-  { onRegister :: Persona.NewUser -> Effect Unit
+  { onRegister :: Aff Persona.LoginResponse -> Effect Unit
   , onCancelRegistration :: Effect Unit
   }
 
@@ -401,7 +401,7 @@ submitForm self@{ state: { formData } } = unV
   where
     createUser form
       | Just user <- mkNewUser form = do
-          self.props.onRegister user `catchError` case _ of
+          self.props.onRegister $ Persona.register user `catchError` case _ of
             err | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
                     Console.error errData.email_address_in_use_registration.description
                     liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse emailInUseMsg `cons` self.state.serverErrors }
