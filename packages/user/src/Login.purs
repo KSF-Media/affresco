@@ -30,7 +30,6 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
-import KSF.Login.Login as Login
 import KSF.Registration.Component as Registration
 import KSF.User.Facebook.Success as Facebook.Success
 import Persona (Token(..))
@@ -57,8 +56,8 @@ derive instance eqSocialLoginOption :: Eq SocialLoginProvider
 derive instance ordSocialLoginOption :: Ord SocialLoginProvider
 
 type Errors =
-  { login :: Maybe Login.Error
-  , social :: Maybe Login.Error
+  { login :: Maybe LoginError
+  , social :: Maybe LoginError
   }
 
 type Providers =
@@ -395,16 +394,15 @@ requireToken =
 deleteToken :: Effect Unit
 deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid" ]
 
-
 renderLogin :: Self -> JSX
 renderLogin self =
   case self.state.loginViewStep of
     Login        -> renderLoginForm self
     Registration ->
       Registration.registration
-        { onRegister: \registration -> self.props.launchAff_ do
-                              loginResponse <- registration
-                              finalizeLogin self.props loginResponse
+        { onRegister: \newUser -> self.props.launchAff_ do
+             registeredUserResponse <- Persona.register newUser
+             finalizeLogin self.props registeredUserResponse
         , onCancelRegistration: do
              self.props.onRegisterCancelled
              self.setState _ { loginViewStep = Login }
