@@ -2,6 +2,7 @@ module KSF.User.Login where
 
 import Prelude
 
+import Control.Alternative ((<|>))
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
@@ -32,6 +33,7 @@ import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
+import KSF.User.User as User
 import Persona (Token(..))
 import Persona as Persona
 import React.Basic (JSX, make)
@@ -44,20 +46,20 @@ import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 import Web.DOM.Node as Web.DOM
 
-data LoginError =
-  InvalidCredentials
-  | FacebookEmailMissing
-  | EmailMismatchError
-  | GoogleAuthInitError
-  | SomethingWentWrong
+-- data LoginError =
+--   InvalidCredentials
+--   | FacebookEmailMissing
+--   | EmailMismatchError
+--   | GoogleAuthInitError
+--   | SomethingWentWrong
 
 data SocialLoginProvider = Facebook | Google
 derive instance eqSocialLoginOption :: Eq SocialLoginProvider
 derive instance ordSocialLoginOption :: Ord SocialLoginProvider
 
 type Errors =
-  { login :: Maybe LoginError
-  , social :: Maybe LoginError
+  { login :: Maybe User.LoginError
+  , social :: Maybe User.LoginError
   }
 
 type Providers =
@@ -118,7 +120,7 @@ type Props =
   , onRegisterCancelled :: Effect Unit
 -- TODO:
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
-  , onUserFetch :: Either Error Persona.User -> Effect Unit
+  , onUserFetch :: Either Error User.User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
   , disableSocialLogins :: Set SocialLoginProvider
   }
@@ -162,48 +164,24 @@ login = make component
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
-  loadedToken <- loadToken
-  props.launchAff_
-    case loadedToken of
-      Just token -> do
-        Console.log "Successfully loaded the saved token from local storage"
-        finalizeLogin props token
-      Nothing -> liftEffect do
-        Console.log "Couldn't load the saved token, giving SSO a try"
-        config <- JanrainSSO.loadConfig
-        case Nullable.toMaybe config of
-          Nothing -> Console.log "sso_lite.js script is not loaded, giving up"
-          Just conf -> checkSsoSession conf
-  where
-    checkSsoSession loginConfig = do
-        JanrainSSO.checkSession $ Record.merge
-             loginConfig
-             { callback_failure: mkEffectFn1 \a -> do
-                Console.log "Janrain SSO failure"
-             , callback_success: mkEffectFn1 \a -> do
-                Console.log "Janrain SSO success"
-                JanrainSSO.setSsoSuccess
-             , capture_error: mkEffectFn1 \a -> do
-                Console.log "Janrain SSO capture error"
-             , capture_success: mkEffectFn1 \r@({ result: { accessToken, userData: { uuid } } }) -> do
-                JanrainSSO.setSsoSuccess
-                Console.log "Janrain SSO capture success"
-                Console.log $ unsafeCoerce r
-                props.launchAff_ do
-                  loginResponse <-
-                    Persona.loginSso { accessToken, uuid } `catchError` case _ of
-                      err | Just serverError <- Persona.internalServerError err -> do
-                              Console.error "Something went wrong with SSO login"
-                              liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-                              throwError err
-                          | otherwise -> do
-                              Console.error "An unexpected error occurred during SSO login"
-                              throwError err
-                  finalizeLogin props loginResponse
-            }
-
-facebookSdk :: Aff FB.Sdk
-facebookSdk = FB.init $ FB.defaultConfig "asd" --facebookAppId
+  User.loginByToken <|> User.loginSso
+  pure unit
+  -- loadedToken <- User.loadToken
+  -- props.launchAff_
+  --   case loadedToken of
+  --     Just token -> do
+  --       Console.log "Successfully loaded the saved token from local storage"
+  --       finalizeLogin props token
+  --     Nothing -> liftEffect do
+  --       Console.log "Couldn't load the saved token, giving SSO a try"
+  --       User.loginSso `catchError` case _ of
+  --         err | Just serverError <- Persona.internalServerError err -> do
+  --                 Console.error "Something went wrong with SSO login"
+  --                 liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
+  --                 throwError err
+  --             | otherwise -> do
+  --                 Console.error "An unexpected error occurred during SSO login"
+  --                 throwError err
 
 render :: Self -> JSX
 render self@{ props, state } =
@@ -284,25 +262,6 @@ onLogin self@{ props, state } = props.launchAff_ do
   liftEffect $ self.setState _ { merge = Nothing }
   finalizeLogin props loginResponse
 
-finalizeLogin :: Props -> Persona.LoginResponse -> Aff Unit
-finalizeLogin props loginResponse = do
-  saveToken loginResponse
-  userResponse <- try do
-    Persona.getUser loginResponse.uuid loginResponse.token
-  case userResponse of
-    Left err
-      | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
-          Console.error "Failed to fetch the user: Invalid token"
-          liftEffect deleteToken
-          throwError err
-      | otherwise -> do
-          Console.error "Failed to fetch the user"
-          throwError err
-    Right user -> do
-      Console.info "User fetched successfully"
-      pure unit
-  liftEffect $ props.onUserFetch userResponse
-
 -- | JS-compatible version of 'logout', takes a callback
 --   that will be called when it's done.
 jsLogout :: Effect Unit -> Effect Unit
@@ -316,80 +275,6 @@ jsUpdateGdprConsent
   -> Effect Unit
 jsUpdateGdprConsent uuid token consents callback
   = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents
-
--- | Logout the user. Calls social-media SDKs and SSO library.
---   Wipes out local storage.
-logout :: Aff Unit
-logout = do
-  -- use authentication data from local storage to logout first from Persona
-  logoutPersona `catchError` Console.errorShow
-  -- then we wipe the local storage
-  liftEffect deleteToken `catchError` Console.errorShow
-  -- then, in parallel, we run all the third-party logouts
-  parSequence_
-    [ logoutFacebook `catchError` Console.errorShow
-    , logoutGoogle   `catchError` Console.errorShow
-    , logoutJanrain  `catchError` Console.errorShow
-    ]
-
-logoutPersona :: Aff Unit
-logoutPersona = do
-  token <- liftEffect loadToken
-  case token of
-    Just t  -> Persona.logout t.uuid t.token
-    Nothing -> pure unit
-
-logoutFacebook :: Aff Unit
-logoutFacebook = do
-  needsFacebookLogout <- liftEffect do
-    Facebook.Success.getFacebookSuccess <* Facebook.Success.unsetFacebookSuccess
-  when needsFacebookLogout do
-    sdk <- facebookSdk
-    FB.StatusInfo { status } <- FB.loginStatus sdk
-    when (status == FB.Connected) do
-      _ <- FB.logout sdk
-      Log.info "Logged out from Facebook."
-
-logoutGoogle :: Aff Unit
-logoutGoogle = do
-  isSignedWithGoogle <- liftEffect Google.isSignedIn
-  when isSignedWithGoogle do
-    Google.signOut
-    Log.info "Logged out from Google."
-
-logoutJanrain :: Aff Unit
-logoutJanrain = do
-  needsSsoLogout <- liftEffect do
-    JanrainSSO.getSsoSuccess <* JanrainSSO.unsetSsoSuccess
-  when needsSsoLogout do
-    -- If JanrainSSO.checkSession is not called before this function,
-    -- the JanrainSSO.endSession will hang.
-    -- So call JanrainSSO.checkSession first just to be safe.
-    config <- liftEffect $ JanrainSSO.loadConfig
-    for_ (Nullable.toMaybe config) \conf -> do
-      liftEffect $ JanrainSSO.checkSession conf
-      JanrainSSO.endSession conf
-      Console.log "Ended Janrain session"
-
-saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
-saveToken { token, ssoCode, uuid } = liftEffect do
-  for_ (Nullable.toMaybe ssoCode) $ \code -> do
-    config <- JanrainSSO.loadConfig
-    for_ (Nullable.toMaybe config) \conf -> JanrainSSO.setSession conf code
-  LocalStorage.setItem "token" case token of Persona.Token a -> a
-  LocalStorage.setItem "uuid" case uuid of Persona.UUID a -> a
-
-loadToken :: forall m. MonadEffect m => m (Maybe Persona.LoginResponse)
-loadToken = liftEffect $ runMaybeT do
-  token <- map Persona.Token $ MaybeT $ LocalStorage.getItem "token"
-  uuid <- map Persona.UUID $ MaybeT $ LocalStorage.getItem "uuid"
-  pure { token, ssoCode: Nullable.toNullable Nothing, uuid }
-
-requireToken :: forall m. MonadEffect m => m Persona.LoginResponse
-requireToken =
-  loadToken >>= case _ of
-    Nothing -> liftEffect $ throw "Did not find uuid/token in local storage."
-    Just loginResponse -> pure loginResponse
 
 deleteToken :: Effect Unit
 deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid" ]
