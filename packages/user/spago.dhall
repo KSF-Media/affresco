@@ -18,7 +18,6 @@
     , "facebook"
     , "now"
     , "affresco-components"
-    , "affresco-login"
     ]
 , packages =
     ../../packages.dhall
