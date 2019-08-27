@@ -8,7 +8,8 @@ module KSF.User.User
   , tryLogin
   , someAuth
   , facebookSdk
-  , createUser)
+  , createUser
+  )
 where
 
 import Prelude
@@ -37,22 +38,10 @@ import KSF.Login.Google as Google
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import Persona (MergeToken, Provider (..), UUID, Email (..), Token (..)) as PersonaReExport
 import Persona as Persona
-import React.Basic as React
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import facebookAppId :: String
-
-type Props =
-  { onMerge :: Effect Unit
-  , onMergeCancelled :: Effect Unit
-  , onRegister :: Effect Unit
-  , onRegisterCancelled :: Effect Unit
--- TODO:
---  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
-  , onUserFetch :: Either Error Persona.User -> Effect Unit
-  , launchAff_ :: Aff Unit -> Effect Unit
-  }
 
 type User =
   { logout :: Effect Unit
@@ -79,9 +68,6 @@ type MergeInfo =
   , newProvider :: Persona.Provider
   , userEmail :: Persona.Email
   }
-
-component :: React.Component Props
-component = React.createComponent "User"
 
 createUser :: Persona.NewUser -> Aff (Either UserError User)
 createUser newUser = do
@@ -136,7 +122,6 @@ tryLogin callback = do
                 liftEffect $ callback $ Left $ UnexpectedError err
                 throwError err
 
-
 someAuth
   :: Maybe MergeInfo
   -> Persona.Email
@@ -168,7 +153,6 @@ someAuth mergeInfo email token provider = do
        | otherwise -> do
            Console.error "An unexpected error occurred during SoMe login"
            pure $ Left $ UnexpectedError err
-
 
 loginSso :: (Either UserError User -> Effect Unit) -> Aff Unit
 loginSso callback = do
@@ -234,9 +218,6 @@ logoutPersona = do
   case token of
     Just t  -> Persona.logout t.uuid t.token
     Nothing -> pure unit
-
-facebookSdk :: Aff FB.Sdk
-facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
 logoutFacebook :: Aff Unit
 logoutFacebook = do
@@ -335,3 +316,6 @@ jsUpdateGdprConsent
   -> Effect Unit
 jsUpdateGdprConsent uuid token consents callback
   = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents
+
+facebookSdk :: Aff FB.Sdk
+facebookSdk = FB.init $ FB.defaultConfig facebookAppId

@@ -2,13 +2,10 @@ module KSF.User.Login where
 
 import Prelude
 
-import Control.Alternative ((<|>))
-import Control.Monad.Error.Class (catchError, throwError, try)
-import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
-import Control.Parallel (parSequence_)
+import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (foldMap)
-import Data.Either (Either(..), either, isLeft)
-import Data.Foldable (for_, surround, traverse_)
+import Data.Either (Either(..), either)
+import Data.Foldable (surround)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
@@ -18,17 +15,13 @@ import Data.String as String
 import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Class.Console as Console
+import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
-import Effect.Exception (Error, throw)
-import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
-import KSF.JanrainSSO as JanrainSSO
-import KSF.LocalStorage as LocalStorage
 import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Registration.Component as Registration
@@ -38,19 +31,10 @@ import KSF.User.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events (handler, handler_)
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import Record as Record
-import Unsafe.Coerce (unsafeCoerce)
 import Web.DOM.Node as Web.DOM
-
--- data UserError =
---   InvalidCredentials
---   | FacebookEmailMissing
---   | EmailMismatchError
---   | GoogleAuthInitError
---   | SomethingWentWrong
 
 data SocialLoginProvider = Facebook | Google
 derive instance eqSocialLoginOption :: Eq SocialLoginProvider
