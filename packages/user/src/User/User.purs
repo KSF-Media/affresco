@@ -4,7 +4,8 @@ module KSF.User.User
   , ValidationServerError
   , module PersonaReExport
   , loginTraditional
-  , automaticLogin
+  , magicLogin
+  , logout
   , someAuth
   , facebookSdk
   , createUser
@@ -19,7 +20,7 @@ import Prelude
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
-import Data.DateTime (DateTime(..))
+import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..))
@@ -124,8 +125,8 @@ loginTraditional loginData = do
           pure $ Left $ UnexpectedError err
 
 -- | Tries to login with token in local storage or, if that fails, SSO.
-automaticLogin :: (Either UserError Persona.User -> Effect Unit) -> Aff Unit
-automaticLogin callback = do
+magicLogin :: (Either UserError Persona.User -> Effect Unit) -> Aff Unit
+magicLogin callback = do
   loadedToken <- loadToken
   case loadedToken of
     Just token -> do

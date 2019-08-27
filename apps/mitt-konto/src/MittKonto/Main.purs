@@ -19,7 +19,6 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
-import KSF.Login.Component (login, logout) as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.Profile.Component as Profile
@@ -29,7 +28,8 @@ import React.Basic (JSX)
 import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
-import KSF.User.Main as U
+import KSF.User.Main (loginForm) as User
+import KSF.User.User (logout) as User
 
 foreign import images :: { subscribe :: String }
 
@@ -146,7 +146,7 @@ navbarView { state, setState } =
       , loggedInUser: state.loggedInUser
       , logout: do
           Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
-            Login.logout
+            User.logout
             liftEffect $ setState $ setLoggedInUser Nothing
       }
 
@@ -330,7 +330,7 @@ loginView { state, setState } = React.fragment
   ]
   where
     loginForm =
-        U.loginForm
+        User.loginForm
           { onMerge:             setState \s -> s { showWelcome = false }
           , onMergeCancelled:    setState \s -> s { showWelcome = true }
           , onRegister:          setState \s -> s { showWelcome = false }
@@ -342,7 +342,7 @@ loginView { state, setState } = React.fragment
                 setState $ setLoggedInUser Nothing
               Right user -> do
                 log "Fetching user succeeded"
-                setState $ setLoggedInUser $ Just user.user
+                setState $ setLoggedInUser $ Just user
           , launchAff_:
               Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)

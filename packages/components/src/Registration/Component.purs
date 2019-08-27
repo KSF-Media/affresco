@@ -3,7 +3,7 @@ module KSF.Registration.Component where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (catchError, throwError)
+import Control.Monad.Error.Class (throwError)
 import Data.Array (all, cons, filter, find, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, traverse_)
@@ -19,7 +19,6 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
-import Foreign.Object (Object)
 import Foreign.Object as Object
 import KSF.User.User as User
 import Persona as Persona
