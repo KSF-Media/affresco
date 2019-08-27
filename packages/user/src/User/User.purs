@@ -9,6 +9,8 @@ module KSF.User.User
   , someAuth
   , facebookSdk
   , createUser
+  , pauseSubscription
+  , temporaryAddressChange
   )
 where
 
@@ -17,6 +19,7 @@ import Prelude
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
+import Data.DateTime (DateTime(..))
 import Data.Either (Either(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..))
@@ -34,9 +37,9 @@ import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
-import KSF.Login.Google as Google
 import KSF.User.Login.Facebook.Success as Facebook.Success
-import Persona (MergeToken, Provider (..), UUID, Email (..), Token (..)) as PersonaReExport
+import KSF.User.Login.Google as Google
+import Persona (MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -319,3 +322,39 @@ jsUpdateGdprConsent uuid token consents callback
 
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
+
+pauseSubscription
+  :: Persona.UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Aff (Either Persona.InvalidDateInput Persona.Subscription)
+pauseSubscription userUuid subsno startDate endDate = do
+  pausedSub <- try $ Persona.pauseSubscription userUuid subsno startDate endDate <<< _.token =<< requireToken
+  case pausedSub of
+    Right sub -> pure $ Right sub
+    Left err
+      | Just (errData :: Persona.InvalidPauseDates) <- Persona.errorData err ->
+          pure $ Left $ Persona.pauseDateErrorToInvalidDateError errData.invalid_pause_dates.message
+      | otherwise -> do
+          Console.error "Unexpected error when pausing subscription."
+          pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
+
+temporaryAddressChange
+  :: Persona.UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> String
+  -> String
+  -> Aff (Either Persona.InvalidDateInput Persona.Subscription)
+temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode = do
+  addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode <<< _.token =<< requireToken
+  case addressChangedSub of
+    Right sub -> pure $ Right sub
+    Left err
+      | Just (errData :: Persona.InvalidDates) <- Persona.errorData err ->
+          pure $ Left errData.invalid_param.message
+      | otherwise -> do
+          Console.error "Unexpected error when making temporary address change."
+          pure $ Left Persona.InvalidUnexpected

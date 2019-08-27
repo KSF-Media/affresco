@@ -234,6 +234,15 @@ type InvalidDates = PersonaError
     { message :: InvalidDateInput }
   )
 
+-- | TODO: These should really be fixed on the server side (we don't need both types)
+pauseDateErrorToInvalidDateError :: InvalidPauseDateError -> InvalidDateInput
+pauseDateErrorToInvalidDateError = case _ of
+  PauseInvalidStartDate   -> InvalidStartDate
+  PauseInvalidLength      -> InvalidLength
+  PauseInvalidOverlapping -> InvalidOverlapping
+  PauseInvalidTooRecent   -> InvalidTooRecent
+  PauseInvalidUnexpected  -> InvalidUnexpected
+
 type EmailAddressInUseRegistration = PersonaError
   ( email_address_in_use_registration :: { description :: String } )
 
