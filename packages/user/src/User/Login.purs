@@ -22,8 +22,8 @@ import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
-import KSF.Login.Google (attachClickHandler)
-import KSF.Login.Google as Google
+import KSF.User.Login.Google (attachClickHandler)
+import KSF.User.Login.Google as Google
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.User (User, UserError(..))

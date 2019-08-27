@@ -1,4 +1,4 @@
-module KSF.Login.Google where
+module KSF.User.Login.Google where
 
 import Control.Promise (Promise)
 import Control.Promise as Promise
