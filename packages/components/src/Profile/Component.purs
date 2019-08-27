@@ -22,6 +22,7 @@ import Effect.Now as Now
 import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Editable.Component (editable, ChangeType(..))
+import KSF.User.User (User)
 import KSF.User.User as User
 import Persona as Persona
 import React.Basic (make, JSX)
@@ -30,8 +31,8 @@ import React.Basic as React
 type Self = React.Self Props State
 
 type Props =
-  { profile :: Persona.User
-  , onUpdate :: Persona.User -> Effect Unit
+  { profile :: User
+  , onUpdate :: User -> Effect Unit
   }
 
 type State =
@@ -114,7 +115,7 @@ render self@{ props: { profile: user } } =
     saveName onError [firstName, lastName] = do
       newUser <- User.updateUser user.uuid $ User.UpdateName { firstName, lastName }
       case newUser of
-        Right u -> liftEffect $ self.props.onUpdate u.user
+        Right u -> liftEffect $ self.props.onUpdate u
         Left err -> do
           Console.error "Unexpected error when updating name."
           liftEffect $ onError "Namnändringen misslyckades."
@@ -129,7 +130,7 @@ render self@{ props: { profile: user } } =
           countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
       newUser <- User.updateUser user.uuid body
       case newUser of
-        Right u -> liftEffect $ self.props.onUpdate u.user
+        Right u -> liftEffect $ self.props.onUpdate u
         Left err -> do
           Console.error "Unexpected error when updating address."
           liftEffect $ onError "Adressändringen misslyckades."

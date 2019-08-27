@@ -1,6 +1,5 @@
 module KSF.User.User
-  ( User
-  , UserError (..)
+  ( UserError (..)
   , MergeInfo
   , ValidationServerError
   , module PersonaReExport
@@ -40,17 +39,12 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import facebookAppId :: String
-
-type User =
-  { logout :: Effect Unit
-  , user :: Persona.User
-  }
 
 data UserError =
   LoginInvalidCredentials
@@ -73,7 +67,7 @@ type MergeInfo =
   , userEmail :: Persona.Email
   }
 
-createUser :: Persona.NewUser -> Aff (Either UserError User)
+createUser :: Persona.NewUser -> Aff (Either UserError Persona.User)
 createUser newUser = do
   registeredUser <- try $ Persona.register newUser
   case registeredUser of
@@ -89,7 +83,7 @@ createUser newUser = do
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin user
 
-getUser :: Persona.UUID -> Persona.Token -> Aff User
+getUser :: Persona.UUID -> Persona.Token -> Aff Persona.User
 getUser uuid token = do
   userResponse <- try do
     Persona.getUser uuid token
@@ -104,16 +98,16 @@ getUser uuid token = do
           throwError err
     Right user -> do
       Console.info "User fetched successfully"
-      pure { user, logout: pure unit }
+      pure user
 
-updateUser :: Persona.UUID -> Persona.UserUpdate -> Aff (Either UserError User)
+updateUser :: Persona.UUID -> Persona.UserUpdate -> Aff (Either UserError Persona.User)
 updateUser uuid update = do
   newUser <- try $ Persona.updateUser uuid update <<< _.token =<< requireToken
   case newUser of
-    Right user -> pure $ Right { logout: pure unit, user }
+    Right user -> pure $ Right user
     Left err   -> pure $ Left $ UnexpectedError err
 
-loginTraditional :: Persona.LoginData -> Aff (Either UserError User)
+loginTraditional :: Persona.LoginData -> Aff (Either UserError Persona.User)
 loginTraditional loginData = do
   loginResponse <- try $ Persona.login loginData
   case loginResponse of
@@ -130,7 +124,7 @@ loginTraditional loginData = do
           pure $ Left $ UnexpectedError err
 
 -- | Tries to login with token in local storage or, if that fails, SSO.
-automaticLogin :: (Either UserError User -> Effect Unit) -> Aff Unit
+automaticLogin :: (Either UserError Persona.User -> Effect Unit) -> Aff Unit
 automaticLogin callback = do
   loadedToken <- loadToken
   case loadedToken of
@@ -155,7 +149,7 @@ someAuth
   -> Persona.Email
   -> Persona.Token
   -> Persona.Provider
-  -> Aff (Either UserError User)
+  -> Aff (Either UserError Persona.User)
 someAuth mergeInfo email token provider = do
   loginResponse <- try $ Persona.loginSome
       { provider: show provider
@@ -182,7 +176,7 @@ someAuth mergeInfo email token provider = do
            Console.error "An unexpected error occurred during SoMe login"
            pure $ Left $ UnexpectedError err
 
-loginSso :: (Either UserError User -> Effect Unit) -> Aff Unit
+loginSso :: (Either UserError Persona.User -> Effect Unit) -> Aff Unit
 loginSso callback = do
   config <- liftEffect $ JanrainSSO.loadConfig
   case Nullable.toMaybe config of
@@ -278,7 +272,7 @@ logoutJanrain = do
       liftEffect $ JanrainSSO.checkSession conf
       JanrainSSO.endSession conf
 
-finalizeLogin :: Persona.LoginResponse -> Aff (Either UserError User)
+finalizeLogin :: Persona.LoginResponse -> Aff (Either UserError Persona.User)
 finalizeLogin loginResponse = do
   saveToken loginResponse
   userResponse <- try do
@@ -294,7 +288,7 @@ finalizeLogin loginResponse = do
           pure $ Left $ UnexpectedError err
     Right user -> do
       Console.info "User fetched successfully"
-      pure $ Right { user, logout: pure unit }
+      pure $ Right user
 
 loadToken :: forall m. MonadEffect m => m (Maybe Persona.LoginResponse)
 loadToken = liftEffect $ runMaybeT do
