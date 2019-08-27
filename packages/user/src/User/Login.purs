@@ -140,7 +140,7 @@ login = make component
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
-  Aff.launchAff_ $ User.automaticLogin \user -> do
+  props.launchAff_ $ User.automaticLogin \user -> do
     props.onUserFetch user
     case user of
       Left SomethingWentWrong -> self.setState _ { errors { login = Just SomethingWentWrong } }
