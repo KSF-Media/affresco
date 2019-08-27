@@ -33,7 +33,7 @@ import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
-import KSF.User.User (LoginError(..))
+import KSF.User.User (UserError(..))
 import KSF.User.User as User
 import Persona (Token(..))
 import Persona as Persona
@@ -47,7 +47,7 @@ import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 import Web.DOM.Node as Web.DOM
 
--- data LoginError =
+-- data UserError =
 --   InvalidCredentials
 --   | FacebookEmailMissing
 --   | EmailMismatchError
@@ -59,8 +59,8 @@ derive instance eqSocialLoginOption :: Eq SocialLoginProvider
 derive instance ordSocialLoginOption :: Ord SocialLoginProvider
 
 type Errors =
-  { login :: Maybe User.LoginError
-  , social :: Maybe User.LoginError
+  { login :: Maybe User.UserError
+  , social :: Maybe User.UserError
   }
 
 type Providers =
@@ -80,7 +80,7 @@ type JSProps =
 -- TODO:
 --  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
 --  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
-  , onUserFetchFail     :: Nullable (EffectFn1 LoginError Unit) -- FIXME: THIS IS BROKEN!
+  , onUserFetchFail     :: Nullable (EffectFn1 UserError Unit) -- FIXME: THIS IS BROKEN!
   , onUserFetchSuccess  :: Nullable (EffectFn1 User.User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
@@ -121,7 +121,7 @@ type Props =
   , onRegisterCancelled :: Effect Unit
 -- TODO:
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
-  , onUserFetch :: Either LoginError User.User -> Effect Unit
+  , onUserFetch :: Either UserError User.User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
   , disableSocialLogins :: Set SocialLoginProvider
   }
@@ -136,8 +136,8 @@ type MergeInfo =
 type State =
   { formEmail :: String
   , formPassword :: String
-  , errors :: { login :: Maybe User.LoginError
-              , social :: Maybe User.LoginError
+  , errors :: { login :: Maybe User.UserError
+              , social :: Maybe User.UserError
               , googleAuthInit :: Maybe Google.Error
               }
   , merge :: Maybe MergeInfo
@@ -165,7 +165,7 @@ login = make component
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
-  Aff.launchAff_ $ User.tryLogin $ \user -> do
+  Aff.launchAff_ $ User.tryLogin \user -> do
     props.onUserFetch user
     case user of
       Left SomethingWentWrong -> self.setState _ { errors { login = Just SomethingWentWrong } }
@@ -186,7 +186,7 @@ failOnEmailMismatch self email
   | Just (Persona.Email email) == map _.userEmail self.state.merge = do
       pure unit
   | otherwise = do
-      liftEffect $ self.setState _ { errors { login = Just EmailMismatchError } }
+      liftEffect $ self.setState _ { errors { login = Just LoginEmailMismatchError } }
       throwError $ error "Emails don't match"
 
 someAuth :: Self -> Persona.Email -> Persona.Token -> Persona.Provider -> Aff Persona.LoginResponse
@@ -235,13 +235,13 @@ onLogin self@{ props, state } = props.launchAff_ do
       } `catchError` case _ of
        err | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
                Console.error errData.invalid_credentials.description
-               -- liftEffect $ send self (LoginError Login.InvalidCredentials)
-               liftEffect $ self.setState _ { errors { login = Just InvalidCredentials } }
+               -- liftEffect $ send self (UserError Login.InvalidCredentials)
+               liftEffect $ self.setState _ { errors { login = Just LoginInvalidCredentials } }
                throwError err
            | Just serverError <- Persona.internalServerError err -> do
                Console.error "Something went wrong with traditional login"
                liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-               -- liftEffect $ send self (LoginError Login.SomethingWentWrong)
+               -- liftEffect $ send self (UserError Login.SomethingWentWrong)
                throwError err
            | otherwise -> do
                Console.error "An unexpected error occurred during traditional login"
@@ -268,11 +268,8 @@ renderLogin self =
     Login        -> renderLoginForm self
     Registration ->
       Registration.registration
-       { onRegister: \registration -> self.props.launchAff_ do
-            loginResponse <- registration
-            pure unit
-            --finalizeLogin self.props loginResponse
-        , onCancelRegistration: do
+       { onRegister: self.props.launchAff_ <<< void
+       , onCancelRegistration: do
              self.props.onRegisterCancelled
              self.setState _ { loginViewStep = Login }
         }
@@ -458,7 +455,7 @@ googleLogin self =
     -- | In this case, an error message is shown to the user when the button is clicked.
     googleFallbackOnClick
       | isJust self.state.errors.googleAuthInit =
-          self.setState _ { errors { login = Just GoogleAuthInitError } }
+          self.setState _ { errors { login = Just LoginGoogleAuthInitError } }
       | otherwise = pure unit
 
 facebookLogin :: Self -> JSX
@@ -496,7 +493,7 @@ facebookLogin self =
           `catchError` \err -> do
             -- Here we get an exception if the FB email is missing,
             -- so we have to ask the user
-            liftEffect $ self.setState _ { errors { login = Just FacebookEmailMissing } }
+            liftEffect $ self.setState _ { errors { login = Just LoginFacebookEmailMissing } }
             throwError err
       failOnEmailMismatch self email
       -- setting the email in the state to eventually send it from the merge view form
@@ -590,7 +587,7 @@ forgotPassword =
         ]
     }
 
-formatErrorMessage :: LoginError -> JSX
+formatErrorMessage :: User.UserError -> JSX
 formatErrorMessage err =
   DOM.div
     { className: "login--error-msg pb1"
@@ -599,13 +596,13 @@ formatErrorMessage err =
   where
     errorMsg =
       case err of
-        InvalidCredentials ->
+        LoginInvalidCredentials ->
           DOM.text "Kombinationen av e-postadress och lösenord finns inte"
-        FacebookEmailMissing ->
+        LoginFacebookEmailMissing ->
           DOM.text "Vi behöver din e-postadress. Godkänn oss i Facebook-inställningar för att få din e-postadress."
-        EmailMismatchError ->
+        LoginEmailMismatchError ->
           DOM.text "Det finns inget konto med e-postadressen du valde. Var god välj en annan e-postaddress."
-        GoogleAuthInitError ->
+        LoginGoogleAuthInitError ->
           DOM.div_
             [ DOM.text
                 """Inloggning med Googlekonto kräver att webbläsaren tillåter tredjepartskakor.
@@ -617,6 +614,5 @@ formatErrorMessage err =
                 }
             , DOM.text "."
             ]
-        -- Somethingwentwrong, UnexpectedError, TokenInvalid
         _ ->
           DOM.text "Något gick fel vid inloggningen. Vänligen försök om en stund igen."

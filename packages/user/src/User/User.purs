@@ -19,6 +19,7 @@ import Effect.Class.Console as Log
 import Effect.Exception (Error, error, throw)
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
+import Foreign.Object (Object)
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.Login.Google as Google
@@ -48,32 +49,42 @@ type User =
   , user :: Persona.User
   }
 
-data LoginError =
-  InvalidCredentials
-  | FacebookEmailMissing
-  | EmailMismatchError
-  | GoogleAuthInitError
+data UserError =
+  LoginInvalidCredentials
+  | LoginFacebookEmailMissing
+  | LoginEmailMismatchError
+  | LoginGoogleAuthInitError
+  | LoginTokenInvalid
+  | InvalidFormFields ValidationServerError
+  | RegistrationEmailInUse
   | SomethingWentWrong
-  | TokenInvalid
   | UnexpectedError Error
+
+type ValidationServerError = Object (Array String)
 
 component :: React.Component Props
 component = React.createComponent "User"
 
-createUser :: Persona.NewUser -> Aff User
+createUser :: Persona.NewUser -> Aff (Either UserError User)
 createUser newUser = do
-  user <- Persona.register newUser
-  finalizeLogin user >>= case _ of
-    Left _  -> throwError $ error "Could not finalize login on registered user."
-    Right u -> pure u
+  registeredUser <- try $ Persona.register newUser
+  case registeredUser of
+    Left err
+      | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
+          Console.error errData.email_address_in_use_registration.description
+          pure $ Left RegistrationEmailInUse
+      | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+          Console.error errData.invalid_form_fields.description
+          pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
+      | otherwise -> do
+          Console.error "An unexpected error occurred during registration"
+          pure $ Left $ UnexpectedError err
+    Right user -> finalizeLogin user
 
--- loginTraditional :: Persona.LoginData -> Aff User
--- loginTraditional loginData = do
---   loginResponse <- Persona.login loginData
---   user <- finalizeLogin loginResponse
---   pure $ { logout: pure unit, user }
+loginTraditional :: Persona.LoginData -> Aff (Either UserError User)
+loginTraditional loginData = finalizeLogin =<< Persona.login loginData
 
-tryLogin :: (Either LoginError User -> Effect Unit) -> Aff Unit
+tryLogin :: (Either UserError User -> Effect Unit) -> Aff Unit
 tryLogin callback = do
   loadedToken <- loadToken
   case loadedToken of
@@ -93,7 +104,6 @@ tryLogin callback = do
                 liftEffect $ callback $ Left $ UnexpectedError err
                 throwError err
 
-
 loginByToken :: Effect (Either Error (Aff User))
 loginByToken = do
   loadedToken <- loadToken
@@ -101,7 +111,7 @@ loginByToken = do
     Just { uuid, token } -> pure $ Right $ getUser uuid token
     Nothing -> pure $ Left $ error "Did not find token from local storage."
 
-loginSso :: (Either LoginError User -> Effect Unit) -> Aff Unit
+loginSso :: (Either UserError User -> Effect Unit) -> Aff Unit
 loginSso callback = do
   config <- liftEffect $ JanrainSSO.loadConfig
   case Nullable.toMaybe config of
@@ -217,7 +227,7 @@ getUser uuid token = do
       Console.info "User fetched successfully"
       pure { user, logout: pure unit }
 
-finalizeLogin :: Persona.LoginResponse -> Aff (Either LoginError User)
+finalizeLogin :: Persona.LoginResponse -> Aff (Either UserError User)
 finalizeLogin loginResponse = do
   saveToken loginResponse
   userResponse <- try do
@@ -227,10 +237,10 @@ finalizeLogin loginResponse = do
       | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
           Console.error "Failed to fetch the user: Invalid token"
           liftEffect deleteToken
-          pure $ Left TokenInvalid
+          pure $ Left LoginTokenInvalid
       | otherwise -> do
           Console.error "Failed to fetch the user"
-          throwError err
+          pure $ Left $ UnexpectedError err
     Right user -> do
       Console.info "User fetched successfully"
       pure $ Right { user, logout: pure unit }
