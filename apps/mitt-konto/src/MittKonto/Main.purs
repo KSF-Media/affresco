@@ -29,7 +29,7 @@ import React.Basic (JSX)
 import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
-import KSF.User as U
+import KSF.User.Main as U
 
 foreign import images :: { subscribe :: String }
 
@@ -330,7 +330,7 @@ loginView { state, setState } = React.fragment
   ]
   where
     loginForm =
-        Login.login
+        U.loginForm
           { onMerge:             setState \s -> s { showWelcome = false }
           , onMergeCancelled:    setState \s -> s { showWelcome = true }
           , onRegister:          setState \s -> s { showWelcome = false }
@@ -342,7 +342,7 @@ loginView { state, setState } = React.fragment
                 setState $ setLoggedInUser Nothing
               Right user -> do
                 log "Fetching user succeeded"
-                setState $ setLoggedInUser $ Just user
+                setState $ setLoggedInUser $ Just user.user
           , launchAff_:
               Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)

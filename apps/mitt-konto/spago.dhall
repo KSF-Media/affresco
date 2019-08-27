@@ -6,7 +6,6 @@ You can edit this file as you like.
     "mitt-konto"
 , dependencies =
     [ "affresco-components"
-    , "affresco-login"
     , "affresco-user"
     , "effect"
     , "console"
