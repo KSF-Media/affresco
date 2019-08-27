@@ -1,4 +1,15 @@
-module KSF.User.User where
+module KSF.User.User
+  ( User
+  , UserError (..)
+  , MergeInfo
+  , ValidationServerError
+  , module PersonaReExport
+  , loginTraditional
+  , tryLogin
+  , someAuth
+  , facebookSdk
+  , createUser)
+where
 
 import Prelude
 
@@ -8,15 +19,15 @@ import Control.Parallel (parSequence_)
 import Data.Either (Either(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..))
+import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
-import Effect.Class.Console as Console
 import Effect.Class.Console as Log
-import Effect.Exception (Error, error, throw)
+import Effect.Exception (Error, throw)
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
@@ -24,9 +35,8 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.Login.Google as Google
 import KSF.User.Login.Facebook.Success as Facebook.Success
-import Persona (UUID(..))
+import Persona (MergeToken, Provider (..), UUID, Email (..), Token (..)) as PersonaReExport
 import Persona as Persona
-import React.Basic (JSX)
 import React.Basic as React
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -57,10 +67,18 @@ data UserError =
   | LoginTokenInvalid
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
+  | MergeEmailInUse MergeInfo
   | SomethingWentWrong
   | UnexpectedError Error
 
 type ValidationServerError = Object (Array String)
+
+type MergeInfo =
+  { token :: Persona.MergeToken
+  , existingProvider :: Persona.Provider
+  , newProvider :: Persona.Provider
+  , userEmail :: Persona.Email
+  }
 
 component :: React.Component Props
 component = React.createComponent "User"
@@ -82,8 +100,22 @@ createUser newUser = do
     Right user -> finalizeLogin user
 
 loginTraditional :: Persona.LoginData -> Aff (Either UserError User)
-loginTraditional loginData = finalizeLogin =<< Persona.login loginData
+loginTraditional loginData = do
+  loginResponse <- try $ Persona.login loginData
+  case loginResponse of
+    Right lr -> finalizeLogin lr
+    Left err
+      | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
+          Console.error errData.invalid_credentials.description
+          pure $ Left LoginInvalidCredentials
+      | Just serverError <- Persona.internalServerError err -> do
+          Console.error "Something went wrong with traditional login"
+          pure $ Left SomethingWentWrong
+      | otherwise -> do
+          Console.error "An unexpected error occurred during traditional login"
+          pure $ Left $ UnexpectedError err
 
+-- | Tries to login with token in local storage or, if that fails, SSO.
 tryLogin :: (Either UserError User -> Effect Unit) -> Aff Unit
 tryLogin callback = do
   loadedToken <- loadToken
@@ -104,12 +136,39 @@ tryLogin callback = do
                 liftEffect $ callback $ Left $ UnexpectedError err
                 throwError err
 
-loginByToken :: Effect (Either Error (Aff User))
-loginByToken = do
-  loadedToken <- loadToken
-  case loadedToken of
-    Just { uuid, token } -> pure $ Right $ getUser uuid token
-    Nothing -> pure $ Left $ error "Did not find token from local storage."
+
+someAuth
+  :: Maybe MergeInfo
+  -> Persona.Email
+  -> Persona.Token
+  -> Persona.Provider
+  -> Aff (Either UserError User)
+someAuth mergeInfo email token provider = do
+  loginResponse <- try $ Persona.loginSome
+      { provider: show provider
+      , someToken: token
+      , mergeToken: toNullable $ map _.token mergeInfo
+      }
+  case loginResponse of
+    Right t -> finalizeLogin t
+    Left err
+      | Just (errData :: Persona.EmailAddressInUse) <- Persona.errorData err -> do
+          Console.error errData.email_address_in_use.description
+          pure $ Left $ MergeEmailInUse newMergeInfo
+          where
+            newMergeInfo =
+              { token: errData.email_address_in_use.merge_token
+              , existingProvider: errData.email_address_in_use.existing_provider
+              , newProvider: provider
+              , userEmail: email
+              }
+       | Just serverError <- Persona.internalServerError err -> do
+           Console.error "Something went wrong with SoMe login"
+           pure $ Left SomethingWentWrong
+       | otherwise -> do
+           Console.error "An unexpected error occurred during SoMe login"
+           pure $ Left $ UnexpectedError err
+
 
 loginSso :: (Either UserError User -> Effect Unit) -> Aff Unit
 loginSso callback = do
@@ -210,7 +269,7 @@ logoutJanrain = do
       liftEffect $ JanrainSSO.checkSession conf
       JanrainSSO.endSession conf
 
-getUser :: UUID -> Persona.Token -> Aff User
+getUser :: Persona.UUID -> Persona.Token -> Aff User
 getUser uuid token = do
   userResponse <- try do
     Persona.getUser uuid token
@@ -267,3 +326,12 @@ requireToken =
   loadToken >>= case _ of
     Nothing -> liftEffect $ throw "Did not find uuid/token in local storage."
     Just loginResponse -> pure loginResponse
+
+jsUpdateGdprConsent
+  :: Persona.UUID
+  -> Persona.Token
+  -> Array Persona.GdprConsent
+  -> Effect Unit
+  -> Effect Unit
+jsUpdateGdprConsent uuid token consents callback
+  = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents

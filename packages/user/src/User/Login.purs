@@ -33,10 +33,8 @@ import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
-import KSF.User.User (UserError(..))
+import KSF.User.User (User, UserError(..))
 import KSF.User.User as User
-import Persona (Token(..))
-import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -59,13 +57,13 @@ derive instance eqSocialLoginOption :: Eq SocialLoginProvider
 derive instance ordSocialLoginOption :: Ord SocialLoginProvider
 
 type Errors =
-  { login :: Maybe User.UserError
-  , social :: Maybe User.UserError
+  { login :: Maybe UserError
+  , social :: Maybe UserError
   }
 
 type Providers =
-  { existing :: Persona.Provider
-  , new :: Persona.Provider
+  { existing :: User.Provider
+  , new :: User.Provider
   }
 
 data LoginStep = Login | Registration
@@ -81,7 +79,7 @@ type JSProps =
 --  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
 --  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
   , onUserFetchFail     :: Nullable (EffectFn1 UserError Unit) -- FIXME: THIS IS BROKEN!
-  , onUserFetchSuccess  :: Nullable (EffectFn1 User.User Unit)
+  , onUserFetchSuccess  :: Nullable (EffectFn1 User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
   , disableSocialLogins :: Nullable (Array String)
@@ -121,26 +119,19 @@ type Props =
   , onRegisterCancelled :: Effect Unit
 -- TODO:
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
-  , onUserFetch :: Either UserError User.User -> Effect Unit
+  , onUserFetch :: Either UserError User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
   , disableSocialLogins :: Set SocialLoginProvider
-  }
-
-type MergeInfo =
-  { token :: Persona.MergeToken
-  , existingProvider :: Persona.Provider
-  , newProvider :: Persona.Provider
-  , userEmail :: Persona.Email
   }
 
 type State =
   { formEmail :: String
   , formPassword :: String
-  , errors :: { login :: Maybe User.UserError
-              , social :: Maybe User.UserError
+  , errors :: { login :: Maybe UserError
+              , social :: Maybe UserError
               , googleAuthInit :: Maybe Google.Error
               }
-  , merge :: Maybe MergeInfo
+  , merge :: Maybe User.MergeInfo
   , loginViewStep :: LoginStep
   }
 
@@ -183,84 +174,30 @@ failOnEmailMismatch :: Self -> String -> Aff Unit
 failOnEmailMismatch self email
   | isNothing self.state.merge =
       pure unit
-  | Just (Persona.Email email) == map _.userEmail self.state.merge = do
+  | Just (User.Email email) == map _.userEmail self.state.merge = do
       pure unit
   | otherwise = do
       liftEffect $ self.setState _ { errors { login = Just LoginEmailMismatchError } }
       throwError $ error "Emails don't match"
 
-someAuth :: Self -> Persona.Email -> Persona.Token -> Persona.Provider -> Aff Persona.LoginResponse
-someAuth self email token provider = do
-  responseToken <-
-    Persona.loginSome
-      { provider: show provider
-      , someToken: token
-      , mergeToken: toNullable $ map _.token self.state.merge
-      } `catchError` case _ of
-          err
-            -- Merge token handling: in case we get an "email address in use"
-            -- error, we set things up in the state to render the merge token screen
-            | Just (errData :: Persona.EmailAddressInUse) <- Persona.errorData err -> do
-                Console.error errData.email_address_in_use.description
-                liftEffect do
-                  self.props.onMerge
-                  self.setState _
-                    { merge =
-                         (Just
-                           { token: errData.email_address_in_use.merge_token
-                           , existingProvider: errData.email_address_in_use.existing_provider
-                           , newProvider: provider
-                           , userEmail: email
-                           })
-                    }
-                throwError err
-            | Just serverError <- Persona.internalServerError err -> do
-                Console.error "Something went wrong with SoMe login"
-                liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-                throwError err
-            | otherwise -> do
-                 Console.error "An unexpected error occurred during SoMe login"
-                 throwError err
-  -- removing merge token from state in case of success
-  liftEffect $ self.setState _ { merge = Nothing }
-  pure responseToken
-
 onLogin :: Self -> Effect Unit
 onLogin self@{ props, state } = props.launchAff_ do
-  loginResponse <-
-    Persona.login
-      { username: state.formEmail
-      , password: state.formPassword
-      , mergeToken: toNullable $ map _.token state.merge
-      } `catchError` case _ of
-       err | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
-               Console.error errData.invalid_credentials.description
-               -- liftEffect $ send self (UserError Login.InvalidCredentials)
-               liftEffect $ self.setState _ { errors { login = Just LoginInvalidCredentials } }
-               throwError err
-           | Just serverError <- Persona.internalServerError err -> do
-               Console.error "Something went wrong with traditional login"
-               liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-               -- liftEffect $ send self (UserError Login.SomethingWentWrong)
-               throwError err
-           | otherwise -> do
-               Console.error "An unexpected error occurred during traditional login"
-               throwError err
-  -- removing merge token from state in case of success
-  liftEffect $ self.setState _ { merge = Nothing }
-  --finalizeLogin props loginResponse
-
-jsUpdateGdprConsent
-  :: Persona.UUID
-  -> Persona.Token
-  -> Array Persona.GdprConsent
-  -> Effect Unit
-  -> Effect Unit
-jsUpdateGdprConsent uuid token consents callback
-  = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents
-
-deleteToken :: Effect Unit
-deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid" ]
+  user <- User.loginTraditional
+            { username: state.formEmail
+            , password: state.formPassword
+            , mergeToken: toNullable $ map _.token state.merge
+            }
+  liftEffect $ props.onUserFetch user
+  case user of
+    Right _ ->
+      -- removing merge token from state in case of success
+      liftEffect $ self.setState _ { merge = Nothing }
+    Left LoginInvalidCredentials ->
+      liftEffect $ self.setState _ { errors { login = Just LoginInvalidCredentials } }
+    Left SomethingWentWrong ->
+      liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
+    Left _ ->
+      throwError $ error "An unexpected error occurred during traditional login"
 
 renderLogin :: Self -> JSX
 renderLogin self =
@@ -327,7 +264,7 @@ renderLoginForm self =
             ]
         }
 
-renderMerge :: Self -> MergeInfo -> JSX
+renderMerge :: Self -> User.MergeInfo -> JSX
 renderMerge self@{ props } mergeInfo =
    DOM.div
      { className: "login-form"
@@ -347,7 +284,7 @@ renderMerge self@{ props } mergeInfo =
     fbText = "Om du vill, kan du aktivera Facebook-inloggning genom att logg in med ditt Google-konto."
     googText = "Om du vill, kan du aktivera Google-inloggning genom att logga in med ditt Facebook-konto."
 
-    mergeActions Persona.Capture =
+    mergeActions User.Capture =
       [ DOM.p_
           [ DOM.text captureText
           , DOM.b_ [ DOM.text self.state.formEmail ]
@@ -355,12 +292,12 @@ renderMerge self@{ props } mergeInfo =
           ]
       , mergeAccountForm
       ]
-    mergeActions Persona.Facebook =
+    mergeActions User.Facebook =
       [ DOM.p_ [ DOM.text fbText ]
       , foldMap formatErrorMessage self.state.errors.social
       , googleLogin self
       ]
-    mergeActions Persona.GooglePlus =
+    mergeActions User.GooglePlus =
       [ DOM.p_ [ DOM.text googText ]
       , foldMap formatErrorMessage self.state.errors.social
       , facebookLogin self
@@ -426,9 +363,8 @@ googleLogin self =
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = email }
-      userResponse <- someAuth self (Persona.Email email) (Token accessToken) Persona.GooglePlus
-      pure unit
-   --   finalizeLogin self.props userResponse
+
+      finalizeSomeAuth self =<< User.someAuth self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
 
     -- | Handles Google login errors. The matched cases are:
     -- | 1) Error "idpiframe_initialization_failed".
@@ -499,9 +435,18 @@ facebookLogin self =
       -- setting the email in the state to eventually send it from the merge view form
       liftEffect $ self.setState _ { formEmail = email }
       let (FB.AccessToken fbAccessToken) = accessToken
-      userResponse <- someAuth self (Persona.Email email) (Token fbAccessToken) Persona.Facebook
-      pure unit
-    --  finalizeLogin self.props userResponse
+      finalizeSomeAuth self =<< User.someAuth self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+
+finalizeSomeAuth :: Self -> Either UserError User -> Aff Unit
+finalizeSomeAuth self = case _ of
+  Right _ ->
+    -- removing merge token from state in case of success
+    liftEffect $ self.setState _ { merge = Nothing }
+  Left (MergeEmailInUse newMergeInfo) -> liftEffect do
+    self.props.onMerge
+    self.setState _ { merge = Just newMergeInfo }
+  Left SomethingWentWrong -> liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
+  Left _ -> throwError $ error "An unexpected error occurred during SoMe login"
 
 someLoginButton ::
   { className :: String
@@ -587,7 +532,7 @@ forgotPassword =
         ]
     }
 
-formatErrorMessage :: User.UserError -> JSX
+formatErrorMessage :: UserError -> JSX
 formatErrorMessage err =
   DOM.div
     { className: "login--error-msg pb1"
