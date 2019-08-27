@@ -19,6 +19,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import KSF.User.User as User
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -31,7 +32,7 @@ type Self = React.Self Props State
 type ValidatedForm a = V (NonEmptyList ValidationError) a
 
 type Props =
-  { onRegister :: Aff Persona.LoginResponse -> Effect Unit
+  { onRegister :: Aff User.User -> Effect Unit
   , onCancelRegistration :: Effect Unit
   }
 
@@ -40,12 +41,6 @@ type State =
   , formData :: FormData
   }
 
--- NOTE: We have two passwords in the state, `password` and `unvalidatedPassword`.
--- `unvalidatedPassword` is the real input value (shown to user), and `password` is used to validate that value (this is sent to the server).
--- This is because we want the password input field to behave differently from the other inputs.
--- In other inputs, we want to validate the values while they're being typed, but with the password,
--- we only validate its value when the focus taken out of that field (onBlur event).
--- TODO: Figure out better ways of doing this.
 type FormData =
   { firstName       :: Maybe String
   , lastName        :: Maybe String
@@ -401,7 +396,7 @@ submitForm self@{ state: { formData } } = unV
   where
     createUser form
       | Just user <- mkNewUser form = do
-          self.props.onRegister $ Persona.register user `catchError` case _ of
+          self.props.onRegister $ User.createUser user `catchError` case _ of
             err | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
                     Console.error errData.email_address_in_use_registration.description
                     liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse emailInUseMsg `cons` self.state.serverErrors }

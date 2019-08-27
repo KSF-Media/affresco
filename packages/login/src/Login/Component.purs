@@ -248,8 +248,9 @@ render self@{ props, state } =
         , registrationComponent:
             Registration.registration
               { onRegister: \registration -> props.launchAff_ do
-                   loginResponse <- registration
-                   finalizeLogin props loginResponse
+                   pure unit
+                   -- loginResponse <- registration
+                   -- finalizeLogin props loginResponse
               , onCancelRegistration: do
                    props.onRegisterCancelled
                    send self (SetViewStep View.Login)

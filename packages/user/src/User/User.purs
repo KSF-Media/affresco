@@ -48,25 +48,51 @@ type User =
   , user :: Persona.User
   }
 
-data LoginError e =
+data LoginError =
   InvalidCredentials
   | FacebookEmailMissing
   | EmailMismatchError
   | GoogleAuthInitError
   | SomethingWentWrong
-  | UnexpectedError e
+  | TokenInvalid
+  | UnexpectedError Error
 
 component :: React.Component Props
 component = React.createComponent "User"
 
-createUser :: Persona.NewUser -> Aff Persona.LoginResponse
-createUser = Persona.register
+createUser :: Persona.NewUser -> Aff User
+createUser newUser = do
+  user <- Persona.register newUser
+  finalizeLogin user >>= case _ of
+    Left _  -> throwError $ error "Could not finalize login on registered user."
+    Right u -> pure u
 
-loginTraditional :: Persona.LoginData -> Aff User
-loginTraditional loginData = do
-  loginResponse <- Persona.login loginData
-  user <- finalizeLogin loginResponse
-  pure $ { logout: pure unit, user }
+-- loginTraditional :: Persona.LoginData -> Aff User
+-- loginTraditional loginData = do
+--   loginResponse <- Persona.login loginData
+--   user <- finalizeLogin loginResponse
+--   pure $ { logout: pure unit, user }
+
+tryLogin :: (Either LoginError User -> Effect Unit) -> Aff Unit
+tryLogin callback = do
+  loadedToken <- loadToken
+  case loadedToken of
+    Just token -> do
+      Console.log "Successfully loaded the saved token from local storage"
+      user <- finalizeLogin token
+      liftEffect $ callback user
+    Nothing -> do
+      Console.log "Couldn't load the saved token, giving SSO a try"
+      loginSso callback `catchError` case _ of
+        err | Just serverError <- Persona.internalServerError err -> do
+                Console.error "Something went wrong with SSO login"
+                liftEffect $ callback $ Left SomethingWentWrong
+                throwError err
+            | otherwise -> do
+                Console.error "An unexpected error occurred during SSO login"
+                liftEffect $ callback $ Left $ UnexpectedError err
+                throwError err
+
 
 loginByToken :: Effect (Either Error (Aff User))
 loginByToken = do
@@ -75,14 +101,14 @@ loginByToken = do
     Just { uuid, token } -> pure $ Right $ getUser uuid token
     Nothing -> pure $ Left $ error "Did not find token from local storage."
 
-loginSso :: Effect (Either Error (Aff Unit))
-loginSso = do
-  config <- JanrainSSO.loadConfig
+loginSso :: (Either LoginError User -> Effect Unit) -> Aff Unit
+loginSso callback = do
+  config <- liftEffect $ JanrainSSO.loadConfig
   case Nullable.toMaybe config of
     Nothing -> do
       Console.log "sso_lite.js script is not loaded, giving up"
-      pure $ Left $ error "nope"
-    Just conf -> pure $ Right $ liftEffect $ checkSsoSession conf
+      pure unit
+    Just conf -> liftEffect $ checkSsoSession conf
   where
     checkSsoSession loginConfig = do
       JanrainSSO.checkSession $ Record.merge
@@ -98,7 +124,19 @@ loginSso = do
              JanrainSSO.setSsoSuccess
              Console.log "Janrain SSO capture success"
              Console.log $ unsafeCoerce r
-             Aff.launchAff_ $ finalizeLogin =<< Persona.loginSso { accessToken, uuid }
+             Aff.launchAff_ do
+               loginResponse <-
+                 Persona.loginSso { accessToken, uuid } `catchError` case _ of
+                      err | Just serverError <- Persona.internalServerError err -> do
+                              Console.error "Something went wrong with SSO login"
+                              liftEffect $ callback $ Left SomethingWentWrong
+                              throwError err
+                          | otherwise -> do
+                              Console.error "An unexpected error occurred during SSO login"
+                              liftEffect $ callback $ Left $ UnexpectedError err
+                              throwError err
+               user <- finalizeLogin loginResponse
+               liftEffect $ callback user
             }
 
 -- | JS-compatible version of 'logout', takes a callback
@@ -179,7 +217,7 @@ getUser uuid token = do
       Console.info "User fetched successfully"
       pure { user, logout: pure unit }
 
-finalizeLogin :: Persona.LoginResponse -> Aff Persona.User
+finalizeLogin :: Persona.LoginResponse -> Aff (Either LoginError User)
 finalizeLogin loginResponse = do
   saveToken loginResponse
   userResponse <- try do
@@ -189,14 +227,13 @@ finalizeLogin loginResponse = do
       | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
           Console.error "Failed to fetch the user: Invalid token"
           liftEffect deleteToken
-          throwError err
+          pure $ Left TokenInvalid
       | otherwise -> do
           Console.error "Failed to fetch the user"
           throwError err
     Right user -> do
       Console.info "User fetched successfully"
-      pure user
- -- liftEffect $ props.onUserFetch userRespons
+      pure $ Right { user, logout: pure unit }
 
 loadToken :: forall m. MonadEffect m => m (Maybe Persona.LoginResponse)
 loadToken = liftEffect $ runMaybeT do

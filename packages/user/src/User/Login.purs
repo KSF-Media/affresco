@@ -7,7 +7,7 @@ import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
 import Data.Array (foldMap)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (for_, surround, traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
@@ -33,6 +33,7 @@ import KSF.Login.Google (attachClickHandler)
 import KSF.Login.Google as Google
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
+import KSF.User.User (LoginError(..))
 import KSF.User.User as User
 import Persona (Token(..))
 import Persona as Persona
@@ -79,8 +80,8 @@ type JSProps =
 -- TODO:
 --  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
 --  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
-  , onUserFetchFail     :: Nullable (EffectFn1 Error Unit)
-  , onUserFetchSuccess  :: Nullable (EffectFn1 Persona.User Unit)
+  , onUserFetchFail     :: Nullable (EffectFn1 LoginError Unit) -- FIXME: THIS IS BROKEN!
+  , onUserFetchSuccess  :: Nullable (EffectFn1 User.User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
   , disableSocialLogins :: Nullable (Array String)
@@ -120,7 +121,7 @@ type Props =
   , onRegisterCancelled :: Effect Unit
 -- TODO:
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
-  , onUserFetch :: Either Error User.User -> Effect Unit
+  , onUserFetch :: Either LoginError User.User -> Effect Unit
   , launchAff_ :: Aff Unit -> Effect Unit
   , disableSocialLogins :: Set SocialLoginProvider
   }
@@ -135,8 +136,8 @@ type MergeInfo =
 type State =
   { formEmail :: String
   , formPassword :: String
-  , errors :: { login :: Maybe LoginError
-              , social :: Maybe LoginError
+  , errors :: { login :: Maybe User.LoginError
+              , social :: Maybe User.LoginError
               , googleAuthInit :: Maybe Google.Error
               }
   , merge :: Maybe MergeInfo
@@ -164,24 +165,11 @@ login = make component
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
-  User.loginByToken <|> User.loginSso
-  pure unit
-  -- loadedToken <- User.loadToken
-  -- props.launchAff_
-  --   case loadedToken of
-  --     Just token -> do
-  --       Console.log "Successfully loaded the saved token from local storage"
-  --       finalizeLogin props token
-  --     Nothing -> liftEffect do
-  --       Console.log "Couldn't load the saved token, giving SSO a try"
-  --       User.loginSso `catchError` case _ of
-  --         err | Just serverError <- Persona.internalServerError err -> do
-  --                 Console.error "Something went wrong with SSO login"
-  --                 liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-  --                 throwError err
-  --             | otherwise -> do
-  --                 Console.error "An unexpected error occurred during SSO login"
-  --                 throwError err
+  Aff.launchAff_ $ User.tryLogin $ \user -> do
+    props.onUserFetch user
+    case user of
+      Left SomethingWentWrong -> self.setState _ { errors { login = Just SomethingWentWrong } }
+      _ -> pure unit
 
 render :: Self -> JSX
 render self@{ props, state } =
@@ -260,12 +248,7 @@ onLogin self@{ props, state } = props.launchAff_ do
                throwError err
   -- removing merge token from state in case of success
   liftEffect $ self.setState _ { merge = Nothing }
-  finalizeLogin props loginResponse
-
--- | JS-compatible version of 'logout', takes a callback
---   that will be called when it's done.
-jsLogout :: Effect Unit -> Effect Unit
-jsLogout callback = Aff.runAff_ (\_ -> callback) logout
+  --finalizeLogin props loginResponse
 
 jsUpdateGdprConsent
   :: Persona.UUID
@@ -287,7 +270,8 @@ renderLogin self =
       Registration.registration
        { onRegister: \registration -> self.props.launchAff_ do
             loginResponse <- registration
-            finalizeLogin self.props loginResponse
+            pure unit
+            --finalizeLogin self.props loginResponse
         , onCancelRegistration: do
              self.props.onRegisterCancelled
              self.setState _ { loginViewStep = Login }
@@ -446,7 +430,8 @@ googleLogin self =
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = email }
       userResponse <- someAuth self (Persona.Email email) (Token accessToken) Persona.GooglePlus
-      finalizeLogin self.props userResponse
+      pure unit
+   --   finalizeLogin self.props userResponse
 
     -- | Handles Google login errors. The matched cases are:
     -- | 1) Error "idpiframe_initialization_failed".
@@ -489,7 +474,7 @@ facebookLogin self =
   where
     onFacebookLogin :: Effect Unit
     onFacebookLogin = self.props.launchAff_ do
-      sdk <- facebookSdk
+      sdk <- User.facebookSdk
       FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
       case authResponse of
         Nothing -> do
@@ -518,7 +503,8 @@ facebookLogin self =
       liftEffect $ self.setState _ { formEmail = email }
       let (FB.AccessToken fbAccessToken) = accessToken
       userResponse <- someAuth self (Persona.Email email) (Token fbAccessToken) Persona.Facebook
-      finalizeLogin self.props userResponse
+      pure unit
+    --  finalizeLogin self.props userResponse
 
 someLoginButton ::
   { className :: String
@@ -631,5 +617,6 @@ formatErrorMessage err =
                 }
             , DOM.text "."
             ]
-        SomethingWentWrong ->
+        -- Somethingwentwrong, UnexpectedError, TokenInvalid
+        _ ->
           DOM.text "Något gick fel vid inloggningen. Vänligen försök om en stund igen."
