@@ -140,7 +140,7 @@ login = make component
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
-  Aff.launchAff_ $ User.tryLogin \user -> do
+  Aff.launchAff_ $ User.automaticLogin \user -> do
     props.onUserFetch user
     case user of
       Left SomethingWentWrong -> self.setState _ { errors { login = Just SomethingWentWrong } }
@@ -348,7 +348,9 @@ googleLogin self =
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = email }
 
-      finalizeSomeAuth self =<< User.someAuth self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+      user <- User.someAuth self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+      finalizeSomeAuth self user
+      liftEffect $ self.props.onUserFetch user
 
     -- | Handles Google login errors. The matched cases are:
     -- | 1) Error "idpiframe_initialization_failed".
@@ -419,7 +421,9 @@ facebookLogin self =
       -- setting the email in the state to eventually send it from the merge view form
       liftEffect $ self.setState _ { formEmail = email }
       let (FB.AccessToken fbAccessToken) = accessToken
-      finalizeSomeAuth self =<< User.someAuth self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+      user <- User.someAuth self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+      finalizeSomeAuth self user
+      liftEffect $ self.props.onUserFetch user
 
 finalizeSomeAuth :: Self -> Either UserError User -> Aff Unit
 finalizeSomeAuth self = case _ of

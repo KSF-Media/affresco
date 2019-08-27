@@ -5,7 +5,7 @@ module KSF.User.User
   , ValidationServerError
   , module PersonaReExport
   , loginTraditional
-  , tryLogin
+  , automaticLogin
   , someAuth
   , facebookSdk
   , createUser
@@ -102,8 +102,8 @@ loginTraditional loginData = do
           pure $ Left $ UnexpectedError err
 
 -- | Tries to login with token in local storage or, if that fails, SSO.
-tryLogin :: (Either UserError User -> Effect Unit) -> Aff Unit
-tryLogin callback = do
+automaticLogin :: (Either UserError User -> Effect Unit) -> Aff Unit
+automaticLogin callback = do
   loadedToken <- loadToken
   case loadedToken of
     Just token -> do
