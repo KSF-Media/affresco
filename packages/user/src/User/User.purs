@@ -9,6 +9,7 @@ module KSF.User.User
   , someAuth
   , facebookSdk
   , createUser
+  , updateUser
   , pauseSubscription
   , temporaryAddressChange
   )
@@ -39,7 +40,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -87,6 +88,30 @@ createUser newUser = do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin user
+
+getUser :: Persona.UUID -> Persona.Token -> Aff User
+getUser uuid token = do
+  userResponse <- try do
+    Persona.getUser uuid token
+  case userResponse of
+    Left err
+      | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
+          Console.error "Failed to fetch the user: Invalid token"
+          liftEffect deleteToken
+          throwError err
+      | otherwise -> do
+          Console.error "Failed to fetch the user"
+          throwError err
+    Right user -> do
+      Console.info "User fetched successfully"
+      pure { user, logout: pure unit }
+
+updateUser :: Persona.UUID -> Persona.UserUpdate -> Aff (Either UserError User)
+updateUser uuid update = do
+  newUser <- try $ Persona.updateUser uuid update <<< _.token =<< requireToken
+  case newUser of
+    Right user -> pure $ Right { logout: pure unit, user }
+    Left err   -> pure $ Left $ UnexpectedError err
 
 loginTraditional :: Persona.LoginData -> Aff (Either UserError User)
 loginTraditional loginData = do
@@ -252,23 +277,6 @@ logoutJanrain = do
     for_ (Nullable.toMaybe config) \conf -> do
       liftEffect $ JanrainSSO.checkSession conf
       JanrainSSO.endSession conf
-
-getUser :: Persona.UUID -> Persona.Token -> Aff User
-getUser uuid token = do
-  userResponse <- try do
-    Persona.getUser uuid token
-  case userResponse of
-    Left err
-      | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
-          Console.error "Failed to fetch the user: Invalid token"
-          liftEffect deleteToken
-          throwError err
-      | otherwise -> do
-          Console.error "Failed to fetch the user"
-          throwError err
-    Right user -> do
-      Console.info "User fetched successfully"
-      pure { user, logout: pure unit }
 
 finalizeLogin :: Persona.LoginResponse -> Aff (Either UserError User)
 finalizeLogin loginResponse = do

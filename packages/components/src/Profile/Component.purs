@@ -2,10 +2,11 @@ module KSF.Profile.Component where
 
 import Prelude
 
-import Control.Monad.Error.Class (catchError, throwError)
+import Control.Monad.Error.Class (throwError)
 import Data.Array (catMaybes, filter, intercalate, null, (:))
 import Data.Array as Array
 import Data.DateTime (DateTime)
+import Data.Either (Either(..))
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable)
@@ -16,11 +17,12 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Exception (error)
 import Effect.Now as Now
 import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Editable.Component (editable, ChangeType(..))
-import KSF.Login.Component as Login
+import KSF.User.User as User
 import Persona as Persona
 import React.Basic (make, JSX)
 import React.Basic as React
@@ -110,27 +112,28 @@ render self@{ props: { profile: user } } =
 
     saveName :: (String -> Effect Unit) -> Array String -> Aff Unit
     saveName onError [firstName, lastName] = do
-      { token } <- Login.requireToken
-      let body = Persona.UpdateName { firstName, lastName }
-      newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
-        Console.error "Unexpected error when updating name."
-        liftEffect $ onError "Namnändringen misslyckades."
-        throwError err
-      liftEffect $ self.props.onUpdate newUser
+      newUser <- User.updateUser user.uuid $ User.UpdateName { firstName, lastName }
+      case newUser of
+        Right u -> liftEffect $ self.props.onUpdate u.user
+        Left err -> do
+          Console.error "Unexpected error when updating name."
+          liftEffect $ onError "Namnändringen misslyckades."
+          throwError $ error "Unexpected error when updating name."
     saveName onError args =
       Console.error $ "saveName: unexpected number of arguments: " <> show args
 
     saveAddress onError [ streetAddress, zipCode, _city ] = do
-      { token } <- Login.requireToken
       let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
           -- TODO: There should be a country select list in the UI
           -- Use country code found in current address until then.
           countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
-      newUser <- Persona.updateUser user.uuid token body `catchError` \err -> do
-        Console.error "Unexpected error when updating address."
-        liftEffect $ onError "Adressändringen misslyckades."
-        throwError err
-      liftEffect $ self.props.onUpdate newUser
+      newUser <- User.updateUser user.uuid body
+      case newUser of
+        Right u -> liftEffect $ self.props.onUpdate u.user
+        Left err -> do
+          Console.error "Unexpected error when updating address."
+          liftEffect $ onError "Adressändringen misslyckades."
+          throwError $ error "Unexpected error when updating address."
     saveAddress onError args =
       Console.error $ "saveName: Unexpected number of arguments: " <> show args
 

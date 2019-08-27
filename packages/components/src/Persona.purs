@@ -58,8 +58,8 @@ getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { 
   where
     authorization = oauthToken token
 
-updateUser :: UUID -> Token -> UserUpdate -> Aff User
-updateUser uuid token update =
+updateUser :: UUID -> UserUpdate -> Token -> Aff User
+updateUser uuid update token =
   let
     authorization = oauthToken token
     body = case update of
