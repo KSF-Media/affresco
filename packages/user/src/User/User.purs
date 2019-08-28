@@ -40,7 +40,8 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..),
+                InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -170,10 +171,10 @@ someAuth mergeInfo email token provider = do
               , newProvider: provider
               , userEmail: email
               }
-       | Just serverError <- Persona.internalServerError err -> do
+      | Just serverError <- Persona.internalServerError err -> do
            Console.error "Something went wrong with SoMe login"
            pure $ Left SomethingWentWrong
-       | otherwise -> do
+      | otherwise -> do
            Console.error "An unexpected error occurred during SoMe login"
            pure $ Left $ UnexpectedError err
 
@@ -204,6 +205,7 @@ loginSso callback = do
                loginResponse <-
                  Persona.loginSso { accessToken, uuid } `catchError` case _ of
                       err | Just serverError <- Persona.internalServerError err -> do
+                              -- TODO: What is the desired action here?
                               Console.error "Something went wrong with SSO login"
                               liftEffect $ callback $ Left SomethingWentWrong
                               throwError err
