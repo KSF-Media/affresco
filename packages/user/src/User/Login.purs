@@ -22,10 +22,10 @@ import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
-import KSF.User.Login.Google (attachClickHandler)
-import KSF.User.Login.Google as Google
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
+import KSF.User.Login.Google (attachClickHandler)
+import KSF.User.Login.Google as Google
 import KSF.User.User (User, UserError(..))
 import KSF.User.User as User
 import React.Basic (JSX, make)
@@ -171,7 +171,6 @@ onLogin self@{ props, state } = props.launchAff_ do
             , password: state.formPassword
             , mergeToken: toNullable $ map _.token state.merge
             }
-  liftEffect $ props.onUserFetch user
   case user of
     Right _ ->
       -- removing merge token from state in case of success
@@ -182,6 +181,9 @@ onLogin self@{ props, state } = props.launchAff_ do
       liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
     Left _ ->
       throwError $ error "An unexpected error occurred during traditional login"
+  -- This call needs to be last, as it will unmount the login component.
+  -- (We cannot set state of an unmounted component)
+  liftEffect $ props.onUserFetch user
 
 renderLogin :: Self -> JSX
 renderLogin self =
