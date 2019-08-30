@@ -6,11 +6,12 @@ import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (foldMap)
 import Data.Either (Either(..), either)
 import Data.Foldable (surround)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
+import Data.String (Pattern(..), contains)
 import Data.String as String
 import Effect (Effect)
 import Effect.Aff (Aff, error)
@@ -19,12 +20,12 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
+import KSF.Alert.Component as Log
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
-import KSF.User.Login.Google (attachClickHandler)
 import KSF.User.Login.Google as Google
 import KSF.User.User (User, UserError(..))
 import KSF.User.User as User
@@ -34,7 +35,6 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import Web.DOM.Node as Web.DOM
 
 data SocialLoginProvider = Facebook | Google
 derive instance eqSocialLoginOption :: Eq SocialLoginProvider
@@ -113,19 +113,20 @@ type State =
   , formPassword :: String
   , errors :: { login :: Maybe UserError
               , social :: Maybe UserError
-              , googleAuthInit :: Maybe Google.Error
               }
   , merge :: Maybe User.MergeInfo
   , loginViewStep :: LoginStep
+  , user :: Maybe User
   }
 
 initialState :: State
 initialState =
   { formEmail: ""
   , formPassword: ""
-  , errors: { login: Nothing, social: Nothing, googleAuthInit: Nothing }
+  , errors: { login: Nothing, social: Nothing }
   , merge: Nothing
   , loginViewStep: Login
+  , user: Nothing
   }
 
 component :: React.Component Props
@@ -143,8 +144,8 @@ didMount self@{ props, state } = do
   props.launchAff_ $ User.magicLogin \user -> do
     props.onUserFetch user
     case user of
-      Left SomethingWentWrong -> self.setState _ { errors { login = Just SomethingWentWrong } }
-      _ -> pure unit
+      Left _ -> self.setState _ { errors { login = Just SomethingWentWrong } }
+      Right u -> self.setState _ { user = Just u }
 
 render :: Self -> JSX
 render self@{ props, state } =
@@ -278,15 +279,17 @@ renderMerge self@{ props } mergeInfo =
           ]
       , mergeAccountForm
       ]
+    -- This means user tried to login with Google
     mergeActions User.Facebook =
-      [ DOM.p_ [ DOM.text fbText ]
-      , foldMap formatErrorMessage self.state.errors.social
-      , googleLogin self
-      ]
-    mergeActions User.GooglePlus =
       [ DOM.p_ [ DOM.text googText ]
       , foldMap formatErrorMessage self.state.errors.social
       , facebookLogin self
+      ]
+    -- This means user tried to login with Facebook
+    mergeActions User.GooglePlus =
+      [ DOM.p_ [ DOM.text fbText ]
+      , foldMap formatErrorMessage self.state.errors.social
+      , googleLogin self
       ]
 
     cancelButton :: JSX
@@ -335,13 +338,10 @@ googleLogin self =
       someLoginButton
         { className: "login--some-button-google"
         , description: "Logga in med Google"
-        , onClick: googleFallbackOnClick
-        , onLoad
+        , onClick: Google.loadGapi { onSuccess: onGoogleLogin, onFailure: onGoogleFailure }
         }
     else mempty
   where
-    onLoad node = attachClickHandler { node, options: {}, onSuccess: onGoogleLogin, onFailure: onGoogleFailure }
-
     onGoogleLogin :: Google.AuthResponse -> Effect Unit
     onGoogleLogin { "Zi": { access_token: accessToken }
                   , w3: { "U3": Google.Email email }
@@ -362,25 +362,19 @@ googleLogin self =
     -- | 3) Every other auth failure.
     -- |    TODO: At least some of these should be displayed to the user.
     onGoogleFailure :: Google.Error -> Effect Unit
-    onGoogleFailure err@{ error: "idpiframe_initialization_failed" } =
-      -- The reason we are not setting `errors.googleAuthInit` here
-      -- is that we do not want to show the Google error message to the user
-      -- until (if at all) the Google login button is clicked.
-      -- This is handled by `googleFallbackOnClick`.
-      liftEffect $ self.setState _ { errors { googleAuthInit = Just err } }
+    onGoogleFailure err@{ error: "idpiframe_initialization_failed", details }
+      -- In addition to failing because of third party cookies, the initialization may
+      -- fail e.g. for the reason, that the domain is not allowed to perform any google actions.
+      -- This case is just to let the developers know what's going on.
+      | not $ isGoogleDomainAllowed details
+      = do
+        Log.error $ "You need to allow this origin, dummy: " <> details
+        self.setState _ { errors { login = Just LoginGoogleAuthInitErrorOrigin } }
+      | otherwise = self.setState _ { errors { login = Just LoginGoogleAuthInitError } }
     onGoogleFailure { error: "popup_closed_by_user" } = pure unit
     onGoogleFailure _ = Log.error "Google login failed."
 
-    -- | This is to set a fallback onClick behaviour to the Google login button.
-    -- | By default, Google wants to attatch its own click handler to the actual
-    -- | button element, so the `onClick` attribute is set to do nothing.
-    -- | However, if the Google auth initialization fails, we want to add a callback
-    -- | to the `onClick` attribute.
-    -- | In this case, an error message is shown to the user when the button is clicked.
-    googleFallbackOnClick
-      | isJust self.state.errors.googleAuthInit =
-          self.setState _ { errors { login = Just LoginGoogleAuthInitError } }
-      | otherwise = pure unit
+    isGoogleDomainAllowed = not <<< contains (Pattern "Not a valid origin for the client")
 
 facebookLogin :: Self -> JSX
 facebookLogin self =
@@ -389,7 +383,6 @@ facebookLogin self =
       { className: "login--some-button-fb"
       , description: "Logga in med Facebook"
       , onClick: onFacebookLogin
-      , onLoad: (\_ -> pure unit)
       }
     else mempty
   where
@@ -442,10 +435,9 @@ someLoginButton ::
   { className :: String
   , description :: String
   , onClick :: Effect Unit
-  , onLoad :: Web.DOM.Node -> Effect Unit
   }
   -> JSX
-someLoginButton { className, description, onClick, onLoad } =
+someLoginButton { className, description, onClick } =
   DOM.div
   { className: className <> surround " " additionalClasses
   , children:
@@ -453,7 +445,6 @@ someLoginButton { className, description, onClick, onLoad } =
         { description
         , destination: Nothing
         , onClick
-        , onLoad
         }
     ]
   }
@@ -549,5 +540,8 @@ formatErrorMessage err =
                 }
             , DOM.text "."
             ]
+        -- For developers only, should not ever happen in production
+        LoginGoogleAuthInitErrorOrigin ->
+          DOM.text "Något gick fel vid inloggningen. (Origin not allowed)."
         _ ->
           DOM.text "Något gick fel vid inloggningen. Vänligen försök om en stund igen."

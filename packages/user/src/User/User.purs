@@ -53,6 +53,7 @@ data UserError =
   | LoginFacebookEmailMissing
   | LoginEmailMismatchError
   | LoginGoogleAuthInitError
+  | LoginGoogleAuthInitErrorOrigin
   | LoginTokenInvalid
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
