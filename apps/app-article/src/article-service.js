@@ -3,7 +3,7 @@ import {isUserLoggedIn} from "./helper";
 
 const articleApi = {
     getArticle(uuid) {
-        return fetch(config.production.apiUrl + "article/" + uuid, {
+        return fetch(config.apiUrl + "article/" + uuid, {
             method: 'GET',
             headers: attachHeaders()
         })
@@ -11,7 +11,7 @@ const articleApi = {
 
     },
     getLatestArticles() {
-        return fetch(config.production.apiUrl + "latest?start=0&limit=5", {
+        return fetch(config.apiUrl + "latest?start=0&limit=5", {
             method: 'GET',
         })
             .then(response => response.json())
