@@ -115,7 +115,6 @@ type State =
               }
   , merge :: Maybe User.MergeInfo
   , loginViewStep :: LoginStep
-  , user :: Maybe User
   }
 
 initialState :: State
@@ -125,7 +124,6 @@ initialState =
   , errors: { login: Nothing, social: Nothing }
   , merge: Nothing
   , loginViewStep: Login
-  , user: Nothing
   }
 
 component :: React.Component Props
@@ -141,10 +139,10 @@ login = make component
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
   props.launchAff_ $ User.magicLogin \user -> do
-    props.onUserFetch user
     case user of
       Left _ -> self.setState _ { errors { login = Just SomethingWentWrong } }
-      Right u -> self.setState _ { user = Just u }
+      Right _ -> pure unit
+    props.onUserFetch user
 
 render :: Self -> JSX
 render self@{ props, state } =
