@@ -464,7 +464,7 @@ class App extends Component {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
                                                onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
-                                               disableSocialLogins={["Facebook"]}/>
+                                               disableSocialLogins={[]}/>
                                         :
                                         ""
                                 }
