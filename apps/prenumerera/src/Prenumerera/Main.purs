@@ -9,7 +9,7 @@ import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Footer.Component as Footer
-import KSF.User.User as KSF.User
+import KSF.User as KSF.User
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
