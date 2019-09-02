@@ -22,8 +22,8 @@ import Effect.Now as Now
 import KSF.DescriptionList.Component (Description(..))
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Editable.Component (editable, ChangeType(..))
-import KSF.User.User (User)
-import KSF.User.User as User
+import KSF.User (User)
+import KSF.User as User
 import Persona as Persona
 import React.Basic (make, JSX)
 import React.Basic as React

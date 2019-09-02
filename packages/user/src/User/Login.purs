@@ -26,8 +26,8 @@ import KSF.InputField.Component as InputField
 import KSF.Registration.Component as Registration
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import KSF.User.User (User, UserError(..))
-import KSF.User.User as User
+import KSF.User (User, UserError(..))
+import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM

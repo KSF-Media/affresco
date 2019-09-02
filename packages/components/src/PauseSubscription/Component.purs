@@ -15,7 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.User.User as User
+import KSF.User as User
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React

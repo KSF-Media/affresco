@@ -1,4 +1,4 @@
-module KSF.User.User
+module KSF.User
   ( UserError (..)
   , MergeInfo
   , ValidationServerError

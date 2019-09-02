@@ -20,7 +20,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Foreign.Object as Object
-import KSF.User.User as User
+import KSF.User as User
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
