@@ -11,7 +11,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Foreign (unsafeFromForeign)
-import KSF.Login.Component as Login
+import KSF.User.Login as Login
 import Persona as Persona
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.Prenumerera (Product)

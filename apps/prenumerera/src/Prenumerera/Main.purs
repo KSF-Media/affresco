@@ -9,7 +9,7 @@ import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Footer.Component as Footer
-import KSF.Login.Component as Login
+import KSF.User.User as KSF.User
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
@@ -157,7 +157,7 @@ navbarView self  =
     , loggedInUser: self.state.loggedInUser
     , logout: do
         Aff.launchAff_ do
-          Login.logout
+          KSF.User.logout
           liftEffect $
             send self $ SetUser Nothing
     }
