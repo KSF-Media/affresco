@@ -28,7 +28,7 @@ import React.Basic (JSX)
 import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
-import KSF.User.Login (loginForm) as Login
+import KSF.User.Login (login) as Login
 import KSF.User (logout) as User
 
 foreign import images :: { subscribe :: String }
@@ -330,7 +330,7 @@ loginView { state, setState } = React.fragment
   ]
   where
     loginForm =
-        Login.loginForm
+        Login.login
           { onMerge:             setState \s -> s { showWelcome = false }
           , onMergeCancelled:    setState \s -> s { showWelcome = true }
           , onRegister:          setState \s -> s { showWelcome = false }
