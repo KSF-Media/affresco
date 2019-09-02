@@ -57,7 +57,6 @@ fromJsProps jsProps =
         "HBL"  -> HBL
         "ON"   -> ON
         "VN"   -> VN
-        "LS"   -> LS
         "HTHL" -> HTHL
         _      -> KSF
     jsMatch match =
@@ -110,7 +109,6 @@ render self@{ props, state } =
             , paperLink HBL "Hufvudstadsbladet"
             , paperLink VN "Västra Nyland"
             , paperLink ON "Östnyland"
-            , paperLink LS "Loviisan Sanomat"
             , paperLink HTHL "Hangötidningen - Hangonlehti"
             ]
         }
@@ -186,6 +184,5 @@ paperToString :: Paper -> String
 paperToString HBL  = "hbl"
 paperToString ON   = "on"
 paperToString VN   = "vn"
-paperToString LS   = "ls"
 paperToString HTHL = "hthl"
 paperToString KSF  = "ksf"
