@@ -33,6 +33,7 @@ function initError(args) {
 function setUser(onSuccess) {
   return function(isSignedIn) {
     if (isSignedIn) {
+      var GoogleAuth = gapi.auth2.getAuthInstance();
       var user = GoogleAuth.currentUser.get();
       onSuccess(user);
     }
