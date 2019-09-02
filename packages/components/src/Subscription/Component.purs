@@ -20,7 +20,7 @@ import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
-import Persona (InvalidDateInput(..), InvalidPauseDateError(..))
+import Persona (InvalidDateInput(..))
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React

@@ -20,7 +20,6 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
-import KSF.Alert.Component as Log
 import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
