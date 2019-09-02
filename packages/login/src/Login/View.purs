@@ -155,7 +155,14 @@ merge attrs =
           ]
       , mergeAccountForm
       ]
+    -- This means user tried to login with Google
     mergeActions Persona.Facebook =
+      [ DOM.p_ [ DOM.text googText ]
+      , foldMap formatErrorMessage attrs.errors.social
+      , facebookLogin attrs.disableSocialLogins attrs.login.onFacebookLogin
+      ]
+    -- This means user tried to login with Facebook
+    mergeActions Persona.GooglePlus =
       [ DOM.p_ [ DOM.text fbText ]
       , foldMap formatErrorMessage attrs.errors.social
       , googleLogin
@@ -163,11 +170,6 @@ merge attrs =
           attrs.login.onGoogleLogin
           attrs.login.onGoogleFailure
           attrs.login.googleFallbackOnClick
-      ]
-    mergeActions Persona.GooglePlus =
-      [ DOM.p_ [ DOM.text googText ]
-      , foldMap formatErrorMessage attrs.errors.social
-      , facebookLogin attrs.disableSocialLogins attrs.login.onFacebookLogin
       ]
 
     cancelButton :: JSX
