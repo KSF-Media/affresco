@@ -1,5 +1,5 @@
 { name =
-    "affresco-login"
+    "affresco-user"
 , dependencies =
     [ "effect"
     , "console"

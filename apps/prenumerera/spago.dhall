@@ -2,7 +2,7 @@
     "prenumerera"
 , dependencies =
     [ "affresco-components"
-    , "affresco-login"
+    , "affresco-user"
     , "effect"
     , "console"
     , "aff"

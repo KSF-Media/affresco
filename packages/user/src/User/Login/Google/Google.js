@@ -1,5 +1,6 @@
 var googleClientId = process.env.GOOGLE_CLIENT_ID;
-exports.attachClickHandler_ = function(args) {
+
+exports.loadGapi_ = function(args) {
   gapi.load('auth2', function() {
     var auth2 = gapi.auth2.init({
       client_id: googleClientId + ".apps.googleusercontent.com",
@@ -10,14 +11,32 @@ exports.attachClickHandler_ = function(args) {
 };
 
 function initSuccess(args) {
-  return function(auth2) {
-    auth2.attachClickHandler(args.node, args.options, args.onSuccess, args.onFailure);
+  return function() {
+    var GoogleAuth = gapi.auth2.getAuthInstance();
+    GoogleAuth.isSignedIn.listen(setUser(args.onSuccess));
+    if (GoogleAuth.isSignedIn.get()) {
+      var user = GoogleAuth.currentUser.get();
+      args.onSuccess(user);
+    }
+    else {
+      GoogleAuth.signIn();
+    }
   }
 }
 
 function initError(args) {
   return function(err) {
     args.onFailure(err);
+  }
+}
+
+function setUser(onSuccess) {
+  return function(isSignedIn) {
+    if (isSignedIn) {
+      var GoogleAuth = gapi.auth2.getAuthInstance();
+      var user = GoogleAuth.currentUser.get();
+      onSuccess(user);
+    }
   }
 }
 

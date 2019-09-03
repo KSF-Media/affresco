@@ -1,7 +1,7 @@
 {
-  "name": "@affresco/login",
+  "name": "@affresco/user",
   "version": "1.0.0",
-  "description": "Login component for KSF Media apps",
+  "description": "User component for KSF Media apps",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {

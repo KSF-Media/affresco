@@ -1,10 +1,10 @@
-module KSF.Login.Facebook.Success where
+module KSF.User.Login.Facebook.Success where
 
-import Prelude
+import           Prelude
 
-import Data.Maybe (isJust)
-import Effect (Effect)
-import KSF.LocalStorage as LocalStorage
+import           Data.Maybe       (isJust)
+import           Effect           (Effect)
+import           KSF.LocalStorage as LocalStorage
 
 successKey :: String
 successKey = "KSF_FACEBOOK_LOGIN_SUCCESS"
