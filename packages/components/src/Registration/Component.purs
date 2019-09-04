@@ -394,14 +394,16 @@ submitForm self@{ state: { formData } } = unV
   createUser
   where
     createUser form
-      | Just user <- mkNewUser form = Aff.launchAff_ do
+      | Just user <- mkNewUser form = self.props.onRegister do
           createdUser <- User.createUser user
           case createdUser of
-            Right u -> liftEffect $ self.props.onRegister $ pure u
-            Left User.RegistrationEmailInUse ->
+            Right u -> pure u
+            Left User.RegistrationEmailInUse -> do
               liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse emailInUseMsg `cons` self.state.serverErrors }
-            Left (User.InvalidFormFields errors) ->
+              throwError $ error "email in use"
+            Left (User.InvalidFormFields errors) -> do
               liftEffect $ handleServerErrs errors
+              throwError $ error "invalid form fields"
             _ -> do
               Console.error unexpectedErr
               throwError $ error unexpectedErr

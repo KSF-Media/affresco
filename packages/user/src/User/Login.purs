@@ -189,7 +189,9 @@ renderLogin self =
     Login        -> renderLoginForm self
     Registration ->
       Registration.registration
-       { onRegister: self.props.launchAff_ <<< void
+       { onRegister: \affUser -> self.props.launchAff_ do
+            user <- affUser
+            liftEffect $ self.props.onUserFetch $ Right user
        , onCancelRegistration: do
              self.props.onRegisterCancelled
              self.setState _ { loginViewStep = Login }
