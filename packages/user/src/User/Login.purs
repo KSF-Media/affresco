@@ -24,10 +24,10 @@ import KSF.Button.Component as Button
 import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Registration.Component as Registration
-import KSF.User.Login.Facebook.Success as Facebook.Success
-import KSF.User.Login.Google as Google
 import KSF.User (User, UserError(..))
 import KSF.User as User
+import KSF.User.Login.Facebook.Success as Facebook.Success
+import KSF.User.Login.Google as Google
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -147,7 +147,7 @@ didMount self@{ props, state } = do
 render :: Self -> JSX
 render self@{ props, state } =
   case state.merge of
-    Nothing        -> renderLoginForm self
+    Nothing        -> renderLogin self
     Just mergeInfo -> renderMerge self mergeInfo
 
 -- | If the email doesn't match the state saved from the Merge request
