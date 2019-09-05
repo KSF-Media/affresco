@@ -1,6 +1,6 @@
 {
-  "name": "@affresco/user",
-  "version": "1.0.0",
+  "name": "@ksf-media/user",
+  "version": "0.1.0",
   "description": "User component for KSF Media apps",
   "main": "index.js",
   "license": "MIT",
@@ -12,5 +12,6 @@
   },
   "scripts": {
     "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less"
-  }
+  },
+  "files": ["build", "build.js", "index.js"]
 }
