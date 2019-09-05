@@ -11,7 +11,7 @@ const articleApi = {
 
     },
     getLatestArticles() {
-        return fetch(config.apiUrl + "latest?start=0&limit=5", {
+        return fetch(config.apiUrl + "mostread?start=0&limit=5", {
             method: 'GET',
         })
             .then(response => response.json())
