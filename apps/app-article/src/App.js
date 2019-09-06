@@ -53,6 +53,7 @@ class App extends Component {
             modalImage: null,
             modalCaption: '',
             latestArticles: [],
+            mostReadArticles: [],
             errorFetching: false,
             errorFetchingLatestArticles: false,
         };
@@ -68,7 +69,7 @@ class App extends Component {
         }
 
         this.getArticle();
-        this.getLatestArticles();
+        this.getMostReadArticles();
     }
 
     getArticle() {
@@ -93,6 +94,17 @@ class App extends Component {
         articleApi.getLatestArticles()
             .then(data => {
                 this.setState({latestArticles: data})
+            })
+            .catch(error => {
+                this.setState({isLoading: false});
+                this.setState({isLoading: false, errorFetchingLatestArticles: true});
+            });
+    }
+
+    getMostReadArticles(){
+        articleApi.getMostReadArticles()
+            .then(data => {
+                this.setState({mostReadArticles: data})
             })
             .catch(error => {
                 this.setState({isLoading: false});
@@ -469,7 +481,7 @@ class App extends Component {
                                 {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} disableSocialLogins={[]}/>
                                         :
                                         ""
                                 }
@@ -482,7 +494,7 @@ class App extends Component {
                                 :
                                 ''
                         }
-                        <RelatedArticles latestArticles={this.state.latestArticles}/>
+                        <RelatedArticles relatedArticles={this.state.mostReadArticles}/>
                     </React.Fragment>
                 </div>
                 {/*<div id="MOBMITT"></div>*/}
