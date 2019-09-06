@@ -428,3 +428,11 @@ body {
     margin-bottom:10px;
     text-align: right;
 }
+
+.authorProfilePic{
+    background-size:cover;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    width:40px;
+    height:40px;
+}
