@@ -62,3 +62,14 @@ Depending on the production environment we're in (dev, prod), the configuration 
 
 For getting the SSO working, an [xd_receiver](https://github.com/KSF-Media/affresco/blob/master/apps/mitt-konto/xd_receiver.html) file should be found under the same domain where the app is running.
 The `JANRAIN_XD_RECEIVER_PATH` variable is the path to this file.
+
+### Logging out
+It's easy.
+```javascript
+import { Logout as logout } from '@ksf-media/user';
+
+function onLogout() {
+  console.log("Logged out successfully!")
+}
+logout(onLogout);
+```
