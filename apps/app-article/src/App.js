@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Lightbox from 'react-image-lightbox';
-import {Login, Logout} from '@affresco/user';
+import {Login, Logout} from '@ksf-media/user';
 import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
