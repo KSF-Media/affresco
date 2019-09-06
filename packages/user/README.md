@@ -66,7 +66,7 @@ The `JANRAIN_XD_RECEIVER_PATH` variable is the path to this file.
 ### Logging out
 It's easy.
 ```javascript
-import { Logout as logout } from '@ksf-media/user';
+import { logout } from '@ksf-media/user';
 
 function onLogout() {
   console.log("Logged out successfully!")

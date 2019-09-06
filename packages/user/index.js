@@ -6,5 +6,5 @@ import 'basscss/css/basscss-cp.css';
 
 module.exports = {
   Login: jsLoginForm,
-  Logout: jsLogout,
+  logout: jsLogout,
 }
