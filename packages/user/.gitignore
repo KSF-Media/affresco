@@ -9,3 +9,4 @@
 /.psa*
 /.spago
 !index.js
+build.js
