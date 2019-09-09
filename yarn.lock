@@ -913,7 +913,7 @@
   integrity sha512-FmuxfCuolpLl0AnQ2NHSzoUKWEJDFl63qXjzdoWBVyFCXzMGm1spBzk7LeHNoVCiWCF7mRVms9e6jEV9+MoPbg==
 
 "@ksf-media/user@file:packages/user":
-  version "0.1.0"
+  version "0.1.1"
   dependencies:
     basscss "^8.1.0"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d"
