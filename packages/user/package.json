@@ -1,12 +1,17 @@
 {
-  "name": "@affresco/user",
-  "version": "1.0.0",
+  "name": "@ksf-media/user",
+  "version": "0.1.1",
   "description": "User component for KSF Media apps",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
+    "basscss": "^8.1.0",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d"
-  }
+  },
+  "scripts": {
+    "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less"
+  },
+  "files": ["build", "build.js", "index.js"]
 }

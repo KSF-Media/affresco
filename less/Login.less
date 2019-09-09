@@ -1,4 +1,5 @@
 @import (reference) 'ksf-colors';
+@import 'ksf-fonts';
 @fb-logo: '../images/fb-logo.svg';
 @google-logo: '../images/google-logo.svg';
 
@@ -12,10 +13,20 @@
     }
 }
 .login-form {
+    font-family: 'Duplex Sans', sans-serif;
+    font-weight: 300;
     width: 345px;
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
+    a {
+        color: @link-color;
+        text-decoration: none;
+        &:hover {
+            transition: color 0.2s linear;
+            color: @grey-mediumdark;
+        }
+    }
     .email-wrapper, .password-wrapper-and-submit-wrapper {
         position: relative;
         &:before {
