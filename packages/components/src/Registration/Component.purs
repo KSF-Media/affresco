@@ -3,7 +3,7 @@ module KSF.Registration.Component where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (catchError, throwError)
+import Control.Monad.Error.Class (throwError)
 import Data.Array (all, cons, filter, find, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, traverse_)
@@ -15,10 +15,12 @@ import Data.String.Regex.Flags as Regex.Flags
 import Data.Validation.Semigroup (V, andThen, invalid, toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Foreign.Object (Object)
+import Effect.Exception (error)
 import Foreign.Object as Object
+import KSF.User as User
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -31,7 +33,7 @@ type Self = React.Self Props State
 type ValidatedForm a = V (NonEmptyList ValidationError) a
 
 type Props =
-  { onRegister :: Aff Persona.LoginResponse -> Effect Unit
+  { onRegister :: Aff User.User -> Effect Unit
   , onCancelRegistration :: Effect Unit
   }
 
@@ -40,12 +42,6 @@ type State =
   , formData :: FormData
   }
 
--- NOTE: We have two passwords in the state, `password` and `unvalidatedPassword`.
--- `unvalidatedPassword` is the real input value (shown to user), and `password` is used to validate that value (this is sent to the server).
--- This is because we want the password input field to behave differently from the other inputs.
--- In other inputs, we want to validate the values while they're being typed, but with the password,
--- we only validate its value when the focus taken out of that field (onBlur event).
--- TODO: Figure out better ways of doing this.
 type FormData =
   { firstName       :: Maybe String
   , lastName        :: Maybe String
@@ -80,8 +76,6 @@ data ValidationError
   | InvalidEmailInUse String
   | InvalidNotInitialized RegistrationInputField -- Fictional state only to be set when the form is first rendered
 derive instance eqValidationError :: Eq ValidationError
-
-type ValidationServerError = Object (Array String)
 
 registration :: Props -> JSX
 registration = make component { initialState, render }
@@ -400,19 +394,21 @@ submitForm self@{ state: { formData } } = unV
   createUser
   where
     createUser form
-      | Just user <- mkNewUser form = do
-          self.props.onRegister $ Persona.register user `catchError` case _ of
-            err | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
-                    Console.error errData.email_address_in_use_registration.description
-                    liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse emailInUseMsg `cons` self.state.serverErrors }
-                    throwError err
-                | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
-                    Console.error errData.invalid_form_fields.description
-                    liftEffect $ handleServerErrs errData.invalid_form_fields.errors
-                    throwError err
-                | otherwise -> do
-                    Console.error "An unexpected error occurred during registration"
-                    throwError err
+      | Just user <- mkNewUser form = self.props.onRegister do
+          createdUser <- User.createUser user
+          case createdUser of
+            Right u -> pure u
+            Left User.RegistrationEmailInUse -> do
+              liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse emailInUseMsg `cons` self.state.serverErrors }
+              throwError $ error "email in use"
+            Left (User.InvalidFormFields errors) -> do
+              liftEffect $ handleServerErrs errors
+              throwError $ error "invalid form fields"
+            _ -> do
+              Console.error unexpectedErr
+              throwError $ error unexpectedErr
+              where
+                unexpectedErr = "An unexpected error occurred during registration"
       | otherwise = Console.error "Not all registration fields were filled."
 
     emailInUseMsg :: String
@@ -422,7 +418,7 @@ submitForm self@{ state: { formData } } = unV
          Då kan du använda samma inloggning.
          Du kan också skapa konto med en annan adress."""
 
-    handleServerErrs :: ValidationServerError -> Effect Unit
+    handleServerErrs :: User.ValidationServerError -> Effect Unit
     handleServerErrs errs = do
       traverse_ setFormInvalid $ Object.keys errs
       where

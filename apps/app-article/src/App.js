@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Lightbox from 'react-image-lightbox';
-import {jsComponent as Login, jsLogout as LogOut} from '@affresco/login';
+import {Login, logout} from '@ksf-media/user';
 import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
@@ -463,7 +463,8 @@ class App extends Component {
                                 {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
+                                               disableSocialLogins={[]}/>
                                         :
                                         ""
                                 }

@@ -7,6 +7,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
+import Data.Set as Set
 import Data.String (toUpper)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -18,7 +19,6 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
-import KSF.Login.Component as Login
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.Profile.Component as Profile
@@ -28,6 +28,8 @@ import React.Basic (JSX)
 import React.Basic.Compat as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
+import KSF.User.Login (login) as Login
+import KSF.User (logout) as User
 
 foreign import images :: { subscribe :: String }
 
@@ -144,7 +146,7 @@ navbarView { state, setState } =
       , loggedInUser: state.loggedInUser
       , logout: do
           Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
-            Login.logout
+            User.logout
             liftEffect $ setState $ setLoggedInUser Nothing
       }
 
@@ -344,6 +346,7 @@ loginView { state, setState } = React.fragment
           , launchAff_:
               Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)
+          , disableSocialLogins: Set.empty
           }
 
     heading =

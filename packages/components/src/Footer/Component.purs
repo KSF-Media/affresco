@@ -75,7 +75,6 @@ paperImages =
         , imageLink "https://www.vastranyland.fi/" papers.vn
         , imageLink "http://hangotidningen.fi/" papers.hthl
         , imageLink "https://www.ostnyland.fi/" papers.on
-        , imageLink "http://www.loviisansanomat.net/" papers.ls
         ]
     }
   where

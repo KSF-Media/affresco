@@ -20,7 +20,7 @@ import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
-import Persona (InvalidDateInput(..), InvalidPauseDateError(..))
+import Persona (InvalidDateInput(..))
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -219,11 +219,11 @@ render self@{ props: props@{ subscription: { package } } } =
                   overlappingError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet går över ett annat uppehåll. Det måste vara minst en vecka mellan uppehållsperioderna."
                   tooRecentError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet är för nära en annan uppehållsperiod. Det måste vara minst en vecka mellan uppehållsperioderna."
                   errMsg = case err of
-                    PauseInvalidStartDate   -> startDateError
-                    PauseInvalidLength      -> lengthError
-                    PauseInvalidOverlapping -> overlappingError
-                    PauseInvalidTooRecent   -> tooRecentError
-                    PauseInvalidUnexpected  -> unexpectedError
+                    InvalidStartDate   -> startDateError
+                    InvalidLength      -> lengthError
+                    InvalidOverlapping -> overlappingError
+                    InvalidTooRecent   -> tooRecentError
+                    InvalidUnexpected  -> unexpectedError
               in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
