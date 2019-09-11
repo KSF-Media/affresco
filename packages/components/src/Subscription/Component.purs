@@ -92,13 +92,16 @@ didMount self = do
     }
 
 render :: Self -> JSX
-render self@{ props: props@{ subscription: { package } } } =
+render self@{ props: props@{ subscription: sub@{ package } } } =
   Grid.row2
     (React.element
        DescriptionList.component
          { definitions:
              [ { term: "Produkt:"
                , description: Static [ package.name ]
+               }
+             , { term: "Pren.nr:"
+               , description: Static [ show sub.subsno ]
                }
              , { term: "Status:"
                , description: Static $
