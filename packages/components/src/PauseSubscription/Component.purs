@@ -74,8 +74,10 @@ calcMaxEndDate (Just startDate) = do
 didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
-  let tomorrow = adjust (Time.Duration.Days 1.0) now
-  self.setState _ { minStartDate = tomorrow }
+  -- We set the minimum start date two days ahead because of system issues.
+  -- TODO: This could be set depending on the time of day
+  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
+  self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
 render self =
