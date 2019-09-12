@@ -33,9 +33,9 @@ class RelatedArticles extends Component {
 
 
     render() {
-        let latestArticles = [];
-        if (this.isArray(this.props.latestArticles)) {
-            latestArticles = this.props.latestArticles.map((item, index) => {
+        let relatedArticles = [];
+        if (this.isArray(this.props.relatedArticles)) {
+            relatedArticles = this.props.relatedArticles.map((item, index) => {
                 return (
                     <div key={index} className={"col-12 articleItem"}>
                         <div className={"row"}>
@@ -84,7 +84,7 @@ class RelatedArticles extends Component {
                         <h3 className={"latest"}>Mest lästa</h3>
                     </div>
                 </div>
-                {latestArticles}
+                {relatedArticles}
                 <div className={"col-12 bottomLine"}></div>
             </div>
         )
