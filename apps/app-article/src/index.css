@@ -42,7 +42,7 @@ body {
 }
 
 .article .content h1, h2, h3, h4, h5, h6 {
-    font-family: 'DuplexSerifSemiBold', sans-serif;
+    font-family: sans-serif;
 }
 
 .article{
@@ -78,7 +78,7 @@ body {
 }
 
 .article .preamble {
-    font-size: 1.125em;
+    font-size: 1em;
     line-height: 1.25em;
     font-weight: bolder;
 }
@@ -158,7 +158,8 @@ body {
     width: 100%;
     margin-left: -10px;
     text-align: center;
-    font-family: "Duplex Sans Bold", Serif;
+    font-family: sans-serif;
+    font-weight: bolder;
     /*opacity: .9;*/
 }
 
@@ -170,7 +171,8 @@ body {
     width: 100%;
     margin-left: -10px;
     text-align: center;
-    font-family: "Duplex Sans Bold", Serif;
+    font-family: sans-serif;
+    font-weight: bolder;
     opacity: .3;
 }
 
@@ -182,7 +184,8 @@ body {
     width: 100%;
     margin-left: -10px;
     text-align: center;
-    font-family: "Duplex Sans Bold", Serif;
+    font-family: sans-serif;
+    font-weight: bolder;
     opacity: .5;
 }
 
@@ -211,7 +214,8 @@ body {
 
 .fakta {
     font-size: 18px;
-    font-family: "Duplex Sans Bold", Serif;
+    font-family: sans-serif;
+    font-weight: bolder;
 }
 
 .factBox ul {
@@ -423,4 +427,12 @@ body {
     margin-top:10px;
     margin-bottom:10px;
     text-align: right;
+}
+
+.authorProfilePic{
+    background-size:cover;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    width:40px;
+    height:40px;
 }

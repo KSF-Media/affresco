@@ -38,10 +38,21 @@ const ArticleDetails = (props) => {
                                         props.authors.map((author, index) => {
                                             return (
                                                 <div className={"mb-1"} key={index}>
-                                                    <img  style={{borderRadius: '50%'}} width={"38px"}
-                                                         height={"38px"}
-                                                         src={author.image}
-                                                         alt=""/>
+                                                    <div class="authorProfilePic" key={index} style={{backgroundImage: `url(${author.image + "?width=740&height=850&function=hardcrop"})`}}></div>
+                                                </div>
+                                            )
+                                        })
+                                        :
+                                        ''
+                                }
+                            </div>
+                            <div className={'col-5'} style={{paddingLeft: "0px"}}>
+                                {
+                                    props.authors != null ?
+                                        props.authors.map((author, index) => {
+                                            return (
+                                                <div key={index}>
+                                                    <div className={"author"}> {author.byline} </div>
                                                 </div>
                                             )
                                         })
@@ -52,20 +63,6 @@ const ArticleDetails = (props) => {
                                     props.premium ?
                                         <PremiumBadge/>
                                         : ''
-                                }
-                            </div>
-                            <div className={'col-5'} style={{paddingLeft: "0px"}}>
-                                {
-                                    props.authors != null ?
-                                        props.authors.map((author, index) => {
-                                            return (
-                                                <div className={"mb-2"} key={index}>
-                                                    <div className={"author"}> {author.byline} </div>
-                                                </div>
-                                            )
-                                        })
-                                        :
-                                        ''
                                 }
                             </div>
                         </Fragment>
