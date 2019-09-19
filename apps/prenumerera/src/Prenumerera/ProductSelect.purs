@@ -12,8 +12,8 @@ import Effect (Effect)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (EventHandler)
-import Router (Match)
-import Router as Router
+import React.Basic.Router (Match)
+import React.Basic.Router as Router
 import Prenumerera.Package as Package
 import Prenumerera.Prenumerera (Product, Package)
 import Prenumerera.User as User

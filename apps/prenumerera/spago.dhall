@@ -19,6 +19,7 @@
     , "simple-json"
     , "facebook"
     , "now"
+    , "react-basic-router"
     ]
 , packages =
     ../../packages.dhall

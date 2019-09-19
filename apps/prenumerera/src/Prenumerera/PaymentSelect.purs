@@ -16,8 +16,8 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (EventHandler, handler)
-import Router (Match, Location)
-import Router as Router
+import React.Basic.Router (Match, Location)
+import React.Basic.Router as Router
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State
