@@ -11,15 +11,15 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Foreign (unsafeFromForeign)
-import KSF.Login.Component as Login
+import KSF.User.Login as Login
 import Persona as Persona
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.Prenumerera (Product)
 import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Router (Match, Location)
-import Router as Router
+import React.Basic.Router (Match, Location)
+import React.Basic.Router as Router
 import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State

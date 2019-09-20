@@ -19,8 +19,17 @@ class Additional extends Component {
     render() {
         return(
             <div className={"row"}>
+                <div className="col-12">
+                    <p className={"preamble mt-3"}>{this.props.preamble}</p>
+                </div>
                 <div className="col-8">
-
+                    {   
+                         <a href="javascript:void(0)" onClick={() => {  
+                            this.onShare()  
+                        }} id={"shareLink"}>    
+                            <img style={{marginTop: '4px'}} className={"shareIcon"} src={shareIcon} 
+                                 alt="Share"/></a>  
+                    }
                 </div>
                 <div className="col-2">
 
