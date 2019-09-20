@@ -41,7 +41,7 @@ function setUser(onSuccess) {
 }
 
 exports.isSignedIn_ = function() {
-  if (gapi['auth2']) {
+  if (typeof gapi !== 'undefined' && gapi['auth2']) {
     var auth2 = gapi.auth2.getAuthInstance();
     return auth2.isSignedIn.get();
   }
