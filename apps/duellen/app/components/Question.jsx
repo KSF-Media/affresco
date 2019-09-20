@@ -273,7 +273,7 @@ export default class Question extends React.Component {
        {/*bug in ksf-media/user
           ksf-media/user.logout return a function that it is not supposed to 
           this is the solution for now */}
-          <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
+          <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"})) } style={{boxShadow: 'none',}}>Byt konto</button>
 
             <MuiThemeProvider>
               <ExitDialog />
