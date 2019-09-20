@@ -10,6 +10,8 @@ import Resultat from './Resultat.jsx';
 import $ from 'jquery';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
+import ReactDOM from 'react-dom';
+import { Login , logout } from '@ksf-media/user';
 
 const red = '#EF5350';
 const green = '#66BB6A';
@@ -34,7 +36,10 @@ export default class Question extends React.Component {
       color: '',
       dataSource: [],
       quizData: [],
-      right: []
+      right: [],
+      logged_in: false,
+      is_loading: 'hidden',
+      name: ''
     };
     this.handleUpdateInput = this.handleUpdateInput.bind(this);
     this.handleClick = this.handleClick.bind(this);
@@ -56,7 +61,6 @@ export default class Question extends React.Component {
      }catch (e) {
       console.log(e);
      }
-     console.log(this.state.quizData);
    }
 
 
@@ -245,62 +249,77 @@ export default class Question extends React.Component {
       this.setState({displayResult: true});
     }
   };
-
-
-
+  logg_in_worked(user){
+    this.setState({logged_in: true, name: user['firstName']});
+    console.log(this.state.user)
+  };
+  loaded(){
+    this.setState({is_loading: "visible"});
+  };
   render() {
-
-    const {displayResult, check} = this.state;
-
-    if (displayResult === true){
-      return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
-    }else {
-      return (
-        <div className='question'>
-          <MuiThemeProvider>
-            <ExitDialog />
-          </MuiThemeProvider>
-
-          <p className="progress">Fråga {this.state.progress} av 5</p>
-
-          <MuiThemeProvider>
-            <LinearProgress mode="determinate" value={this.state.completed} />
-          </MuiThemeProvider>
-          <p className="header">{this.state.hintPoint} poängs fråga</p>
-
-          <h2>{this.state.category} <br /> {this.state.question}</h2>
-
-          <p style={{height: 70,}}>{this.state.hint}</p>
-
-          <div style={{height: 10, textAlign: 'right', padding: 20}}>
-              <p className="progress" style={{color: this.state.color}}>{this.state.check}</p>
+    const {displayResult, check, logged_in, is_loading} = this.state;
+    if (logged_in === false){
+        return(
+          <div style={{visibility: is_loading}} >
+            <Login onUserFetchSuccess={(user) => this.logg_in_worked(user)} onLoadingEnd={ () => this.loaded() } />
           </div>
+          );
+    }else {
+      if (displayResult === true){
+        return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
+      }else {
+        return (
+          <div className='question'>
+       {/*bug in ksf-media/user
+          ksf-media/user.logout return a function that it is not supposed to 
+          this is the solution for now */}
+          <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
 
-        <MuiThemeProvider>
-          <AutoComplete
-            hintText="Ditt svar här"
-            searchText={this.state.searchText}
-            onUpdateInput={this.handleUpdateInput}
-            dataSource={this.state.dataSource}
-            filter={AutoComplete.fuzzyFilter}
-            animated={false}
-            fullWidth={true}
-            maxSearchResults={3}
-            style={{marginBottom: 30}}
-            ></AutoComplete>
-        </MuiThemeProvider>
+            <MuiThemeProvider>
+              <ExitDialog />
+            </MuiThemeProvider>
+
+            <p className="progress">Fråga {this.state.progress} av 5</p>
+
+            <MuiThemeProvider>
+              <LinearProgress mode="determinate" value={this.state.completed} />
+            </MuiThemeProvider>
+            <p className="header">{this.state.hintPoint} poängs fråga</p>
+
+            <h2>{this.state.category} <br /> {this.state.question}</h2>
+
+            <p style={{height: 70,}}>{this.state.hint}</p>
+
+            <div style={{height: 10, textAlign: 'right', padding: 20}}>
+                <p className="progress" style={{color: this.state.color}}>{this.state.check}</p>
+            </div>
+
+          <MuiThemeProvider>
+            <AutoComplete
+              hintText="Ditt svar här"
+              searchText={this.state.searchText}
+              onUpdateInput={this.handleUpdateInput}
+              dataSource={this.state.dataSource}
+              filter={AutoComplete.fuzzyFilter}
+              animated={false}
+              fullWidth={true}
+              maxSearchResults={3}
+              style={{marginBottom: 30}}
+              ></AutoComplete>
+          </MuiThemeProvider>
 
 
-        <MuiThemeProvider>
-          <span>
-            <Button variant="contained"onClick={this.handleClick} primary={true} style={{paddingRight: '1%', width: '50%', boxShadow: 'none',}}>Hoppa över</Button>
-            <Button variant="contained" onClick={this.handleClick} primary={true} style={{paddingLeft: '1%', width: '50%', boxShadow: 'none',}}>Svara</Button>
-          </span>
-        </MuiThemeProvider>
+          <MuiThemeProvider>
+            <span>
+              <Button variant="contained"onClick={this.handleClick} primary={true} style={{paddingRight: '1%', width: '49%', marginRight: '1%', boxShadow: 'none',}}>Hoppa över</Button>
+              <Button variant="contained" onClick={this.handleClick} primary={true} style={{paddingLeft: '1%', width: '49%', marginLeft: '1%', boxShadow: 'none',}}>Svara</Button>
+            </span>
+          </MuiThemeProvider>
 
-      </div>
+        </div>
 
-      );
+        );
+      };
     };
   };
 };
