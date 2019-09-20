@@ -9,7 +9,7 @@ import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Footer.Component as Footer
-import KSF.Login.Component as Login
+import KSF.User as KSF.User
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
@@ -20,7 +20,7 @@ import Prenumerera.User as User
 import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Router as Router
+import React.Basic.Router as Router
 
 
 type Self = React.Self Props State
@@ -157,7 +157,7 @@ navbarView self  =
     , loggedInUser: self.state.loggedInUser
     , logout: do
         Aff.launchAff_ do
-          Login.logout
+          KSF.User.logout
           liftEffect $
             send self $ SetUser Nothing
     }

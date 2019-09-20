@@ -2,8 +2,8 @@ module KSF.TemporaryAddressChange.Component where
 
 import Prelude
 
-import Control.Monad.Error.Class (catchError, throwError)
 import Data.DateTime (DateTime, adjust)
+import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toNullable)
@@ -16,7 +16,7 @@ import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
-import KSF.Login.Component as Login
+import KSF.User as User
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -76,8 +76,10 @@ calcMinEndDate (Just startDate) = do
 didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
-  let tomorrow = adjust (Time.Duration.Days 1.0) now
-  self.setState _ { minStartDate = tomorrow }
+  -- We set the minimum start date two days ahead because of system issues.
+  -- TODO: This could be set depending on the time of day
+  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
+  self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
 render self =
@@ -237,16 +239,10 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
 
 submitForm :: State -> Props -> Effect Unit
 submitForm { startDate: Just start, endDate: Just end, streetAddress, zipCode } props@{ userUuid, subsno } = do
-  { token } <- Login.requireToken
   props.onLoading
   Aff.launchAff_ do
-    pausedSub <- Persona.temporaryAddressChange userUuid subsno start end streetAddress zipCode token `catchError` case _ of
-      err | Just (errData :: Persona.InvalidDates) <- Persona.errorData err -> do
-              liftEffect $ props.onError errData.invalid_param.message
-              throwError err
-          | otherwise -> do
-              Console.error "Unexpected error when making temporary address change."
-              liftEffect $ props.onError Persona.InvalidUnexpected
-              throwError err
-    liftEffect $ props.onSuccess pausedSub
+    User.temporaryAddressChange userUuid subsno start end streetAddress zipCode >>=
+      case _ of
+        Right sub -> liftEffect $ props.onSuccess sub
+        Left invalidDateInput -> liftEffect $ props.onError invalidDateInput
 submitForm _ _ = Console.error "Temporary address change dates were not defined."

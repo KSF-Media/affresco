@@ -13,8 +13,8 @@ import Persona as Persona
 import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Router (Location)
-import Router as Router
+import React.Basic.Router (Location)
+import React.Basic.Router as Router
 import Prenumerera.Prenumerera (Product)
 import Unsafe.Coerce (unsafeCoerce)
 

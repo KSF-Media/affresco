@@ -85,7 +85,7 @@ class Content extends Component {
                 <div className={"expand"} id={"expandFactBox-" + key} onClick={() => {
                     this.expandFaktBox(key)
                 }}>
-                    <div style={{display:'inline-block'}}><span>VIKA UT</span></div>
+                    <div style={{display:'inline-block'}}><span>VIK UT</span></div>
                     <div style={{display:'inline-block'}}><i className="arrow down"/></div>
                 </div>
             </div>
@@ -111,7 +111,6 @@ class Content extends Component {
             <div className={"row"}>
                 <div className={"col-sm-12 content text-left mt-2"} id={"content"}
                      style={{wordWrap: 'break-word'}}>
-                    <p className={"preamble mt-3"}>{this.props.preamble}</p>
                     <div id="MOBPARAD"></div>
                     {
                         this.props.body != null ?

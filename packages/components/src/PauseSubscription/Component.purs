@@ -2,8 +2,8 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
-import Control.Monad.Error.Class (catchError, throwError)
 import Data.DateTime (DateTime, adjust)
+import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (toNullable)
@@ -15,7 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.Login.Component as Login
+import KSF.User as User
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -31,7 +31,7 @@ type Props =
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: Persona.Subscription -> Effect Unit
-  , onError   :: Persona.InvalidPauseDateError -> Effect Unit
+  , onError   :: Persona.InvalidDateInput -> Effect Unit
   }
 
 type State =
@@ -74,8 +74,10 @@ calcMaxEndDate (Just startDate) = do
 didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
-  let tomorrow = adjust (Time.Duration.Days 1.0) now
-  self.setState _ { minStartDate = tomorrow }
+  -- We set the minimum start date two days ahead because of system issues.
+  -- TODO: This could be set depending on the time of day
+  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
+  self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
 render self =
@@ -178,16 +180,10 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
 
 submitForm :: State -> Props -> Effect Unit
 submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
-  { token } <- Login.requireToken
   props.onLoading
-  Aff.launchAff_ do
-    pausedSub <- Persona.pauseSubscription userUuid subsno start end token `catchError` case _ of
-      err | Just (errData :: Persona.InvalidPauseDates) <- Persona.errorData err -> do
-              liftEffect $ props.onError errData.invalid_pause_dates.message
-              throwError err
-          | otherwise -> do
-              Console.error "Unexpected error when pausing subscription."
-              liftEffect $ props.onError Persona.PauseInvalidUnexpected
-              throwError err
-    liftEffect $ props.onSuccess pausedSub
+  Aff.launchAff_ $
+    User.pauseSubscription userUuid subsno start end >>=
+      case _ of
+        Right sub -> liftEffect $ props.onSuccess sub
+        Left invalidDateInput -> liftEffect $ props.onError invalidDateInput
 submitForm _ _ = Console.error "Pause subscription dates were not defined."

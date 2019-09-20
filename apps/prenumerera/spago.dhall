@@ -2,7 +2,7 @@
     "prenumerera"
 , dependencies =
     [ "affresco-components"
-    , "affresco-login"
+    , "affresco-user"
     , "effect"
     , "console"
     , "aff"
@@ -19,6 +19,7 @@
     , "simple-json"
     , "facebook"
     , "now"
+    , "react-basic-router"
     ]
 , packages =
     ../../packages.dhall

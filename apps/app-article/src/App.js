@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Lightbox from 'react-image-lightbox';
-import {jsComponent as Login, jsLogout as LogOut} from '@affresco/login';
+import {Login, logout} from '@ksf-media/user';
 import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
@@ -53,6 +53,7 @@ class App extends Component {
             modalImage: null,
             modalCaption: '',
             latestArticles: [],
+            mostReadArticles: [],
             errorFetching: false,
             errorFetchingLatestArticles: false,
         };
@@ -68,7 +69,7 @@ class App extends Component {
         }
 
         this.getArticle();
-        this.getLatestArticles();
+        this.getMostReadArticles();
     }
 
     getArticle() {
@@ -93,6 +94,17 @@ class App extends Component {
         articleApi.getLatestArticles()
             .then(data => {
                 this.setState({latestArticles: data})
+            })
+            .catch(error => {
+                this.setState({isLoading: false});
+                this.setState({isLoading: false, errorFetchingLatestArticles: true});
+            });
+    }
+
+    getMostReadArticles(){
+        articleApi.getMostReadArticles()
+            .then(data => {
+                this.setState({mostReadArticles: data})
             })
             .catch(error => {
                 this.setState({isLoading: false});
@@ -389,6 +401,12 @@ class App extends Component {
             articleTitle.style.lineHeight = "100%";
         }
 
+        if (document.getElementsByClassName('preamble').length > 0) {
+            const articleTitle = document.getElementsByClassName('preamble')[0];
+            articleTitle.style.fontSize = newSize  + 0.05 + "rem";
+            articleTitle.style.lineHeight = "100%";
+        }
+
         const nodes = document.querySelectorAll('#content');
         nodes.forEach(a => {
             a.style.fontSize = newSize + "em";
@@ -445,11 +463,11 @@ class App extends Component {
                         <Title title={this.state.title}/>
                         <Header showHighResolutionImg={this.showHighResolutionImage} mainImage={this.state.mainImage}
                                 caption={caption} appendBylineLabel={appendBylineLabel} byline={byline}/>
-                        <Additional increaseFontSize={this.increaseFontSize}/>
+                        <Additional preamble={this.state.preamble} increaseFontSize={this.increaseFontSize}/>
                         <ArticleDetails category={this.state.category} premium={this.state.premium}
                                         authors={this.state.authors} publishingTime={this.state.publishingTime}
                                         updateTime={this.state.updateTime}/>
-                        <Content body={this.state.body} preamble={this.state.preamble}
+                        <Content body={this.state.body}
                                  showHighResolutionImage={this.showHighResolutionImage}/>
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
@@ -463,8 +481,7 @@ class App extends Component {
                                 {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
-                                               disableSocialLogins={["Facebook"]}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} disableSocialLogins={[]}/>
                                         :
                                         ""
                                 }
@@ -477,7 +494,7 @@ class App extends Component {
                                 :
                                 ''
                         }
-                        <RelatedArticles latestArticles={this.state.latestArticles}/>
+                        <RelatedArticles relatedArticles={this.state.mostReadArticles}/>
                     </React.Fragment>
                 </div>
                 {/*<div id="MOBMITT"></div>*/}

@@ -58,8 +58,8 @@ getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { 
   where
     authorization = oauthToken token
 
-updateUser :: UUID -> Token -> UserUpdate -> Aff User
-updateUser uuid token update =
+updateUser :: UUID -> UserUpdate -> Token -> Aff User
+updateUser uuid update token =
   let
     authorization = oauthToken token
     body = case update of
@@ -233,6 +233,15 @@ type InvalidDates = PersonaError
   ( invalid_param ::
     { message :: InvalidDateInput }
   )
+
+-- | TODO: These should really be fixed on the server side (we don't need both types)
+pauseDateErrorToInvalidDateError :: InvalidPauseDateError -> InvalidDateInput
+pauseDateErrorToInvalidDateError = case _ of
+  PauseInvalidStartDate   -> InvalidStartDate
+  PauseInvalidLength      -> InvalidLength
+  PauseInvalidOverlapping -> InvalidOverlapping
+  PauseInvalidTooRecent   -> InvalidTooRecent
+  PauseInvalidUnexpected  -> InvalidUnexpected
 
 type EmailAddressInUseRegistration = PersonaError
   ( email_address_in_use_registration :: { description :: String } )
