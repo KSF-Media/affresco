@@ -134,7 +134,7 @@ render self@{ props: { profile: user } } =
                         }
                       ]
                   }
-              , startEditButton self EditName
+              , changeNameButton self
               ]
           }
         profileNameEditing = DOM.div_
@@ -167,7 +167,9 @@ render self@{ props: { profile: user } } =
                           }
                         ]
                     }
-                , startEditButton self EditAddress
+                , if isNothing $ toMaybe user.address
+                  then addAddressButton self
+                  else changeAddressButton self
                 ]
             }
         profileAddressEditing = DOM.div_
@@ -308,8 +310,20 @@ iconClose self field = DOM.div
       switchEditProgress self field Ready
   }
 
-startEditButton :: Self -> EditField -> JSX
-startEditButton self field =
+changeAttributeButton :: Self -> EditField -> JSX
+changeAttributeButton = editButton "Ändra"
+
+addAddressButton :: Self -> JSX
+addAddressButton self = editButton "Lägg till adress" self EditAddress
+
+changeAddressButton :: Self -> JSX
+changeAddressButton self = changeAttributeButton self EditAddress
+
+changeNameButton :: Self -> JSX
+changeNameButton self = changeAttributeButton self EditName
+
+editButton :: String -> Self -> EditField -> JSX
+editButton buttonText self field =
   DOM.div
     { className: "profile--edit-attribute-button"
     , children:
@@ -321,7 +335,7 @@ startEditButton self field =
             { className: "profile--edit-text"
             , onClick: capture_ startEdit
             , children:
-                [ DOM.u_ [ DOM.text "Ändra" ] ]
+                [ DOM.u_ [ DOM.text buttonText ] ]
             }
         ]
     }
