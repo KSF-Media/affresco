@@ -2,29 +2,30 @@ module KSF.DescriptionList.Component where
 
 import Prelude
 
-import React.Basic (JSX)
-import React.Basic.Compat as React.Compat
 import Data.Array (foldl, (:))
 import Data.Array as Array
+import React.Basic (JSX, make)
+import React.Basic as React
 import React.Basic.DOM as DOM
+
+type Self = React.Self Props {}
 
 type Props =
   { definitions :: Array Definition }
 
-data Description
-  = Static (Array String)
-  | Editable JSX
-
 type Definition =
   { term :: String
-  , description :: Description
+  , description :: Array JSX
   }
 
-component :: React.Compat.Component Props
-component = React.Compat.stateless { displayName: "DescriptionList", render }
+component :: React.Component Props
+component = React.createComponent "DescriptionList"
 
-render :: Props -> JSX
-render { definitions } =
+descriptionList :: Props -> JSX
+descriptionList = make component { initialState: {}, render }
+
+render :: Self -> JSX
+render { props: { definitions } } =
   DOM.dl
     { className: "description-list--container"
     , children: foldl mkDescriptionList [] $ map handleEmptyDescriptions definitions
@@ -35,13 +36,11 @@ render { definitions } =
 
     mkDescription :: Definition -> Array JSX
     mkDescription { term, description } =
-      DOM.dt_ [ DOM.text term ] : case description of
-        Static descs -> map mkStaticDescription descs
-        Editable jsx -> [jsx]
+      DOM.dt_ [ DOM.text term ] : map mkStaticDescription description
       where
-        mkStaticDescription = DOM.dd_ <<< Array.singleton <<< DOM.text
+        mkStaticDescription = DOM.dd_ <<< Array.singleton
 
 -- | If there are no descriptions, just show a hyphen there.
 handleEmptyDescriptions :: Definition -> Definition
-handleEmptyDescriptions d@{ description: Static [] } = d { description = Static [ "-" ] }
+handleEmptyDescriptions d@{ description: [] } = d { description = [ DOM.text "-" ] }
 handleEmptyDescriptions d = d
