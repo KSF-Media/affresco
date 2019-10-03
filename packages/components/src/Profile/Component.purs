@@ -2,6 +2,7 @@ module KSF.Profile.Component where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (catMaybes, filter, intercalate, mapMaybe, null, (:))
 import Data.Array as Array
@@ -10,13 +11,16 @@ import Data.Either (Either(..))
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable)
+import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Validation.Semigroup (V(..), unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
@@ -29,6 +33,8 @@ import KSF.FormInputField as FormField
 import KSF.InputField.Component as Input
 import KSF.User (User)
 import KSF.User as User
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateForm, validateZipCode)
+import KSF.ValidatableForm as VF
 import Persona as Persona
 import React.Basic (make, JSX)
 import React.Basic as React
@@ -68,6 +74,26 @@ type Address =
 data EditField = EditAddress | EditName
 derive instance eqEditField :: Eq EditField
 derive instance ordEditField :: Ord EditField
+
+data NameFormFields
+  = FirstName
+  | LastName
+instance validatableFieldNameFormFields :: ValidatableField NameFormFields where
+  validateField field value = case field of
+    FirstName -> validateEmptyField field "Förnamn krävs." value
+    LastName  -> validateEmptyField field "Efternamn krävs." value
+
+data AddressFormFields
+  = StreetAddress
+  | City
+  | Zip
+  | CountryCode
+instance validatableFieldAddressFormFields :: ValidatableField AddressFormFields where
+  validateField field value = case field of
+    StreetAddress -> validateEmptyField field "Adress krävs." value
+    City          -> validateEmptyField field "Stad krävs." value
+    Zip           -> validateZipCode field value
+    CountryCode   -> validateEmptyField field "Land krävs." value
 
 jsComponent :: React.Component Props
 jsComponent = component
@@ -120,7 +146,8 @@ render self@{ props: { profile: user } } =
         { wrapperState: self.state.editName
         , readyView: profileNameReady
         , editingView: \_ -> profileNameEditing
-        , successView: DOM.div_ []
+        , loadingView: profileNameLoading
+        , successView: profileNameReady
         , errorView: \e -> DOM.text e
         }
       where
@@ -146,12 +173,27 @@ render self@{ props: { profile: user } } =
                   ]
               }
           ]
+        profileNameLoading spinner =
+          DOM.div
+            { className: "profile--profile-row"
+            , children:
+                [ DescriptionList.descriptionList
+                    { definitions:
+                        [ { term: "Namn:"
+                          , description: []
+                          }
+                        ]
+                    }
+                , spinner
+                ]
+            }
 
     profileAddress =
       AsyncWrapper.asyncWrapper
         { wrapperState: self.state.editAddress
         , readyView: profileAddressReady
         , editingView: \_ -> profileAddressEditing
+        , loadingView: profileAddressLoading
         , successView: DOM.div_ []
         , errorView: \e -> DOM.text e
         }
@@ -181,40 +223,53 @@ render self@{ props: { profile: user } } =
                   ]
               }
           ]
+        profileAddressLoading spinner =
+          DOM.div
+            { className: "profile--profile-row"
+            , children:
+                [ DescriptionList.descriptionList
+                    { definitions:
+                        [ { term: "Adress:"
+                          , description: []
+                          }
+                        ]
+                    }
+                , spinner
+                ]
+            }
+
    -- <> editAddress self
   -- where
   --   -- | I'm sorry
   --   fixNullable :: Nullable String -> String
   --   fixNullable a = fromMaybe "" $ Nullable.toMaybe a
 
-  --   address = fromMaybe [] $ addressArray <$> Nullable.toMaybe user.address
+    -- saveName :: (String -> Effect Unit) -> Array String -> Aff Unit
+    -- saveName onError [firstName, lastName] = do
+    --   newUser <- User.updateUser user.uuid $ User.UpdateName { firstName, lastName }
+    --   case newUser of
+    --     Right u -> liftEffect $ self.props.onUpdate u
+    --     Left err -> do
+    --       Console.error "Unexpected error when updating name."
+    --       liftEffect $ onError "Namnändringen misslyckades."
+    --       throwError $ error "Unexpected error when updating name."
+    -- saveName onError args =
+    --   Console.error $ "saveName: unexpected number of arguments: " <> show args
 
-  --   saveName :: (String -> Effect Unit) -> Array String -> Aff Unit
-  --   saveName onError [firstName, lastName] = do
-  --     newUser <- User.updateUser user.uuid $ User.UpdateName { firstName, lastName }
-  --     case newUser of
-  --       Right u -> liftEffect $ self.props.onUpdate u
-  --       Left err -> do
-  --         Console.error "Unexpected error when updating name."
-  --         liftEffect $ onError "Namnändringen misslyckades."
-  --         throwError $ error "Unexpected error when updating name."
-  --   saveName onError args =
-  --     Console.error $ "saveName: unexpected number of arguments: " <> show args
-
-  --   saveAddress onError [ streetAddress, zipCode, _city ] = do
-  --     let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
-  --         -- TODO: There should be a country select list in the UI
-  --         -- Use country code found in current address until then.
-  --         countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
-  --     newUser <- User.updateUser user.uuid body
-  --     case newUser of
-  --       Right u -> liftEffect $ self.props.onUpdate u
-  --       Left err -> do
-  --         Console.error "Unexpected error when updating address."
-  --         _ <- liftEffect $ onError "Adressändringen misslyckades."
-  --         throwError $ error "Unexpected error when updating address."
-  --   saveAddress onError args =
-  --     Console.error $ "saveName: Unexpected number of arguments: " <> show args
+    -- saveAddress onError [ streetAddress, zipCode, _city ] = do
+    --   let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
+    --       -- TODO: There should be a country select list in the UI
+    --       -- Use country code found in current address until then.
+    --       countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
+    --   newUser <- User.updateUser user.uuid body
+    --   case newUser of
+    --     Right u -> liftEffect $ self.props.onUpdate u
+    --     Left err -> do
+    --       Console.error "Unexpected error when updating address."
+    --       _ <- liftEffect $ onError "Adressändringen misslyckades."
+    --       throwError $ error "Unexpected error when updating address."
+    -- saveAddress onError args =
+    --   Console.error $ "saveName: Unexpected number of arguments: " <> show args
 
 showPendingAddressChanges :: Self -> Array DescriptionList.Definition
 showPendingAddressChanges self =
@@ -241,6 +296,7 @@ editAddress self =
             , value: self.state.address.streetAddress
             , onChange: \newStreetAddr -> self.setState _ { address { streetAddress = newStreetAddr } }
             , label: "Gatuadress"
+            , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress
             }
         , FormField.formInputField
             { type_: "text"
@@ -249,6 +305,7 @@ editAddress self =
             , value: self.state.address.zipCode
             , onChange: \newZip -> self.setState _ { address { zipCode = newZip } }
             , label: "Postnummer"
+            , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode
             }
         , FormField.formInputField
             { type_: "text"
@@ -257,6 +314,7 @@ editAddress self =
             , value: self.state.address.city
             , onChange: \newCity -> self.setState _ { address { city = newCity } }
             , label: "Stad"
+            , validationError: inputFieldErrorMessage $ validateField City self.state.address.city
             }
         , DOM.div { className: "profile--submit-buttons", children: [ iconSubmit, iconClose self EditAddress ] }
         ]
@@ -265,7 +323,7 @@ editAddress self =
 
 editName :: Self -> JSX
 editName self =
-    DOM.form
+  DOM.form
     { className: "profile--edit-name"
     , children:
         [ FormField.formInputField
@@ -275,6 +333,7 @@ editName self =
             , value: self.state.name.firstName
             , onChange: \newFirstName -> self.setState _ { name { firstName = newFirstName } }
             , label: "Förnamn"
+            , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName
             }
         , FormField.formInputField
             { type_: "text"
@@ -283,11 +342,48 @@ editName self =
             , value: self.state.name.lastName
             , onChange: \newLastName -> self.setState _ { name { lastName = newLastName } }
             , label: "Efternamn"
+            , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName
             }
         , DOM.div { className: "profile--submit-buttons", children: [ iconSubmit, iconClose self EditName ] }
         ]
-    , onSubmit: Events.handler preventDefault $ \_ -> Console.log "SUBMIT"
+    , onSubmit: Events.handler preventDefault $ \_ -> submitNewName $ validateForm validateNameForm self.state.name
     }
+    where
+      validateNameForm :: Name -> ValidatedForm NameFormFields Name
+      validateNameForm form =
+        { firstName: _
+        , lastName: _
+        }
+        <$> validateField FirstName form.firstName
+        <*> validateField LastName form.lastName
+
+      submitNewName :: ValidatedForm NameFormFields Name -> Effect Unit
+      submitNewName = unV
+        -- TODO: Just disable button if form not valid
+        (\errors -> do
+            self.setState _
+              { name = { firstName: self.state.name.firstName <|> Just ""
+                       , lastName:  self.state.name.lastName  <|> Just ""
+                       }
+              }
+        )
+        updateName
+
+      updateName :: Name -> Effect Unit
+      updateName { firstName: Just fname, lastName: Just lname } = do
+        self.setState _ { editName = Loading mempty }
+        Aff.launchAff_ do
+          newUser <- User.updateUser self.props.profile.uuid $ User.UpdateName { firstName: fname, lastName: lname }
+          case newUser of
+            Right u -> liftEffect do
+              Console.log "updated user"
+              self.props.onUpdate u
+              self.setState _ { editName = Success }
+            Left err -> do
+              Console.error "Unexpected error when updating name."
+              liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
+              throwError $ error "Unexpected error when updating name."
+      updateName _ = pure unit
 
 iconSubmit :: JSX
 iconSubmit = DOM.div
@@ -343,6 +439,7 @@ editButton buttonText self field =
     startEdit = do
       self.setState _ { editFields = Set.insert field self.state.editFields }
       switchEditProgress self field (Editing mempty)
+
 
 switchEditProgress :: Self -> EditField -> AsyncWrapper.Progress JSX -> Effect Unit
 switchEditProgress self EditName progress = self.setState _ { editName = progress }
