@@ -9,6 +9,7 @@ type Props a =
   { wrapperState :: Progress a
   , readyView    :: JSX
   , editingView  :: a -> JSX
+  , loadingView  :: (JSX -> JSX)
   , successView  :: JSX
   , errorView    :: String -> JSX
   }
@@ -27,7 +28,7 @@ asyncWrapper :: forall a. Props a -> JSX
 asyncWrapper props = case props.wrapperState of
   Ready     -> props.readyView
   Editing a -> props.editingView a
-  Loading a -> loadingSpinner
+  Loading a -> props.loadingView loadingSpinner
   Success   -> props.successView
   Error msg -> props.errorView msg
 
