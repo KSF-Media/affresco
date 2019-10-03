@@ -4,18 +4,18 @@
 
 .profile--edit-address {
     display: grid;
-    grid-row-gap: 1em;
+    grid-row-gap: .5em;
     grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: 1fr .5fr;
     grid-auto-flow: column;
-    margin-bottom: 1em;
 }
 
 .profile--edit-name {
     display: grid;
-    grid-row-gap: 1em;
+    grid-row-gap: .5em;
     grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: 1fr .5fr;
     grid-auto-flow: column;
-    margin-bottom: 1em;
 }
 
 .profile--submit-buttons {
@@ -38,4 +38,8 @@
 .profile--edit-text {
     margin-top: .5em;
     cursor: pointer;
+}
+
+.tiny-spinner {
+    justify-self: end;
 }
