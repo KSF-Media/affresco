@@ -2,8 +2,11 @@ module KSF.FormInputField where
 
 import Prelude
 
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Array (catMaybes, head, null, snoc)
+import Data.Foldable (fold, foldMap)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Effect (Effect)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isValidOrNotInitialized, validateEmptyField, validateField)
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -20,12 +23,13 @@ type Props =
   , placeholder    :: String
   , value          :: Maybe String
   , onChange       :: Maybe String -> Effect Unit
---  , validatedInput :: ValidatedForm (Maybe String)
+  , validationError :: Maybe String
   }
 type State = {}
 
 formInputField :: Props -> JSX
 formInputField = make component { initialState, render }
+
 
 component :: React.Component Props
 component = React.createComponent "FormInputField"
@@ -48,13 +52,15 @@ inputField props =
             , name: props.name
             , value: fromMaybe "" props.value
             , onChange: handler targetValue props.onChange
-            -- , className: if isValidOrNotInitialized a.validatedInput
-            --                then ""
-            --                else "form-input-field--invalid-field"
+            , className:
+                if isJust props.validationError
+                then "form-input--field-invalid-field"
+                else mempty
             }
-        ] -- `snoc` foldMap errorMessage (inputFieldErrorMessage a.validatedInput)
+        ] `snoc` foldMap errorMessage props.validationError
     }
   where
+    errorMessage :: String -> JSX
     errorMessage e =
       DOM.span
         { className: "form-input-field--invalid-text"
