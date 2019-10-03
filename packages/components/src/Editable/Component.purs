@@ -105,6 +105,7 @@ render self@{ state, props } =
                   , editingView: \_ -> flexDiv { children: [ iconSuccess, iconClose ], className: "" }
                   , errorView: \err -> errorFlexDiv { children: [ errText err, tryAgain ], className: "" }
                   , successView: mempty
+                  , loadingView: \_ -> mempty
                   }
               ]
           }

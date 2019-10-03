@@ -2,7 +2,6 @@ module KSF.Subscription.Component where
 
 import Prelude
 
-import KSF.AsyncWrapper as AsyncWrapper
 import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime)
@@ -15,6 +14,7 @@ import Data.Nullable (toMaybe)
 import Data.String (trim)
 import Effect (Effect)
 import Effect.Now as Now
+import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
@@ -158,6 +158,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             , editingView: identity
             , successView: pauseContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
+            , loadingView: identity
             }
 
           errorMessage msg =
