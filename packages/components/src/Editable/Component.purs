@@ -3,7 +3,7 @@ module KSF.Editable.Component where
 import Prelude
 
 import Data.Array as Array
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -15,8 +15,8 @@ import KSF.InputField.Component as Input
 import React.Basic (JSX, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_) as React.Events
 import React.Basic.DOM.Events (preventDefault)
-import React.Basic.DOM.Events(capture_) as React.Events
 import React.Basic.Events (handler, handler_) as React.Events
 
 type Props =
@@ -166,8 +166,9 @@ render self@{ state, props } =
       { type_: "text"
       , name: show i <> "-field"
       , placeholder: v
-      , defaultValue: Just v
-      , required: true
+      , value: Just v
       , children: []
-      , onChange: send self <<< Change i
+      , onChange: send self <<< Change i <<< fromMaybe ""
+      , validationError: Nothing
+      , label: ""
       }

@@ -17,6 +17,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
@@ -218,18 +219,50 @@ renderLoginForm self =
         , className: "pb2"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
-            , createInputField
-                { inputAttributes: emailAttributes
-                , className: "email-wrapper"
-                , children: []
-                , onChange: \email -> self.setState _ { formEmail = email }
+            , InputField.inputField
+                { type_: "text"
+                , placeholder: ""
+                , label: ""
+                , name: "accountEmail"
+                , value: Nothing
+                , onChange: \email -> self.setState _ { formEmail = fromMaybe "" email }
+                , validationError: Nothing
                 }
-            , createInputField
-                { inputAttributes: passwordAttributes
-                , className: "password-wrapper-and-submit-wrapper"
-                , children: [ loginButton "LOGGA IN" ]
-                , onChange: \password -> self.setState _ { formPassword = password }
+            , InputField.inputField
+                { type_: "password"
+                , placeholder: ""
+                , label: ""
+                , name: "accountPassword"
+                , value: Nothing
+                , onChange: \pw -> self.setState _ { formPassword = fromMaybe "" pw }
+                , validationError: Nothing
                 }
+            , DOM.input
+                { className: "button-green"
+                , value: "Logga in"
+                , type: "submit"
+                }
+            -- , createInputField
+            --     { inputAttributes: emailAttributes
+            --     , className: "login--email-input"
+            --     , children: []
+            --     , onChange: \email -> self.setState _ { formEmail = email }
+            --     }
+            -- , createInputField
+            --     { inputAttributes: passwordAttributes
+            --     , className: "password-wrapper-and-submit-wrapper"
+            --     , children: [ loginButton "LOGGA IN" ]
+            --     , onChange: \password -> self.setState _ { formPassword = password }
+            --     }
+            ]
+        }
+    username :: JSX -> JSX
+    username input =
+      DOM.div
+        { className: "login--email-input"
+        , children:
+            [ DOM.div { className: "lol" }
+            , input
             ]
         }
 
@@ -459,16 +492,18 @@ createInputField ::
   -> JSX
 createInputField { inputAttributes, className, children, onChange } =
   DOM.div
-    { className
+    { className: className
     , children:
         [ InputField.inputField
             { type_: inputAttributes.type_
             , placeholder: inputAttributes.placeholder
             , name: inputAttributes.name
-            , required: inputAttributes.required
+        --    , required: inputAttributes.required
             , children
-            , onChange
-            , defaultValue: Nothing
+            , onChange: onChange <<< fromMaybe ""
+            , value: Nothing
+            , validationError: Nothing
+            , label: ""
             }
         ]
     }

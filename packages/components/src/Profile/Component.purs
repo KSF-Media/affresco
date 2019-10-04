@@ -17,7 +17,7 @@ import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Validation.Semigroup (V(..), unV)
+import Data.Validation.Semigroup (V(..), isValid, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -27,10 +27,12 @@ import Effect.Exception (error)
 import Effect.Now as Now
 import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
+import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Editable.Component (editable, ChangeType(..))
 import KSF.FormInputField as FormField
 import KSF.InputField.Component as Input
+import KSF.InputField.Component as InputField
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateForm, validateZipCode)
@@ -289,7 +291,7 @@ editAddress self =
   DOM.form
     { className: "profile--edit-address"
     , children:
-        [ FormField.formInputField
+        [ InputField.inputField
             { type_: "text"
             , name: "streetAddress"
             , placeholder: "Gatuadress"
@@ -297,8 +299,9 @@ editAddress self =
             , onChange: \newStreetAddr -> self.setState _ { address { streetAddress = newStreetAddr } }
             , label: "Gatuadress"
             , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress
+            , children: []
             }
-        , FormField.formInputField
+        , InputField.inputField
             { type_: "text"
             , name: "zipCode"
             , placeholder: "Postnummer"
@@ -306,8 +309,9 @@ editAddress self =
             , onChange: \newZip -> self.setState _ { address { zipCode = newZip } }
             , label: "Postnummer"
             , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode
+            , children: []
             }
-        , FormField.formInputField
+        , InputField.inputField
             { type_: "text"
             , name: "city"
             , placeholder: "Stad"
@@ -315,18 +319,36 @@ editAddress self =
             , onChange: \newCity -> self.setState _ { address { city = newCity } }
             , label: "Stad"
             , validationError: inputFieldErrorMessage $ validateField City self.state.address.city
+            , children: []
             }
-        , DOM.div { className: "profile--submit-buttons", children: [ iconSubmit, iconClose self EditAddress ] }
+        , CountryDropDown.countryDropDown
+            (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
+            self.state.address.countryCode
+        , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditAddress ] }
         ]
     , onSubmit: Events.handler preventDefault $ \_ -> Console.log "SUBMIT"
     }
+  where
+    submitButton = iconSubmit $ isValid (validateAddressForm self.state.address)
+
+    validateAddressForm :: Address -> ValidatedForm AddressFormFields Address
+    validateAddressForm form =
+      { streetAddress: _
+      , zipCode: _
+      , city: _
+      , countryCode: _
+      }
+      <$> validateField StreetAddress form.streetAddress
+      <*> validateField Zip form.zipCode
+      <*> validateField City form.city
+      <*> validateField CountryCode form.countryCode
 
 editName :: Self -> JSX
 editName self =
   DOM.form
     { className: "profile--edit-name"
     , children:
-        [ FormField.formInputField
+        [ InputField.inputField
             { type_: "text"
             , name: "firstName"
             , placeholder: "Förnamn"
@@ -334,8 +356,9 @@ editName self =
             , onChange: \newFirstName -> self.setState _ { name { firstName = newFirstName } }
             , label: "Förnamn"
             , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName
+            , children: []
             }
-        , FormField.formInputField
+        , InputField.inputField
             { type_: "text"
             , name: "lastName"
             , placeholder: "Efternamn"
@@ -343,12 +366,15 @@ editName self =
             , onChange: \newLastName -> self.setState _ { name { lastName = newLastName } }
             , label: "Efternamn"
             , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName
+            , children: []
             }
-        , DOM.div { className: "profile--submit-buttons", children: [ iconSubmit, iconClose self EditName ] }
+        , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }
         ]
     , onSubmit: Events.handler preventDefault $ \_ -> submitNewName $ validateForm validateNameForm self.state.name
     }
     where
+      submitButton = iconSubmit $ isValid (validateNameForm self.state.name)
+
       validateNameForm :: Name -> ValidatedForm NameFormFields Name
       validateNameForm form =
         { firstName: _
@@ -385,14 +411,15 @@ editName self =
               throwError $ error "Unexpected error when updating name."
       updateName _ = pure unit
 
-iconSubmit :: JSX
-iconSubmit = DOM.div
+iconSubmit :: Boolean -> JSX
+iconSubmit isFormValid = DOM.div
   { className: "editable--submit"
   , children:
       [ DOM.button
           { type: "submit"
           , children: [ DOM.text "Spara" ]
           , className: "button-green"
+          , disabled: not isFormValid
           }
       ]
   }
@@ -461,7 +488,7 @@ resetFields self EditAddress =
   self.setState _
     { address =
         { streetAddress: _.streetAddress <$> toMaybe self.props.profile.address
-        , countryCode: _.countryCode <$> toMaybe self.props.profile.address
+        , countryCode: (_.countryCode <$> toMaybe self.props.profile.address) <|> Just "FI"
         , zipCode: toMaybe <<< _.zipCode =<< toMaybe self.props.profile.address
         , city: toMaybe <<< _.city =<< toMaybe self.props.profile.address
         }

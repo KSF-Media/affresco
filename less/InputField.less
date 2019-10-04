@@ -1,9 +1,15 @@
 @import (reference) 'ksf-colors';
 @import (reference) 'ksf-variables';
+@icon-triangle-down: '../images/icon-triangle-down.svg';
 
-.input-field {
-    input[type=text], input[type=password], input[type=email] {
+.input-field--container {
+    display: grid;
+    grid-template-rows: 1em 2.5em 1em;
+    grid-column-gap: 20px;
+    grid-row-gap: auto;
+    input[type=text], input[type=password], input[type=email], select {
         width: 100%;
+        max-height: 2.5em;
         font-size: 1em;
         border-style: solid;
         border-width: 1px;
@@ -12,4 +18,35 @@
         background: @white;
         box-sizing: border-box;
     }
+    select {
+        max-width: 100%;
+        font-weight: 400;
+        font-family: 'Duplex Sans', sans-serif;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding: 8px 36px 6px 8px;
+        background: url(@icon-triangle-down) no-repeat @white;
+        background-position: right 15px center;
+        background-size: 8px;
+    }
+    @media @to-medium {
+        margin-right: 1em;
+        grid-template-columns: 1fr;
+    }
+}
+
+.input-field--input-label {
+    text-align: left;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.input-field--invalid-field {
+    border-color: red !important;
+}
+
+.input-field--invalid-text {
+    text-align: left;
+    color: red;
 }

@@ -151,10 +151,11 @@ render self =
               { type_: "text"
               , placeholder: "Gatuadress"
               , name: "address"
-              , required: true
               , children: []
-              , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
-              , defaultValue: Nothing
+              , onChange: \newAddress -> self.setState _ { streetAddress = fromMaybe "" newAddress }
+              , value: Nothing
+              , label: "Gatuadress"
+              , validationError: Nothing
               }
             ]
         ]
@@ -191,10 +192,11 @@ render self =
               { type_: "text"
               , placeholder: "Stad"
               , name: "city"
-              , required: false
               , children: []
               , onChange: \_ -> pure unit
-              , defaultValue: Nothing
+              , value: Nothing
+              , validationError: Nothing
+              , label: "Stad"
               }
             ]
         ]

@@ -12,7 +12,17 @@
         text-decoration: underline;
     }
 }
+.login--email-input {
+        margin-bottom: 10px;
+        &:before {
+            background-image: url('../images/icon-mail-white.png');
+            background-size: 16px 11px;
+        }
+}
 .login-form {
+    .input-field--container {
+        margin-top: -1em;
+    }
     font-family: 'Duplex Sans', sans-serif;
     font-weight: 300;
     width: 345px;
@@ -27,69 +37,7 @@
             color: @grey-mediumdark;
         }
     }
-    .email-wrapper, .password-wrapper-and-submit-wrapper {
-        position: relative;
-        &:before {
-            display: block;
-            content: "";
-            background-color: @color-input-border;
-            background-repeat: no-repeat;
-            background-position: center;
-            position: absolute;
-            left: 1px;
-            top: 1px;
-            bottom: 1px;
-            width: 40px;
-            pointer-events: none;
-        }
-        width: 100%;
-        input {
-            display: block;
-            padding: 8px 10px 8px 50px;
-            width: 100%;
-            border: 1px solid @color-input-border;
-            box-sizing: border-box;
-            font-size: .9em;
-        }
-    }
-    .email-wrapper {
-        margin-bottom: 10px;
-        &:before {
-            background-image: url('../images/icon-mail-white.png');
-            background-size: 16px 11px;
-        }
-    }
-    .password-wrapper-and-submit-wrapper {
-        &:before {
-            background-image: url('../images/icon-key-white.png');
-            background-size: 16px;
-        }
-        input[type="submit"] {
-            position: absolute;
-            right: 1px;
-            top: 1px;
-            bottom: 1px;
-            width: 85px;
-            text-align: center;
-            padding: 0;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            -ms-appearance: none;
-            appearance: none;
-            border: none;
-            border-left: 1px solid @color-input-border;
-            border-radius: 0;
-            color: @color-input-border;
-            background: white;
-            font-size: .8em;
-            font-family: "Duplex Sans", sans-serif;
-            font-weight: 300;
-            &:hover {
-                background-color: @color-input-border;
-                color: white;
-            }
-        }
-    }
+
 }
 
 .login--error-msg {
