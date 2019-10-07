@@ -30,7 +30,7 @@ function attachHeaders() {
         headers = {
             'Content-Type': 'application/json',
             'AuthUser': localStorage.getItem('uuid'),
-            'Authorization': 'OAuth ' + localStorage.getItem('token'),
+            'Authorization': 'OAuth ' + getCookie('token'),
         };
     }
     return headers;

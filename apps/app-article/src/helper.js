@@ -1,9 +1,14 @@
 export const isUserLoggedIn = () => {
-    return !(localStorage.getItem("uuid") === null && localStorage.getItem("token") === null);
+    return !(getCookie('token') === null);
 };
 
 export const shareArticle = (title, url, description) => {
     return AndroidNativeShare(title, url, description);
+};
+
+export const getCookie = (name) => {
+    let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
 };
 
 async function AndroidNativeShare(Title, URL, Description) {

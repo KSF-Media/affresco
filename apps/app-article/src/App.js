@@ -370,6 +370,7 @@ class App extends Component {
 
     onUserFetchSuccess(user) {
         localStorage.setItem("currentUser", JSON.stringify(user));
+        document.cookie = "token="+localStorage.getItem("token");
         this.setState({user: user});
         let urlParams = new URLSearchParams(window.location.search);
         this.fetchArticleFromApi(urlParams.get('uuid'));
