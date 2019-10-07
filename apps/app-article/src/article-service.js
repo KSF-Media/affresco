@@ -1,5 +1,5 @@
 import config from "./config";
-import {isUserLoggedIn} from "./helper";
+import {getCookie, isUserLoggedIn} from "./helper";
 
 const articleApi = {
     getArticle(uuid) {
