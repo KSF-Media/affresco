@@ -167,7 +167,6 @@ render self@{ state, props } =
       , name: show i <> "-field"
       , placeholder: v
       , value: Just v
-      , children: []
       , onChange: send self <<< Change i <<< fromMaybe ""
       , validationError: Nothing
       , label: ""

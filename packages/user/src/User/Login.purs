@@ -22,7 +22,6 @@ import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import KSF.Button.Component as Button
-import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Registration.Component as Registration
 import KSF.User (User, UserError(..))
@@ -221,8 +220,8 @@ renderLoginForm self =
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
                 { type_: "text"
-                , placeholder: ""
-                , label: ""
+                , placeholder: "E-postadress"
+                , label: "E-postadress"
                 , name: "accountEmail"
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = fromMaybe "" email }
@@ -230,8 +229,8 @@ renderLoginForm self =
                 }
             , InputField.inputField
                 { type_: "password"
-                , placeholder: ""
-                , label: ""
+                , placeholder: "Lösenord"
+                , label: "Lösenord"
                 , name: "accountPassword"
                 , value: Nothing
                 , onChange: \pw -> self.setState _ { formPassword = fromMaybe "" pw }
@@ -242,18 +241,6 @@ renderLoginForm self =
                 , value: "Logga in"
                 , type: "submit"
                 }
-            -- , createInputField
-            --     { inputAttributes: emailAttributes
-            --     , className: "login--email-input"
-            --     , children: []
-            --     , onChange: \email -> self.setState _ { formEmail = email }
-            --     }
-            -- , createInputField
-            --     { inputAttributes: passwordAttributes
-            --     , className: "password-wrapper-and-submit-wrapper"
-            --     , children: [ loginButton "LOGGA IN" ]
-            --     , onChange: \password -> self.setState _ { formPassword = password }
-            --     }
             ]
         }
     username :: JSX -> JSX
@@ -349,11 +336,19 @@ renderMerge self@{ props } mergeInfo =
         , className: "pt2 pb2"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
-            , createInputField
-                { inputAttributes: passwordAttributes
-                , className: "password-wrapper-and-submit-wrapper"
-                , children: [ loginButton "AKTIVERA" ]
-                , onChange: \email -> self.setState _ { formEmail = email }
+            , InputField.inputField
+                { type_: "text"
+                , placeholder: ""
+                , label: ""
+                , name: "accountPassword"
+                , value: Nothing
+                , onChange: \email -> self.setState _ { formEmail = fromMaybe "" email }
+                , validationError: Nothing
+                }
+            , DOM.input
+                { className: "button-green"
+                , value: "Aktivera"
+                , type: "submit"
                 }
             ]
         }
@@ -483,46 +478,46 @@ someLoginButton { className, description, onClick } =
   where
     additionalClasses = [ "pb1" ]
 
-createInputField ::
-  { inputAttributes :: InputFieldAttributes
-  , className :: String
-  , children :: Array JSX
-  , onChange :: String -> Effect Unit
-  }
-  -> JSX
-createInputField { inputAttributes, className, children, onChange } =
-  DOM.div
-    { className: className
-    , children:
-        [ InputField.inputField
-            { type_: inputAttributes.type_
-            , placeholder: inputAttributes.placeholder
-            , name: inputAttributes.name
-        --    , required: inputAttributes.required
-            , children
-            , onChange: onChange <<< fromMaybe ""
-            , value: Nothing
-            , validationError: Nothing
-            , label: ""
-            }
-        ]
-    }
+-- createInputField ::
+--   { inputAttributes :: InputFieldAttributes
+--   , className :: String
+--   , children :: Array JSX
+--   , onChange :: String -> Effect Unit
+--   }
+--   -> JSX
+-- createInputField { inputAttributes, className, children, onChange } =
+--   DOM.div
+--     { className: className
+--     , children:
+--         [ InputField.inputField
+--             { type_: inputAttributes.type_
+--             , placeholder: inputAttributes.placeholder
+--             , name: inputAttributes.name
+--         --    , required: inputAttributes.required
+--             , children
+--             , onChange: onChange <<< fromMaybe ""
+--             , value: Nothing
+--             , validationError: Nothing
+--             , label: ""
+--             }
+--         ]
+--     }
 
-emailAttributes :: InputFieldAttributes
-emailAttributes =
-  { type_: "email"
-  , placeholder: "E-post..."
-  , name: "email"
-  , required: true
-  }
+-- emailAttributes :: InputFieldAttributes
+-- emailAttributes =
+--   { type_: "email"
+--   , placeholder: "E-post..."
+--   , name: "email"
+--   , required: true
+--   }
 
-passwordAttributes :: InputFieldAttributes
-passwordAttributes =
-  { type_: "password"
-  , placeholder: "Lösenord..."
-  , name: "password"
-  , required: true
-  }
+-- passwordAttributes :: InputFieldAttributes
+-- passwordAttributes =
+--   { type_: "password"
+--   , placeholder: "Lösenord..."
+--   , name: "password"
+--   , required: true
+--   }
 
 loginButton :: String -> JSX
 loginButton text =

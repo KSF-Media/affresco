@@ -299,7 +299,6 @@ editAddress self =
             , onChange: \newStreetAddr -> self.setState _ { address { streetAddress = newStreetAddr } }
             , label: "Gatuadress"
             , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress
-            , children: []
             }
         , InputField.inputField
             { type_: "text"
@@ -309,7 +308,6 @@ editAddress self =
             , onChange: \newZip -> self.setState _ { address { zipCode = newZip } }
             , label: "Postnummer"
             , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode
-            , children: []
             }
         , InputField.inputField
             { type_: "text"
@@ -319,7 +317,6 @@ editAddress self =
             , onChange: \newCity -> self.setState _ { address { city = newCity } }
             , label: "Stad"
             , validationError: inputFieldErrorMessage $ validateField City self.state.address.city
-            , children: []
             }
         , CountryDropDown.countryDropDown
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
@@ -356,7 +353,6 @@ editName self =
             , onChange: \newFirstName -> self.setState _ { name { firstName = newFirstName } }
             , label: "Förnamn"
             , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName
-            , children: []
             }
         , InputField.inputField
             { type_: "text"
@@ -366,7 +362,6 @@ editName self =
             , onChange: \newLastName -> self.setState _ { name { lastName = newLastName } }
             , label: "Efternamn"
             , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName
-            , children: []
             }
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }
         ]
