@@ -17,7 +17,6 @@ import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
@@ -477,47 +476,6 @@ someLoginButton { className, description, onClick } =
   }
   where
     additionalClasses = [ "pb1" ]
-
--- createInputField ::
---   { inputAttributes :: InputFieldAttributes
---   , className :: String
---   , children :: Array JSX
---   , onChange :: String -> Effect Unit
---   }
---   -> JSX
--- createInputField { inputAttributes, className, children, onChange } =
---   DOM.div
---     { className: className
---     , children:
---         [ InputField.inputField
---             { type_: inputAttributes.type_
---             , placeholder: inputAttributes.placeholder
---             , name: inputAttributes.name
---         --    , required: inputAttributes.required
---             , children
---             , onChange: onChange <<< fromMaybe ""
---             , value: Nothing
---             , validationError: Nothing
---             , label: ""
---             }
---         ]
---     }
-
--- emailAttributes :: InputFieldAttributes
--- emailAttributes =
---   { type_: "email"
---   , placeholder: "E-post..."
---   , name: "email"
---   , required: true
---   }
-
--- passwordAttributes :: InputFieldAttributes
--- passwordAttributes =
---   { type_: "password"
---   , placeholder: "Lösenord..."
---   , name: "password"
---   , required: true
---   }
 
 loginButton :: String -> JSX
 loginButton text =
