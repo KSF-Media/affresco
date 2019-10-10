@@ -11,15 +11,13 @@ import Data.Either (Either(..))
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable)
-import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
-import Data.Nullable (Nullable, toMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Nullable (toMaybe)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Validation.Semigroup (V(..), isValid, unV)
+import Data.Validation.Semigroup (isValid, unV)
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -29,21 +27,16 @@ import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
-import KSF.Editable.Component (editable, ChangeType(..))
-import KSF.FormInputField as FormField
-import KSF.InputField.Component as Input
 import KSF.InputField.Component as InputField
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateForm, validateZipCode)
-import KSF.ValidatableForm as VF
 import Persona as Persona
 import React.Basic (make, JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (capture, capture_, preventDefault)
+import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events as Events
-import Web.DOM.Element (id)
 
 type Self = React.Self Props State
 
@@ -156,13 +149,7 @@ render self@{ props: { profile: user } } =
         profileNameReady = DOM.div
           { className: "profile--profile-row"
           , children:
-              [ DescriptionList.descriptionList
-                  { definitions:
-                      [ { term: "Namn:"
-                        , description: map DOM.text $ mapMaybe toMaybe [ user.firstName, user.lastName ]
-                        }
-                      ]
-                  }
+              [ currentName
               , changeNameButton self
               ]
           }
@@ -175,18 +162,19 @@ render self@{ props: { profile: user } } =
                   ]
               }
           ]
-        profileNameLoading spinner =
-          DOM.div
-            { className: "profile--profile-row"
-            , children:
-                [ DescriptionList.descriptionList
-                    { definitions:
-                        [ { term: "Namn:"
-                          , description: []
-                          }
-                        ]
-                    }
-                , spinner
+        profileNameLoading spinner = DOM.div
+          { className: "profile--profile-row"
+          , children:
+              [ currentName
+              , spinner
+              ]
+          }
+        currentName =
+          DescriptionList.descriptionList
+            { definitions:
+                [ { term: "Namn:"
+                  , description: map DOM.text $ mapMaybe toMaybe [ user.firstName, user.lastName ]
+                  }
                 ]
             }
 
@@ -196,7 +184,7 @@ render self@{ props: { profile: user } } =
         , readyView: profileAddressReady
         , editingView: \_ -> profileAddressEditing
         , loadingView: profileAddressLoading
-        , successView: DOM.div_ []
+        , successView: profileAddressReady
         , errorView: \e -> DOM.text e
         }
       where
@@ -204,16 +192,13 @@ render self@{ props: { profile: user } } =
           DOM.div
             { className: "profile--profile-row"
             , children:
-                [ DescriptionList.descriptionList
-                    { definitions:
-                        [ { term: "Adress:"
-                          , description: map DOM.text $ fromMaybe [] $ addressArray <$> toMaybe user.address
-                          }
-                        ]
-                    }
-                , if isNothing $ toMaybe user.address
-                  then addAddressButton self
-                  else changeAddressButton self
+                [ currentAddress
+                , case toMaybe user.pendingAddressChanges of
+                    Nothing
+                      | isNothing $ toMaybe user.address -> addAddressButton self
+                      | otherwise -> changeAddressButton self
+                    -- Don't allow to edit address if already pending for a change
+                    Just _ -> mempty
                 ]
             }
         profileAddressEditing = DOM.div_
@@ -229,49 +214,18 @@ render self@{ props: { profile: user } } =
           DOM.div
             { className: "profile--profile-row"
             , children:
-                [ DescriptionList.descriptionList
-                    { definitions:
-                        [ { term: "Adress:"
-                          , description: []
-                          }
-                        ]
-                    }
+                [ currentAddress
                 , spinner
                 ]
             }
-
-   -- <> editAddress self
-  -- where
-  --   -- | I'm sorry
-  --   fixNullable :: Nullable String -> String
-  --   fixNullable a = fromMaybe "" $ Nullable.toMaybe a
-
-    -- saveName :: (String -> Effect Unit) -> Array String -> Aff Unit
-    -- saveName onError [firstName, lastName] = do
-    --   newUser <- User.updateUser user.uuid $ User.UpdateName { firstName, lastName }
-    --   case newUser of
-    --     Right u -> liftEffect $ self.props.onUpdate u
-    --     Left err -> do
-    --       Console.error "Unexpected error when updating name."
-    --       liftEffect $ onError "Namnändringen misslyckades."
-    --       throwError $ error "Unexpected error when updating name."
-    -- saveName onError args =
-    --   Console.error $ "saveName: unexpected number of arguments: " <> show args
-
-    -- saveAddress onError [ streetAddress, zipCode, _city ] = do
-    --   let body = Persona.UpdateAddress { streetAddress, zipCode, countryCode }
-    --       -- TODO: There should be a country select list in the UI
-    --       -- Use country code found in current address until then.
-    --       countryCode = fromMaybe "FI" $ (map _.countryCode <<< toMaybe) user.address
-    --   newUser <- User.updateUser user.uuid body
-    --   case newUser of
-    --     Right u -> liftEffect $ self.props.onUpdate u
-    --     Left err -> do
-    --       Console.error "Unexpected error when updating address."
-    --       _ <- liftEffect $ onError "Adressändringen misslyckades."
-    --       throwError $ error "Unexpected error when updating address."
-    -- saveAddress onError args =
-    --   Console.error $ "saveName: Unexpected number of arguments: " <> show args
+        currentAddress =
+          DescriptionList.descriptionList
+            { definitions:
+                [ { term: "Adress:"
+                  , description: map DOM.text $ fromMaybe [] $ addressArray <$> toMaybe user.address
+                  }
+                ]
+            }
 
 showPendingAddressChanges :: Self -> Array DescriptionList.Definition
 showPendingAddressChanges self =
@@ -323,7 +277,7 @@ editAddress self =
             self.state.address.countryCode
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditAddress ] }
         ]
-    , onSubmit: Events.handler preventDefault $ \_ -> Console.log "SUBMIT"
+    , onSubmit: Events.handler preventDefault $ \_ -> submitNewAddress $ validateForm validateAddressForm self.state.address
     }
   where
     submitButton = iconSubmit $ isValid (validateAddressForm self.state.address)
@@ -339,6 +293,29 @@ editAddress self =
       <*> validateField Zip form.zipCode
       <*> validateField City form.city
       <*> validateField CountryCode form.countryCode
+
+    submitNewAddress :: ValidatedForm AddressFormFields Address -> Effect Unit
+    submitNewAddress = unV
+      (\errors -> Console.error "Could not submit address.")
+      updateAddress
+
+    updateAddress :: Address -> Effect Unit
+    updateAddress { streetAddress: Just streetAddress
+                  , zipCode:       Just zipCode
+                  , countryCode:   Just countryCode
+                  } = do
+      self.setState _ { editAddress = Loading mempty }
+      Aff.launchAff_ do
+        newUser <- User.updateUser self.props.profile.uuid $ User.UpdateAddress { streetAddress, zipCode, countryCode }
+        case newUser of
+          Right u -> liftEffect do
+            self.props.onUpdate u
+            self.setState _ { editAddress = Success }
+          Left err -> do
+            Console.error "Unexpected error when updating name."
+            liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
+            throwError $ error "Unexpected error when updating name."
+    updateAddress _ = pure unit
 
 editName :: Self -> JSX
 editName self =
@@ -380,14 +357,7 @@ editName self =
 
       submitNewName :: ValidatedForm NameFormFields Name -> Effect Unit
       submitNewName = unV
-        -- TODO: Just disable button if form not valid
-        (\errors -> do
-            self.setState _
-              { name = { firstName: self.state.name.firstName <|> Just ""
-                       , lastName:  self.state.name.lastName  <|> Just ""
-                       }
-              }
-        )
+        (\errors -> Console.error "Could not submit name.")
         updateName
 
       updateName :: Name -> Effect Unit
@@ -397,7 +367,6 @@ editName self =
           newUser <- User.updateUser self.props.profile.uuid $ User.UpdateName { firstName: fname, lastName: lname }
           case newUser of
             Right u -> liftEffect do
-              Console.log "updated user"
               self.props.onUpdate u
               self.setState _ { editName = Success }
             Left err -> do
@@ -461,7 +430,6 @@ editButton buttonText self field =
     startEdit = do
       self.setState _ { editFields = Set.insert field self.state.editFields }
       switchEditProgress self field (Editing mempty)
-
 
 switchEditProgress :: Self -> EditField -> AsyncWrapper.Progress JSX -> Effect Unit
 switchEditProgress self EditName progress = self.setState _ { editName = progress }
