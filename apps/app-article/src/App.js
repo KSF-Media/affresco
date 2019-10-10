@@ -376,6 +376,13 @@ class App extends Component {
         this.fetchArticleFromApi(urlParams.get('uuid'));
     }
 
+     onUserFetchFail(error){
+        let d = new Date(); 
+        d.setTime(d.getTime() - (1000*60*60*24)); //Set the time to the past. 1000 milliseonds = 1 second
+        let expires = "expires=" + d.toUTCString();
+        window.document.cookie = "token="+"; "+expires;
+    }
+
     showLogin = (e) => {
         e.preventDefault();
         this.setState({appearLogin: true, showBuyOption: false});
@@ -482,7 +489,7 @@ class App extends Component {
                                 {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} disableSocialLogins={[]}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>
                                         :
                                         ""
                                 }
