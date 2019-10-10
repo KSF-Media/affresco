@@ -16,6 +16,7 @@ import Content from "./components/article-content";
 import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
+import {getCookie} from "./helper";
 
 class App extends Component {
     constructor(props) {
