@@ -16,7 +16,6 @@ import Content from "./components/article-content";
 import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
-import {getCookie} from "./helper";
 
 class App extends Component {
     constructor(props) {
@@ -378,12 +377,10 @@ class App extends Component {
     }
 
     onUserFetchFail(error){
-        if(getCookie('token')){
-            let d = new Date();
-            d.setTime(d.getTime() - (1000*60*60*24)); //Set the time to the past. 1000 milliseonds = 1 second
-            let expires = "expires=" + d.toUTCString();
-            window.document.cookie = "token=" + "; "+expires;
-        }
+        let d = new Date();
+        d.setTime(d.getTime() - (1000*60*60*24)); //Set the time to the past. 1000 milliseonds = 1 second
+        let expires = "expires=" + d.toUTCString();
+        window.document.cookie = "token=" + "; "+expires;
     }
 
     showLogin = (e) => {
