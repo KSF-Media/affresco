@@ -4,14 +4,14 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
-import Data.Array (catMaybes, filter, intercalate, mapMaybe, null, (:))
+import Data.Array (any, catMaybes, filter, intercalate, mapMaybe, null, (:))
 import Data.Array as Array
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Nullable as Nullable
 import Data.Set (Set)
@@ -193,14 +193,17 @@ render self@{ props: { profile: user } } =
             { className: "profile--profile-row"
             , children:
                 [ currentAddress
-                , case toMaybe user.pendingAddressChanges of
-                    Nothing
+                  -- Don't allow to edit address if already pending for a change
+                , case any (isUpcomingPendingChange self.state.now) pendingChanges of
+                    false
                       | isNothing $ toMaybe user.address -> addAddressButton self
                       | otherwise -> changeAddressButton self
-                    -- Don't allow to edit address if already pending for a change
-                    Just _ -> mempty
+                    true -> mempty
                 ]
             }
+          where
+            pendingChanges = fromMaybe [] $ toMaybe user.pendingAddressChanges
+
         profileAddressEditing = DOM.div_
           [ DescriptionList.descriptionList
               { definitions:
