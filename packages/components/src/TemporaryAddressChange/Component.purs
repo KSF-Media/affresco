@@ -22,9 +22,8 @@ import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault, targetValue)
+import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import React.Basic.Events as Events
 
 type State =
   { startDate     :: Maybe DateTime

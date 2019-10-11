@@ -31,14 +31,18 @@ validateZipCode field zipCode =
   validateEmptyField field "Postnummer krävs." zipCode `andThen`
   validateInputWithRegex field "^[\\s|\\w|-]+$" "Postnummerfältet kan bara innehålla siffror och bokstäver."
 
-validateEmailAddress :: forall a. Eq a => a -> Maybe String -> Array (ValidationError a) -> ValidatedForm a (Maybe String)
-validateEmailAddress emailField email serverErrors =
-  validateServerError emailField serverErrors email `andThen`
-  validateEmptyField emailField "E-postadress krävs." `andThen`
+validateEmailAddress :: forall a. Eq a => a -> Maybe String -> ValidatedForm a (Maybe String)
+validateEmailAddress emailField email =
+  validateEmptyField emailField "E-postadress krävs." email `andThen`
   validateInputWithRegex emailField emailRegex "Ogiltig E-postadress."
   where
     -- From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email#Basic_validation
     emailRegex = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+
+validatePhone :: forall a. a -> Maybe String -> ValidatedForm a (Maybe String)
+validatePhone field phone =
+  validateEmptyField field "Telefon krävs." phone `andThen`
+  validateInputWithRegex field "^[\\d|\\+|\\s|-|\\(|\\)]+$" "Telefonnummer kan bara bestå av siffror, mellanslag och +-tecken."
 
 validateEmptyField :: forall a. a -> String -> Maybe String -> ValidatedForm a (Maybe String)
 validateEmptyField field _ Nothing = notInitialized field
@@ -68,6 +72,10 @@ notInitialized field = invalid $ pure $ InvalidNotInitialized field
 
 isValidOrNotInitialized :: forall a. ValidatedForm a (Maybe String) -> Boolean
 isValidOrNotInitialized = isNothing <<< inputFieldErrorMessage
+
+isNotInitialized :: forall a. ValidationError a -> Boolean
+isNotInitialized (InvalidNotInitialized _) = true
+isNotInitialized _ = false
 
 validationErrorMessageOf :: forall a. ValidationError a -> String
 validationErrorMessageOf = case _ of

@@ -2,16 +2,15 @@ module KSF.InputField.Component where
 
 import Prelude
 
-import Data.Array (snoc, (:))
+import Data.Array (snoc)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe, fromMaybe, isJust)
 import Effect (Effect)
 import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault, targetValue)
+import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
-import React.Basic.Events as Events
 
 type Self = React.Self Props State
 
