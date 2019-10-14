@@ -74,7 +74,7 @@ data NameFormFields
   = FirstName
   | LastName
 instance validatableFieldNameFormFields :: ValidatableField NameFormFields where
-  validateField field value = case field of
+  validateField field value _serverErrors = case field of
     FirstName -> validateEmptyField field "Förnamn krävs." value
     LastName  -> validateEmptyField field "Efternamn krävs." value
 
@@ -84,7 +84,7 @@ data AddressFormFields
   | Zip
   | CountryCode
 instance validatableFieldAddressFormFields :: ValidatableField AddressFormFields where
-  validateField field value = case field of
+  validateField field value _serverErrors = case field of
     StreetAddress -> validateEmptyField field "Adress krävs." value
     City          -> validateEmptyField field "Stad krävs." value
     Zip           -> validateZipCode field value
@@ -255,7 +255,7 @@ editAddress self =
             , value: self.state.address.streetAddress
             , onChange: \newStreetAddr -> self.setState _ { address { streetAddress = newStreetAddr } }
             , label: "Gatuadress"
-            , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress
+            , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress []
             }
         , InputField.inputField
             { type_: "text"
@@ -264,7 +264,7 @@ editAddress self =
             , value: self.state.address.zipCode
             , onChange: \newZip -> self.setState _ { address { zipCode = newZip } }
             , label: "Postnummer"
-            , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode
+            , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode []
             }
         , InputField.inputField
             { type_: "text"
@@ -273,7 +273,7 @@ editAddress self =
             , value: self.state.address.city
             , onChange: \newCity -> self.setState _ { address { city = newCity } }
             , label: "Stad"
-            , validationError: inputFieldErrorMessage $ validateField City self.state.address.city
+            , validationError: inputFieldErrorMessage $ validateField City self.state.address.city []
             }
         , CountryDropDown.countryDropDown
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
@@ -292,10 +292,10 @@ editAddress self =
       , city: _
       , countryCode: _
       }
-      <$> validateField StreetAddress form.streetAddress
-      <*> validateField Zip form.zipCode
-      <*> validateField City form.city
-      <*> validateField CountryCode form.countryCode
+      <$> validateField StreetAddress form.streetAddress []
+      <*> validateField Zip form.zipCode []
+      <*> validateField City form.city []
+      <*> validateField CountryCode form.countryCode []
 
     submitNewAddress :: ValidatedForm AddressFormFields Address -> Effect Unit
     submitNewAddress = unV
@@ -332,7 +332,7 @@ editName self =
             , value: self.state.name.firstName
             , onChange: \newFirstName -> self.setState _ { name { firstName = newFirstName } }
             , label: "Förnamn"
-            , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName
+            , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName []
             }
         , InputField.inputField
             { type_: "text"
@@ -341,7 +341,7 @@ editName self =
             , value: self.state.name.lastName
             , onChange: \newLastName -> self.setState _ { name { lastName = newLastName } }
             , label: "Efternamn"
-            , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName
+            , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName []
             }
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }
         ]
@@ -355,8 +355,8 @@ editName self =
         { firstName: _
         , lastName: _
         }
-        <$> validateField FirstName form.firstName
-        <*> validateField LastName form.lastName
+        <$> validateField FirstName form.firstName []
+        <*> validateField LastName form.lastName []
 
       submitNewName :: ValidatedForm NameFormFields Name -> Effect Unit
       submitNewName = unV

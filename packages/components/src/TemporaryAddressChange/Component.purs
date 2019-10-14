@@ -55,7 +55,7 @@ data AddressChangeFields
   | Zip
   | City
 instance validatableFieldAddressChangeFields :: ValidatableField AddressChangeFields where
-  validateField field value = case field of
+  validateField field value _serverErrors = case field of
     StreetAddress -> validateEmptyField field "Adress krävs." value
     City          -> validateEmptyField field "Stad krävs." value
     Zip           -> validateZipCode field value
@@ -161,7 +161,7 @@ render self =
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
         , value: Nothing
         , label: "Gatuadress"
-        , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.streetAddress
+        , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.streetAddress []
         }
 
     zipInput =
@@ -172,7 +172,7 @@ render self =
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
         , value: Nothing
         , label: "Postnummer"
-        , validationError: inputFieldErrorMessage $ validateField Zip self.state.zipCode
+        , validationError: inputFieldErrorMessage $ validateField Zip self.state.zipCode []
         }
 
     -- A dummy input field for UX pleasure
