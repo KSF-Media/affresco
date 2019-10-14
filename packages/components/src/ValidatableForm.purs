@@ -2,17 +2,17 @@ module KSF.ValidatableForm where
 
 import Prelude
 
-import Data.Array (find)
+import Data.Array (filter, find)
 import Data.Either (Either(..))
 import Data.List.NonEmpty (NonEmptyList, head)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.String (null)
+import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
 import Data.Validation.Semigroup (V, andThen, invalid, unV)
 
 class ValidatableField a where
-  validateField :: a -> Maybe String -> ValidatedForm a (Maybe String)
+  validateField :: a -> Maybe String -> Array (ValidationError a) -> ValidatedForm a (Maybe String)
 
 type ValidatedForm a b = V (NonEmptyList (ValidationError a)) b
 
@@ -44,6 +44,27 @@ validatePhone field phone =
   validateEmptyField field "Telefon krävs." phone `andThen`
   validateInputWithRegex field "^[\\d|\\+|\\s|-|\\(|\\)]+$" "Telefonnummer kan bara bestå av siffror, mellanslag och +-tecken."
 
+
+validatePassword :: forall a. a -> Maybe String -> ValidatedForm a (Maybe String)
+validatePassword field password =
+  validateEmptyField field "Lösenord krävs." password `andThen`
+  validatePasswordLength field
+
+validatePasswordLength :: forall a. a -> Maybe String -> ValidatedForm a (Maybe String)
+validatePasswordLength field Nothing = notInitialized field
+validatePasswordLength field password
+  | Just pw <- password, length pw >= 6 = pure $ Just pw
+  | otherwise = invalid $ pure $ Invalid field "Lösenordet måste ha minst 6 tecken."
+
+validatePasswordComparison :: forall a. a -> a -> Maybe String -> Maybe String -> ValidatedForm a (Maybe String)
+validatePasswordComparison originalField _confirmField Nothing Nothing = notInitialized originalField
+validatePasswordComparison originalField confirmField password confirmedPassword
+  | Just pw <- password
+  , Just confirmedPw <- confirmedPassword
+  , pw == confirmedPw
+  = pure $ Just pw
+  | otherwise = invalid $ pure $ Invalid confirmField "Lösenorden överensstämmer inte med varandra."
+
 validateEmptyField :: forall a. a -> String -> Maybe String -> ValidatedForm a (Maybe String)
 validateEmptyField field _ Nothing = notInitialized field
 validateEmptyField fieldName validationErr (Just value) =
@@ -59,6 +80,16 @@ validateInputWithRegex fieldName regexString errMsg inputValue
   = pure $ Just val
   | otherwise = invalid $ pure $ InvalidPatternFailure fieldName errMsg
 
+validateWithServerErrors
+ :: forall a. Eq a
+ => Array (ValidationError a)
+ -> a
+ -> Maybe String
+ -> (a -> Maybe String -> ValidatedForm a (Maybe String))
+ -> ValidatedForm a (Maybe String)
+validateWithServerErrors serverErrors field value validationFn =
+  validateServerError field serverErrors value `andThen` (validationFn field)
+
 -- | NOTE: Even though `val` is not required by this function, it must be taken in and returned as is,
 --   in order to keep chaining validation functions working.
 validateServerError ::  forall a. Eq a => a -> Array (ValidationError a) -> Maybe String -> ValidatedForm a (Maybe String)
@@ -66,6 +97,9 @@ validateServerError fieldName serverErrors val =
   case find ((_ == fieldName) <<< validationInputFieldOf) serverErrors of
     Just err -> invalid $ pure err
     Nothing  -> pure $ val
+
+removeServerErrors :: forall a. Eq a => a -> Array (ValidationError a) -> Array (ValidationError a)
+removeServerErrors field serverErrors = filter ((field /= _) <<< validationInputFieldOf) serverErrors
 
 notInitialized :: forall a. a -> ValidatedForm a (Maybe String)
 notInitialized field = invalid $ pure $ InvalidNotInitialized field
