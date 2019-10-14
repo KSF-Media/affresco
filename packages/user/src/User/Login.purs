@@ -114,7 +114,11 @@ type State =
               }
   , merge :: Maybe User.MergeInfo
   , loginViewStep :: LoginStep
+  , socialLoginVisibility :: Visibility
   }
+
+data Visibility = Visible | Hidden
+derive instance eqVisibility :: Eq Visibility
 
 initialState :: State
 initialState =
@@ -123,6 +127,7 @@ initialState =
   , errors: { login: Nothing, social: Nothing }
   , merge: Nothing
   , loginViewStep: Login
+  , socialLoginVisibility: Hidden
   }
 
 component :: React.Component Props
@@ -204,12 +209,26 @@ renderLoginForm self =
         [ foldMap formatErrorMessage self.state.errors.social
         , loginForm
         , forgotPassword
-        , facebookLogin self
-        , googleLogin self
         , register
+        , socialLogins
         ]
     }
   where
+    socialLogins :: JSX
+    socialLogins =
+      DOM.div
+        { children: [ loginWithSocial ] <> socialLoginButtons
+        }
+      where
+        loginWithSocial =
+          DOM.span
+            { className: "login--login-with-some-text underline"
+            , children: [ DOM.text "Logga in med Facebook eller Google" ]
+            , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
+            }
+        socialLoginButtons = case self.state.socialLoginVisibility of
+          Visible -> [ facebookLogin self, googleLogin self ]
+          Hidden  -> mempty
     loginForm :: JSX
     loginForm =
       DOM.form
@@ -242,20 +261,10 @@ renderLoginForm self =
                 }
             ]
         }
-    username :: JSX -> JSX
-    username input =
-      DOM.div
-        { className: "login--email-input"
-        , children:
-            [ DOM.div { className: "lol" }
-            , input
-            ]
-        }
-
     register :: JSX
     register =
       DOM.div
-        { className: "mt3 center"
+        { className: "center"
         , children:
             [ DOM.text "Inget konto? "
             , DOM.a
@@ -491,7 +500,7 @@ forgotPasswordUrl = "https://www.hbl.fi/losenord/"
 forgotPassword :: JSX
 forgotPassword =
   DOM.div
-    { className: "underline center mb3"
+    { className: "underline center mb1"
     , children:
         [ DOM.a
             { href: forgotPasswordUrl
