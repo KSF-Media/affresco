@@ -30,7 +30,7 @@ import KSF.DescriptionList.Component as DescriptionList
 import KSF.InputField.Component as InputField
 import KSF.User (User)
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateForm, validateZipCode)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
 import Persona as Persona
 import React.Basic (make, JSX)
 import React.Basic as React
@@ -280,7 +280,7 @@ editAddress self =
             self.state.address.countryCode
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditAddress ] }
         ]
-    , onSubmit: Events.handler preventDefault $ \_ -> submitNewAddress $ validateForm validateAddressForm self.state.address
+    , onSubmit: Events.handler preventDefault $ \_ -> submitNewAddress $ validateAddressForm self.state.address
     }
   where
     submitButton = iconSubmit $ isValid (validateAddressForm self.state.address)
@@ -345,7 +345,7 @@ editName self =
             }
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }
         ]
-    , onSubmit: Events.handler preventDefault $ \_ -> submitNewName $ validateForm validateNameForm self.state.name
+    , onSubmit: Events.handler preventDefault $ \_ -> submitNewName $ validateNameForm self.state.name
     }
     where
       submitButton = iconSubmit $ isValid (validateNameForm self.state.name)
