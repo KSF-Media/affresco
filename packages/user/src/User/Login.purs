@@ -58,7 +58,7 @@ instance validatedLoginField :: Form.ValidatableField LoginField where
     Form.validateWithServerErrors serverErrors field value
       case field of
         EmailAddressField ->  Form.validateEmailAddress
-        PasswordField -> Form.validatePassword
+        PasswordField -> \_field -> Form.validateEmptyField field "Lösenord krävs."
 data LoginStep = Login | Registration
 
 type Self = React.Self Props State
