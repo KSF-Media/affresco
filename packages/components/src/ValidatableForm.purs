@@ -23,9 +23,6 @@ data ValidationError a
   | InvalidEmailInUse a String
   | InvalidNotInitialized a -- Fictional state only to be set when the form is first rendered
 
-validateForm :: forall a b. ValidatableField b => (a -> ValidatedForm b a) -> a -> ValidatedForm b a
-validateForm f = f
-
 validateZipCode :: forall a. a -> Maybe String -> ValidatedForm a (Maybe String)
 validateZipCode field zipCode =
   validateEmptyField field "Postnummer krävs." zipCode `andThen`
