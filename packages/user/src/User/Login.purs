@@ -118,8 +118,8 @@ type Props =
   }
 
 type State =
-  { formEmail :: String
-  , formPassword :: String
+  { formEmail :: Maybe String
+  , formPassword :: Maybe String
   , errors :: { login :: Maybe UserError
               , social :: Maybe UserError
               }
@@ -133,8 +133,8 @@ derive instance eqVisibility :: Eq Visibility
 
 initialState :: State
 initialState =
-  { formEmail: ""
-  , formPassword: ""
+  { formEmail: Nothing
+  , formPassword: Nothing
   , errors: { login: Nothing, social: Nothing }
   , merge: Nothing
   , loginViewStep: Login
@@ -180,8 +180,8 @@ failOnEmailMismatch self email
 onLogin :: Self -> Effect Unit
 onLogin self@{ props, state } = props.launchAff_ do
   user <- User.loginTraditional
-            { username: state.formEmail
-            , password: state.formPassword
+            { username: fromMaybe "" state.formEmail
+            , password: fromMaybe "" state.formPassword
             , mergeToken: toNullable $ map _.token state.merge
             }
   case user of
@@ -253,10 +253,10 @@ renderLoginForm self =
                 , label: "E-postadress"
                 , name: "accountEmail"
                 , value: Nothing
-                , onChange: \email -> self.setState _ { formEmail = fromMaybe "" email }
+                , onChange: \email -> self.setState _ { formEmail = email }
                 , validationError:
                    Form.inputFieldErrorMessage $
-                     Form.validateField EmailAddressField (Just self.state.formEmail) []
+                     Form.validateField EmailAddressField self.state.formEmail []
                 }
             , InputField.inputField
                 { type_: "password"
@@ -264,10 +264,10 @@ renderLoginForm self =
                 , label: "Lösenord"
                 , name: "accountPassword"
                 , value: Nothing
-                , onChange: \pw -> self.setState _ { formPassword = fromMaybe "" pw }
+                , onChange: \pw -> self.setState _ { formPassword = pw }
                 , validationError:
                    Form.inputFieldErrorMessage $
-                     Form.validateField PasswordField (Just self.state.formPassword) []
+                     Form.validateField PasswordField self.state.formPassword []
                 }
             , DOM.input
                 { className: "button-green"
@@ -316,7 +316,7 @@ renderMerge self@{ props } mergeInfo =
     mergeActions User.Capture =
       [ DOM.p_
           [ DOM.text captureText
-          , DOM.b_ [ DOM.text self.state.formEmail ]
+          , DOM.b_ [ DOM.text $ fromMaybe "" self.state.formEmail ]
           , DOM.text "."
           ]
       , mergeAccountForm
@@ -363,10 +363,12 @@ renderMerge self@{ props } mergeInfo =
                 { type_: "text"
                 , placeholder: ""
                 , label: ""
-                , name: "accountPassword"
+                , name: ""
                 , value: Nothing
-                , onChange: \email -> self.setState _ { formEmail = fromMaybe "" email }
-                , validationError: Nothing
+                , onChange: \email -> self.setState _ { formEmail = email }
+                , validationError:
+                   Form.inputFieldErrorMessage $
+                     Form.validateField EmailAddressField self.state.formEmail []
                 }
             , DOM.input
                 { className: "button-green"
@@ -398,7 +400,7 @@ googleLogin self =
                   } = self.props.launchAff_ do
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
-      liftEffect $ self.setState _ { formEmail = email }
+      liftEffect $ self.setState _ { formEmail = Just email }
 
       user <- User.someAuth self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
       finalizeSomeAuth self user
@@ -464,7 +466,7 @@ facebookLogin self =
             throwError err
       failOnEmailMismatch self email
       -- setting the email in the state to eventually send it from the merge view form
-      liftEffect $ self.setState _ { formEmail = email }
+      liftEffect $ self.setState _ { formEmail = Just email }
       let (FB.AccessToken fbAccessToken) = accessToken
       user <- User.someAuth self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
       finalizeSomeAuth self user
