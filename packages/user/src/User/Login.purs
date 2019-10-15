@@ -23,6 +23,7 @@ import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField.Component as InputField
 import KSF.Registration.Component as Registration
+import KSF.ValidatableForm as Form
 import KSF.User (User, UserError(..))
 import KSF.User as User
 import KSF.User.Login.Facebook.Success as Facebook.Success
@@ -48,6 +49,16 @@ type Providers =
   , new :: User.Provider
   }
 
+data LoginField = EmailAddressField | PasswordField
+
+derive instance eqLoginField :: Eq LoginField
+
+instance validatedLoginField :: Form.ValidatableField LoginField where
+  validateField field value serverErrors =
+    Form.validateWithServerErrors serverErrors field value
+      case field of
+        EmailAddressField ->  Form.validateEmailAddress
+        PasswordField -> Form.validatePassword
 data LoginStep = Login | Registration
 
 type Self = React.Self Props State
@@ -243,7 +254,9 @@ renderLoginForm self =
                 , name: "accountEmail"
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = fromMaybe "" email }
-                , validationError: Nothing
+                , validationError:
+                   Form.inputFieldErrorMessage $
+                     Form.validateField EmailAddressField (Just self.state.formEmail) []
                 }
             , InputField.inputField
                 { type_: "password"
@@ -252,7 +265,9 @@ renderLoginForm self =
                 , name: "accountPassword"
                 , value: Nothing
                 , onChange: \pw -> self.setState _ { formPassword = fromMaybe "" pw }
-                , validationError: Nothing
+                , validationError:
+                   Form.inputFieldErrorMessage $
+                     Form.validateField PasswordField (Just self.state.formPassword) []
                 }
             , DOM.input
                 { className: "button-green"
