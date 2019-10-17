@@ -20,7 +20,7 @@ import Prenumerera.User as User
 import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Router as Router
+import React.Basic.Router as Router
 
 
 type Self = React.Self Props State
