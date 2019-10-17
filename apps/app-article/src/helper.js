@@ -1,5 +1,5 @@
 export const isUserLoggedIn = () => {
-    return !(getCookie('token') === null);
+    return !(localStorage.getItem("uuid") === null && localStorage.getItem("token") === null);
 };
 
 export const shareArticle = (title, url, description) => {

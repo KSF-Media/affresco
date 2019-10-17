@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import {isUserLoggedIn} from "./helper";
+import {isUserLoggedIn, getCookie} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -68,8 +68,21 @@ class App extends Component {
             this.setState({fontSize: parseFloat(localStorage.getItem("fontSize"))});
         }
 
+        if(getCookie('LoggedOutFlag')){
+            let d = new Date();
+            d.setTime(d.getTime() - (1000*60*60*24)); //Set the time to the past. 1000 milliseonds = 1 second
+            let expires = "expires=" + d.toUTCString();
+            window.document.cookie = "LoggedOutFlag=" + "; "+expires;
+            logout(this.onLogout);
+            localStorage.removeItem('token');
+        }
+
         this.getArticle();
         this.getMostReadArticles();
+    }
+
+    onLogout() {
+        console.log("Logged out successfully!")
     }
 
     getArticle() {
@@ -113,14 +126,17 @@ class App extends Component {
     }
 
     checkCache(uuid) {
-        if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
-            const articleFound = JSON.parse(localStorage.getItem('cachedArticles')).find(article => {
-                if (article.uuid === uuid) {
-                    return true;
-                }
-            });
-            return articleFound;
+        if(!isUserLoggedIn()){
+            if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
+                const articleFound = JSON.parse(localStorage.getItem('cachedArticles')).find(article => {
+                    if (article.uuid === uuid) {
+                        return true;
+                    }
+                });
+                return articleFound;
+            }
         }
+        return false;
     }
 
     cleanCache() {
@@ -370,17 +386,13 @@ class App extends Component {
 
     onUserFetchSuccess(user) {
         localStorage.setItem("currentUser", JSON.stringify(user));
-        document.cookie = "token="+localStorage.getItem("token");
         this.setState({user: user});
         let urlParams = new URLSearchParams(window.location.search);
         this.fetchArticleFromApi(urlParams.get('uuid'));
     }
 
     onUserFetchFail(error){
-        let d = new Date();
-        d.setTime(d.getTime() - (1000*60*60*24)); //Set the time to the past. 1000 milliseonds = 1 second
-        let expires = "expires=" + d.toUTCString();
-        window.document.cookie = "token=" + "; "+expires;
+
     }
 
     showLogin = (e) => {

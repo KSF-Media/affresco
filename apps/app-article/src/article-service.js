@@ -1,5 +1,5 @@
 import config from "./config";
-import {getCookie, isUserLoggedIn} from "./helper";
+import {isUserLoggedIn} from "./helper";
 
 const articleApi = {
     getArticle(uuid) {
@@ -30,7 +30,7 @@ function attachHeaders() {
         headers = {
             'Content-Type': 'application/json',
             'AuthUser': localStorage.getItem('uuid'),
-            'Authorization': 'OAuth ' + getCookie('token'),
+            'Authorization': 'OAuth ' + localStorage.getItem('token'),
         };
     }
     return headers;
