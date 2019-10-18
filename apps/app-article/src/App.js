@@ -130,10 +130,9 @@ class App extends Component {
                 let cachedArticles = localStorage.getItem('cachedArticles');
                 if (cachedArticles != null) {
                     let parsedArticles = JSON.parse(cachedArticles)
-                    const articleFound = parsedArticles.find(article => {
+                    return parsedArticles.find(article => {
                         return article.uuid === uuid
                     });
-                    return articleFound;
                 }
             } catch (e) {
                 console.log(e);
