@@ -74,7 +74,6 @@ class App extends Component {
             let expires = "expires=" + d.toUTCString();
             window.document.cookie = "LoggedOutFlag=" + "; "+expires;
             logout(this.onLogout);
-            localStorage.removeItem('token');
         }
 
         this.getArticle();
@@ -129,9 +128,7 @@ class App extends Component {
         if(!isUserLoggedIn()){
             if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
                 const articleFound = JSON.parse(localStorage.getItem('cachedArticles')).find(article => {
-                    if (article.uuid === uuid) {
-                        return true;
-                    }
+                    return article.uuid === uuid
                 });
                 return articleFound;
             }
