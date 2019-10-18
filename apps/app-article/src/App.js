@@ -126,12 +126,17 @@ class App extends Component {
 
     checkCache(uuid) {
         if(!isUserLoggedIn()){
-            let articles = JSON.parse(localStorage.getItem('cachedArticles'));
-            if ( articles != null) {
-                const articleFound = articles.find(article => {
-                    return article.uuid === uuid
-                });
-                return articleFound;
+            try {
+                let cachedArticles = localStorage.getItem('cachedArticles');
+                if (cachedArticles != null) {
+                    let parsedArticles = JSON.parse(cachedArticles)
+                    const articleFound = parsedArticles.find(article => {
+                        return article.uuid === uuid
+                    });
+                    return articleFound;
+                }
+            } catch (e) {
+                console.log(e);
             }
         }
         return false;
