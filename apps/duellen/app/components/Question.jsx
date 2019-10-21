@@ -196,18 +196,24 @@ export default class Question extends React.Component {
     this.setState({is_loading: "visible"});
   };
 
-
   render() {
     const {displayResult, check, logged_in, is_loading} = this.state;
-    if (displayResult){
-      return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
+    if (logged_in === false){
+        return(
+          <div style={{visibility: is_loading}} >
+            <Login onUserFetchSuccess={(user) => this.logg_in_worked(user)} onLoadingEnd={ () => this.loaded() } />
+          </div>
+          );
     }else {
+      if (displayResult === true){
+        return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
+      }else {
         return (
           <div className='question'>
        {/*bug in ksf-media/user
           ksf-media/user.logout return a function that it is not supposed to 
           this is the solution for now */}
-          <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"})) } style={{boxShadow: 'none',}}>Byt konto</button>
+          <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
 
             <MuiThemeProvider>
               <ExitDialog />
@@ -255,4 +261,5 @@ export default class Question extends React.Component {
         );
       };
     };
+  };
 };
