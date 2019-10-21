@@ -36,18 +36,21 @@ export default class Intro extends React.Component{
   async componentDidMount() {
     ReactGA.pageview(window.location.pathname + window.location.search);
     try {
-      const res = await fetch(backendURL + 'duellen/api/' + this.props.match.params.id + '/');
+      const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
       const quizData = await res.json();
       this.setState({
         quizData,
       });
-      this.setState({
-        player1_img: this.state.quizData.player1_img,
-        player2_img: this.state.quizData.player2_img
-      });
+      console.log(this.state.quizData)
     } catch (e) {
       console.log(e);
     }
+    this.setState({
+      player1_img: this.state.quizData.players.player1.img,
+      player2_img: this.state.quizData.players.player2.img,
+      player1_name : this.state.quizData.players.player1.name,
+      player2_name : this.state.quizData.players.player2.name
+    });
     if(this.state.quizData.sponsor === ''){
       this.setState({sponsor: ''});
     }else{
@@ -75,11 +78,11 @@ export default class Intro extends React.Component{
           <div className="players">
             <div style={{float: 'left', width: '50%',textAlign: 'center'}}>
               <img src={this.state.player1_img} style={{objectFit: 'cover', width:200, height:200, borderRadius: '50%'}}></img>
-              <p>{this.state.quizData.player1}</p>
+              <p>{this.state.player1_name}</p>
             </div>
             <div style={{float: 'left', width: '50%', textAlign: 'center'}}>
               <img src={this.state.player2_img} style={{objectFit: 'cover', width:200, height:200, borderRadius: '50%'}}></img>
-              <p>{this.state.quizData.player2}</p>
+              <p>{this.state.player2_name}</p>
             </div>
           </div>
         <p>{this.state.quizData.description}</p>

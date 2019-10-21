@@ -5,6 +5,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {quizIntro} from './data/quizData.jsx';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
+import { Script } from 'vm';
 
 const styles = {
 };
@@ -33,23 +34,31 @@ export default class Start extends React.Component {
     async componentDidMount() {
        ReactGA.pageview(window.location.pathname + window.location.search);
      try {
-       const res = await fetch(backendURL + 'duellen/api/');
+       const res = await fetch(backendURL + 'get/all/quizzes/as/json');
        const quizData = await res.json();
        this.setState({
-         quizData,
+        weeklyQuiz: quizData[0],
        });
+       delete quizData[0]
        this.setState({
-           weeklyQuiz: this.state.quizData[0]
-       });
-       } catch (e) {
+        quizData,
+       }); 
+      } catch (e) {
         console.log(e);
        }
        if(this.state.weeklyQuiz.price === ''){
          this.setState({price: ''});
        }else{
-         this.setState({price: 'Denna vecka lottar vi ut ' + this.state.weeklyQuiz.price});
+        console.log(this.state.weeklyQuiz)
+        this.setState({price: 'Denna vecka lottar vi ut ' + this.state.weeklyQuiz.price});
        }
-     }
+       if(this.state.quizData.length == 0){
+         this.state.hasManyQuizzes = false
+       }else{
+        this.state.hasManyQuizzes = true
+       }
+     
+      }
 
 
   handleClick(e) {
@@ -60,30 +69,48 @@ export default class Start extends React.Component {
 
   render() {
 //console.log("Moi".this.state)
-    return (
-    <div class="duellen--button-container">
-      <MuiThemeProvider>
-        <div>
-          <div>
-            <h1>Duellen</h1>
-            <p><b>{this.state.price}</b></p>
-            <p className="header">Veckans Quiz</p>
-            <a href={'/Intro/' + this.state.weeklyQuiz.id}>
-              <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}> {this.state.weeklyQuiz.title}</Button>
-            </a>
-              <p className="header">Tidigare Quiz</p>
-            {this.state.quizData.map(item => (
-              <div key={item.id} style={styles}>
-                <a href={'/Intro/' + item.id}>
-                  <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}> {item.title} </Button>
+    if (this.state.hasManyQuizzes){
+      return (
+        <div class="duellen--button-container">
+          <MuiThemeProvider>
+            <div>
+              <div>
+                <h1>Duellen</h1>
+                <p><b>{this.state.price}</b></p>
+                <p className="header">Veckans Quiz</p>
+                <a href={'/Intro/' + this.state.weeklyQuiz.id}>
+                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}> {this.state.weeklyQuiz.title}</Button>
+                </a>
+                  <p className="header">Tidigare Quiz</p>
+                {this.state.quizData.map(item => (
+                  <div key={item.id} style={styles}>
+                    <a href={'/Intro/' + item.id}>
+                      <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}> {item.title} </Button>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </MuiThemeProvider>
+        </div>
+      );
+    }else{
+      return (
+        <div class="duellen--button-container">
+          <MuiThemeProvider>
+            <div>
+              <div>
+                <h1>Duellen</h1>
+                <p><b>{this.state.price}</b></p>
+                <p className="header">Veckans Quiz</p>
+                <a href={'/Intro/' + this.state.weeklyQuiz.id}>
+                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}> {this.state.weeklyQuiz.title}</Button>
                 </a>
               </div>
-            ))}
-          </div>
+            </div>
+          </MuiThemeProvider>
         </div>
-      </MuiThemeProvider>
-    </div>
-
-    );
+      );
+    }
   }
 }
