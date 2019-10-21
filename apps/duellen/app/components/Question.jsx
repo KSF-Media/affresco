@@ -101,7 +101,6 @@ export default class Question extends React.Component {
   handleClick(e){
     e.preventDefault();
     this.handleAnswer(e);
-    this.handleResults(e);
     this.handleWrongRight(e);
   };
 
@@ -138,7 +137,8 @@ export default class Question extends React.Component {
     }
   }
 
-  getNextQuestion(){
+  getNextQuestion(e){
+    this.handleResults(e)
     if (this.state.progress === 5){
       this.setState({displayResult: true});
     }
@@ -156,9 +156,9 @@ export default class Question extends React.Component {
     }
   }
 
-  getNextHint(){
+  getNextHint(e){
     if (this.hintPoint === 1){
-      this.getNextQuestion()
+      this.getNextQuestion(e)
     }
     else{
       const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
@@ -171,7 +171,7 @@ export default class Question extends React.Component {
           return 0  
         }
       }
-      return this.getNextQuestion()
+      return this.getNextQuestion(e)
     }
 
 
@@ -181,9 +181,9 @@ export default class Question extends React.Component {
     e.preventDefault();
     var searchText = this.state.searchText.toLocaleLowerCase();
     if (searchText === this.checkIfCorrect()){
-      this.getNextQuestion()
+      this.getNextQuestion(e)
     }else{
-      this.getNextHint()
+      this.getNextHint(e)
     }
   }
 
@@ -199,16 +199,9 @@ export default class Question extends React.Component {
 
   render() {
     const {displayResult, check, logged_in, is_loading} = this.state;
-    if (logged_in === false){
-        return(
-          <div style={{visibility: is_loading}} >
-            <Login onUserFetchSuccess={(user) => this.logg_in_worked(user)} onLoadingEnd={ () => this.loaded() } />
-          </div>
-          );
+    if (displayResult){
+      return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
     }else {
-      if (displayResult === true){
-        return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
-      }else {
         return (
           <div className='question'>
        {/*bug in ksf-media/user
@@ -262,5 +255,4 @@ export default class Question extends React.Component {
         );
       };
     };
-  };
 };
