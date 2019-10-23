@@ -24,7 +24,7 @@ export default class Start extends React.Component {
     super(props);
     this.state={
       quizData: [],
-      weeklyQuiz: [],
+      weeklyQuiz: {},
       price: ''
     };
     this.handleClick = this.handleClick.bind(this);
@@ -38,28 +38,48 @@ export default class Start extends React.Component {
        const quizData = await res.json();
        this.setState({
         weeklyQuiz: quizData[0],
-       });
-       delete quizData[0]
-       this.setState({
-        quizData,
-       }); 
+        quizData: quizData.slice(1, quizData.length + 1)
+      }); 
       } catch (e) {
         console.log(e);
        }
-       if(this.state.weeklyQuiz.price === ''){
+       if(this.state.weeklyQuiz.price === null){
          this.setState({price: ''});
        }else{
-        console.log(this.state.weeklyQuiz)
         this.setState({price: 'Denna vecka lottar vi ut ' + this.state.weeklyQuiz.price});
        }
-       if(this.state.quizData.length == 0){
-         this.state.hasManyQuizzes = false
-       }else{
-        this.state.hasManyQuizzes = true
-       }
-     
+       this.setState({loaded: true})
       }
 
+  getweek(date){
+    Date.prototype.getWeek = function (dowOffset) {      
+          dowOffset = typeof(dowOffset) == 'int' ? dowOffset : 0; //default dowOffset to zero
+          var newYear = new Date(this.getFullYear(),0,1);
+          var day = newYear.getDay() - dowOffset; //the day of week the year begins on
+          day = (day >= 0 ? day : day + 7);
+          var daynum = Math.floor((this.getTime() - newYear.getTime() - 
+          (this.getTimezoneOffset()-newYear.getTimezoneOffset())*60000)/86400000) + 1;
+          var weeknum;
+          //if the year starts before the middle of a week
+          if(day < 4) {
+              weeknum = Math.floor((daynum+day-1)/7) + 1;
+              if(weeknum > 52) {
+                  nYear = new Date(this.getFullYear() + 1,0,1);
+                  nday = nYear.getDay() - dowOffset;
+                  nday = nday >= 0 ? nday : nday + 7;
+                  /*if the next year starts before the middle of
+                    the week, it is week #1 of that year*/
+                  weeknum = nday < 4 ? 1 : 53;
+              }
+          }
+          else {
+              weeknum = Math.floor((daynum+day-1)/7);
+          }
+          return weeknum;
+      };
+      var mydate = new Date(Number(date.slice(0,4)), Number(date.slice(5,7))-1,Number(date.slice(8,10)));
+    return mydate.getWeek()
+  }
 
   handleClick(e) {
     e.preventDefault();
@@ -68,8 +88,7 @@ export default class Start extends React.Component {
 
 
   render() {
-//console.log("Moi".this.state)
-    if (this.state.hasManyQuizzes){
+    try{
       return (
         <div class="duellen--button-container">
           <MuiThemeProvider>
@@ -79,13 +98,13 @@ export default class Start extends React.Component {
                 <p><b>{this.state.price}</b></p>
                 <p className="header">Veckans Quiz</p>
                 <a href={'/Intro/' + this.state.weeklyQuiz.id}>
-                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}> {this.state.weeklyQuiz.title}</Button>
+                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}>Vecka {this.getweek(this.state.weeklyQuiz.publication_date)}</Button>
                 </a>
                   <p className="header">Tidigare Quiz</p>
                 {this.state.quizData.map(item => (
                   <div key={item.id} style={styles}>
                     <a href={'/Intro/' + item.id}>
-                      <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}> {item.title} </Button>
+                      <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}>Vecka {this.getweek(item.publication_date)}</Button>
                     </a>
                   </div>
                 ))}
@@ -94,7 +113,8 @@ export default class Start extends React.Component {
           </MuiThemeProvider>
         </div>
       );
-    }else{
+    } catch (e){
+      console.log('has not loaded yet')
       return (
         <div class="duellen--button-container">
           <MuiThemeProvider>
@@ -104,13 +124,21 @@ export default class Start extends React.Component {
                 <p><b>{this.state.price}</b></p>
                 <p className="header">Veckans Quiz</p>
                 <a href={'/Intro/' + this.state.weeklyQuiz.id}>
-                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}> {this.state.weeklyQuiz.title}</Button>
+                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}>{this.state.weeklyQuiz.title}</Button>
                 </a>
+                  <p className="header">Tidigare Quiz</p>
+                {this.state.quizData.map(item => (
+                  <div key={item.id} style={styles}>
+                    <a href={'/Intro/' + item.id}>
+                      <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}>{item.title}</Button>
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
           </MuiThemeProvider>
         </div>
-      );
+      );  
     }
   }
 }
