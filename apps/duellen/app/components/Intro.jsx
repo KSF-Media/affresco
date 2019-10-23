@@ -39,9 +39,8 @@ export default class Intro extends React.Component{
       const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
       const quizData = await res.json();
       this.setState({
-        quizData,
+        quizData: quizData,
       });
-      console.log(this.state.quizData)
     } catch (e) {
       console.log(e);
     }
@@ -51,11 +50,12 @@ export default class Intro extends React.Component{
       player1_name : this.state.quizData.players.player1.name,
       player2_name : this.state.quizData.players.player2.name
     });
-    if(this.state.quizData.sponsor === ''){
+    if(this.state.quizData.sponsor === null){
       this.setState({sponsor: ''});
     }else{
       this.setState({sponsor: 'Veckans pris är sponsrat av ' + this.state.quizData.sponsor});
     }
+    this.getweek()
   }
 
   handleClick(e){
@@ -66,6 +66,38 @@ export default class Intro extends React.Component{
       action: 'Started Quiz'
     });
   }
+  getweek(){
+    Date.prototype.getWeek = function (dowOffset) {      
+          dowOffset = typeof(dowOffset) == 'int' ? dowOffset : 0; //default dowOffset to zero
+          var newYear = new Date(this.getFullYear(),0,1);
+          var day = newYear.getDay() - dowOffset; //the day of week the year begins on
+          day = (day >= 0 ? day : day + 7);
+          var daynum = Math.floor((this.getTime() - newYear.getTime() - 
+          (this.getTimezoneOffset()-newYear.getTimezoneOffset())*60000)/86400000) + 1;
+          var weeknum;
+          //if the year starts before the middle of a week
+          if(day < 4) {
+              weeknum = Math.floor((daynum+day-1)/7) + 1;
+              if(weeknum > 52) {
+                  nYear = new Date(this.getFullYear() + 1,0,1);
+                  nday = nYear.getDay() - dowOffset;
+                  nday = nday >= 0 ? nday : nday + 7;
+                  /*if the next year starts before the middle of
+                    the week, it is week #1 of that year*/
+                  weeknum = nday < 4 ? 1 : 53;
+              }
+          }
+          else {
+              weeknum = Math.floor((daynum+day-1)/7);
+          }
+          return weeknum;
+      };
+      var date = this.state.quizData.publication_date
+      var mydate = new Date(Number(date.slice(0,4)), Number(date.slice(5,7))-1,Number(date.slice(8,10)));
+      this.setState({
+        week: mydate.getWeek(),
+      });     
+  }
 
   render(){
     return(
@@ -73,7 +105,7 @@ export default class Intro extends React.Component{
       <div style={styles}>
 
         <BackBtn />
-        <p className="header">{quizIntro.week}</p>
+        <p className="header">Vecka {this.state.week}</p>
         <h2>{this.state.quizData.title}</h2>
           <div className="players">
             <div style={{float: 'left', width: '50%',textAlign: 'center'}}>
