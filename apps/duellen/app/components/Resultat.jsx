@@ -54,7 +54,6 @@ export default class Resultat extends React.Component{
       category: 'User',
       action: 'Completed Quiz'
     });
-    console.log(this.props.right)
   }
 
   handleChange(value){
