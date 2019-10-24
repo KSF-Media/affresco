@@ -11,6 +11,8 @@ export const getCookie = (name) => {
     return v ? v[2] : null;
 };
 
+export const getUrlParam =() => {return new URLSearchParams(window.location.search)};
+
 async function AndroidNativeShare(Title, URL, Description) {
     if (typeof navigator.share === 'undefined' || !navigator.share) {
         // alert('Your browser does not support Android Native Share, it\'s tested on chrome 63+');

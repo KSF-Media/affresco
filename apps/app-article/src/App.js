@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import {isUserLoggedIn, getCookie} from "./helper";
+import {isUserLoggedIn, getUrlParam} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -16,6 +16,8 @@ import Content from "./components/article-content";
 import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
+import Cookies from 'js-cookie';
+
 
 class App extends Component {
     constructor(props) {
@@ -56,6 +58,7 @@ class App extends Component {
             mostReadArticles: [],
             errorFetching: false,
             errorFetchingLatestArticles: false,
+            forceLoginView: false
         };
     }
 
@@ -68,35 +71,38 @@ class App extends Component {
             this.setState({fontSize: parseFloat(localStorage.getItem("fontSize"))});
         }
 
-        if(getCookie('LoggedOutFlag')){
-            let d = new Date();
-            d.setTime(d.getTime() - (1000*60*60*24)); //Set the time to the past. 1000 milliseonds = 1 second
-            let expires = "expires=" + d.toUTCString();
-            window.document.cookie = "LoggedOutFlag=" + "; "+expires;
+        //In case User want to logout, the value should be false
+        if(Cookies.get('LoginStatus') != undefined && !Cookies.get('LoginStatus')){
+            //we remove it to avoid infinite loop
+            Cookies.remove('LoginStatus');
+            //TODO
+            // we need to have logout listener here, after success we can then remove the cookie, if for exemple an error happend while             
+            //LogOut;in localstorage will keep logged but for android is considered as logged out
+
             logout(this.onLogout);
         }
-
-        this.getArticle();
-        this.getMostReadArticles();
+        if(getUrlParam().has('login')){
+            this.setState({forceLoginView: true});
+        }else {
+            this.getArticle();
+            this.getMostReadArticles();
+        }
     }
 
     onLogout() {
         console.log("Logged out successfully!")
-    }
-
+    }    
     getArticle() {
         if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
             this.setState({cachedArticles: JSON.parse(localStorage.getItem('cachedArticles'))});
         }
-
-        let urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('uuid')) {
+        if (getUrlParam().has('uuid')) {
             if (this.checkCache(urlParams.get('uuid'))) {
                 this.fetchArticleFromCache(urlParams.get('uuid'));
             } else {
                 this.fetchArticleFromApi(urlParams.get('uuid'));
             }
-        } else {
+        }else {
             console.log("no uuid found!")
             // TODO:: handle this part
         }
@@ -387,10 +393,14 @@ class App extends Component {
     }
 
     onUserFetchSuccess(user) {
+        //Cookie will expire after 7 days 
+        Cookies.set('LoginStatus', true, { expires: 7 });
+        //To get User data from Android side 
+        Cookies.set('currentUser', JSON.stringify(user), { expires: 7 });
+
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        let urlParams = new URLSearchParams(window.location.search);
-        this.fetchArticleFromApi(urlParams.get('uuid'));
+        this.fetchArticleFromApi(getUrlParam().has('uuid'));
     }
 
     onUserFetchFail(error){
@@ -465,10 +475,12 @@ class App extends Component {
         if (this.state.errorFetching) {
             return <ErrorPage message={"Something wrong happened!"}/>;
         }
+        if(this.state.forceLoginView){
+            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>;
+        }
 
         return (
-            <div className="App">
-
+            <div className="App">                
                 {isImageModalOpen && (
                     <Lightbox
                         mainSrc={this.state.modalImage + '&width=1200'}
