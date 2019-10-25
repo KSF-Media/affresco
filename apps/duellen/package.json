@@ -19,6 +19,7 @@
     "jsonp": "^0.2.1",
     "material-ui": "^0.20.0",
     "material-ui-superselectfield": "^1.9.0",
+    "moment": "^2.24.0",
     "parcel-bundler": "^1.12.3",
     "path": "^0.12.7",
     "react": "^16.3.0",
