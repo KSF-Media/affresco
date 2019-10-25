@@ -80,7 +80,7 @@ export default class Question extends React.Component {
              const children = (
                <div>
                  <h4 style={{marginBottom: '-30px'}}>{title}</h4>
-                 <p style={{fontSize:'16px', color: '#808080'}}>{extract}</p>
+                 <p style={{fontSize:'16px', color: '#808080', overflow: 'hidden'}}>{extract}</p>
                </div>
              );
              const dataSourceItem = {
@@ -108,11 +108,11 @@ export default class Question extends React.Component {
     e.preventDefault();
     const {tally, hintPoint} = this.state;
     if(this.state.searchText === this.checkIfCorrect()){
-      this.setState({check: 'Rätt!', opacity: 1, color: green,}, () => setTimeout(() => this.setState({check: '', opacity:0}),750));
+      this.setState({check: 'Rätt!', opacity: 1, color: green,}, () => setTimeout(() => this.setState({check: '', opacity:0}),3000));
       this.setState({tally: tally + hintPoint});
 
     }else{
-      this.setState({check: 'Fel!', opacity: 1, color: red,}, () => setTimeout(() => this.setState({check: '', opacity:0}),750));  
+      this.setState({check: 'Fel!', opacity: 1, color: red,}, () => setTimeout(() => this.setState({check: '', opacity:0}),3000));  
     }
   };
 
