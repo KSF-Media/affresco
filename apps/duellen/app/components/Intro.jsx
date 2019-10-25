@@ -18,6 +18,7 @@ const btnstyles ={
 };
 
 ReactGA.initialize('UA-119802236-1');
+var moment = require('moment');
 
 export default class Intro extends React.Component{
 
@@ -39,9 +40,8 @@ export default class Intro extends React.Component{
       const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
       const quizData = await res.json();
       this.setState({
-        quizData,
+        quizData: quizData,
       });
-      console.log(this.state.quizData)
     } catch (e) {
       console.log(e);
     }
@@ -51,11 +51,12 @@ export default class Intro extends React.Component{
       player1_name : this.state.quizData.players.player1.name,
       player2_name : this.state.quizData.players.player2.name
     });
-    if(this.state.quizData.sponsor === ''){
+    if(this.state.quizData.sponsor === null){
       this.setState({sponsor: ''});
     }else{
       this.setState({sponsor: 'Veckans pris är sponsrat av ' + this.state.quizData.sponsor});
     }
+    this.getweek()
   }
 
   handleClick(e){
@@ -66,6 +67,14 @@ export default class Intro extends React.Component{
       action: 'Started Quiz'
     });
   }
+  getweek(){
+      var day = moment(this.state.quizData.publication_date.slice(0,10));
+      
+      this.setState({
+        week: day.week(),
+      });
+      
+    }
 
   render(){
     return(
@@ -73,7 +82,7 @@ export default class Intro extends React.Component{
       <div style={styles}>
 
         <BackBtn />
-        <p className="header">{quizIntro.week}</p>
+        <p className="header">Vecka {this.state.week}</p>
         <h2>{this.state.quizData.title}</h2>
           <div className="players">
             <div style={{float: 'left', width: '50%',textAlign: 'center'}}>

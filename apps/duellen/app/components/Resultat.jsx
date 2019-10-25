@@ -54,7 +54,6 @@ export default class Resultat extends React.Component{
       category: 'User',
       action: 'Completed Quiz'
     });
-    console.log(this.props.right)
   }
 
   handleChange(value){
@@ -154,14 +153,14 @@ export default class Resultat extends React.Component{
             <div style={styles.slide}>              
               <div style={{textAlign: 'left', padding: '7%', lineHeight: '1.8'}}>
               {this.state.questions.map(item => (
-                  <div>
+                  <div style={{marginBottom: '10px'}}>
                     <p className='facit'>{item[0].category} {item[0].question}</p>
                     <p className='progress' style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[item[1]]}</p>
-                    <b>1.</b> {item[0].hints.hint1} <br/>
-                    <b>2.</b> {item[0].hints.hint2} <br/>
-                    <b>3.</b> {item[0].hints.hint3} <br/>
-                    <b>4.</b> {item[0].hints.hint4} <br/>
-                    <b>5.</b> {item[0].hints.hint5} <br/>
+                    <b>5 poäng</b> {item[0].hints.hint1} <br/>
+                    <b>4 poäng</b> {item[0].hints.hint2} <br/>
+                    <b>3 poäng</b> {item[0].hints.hint3} <br/>
+                    <b>2 poäng</b> {item[0].hints.hint4} <br/>
+                    <b>1 poäng</b> {item[0].hints.hint5} <br/>
                     <p className='progress'>Rätt svar: {item[0].answer}</p>
                   </div>
                 ))}
