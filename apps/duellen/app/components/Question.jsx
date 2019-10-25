@@ -37,7 +37,7 @@ export default class Question extends React.Component {
       dataSource: [],
       quizData: [],
       right: [],
-      logged_in: false,
+      logged_in: true,
       is_loading: 'hidden',
       name: ''
     };
@@ -125,7 +125,7 @@ export default class Question extends React.Component {
     e.preventDefault();
     if(this.state.searchText === this.checkIfCorrect()){
       this.setState({
-        right: [...this.state.right, ' Du svarade rätt på ledtråd ' + this.state.hintPoint]
+        right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p']
       });
     }else{
       this.setState({
@@ -208,9 +208,9 @@ export default class Question extends React.Component {
           <div className='question'>
        {/*bug in ksf-media/user
           ksf-media/user.logout return a function that it is not supposed to 
-          this is the solution for now */}
+          this is the solution for now 
           <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
-
+*/}
             <MuiThemeProvider>
               <ExitDialog />
             </MuiThemeProvider>
