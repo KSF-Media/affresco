@@ -49,10 +49,10 @@ export default class Question extends React.Component {
   async componentDidMount() {
     ReactGA.pageview(window.location.pathname + window.location.search);
    try {
-     const res = await fetch(backendURL + 'get/all/quizzes/as/json');
+     console.log(this.props.match.params.id)
+     const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
      var quizData = await res.json();
-     /* change leter */
-     quizData = quizData[0]
+     console.log(quizData)
      this.setState({
        quizData,
      });
@@ -106,9 +106,8 @@ export default class Question extends React.Component {
 
   handleWrongRight(e){
     e.preventDefault();
-    var searchText = this.state.searchText.toLocaleLowerCase();
     const {tally, hintPoint} = this.state;
-    if(searchText === this.checkIfCorrect()){
+    if(this.state.searchText === this.checkIfCorrect()){
       this.setState({check: 'Rätt!', opacity: 1, color: green,}, () => setTimeout(() => this.setState({check: '', opacity:0}),750));
       this.setState({tally: tally + hintPoint});
 
@@ -124,11 +123,9 @@ export default class Question extends React.Component {
 
   handleResults(e){
     e.preventDefault();
-    var searchText = this.state.searchText.toLocaleLowerCase();
-
-    if(searchText === this.checkIfCorrect()){
+    if(this.state.searchText === this.checkIfCorrect()){
       this.setState({
-        right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p!']
+        right: [...this.state.right, ' Du svarade rätt på ledtråd ' + this.state.hintPoint]
       });
     }else{
       this.setState({
@@ -179,8 +176,7 @@ export default class Question extends React.Component {
 
   handleAnswer(e){
     e.preventDefault();
-    var searchText = this.state.searchText.toLocaleLowerCase();
-    if (searchText === this.checkIfCorrect()){
+    if (this.state.searchText === this.checkIfCorrect()){
       this.getNextQuestion(e)
     }else{
       this.getNextHint(e)
@@ -197,7 +193,7 @@ export default class Question extends React.Component {
   };
 
   render() {
-    const {displayResult, check, logged_in, is_loading} = this.state;
+    const {displayResult, logged_in, is_loading} = this.state;
     if (logged_in === false){
         return(
           <div style={{visibility: is_loading}} >
