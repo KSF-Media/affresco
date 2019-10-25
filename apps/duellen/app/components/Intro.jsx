@@ -68,9 +68,7 @@ export default class Intro extends React.Component{
     });
   }
   getweek(){
-      var date = this.state.quizData.publication_date
-      console.log(date.slice(0,10))
-      var day = moment(date.slice(0,10));
+      var day = moment(this.state.quizData.publication_date.slice(0,10));
       
       this.setState({
         week: day.week(),

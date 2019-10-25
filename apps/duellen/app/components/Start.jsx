@@ -52,8 +52,7 @@ export default class Start extends React.Component {
       }
 
   getweek(date){
-    var day = moment(date.slice(0,10));
-    return day.week()
+    return moment(date.slice(0,10)).week()
   }
 
   handleClick(e) {
