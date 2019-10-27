@@ -17,6 +17,7 @@ import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
+import { AndroidView } from 'react-device-detect';
 
 
 class App extends Component {
@@ -401,6 +402,9 @@ class App extends Component {
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
         this.fetchArticleFromApi(getUrlParam().has('uuid'));
+
+        //Call Android bridge 
+        Android.isLoggedIn();        
     }
 
     onUserFetchFail(error){
