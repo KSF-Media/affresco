@@ -2,7 +2,6 @@ import React from 'react';
 import Intro from './Intro.jsx';
 import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import {quizIntro} from './data/quizData.jsx';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 import { Script } from 'vm';
@@ -52,7 +51,8 @@ export default class Start extends React.Component {
       }
 
   getweek(date){
-    return moment(date.slice(0,10)).week()
+    var dateObject = moment(date.slice(0,10)).add(-1, 'days')
+    return moment(dateObject).week()
   }
 
   handleClick(e) {

@@ -2,7 +2,6 @@ import React from 'react';
 import BackBtn from './BackBtn.jsx';
 import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import {quizIntro} from './data/quizData.jsx';
 import EmailDialog from './EmailDialog.jsx';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
@@ -68,13 +67,13 @@ export default class Intro extends React.Component{
     });
   }
   getweek(){
-      var day = moment(this.state.quizData.publication_date.slice(0,10));
+    var day = moment(this.state.quizData.publication_date.slice(0,10)).add(-1, 'days');
       
-      this.setState({
-        week: day.week(),
-      });
+    this.setState({
+      week: day.week(),
+    });
       
-    }
+  }
 
   render(){
     return(
