@@ -13,7 +13,7 @@ class Additional extends Component {
 
     }
     onShare() {
-        Android.showIntent('https://ksfmedia.herokuapp.com/index.html?uuid=' + this.state.uuid);
+        Android.showIntent(process.env.SHARE_URL + this.state.uuid);
     }
 
     render() {

@@ -397,7 +397,7 @@ class App extends Component {
         //Cookie will expire after 7 days 
         Cookies.set('LoginStatus', true, { expires: 7 });
         //To get User data from Android side 
-        Cookies.set('currentUser', JSON.stringify(user), { expires: 7 });
+        Cookies.set('currentUser', JSON.stringify({firstName:user.firstName,lastName:user.lastName,email:user.email}), { expires: 7 });
 
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});

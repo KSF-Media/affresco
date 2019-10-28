@@ -6,11 +6,6 @@ export const shareArticle = (title, url, description) => {
     return AndroidNativeShare(title, url, description);
 };
 
-export const getCookie = (name) => {
-    let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-    return v ? v[2] : null;
-};
-
 export const getUrlParam =() => {return new URLSearchParams(window.location.search)};
 
 async function AndroidNativeShare(Title, URL, Description) {
