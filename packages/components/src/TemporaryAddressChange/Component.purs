@@ -17,21 +17,21 @@ import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.User as User
+import KSF.ValidatableForm (class ValidatableField, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault, targetValue)
+import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import React.Basic.Events as Events
 
 type State =
   { startDate     :: Maybe DateTime
   , minStartDate  :: Maybe DateTime
   , endDate       :: Maybe DateTime
   , minEndDate    :: Maybe DateTime
-  , streetAddress :: String
-  , zipCode       :: String
+  , streetAddress :: Maybe String
+  , zipCode       :: Maybe String
   }
 
 type Self = React.Self Props State
@@ -50,6 +50,16 @@ data Action
   | SetMinStartDate (Maybe DateTime)
   | SetEndDate (Maybe DateTime)
 
+data AddressChangeFields
+  = StreetAddress
+  | Zip
+  | City
+instance validatableFieldAddressChangeFields :: ValidatableField AddressChangeFields where
+  validateField field value _serverErrors = case field of
+    StreetAddress -> validateEmptyField field "Adress krävs." value
+    City          -> validateEmptyField field "Stad krävs." value
+    Zip           -> validateZipCode field value
+
 temporaryAddressChange :: Props -> JSX
 temporaryAddressChange = make component { initialState, render, didMount }
 
@@ -59,8 +69,8 @@ initialState =
   , minStartDate: Nothing
   , endDate: Nothing
   , minEndDate: Nothing
-  , streetAddress: ""
-  , zipCode: ""
+  , streetAddress: Nothing
+  , zipCode: Nothing
   }
 
 component :: React.Component Props
@@ -144,61 +154,39 @@ render self =
         }
 
     addressInput =
-      Grid.row
-        [ Grid.row_ [ DOM.label_ [ DOM.text "Gatuadress*" ] ]
-        , Grid.row_
-            [ InputField.inputField
-              { type_: "text"
-              , placeholder: "Gatuadress"
-              , name: "address"
-              , required: true
-              , children: []
-              , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
-              , defaultValue: Nothing
-              }
-            ]
-        ]
-        $ Just { extraClasses: [ "mt2" ] }
+      InputField.inputField
+        { type_: "text"
+        , placeholder: "Gatuadress"
+        , name: "address"
+        , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
+        , value: Nothing
+        , label: "Gatuadress"
+        , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.streetAddress []
+        }
 
     zipInput =
-      Grid.row
-        [ Grid.row_ [ DOM.label_ [ DOM.text "Postnummer*" ] ]
-        , Grid.row_
-            [ DOM.input
-              { type: "text"
-              , placeholder: "Postnummer"
-              , name: "zipCode"
-              , required: true
-              , value: self.state.zipCode
-              , onChange:
-                  Events.handler
-                    (preventDefault >>> Events.merge { targetValue })
-                    \{ targetValue: newZip } -> self.setState _ { zipCode = fromMaybe "" newZip }
-              , pattern: "\\d+"
-              , title: "Endast siffror"
-              }
-            ]
-        ]
-        $ Just { extraClasses: [ "mt2" ] }
+      InputField.inputField
+        { type_: "text"
+        , placeholder: "Postnummer"
+        , name: "zipCode"
+        , onChange: \newZip -> self.setState _ { zipCode = newZip }
+        , value: Nothing
+        , label: "Postnummer"
+        , validationError: inputFieldErrorMessage $ validateField Zip self.state.zipCode []
+        }
 
     -- A dummy input field for UX pleasure
     -- NOTE: The correct city will be eventually inferred by the zip code
     cityInput =
-      Grid.row
-        [ Grid.row_ [ DOM.label_ [ DOM.text "Stad" ] ]
-        , Grid.row_
-            [ InputField.inputField
-              { type_: "text"
-              , placeholder: "Stad"
-              , name: "city"
-              , required: false
-              , children: []
-              , onChange: \_ -> pure unit
-              , defaultValue: Nothing
-              }
-            ]
-        ]
-        $ Just { extraClasses: [ "mt2" ] }
+      InputField.inputField
+        { type_: "text"
+        , placeholder: "Stad"
+        , name: "city"
+        , onChange: \_ -> pure unit
+        , value: Nothing
+        , validationError: Nothing
+        , label: "Stad"
+        }
 
     submitFormButton =
       Grid.columnThird $
@@ -235,13 +223,14 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             }
         ]
     ]
-    $ Just { extraClasses: [ "mt2" ] }
+    $ Just { extraClasses: [ "mb2" ] }
 
 submitForm :: State -> Props -> Effect Unit
 submitForm { startDate: Just start, endDate: Just end, streetAddress, zipCode } props@{ userUuid, subsno } = do
   props.onLoading
   Aff.launchAff_ do
-    User.temporaryAddressChange userUuid subsno start end streetAddress zipCode >>=
+    -- TODO: FIX FROMMAYBES!
+    User.temporaryAddressChange userUuid subsno start end (fromMaybe "" streetAddress) (fromMaybe "" zipCode) >>=
       case _ of
         Right sub -> liftEffect $ props.onSuccess sub
         Left invalidDateInput -> liftEffect $ props.onError invalidDateInput
