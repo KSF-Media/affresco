@@ -2,7 +2,6 @@ module KSF.Subscription.Component where
 
 import Prelude
 
-import KSF.AsyncWrapper as AsyncWrapper
 import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime)
@@ -15,7 +14,7 @@ import Data.Nullable (toMaybe)
 import Data.String (trim)
 import Effect (Effect)
 import Effect.Now as Now
-import KSF.DescriptionList.Component (Description(..))
+import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
@@ -94,19 +93,18 @@ didMount self = do
 render :: Self -> JSX
 render self@{ props: props@{ subscription: sub@{ package } } } =
   Grid.row2
-    (React.element
-       DescriptionList.component
+    (DescriptionList.descriptionList
          { definitions:
              [ { term: "Produkt:"
-               , description: Static [ package.name ]
+               , description: [ DOM.text package.name ]
                }
              , { term: "Pren.nr:"
-               , description: Static [ show sub.subsno ]
+               , description: [ DOM.text $ show sub.subsno ]
                }
              , { term: "Status:"
-               , description: Static $
-                   [ translateStatus props.subscription.state ]
-                   <> (foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
+               , description:
+                   [ DOM.text $ translateStatus props.subscription.state ]
+                   <> (map DOM.text $ foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                }
              ]
              <> deliveryAddress
@@ -123,19 +121,19 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
        then mempty
        else Array.singleton
               { term: "Leveransadress:"
-              , description: Static $ [ currentDeliveryAddress ]
+              , description: [ DOM.text currentDeliveryAddress ]
               }
 
     pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
       { term: "Tillfällig adressändring:"
-      , description: Static $ map showPendingAddressChange (filterExpiredPendingChanges pendingChanges)
+      , description: map (DOM.text <<< showPendingAddressChange) (filterExpiredPendingChanges pendingChanges)
       }
 
     billingDateTerm :: String -> Array DescriptionList.Definition
     billingDateTerm date = Array.singleton $
       { term: "Faktureringsperioden upphör:"
-      , description: Static $ [ date ]
+      , description: [ DOM.text date ]
       }
 
     filterExpiredPausePeriods :: Array Persona.PausedSubscription -> Array Persona.PausedSubscription
@@ -160,6 +158,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             , editingView: identity
             , successView: pauseContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
+            , loadingView: identity
             }
 
           errorMessage msg =
