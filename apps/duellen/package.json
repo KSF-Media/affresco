@@ -6,9 +6,11 @@
   "license": "MIT",
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "parcel build index.html --no-cache && cp _redirects dist/"
+    "build-user": "yarn --cwd '../../packages/user' build-npm",
+    "build": "yarn build-user && parcel build index.html --no-cache && cp _redirects dist/"
   },
   "dependencies": {
+    "@ksf-media/user": "^0.1.2",
     "@material-ui/core": "^3.9.3",
     "babel-plugin-transform-react-jsx": "^6.24.1",
     "babel-plugin-transform-runtime": "^6.23.0",
@@ -17,6 +19,7 @@
     "jsonp": "^0.2.1",
     "material-ui": "^0.20.0",
     "material-ui-superselectfield": "^1.9.0",
+    "moment": "^2.24.0",
     "parcel-bundler": "^1.12.3",
     "path": "^0.12.7",
     "react": "^16.3.0",
