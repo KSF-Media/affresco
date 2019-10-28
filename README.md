@@ -27,7 +27,6 @@ We have different kinds of apps, and they require different initial setup. Move 
 
 After this initial setup, running `yarn start` should give you a hot reloading local dev server.
 
-
 ### Structure
 
 It's a monorepo, and there's a separation between **packages** and **apps**:
@@ -47,6 +46,10 @@ All assets are shared by all packages and apps:
 - all styles are in `less`
 - all fonts in `fonts`
 - all images in `images`
+
+### Styles
+
+All styles should be placed under `/less`. The file should be named after the component it belongs to. Also note that the file `Components.less` conveniently imports every `less` file associated with a component. Newly created styles should be added to this file.
 
 ### Production build
 
