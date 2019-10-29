@@ -121,8 +121,7 @@ export default class Question extends React.Component {
         color: "white",
       });
       }else{
-        console.log("UIYIKFYLGLIUOI")
-      this.setState({check: 'Den fo lite fel, nytt försök!', opacity: 1, color: red,});  
+        this.setState({check: 'Den fo lite fel, nytt försök!', opacity: 1, color: red,});  
       }
     }
   };
