@@ -249,27 +249,8 @@ export default class Question extends React.Component {
             </div>
             <div class="row">
               <div class="col">
-                <MuiThemeProvider
-                  muiTheme = {getMuiTheme({palette: {
-                    primary1Color: redA200,
-                    primary2Color: indigo700,
-                    accent1Color: redA200,
-                    pickerHeaderColor: 'yellow',
-                },})}
-                >
-                  <AutoComplete
-                    hintText={this.state.check}
-                    searchText={this.state.searchText}
-                    onUpdateInput={this.handleUpdateInput}
-                    dataSource={this.state.dataSource}
-                    filter={AutoComplete.fuzzyFilter}
-                    animated={false}
-                    fullWidth={true}
-                    maxSearchResults={5}
-                    hintStyle={{color:this.state.color}}
-                    menuStyle={{msOverflowY: scroll,}}
-                    ></AutoComplete>
-                </MuiThemeProvider>
+              <input type="text" name="question_input" maxlength="200" class="textinput textInput form-control" id="question_input"></input>
+              <div id='output_options' class="d-flex flex-column"></div>
             </div>
           </div>
 

@@ -2,6 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta 
+     name='viewport' 
+     content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0'/>
     <title>Duellen</title>
     <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.min.css" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"rel="stylesheet">
@@ -16,6 +19,39 @@
     <script type="text/javascript" src="index.js"></script>
     <script type="text/javascript" src="node_modules/jquery/dist/jquery.slim.min.js"></script>
     <script type="text/javascript" src="node_modules/popper.js/dist/popper.min.js"></script>
-    <script type="text/javascript" src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>    
+    <script type="text/javascript" src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script>
+      var witch_filed = '';
+      function myAmazingFunction(data){
+        document.getElementById('output_options').innerHTML = '';
+        for(var i=0; i<10; i++){
+            if(data[1][i]){
+                document.getElementById('output_options').innerHTML += '<button type="button" onClick="setvalue(\''+ data[1][i] +'\')" class="p-3 mb-2 bg-light text-black border"><p><b><a href="'+data[3][i]+'" target="_blank">'+data[1][i]+'</a></b><br>'+data[2][i]+'</p></button>';
+            }
+        }
+
+      }
+      function setvalue(link){
+        document.getElementById('output_options').innerHTML = '';
+        document.getElementById('question_input').value = link;
+
+      }
+
+      var myScript = ''; 
+      document.getElementById('question_input').onkeyup = function() {makeScript('1')};
+      function makeScript(witch){
+        witch_filed = witch
+        if(myScript!==''){
+            document.body.removeChild(myScript);
+        }
+
+        var stuff_in_text_box = document.getElementById('question_input').value;
+        myScript = document.createElement('script');
+
+        myScript.src = 'https://sv.wikipedia.org/w/api.php?action=opensearch&format=json&formatversion=2&suggest=true&callback=myAmazingFunction&search='+stuff_in_text_box;
+
+        document.body.appendChild(myScript);
+      };
+      </script>
   </body>
 </html>
