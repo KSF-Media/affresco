@@ -8,11 +8,10 @@ Requirements:
 `<script async='async' src='gamAppAds.js'></script>`
 
 DIV tags in the HTML that correspond to the once known by the script:
-The script is currently looking for div:s in the HTML, with an id among these:
+The script is looking for div:s in the HTML based on id like these:
 **MOBPARAD
-MOBBOX1
-MOBBOX2
-MOBBOX5**
+MOBNER
+DIGIHELMOB**
 These names are not final. The expected HTML is this:
 `<div id = "string"></div>`
 
