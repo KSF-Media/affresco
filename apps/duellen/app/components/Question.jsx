@@ -1,7 +1,9 @@
 import React from 'react';
 import AutoComplete from 'material-ui/AutoComplete';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MenuItem from 'material-ui/MenuItem';
+import {indigo500, indigo700, redA200} from 'material-ui/styles/colors';
 import Button from '@material-ui/core/Button';
 import {withRouter} from 'react-router';
 import ExitDialog from './ExitDialog.jsx';
@@ -12,6 +14,8 @@ import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 import ReactDOM from 'react-dom';
 import { Login , logout } from '@ksf-media/user';
+import spacing from '@material-ui/core/styles/spacing';
+import { Hidden } from '@material-ui/core';
 
 const red = '#EF5350';
 const green = '#66BB6A';
@@ -31,9 +35,9 @@ export default class Question extends React.Component {
       completed: 20,
       tally: 0,
       displayResult: false,
-      check: '',
+      check: 'Skriv in ditt svar här',
       opacity: 0,
-      color: '',
+      color: 'white',
       dataSource: [],
       quizData: [],
       right: [],
@@ -77,9 +81,8 @@ export default class Question extends React.Component {
              var extract = response[2][key];
              const children = (
                <div>
-                 <h4 style={{marginBottom: '-30px'}}>{title}</h4>
-                 <p style={{fontSize:'16px', color: '#808080', overflow: 'hidden'}}>{extract}</p>
-               </div>
+                 <h4>{title}</h4>
+                </div>
              );
              const dataSourceItem = {
                text: title,
@@ -89,6 +92,7 @@ export default class Question extends React.Component {
                dataSourceItem
              );
          });
+         console.log(pagesFiltered)
        this.setState({dataSource: pagesFiltered});
      }.bind(this)
    });
@@ -106,11 +110,20 @@ export default class Question extends React.Component {
     e.preventDefault();
     const {tally, hintPoint} = this.state;
     if(this.state.searchText === this.checkIfCorrect()){
-      this.setState({check: 'Rätt!', opacity: 1, color: green,}, () => setTimeout(() => this.setState({check: '', opacity:0}),3000));
+      this.setState({check: 'Den fick du rätt!', opacity: 1, color: green,});
       this.setState({tally: tally + hintPoint});
 
     }else{
-      this.setState({check: 'Fel!', opacity: 1, color: red,}, () => setTimeout(() => this.setState({check: '', opacity:0}),3000));  
+      console.log(hintPoint)
+      if(hintPoint === 1){
+      this.setState({
+        check: 'Nu var det dags för nästa fråga, skriv in svaret här',
+        color: "white",
+      });
+      }else{
+        console.log("UIYIKFYLGLIUOI")
+      this.setState({check: 'Den fo lite fel, nytt försök!', opacity: 1, color: red,});  
+      }
     }
   };
 
@@ -146,7 +159,7 @@ export default class Question extends React.Component {
         hintPoint: 5, 
         completed: this.state.completed + 20, 
         progress: this.state.progress + 1, 
-        searchText: ''
+        searchText: '',
       });
     }
   }
@@ -209,47 +222,66 @@ export default class Question extends React.Component {
           this is the solution for now 
           <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
 */}
-            <MuiThemeProvider>
-              <ExitDialog />
-            </MuiThemeProvider>
-
-            <p className="progress">Fråga {this.state.progress} av 5</p>
-
-            <MuiThemeProvider>
-              <LinearProgress mode="determinate" value={this.state.completed} />
-            </MuiThemeProvider>
-            <p className="header">{this.state.hintPoint} poängs fråga</p>
-
-            <h2>{this.state.category} <br /> {this.state.question}</h2>
-
-            <p style={{height: 70,}}>{this.state.hint}</p>
-
-            <div style={{height: 10, textAlign: 'right', padding: 20}}>
-                <p className="progress" style={{color: this.state.color}}>{this.state.check}</p>
+            <div class="row">
+              <div class="col-1">
+                <MuiThemeProvider>
+                  <ExitDialog />
+                </MuiThemeProvider>
+                </div>
+              <p class="col-10 text-center font-italic">Fråga {this.state.progress} av 5</p>
+              <div class="col-1"></div>
             </div>
+            <div class="row">
+              <div class="col-12">
+              <MuiThemeProvider>
+                <LinearProgress mode="determinate" value={this.state.completed} />
+              </MuiThemeProvider>
+              </div>
+              <div class="col-12">
+              <p className="header">{this.state.hintPoint} poängs fråga</p>
+              </div>
+            </div>
+            
+            <div class="row">
+              <h2>{this.state.category} <br /> {this.state.question}</h2>
+            </div>
+            <div class="row">
+              <h3 style={{margin:10,}}>{this.state.hint}</h3>
+            </div>
+            <div class="row">
+              <div class="col">
+                <MuiThemeProvider
+                  muiTheme = {getMuiTheme({palette: {
+                    primary1Color: redA200,
+                    primary2Color: indigo700,
+                    accent1Color: redA200,
+                    pickerHeaderColor: 'yellow',
+                },})}
+                >
+                  <AutoComplete
+                    hintText={this.state.check}
+                    searchText={this.state.searchText}
+                    onUpdateInput={this.handleUpdateInput}
+                    dataSource={this.state.dataSource}
+                    filter={AutoComplete.fuzzyFilter}
+                    animated={false}
+                    fullWidth={true}
+                    maxSearchResults={5}
+                    hintStyle={{color:this.state.color}}
+                    menuStyle={{msOverflowY: scroll,}}
+                    ></AutoComplete>
+                </MuiThemeProvider>
+            </div>
+          </div>
 
-          <MuiThemeProvider>
-            <AutoComplete
-              hintText="Ditt svar här"
-              searchText={this.state.searchText}
-              onUpdateInput={this.handleUpdateInput}
-              dataSource={this.state.dataSource}
-              filter={AutoComplete.fuzzyFilter}
-              animated={false}
-              fullWidth={true}
-              maxSearchResults={3}
-              style={{marginBottom: 30}}
-              ></AutoComplete>
-          </MuiThemeProvider>
-
-
-          <MuiThemeProvider>
-            <span>
-              <Button variant="contained"onClick={this.handleClick} primary={true} style={{paddingRight: '1%', width: '49%', marginRight: '1%', boxShadow: 'none',}}>Hoppa över</Button>
-              <Button variant="contained" onClick={this.handleClick} primary={true} style={{paddingLeft: '1%', width: '49%', marginLeft: '1%', boxShadow: 'none',}}>Svara</Button>
-            </span>
-          </MuiThemeProvider>
-
+            <div class="row">
+              <div class="col-sm mt-3">
+              <button onClick={this.handleClick} class='start questionBtn'>Hoppa över</button>
+              </div>
+              <div class="col-sm mt-3">
+              <button onClick={this.handleClick} class='start questionBtn'>Svara</button>
+              </div>
+            </div>
         </div>
 
         );

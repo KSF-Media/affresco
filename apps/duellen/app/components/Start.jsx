@@ -6,14 +6,6 @@ import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 import { Script } from 'vm';
 
-const styles = {
-};
-
-const btnstyles ={
-  height: 80,
-  marginBottom: 20,
-};
-
 ReactGA.initialize('UA-119802236-1');
 var moment = require('moment');
 
@@ -45,7 +37,7 @@ export default class Start extends React.Component {
        if(this.state.weeklyQuiz.price === null){
          this.setState({price: ''});
        }else{
-        this.setState({price: 'Denna vecka lottar vi ut ' + this.state.weeklyQuiz.price});
+        this.setState({price: 'Denna vecka lottar vi ut: ' + this.state.weeklyQuiz.price});
        }
        this.setState({loaded: true})
       }
@@ -67,18 +59,18 @@ export default class Start extends React.Component {
         <div class="duellen--button-container">
           <MuiThemeProvider>
             <div>
-              <div>
+              <div class="text-center m-auto col-12">
                 <h1>Duellen</h1>
-                <p><b>{this.state.price}</b></p>
-                <p className="header">Veckans Quiz</p>
+                <h3><b>{this.state.price}</b></h3>
+                <h2 className="header">Veckans Quiz</h2>
                 <a href={'/Intro/' + this.state.weeklyQuiz.id}>
-                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}>Vecka {this.getweek(this.state.weeklyQuiz.publication_date)}</Button>
+                  <Button variant="contained" class="start" fullWidth={true} color="primary">Vecka {this.getweek(this.state.weeklyQuiz.publication_date)}</Button>
                 </a>
-                  <p className="header">Tidigare Quiz</p>
+                  <h2 className="slimh2">Tidigare Quiz</h2>
                 {this.state.quizData.map(item => (
-                  <div key={item.id} style={styles}>
+                  <div key={item.id} class="btnOrange">
                     <a href={'/Intro/' + item.id}>
-                      <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}>Vecka {this.getweek(item.publication_date)}</Button>
+                      <Button variant="contained" class="start" color="primary" fullWidth={true}>Vecka {this.getweek(item.publication_date)}</Button>
                     </a>
                   </div>
                 ))}
@@ -96,15 +88,15 @@ export default class Start extends React.Component {
               <div>
                 <h1>Duellen</h1>
                 <p><b>{this.state.price}</b></p>
-                <p className="header">Veckans Quiz</p>
+                <h2 className="header">Veckans Quiz</h2>
                 <a href={'/Intro/' + this.state.weeklyQuiz.id}>
-                  <Button variant="contained" fullWidth={true} color="primary" style={btnstyles}>{this.state.weeklyQuiz.title}</Button>
+                  <Button variant="contained" class="start" fullWidth={true} color="primary">{this.state.weeklyQuiz.title}</Button>
                 </a>
                   <p className="header">Tidigare Quiz</p>
                 {this.state.quizData.map(item => (
                   <div key={item.id} style={styles}>
                     <a href={'/Intro/' + item.id}>
-                      <Button variant="contained" color="primary" fullWidth={true} style={btnstyles}>{item.title}</Button>
+                      <Button variant="contained" class="start" color="primary" fullWidth={true}>{item.title}</Button>
                     </a>
                   </div>
                 ))}
