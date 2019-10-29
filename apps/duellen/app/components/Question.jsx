@@ -274,10 +274,10 @@ export default class Question extends React.Component {
           </div>
 
             <div class="row">
-              <div class="col-sm mt-3">
+              <div class="col-md mt-3">
               <button onClick={this.handleClick} class='start questionBtn'>Hoppa över</button>
               </div>
-              <div class="col-sm mt-3">
+              <div class="col-md mt-3">
               <button onClick={this.handleClick} class='start questionBtn'>Svara</button>
               </div>
             </div>
