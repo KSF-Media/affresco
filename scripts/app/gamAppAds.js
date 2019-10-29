@@ -87,22 +87,17 @@ var ksfDfp = {};
                 [300, 300],
                 [300, 600]
             ]],
-            ["MOBBOX1", [
+            ["MOBNER", [
                 [300, 100],
                 [300, 250],
                 [300, 300],
                 [300, 600]
             ]],
-            ["MOBBOX2", [
+            ["DIGIHELMOB", [
                 [300, 100],
                 [300, 250],
                 [300, 300],
-                [300, 600]
-            ]],
-            ["MOBBOX5", [
-                [300, 100],
-                [300, 250],
-                [300, 300],
+                [300, 431],
                 [300, 600]
             ]]
         ];
@@ -138,12 +133,12 @@ var ksfDfp = {};
                         googletag.pubads());
                     // add a targeting value that differentiates the site. key=newpaper, value is site from the ksf wordpress code base. Such as vn, hbl etc.
                     ksfDfp.slotObjects[ksfDfp.slots[n][0]].setTargeting("newspaper", [ksfDfp.site]);
-                    ksfDfp.slotObjects[ksfDfp.slots[n][0]].setTargeting("consent"); // this is strictly not needed as consent is a default in the app 
+                    ksfDfp.slotObjects[ksfDfp.slots[n][0]].setTargeting("consent", 1); // this sets consent to not accept tracking ads, for use in campaigns trafficed by us. This is hardcoded for now due to policy. 20191029
                 } // slot size to screen comparison end of if
                 n -= 1;
             }
             // Send the users tracking banner consent choice to DFP
-            googletag.pubads().setRequestNonPersonalizedAds(0); // hard coded as consent is required by customer conditions
+            googletag.pubads().setRequestNonPersonalizedAds(1); // hard coded to no consent as we do not yet ask 20191029. 0 means consent, 1 means no tracking ads should be shown.This is used for Google ads.
             googletag.pubads().collapseEmptyDivs();
             googletag.pubads().enableLazyLoad({
                 fetchMarginPercent: 0.85, // Fetch slots within 0.5 viewports.
