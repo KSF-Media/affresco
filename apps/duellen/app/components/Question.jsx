@@ -220,7 +220,6 @@ export default class Question extends React.Component {
               <p className="header">{this.state.hintPoint} poängs fråga</p>
               </div>
             </div>
-            
             <div className="row">
               <h2>{this.state.category} <br /> {this.state.question}</h2>
             </div>
