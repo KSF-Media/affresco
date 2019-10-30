@@ -1,6 +1,7 @@
 import React from 'react';
 import AutoComplete from 'material-ui/AutoComplete';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import WikiLink from './WikiLink.jsx';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MenuItem from 'material-ui/MenuItem';
 import {indigo500, indigo700, redA200} from 'material-ui/styles/colors';
@@ -26,7 +27,7 @@ export default class Question extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      searchText: '',
+      searchText: "",
       question: '',
       category: '',
       hint: '',
@@ -38,14 +39,14 @@ export default class Question extends React.Component {
       check: 'Skriv in ditt svar här',
       opacity: 0,
       color: 'white',
-      dataSource: [],
+      userInput: '',
       quizData: [],
       right: [],
       logged_in: true,
       is_loading: 'hidden',
-      name: ''
+      name: '',
+      options:'',
     };
-    this.handleUpdateInput = this.handleUpdateInput.bind(this);
     this.handleClick = this.handleClick.bind(this);
   };
 
@@ -56,49 +57,29 @@ export default class Question extends React.Component {
      const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
      var quizData = await res.json();
      this.setState({
-       quizData,
-     });
-     this.setState({
-       question: this.state.quizData.questions.question1.question,
-       category: this.state.quizData.questions.question1.category,
-       hint: this.state.quizData.questions.question1.hints.hint1,
+       quizData: quizData,
+       question: quizData.questions.question1.question,
+       category: quizData.questions.question1.category,
+       hint: quizData.questions.question1.hints.hint1,
      });
      }catch (e) {
       console.log(e);
      }
   }
 
-
-  handleUpdateInput(searchText){
-     $.ajax({
-       url: "https://sv.wikipedia.org/w/api.php?action=opensearch&format=json&suggest=true&formatversion=2&search=" + searchText ,
-       dataType: 'jsonp',
-       success: function(response) { 
-         var pagesFiltered = Object.keys(response[1]).filter(function(key) {
-          return [key]
-         }).map(function(key) {
-             var title = response[1][key];
-             var extract = response[2][key];
-             const children = (
-               <div>
-                 <h4>{title}</h4>
-                </div>
-             );
-             const dataSourceItem = {
-               text: title,
-               value: (<MenuItem children={children} />)
-             };
-             return (
-               dataSourceItem
-             );
-         });
-         console.log(pagesFiltered)
-       this.setState({dataSource: pagesFiltered});
-     }.bind(this)
-   });
-  this.setState({dataSource: [], searchText: searchText});
-  };
-
+  inputChange(event){
+    this.setState({
+      searchText: event.target.value,
+      userInput: event.target.value
+    })
+  }
+  setInputValue(title){
+    this.setState({
+      userInput: title,
+      //this will remove all wikilinks components
+      searchText: ''
+    })
+  }
 
   handleClick(e){
     e.preventDefault();
@@ -125,7 +106,6 @@ export default class Question extends React.Component {
       }
     }
   };
-
   checkIfCorrect(){
     const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
     return this.state.quizData.questions[questionOptions[this.state.progress-1]].answer
@@ -221,64 +201,48 @@ export default class Question extends React.Component {
           this is the solution for now 
           <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
 */}
-            <div class="row">
-              <div class="col-1">
+            <div className="row">
+              <div className="col-1">
                 <MuiThemeProvider>
                   <ExitDialog />
                 </MuiThemeProvider>
                 </div>
-              <p class="col-10 text-center font-italic">Fråga {this.state.progress} av 5</p>
-              <div class="col-1"></div>
+              <p className="col-10 text-center font-italic">Fråga {this.state.progress} av 5</p>
+              <div className="col-1"></div>
             </div>
-            <div class="row">
-              <div class="col-12">
+            <div className="row">
+              <div className="col-12">
               <MuiThemeProvider>
                 <LinearProgress mode="determinate" value={this.state.completed} />
               </MuiThemeProvider>
               </div>
-              <div class="col-12">
+              <div className="col-12">
               <p className="header">{this.state.hintPoint} poängs fråga</p>
               </div>
             </div>
-            
-            <div class="row">
+            <div className="row">
               <h2>{this.state.category} <br /> {this.state.question}</h2>
             </div>
-            <div class="row">
+            <div className="row">
               <h3 style={{margin:10,}}>{this.state.hint}</h3>
             </div>
-            <div class="row">
-              <div class="col">
-                <MuiThemeProvider
-                  muiTheme = {getMuiTheme({palette: {
-                    primary1Color: redA200,
-                    primary2Color: indigo700,
-                    accent1Color: redA200,
-                    pickerHeaderColor: 'yellow',
-                },})}
-                >
-                  <AutoComplete
-                    hintText={this.state.check}
-                    searchText={this.state.searchText}
-                    onUpdateInput={this.handleUpdateInput}
-                    dataSource={this.state.dataSource}
-                    filter={AutoComplete.fuzzyFilter}
-                    animated={false}
-                    fullWidth={true}
-                    maxSearchResults={5}
-                    hintStyle={{color:this.state.color}}
-                    menuStyle={{msOverflowY: scroll,}}
-                    ></AutoComplete>
-                </MuiThemeProvider>
+            <div className="row">
+              <div className="col">
+              <input id="input_text" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
+              <div id='output_options' className="d-flex flex-column">
+                <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
+
+                </WikiLink>
+              </div>
             </div>
           </div>
 
-            <div class="row">
-              <div class="col-md mt-3">
-              <button onClick={this.handleClick} class='start questionBtn'>Hoppa över</button>
+            <div className="row">
+              <div className="col-md mt-3">
+              <button onClick={this.handleClick} className='start questionBtn'>Hoppa över</button>
               </div>
-              <div class="col-md mt-3">
-              <button onClick={this.handleClick} class='start questionBtn'>Svara</button>
+              <div className="col-md mt-3">
+              <button onClick={this.handleClick} className='start questionBtn'>Svara</button>
               </div>
             </div>
         </div>
