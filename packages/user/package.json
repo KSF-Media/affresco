@@ -1,6 +1,6 @@
 {
   "name": "@ksf-media/user",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "User component for KSF Media apps",
   "main": "index.js",
   "license": "MIT",
