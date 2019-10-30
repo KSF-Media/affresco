@@ -221,14 +221,18 @@ export default class Question extends React.Component {
               </div>
             </div>
             <div className="row">
-              <h2>{this.state.category} <br /> {this.state.question}</h2>
-            </div>
-            <div className="row">
-              <h3 style={{margin:10,}}>{this.state.hint}</h3>
+              <div className="col text-center">
+                <h2>{this.state.category} <br /> {this.state.question}</h2>
+              </div>
             </div>
             <div className="row">
               <div className="col">
-              <input id="input_text" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
+                <h3>{this.state.hint}</h3>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col">
+              <input id="input_text" className="w-100 mt-3 mb-4" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
               <div id='output_options' className="d-flex flex-column">
                 <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
 

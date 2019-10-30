@@ -41,9 +41,9 @@ export default class WikiLink extends React.Component{
   render(){
     if(this.props.search){
    return(
-      <div>
+      <div className="w-100">
         {this.state.wikiresponse.map(({title, description, url}) => (
-          <button key={title} onClick={() => this.props.onClick(title)} type="button" className="p-3 mb-2 bg-light text-black border">
+          <button key={title} onClick={() => this.props.onClick(title)} type="button" className="w-100 p-3 mb-2 bg-light text-black border">
               <p><b><a href={url} target="_blank">{title}</a></b>
                   <br/>
                   {description}
