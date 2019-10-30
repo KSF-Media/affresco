@@ -70,13 +70,13 @@ export default class Resultat extends React.Component{
     const title = 'Duellen Digitalt!';
     const hashtag = '#duellen';
     const hashtags = ['duellen','hbl'];
+    console.log(this.state.questions)
     return (
       <MuiThemeProvider>
         <div>
           <div style={{backgroundColor:'#f07e26',padding: 10}}>
             <BackBtn />
           </div>
-
           <Tabs
             onChange={this.handleChange}
             value={this.state.slideIndex}
@@ -95,7 +95,7 @@ export default class Resultat extends React.Component{
               <div style={{paddingTop: 12}}>
 
               <div style={{textAlign: 'center'}}>
-                  <h2 style={{paddingBottom: '12%', paddingTop: '12%'}}>Du fick <br/> {this.props.tally} poäng!</h2>
+                  <h3 style={{paddingBottom: '12%', paddingTop: '12%'}}>Du fick <br/> {this.props.tally} poäng!</h3>
               </div>
 
                     <div className="players">
@@ -153,15 +153,15 @@ export default class Resultat extends React.Component{
             <div style={styles.slide}>              
               <div style={{textAlign: 'left', padding: '7%', lineHeight: '1.8'}}>
               {this.state.questions.map(item => (
-                  <div style={{marginBottom: '10px'}}>
-                    <p className='facit'>{item[0].category} {item[0].question}</p>
-                    <p className='progress' style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[item[1]]}</p>
-                    <b>5 poäng</b> {item[0].hints.hint1} <br/>
-                    <b>4 poäng</b> {item[0].hints.hint2} <br/>
-                    <b>3 poäng</b> {item[0].hints.hint3} <br/>
-                    <b>2 poäng</b> {item[0].hints.hint4} <br/>
-                    <b>1 poäng</b> {item[0].hints.hint5} <br/>
-                    <p className='progress'>Rätt svar: {item[0].answer}</p>
+                <div style={{marginBottom: '10px', borderBottom: '1px solid black'}}>
+                    <h3>{item[0].category} {item[0].question}</h3>
+                    <p style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[item[1]]}</p>
+                    <p><b>5 poäng</b> {item[0].hints.hint1} <br/></p>
+                    <p><b>4 poäng</b> {item[0].hints.hint2} <br/></p>
+                    <p><b>3 poäng</b> {item[0].hints.hint3} <br/></p>
+                    <p><b>2 poäng</b> {item[0].hints.hint4} <br/></p>
+                    <p><b>1 poäng</b> {item[0].hints.hint5} <br/></p>
+                    <p>Rätt svar: {item[0].answer}</p>
                   </div>
                 ))}
               </div>
