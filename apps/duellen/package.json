@@ -16,6 +16,7 @@
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-stage-0": "^6.24.1",
     "bootstrap": "^4.3.1",
+    "cogo-toast": "^4.1.1",
     "jquery": "^3.4.0",
     "jsonp": "^0.2.1",
     "material-ui": "^0.20.0",
