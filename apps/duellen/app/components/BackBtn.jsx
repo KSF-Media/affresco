@@ -11,7 +11,7 @@ class BackBtn extends React.Component{
   handleClick(e){
     e.preventDefault(e);
     this.props.history.push('/');
-    };
+  };
 
   render(){
     return(

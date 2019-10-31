@@ -1,7 +1,10 @@
 import React from 'react';
 import AutoComplete from 'material-ui/AutoComplete';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import WikiLink from './WikiLink.jsx';
+import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MenuItem from 'material-ui/MenuItem';
+import {indigo500, indigo700, redA200} from 'material-ui/styles/colors';
 import Button from '@material-ui/core/Button';
 import {withRouter} from 'react-router';
 import ExitDialog from './ExitDialog.jsx';
@@ -12,6 +15,8 @@ import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 import ReactDOM from 'react-dom';
 import { Login , logout } from '@ksf-media/user';
+import spacing from '@material-ui/core/styles/spacing';
+import { Hidden } from '@material-ui/core';
 
 const red = '#EF5350';
 const green = '#66BB6A';
@@ -22,7 +27,7 @@ export default class Question extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      searchText: '',
+      searchText: "",
       question: '',
       category: '',
       hint: '',
@@ -31,17 +36,17 @@ export default class Question extends React.Component {
       completed: 20,
       tally: 0,
       displayResult: false,
-      check: '',
+      check: 'Skriv in ditt svar här',
       opacity: 0,
-      color: '',
-      dataSource: [],
+      color: 'white',
+      userInput: '',
       quizData: [],
       right: [],
       logged_in: true,
       is_loading: 'hidden',
-      name: ''
+      name: '',
+      options:'',
     };
-    this.handleUpdateInput = this.handleUpdateInput.bind(this);
     this.handleClick = this.handleClick.bind(this);
   };
 
@@ -49,54 +54,32 @@ export default class Question extends React.Component {
   async componentDidMount() {
     ReactGA.pageview(window.location.pathname + window.location.search);
    try {
-     console.log(this.props.match.params.id)
      const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
      var quizData = await res.json();
-     console.log(quizData)
      this.setState({
-       quizData,
-     });
-     this.setState({
-       question: this.state.quizData.questions.question1.question,
-       category: this.state.quizData.questions.question1.category,
-       hint: this.state.quizData.questions.question1.hints.hint1,
+       quizData: quizData,
+       question: quizData.questions.question1.question,
+       category: quizData.questions.question1.category,
+       hint: quizData.questions.question1.hints.hint1,
      });
      }catch (e) {
       console.log(e);
      }
   }
 
-
-  handleUpdateInput(searchText){
-     $.ajax({
-       url: "https://sv.wikipedia.org/w/api.php?action=opensearch&format=json&suggest=true&formatversion=2&search=" + searchText ,
-       dataType: 'jsonp',
-       success: function(response) { 
-         var pagesFiltered = Object.keys(response[1]).filter(function(key) {
-          return [key]
-         }).map(function(key) {
-             var title = response[1][key];
-             var extract = response[2][key];
-             const children = (
-               <div>
-                 <h4 style={{marginBottom: '-30px'}}>{title}</h4>
-                 <p style={{fontSize:'16px', color: '#808080'}}>{extract}</p>
-               </div>
-             );
-             const dataSourceItem = {
-               text: title,
-               value: (<MenuItem children={children} />)
-             };
-             return (
-               dataSourceItem
-             );
-         });
-       this.setState({dataSource: pagesFiltered});
-     }.bind(this)
-   });
-  this.setState({dataSource: [], searchText: searchText});
-  };
-
+  inputChange(event){
+    this.setState({
+      searchText: event.target.value,
+      userInput: event.target.value
+    })
+  }
+  setInputValue(title){
+    this.setState({
+      userInput: title,
+      //this will remove all wikilinks components
+      searchText: ''
+    })
+  }
 
   handleClick(e){
     e.preventDefault();
@@ -108,14 +91,21 @@ export default class Question extends React.Component {
     e.preventDefault();
     const {tally, hintPoint} = this.state;
     if(this.state.searchText === this.checkIfCorrect()){
-      this.setState({check: 'Rätt!', opacity: 1, color: green,}, () => setTimeout(() => this.setState({check: '', opacity:0}),750));
+      this.setState({check: 'Den fick du rätt!', opacity: 1, color: green,});
       this.setState({tally: tally + hintPoint});
 
     }else{
-      this.setState({check: 'Fel!', opacity: 1, color: red,}, () => setTimeout(() => this.setState({check: '', opacity:0}),750));  
+      console.log(hintPoint)
+      if(hintPoint === 1){
+      this.setState({
+        check: 'Nu var det dags för nästa fråga, skriv in svaret här',
+        color: "white",
+      });
+      }else{
+        this.setState({check: 'Den fo lite fel, nytt försök!', opacity: 1, color: red,});  
+      }
     }
   };
-
   checkIfCorrect(){
     const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
     return this.state.quizData.questions[questionOptions[this.state.progress-1]].answer
@@ -148,7 +138,7 @@ export default class Question extends React.Component {
         hintPoint: 5, 
         completed: this.state.completed + 20, 
         progress: this.state.progress + 1, 
-        searchText: ''
+        searchText: '',
       });
     }
   }
@@ -211,47 +201,54 @@ export default class Question extends React.Component {
           this is the solution for now 
           <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
 */}
-            <MuiThemeProvider>
-              <ExitDialog />
-            </MuiThemeProvider>
-
-            <p className="progress">Fråga {this.state.progress} av 5</p>
-
-            <MuiThemeProvider>
-              <LinearProgress mode="determinate" value={this.state.completed} />
-            </MuiThemeProvider>
-            <p className="header">{this.state.hintPoint} poängs fråga</p>
-
-            <h2>{this.state.category} <br /> {this.state.question}</h2>
-
-            <p style={{height: 70,}}>{this.state.hint}</p>
-
-            <div style={{height: 10, textAlign: 'right', padding: 20}}>
-                <p className="progress" style={{color: this.state.color}}>{this.state.check}</p>
+            <div className="row">
+              <div className="col-1">
+                <MuiThemeProvider>
+                  <ExitDialog />
+                </MuiThemeProvider>
+                </div>
+              <p className="col-10 text-center font-italic">Fråga {this.state.progress} av 5</p>
+              <div className="col-1"></div>
             </div>
+            <div className="row">
+              <div className="col-12">
+              <MuiThemeProvider>
+                <LinearProgress mode="determinate" value={this.state.completed} />
+              </MuiThemeProvider>
+              </div>
+              <div className="col-12">
+              <p className="header">{this.state.hintPoint} poängs fråga</p>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col text-center">
+                <h2>{this.state.category} <br /> {this.state.question}</h2>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col">
+                <h3>{this.state.hint}</h3>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col">
+              <input id="input_text" className="w-100 mt-3 mb-4" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
+              <div id='output_options' className="d-flex flex-column">
+                <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
 
-          <MuiThemeProvider>
-            <AutoComplete
-              hintText="Ditt svar här"
-              searchText={this.state.searchText}
-              onUpdateInput={this.handleUpdateInput}
-              dataSource={this.state.dataSource}
-              filter={AutoComplete.fuzzyFilter}
-              animated={false}
-              fullWidth={true}
-              maxSearchResults={3}
-              style={{marginBottom: 30}}
-              ></AutoComplete>
-          </MuiThemeProvider>
+                </WikiLink>
+              </div>
+            </div>
+          </div>
 
-
-          <MuiThemeProvider>
-            <span>
-              <Button variant="contained"onClick={this.handleClick} primary={true} style={{paddingRight: '1%', width: '49%', marginRight: '1%', boxShadow: 'none',}}>Hoppa över</Button>
-              <Button variant="contained" onClick={this.handleClick} primary={true} style={{paddingLeft: '1%', width: '49%', marginLeft: '1%', boxShadow: 'none',}}>Svara</Button>
-            </span>
-          </MuiThemeProvider>
-
+            <div className="row">
+              <div className="col-md mt-3">
+              <button onClick={this.handleClick} className='start questionBtn'>Hoppa över</button>
+              </div>
+              <div className="col-md mt-3">
+              <button onClick={this.handleClick} className='start questionBtn'>Svara</button>
+              </div>
+            </div>
         </div>
 
         );
