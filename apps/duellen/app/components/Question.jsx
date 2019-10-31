@@ -17,6 +17,7 @@ import ReactDOM from 'react-dom';
 import { Login , logout } from '@ksf-media/user';
 import spacing from '@material-ui/core/styles/spacing';
 import { Hidden } from '@material-ui/core';
+import cogoToast from 'cogo-toast';
 
 const red = '#EF5350';
 const green = '#66BB6A';
@@ -33,7 +34,7 @@ export default class Question extends React.Component {
       hint: '',
       progress: 1,
       hintPoint: 5,
-      completed: 20,
+      completed: 0,
       tally: 0,
       displayResult: false,
       check: 'Skriv in ditt svar här',
@@ -46,6 +47,7 @@ export default class Question extends React.Component {
       is_loading: 'hidden',
       name: '',
       options:'',
+      message: '',
     };
     this.handleClick = this.handleClick.bind(this);
   };
@@ -85,24 +87,24 @@ export default class Question extends React.Component {
     e.preventDefault();
     this.handleAnswer(e);
     this.handleWrongRight(e);
+    this.setState({
+      userInput: '',
+    })
   };
 
   handleWrongRight(e){
     e.preventDefault();
     const {tally, hintPoint} = this.state;
-    if(this.state.searchText === this.checkIfCorrect()){
-      this.setState({check: 'Den fick du rätt!', opacity: 1, color: green,});
+    if(this.state.userInput === this.checkIfCorrect()){
+      cogoToast.success('Du fick den rätt');
       this.setState({tally: tally + hintPoint});
 
     }else{
-      console.log(hintPoint)
       if(hintPoint === 1){
-      this.setState({
-        check: 'Nu var det dags för nästa fråga, skriv in svaret här',
-        color: "white",
-      });
+        hide()
+        cogoToast.info('Den fo tyvärr fel men nu var det dags för nästa')
       }else{
-        this.setState({check: 'Den fo lite fel, nytt försök!', opacity: 1, color: red,});  
+        cogoToast.error('Fel nytt försök')
       }
     }
   };
@@ -113,7 +115,7 @@ export default class Question extends React.Component {
 
   handleResults(e){
     e.preventDefault();
-    if(this.state.searchText === this.checkIfCorrect()){
+    if(this.state.userInput === this.checkIfCorrect()){
       this.setState({
         right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p']
       });
@@ -138,7 +140,6 @@ export default class Question extends React.Component {
         hintPoint: 5, 
         completed: this.state.completed + 20, 
         progress: this.state.progress + 1, 
-        searchText: '',
       });
     }
   }
@@ -153,7 +154,8 @@ export default class Question extends React.Component {
       for(var i = 0; i < 4; i++){
         if (this.state.hint === this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i]]){
           this.setState({
-            hint: this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i+1]] ,hintPoint: 4 - i, searchText: '' 
+            hint: this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i+1]] ,
+            hintPoint: 4 - i, 
           });
           return 0  
         }
@@ -166,7 +168,7 @@ export default class Question extends React.Component {
 
   handleAnswer(e){
     e.preventDefault();
-    if (this.state.searchText === this.checkIfCorrect()){
+    if (this.state.userInput === this.checkIfCorrect()){
       this.getNextQuestion(e)
     }else{
       this.getNextHint(e)
