@@ -38,7 +38,7 @@ const ArticleDetails = (props) => {
                                         props.authors.map((author, index) => {
                                             return (
                                                 <div className={"mb-1"} key={index}>
-                                                    <div class="authorProfilePic" key={index} style={{backgroundImage: `url(${author.image + "?width=740&height=850&function=hardcrop"})`}}></div>
+                                                    <div className="authorProfilePic" key={index} style={{backgroundImage: `url(${author.image + "?width=740&height=850&function=hardcrop"})`}}></div>
                                                 </div>
                                             )
                                         })
