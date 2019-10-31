@@ -94,10 +94,11 @@ class App extends Component {
         console.log("Logged out successfully!")
     }    
     getArticle() {
+        let urlParams = getUrlParam();
         if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
             this.setState({cachedArticles: JSON.parse(localStorage.getItem('cachedArticles'))});
-        }
-        if (getUrlParam().has('uuid')) {
+        }        
+        if (urlParams.has('uuid')) {
             if (this.checkCache(urlParams.get('uuid'))) {
                 this.fetchArticleFromCache(urlParams.get('uuid'));
             } else {
