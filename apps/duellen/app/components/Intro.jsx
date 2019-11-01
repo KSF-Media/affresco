@@ -2,7 +2,6 @@ import React from 'react';
 import BackBtn from './BackBtn.jsx';
 import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import EmailDialog from './EmailDialog.jsx';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 

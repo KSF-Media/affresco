@@ -1,7 +1,6 @@
 import React from 'react';
 import BackBtn from './BackBtn.jsx';
 import EmailDialog from './EmailDialog.jsx';
-import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {Tabs, Tab} from 'material-ui/Tabs';
 import SwipeableViews from 'react-swipeable-views';
@@ -56,7 +55,7 @@ export default class Resultat extends React.Component{
     });
   }
 
-  handleChange(value){
+  handleChange(){
     if(this.state.slideIndex === 0){
       this.setState({slideIndex: 1,});
     }else{
@@ -70,7 +69,6 @@ export default class Resultat extends React.Component{
     const title = 'Duellen Digitalt!';
     const hashtag = '#duellen';
     const hashtags = ['duellen','hbl'];
-    console.log(this.state.questions)
     return (
       <MuiThemeProvider>
         <div>

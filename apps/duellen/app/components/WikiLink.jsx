@@ -1,7 +1,5 @@
 import React from 'react';
 import $ from 'jquery';
-import {withRouter} from 'react-router';
-import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 export default class WikiLink extends React.Component{
     constructor(props){
