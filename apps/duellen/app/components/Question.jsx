@@ -47,7 +47,7 @@ export default class Question extends React.Component {
       is_loading: 'hidden',
       name: '',
       options:'',
-      message: '',
+      message: null,
     };
     this.handleClick = this.handleClick.bind(this);
   };
@@ -91,23 +91,43 @@ export default class Question extends React.Component {
       userInput: '',
     })
   };
+  handleSkip(e){
+    e.preventDefault();
+    this.hideMessage()
+    this.setState({message: cogoToast.info('Frågan skippad', {toastContainerID: '1'})})
+    this.handleAnswer(e);
+    this.setState({
+      userInput: '',
+    })
+  };
 
   handleWrongRight(e){
     e.preventDefault();
     const {tally, hintPoint} = this.state;
     if(this.state.userInput === this.checkIfCorrect()){
-      cogoToast.success('Du fick den rätt');
-      this.setState({tally: tally + hintPoint});
+      this.hideMessage()
+      var test = cogoToast.success('Du fick den rätt', {toastContainerID: '1'});
+      this.setState({tally: tally + hintPoint, message: test});
 
     }else{
       if(hintPoint === 1){
-        hide()
-        cogoToast.info('Den fo tyvärr fel men nu var det dags för nästa')
+        this.hideMessage()
+        var test = cogoToast.info('Den fo tyvärr fel men nu var det dags för nästa', {toastContainerID: '1'})
+        this.setState({message: test})
       }else{
-        cogoToast.error('Fel nytt försök')
+        this.hideMessage()
+        var test = cogoToast.error('Fel nytt försök', {toastContainerID: '1'})
+        this.setState({message: test})
       }
     }
   };
+
+  hideMessage(){
+    if (this.state.message !== null){
+      this.state.message.hide()
+    }
+  }
+
   checkIfCorrect(){
     const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
     return this.state.quizData.questions[questionOptions[this.state.progress-1]].answer
@@ -245,7 +265,7 @@ export default class Question extends React.Component {
 
             <div className="row">
               <div className="col-md mt-3">
-              <button onClick={this.handleClick} className='start questionBtn'>Hoppa över</button>
+              <button onClick={this.handleSkip.bind(this)} className='start questionBtn'>Hoppa över</button>
               </div>
               <div className="col-md mt-3">
               <button onClick={this.handleClick} className='start questionBtn'>Svara</button>
