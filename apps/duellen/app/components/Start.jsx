@@ -6,6 +6,8 @@ import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 import { Script } from 'vm';
 
+const Logo = require('../../../../images/duellen-logo-vit.svg');
+
 ReactGA.initialize('UA-119802236-1');
 var moment = require('moment');
 
@@ -57,6 +59,11 @@ export default class Start extends React.Component {
     try{
       return (
         <div class="duellen--button-container">
+          <div className="mb-4 row justify-content-center">
+            <div className='col-4'>
+              <img src={Logo} alt="logo" style={{width: '100%', height:'100%'}}/>
+            </div>
+          </div>
           <MuiThemeProvider>
             <div>
               <div class="text-center m-auto col-12">
@@ -83,6 +90,11 @@ export default class Start extends React.Component {
       console.log('has not loaded yet')
       return (
         <div class="duellen--button-container">
+          <div className="mb-4 row justify-content-center">
+            <div className='col-4'>
+              <img src={Logo} alt="logo" style={{width: '100%', height:'100%'}}/>
+            </div>
+          </div>
           <MuiThemeProvider>
             <div>
               <div>
