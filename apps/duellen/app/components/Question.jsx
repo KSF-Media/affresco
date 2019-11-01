@@ -1,26 +1,13 @@
 import React from 'react';
-import AutoComplete from 'material-ui/AutoComplete';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import WikiLink from './WikiLink.jsx';
-import getMuiTheme from 'material-ui/styles/getMuiTheme';
-import MenuItem from 'material-ui/MenuItem';
-import {indigo500, indigo700, redA200} from 'material-ui/styles/colors';
-import Button from '@material-ui/core/Button';
-import {withRouter} from 'react-router';
 import ExitDialog from './ExitDialog.jsx';
 import LinearProgress from 'material-ui/LinearProgress';
 import Resultat from './Resultat.jsx';
-import $ from 'jquery';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
-import ReactDOM from 'react-dom';
 import { Login , logout } from '@ksf-media/user';
-import spacing from '@material-ui/core/styles/spacing';
-import { Hidden } from '@material-ui/core';
 import cogoToast from 'cogo-toast';
-
-const red = '#EF5350';
-const green = '#66BB6A';
 
 ReactGA.initialize('UA-119802236-1');
 
@@ -37,16 +24,12 @@ export default class Question extends React.Component {
       completed: 0,
       tally: 0,
       displayResult: false,
-      check: 'Skriv in ditt svar här',
-      opacity: 0,
-      color: 'white',
       userInput: '',
       quizData: [],
       right: [],
       logged_in: true,
       is_loading: 'hidden',
       name: '',
-      options:'',
       message: null,
     };
     this.handleClick = this.handleClick.bind(this);
@@ -257,7 +240,6 @@ export default class Question extends React.Component {
               <input id="input_text" className="w-100 mt-3 mb-4" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
               <div id='output_options' className="d-flex flex-column">
                 <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
-
                 </WikiLink>
               </div>
             </div>
