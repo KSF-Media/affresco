@@ -37,17 +37,13 @@ export default class Question extends React.Component {
       completed: 0,
       tally: 0,
       displayResult: false,
-      check: 'Skriv in ditt svar här',
-      opacity: 0,
-      color: 'white',
       userInput: '',
       quizData: [],
       right: [],
       logged_in: true,
       is_loading: 'hidden',
       name: '',
-      options:'',
-      message: '',
+      message: null,
     };
     this.handleClick = this.handleClick.bind(this);
   };
@@ -245,7 +241,7 @@ export default class Question extends React.Component {
 
             <div className="row">
               <div className="col-md mt-3">
-              <button onClick={this.handleClick} className='start questionBtn'>Hoppa över</button>
+              <button onClick={this.handleClick.bind(this)} className='start questionBtn'>Hoppa över</button>
               </div>
               <div className="col-md mt-3">
               <button onClick={this.handleClick} className='start questionBtn'>Svara</button>
