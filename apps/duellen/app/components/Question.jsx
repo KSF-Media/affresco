@@ -9,9 +9,6 @@ import {backendURL} from '../backend.js'
 import { Login , logout } from '@ksf-media/user';
 import cogoToast from 'cogo-toast';
 
-const red = '#EF5350';
-const green = '#66BB6A';
-
 ReactGA.initialize('UA-119802236-1');
 
 export default class Question extends React.Component {
