@@ -220,7 +220,6 @@ export default class Question extends React.Component {
               <input id="input_text" className="w-100 mt-3 mb-4" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
               <div id='output_options' className="d-flex flex-column">
                 <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
-
                 </WikiLink>
               </div>
             </div>
