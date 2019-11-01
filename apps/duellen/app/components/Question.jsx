@@ -106,18 +106,18 @@ export default class Question extends React.Component {
     const {tally, hintPoint} = this.state;
     if(this.state.userInput === this.checkIfCorrect()){
       this.hideMessage()
-      var test = cogoToast.success('Du fick den rätt', {toastContainerID: '1'});
-      this.setState({tally: tally + hintPoint, message: test});
+      var notification = cogoToast.success('Du fick den rätt', {toastContainerID: '1'});
+      this.setState({tally: tally + hintPoint, message: notification});
 
     }else{
       if(hintPoint === 1){
         this.hideMessage()
-        var test = cogoToast.info('Den fo tyvärr fel men nu var det dags för nästa', {toastContainerID: '1'})
-        this.setState({message: test})
+        var notification = cogoToast.info('Den fo tyvärr fel men nu var det dags för nästa', {toastContainerID: '1'})
+        this.setState({message: notification})
       }else{
         this.hideMessage()
-        var test = cogoToast.error('Fel nytt försök', {toastContainerID: '1'})
-        this.setState({message: test})
+        var notification = cogoToast.error('Fel nytt försök', {toastContainerID: '1'})
+        this.setState({message: notification})
       }
     }
   };
