@@ -91,16 +91,23 @@ export default class Question extends React.Component {
       userInput: '',
     })
   };
+
+  // If user skips a question this will run so the user won't get a notification like wrong answer
   handleSkip(e){
     e.preventDefault();
     this.hideMessage()
+    // Gives a notification that the question was skip
     this.setState({message: cogoToast.info('Frågan skippad', {toastContainerID: '1'})})
     this.handleAnswer(e);
+    // Sets the user input to nothing so the input field is empty
     this.setState({
       userInput: '',
     })
   };
 
+  // If user answers on a question this function will run
+  // This will give the user a notification how they answer
+  // It will also add the number of points the question was worth to the total score
   handleWrongRight(e){
     e.preventDefault();
     const {tally, hintPoint} = this.state;
@@ -257,7 +264,6 @@ export default class Question extends React.Component {
               <input id="input_text" className="w-100 mt-3 mb-4" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
               <div id='output_options' className="d-flex flex-column">
                 <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
-
                 </WikiLink>
               </div>
             </div>
