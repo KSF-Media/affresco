@@ -4,6 +4,8 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 
+const Logo = require('../../../../images/duellen-logo-vit.svg');
+
 ReactGA.initialize('UA-119802236-1');
 
 // to get the moment module to work
@@ -61,6 +63,11 @@ export default class Start extends React.Component {
     try{
       return (
         <div class="duellen--button-container">
+          <div className="mb-4 row justify-content-center">
+            <div className='col-4'>
+              <img src={Logo} alt="logo" style={{width: '100%', height:'100%'}}/>
+            </div>
+          </div>
           <MuiThemeProvider>
             <div>
               <div class="text-center m-auto col-12">
@@ -90,6 +97,11 @@ export default class Start extends React.Component {
       // if it gets stuck it will never render porperli
       return (
         <div class="duellen--button-container">
+          <div className="mb-4 row justify-content-center">
+            <div className='col-4'>
+              <img src={Logo} alt="logo" style={{width: '100%', height:'100%'}}/>
+            </div>
+          </div>
           <MuiThemeProvider>
             <div>
               <div>
