@@ -97,16 +97,16 @@ export default class Resultat extends React.Component{
                   <h3 style={{paddingBottom: '12%', paddingTop: '12%'}}>Du fick <br/> {this.props.tally} poäng!</h3>
               </div>
 
-                    <div className="players">
-                      <div style={{float: 'left', width: '50%',textAlign: 'center'}}>
-                        <img src={this.state.player1_img} style={{objectFit: 'cover', width:160, height:160, borderRadius: '50%'}}></img>
-                        <p>{this.state.player1} fick <br></br><b>{this.state.player1_score}</b> poäng!</p>
-                      </div>
-                      <div style={{float: 'left', width: '50%', textAlign: 'center'}}>
-                        <img src={this.state.player2_img} style={{objectFit: 'cover', width:160, height:160, borderRadius: '50%'}}></img>
-                        <p>{this.state.player2} fick <br></br><b>{this.state.player2_score}</b> poäng!</p>
-                      </div>
-                    </div>
+              <div className="row">
+                <div className="col-sm-6 text-center">
+                  <img src={this.state.player1_img} className='img-fluid rounded-circle' style={{width: 250, height:250, objectFit: 'cover'}}></img>
+                  <p>{this.state.player1} fick <br></br><b>{this.state.player1_score}</b> poäng!</p>
+                </div>
+                <div className="col-sm-6 text-center">
+                  <img src={this.state.player2_img} className='img-fluid rounded-circle' style={{width: 250, height:250, objectFit: 'cover'}}></img>
+                  <p>{this.state.player2} fick <br></br><b>{this.state.player2_score}</b> poäng!</p>
+                </div>
+              </div>
 
 
                   <div className="share_buttons" style={{display: 'inline-block', textAlign: 'center', width: '100%', cursor: 'pointer'}}>
@@ -152,7 +152,7 @@ export default class Resultat extends React.Component{
             <div style={styles.slide}>              
               <div style={{textAlign: 'left', padding: '7%', lineHeight: '1.8'}}>
               {this.state.questions.map(item => (
-                <div style={{marginBottom: '10px', borderBottom: '1px solid black'}}>
+                <div style={{marginBottom: '40px', borderBottom: '1px solid black'}}>
                     <h3>{item[0].category} {item[0].question}</h3>
                     <p style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[item[1]]}</p>
                     <p><b>5 poäng</b> {item[0].hints.hint1} <br/></p>
