@@ -1,3 +1,43 @@
 .profile--customer-details {
     background: white;
 }
+
+.profile--edit-address {
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    grid-template-columns: 1fr .5fr;
+    grid-auto-flow: column;
+}
+
+.profile--edit-name {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: 1fr .5fr;
+    grid-auto-flow: column;
+}
+
+.profile--submit-buttons {
+    margin-top: 1em;
+    display: flex;
+    justify-content: right;
+}
+
+.profile--profile-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 1em;
+}
+
+.profile--edit-attribute-button {
+    display: flex;
+    justify-content: end;
+}
+
+.profile--edit-text {
+    margin-top: .5em;
+    cursor: pointer;
+}
+
+.tiny-spinner {
+    justify-self: end;
+}

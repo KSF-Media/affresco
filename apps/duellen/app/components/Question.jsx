@@ -1,18 +1,13 @@
 import React from 'react';
-import AutoComplete from 'material-ui/AutoComplete';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import MenuItem from 'material-ui/MenuItem';
-import Button from '@material-ui/core/Button';
-import {withRouter} from 'react-router';
+import WikiLink from './WikiLink.jsx';
 import ExitDialog from './ExitDialog.jsx';
 import LinearProgress from 'material-ui/LinearProgress';
 import Resultat from './Resultat.jsx';
-import $ from 'jquery';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
-
-const red = '#EF5350';
-const green = '#66BB6A';
+import { Login , logout } from '@ksf-media/user';
+import cogoToast from 'cogo-toast';
 
 ReactGA.initialize('UA-119802236-1');
 
@@ -20,287 +15,248 @@ export default class Question extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      searchText: '',
+      searchText: "",
       question: '',
       category: '',
       hint: '',
-      progress: '1',
-      hintPoint: '5',
-      completed: 20,
-      tally: '0',
+      progress: 1,
+      hintPoint: 5,
+      completed: 0,
+      tally: 0,
       displayResult: false,
-      check: '',
-      opacity: 0,
-      color: '',
-      dataSource: [],
+      userInput: '',
       quizData: [],
-      right: []
+      right: [],
+      logged_in: true,
+      is_loading: 'hidden',
+      name: '',
+      message: null,
     };
-    this.handleUpdateInput = this.handleUpdateInput.bind(this);
     this.handleClick = this.handleClick.bind(this);
   };
+
 
   async componentDidMount() {
     ReactGA.pageview(window.location.pathname + window.location.search);
    try {
-     const res = await fetch(backendURL + 'duellen/api/' + this.props.match.params.id + '/');
-     const quizData = await res.json();
+     const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
+     var quizData = await res.json();
      this.setState({
-       quizData,
-     });
-     this.setState({
-       question: this.state.quizData.first_question,
-       category: this.state.quizData.first_category,
-       hint: this.state.quizData.first_hint5,
+       quizData: quizData,
+       question: quizData.questions.question1.question,
+       category: quizData.questions.question1.category,
+       hint: quizData.questions.question1.hints.hint1,
      });
      }catch (e) {
       console.log(e);
      }
-     console.log(this.state.quizData);
-   }
+  }
 
-
-   handleUpdateInput(searchText){
-     this.setState({dataSource: [], searchText: searchText});
-     $.ajax({
-       url: "https://sv.wikipedia.org/w/api.php?format=json&action=query&generator=search&gsrnamespace=0&gsrlimit=10&prop=extracts&exintro&explaintext&exchars=38&gsrsearch=" + this.state.searchText ,
-       dataType: 'jsonp',
-       success: function(response) {
-         var pages = response.query.pages;
-         var pagesFiltered = Object.keys(pages).filter(function(key) {
-             return [key];
-         }).map(function(key) {
-             var title = pages[key].title;
-             var extract = pages[key].extract;
-             const children = (
-               <div>
-                 <h4 style={{marginBottom: '-30px'}}>{title}</h4>
-                 <p style={{fontSize:'16px', color: '#808080'}}>{extract}</p>
-               </div>
-             );
-             const dataSourceItem = {
-               text: title,
-               value: (<MenuItem children={children} />)
-             };
-             return (
-               dataSourceItem
-             );
-         });
-       this.setState({dataSource: pagesFiltered});
-     }.bind(this)
-   });
-   };
+  inputChange(event){
+    this.setState({
+      searchText: event.target.value,
+      userInput: event.target.value
+    })
+  }
+  setInputValue(title){
+    this.setState({
+      userInput: title,
+      //this will remove all wikilinks components
+      searchText: ''
+    })
+  }
 
   handleClick(e){
     e.preventDefault();
-    this.handleScore(e);
     this.handleAnswer(e);
-    this.handleResults(e);
     this.handleWrongRight(e);
+    this.setState({
+      userInput: '',
+    })
+  };
+  handleSkip(e){
+    e.preventDefault();
+    this.hideMessage()
+    this.setState({message: cogoToast.info('Frågan skippad', {toastContainerID: '1'})})
+    this.handleAnswer(e);
+    this.setState({
+      userInput: '',
+    })
   };
 
   handleWrongRight(e){
     e.preventDefault();
-    var searchText = this.state.searchText.toLocaleLowerCase();
+    const {tally, hintPoint} = this.state;
+    if(this.state.userInput === this.checkIfCorrect()){
+      this.hideMessage()
+      var notification = cogoToast.success('Du fick den rätt', {toastContainerID: '1'});
+      this.setState({tally: tally + hintPoint, message: notification});
 
-    if(searchText === this.state.quizData.first_answer.toLocaleLowerCase() && this.state.completed === 20 || searchText === this.state.quizData.second_answer.toLocaleLowerCase() && this.state.completed === 40 || searchText === this.state.quizData.third_answer.toLocaleLowerCase() && this.state.completed === 60 || searchText === this.state.quizData.fourth_answer.toLocaleLowerCase() && this.state.completed === 80 || searchText === this.state.quizData.fifth_answer.toLocaleLowerCase() && this.state.completed === 100 ){
-    this.setState({check: 'Rätt!', opacity: 1, color: green,}, () => setTimeout(() => this.setState({check: '', opacity:0}),750));
-  }else{
-    this.setState({check: 'Fel!', opacity: 1, color: red,}, () => setTimeout(() => this.setState({check: '', opacity:0}),750));  }
+    }else{
+      if(hintPoint === 1){
+        this.hideMessage()
+        var notification = cogoToast.info('Den fo tyvärr fel men nu var det dags för nästa', {toastContainerID: '1'})
+        this.setState({message: notification})
+      }else{
+        this.hideMessage()
+        var notification = cogoToast.error('Fel nytt försök', {toastContainerID: '1'})
+        this.setState({message: notification})
+      }
+    }
   };
+
+  hideMessage(){
+    if (this.state.message !== null){
+      this.state.message.hide()
+    }
+  }
+
+  checkIfCorrect(){
+    const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
+    return this.state.quizData.questions[questionOptions[this.state.progress-1]].answer
+  }
 
   handleResults(e){
     e.preventDefault();
-    var quizData = this.state.quizData;
-    var searchText = this.state.searchText.toLocaleLowerCase();
-
-    if(searchText === this.state.quizData.first_answer.toLocaleLowerCase() && this.state.completed === 20 || searchText === this.state.quizData.second_answer.toLocaleLowerCase() && this.state.completed === 40 || searchText === this.state.quizData.third_answer.toLocaleLowerCase() && this.state.completed === 60 || searchText === this.state.quizData.fourth_answer.toLocaleLowerCase() && this.state.completed === 80 || searchText === this.state.quizData.fifth_answer.toLocaleLowerCase() && this.state.completed === 100 ){
+    if(this.state.userInput === this.checkIfCorrect()){
       this.setState({
-      right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p!']
-      }, () => {
-          console.log(this.state.right);
+        right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p']
       });
-    }else if(this.state.hint === quizData.first_hint1 && this.state.searchText !== this.state.quizData.first_answer || this.state.hint === quizData.second_hint1 && this.state.searchText !== this.state.quizData.second_answer ||
-      this.state.hint === quizData.third_hint1 && this.state.searchText !== this.state.quizData.third_answer || this.state.hint === quizData.fourth_hint1 && this.state.searchText !== this.state.quizData.fourth_answer || this.state.hint === quizData.fifth_hint1 && this.state.searchText !== this.state.quizData.fifth_answer){
+    }else{
       this.setState({
       right: [...this.state.right, ' Du svarade fel på denna fråga.']
-      }, () => {
-          console.log(this.state.right);
       });
     }
   }
 
-  handleScore(e){
-    e.preventDefault();
-    const {tally, hintPoint} = this.state;
-    var searchText = this.state.searchText.toLocaleLowerCase();
-    if(searchText === this.state.quizData.first_answer.toLocaleLowerCase() && this.state.completed === 20 || searchText === this.state.quizData.second_answer.toLocaleLowerCase() && this.state.completed === 40 || searchText === this.state.quizData.third_answer.toLocaleLowerCase() && this.state.completed === 60 || searchText === this.state.quizData.fourth_answer.toLocaleLowerCase() && this.state.completed === 80 || searchText === this.state.quizData.fifth_answer.toLocaleLowerCase() && this.state.completed === 100){
-      this.setState({tally: +tally + +hintPoint});
-    }
-  };
-
-
-  handleAnswer(e){
-  e.preventDefault();
-  const {displayResult} = this.state;
-  var quizData = this.state.quizData;
-  var searchText = this.state.searchText.toLocaleLowerCase();
-
-
-  if (searchText === quizData.first_answer.toLocaleLowerCase() && this.state.completed === 20){
-    this.setState({
-      question: quizData.second_question,category: quizData.second_category,hint: quizData.second_hint5,hintPoint: 5, completed: 40, progress: 2, searchText: '',});
-    }else if(this.state.hint === quizData.first_hint5){
-      this.setState({
-        hint: quizData.first_hint4, hintPoint: 4, searchText: '', });
-    }else if(this.state.hint === quizData.first_hint4){
-      this.setState({
-        hint: quizData.first_hint3,hintPoint: 3, searchText: '',});
-    }else if(this.state.hint === quizData.first_hint3){
-      this.setState({
-        hint: quizData.first_hint2,hintPoint: 2, searchText: '', });
-    }else if(this.state.hint === quizData.first_hint2){
-      this.setState({
-        hint: quizData.first_hint1,hintPoint: 1, searchText: '', });
-    }else if(this.state.hint === quizData.first_hint1){
-
-
-      this.setState({
-        question: quizData.second_question,category: quizData.second_category,hint: quizData.second_hint5,hintPoint: 5,completed: 40,progress: 2, searchText: '', });
-    }else if(searchText === quizData.second_answer.toLocaleLowerCase() && this.state.completed === 40){
-      this.setState({
-        question: quizData.third_question,category: quizData.third_category,hint: quizData.third_hint5,hintPoint: 5,completed: 60,progress: 3, searchText: '', });
-    }else if(this.state.hint === quizData.second_hint5){
-      this.setState({
-        hint: quizData.second_hint4,hintPoint: 4, searchText: '', });
-    }else if(this.state.hint === quizData.second_hint4){
-      this.setState({
-        hint: quizData.second_hint3,hintPoint: 3, searchText: '', });
-    }else if(this.state.hint === quizData.second_hint3){
-      this.setState({
-        hint: quizData.second_hint2,hintPoint: 2, searchText: '', });
-    }else if(this.state.hint === quizData.second_hint2){
-      this.setState({
-        hint: quizData.second_hint1,hintPoint: 1, searchText: '', });
-    }else if(this.state.hint === quizData.second_hint1){
-
-
-      this.setState({
-        question: quizData.third_question,category: quizData.third_category,hint: quizData.third_hint5,hintPoint: 5,completed: 60,progress: 3, searchText: '',});
-    }else if(searchText === quizData.third_answer.toLocaleLowerCase() && this.state.completed === 60){
-      this.setState({
-        question: quizData.fourth_question,category: quizData.fourth_category,hint: quizData.fourth_hint5,hintPoint: 5,completed: 80,progress: 4, searchText: '',});
-    }else if(this.state.hint === quizData.third_hint5){
-      this.setState({
-        hint: quizData.third_hint4,hintPoint: 4, searchText: '',});
-    }else if(this.state.hint === quizData.third_hint4){
-      this.setState({
-        hint: quizData.third_hint3,hintPoint: 3, searchText: '',});
-    }else if(this.state.hint === quizData.third_hint3){
-      this.setState({
-        hint: quizData.third_hint2,hintPoint: 2, searchText: '',});
-    }else if(this.state.hint === quizData.third_hint2){
-      this.setState({
-        hint: quizData.third_hint1,hintPoint: 1, searchText: '',});
-    }else if(this.state.hint === quizData.third_hint1){
-
-
-      this.setState({
-        question: quizData.fourth_question,category: quizData.fourth_category,hint: quizData.fourth_hint5,hintPoint: 5,completed: 80,progress: 4, searchText: '',});
-    }else if(searchText === quizData.fourth_answer.toLocaleLowerCase() && this.state.completed === 80){
-      this.setState({
-        question: quizData.fifth_question,category: quizData.fifth_category,hint: quizData.fifth_hint5,hintPoint: 5,completed: 100,progress: 5, searchText: '',});
-    }else if(this.state.hint === quizData.fourth_hint5){
-      this.setState({
-        hint: quizData.fourth_hint4,hintPoint: 4, searchText: '',});
-    }else if(this.state.hint === quizData.fourth_hint4){
-      this.setState({
-        hint: quizData.fourth_hint3,hintPoint: 3, searchText: '',});
-    }else if(this.state.hint === quizData.fourth_hint3){
-      this.setState({
-        hint: quizData.fourth_hint2,hintPoint: 2, searchText: '',});
-    }else if(this.state.hint === quizData.fourth_hint2){
-      this.setState({
-        hint: quizData.fourth_hint1,hintPoint: 1, searchText: '',});
-    }else if(this.state.hint === quizData.fourth_hint1){
-
-
-      this.setState({
-        question: quizData.fifth_question,category: quizData.fifth_category,hint: quizData.fifth_hint5,hintPoint: 5,completed: 100,progress: 5, searchText: '',});
-    }else if(searchText === quizData.fifth_answer.toLocaleLowerCase() && this.state.completed === 100){
-        this.setState({displayResult: true});
-    }else if(this.state.hint === quizData.fifth_hint5){
-      this.setState({
-        hint: quizData.fifth_hint4,hintPoint: 4, searchText: '',});
-    }else if(this.state.hint === quizData.fifth_hint4){
-      this.setState({
-        hint: quizData.fifth_hint3,hintPoint: 3, searchText: '',});
-    }else if(this.state.hint === quizData.fifth_hint3){
-      this.setState({
-        hint: quizData.fifth_hint2,hintPoint: 2, searchText: '',});
-    }else if(this.state.hint === quizData.fifth_hint2){
-      this.setState({
-        hint: quizData.fifth_hint1,hintPoint: 1, searchText: '',});
-    }else if(this.state.hint === quizData.fifth_hint1){
+  getNextQuestion(e){
+    this.handleResults(e)
+    if (this.state.progress === 5){
       this.setState({displayResult: true});
     }
+    else{
+      const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
+      this.setState({
+        question: this.state.quizData.questions[questionOptions[this.state.progress]].question, 
+        category: this.state.quizData.questions[questionOptions[this.state.progress]].category, 
+        hint: this.state.quizData.questions[questionOptions[this.state.progress]].hints.hint1,
+        hintPoint: 5, 
+        completed: this.state.completed + 20, 
+        progress: this.state.progress + 1, 
+      });
+    }
+  }
+
+  getNextHint(e){
+    if (this.hintPoint === 1){
+      this.getNextQuestion(e)
+    }
+    else{
+      const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
+      const hintOptions = (Object.getOwnPropertyNames(this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints)).sort();
+      for(var i = 0; i < 4; i++){
+        if (this.state.hint === this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i]]){
+          this.setState({
+            hint: this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i+1]] ,
+            hintPoint: 4 - i, 
+          });
+          return 0  
+        }
+      }
+      return this.getNextQuestion(e)
+    }
+
+
+  }
+
+  handleAnswer(e){
+    e.preventDefault();
+    if (this.state.userInput === this.checkIfCorrect()){
+      this.getNextQuestion(e)
+    }else{
+      this.getNextHint(e)
+    }
+  }
+
+  logg_in_worked(user){
+    this.setState({logged_in: true, name: user['firstName']});
   };
 
 
+  loaded(){
+    this.setState({is_loading: "visible"});
+  };
 
   render() {
-
-    const {displayResult, check} = this.state;
-
-    if (displayResult === true){
-      return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
+    const {displayResult, logged_in, is_loading} = this.state;
+    if (logged_in === false){
+        return(
+          <div style={{visibility: is_loading}} >
+            <Login onUserFetchSuccess={(user) => this.logg_in_worked(user)} onLoadingEnd={ () => this.loaded() } />
+          </div>
+          );
     }else {
-      return (
-        <div className='question'>
-          <MuiThemeProvider>
-            <ExitDialog />
-          </MuiThemeProvider>
-
-          <p className="progress">Fråga {this.state.progress} av 5</p>
-
-          <MuiThemeProvider>
-            <LinearProgress mode="determinate" value={this.state.completed} />
-          </MuiThemeProvider>
-          <p className="header">{this.state.hintPoint} poängs fråga</p>
-
-          <h2>{this.state.category} <br /> {this.state.question}</h2>
-
-          <p style={{height: 70,}}>{this.state.hint}</p>
-
-          <div style={{height: 10, textAlign: 'right', padding: 20}}>
-              <p className="progress" style={{color: this.state.color}}>{this.state.check}</p>
+      if (displayResult === true){
+        return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
+      }else {
+        return (
+          <div className='question'>
+       {/*bug in ksf-media/user
+          ksf-media/user.logout return a function that it is not supposed to 
+          this is the solution for now 
+          <button id='logout' onClick={() => logout(() => this.setState({logged_in: false, is_loading: "visible"}))() } style={{boxShadow: 'none',}}>Byt konto</button>
+*/}
+            <div className="row">
+              <div className="col-1">
+                <MuiThemeProvider>
+                  <ExitDialog />
+                </MuiThemeProvider>
+                </div>
+              <p className="col-10 text-center font-italic">Fråga {this.state.progress} av 5</p>
+              <div className="col-1"></div>
+            </div>
+            <div className="row">
+              <div className="col-12">
+              <MuiThemeProvider>
+                <LinearProgress mode="determinate" value={this.state.completed} />
+              </MuiThemeProvider>
+              </div>
+              <div className="col-12">
+              <p className="header">{this.state.hintPoint} poängs fråga</p>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col text-center">
+                <h2>{this.state.category} <br /> {this.state.question}</h2>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col">
+                <h3>{this.state.hint}</h3>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col">
+              <input id="input_text" className="w-100 mt-3 mb-4" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)}></input>
+              <div id='output_options' className="d-flex flex-column">
+                <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
+                </WikiLink>
+              </div>
+            </div>
           </div>
 
-        <MuiThemeProvider>
-          <AutoComplete
-            hintText="Ditt svar här"
-            searchText={this.state.searchText}
-            onUpdateInput={this.handleUpdateInput}
-            dataSource={this.state.dataSource}
-            filter={AutoComplete.fuzzyFilter}
-            animated={false}
-            fullWidth={true}
-            maxSearchResults={3}
-            style={{marginBottom: 30}}
-            ></AutoComplete>
-        </MuiThemeProvider>
+            <div className="row">
+              <div className="col-md mt-3">
+              <button onClick={this.handleSkip.bind(this)} className='start questionBtn'>Hoppa över</button>
+              </div>
+              <div className="col-md mt-3">
+              <button onClick={this.handleClick} className='start questionBtn'>Svara</button>
+              </div>
+            </div>
+        </div>
 
-
-        <MuiThemeProvider>
-          <span>
-            <Button variant="contained"onClick={this.handleClick} primary={true} style={{paddingRight: '1%', width: '50%', boxShadow: 'none',}}>Hoppa över</Button>
-            <Button variant="contained" onClick={this.handleClick} primary={true} style={{paddingLeft: '1%', width: '50%', boxShadow: 'none',}}>Svara</Button>
-          </span>
-        </MuiThemeProvider>
-
-      </div>
-
-      );
+        );
+      };
     };
   };
 };

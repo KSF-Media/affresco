@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import {isUserLoggedIn} from "./helper";
+import {isUserLoggedIn, getUrlParam} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -16,6 +16,9 @@ import Content from "./components/article-content";
 import RelatedArticles from "./components/related-articles";
 import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
+import Cookies from 'js-cookie';
+import { AndroidView } from 'react-device-detect';
+
 
 class App extends Component {
     constructor(props) {
@@ -56,6 +59,7 @@ class App extends Component {
             mostReadArticles: [],
             errorFetching: false,
             errorFetchingLatestArticles: false,
+            forceLoginView: false
         };
     }
 
@@ -68,23 +72,39 @@ class App extends Component {
             this.setState({fontSize: parseFloat(localStorage.getItem("fontSize"))});
         }
 
-        this.getArticle();
-        this.getMostReadArticles();
+        //In case User want to logout, the value should be false
+        if(Cookies.get('LoginStatus') != undefined && !Cookies.get('LoginStatus')){
+            //we remove it to avoid infinite loop
+            Cookies.remove('LoginStatus');
+            //TODO
+            // we need to have logout listener here, after success we can then remove the cookie, if for exemple an error happend while             
+            //LogOut;in localstorage will keep logged but for android is considered as logged out
+
+            logout(this.onLogout);
+        }
+        if(getUrlParam().has('login')){
+            this.setState({forceLoginView: true});
+        }else {
+            this.getArticle();
+            this.getMostReadArticles();
+        }
     }
 
+    onLogout() {
+        console.log("Logged out successfully!")
+    }    
     getArticle() {
+        let urlParams = getUrlParam();
         if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
             this.setState({cachedArticles: JSON.parse(localStorage.getItem('cachedArticles'))});
-        }
-
-        let urlParams = new URLSearchParams(window.location.search);
+        }        
         if (urlParams.has('uuid')) {
             if (this.checkCache(urlParams.get('uuid'))) {
                 this.fetchArticleFromCache(urlParams.get('uuid'));
             } else {
                 this.fetchArticleFromApi(urlParams.get('uuid'));
             }
-        } else {
+        }else {
             console.log("no uuid found!")
             // TODO:: handle this part
         }
@@ -113,14 +133,20 @@ class App extends Component {
     }
 
     checkCache(uuid) {
-        if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
-            const articleFound = JSON.parse(localStorage.getItem('cachedArticles')).find(article => {
-                if (article.uuid === uuid) {
-                    return true;
+        if(!isUserLoggedIn()){
+            try {
+                let cachedArticles = localStorage.getItem('cachedArticles');
+                if (cachedArticles != null) {
+                    let parsedArticles = JSON.parse(cachedArticles)
+                    return parsedArticles.find(article => {
+                        return article.uuid === uuid
+                    });
                 }
-            });
-            return articleFound;
+            } catch (e) {
+                console.log(e);
+            }
         }
+        return false;
     }
 
     cleanCache() {
@@ -369,10 +395,21 @@ class App extends Component {
     }
 
     onUserFetchSuccess(user) {
+        //Cookie will expire after 7 days 
+        Cookies.set('LoginStatus', true, { expires: 7 });
+        //To get User data from Android side 
+        Cookies.set('currentUser', JSON.stringify({firstName:user.firstName,lastName:user.lastName,email:user.email}), { expires: 7 });
+
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        let urlParams = new URLSearchParams(window.location.search);
-        this.fetchArticleFromApi(urlParams.get('uuid'));
+        this.fetchArticleFromApi(getUrlParam().has('uuid'));
+
+        //Call Android bridge 
+        Android.isLoggedIn();        
+    }
+
+    onUserFetchFail(error){
+
     }
 
     showLogin = (e) => {
@@ -443,10 +480,12 @@ class App extends Component {
         if (this.state.errorFetching) {
             return <ErrorPage message={"Something wrong happened!"}/>;
         }
+        if(this.state.forceLoginView){
+            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>;
+        }
 
         return (
-            <div className="App">
-
+            <div className="App">                
                 {isImageModalOpen && (
                     <Lightbox
                         mainSrc={this.state.modalImage + '&width=1200'}
@@ -481,7 +520,7 @@ class App extends Component {
                                 {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} disableSocialLogins={[]}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>
                                         :
                                         ""
                                 }
