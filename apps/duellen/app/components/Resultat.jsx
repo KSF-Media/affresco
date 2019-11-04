@@ -55,6 +55,7 @@ export default class Resultat extends React.Component{
     });
   }
 
+  // This is so you can se if you are on 'dina resultat' or 'Rätt svar'
   handleChange(){
     if(this.state.slideIndex === 0){
       this.setState({slideIndex: 1,});
@@ -169,6 +170,4 @@ export default class Resultat extends React.Component{
       </MuiThemeProvider>
     );
   }
-
-
 };
