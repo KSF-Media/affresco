@@ -1,10 +1,8 @@
 import React from 'react';
-import Intro from './Intro.jsx';
 import Button from '@material-ui/core/Button';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
-import { Script } from 'vm';
 
 ReactGA.initialize('UA-119802236-1');
 
