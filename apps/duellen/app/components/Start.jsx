@@ -7,6 +7,8 @@ import {backendURL} from '../backend.js'
 import { Script } from 'vm';
 
 ReactGA.initialize('UA-119802236-1');
+
+// to get the moment module to work
 var moment = require('moment');
 
 export default class Start extends React.Component {
@@ -25,6 +27,8 @@ export default class Start extends React.Component {
     async componentDidMount() {
        ReactGA.pageview(window.location.pathname + window.location.search);
      try {
+       // The backendUrl needs to be the same as from where you want the quizzes to be fetched
+       // 'get/all/quizzes/as/json' can't have a / in the end because the backend address dosen't have it
        const res = await fetch(backendURL + 'get/all/quizzes/as/json');
        const quizData = await res.json();
        this.setState({
@@ -39,9 +43,11 @@ export default class Start extends React.Component {
        }else{
         this.setState({price: 'Denna vecka lottar vi ut: ' + this.state.weeklyQuiz.price});
        }
+       // This will make the quizzes show need tho be here so the map funktion can be activated otherwise the program will crash
        this.setState({loaded: true})
       }
 
+  // gets the week of eatch quiz and displays the week
   getweek(date){
     var dateObject = moment(date.slice(0,10)).add(-1, 'days')
     return moment(dateObject).week()
@@ -81,6 +87,9 @@ export default class Start extends React.Component {
       );
     } catch (e){
       console.log('has not loaded yet')
+      // this will render befor the quiz have loaded in
+      // this is due to that the map needs to have an populated array to be abel to render otherwise the render function gets stuck
+      // if it gets stuck it will never render porperli
       return (
         <div class="duellen--button-container">
           <MuiThemeProvider>

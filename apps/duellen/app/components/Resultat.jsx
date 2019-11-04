@@ -56,6 +56,7 @@ export default class Resultat extends React.Component{
     });
   }
 
+  // This is so you can se if you are on 'dina resultat' or 'Rätt svar'
   handleChange(value){
     if(this.state.slideIndex === 0){
       this.setState({slideIndex: 1,});
@@ -70,7 +71,6 @@ export default class Resultat extends React.Component{
     const title = 'Duellen Digitalt!';
     const hashtag = '#duellen';
     const hashtags = ['duellen','hbl'];
-    console.log(this.state.questions)
     return (
       <MuiThemeProvider>
         <div>
@@ -171,6 +171,4 @@ export default class Resultat extends React.Component{
       </MuiThemeProvider>
     );
   }
-
-
 };

@@ -69,12 +69,17 @@ export default class Question extends React.Component {
      }
   }
 
+  // will run for each key press on on the input field
   inputChange(event){
     this.setState({
+      // For the wikilink component so it searches the latest user input
       searchText: event.target.value,
+      // So the value displayed in the input field is the same as the user enters
       userInput: event.target.value
     })
   }
+  
+  // This will set the input fields value to the correct wikipedia pages title  
   setInputValue(title){
     this.setState({
       userInput: title,
@@ -83,6 +88,7 @@ export default class Question extends React.Component {
     })
   }
 
+  // This will run when you click 'svara'
   handleClick(e){
     e.preventDefault();
     this.handleAnswer(e);
@@ -129,17 +135,21 @@ export default class Question extends React.Component {
     }
   };
 
+  // hides the message so the notifications won't stack on each other
+  // needs to check if there is something to hide away other wise it will crash
   hideMessage(){
     if (this.state.message !== null){
       this.state.message.hide()
     }
   }
 
+  // returns the current questions answer
   checkIfCorrect(){
     const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
     return this.state.quizData.questions[questionOptions[this.state.progress-1]].answer
   }
 
+  // Adds how the player did for each quiz
   handleResults(e){
     e.preventDefault();
     if(this.state.userInput === this.checkIfCorrect()){
@@ -153,6 +163,8 @@ export default class Question extends React.Component {
     }
   }
 
+  // gets the next question
+  // If all questions have been then it will load the result screen
   getNextQuestion(e){
     this.handleResults(e)
     if (this.state.progress === 5){
@@ -165,12 +177,14 @@ export default class Question extends React.Component {
         category: this.state.quizData.questions[questionOptions[this.state.progress]].category, 
         hint: this.state.quizData.questions[questionOptions[this.state.progress]].hints.hint1,
         hintPoint: 5, 
-        completed: this.state.completed + 20, 
+        completed: this.state.completed + 20,
+        // tells witch question you are on
         progress: this.state.progress + 1, 
       });
     }
   }
 
+  //gets the next hint
   getNextHint(e){
     if (this.hintPoint === 1){
       this.getNextQuestion(e)
@@ -182,17 +196,17 @@ export default class Question extends React.Component {
         if (this.state.hint === this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i]]){
           this.setState({
             hint: this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i+1]] ,
+            // It's 4 - i becouse if i=0 we willload the fourth hint
+            // The fifth hint will never be loaded here so thats why it's 4 and not 5 
             hintPoint: 4 - i, 
           });
-          return 0  
         }
       }
       return this.getNextQuestion(e)
     }
-
-
   }
 
+  // Gets the next question if the user answers correctly and the next hint if tha answer is wrong
   handleAnswer(e){
     e.preventDefault();
     if (this.state.userInput === this.checkIfCorrect()){
@@ -202,11 +216,12 @@ export default class Question extends React.Component {
     }
   }
 
+  // For the loging               THIS FUNCTION IS DISABELD RIGHT NOW BECAUSE LOGIN IS DISABELD
   logg_in_worked(user){
     this.setState({logged_in: true, name: user['firstName']});
   };
 
-
+  // For the loging to show the quisses if you are logged in     THIS FUNCTION IS DISABELD RIGHT NOW BECAUSE LOGIN IS DISABELD
   loaded(){
     this.setState({is_loading: "visible"});
   };

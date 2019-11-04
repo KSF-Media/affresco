@@ -56,9 +56,11 @@ export default class Intro extends React.Component{
       action: 'Started Quiz'
     });
   }
+  
+  // Gets the week number when the question was published
   getweek(){
     var day = moment(this.state.quizData.publication_date.slice(0,10)).add(-1, 'days');
-      
+
     this.setState({
       week: day.week(),
     });
