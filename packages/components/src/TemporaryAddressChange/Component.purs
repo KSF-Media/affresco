@@ -35,7 +35,6 @@ type State =
   , minEndDate    :: Maybe DateTime
   , streetAddress :: Maybe String
   , zipCode       :: Maybe String
-  , city          :: Maybe String
   , temporaryName :: Maybe String
   }
 
@@ -82,7 +81,6 @@ initialState =
   , minEndDate: Nothing
   , streetAddress: Nothing
   , zipCode: Nothing
-  , city: Nothing
   , temporaryName: Nothing
   }
 
@@ -105,7 +103,7 @@ didMount self = do
   self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, city, temporaryName }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName }} =
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
