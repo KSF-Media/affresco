@@ -348,9 +348,10 @@ temporaryAddressChange
   -> DateTime
   -> String
   -> String
+  -> Maybe String
   -> Aff (Either Persona.InvalidDateInput Persona.Subscription)
-temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode = do
-  addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode <<< _.token =<< requireToken
+temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode temporaryName = do
+  addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode temporaryName <<< _.token =<< requireToken
   case addressChangedSub of
     Right sub -> pure $ Right sub
     Left err

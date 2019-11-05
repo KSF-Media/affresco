@@ -14,7 +14,7 @@ import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
 import Data.List (fromFoldable)
 import Data.Maybe (Maybe, isNothing)
-import Data.Nullable (Nullable)
+import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
@@ -103,15 +103,16 @@ temporaryAddressChange
   -> DateTime
   -> String
   -> String
+  -> Maybe String
   -> Token
   -> Aff Subscription
-temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode token = do
+temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode temporaryName token = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode }
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode, temporaryName: toNullable temporaryName }
     ]
     { authorization }
   where
