@@ -19,8 +19,8 @@ import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
-import Persona (InvalidDateInput(..))
-import Persona as Persona
+import KSF.User as User
+import KSF.User (User(..), InvalidDateInput(..))
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -29,14 +29,14 @@ import React.Basic.Events (handler_)
 type Self = React.Self Props State
 
 type Props =
-  { subscription :: Persona.Subscription
-  , user :: Persona.User
+  { subscription :: User.Subscription
+  , user :: User
   }
 
 type State =
   { wrapperProgress :: AsyncWrapper.Progress JSX
-  , pausedSubscriptions :: Maybe (Array Persona.PausedSubscription)
-  , pendingAddressChanges :: Maybe (Array Persona.PendingAddressChange)
+  , pausedSubscriptions :: Maybe (Array User.PausedSubscription)
+  , pendingAddressChanges :: Maybe (Array User.PendingAddressChange)
   , now :: Maybe DateTime
   , updateAction :: Maybe SubscriptionUpdateAction
   }
@@ -50,7 +50,7 @@ type Subscription =
                , paper :: { name :: String }
                }
   , state :: String
-  , dates :: Persona.SubscriptionDates
+  , dates :: User.SubscriptionDates
   }
 
 formatDate :: JSDate -> Maybe String
@@ -124,7 +124,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               , description: [ DOM.text currentDeliveryAddress ]
               }
 
-    pendingAddressChanges :: Array Persona.PendingAddressChange -> Array DescriptionList.Definition
+    pendingAddressChanges :: Array User.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
       { term: "Tillfällig adressändring:"
       , description: map (DOM.text <<< showPendingAddressChange) (filterExpiredPendingChanges pendingChanges)
@@ -136,13 +136,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
       , description: [ DOM.text date ]
       }
 
-    filterExpiredPausePeriods :: Array Persona.PausedSubscription -> Array Persona.PausedSubscription
+    filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
       case self.state.now of
         Nothing  -> pausedSubs
         Just now -> filter (not isPeriodExpired now <<< toMaybe <<< _.endDate) pausedSubs
 
-    filterExpiredPendingChanges :: Array Persona.PendingAddressChange -> Array Persona.PendingAddressChange
+    filterExpiredPendingChanges :: Array User.PendingAddressChange -> Array User.PendingAddressChange
     filterExpiredPendingChanges pendingChanges =
       case self.state.now of
         Nothing  -> pendingChanges
@@ -191,7 +191,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                          , wrapperProgress = AsyncWrapper.Success
                          }
 
-        , onError: \(err :: Persona.InvalidDateInput) ->
+        , onError: \(err :: User.InvalidDateInput) ->
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
                   startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
                   lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
@@ -298,13 +298,15 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           ]
       | otherwise = "-"
 
-formatAddress :: Persona.DeliveryAddress -> String
-formatAddress { streetAddress, zipcode, city } = intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
+formatAddress :: User.DeliveryAddress -> String
+formatAddress { temporaryName, streetAddress, zipcode, city } =
+  (maybe "" (_ <> ", ") $ toMaybe temporaryName) <>
+  intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
 
 -- | Translates English status to Swedish.
 -- | Described in https://git.ksfmedia.fi/taco/faro/blob/master/kayak-api-details.md
-translateStatus :: Persona.SubscriptionState -> String
-translateStatus (Persona.SubscriptionState englishStatus) = do
+translateStatus :: User.SubscriptionState -> String
+translateStatus (User.SubscriptionState englishStatus) = do
   case englishStatus of
     "Upcoming"                  -> "Under behandling"
     "Active"                    -> "Aktiv"
@@ -327,12 +329,12 @@ isPeriodExpired baseDate endDate =
       let endDateTime = toDateTime date
       in maybe true (_ < baseDate) endDateTime
 
-showPausedDates :: Array Persona.PausedSubscription -> Array String
+showPausedDates :: Array User.PausedSubscription -> Array String
 showPausedDates pausedSubs =
   let formatDates { startDate, endDate } = formatDateString startDate $ toMaybe endDate
   in map (((<>) "Uppehåll: ") <<< formatDates) pausedSubs
 
-showPendingAddressChange :: Persona.PendingAddressChange -> String
+showPendingAddressChange :: User.PendingAddressChange -> String
 showPendingAddressChange { address, startDate, endDate } =
   let addressString = formatAddress address
       pendingPeriod = formatDateString startDate (Just endDate)

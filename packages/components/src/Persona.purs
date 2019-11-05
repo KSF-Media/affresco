@@ -355,6 +355,7 @@ type DeliveryAddress =
   { streetAddress :: Nullable String
   , zipcode       :: String
   , city          :: Nullable String
+  , temporaryName :: Nullable String
   }
 
 type PendingAddressChange =
