@@ -24,8 +24,8 @@ data ValidationError a
   | InvalidNotInitialized a -- Fictional state only to be set when the form is first rendered
 
 
-noValidation :: forall a. ValidatedForm a (Maybe String)
-noValidation = pure mempty
+noValidation :: forall a. Maybe String -> ValidatedForm a (Maybe String)
+noValidation v = pure v
 
 validateZipCode :: forall a. a -> Maybe String -> ValidatedForm a (Maybe String)
 validateZipCode field zipCode =

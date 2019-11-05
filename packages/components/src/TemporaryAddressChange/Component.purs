@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import Data.Validation.Semigroup (unV)
@@ -58,19 +58,16 @@ data Action
 data AddressChangeFields
   = StreetAddress
   | Zip
-  | City
   | TemporaryName
 instance validatableFieldAddressChangeFields :: VF.ValidatableField AddressChangeFields where
   validateField field value _serverErrors = case field of
     StreetAddress -> VF.validateEmptyField field "Adress krävs." value
     Zip           -> VF.validateZipCode field value
-    TemporaryName -> VF.noValidation
-    City          -> VF.noValidation
+    TemporaryName -> VF.noValidation value
 
 type AddressChange =
   { streetAddress :: Maybe String
-  , zipCode :: Maybe String
-  , city :: Maybe String
+  , zipCode       :: Maybe String
   , temporaryName :: Maybe String
   }
 
@@ -129,13 +126,14 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, city, tempora
   where
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, city, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, temporaryName })
           , children:
               [ startDayInput
               , endDayInput
               , addressInput
               , zipInput
               , cityInput
+              , temporaryNameInput
               , DOM.div
                   { children: [ submitFormButton ]
                   , className: "mt2 clearfix"
@@ -196,10 +194,22 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, city, tempora
         { type_: "text"
         , placeholder: "Stad"
         , name: "city"
+        -- We don't care about the city input, as on the server side, the city is inferred by the zip code
         , onChange: \_ -> pure unit
         , value: Nothing
         , validationError: Nothing
         , label: "Stad"
+        }
+
+    temporaryNameInput =
+      InputField.inputField
+        { type_: "text"
+        , placeholder: "Tillfällig namnändring eller C/O"
+        , name: "temporaryName"
+        , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
+        , value: Nothing
+        , validationError: Nothing
+        , label: "Tillfällig namnändring eller C/O"
         }
 
     submitFormButton =
@@ -214,6 +224,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, city, tempora
     submitForm (Just startDate') (Just endDate') addressChangeFormValues = do
       Aff.launchAff_ do
         unV
+          -- Shows validation errors if submit button is pushed with uninitialized values
           (\_ -> liftEffect $ self.setState _
                     { streetAddress = self.state.streetAddress <|> Just ""
                     , zipCode = self.state.zipCode             <|> Just ""
@@ -226,7 +237,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, city, tempora
                                                  , zipCode: Just zipCode'
                                                  , temporaryName: temporaryName'
                                                  } = do
-          Console.log $ "making address change" <> streetAddress' <> zipCode'
           liftEffect $ self.props.onLoading
           User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' temporaryName' >>=
             case _ of
@@ -268,10 +278,8 @@ validateTemporaryAddressChangeForm :: AddressChange -> VF.ValidatedForm AddressC
 validateTemporaryAddressChangeForm form =
   { streetAddress: _
   , zipCode: _
-  , city: _
   , temporaryName: _
   }
   <$> VF.validateField StreetAddress form.streetAddress []
   <*> VF.validateField Zip form.zipCode []
-  <*> VF.validateField City form.city []
   <*> VF.validateField TemporaryName form.temporaryName []
