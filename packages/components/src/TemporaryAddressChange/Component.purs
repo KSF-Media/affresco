@@ -231,10 +231,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
           (validateTemporaryAddressChangeForm addressChangeFormValues)
       where
         makeTemporaryAddressChange :: AddressChange -> Aff Unit
-        makeTemporaryAddressChange addressChange@{ streetAddress: Just streetAddress'
-                                                 , zipCode: Just zipCode'
-                                                 , temporaryName: temporaryName'
-                                                 } = do
+        makeTemporaryAddressChange { streetAddress: Just streetAddress'
+                                   , zipCode: Just zipCode'
+                                   , temporaryName: temporaryName'
+                                   } = do
           liftEffect $ self.props.onLoading
           User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' temporaryName' >>=
             case _ of
