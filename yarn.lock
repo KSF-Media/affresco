@@ -816,7 +816,7 @@
   version "0.1.3"
   dependencies:
     basscss "^8.1.0"
-    persona "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d"
+    persona "https://github.com/KSF-Media/persona-javascript-client.git#d74a38a69b18f71a7a73da307b0afbf9d577e836"
     react "^16.5.2"
     react-dom "^16.5.2"
 
@@ -2472,6 +2472,11 @@ code-point-at@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
   integrity sha1-DQcLTQQ6W+ozovGkDi7bPZpMz3c=
+
+cogo-toast@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/cogo-toast/-/cogo-toast-4.1.1.tgz#623f05eab713f45f1406851e3dab83e7c6bc7fb0"
+  integrity sha512-PZ16evCEtkcb43ycKubxpmjEb5ZFzSRqjKccJDJ1wbdhfQVdZreOFpJCo1q3xkGDghwXtNse/xsoG854k5pSmg==
 
 collection-visit@^1.0.0:
   version "1.0.0"
@@ -4487,6 +4492,11 @@ js-beautify@^1.8.9:
     mkdirp "~0.5.1"
     nopt "~4.0.1"
 
+js-cookie@^2.2.1:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/js-cookie/-/js-cookie-2.2.1.tgz#69e106dc5d5806894562902aa5baec3744e9b2b8"
+  integrity sha512-HvdH2LzI/EAZcUwA8+0nKNtWHqS+ZmijLA30RwZA0bo7ToCckjK5MkGhjED9KoRcXO6BaGI3I9UIzSA1FKFPOQ==
+
 js-levenshtein@^1.1.3:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/js-levenshtein/-/js-levenshtein-1.1.6.tgz#c6cee58eb3550372df8deb85fad5ce66ce01d59d"
@@ -5736,9 +5746,9 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#d74a38a69b18f71a7a73da307b0afbf9d577e836":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#d74a38a69b18f71a7a73da307b0afbf9d577e836"
   dependencies:
     superagent "3.7.0"
 
