@@ -62,16 +62,15 @@ export default class Start extends React.Component {
   render() {
     try{
       return (
-        <div class="duellen--button-container">
+        <div class="duellen--button-container" style={{marginTop: '-50px'}}>
           <div className="mb-4 row justify-content-center">
-            <div className='col-4'>
+            <div className='col-10 col-sm-10 col-md-7 col-lg-6'>
               <img src={Logo} alt="logo" style={{width: '100%', height:'100%'}}/>
             </div>
           </div>
           <MuiThemeProvider>
             <div>
               <div class="text-center m-auto col-12">
-                <h1>Duellen</h1>
                 <h3><b>{this.state.price}</b></h3>
                 <h2 className="header">Veckans Quiz</h2>
                 <a href={'/Intro/' + this.state.weeklyQuiz.id}>
@@ -96,16 +95,15 @@ export default class Start extends React.Component {
       // this is due to that the map needs to have an populated array to be abel to render otherwise the render function gets stuck
       // if it gets stuck it will never render porperli
       return (
-        <div class="duellen--button-container">
+        <div class="duellen--button-container" style={{marginTop: '-50px'}}>
           <div className="mb-4 row justify-content-center">
-            <div className='col-4'>
+            <div className='col-10 col-sm-10 col-md-7 col-lg-6'>
               <img src={Logo} alt="logo" style={{width: '100%', height:'100%'}}/>
             </div>
           </div>
           <MuiThemeProvider>
             <div>
               <div>
-                <h1>Duellen</h1>
                 <p><b>{this.state.price}</b></p>
                 <h2 className="header">Veckans Quiz</h2>
                 <a href={'/Intro/' + this.state.weeklyQuiz.id}>
