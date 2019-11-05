@@ -20,7 +20,7 @@ import KSF.Grid as Grid
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.User as User
-import KSF.User (User(..), InvalidDateInput(..))
+import KSF.User (User, InvalidDateInput(..))
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
