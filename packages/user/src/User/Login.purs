@@ -23,11 +23,11 @@ import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField.Component as InputField
 import KSF.Registration.Component as Registration
-import KSF.ValidatableForm as Form
 import KSF.User (User, UserError(..))
 import KSF.User as User
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
+import KSF.ValidatableForm as Form
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -71,7 +71,7 @@ type JSProps =
 -- TODO:
 --  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
 --  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
-  , onUserFetchFail     :: Nullable (EffectFn1 UserError Unit) -- FIXME: THIS IS BROKEN!
+  , onUserFetchFail     :: Nullable (EffectFn1 String Unit)
   , onUserFetchSuccess  :: Nullable (EffectFn1 User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
@@ -88,6 +88,7 @@ fromJSProps jsProps =
   , onRegister: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
   , onRegisterCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegisterCancelled
   , onUserFetch:
+      userErrorToString >>>
       either
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchFail)
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchSuccess)
@@ -100,6 +101,11 @@ fromJSProps jsProps =
   , disableSocialLogins: maybe Set.empty (Set.mapMaybe readSocialLoginProvider <<< Set.fromFoldable) $ Nullable.toMaybe jsProps.disableSocialLogins
   }
   where
+    -- TODO: We could have a more descriptive error than just a String
+    userErrorToString :: Either UserError User -> Either String User
+    userErrorToString = case _ of
+      Right user -> Right user
+      Left e     -> Left $ show e
     readSocialLoginProvider p = case String.toUpper p of
       "GOOGLE"   -> Just Google
       "FACEBOOK" -> Just Facebook
