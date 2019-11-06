@@ -40,8 +40,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..),
-                InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -220,10 +219,10 @@ loginSso callback = do
 
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
-logout :: Aff Unit
+logout :: Aff (Either Error Unit)
 logout = do
   -- use authentication data from local storage to logout first from Persona
-  logoutPersona `catchError` Console.errorShow
+  logoutResponse <- try logoutPersona
   -- then we wipe the local storage
   liftEffect deleteToken `catchError` Console.errorShow
   -- then, in parallel, we run all the third-party logouts
@@ -232,6 +231,7 @@ logout = do
     , logoutGoogle   `catchError` Console.errorShow
     , logoutJanrain  `catchError` Console.errorShow
     ]
+  pure logoutResponse
 
 logoutPersona :: Aff Unit
 logoutPersona = do
