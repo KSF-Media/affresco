@@ -4,15 +4,11 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
-import Data.Array (all, cons, filter, find, snoc)
+import Data.Array (all, cons)
 import Data.Either (Either(..))
-import Data.Foldable (foldMap, traverse_)
-import Data.List.NonEmpty (NonEmptyList, head)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
-import Data.String (length, null)
-import Data.String.Regex as Regex
-import Data.String.Regex.Flags as Regex.Flags
-import Data.Validation.Semigroup (V, andThen, invalid, toEither, unV)
+import Data.Foldable (traverse_)
+import Data.Maybe (Maybe(..))
+import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -22,12 +18,12 @@ import Foreign.Object as Object
 import KSF.CountryDropDown (countryDropDown)
 import KSF.InputField.Component as InputField
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, notInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateServerError, validateWithServerErrors, validateZipCode, validationInputFieldOf)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateZipCode)
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault, targetValue)
+import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 
 type Self = React.Self Props State
