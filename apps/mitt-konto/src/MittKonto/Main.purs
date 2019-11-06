@@ -3,7 +3,7 @@ module MittKonto.Main where
 import Prelude
 
 import Data.Array (snoc, sortBy, (:))
-import Data.Either (Either(..), either)
+import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
@@ -147,9 +147,7 @@ navbarView { state, setState } =
       , loggedInUser: state.loggedInUser
       , logout: do
           Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
-            User.logout >>= case _ of
-              Right _ -> Console.log "logout success"
-              Left _ -> Console.log "logout definitely failed"
+            User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect $ setState $ setLoggedInUser Nothing
       }
 

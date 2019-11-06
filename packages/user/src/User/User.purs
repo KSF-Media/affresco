@@ -221,9 +221,10 @@ loginSso callback = do
 
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
-logout :: Aff (Either Error Unit)
-logout = do
+logout :: (Either Error Unit -> Effect Unit) -> Aff Unit
+logout handleLogout = do
   -- use authentication data from local storage to logout first from Persona
+  -- NOTE: In case this request fails, we still want to clear local storage and continue with the social logouts.
   logoutResponse <- try logoutPersona
   -- then we wipe the local storage
   liftEffect deleteToken `catchError` Console.errorShow
@@ -233,7 +234,7 @@ logout = do
     , logoutGoogle   `catchError` Console.errorShow
     , logoutJanrain  `catchError` Console.errorShow
     ]
-  pure logoutResponse
+  liftEffect $ handleLogout logoutResponse
 
 logoutPersona :: Aff Unit
 logoutPersona = do
