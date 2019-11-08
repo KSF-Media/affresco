@@ -169,7 +169,7 @@ export default class Question extends React.Component {
 
   //gets the next hint
   getNextHint(e){
-    if (this.hintPoint === 1){
+    if (this.state.hintPoint === 1){
       this.getNextQuestion(e)
     }
     else{
@@ -185,7 +185,6 @@ export default class Question extends React.Component {
           });
         }
       }
-      return this.getNextQuestion(e)
     }
   }
 
