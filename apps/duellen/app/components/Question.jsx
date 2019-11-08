@@ -191,8 +191,6 @@ export default class Question extends React.Component {
   // Gets the next question if the user answers correctly and the next hint if tha answer is wrong
   handleAnswer(e){
     e.preventDefault();
-    console.log(this.state.userInput)
-    console.log(this.checkIfCorrect())
     if (this.state.userInput === this.checkIfCorrect()){
       this.getNextQuestion(e)
     }else{
