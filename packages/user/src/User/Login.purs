@@ -21,13 +21,13 @@ import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import KSF.Button.Component as Button
-import KSF.InputField.Component (InputFieldAttributes)
 import KSF.InputField.Component as InputField
 import KSF.Registration.Component as Registration
 import KSF.User (User, UserError(..))
 import KSF.User as User
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
+import KSF.ValidatableForm as Form
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -49,6 +49,16 @@ type Providers =
   , new :: User.Provider
   }
 
+data LoginField = EmailAddressField | PasswordField
+
+derive instance eqLoginField :: Eq LoginField
+
+instance validatedLoginField :: Form.ValidatableField LoginField where
+  validateField field value serverErrors =
+    Form.validateWithServerErrors serverErrors field value
+      case field of
+        EmailAddressField ->  Form.validateEmailAddress
+        PasswordField -> \_field -> Form.validateEmptyField field "Lösenord krävs."
 data LoginStep = Login | Registration
 
 type Self = React.Self Props State
@@ -61,7 +71,7 @@ type JSProps =
 -- TODO:
 --  , onLoginSuccess     :: Nullable (EffectFn1 Persona.LoginResponse Unit)
 --  , onLoginFail        :: Nullable (EffectFn1 Error Unit)
-  , onUserFetchFail     :: Nullable (EffectFn1 UserError Unit) -- FIXME: THIS IS BROKEN!
+  , onUserFetchFail     :: Nullable (EffectFn1 String Unit)
   , onUserFetchSuccess  :: Nullable (EffectFn1 User Unit)
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
@@ -78,6 +88,7 @@ fromJSProps jsProps =
   , onRegister: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegister
   , onRegisterCancelled: fromMaybe (pure unit) $ Nullable.toMaybe jsProps.onRegisterCancelled
   , onUserFetch:
+      userErrorToString >>>
       either
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchFail)
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchSuccess)
@@ -90,6 +101,11 @@ fromJSProps jsProps =
   , disableSocialLogins: maybe Set.empty (Set.mapMaybe readSocialLoginProvider <<< Set.fromFoldable) $ Nullable.toMaybe jsProps.disableSocialLogins
   }
   where
+    -- TODO: We could have a more descriptive error than just a String
+    userErrorToString :: Either UserError User -> Either String User
+    userErrorToString = case _ of
+      Right user -> Right user
+      Left e     -> Left $ show e
     readSocialLoginProvider p = case String.toUpper p of
       "GOOGLE"   -> Just Google
       "FACEBOOK" -> Just Facebook
@@ -108,22 +124,27 @@ type Props =
   }
 
 type State =
-  { formEmail :: String
-  , formPassword :: String
+  { formEmail :: Maybe String
+  , formPassword :: Maybe String
   , errors :: { login :: Maybe UserError
               , social :: Maybe UserError
               }
   , merge :: Maybe User.MergeInfo
   , loginViewStep :: LoginStep
+  , socialLoginVisibility :: Visibility
   }
+
+data Visibility = Visible | Hidden
+derive instance eqVisibility :: Eq Visibility
 
 initialState :: State
 initialState =
-  { formEmail: ""
-  , formPassword: ""
+  { formEmail: Nothing
+  , formPassword: Nothing
   , errors: { login: Nothing, social: Nothing }
   , merge: Nothing
   , loginViewStep: Login
+  , socialLoginVisibility: Hidden
   }
 
 component :: React.Component Props
@@ -165,8 +186,8 @@ failOnEmailMismatch self email
 onLogin :: Self -> Effect Unit
 onLogin self@{ props, state } = props.launchAff_ do
   user <- User.loginTraditional
-            { username: state.formEmail
-            , password: state.formPassword
+            { username: fromMaybe "" state.formEmail
+            , password: fromMaybe "" state.formPassword
             , mergeToken: toNullable $ map _.token state.merge
             }
   case user of
@@ -205,12 +226,26 @@ renderLoginForm self =
         [ foldMap formatErrorMessage self.state.errors.social
         , loginForm
         , forgotPassword
-        , facebookLogin self
-        , googleLogin self
         , register
+        , socialLogins
         ]
     }
   where
+    socialLogins :: JSX
+    socialLogins =
+      DOM.div
+        { children: [ loginWithSocial ] <> socialLoginButtons
+        }
+      where
+        loginWithSocial =
+          DOM.span
+            { className: "login--login-with-some-text underline"
+            , children: [ DOM.text "Logga in med Facebook eller Google" ]
+            , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
+            }
+        socialLoginButtons = case self.state.socialLoginVisibility of
+          Visible -> [ facebookLogin self, googleLogin self ]
+          Hidden  -> mempty
     loginForm :: JSX
     loginForm =
       DOM.form
@@ -218,25 +253,39 @@ renderLoginForm self =
         , className: "pb2"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
-            , createInputField
-                { inputAttributes: emailAttributes
-                , className: "email-wrapper"
-                , children: []
+            , InputField.inputField
+                { type_: "text"
+                , placeholder: "E-postadress"
+                , label: "E-postadress"
+                , name: "accountEmail"
+                , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
+                , validationError:
+                   Form.inputFieldErrorMessage $
+                     Form.validateField EmailAddressField self.state.formEmail []
                 }
-            , createInputField
-                { inputAttributes: passwordAttributes
-                , className: "password-wrapper-and-submit-wrapper"
-                , children: [ loginButton "LOGGA IN" ]
-                , onChange: \password -> self.setState _ { formPassword = password }
+            , InputField.inputField
+                { type_: "password"
+                , placeholder: "Lösenord"
+                , label: "Lösenord"
+                , name: "accountPassword"
+                , value: Nothing
+                , onChange: \pw -> self.setState _ { formPassword = pw }
+                , validationError:
+                   Form.inputFieldErrorMessage $
+                     Form.validateField PasswordField self.state.formPassword []
+                }
+            , DOM.input
+                { className: "button-green"
+                , value: "Logga in"
+                , type: "submit"
                 }
             ]
         }
-
     register :: JSX
     register =
       DOM.div
-        { className: "mt3 center"
+        { className: "center"
         , children:
             [ DOM.text "Inget konto? "
             , DOM.a
@@ -273,7 +322,7 @@ renderMerge self@{ props } mergeInfo =
     mergeActions User.Capture =
       [ DOM.p_
           [ DOM.text captureText
-          , DOM.b_ [ DOM.text self.state.formEmail ]
+          , DOM.b_ [ DOM.text $ fromMaybe "" self.state.formEmail ]
           , DOM.text "."
           ]
       , mergeAccountForm
@@ -316,11 +365,21 @@ renderMerge self@{ props } mergeInfo =
         , className: "pt2 pb2"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
-            , createInputField
-                { inputAttributes: passwordAttributes
-                , className: "password-wrapper-and-submit-wrapper"
-                , children: [ loginButton "AKTIVERA" ]
+            , InputField.inputField
+                { type_: "text"
+                , placeholder: ""
+                , label: ""
+                , name: ""
+                , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
+                , validationError:
+                   Form.inputFieldErrorMessage $
+                     Form.validateField EmailAddressField self.state.formEmail []
+                }
+            , DOM.input
+                { className: "button-green"
+                , value: "Aktivera"
+                , type: "submit"
                 }
             ]
         }
@@ -347,7 +406,7 @@ googleLogin self =
                   } = self.props.launchAff_ do
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
-      liftEffect $ self.setState _ { formEmail = email }
+      liftEffect $ self.setState _ { formEmail = Just email }
 
       user <- User.someAuth self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
       finalizeSomeAuth self user
@@ -413,7 +472,7 @@ facebookLogin self =
             throwError err
       failOnEmailMismatch self email
       -- setting the email in the state to eventually send it from the merge view form
-      liftEffect $ self.setState _ { formEmail = email }
+      liftEffect $ self.setState _ { formEmail = Just email }
       let (FB.AccessToken fbAccessToken) = accessToken
       user <- User.someAuth self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
       finalizeSomeAuth self user
@@ -450,45 +509,6 @@ someLoginButton { className, description, onClick } =
   where
     additionalClasses = [ "pb1" ]
 
-createInputField ::
-  { inputAttributes :: InputFieldAttributes
-  , className :: String
-  , children :: Array JSX
-  , onChange :: String -> Effect Unit
-  }
-  -> JSX
-createInputField { inputAttributes, className, children, onChange } =
-  DOM.div
-    { className
-    , children:
-        [ InputField.inputField
-            { type_: inputAttributes.type_
-            , placeholder: inputAttributes.placeholder
-            , name: inputAttributes.name
-            , required: inputAttributes.required
-            , children
-            , onChange
-            , defaultValue: Nothing
-            }
-        ]
-    }
-
-emailAttributes :: InputFieldAttributes
-emailAttributes =
-  { type_: "email"
-  , placeholder: "E-post..."
-  , name: "email"
-  , required: true
-  }
-
-passwordAttributes :: InputFieldAttributes
-passwordAttributes =
-  { type_: "password"
-  , placeholder: "Lösenord..."
-  , name: "password"
-  , required: true
-  }
-
 loginButton :: String -> JSX
 loginButton text =
   DOM.input
@@ -503,7 +523,7 @@ forgotPasswordUrl = "https://www.hbl.fi/losenord/"
 forgotPassword :: JSX
 forgotPassword =
   DOM.div
-    { className: "underline center mb3"
+    { className: "underline center mb1"
     , children:
         [ DOM.a
             { href: forgotPasswordUrl

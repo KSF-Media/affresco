@@ -157,7 +157,7 @@ navbarView self  =
     , loggedInUser: self.state.loggedInUser
     , logout: do
         Aff.launchAff_ do
-          KSF.User.logout
+          KSF.User.logout (const $ pure unit)
           liftEffect $
             send self $ SetUser Nothing
     }

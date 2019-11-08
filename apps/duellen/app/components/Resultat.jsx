@@ -3,7 +3,6 @@ import BackBtn from './BackBtn.jsx';
 import EmailDialog from './EmailDialog.jsx';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import {Tabs, Tab} from 'material-ui/Tabs';
-import {fruit, first, second,third, fourth, fifth} from './data/quizData.jsx';
 import SwipeableViews from 'react-swipeable-views';
 import {FacebookShareButton, FacebookIcon, TwitterShareButton, TwitterIcon, EmailShareButton, EmailIcon} from 'react-share';
 import ReactGA from 'react-ga';
@@ -15,6 +14,13 @@ const styles = {
     marginBottom: 12,
     fontWeight: 400,
   },
+  progress: {
+    padding: '5px', 
+    backgroundColor:'rgba(0, 188, 212, 0.1',
+  },
+  border: {
+    borderTop: '1px solid #00BCD4',
+  },
 };
 
 ReactGA.initialize('UA-119802236-1');
@@ -24,12 +30,19 @@ export default class Resultat extends React.Component{
     super(props);
     this.state = {
       slideIndex: 0,
-      player1: this.props.quizData.player1,
-      player2: this.props.quizData.player2,
-      player1_img: this.props.quizData.player1_img,
-      player2_img: this.props.quizData.player2_img,
-      player1_score: this.props.quizData.player1_score,
-      player2_score: this.props.quizData.player2_score
+      player1: this.props.quizData.players.player1.name,
+      player2: this.props.quizData.players.player2.name,
+      player1_img: this.props.quizData.players.player1.img,
+      player2_img: this.props.quizData.players.player2.img,
+      player1_score: this.props.quizData.players.player1.score,
+      player2_score: this.props.quizData.players.player2.score,
+      questions: [[this.props.quizData.questions.question1,0], 
+                  [this.props.quizData.questions.question2,1],
+                  [this.props.quizData.questions.question3,2],
+                  [this.props.quizData.questions.question4,3],
+                  [this.props.quizData.questions.question5,4],
+      ],
+
     };
     this.handleChange = this.handleChange.bind(this);
   }
@@ -42,7 +55,8 @@ export default class Resultat extends React.Component{
     });
   }
 
-  handleChange(value){
+  // This is so you can se if you are on 'dina resultat' or 'Rätt svar'
+  handleChange(){
     if(this.state.slideIndex === 0){
       this.setState({slideIndex: 1,});
     }else{
@@ -56,14 +70,12 @@ export default class Resultat extends React.Component{
     const title = 'Duellen Digitalt!';
     const hashtag = '#duellen';
     const hashtags = ['duellen','hbl'];
-
     return (
       <MuiThemeProvider>
         <div>
           <div style={{backgroundColor:'#f07e26',padding: 10}}>
             <BackBtn />
           </div>
-
           <Tabs
             onChange={this.handleChange}
             value={this.state.slideIndex}
@@ -82,19 +94,19 @@ export default class Resultat extends React.Component{
               <div style={{paddingTop: 12}}>
 
               <div style={{textAlign: 'center'}}>
-                  <h2 style={{paddingBottom: '12%', paddingTop: '12%'}}>Du fick <br/> {this.props.tally} poäng!</h2>
+                  <h3 style={{paddingBottom: '12%', paddingTop: '12%'}}>Du fick <br/> {this.props.tally} poäng!</h3>
               </div>
 
-                    <div className="players">
-                      <div style={{float: 'left', width: '50%',textAlign: 'center'}}>
-                        <img src={this.state.player1_img} style={{objectFit: 'cover', width:160, height:160, borderRadius: '50%'}}></img>
-                        <p>{this.state.player1} fick <br></br><b>{this.state.player1_score}</b> poäng!</p>
-                      </div>
-                      <div style={{float: 'left', width: '50%', textAlign: 'center'}}>
-                        <img src={this.state.player2_img} style={{objectFit: 'cover', width:160, height:160, borderRadius: '50%'}}></img>
-                        <p>{this.state.player2} fick <br></br><b>{this.state.player2_score}</b> poäng!</p>
-                      </div>
-                    </div>
+              <div className="row">
+                <div className="col-sm-6 text-center">
+                  <img src={this.state.player1_img} className='img-fluid rounded-circle' style={{width: 250, height:250, objectFit: 'cover'}}></img>
+                  <p>{this.state.player1} fick <br></br><b>{this.state.player1_score}</b> poäng!</p>
+                </div>
+                <div className="col-sm-6 text-center">
+                  <img src={this.state.player2_img} className='img-fluid rounded-circle' style={{width: 250, height:250, objectFit: 'cover'}}></img>
+                  <p>{this.state.player2} fick <br></br><b>{this.state.player2_score}</b> poäng!</p>
+                </div>
+              </div>
 
 
                   <div className="share_buttons" style={{display: 'inline-block', textAlign: 'center', width: '100%', cursor: 'pointer'}}>
@@ -137,55 +149,20 @@ export default class Resultat extends React.Component{
 
 
 
-            <div style={styles.slide}>
-
+            <div style={styles.slide}>              
               <div style={{textAlign: 'left', padding: '7%', lineHeight: '1.8'}}>
-                  <p className='facit'>{this.props.quizData.first_category} {this.props.quizData.first_question}</p>
-                  <p className='progress' style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[0]}</p>
-                  <b>1.</b> {this.props.quizData.first_hint5} <br/>
-                  <b>2.</b> {this.props.quizData.first_hint4} <br/>
-                  <b>3.</b> {this.props.quizData.first_hint3} <br/>
-                  <b>4.</b> {this.props.quizData.first_hint2} <br/>
-                  <b>5.</b> {this.props.quizData.first_hint1} <br/>
-                  <p className='progress'>Rätt svar: {this.props.quizData.first_answer}</p><br/>
-
-                  <hr style={{borderTop: '1px solid #00BCD4'}}></hr><br/>
-
-                  <p className='facit'>{this.props.quizData.second_category} {this.props.quizData.second_question}</p>
-                  <p className='progress' style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[1]}</p>
-                  <b>1.</b> {this.props.quizData.second_hint5} <br/>
-                  <b>2.</b> {this.props.quizData.second_hint4} <br/>
-                  <b>3.</b> {this.props.quizData.second_hint3} <br/>
-                  <b>4.</b> {this.props.quizData.second_hint2} <br/>
-                  <b>5.</b> {this.props.quizData.second_hint1} <br/>
-                  <p className='progress'>Rätt svar: {this.props.quizData.second_answer}</p>
-                <br/><hr style={{borderTop: '1px solid #00BCD4'}}></hr><br/>
-                  <p className='facit'>{this.props.quizData.third_category} {this.props.quizData.third_question}</p>
-                  <p className='progress' style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[2]}</p>
-                  <b>1.</b> {this.props.quizData.third_hint5} <br/>
-                  <b>2.</b> {this.props.quizData.third_hint4} <br/>
-                  <b>3.</b> {this.props.quizData.third_hint3} <br/>
-                  <b>4.</b> {this.props.quizData.third_hint2} <br/>
-                  <b>5.</b> {this.props.quizData.third_hint1} <br/>
-                  <p className='progress'>Rätt svar: {this.props.quizData.third_answer}</p>
-                <br/><hr style={{borderTop: '1px solid #00BCD4'}}></hr><br/>
-                  <p className='facit'>{this.props.quizData.fourth_category} {this.props.quizData.fourth_question}</p>
-                  <p className='progress' style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[3]}</p>
-                  <b>1.</b> {this.props.quizData.fourth_hint5} <br/>
-                  <b>2.</b> {this.props.quizData.fourth_hint4} <br/>
-                  <b>3.</b> {this.props.quizData.fourth_hint3} <br/>
-                  <b>4.</b> {this.props.quizData.fourth_hint2} <br/>
-                  <b>5.</b> {this.props.quizData.fourth_hint1} <br/>
-                  <p className='progress'>Rätt svar: {this.props.quizData.fourth_answer}</p>
-                <br/><hr style={{borderTop: '1px solid #00BCD4'}}></hr><br/>
-                  <p className='facit'>{this.props.quizData.fifth_category} {this.props.quizData.fifth_question}</p>
-                  <p className='progress' style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[4]}</p>
-                  <b>1.</b> {this.props.quizData.fifth_hint5} <br/>
-                  <b>2.</b> {this.props.quizData.fifth_hint4} <br/>
-                  <b>3.</b> {this.props.quizData.fifth_hint3} <br/>
-                  <b>4.</b> {this.props.quizData.fifth_hint2} <br/>
-                  <b>5.</b> {this.props.quizData.fifth_hint1} <br/>
-                  <p className='progress'>Rätt svar: {this.props.quizData.fifth_answer}</p>
+              {this.state.questions.map(item => (
+                <div style={{marginBottom: '40px', borderBottom: '1px solid black'}}>
+                    <h3>{item[0].category} {item[0].question}</h3>
+                    <p style={{padding: '5px', backgroundColor:'rgba(0, 188, 212, 0.1)'}}>{this.props.right[item[1]]}</p>
+                    <p><b>5 poäng</b> {item[0].hints.hint1} <br/></p>
+                    <p><b>4 poäng</b> {item[0].hints.hint2} <br/></p>
+                    <p><b>3 poäng</b> {item[0].hints.hint3} <br/></p>
+                    <p><b>2 poäng</b> {item[0].hints.hint4} <br/></p>
+                    <p><b>1 poäng</b> {item[0].hints.hint5} <br/></p>
+                    <p>Rätt svar: {item[0].answer}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </SwipeableViews>
@@ -193,6 +170,4 @@ export default class Resultat extends React.Component{
       </MuiThemeProvider>
     );
   }
-
-
 };

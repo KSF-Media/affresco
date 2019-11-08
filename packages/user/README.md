@@ -64,12 +64,18 @@ For getting the SSO working, an [xd_receiver](https://github.com/KSF-Media/affre
 The `JANRAIN_XD_RECEIVER_PATH` variable is the path to this file.
 
 ### Logging out
-It's easy.
+It's easy. The `logout` function takes two callbacks:
+1) function to call when logout is successful
+2) function to call when logout fails
+
 ```javascript
 import { logout } from '@ksf-media/user';
 
-function onLogout() {
-  console.log("Logged out successfully!")
+function onLogoutSuccess() {
+  console.log("Logged out successfully!");
 }
-logout(onLogout);
+function onLogoutFail(errorString) {
+  console.log("Logging out failed: ", errorString);
+}
+logout(onLogoutSuccess, onLogoutFail);
 ```
