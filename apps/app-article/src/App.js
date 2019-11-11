@@ -67,13 +67,14 @@ class App extends Component {
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
         }
-
+        //TODO get fontSize from Cookie
         if (localStorage.getItem("fontSize")) {
             this.setState({fontSize: parseFloat(localStorage.getItem("fontSize"))});
         }
 
         //In case User want to logout, the value should be false
-        if(Cookies.get('LoginStatus') != undefined && !Cookies.get('LoginStatus')){
+        console.log(typeof(Cookies.get('LoginStatus')));
+        if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
             //we remove it to avoid infinite loop
             Cookies.remove('LoginStatus');
             //TODO
@@ -92,6 +93,9 @@ class App extends Component {
 
     onLogout() {
         console.log("Logged out successfully!")
+        //Remove the current user from localstorage 
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("cachedArticles");
     }    
     getArticle() {
         let urlParams = getUrlParam();
@@ -270,11 +274,11 @@ class App extends Component {
     };
 
     loadScriptError(oError) {
-        // console.log('error: ', oError);
+         console.log('error: ', oError);
     }
 
     loadScriptSuccess(res) {
-        // console.log('success: ', res);
+         console.log('success: ', res);
     }
 
     // not the best solution but seems is working for now, delay the appending of script for each element in array
@@ -402,7 +406,7 @@ class App extends Component {
 
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        this.fetchArticleFromApi(getUrlParam().has('uuid'));
+        this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
 
         //Call Android bridge 
         Android.isLoggedIn();        
