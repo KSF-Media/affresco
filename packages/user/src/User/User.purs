@@ -23,6 +23,8 @@ import Control.Parallel (parSequence_)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.Foldable (for_, traverse_)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
@@ -40,8 +42,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..),
-                InvalidDateInput(..), UserUpdate(..)) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -60,6 +61,9 @@ data UserError =
   | MergeEmailInUse MergeInfo
   | SomethingWentWrong
   | UnexpectedError Error
+derive instance genericUserError :: Generic UserError _
+instance showUserError :: Show UserError where
+  show = genericShow
 
 type ValidationServerError = Object (Array String)
 
@@ -220,10 +224,11 @@ loginSso callback = do
 
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
-logout :: Aff Unit
-logout = do
+logout :: (Either Error Unit -> Effect Unit) -> Aff Unit
+logout handleLogout = do
   -- use authentication data from local storage to logout first from Persona
-  logoutPersona `catchError` Console.errorShow
+  -- NOTE: In case this request fails, we still want to clear local storage and continue with the social logouts.
+  logoutResponse <- try logoutPersona
   -- then we wipe the local storage
   liftEffect deleteToken `catchError` Console.errorShow
   -- then, in parallel, we run all the third-party logouts
@@ -232,6 +237,7 @@ logout = do
     , logoutGoogle   `catchError` Console.errorShow
     , logoutJanrain  `catchError` Console.errorShow
     ]
+  liftEffect $ handleLogout logoutResponse
 
 logoutPersona :: Aff Unit
 logoutPersona = do
@@ -348,9 +354,10 @@ temporaryAddressChange
   -> DateTime
   -> String
   -> String
+  -> Maybe String
   -> Aff (Either Persona.InvalidDateInput Persona.Subscription)
-temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode = do
-  addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode <<< _.token =<< requireToken
+temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode temporaryName = do
+  addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode temporaryName <<< _.token =<< requireToken
   case addressChangedSub of
     Right sub -> pure $ Right sub
     Left err

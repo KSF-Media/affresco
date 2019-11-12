@@ -75,6 +75,7 @@ class App extends Component {
         //In case User want to logout, the value should be false
         console.log(typeof(Cookies.get('LoginStatus')));
         if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
+
             //we remove it to avoid infinite loop
             Cookies.remove('LoginStatus');
             //TODO
@@ -407,7 +408,6 @@ class App extends Component {
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
         this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
-
         //Call Android bridge 
         Android.isLoggedIn();        
     }
