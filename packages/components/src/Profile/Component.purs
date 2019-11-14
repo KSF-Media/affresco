@@ -206,7 +206,7 @@ render self@{ props: { profile: user } } =
         profileAddressEditing = DOM.div_
           [ DescriptionList.descriptionList
               { definitions:
-                  [ { term: "Adress:"
+                  [ { term: "Permanent adress:"
                     , description: [ editAddress self ]
                     }
                   ]
