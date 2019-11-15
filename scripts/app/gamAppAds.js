@@ -34,18 +34,16 @@ var ksfDfp = {};
         }
         return bannerWidth;
     };
-
     ksfDfp.onSwitch = true;
     if (window.disableAds === true) {
         // if the backend main settings kill switch is activated we show no ads. The onSwitch will silently leave all banners unloaded
         ksfDfp.onSwitch = false;
-        console.log('We will not show ads on this page load!');
+            console.log('We will not show ads on this page load!');
     }
 
     if (ksfDfp.onSwitch) {
         ksfDfp.activated = false;
-        document.onreadystatechange = function() {
-            if (!ksfDfp.activated && (document.readyState === 'interactive' || document.readyState === 'complete')) {
+        ksfDfp.startUp = function() {
                 ksfDfp.activated = true;
                 // using interactive instead of complete improves loading speed somewhat
                 // activate display for all slots
@@ -67,7 +65,6 @@ var ksfDfp = {};
                     }
                     n = n - 1;
                 }
-            }
         };
         ksfDfp.account = "/21664538223/";
         ksfDfp.w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
