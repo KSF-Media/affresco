@@ -333,6 +333,7 @@ class App extends Component {
 
         if (this.state.user && typeof this.state.user.uuid != 'undefined') {
             push_data.userid = this.state.user.uuid;
+            push_data.cusno = this.state.user.cusno;
         }
 
         if (this.state.user && this.state.user.subs) {
@@ -349,7 +350,7 @@ class App extends Component {
 
             let authors = [];
             article.authors.map(author =>{
-                authors.push(author.authorByline);
+                authors.push(author.byline);
             });
 
             push_data.authors = authors;
