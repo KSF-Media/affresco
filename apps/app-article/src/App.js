@@ -448,7 +448,7 @@ class App extends Component {
         if (document.getElementsByClassName('preamble').length > 0) {
             const articleTitle = document.getElementsByClassName('preamble')[0];
             articleTitle.style.fontSize = newSize  + 0.05 + "rem";
-            articleTitle.style.lineHeight = "100%";
+            articleTitle.style.lineHeight = "120%";
         }
 
         const nodes = document.querySelectorAll('#content');

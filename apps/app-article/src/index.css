@@ -343,21 +343,17 @@ body {
     color:grey;
 }
 
-.manuallyRelated{
-    border-left: 3px solid #f07e26;
-}
-
 .relatedArticles .articleItem .category{
     color:#f07e26;
     font-size: 15px;
     display: inline-block;
+    margin-right: 12px;
 }
 
 .relatedArticles .articleItem .date{
     color: #818181;
     font-size: 15px;
     display: inline-block;
-    margin-left: 12px;
 }
 
 .relatedArticles .articleItem a {
