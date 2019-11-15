@@ -64,6 +64,9 @@ class App extends Component {
     }
 
     componentDidMount() {
+        if(window.ksfDfp){
+            window.ksfDfp.startUp();
+        }
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
         }
