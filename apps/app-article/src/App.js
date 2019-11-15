@@ -481,10 +481,6 @@ class App extends Component {
 
         const {isImageModalOpen} = this.state;
 
-        if (this.state.isLoading) {
-            return <Loading/>;
-        }
-
         if (this.state.errorFetching) {
             return <ErrorPage message={"Something wrong happened!"}/>;
         }
@@ -493,7 +489,9 @@ class App extends Component {
         }
 
         return (
-            <div className="App">                
+            <div className="App">
+                {this.state.isLoading ? <Loading/>:''}
+                                
                 {isImageModalOpen && (
                     <Lightbox
                         mainSrc={this.state.modalImage + '&width=1200'}
