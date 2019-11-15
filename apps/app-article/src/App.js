@@ -481,15 +481,16 @@ class App extends Component {
         const {isImageModalOpen} = this.state;
 
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Something wrong happened!"}/>;
+            return <ErrorPage message={"Laddar..."}/>;
         }
+        
         if(this.state.forceLoginView){
             return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>;
         }
 
         return (
             <div className="App">
-                {this.state.isLoading ? <Loading/>:''}
+                // {this.state.isLoading ? <Loading/>:''}
                                 
                 {isImageModalOpen && (
                     <Lightbox

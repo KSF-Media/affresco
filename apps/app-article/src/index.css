@@ -57,6 +57,7 @@ body {
     font-family: 'DuplexSerifBold', sans-serif;
     font-size: 2rem;
     letter-spacing:0px;
+    word-break: break-all;
 }
 
 .article .content .author {
@@ -81,6 +82,9 @@ body {
     font-size: 1em;
     line-height: 1.25em;
     font-weight: bolder;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    word-break: break-all;
 }
 
 .article .content h2, h3, h4, h5, h6 {
@@ -238,6 +242,9 @@ body {
     margin-bottom:16px;
     overflow-wrap: break-word;
     /*font-size: 16px;*/
+     -webkit-hyphens: auto;
+    hyphens: auto;
+    word-break: break-all;
 }
 
 .premiumBox {
