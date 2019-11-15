@@ -34,6 +34,23 @@ body {
   color: white;
   cursor: pointer;
 }
+.svarButton{
+  background-color: orange;
+  width: 100%;
+  border: none;
+  border-radius: 5px;
+  padding: 5px;
+  color: white;
+  cursor: pointer;
+}
+.skipButton{
+  background-color: darkgreen;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  color: white;
+  cursor: pointer;
+}
 .start :hover {
   text-decoration: none;
 }
