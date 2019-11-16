@@ -449,7 +449,7 @@ class App extends Component {
         if (document.getElementsByClassName('preamble').length > 0) {
             const articleTitle = document.getElementsByClassName('preamble')[0];
             articleTitle.style.fontSize = newSize  + 0.05 + "rem";
-            articleTitle.style.lineHeight = "100%";
+            articleTitle.style.lineHeight = "120%";
         }
 
         const nodes = document.querySelectorAll('#content');
@@ -482,8 +482,9 @@ class App extends Component {
         const {isImageModalOpen} = this.state;
 
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Something wrong happened!"}/>;
+            return <ErrorPage message={"Laddar..."}/>;
         }
+        
         if(this.state.forceLoginView){
             return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>;
         }
