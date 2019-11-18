@@ -36,6 +36,7 @@ export default class Question extends React.Component {
       hasSelectedAnswer: false,
       middleScreen: false,
       answer: '',
+
     };
     this.handleClick = this.handleClick.bind(this);
   };
@@ -152,6 +153,7 @@ export default class Question extends React.Component {
     this.hideMessage()
     // Gives a notification that the question was skip
     this.loadMiddleScreen(e)
+
     this.handleResults(e)
     // Sets the user input to nothing so the input field is empty
     this.setState({
