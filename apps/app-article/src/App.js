@@ -422,7 +422,9 @@ class App extends Component {
 
     showLogin = (e) => {
         e.preventDefault();
-        this.setState({appearLogin: true, showBuyOption: false});
+        this.setState({appearLogin: true, showBuyOption: false}, () => {
+            document.getElementById('loginForm').scrollIntoView();
+        });
     };
 
     increaseFontSize = () => {
@@ -520,6 +522,13 @@ class App extends Component {
                                 {
                                     this.state.showBuyOption ?
                                         <PremiumBox showLogin={this.showLogin}/>
+                                        :
+                                        ""
+                                }
+
+                                {
+                                    this.state.appearLogin ?
+                                        <div id={"loginForm"}><strong>Logga in: </strong></div>
                                         :
                                         ""
                                 }
