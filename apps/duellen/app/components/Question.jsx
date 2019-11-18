@@ -1,6 +1,7 @@
 import React from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import WikiLink from './WikiLink.jsx';
+import MiddleScreen from './MiddleScreen.jsx'
 import ExitDialog from './ExitDialog.jsx';
 import LinearProgress from 'material-ui/LinearProgress';
 import Resultat from './Resultat.jsx';
@@ -32,7 +33,9 @@ export default class Question extends React.Component {
       name: '',
       message: null,
       helpMessage: '',
-      hasSelectedAnswer: false
+      hasSelectedAnswer: false,
+      middleScreen: false,
+      answer: '',
     };
     this.handleClick = this.handleClick.bind(this);
   };
@@ -48,6 +51,7 @@ export default class Question extends React.Component {
        question: quizData.questions.question1.question,
        category: quizData.questions.question1.category,
        hint: quizData.questions.question1.hints.hint1,
+       answer: quizData.questions.question1.answer,
      });
      }catch (e) {
       console.log(e);
@@ -74,6 +78,35 @@ export default class Question extends React.Component {
     })
   }
   
+  loadMiddleScreen(e){
+    e.preventDefault();
+    
+    this.setState({
+      middleScreen: true,
+    })
+
+  }
+  
+  loadNextQuestion(){
+    if (this.state.progress === 5){
+      this.setState({displayResult: true});
+    }
+    else{      
+      const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
+      this.setState({
+        question: this.state.quizData.questions[questionOptions[this.state.progress]].question, 
+        category: this.state.quizData.questions[questionOptions[this.state.progress]].category, 
+        answer: this.state.quizData.questions[questionOptions[this.state.progress]].answer,
+        hint: this.state.quizData.questions[questionOptions[this.state.progress]].hints.hint1,
+        hintPoint: 5, 
+        completed: this.state.completed + 20,
+        // tells witch question you are on
+        progress: this.state.progress + 1,
+        middleScreen: false,
+      });
+    }
+  }
+
   // This will set the input fields value to the correct wikipedia pages title  
   setInputValue(title){
     this.setState({
@@ -118,8 +151,7 @@ export default class Question extends React.Component {
     e.preventDefault();
     this.hideMessage()
     // Gives a notification that the question was skip
-    this.setState({message: cogoToast.info('Här är nästa fråga', {toastContainerID: '1'})})
-    this.getNextQuestion(e)
+    this.loadMiddleScreen(e)
     this.handleResults(e)
     // Sets the user input to nothing so the input field is empty
     this.setState({
@@ -179,31 +211,10 @@ export default class Question extends React.Component {
     }
   }
 
-  // gets the next question
-  // If all questions have been then it will load the result screen
-  getNextQuestion(e){
-    this.handleResults(e)
-    if (this.state.progress === 5){
-      this.setState({displayResult: true});
-    }
-    else{
-      const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
-      this.setState({
-        question: this.state.quizData.questions[questionOptions[this.state.progress]].question, 
-        category: this.state.quizData.questions[questionOptions[this.state.progress]].category, 
-        hint: this.state.quizData.questions[questionOptions[this.state.progress]].hints.hint1,
-        hintPoint: 5, 
-        completed: this.state.completed + 20,
-        // tells witch question you are on
-        progress: this.state.progress + 1, 
-      });
-    }
-  }
-
   //gets the next hint
   getNextHint(e){
     if (this.state.hintPoint === 1){
-      this.getNextQuestion(e)
+      this.loadMiddleScreen(e)
     }
     else{
       const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
@@ -225,7 +236,7 @@ export default class Question extends React.Component {
   handleAnswer(e){
     e.preventDefault();
     if (this.state.userInput === this.checkIfCorrect()){
-      this.getNextQuestion(e)
+      this.loadMiddleScreen(e)
     }else{
       this.getNextHint(e)
     }
@@ -242,7 +253,7 @@ export default class Question extends React.Component {
   };
 
   render() {
-    const {displayResult, logged_in, is_loading} = this.state;
+    const {displayResult, logged_in, is_loading, middleScreen} = this.state;
     if (logged_in === false){
         return(
           <div style={{visibility: is_loading}} >
@@ -252,6 +263,16 @@ export default class Question extends React.Component {
     }else {
       if (displayResult === true){
         return(<Resultat tally={this.state.tally} quizData={this.state.quizData} right={this.state.right}/>);
+      }else if (middleScreen == true){
+        return(
+          <MiddleScreen players={this.state.quizData.players} 
+                        progress={this.state.progress-1} 
+                        question={this.state.question} 
+                        category={this.state.category} 
+                        answer={this.state.answer}
+                        onClick={this.loadNextQuestion.bind(this)}
+                        />
+        )
       }else {
         return (
           <div className='question'>
