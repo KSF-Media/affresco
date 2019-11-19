@@ -105,29 +105,31 @@ body {
 /*Ads*/
 #MOBPARAD {
     text-align: center;
-    /*margin-top:20px;*/
     margin-bottom: 20px;
+    overflow: hidden;
 }
 
 #MOBMITT {
     text-align: center;
     margin-bottom: 20px;
+    overflow: hidden;
 }
 
 #MOBNER {
     text-align: center;
     margin-bottom: 20px;
-    margin-top: 20px;
+    overflow: hidden;
 }
 
 #DIGIHELMOB {
     text-align: center;
     margin-bottom: 20px;
+    overflow: hidden;
 }
 
 .ksfDFPadHeader {
     /*display: none;*/
-    margin-left: 40px;
+    margin-left: 1em;
     color: #9b9b9b;
     font-size: 12px !important;
     text-transform: uppercase;
