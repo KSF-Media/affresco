@@ -3,7 +3,7 @@ module KSF.User.Login where
 import Prelude
 
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (foldMap)
+import Data.Array (all, foldMap)
 import Data.Either (Either(..), either)
 import Data.Foldable (surround)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
@@ -233,9 +233,10 @@ renderLoginForm self =
   where
     socialLogins :: JSX
     socialLogins =
-      DOM.div
-        { children: [ loginWithSocial ] <> socialLoginButtons
-        }
+      -- Don't show possibility of logging with social providers if they're all disabled
+      if allSocialLoginsDisabled
+      then mempty
+      else DOM.div { children: [ loginWithSocial ] <> socialLoginButtons }
       where
         loginWithSocial =
           DOM.span
@@ -246,6 +247,8 @@ renderLoginForm self =
         socialLoginButtons = case self.state.socialLoginVisibility of
           Visible -> [ facebookLogin self, googleLogin self ]
           Hidden  -> mempty
+        allSocialLoginsDisabled =
+          all (\loginProvider -> Set.member loginProvider self.props.disableSocialLogins) [ Facebook, Google ]
     loginForm :: JSX
     loginForm =
       DOM.form

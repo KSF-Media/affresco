@@ -330,6 +330,7 @@ class App extends Component {
 
         if (this.state.user && typeof this.state.user.uuid != 'undefined') {
             push_data.userid = this.state.user.uuid;
+            push_data.cusno = this.state.user.cusno;
         }
 
         if (this.state.user && this.state.user.subs) {
@@ -346,7 +347,7 @@ class App extends Component {
 
             let authors = [];
             article.authors.map(author =>{
-                authors.push(author.authorByline);
+                authors.push(author.byline);
             });
 
             push_data.authors = authors;
@@ -418,7 +419,9 @@ class App extends Component {
 
     showLogin = (e) => {
         e.preventDefault();
-        this.setState({appearLogin: true, showBuyOption: false});
+        this.setState({appearLogin: true, showBuyOption: false}, () => {
+            document.getElementById('loginForm').scrollIntoView();
+        });
     };
 
     increaseFontSize = () => {
@@ -445,7 +448,7 @@ class App extends Component {
         if (document.getElementsByClassName('preamble').length > 0) {
             const articleTitle = document.getElementsByClassName('preamble')[0];
             articleTitle.style.fontSize = newSize  + 0.05 + "rem";
-            articleTitle.style.lineHeight = "100%";
+            articleTitle.style.lineHeight = "120%";
         }
 
         const nodes = document.querySelectorAll('#content');
@@ -477,19 +480,18 @@ class App extends Component {
 
         const {isImageModalOpen} = this.state;
 
-        if (this.state.isLoading) {
-            return <Loading/>;
-        }
-
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Something wrong happened!"}/>;
+            return <ErrorPage message={"Laddar..."}/>;
         }
+        
         if(this.state.forceLoginView){
-            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>;
+            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>;
         }
 
         return (
-            <div className="App">                
+            <div className="App">
+                {this.state.isLoading ? <Loading/>:''}
+                                
                 {isImageModalOpen && (
                     <Lightbox
                         mainSrc={this.state.modalImage + '&width=1200'}
@@ -523,8 +525,15 @@ class App extends Component {
 
                                 {
                                     this.state.appearLogin ?
+                                        <div id={"loginForm"}><strong>Logga in: </strong></div>
+                                        :
+                                        ""
+                                }
+
+                                {
+                                    this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>
                                         :
                                         ""
                                 }
