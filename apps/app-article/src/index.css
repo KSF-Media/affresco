@@ -107,24 +107,28 @@ body {
     text-align: center;
     margin-bottom: 20px;
     overflow: hidden;
+    max-width: 100%;
 }
 
 #MOBMITT {
     text-align: center;
     margin-bottom: 20px;
     overflow: hidden;
+    max-width: 100%;
 }
 
 #MOBNER {
     text-align: center;
     margin-bottom: 20px;
     overflow: hidden;
+    max-width: 100%;
 }
 
 #DIGIHELMOB {
     text-align: center;
     margin-bottom: 20px;
     overflow: hidden;
+    max-width: 100%;
 }
 
 .ksfDFPadHeader {
@@ -437,4 +441,8 @@ body {
 
 .html iframe {
     width: 100%;
+}
+
+.container-fluid.article {
+    overflow-x: hidden;
 }
