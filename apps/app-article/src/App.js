@@ -425,7 +425,7 @@ class App extends Component {
         let increaseTextSize = parseFloat(this.state.fontSize) + parseFloat(this.state.fontSizeIncrementalValue);
         this.setState({fontSize: increaseTextSize}, () => {
             Cookies.set("fontSize", this.state.fontSize, { expires: 365 });
-            if (this.state.fontSize > this.state.fontSizeThreshold) {                
+            if (this.state.fontSize > this.state.fontSizeThreshold) {
                 Cookies.set("fontSize", "1", { expires: 365 });
                 this.setState({fontSize: 1}, () => {
                     this.resizeText(1);
