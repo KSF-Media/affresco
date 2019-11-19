@@ -441,5 +441,8 @@ body {
 
 .html iframe {
     width: 100%;
-    height:196px;
+}
+
+.container-fluid.article {
+    overflow-x: hidden;
 }
