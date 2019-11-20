@@ -303,9 +303,6 @@ export default class Question extends React.Component {
             </div>
             <PastHints hints={this.state.pastQuestionHints} show={this.state.showPastHints} lasthint={this.state.hintPoint}></PastHints>
             <div className="row">
-              <div className="col-12">
-                <p className="header">{this.state.hintPoint} poängs ledtråden</p>
-              </div>
               <div className="col">
                 <h4>{this.state.hint}</h4>
               </div>
