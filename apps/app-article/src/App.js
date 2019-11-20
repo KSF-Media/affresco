@@ -70,15 +70,12 @@ class App extends Component {
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
         }
-        //TODO get fontSize from Cookie
-        if (localStorage.getItem("fontSize")) {
-            this.setState({fontSize: parseFloat(localStorage.getItem("fontSize"))});
+        if (Cookies.get("fontSize")) {
+            this.setState({fontSize: parseFloat(Cookies.get("fontSize"))});
         }
 
         //In case User want to logout, the value should be false
-        console.log(typeof(Cookies.get('LoginStatus')));
         if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
-
             //we remove it to avoid infinite loop
             Cookies.remove('LoginStatus');
             //TODO
@@ -430,9 +427,9 @@ class App extends Component {
     increaseFontSize = () => {
         let increaseTextSize = parseFloat(this.state.fontSize) + parseFloat(this.state.fontSizeIncrementalValue);
         this.setState({fontSize: increaseTextSize}, () => {
-            localStorage.setItem("fontSize", this.state.fontSize);
+            Cookies.set("fontSize", this.state.fontSize, { expires: 365 });
             if (this.state.fontSize > this.state.fontSizeThreshold) {
-                localStorage.setItem("fontSize", "1");
+                Cookies.set("fontSize", "1", { expires: 365 });
                 this.setState({fontSize: 1}, () => {
                     this.resizeText(1);
                 });
