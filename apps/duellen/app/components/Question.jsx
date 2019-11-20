@@ -33,7 +33,6 @@ export default class Question extends React.Component {
       name: '',
       message: null,
       helpMessage: '',
-      hasSelectedAnswer: false,
       middleScreen: false,
       answer: '',
 
@@ -64,7 +63,7 @@ export default class Question extends React.Component {
     // So the help text dosen't show if you have not typed anything into the searchfield
     if (event.target.value !== ''){
       this.setState({
-        helpMessage: 'Välj ett svar på listan och klicka "Svara".'
+        helpMessage: 'Klicka på ett av alternativen nedanför så svarar du på frågan'
       })
     }else{
       this.setState({
@@ -79,9 +78,7 @@ export default class Question extends React.Component {
     })
   }
   
-  loadMiddleScreen(e){
-    e.preventDefault();
-    
+  loadMiddleScreen(){
     this.setState({
       middleScreen: true,
     })
@@ -108,53 +105,34 @@ export default class Question extends React.Component {
     }
   }
 
-  // This will set the input fields value to the correct wikipedia pages title  
-  setInputValue(title){
-    this.setState({
-      userInput: title,
-      //this will remove all wikilinks components
-      searchText: '',
-      helpMessage: '',
-      hasSelectedAnswer: true
-    })
-  }
-
   // This will run when you click 'svara'
-  handleClick(e){
-    if (!this.state.hasSelectedAnswer){
-      this.hideMessage()
-      // Gives a notification that the question was skip
-      this.setState({message: cogoToast.info('Clicka på ett av svaren från listan', {toastContainerID: '1'})})
-    }else{
-      e.preventDefault();
-      this.handleAnswer(e);
-      this.handleWrongRight(e);
+  handleClick(answer){
+      this.handleAnswer(answer);
+      this.handleWrongRight(answer);
       this.setState({
         userInput: '',
-        hasSelectedAnswer: false
+        searchText: '',
+        helpMessage: '',
       })
-    }
   };
 
   // If user skips a question this will run so the user won't get a notification like wrong answer
-  skipHint(e){
-    e.preventDefault();
+  skipHint(){
     this.hideMessage()
     // Gives a notification that the question was skip
     this.setState({message: cogoToast.info('Här är nästa ledtråd', {toastContainerID: '1'})})
-    this.handleAnswer(e);
+    this.handleAnswer();
     // Sets the user input to nothing so the input field is empty
     this.setState({
       userInput: '',
     })
   };
-  skipAnswer(e){
-    e.preventDefault();
+  skipAnswer(){
     this.hideMessage()
     // Gives a notification that the question was skip
-    this.loadMiddleScreen(e)
+    this.loadMiddleScreen()
 
-    this.handleResults(e)
+    this.handleResults()
     // Sets the user input to nothing so the input field is empty
     this.setState({
       userInput: '',
@@ -164,18 +142,17 @@ export default class Question extends React.Component {
   // If user answers on a question this function will run
   // This will give the user a notification how they answer
   // It will also add the number of points the question was worth to the total score
-  handleWrongRight(e){
-    e.preventDefault();
+  handleWrongRight(answer){
     const {tally, hintPoint} = this.state;
-    if(this.state.userInput === this.checkIfCorrect()){
+    if(answer === this.checkIfCorrect()){
       this.hideMessage()
-      var notification = cogoToast.success('Du fick den rätt', {toastContainerID: '1'});
+      var notification = cogoToast.success('Du hade rätt', {toastContainerID: '1'});
       this.setState({tally: tally + hintPoint, message: notification});
 
     }else{
       if(hintPoint === 1){
         this.hideMessage()
-        var notification = cogoToast.info('Den fo tyvärr fel men nu var det dags för nästa', {toastContainerID: '1'})
+        var notification = cogoToast.info('Den for tyvärr fel men nu var det dags för nästa', {toastContainerID: '1'})
         this.setState({message: notification})
       }else{
         this.hideMessage()
@@ -200,8 +177,7 @@ export default class Question extends React.Component {
   }
 
   // Adds how the player did for each quiz
-  handleResults(e){
-    e.preventDefault();
+  handleResults(){
     if(this.state.userInput === this.checkIfCorrect()){
       this.setState({
         right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p']
@@ -214,9 +190,9 @@ export default class Question extends React.Component {
   }
 
   //gets the next hint
-  getNextHint(e){
+  getNextHint(){
     if (this.state.hintPoint === 1){
-      this.loadMiddleScreen(e)
+      this.loadMiddleScreen()
     }
     else{
       const questionOptions = Object.getOwnPropertyNames(this.state.quizData.questions)
@@ -235,12 +211,11 @@ export default class Question extends React.Component {
   }
 
   // Gets the next question if the user answers correctly and the next hint if tha answer is wrong
-  handleAnswer(e){
-    e.preventDefault();
-    if (this.state.userInput === this.checkIfCorrect()){
-      this.loadMiddleScreen(e)
+  handleAnswer(answer){
+    if (answer === this.checkIfCorrect()){
+      this.loadMiddleScreen()
     }else{
-      this.getNextHint(e)
+      this.getNextHint()
     }
   }
 
@@ -298,9 +273,6 @@ export default class Question extends React.Component {
                 <LinearProgress mode="determinate" value={this.state.completed} />
               </MuiThemeProvider>
               </div>
-              <div className="col-12">
-              <p className="header">{this.state.hintPoint} poängs fråga</p>
-              </div>
             </div>
             <div className="row">
               <div className="col text-center">
@@ -308,23 +280,23 @@ export default class Question extends React.Component {
               </div>
             </div>
             <div className="row">
+              <div className="col-12">
+                <p className="header">{this.state.hintPoint} poängs ledtråden</p>
+              </div>
               <div className="col">
                 <h4>{this.state.hint}</h4>
               </div>
             </div>
             <div className="row">
-              <div className="col-9 mt-3">
-                <input id="input_text" className="w-100 p-1 text-dark bg-black" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)} placeholder="Skriv in svaret här..."></input>
-              </div>
-              <div className="col-3 mt-3 text-center">
-                <button onClick={this.handleClick} className='svarButton pr-3 pl-3'>Svara</button>
+              <div className="col-12 mt-3">
+                <input autoComplete="false" id="input_text" className="w-100 p-1 text-dark bg-black" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)} placeholder="Skriv in svaret här..."></input>
               </div>
             </div>
             <div className="row">
               <div className="col">
                 <div className="mb-3">{this.state.helpMessage}</div>
                 <div id='output_options' className="d-flex flex-column">
-                  <WikiLink search={this.state.searchText} onClick={this.setInputValue.bind(this)}>
+                  <WikiLink search={this.state.searchText} onClick={this.handleClick.bind(this)}>
                   </WikiLink>
                 </div>
               </div>
