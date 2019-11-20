@@ -2,6 +2,7 @@ import React from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import WikiLink from './WikiLink.jsx';
 import MiddleScreen from './MiddleScreen.jsx'
+import PastHints from './PastHints.jsx'
 import ExitDialog from './ExitDialog.jsx';
 import LinearProgress from 'material-ui/LinearProgress';
 import Resultat from './Resultat.jsx';
@@ -9,6 +10,7 @@ import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 import { Login , logout } from '@ksf-media/user';
 import cogoToast from 'cogo-toast';
+import spa from 'material-ui/svg-icons/places/spa';
 
 ReactGA.initialize('UA-119802236-1');
 
@@ -35,6 +37,9 @@ export default class Question extends React.Component {
       helpMessage: '',
       middleScreen: false,
       answer: '',
+      showHintsText: false,
+      pastQuestionHints: [],
+      showPastHints: false,
 
     };
     this.handleClick = this.handleClick.bind(this);
@@ -63,7 +68,7 @@ export default class Question extends React.Component {
     // So the help text dosen't show if you have not typed anything into the searchfield
     if (event.target.value !== ''){
       this.setState({
-        helpMessage: 'Klicka på ett av alternativen nedanför så svarar du på frågan'
+        helpMessage: "Klicka på ett av alternativen nedanför så svarar du på frågan"
       })
     }else{
       this.setState({
@@ -113,6 +118,7 @@ export default class Question extends React.Component {
         userInput: '',
         searchText: '',
         helpMessage: '',
+        pastQuestionHints: [],
       })
   };
 
@@ -136,9 +142,16 @@ export default class Question extends React.Component {
     // Sets the user input to nothing so the input field is empty
     this.setState({
       userInput: '',
+      pastQuestionHints: [],
     })
   };
 
+  showHints(){
+    console.log(!this.state.showPastHints)
+    this.setState({
+      showPastHints: !this.state.showPastHints
+    })
+  }
   // If user answers on a question this function will run
   // This will give the user a notification how they answer
   // It will also add the number of points the question was worth to the total score
@@ -203,7 +216,9 @@ export default class Question extends React.Component {
             hint: this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i+1]] ,
             // It's 4 - i becouse if i=0 we willload the fourth hint
             // The fifth hint will never be loaded here so thats why it's 4 and not 5 
-            hintPoint: 4 - i, 
+            hintPoint: 4 - i,
+            showHintsText: true,
+            pastQuestionHints: [...this.state.pastQuestionHints, [this.state.hintPoint + " poängs ledtråden", this.state.quizData.questions[questionOptions[this.state.progress - 1]].hints[hintOptions[i]]]],
           });
         }
       }
@@ -273,23 +288,29 @@ export default class Question extends React.Component {
                 <LinearProgress mode="determinate" value={this.state.completed} />
               </MuiThemeProvider>
               </div>
+              <div className="col-6">
+                <p className="header">{this.state.hintPoint} poängs ledtråden</p>
+              </div>
+              {this.state.pastQuestionHints.length > 0 &&
+              <div className="col-6">
+                <p onClick={this.showHints.bind(this)} type="button" className="show-as-p">Se tidigare ledtrådar <span className="turn">&#9660;</span></p>
+              </div>
+              }
             </div>
             <div className="row">
               <div className="col text-center">
-                <h2>{this.state.category} : {this.state.question}</h2>
+                <h2>{this.state.category}: {this.state.question}</h2>
               </div>
             </div>
+            <PastHints hints={this.state.pastQuestionHints} show={this.state.showPastHints} lasthint={this.state.hintPoint}></PastHints>
             <div className="row">
-              <div className="col-12">
-                <p className="header">{this.state.hintPoint} poängs ledtråden</p>
-              </div>
               <div className="col">
                 <h4>{this.state.hint}</h4>
               </div>
             </div>
             <div className="row">
               <div className="col-12 mt-3">
-                <input autoComplete="false" id="input_text" className="w-100 p-1 text-dark bg-black" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)} placeholder="Skriv in svaret här..."></input>
+                <input autoComplete="off" id="input_text" className="w-100 p-1 text-dark bg-black" type="text" value={this.state.userInput} onChange={this.inputChange.bind(this)} placeholder="Skriv in svaret här..."></input>
               </div>
             </div>
             <div className="row">

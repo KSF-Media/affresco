@@ -19,7 +19,7 @@ export default class MiddleScreen extends React.Component{
           player2CurrentPoints: 0,
         }
       };
-    // every time something new is typed in to the input field this will search for it in wikipedia
+    // After each question this screen  is loaded to show the player how they did
     componentDidMount(){
       var nextQuestionText = 'Nästa fråga'
       console.log(this.props.progress)
@@ -42,8 +42,7 @@ export default class MiddleScreen extends React.Component{
     }
   
   render(){
-    // The map funktion returns an error if ther is an empty array 
-    // And we don't want anything to show it there hasn't been a search for anything
+    // If there is no check if it has mounted it will just render a empty screeen
     if (this.state.hasMounted == true){  
       return(
         <div>
