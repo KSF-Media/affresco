@@ -79,7 +79,6 @@ export default class Question extends React.Component {
   }
   
   loadMiddleScreen(){
-    
     this.setState({
       middleScreen: true,
     })
