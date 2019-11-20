@@ -55,7 +55,10 @@ export default class MiddleScreen extends React.Component{
             </div>
           </div>
           <div className="row">
-            <div className="col text-center">
+            <div className="col-12 text-center">
+              <h2>Fråga {this.state.progress + 1}s svar</h2>
+            </div>
+            <div className="col-12 text-center">
               <h2>{this.state.category} : {this.state.question}</h2>
             </div>
           </div>
