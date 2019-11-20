@@ -10,7 +10,6 @@ import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 import { Login , logout } from '@ksf-media/user';
 import cogoToast from 'cogo-toast';
-import spa from 'material-ui/svg-icons/places/spa';
 
 ReactGA.initialize('UA-119802236-1');
 

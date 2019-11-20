@@ -42,7 +42,8 @@ export default class MiddleScreen extends React.Component{
     }
   
   render(){
-    // If there is no check if it has mounted it will just render a empty screeen
+    // Needs to check if the data has loaded in and then it can render the data
+    // If it has not mounted it will render empty screen
     if (this.state.hasMounted == true){  
       return(
         <div>
