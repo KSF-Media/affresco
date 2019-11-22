@@ -196,4 +196,10 @@ h2 {
 .show-as-p{
   text-decoration: none;
   background: none;
+  border: none;
+  color: white;
+  outline: none;
+}
+button:focus {
+  outline: none;
 }
