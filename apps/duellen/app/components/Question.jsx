@@ -292,7 +292,7 @@ export default class Question extends React.Component {
               </div>
               {this.state.pastQuestionHints.length > 0 &&
               <div className="col-6">
-                <p onClick={this.showHints.bind(this)} type="button" className="show-as-p">Se tidigare ledtrådar <span className="turn">&#9660;</span></p>
+                <button onClick={this.showHints.bind(this)} className="show-as-p">Se tidigare ledtrådar <span className="turn">&#9660;</span></button>
               </div>
               }
             </div>
