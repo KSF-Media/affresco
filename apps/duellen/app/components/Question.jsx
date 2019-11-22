@@ -119,6 +119,7 @@ export default class Question extends React.Component {
         userInput: '',
         searchText: '',
         helpMessage: '',
+        pastQuestionHints: [],
       })
   };
 
