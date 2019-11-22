@@ -146,7 +146,6 @@ export default class Question extends React.Component {
   };
 
   showHints(){
-    console.log(!this.state.showPastHints)
     this.setState({
       showPastHints: !this.state.showPastHints
     })
