@@ -85,6 +85,8 @@ export default class Question extends React.Component {
   loadMiddleScreen(){
     this.setState({
       middleScreen: true,
+      showPastHints: false,
+      pastQuestionHints: [],
     })
 
   }
@@ -117,7 +119,6 @@ export default class Question extends React.Component {
         userInput: '',
         searchText: '',
         helpMessage: '',
-        pastQuestionHints: [],
       })
   };
 
