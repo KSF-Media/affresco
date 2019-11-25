@@ -95,7 +95,6 @@ export default class Start extends React.Component {
 
   }
 
-
   render() {
     try{
       return (
