@@ -38,7 +38,6 @@ export default class Start extends React.Component {
        // 'get/all/quizzes/as/json' can't have a / in the end because the backend address dosen't have it
        const res = await fetch(backendURL + 'get/all/quizzes/as/json/?lowerlim=' + this.state.lowerLim.toString() + '&upperlim='+ this.state.gap.toString());
        const quizData = await res.json();
-       console.log(quizData)
        this.setState({
         weeklyQuiz: quizData[0],
         quizData: quizData.slice(1, quizData.length + 1),
@@ -76,11 +75,9 @@ export default class Start extends React.Component {
     e.preventDefault();
     try {
       // Gets the more quizzes from the backend        
-      fetch(backendURL + 'get/all/quizzes/as/json/?lowerlim=' + this.state.lowerLim.toString() + '&upperlim='+ this.state.upperLim.toString()
-          ).then(
-            (res) => {return res.json()}
-          ).then(
-            (quizData) => {
+      fetch(backendURL + 'get/all/quizzes/as/json/?lowerlim=' + this.state.lowerLim.toString() + '&upperlim='+ this.state.upperLim.toString())
+        .then((res) => {return res.json()})
+        .then((quizData) => {
               this.setState({
                 quizData: [...this.state.quizData,  ...quizData],
                 lowerLim: this.state.lowerLim + this.state.gap,
