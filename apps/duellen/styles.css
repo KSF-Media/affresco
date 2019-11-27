@@ -34,6 +34,11 @@ body {
   color: white;
   cursor: pointer;
 }
+.start:hover {
+  background-color: rgb(201, 114, 0);
+  border: none;
+  cursor: pointer;
+}
 .svarButton{
   background-color: orange;
   width: 100%;
