@@ -40,6 +40,7 @@ apps = {
 }
 
 app_name = ARGV.first
+maintenance = ARGV[1]
 
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
@@ -72,4 +73,13 @@ build_commands = [
   "yarn --cwd './apps/#{app_name}/' run build"
 ]
 
-build_commands.each { |c| run_command(c) }
+def deploy_maintenance_page(app_name)
+  run_command("mkdir -p ./apps/#{app_name}/dist && cp ./static/maintenance.html ./apps/#{app_name}/dist/index.html")
+end
+
+if maintenance == '--maintenance'
+  puts 'Depolying maintenance page'
+  deploy_maintenance_page(app_name)
+else
+  build_commands.each { |c| run_command(c) }
+end
