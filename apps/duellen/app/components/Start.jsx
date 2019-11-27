@@ -117,7 +117,7 @@ export default class Start extends React.Component {
                     </a>
                   </div>
                 ))}
-                {this.state.showingAll == false &&
+                {this.state.showingAll === false &&
                   <div className="btnOrange">
                     <Button variant="contained" className="start" color="primary" fullWidth={true} onClick={this.loadMore.bind(this)}>Ladda mera</Button>
                   </div>
