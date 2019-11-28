@@ -4,7 +4,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import ReactGA from 'react-ga';
 import {backendURL} from '../backend.js'
 
-const Logo = require('../../../../images/duellen-logo-vit.svg');
+const Logo = require('../../../../images/duellen-logo-svart.svg');
 
 ReactGA.initialize('UA-119802236-1');
 
