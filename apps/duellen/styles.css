@@ -20,40 +20,37 @@ body {
   width: 100%;
   position: relative;
   font-family: 'Open Sans', sans-serif;
-  background-color: green;
-  color: white;
+  color: black;
 }
 .start {
-  background-color: orange;
+  border: 1px solid navy;
   width: 100%;
-  border: none;
   border-radius: 5px;
   padding: 10px;
   margin-top: 15px;
   margin-bottom: 15px;
-  color: white;
+  color: black;
+  background-color: white;
   cursor: pointer;
 }
 .start:hover {
-  background-color: rgb(201, 114, 0);
-  border: none;
-  cursor: pointer;
+  background-color: rgb(196, 196, 196);
 }
 .svarButton{
-  background-color: orange;
+  border: 1px solid navy;
   width: 100%;
   border: none;
   border-radius: 5px;
   padding: 5px;
-  color: white;
+  color: black;
   cursor: pointer;
 }
 .skipButton{
-  background-color: darkgreen;
   border: none;
   border-radius: 5px;
   padding: 10px;
-  color: white;
+  color: black;
+  border: 1px solid navy;
   cursor: pointer;
 }
 .start :hover {

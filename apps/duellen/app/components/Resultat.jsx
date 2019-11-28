@@ -73,16 +73,17 @@ export default class Resultat extends React.Component{
     return (
       <MuiThemeProvider>
         <div>
-          <div style={{backgroundColor:'#f07e26',padding: 10}}>
+          <div style={{padding: 10}}>
             <BackBtn />
           </div>
           <Tabs
             onChange={this.handleChange}
             value={this.state.slideIndex}
             onClick={this.handleChange}
+            style={{backgroundColor:'white'}}
           >
-            <Tab label="Dina resultat" value={0} />
-            <Tab label="Rätta svar" value={1} />
+            <Tab label="Dina resultat" value={0} style={{backgroundColor:'white', color:'black'}}/>
+            <Tab label="Rätta svar" value={1} style={{backgroundColor:'white', color:'black'}}/>
           </Tabs>
           <EmailDialog />
           <SwipeableViews
