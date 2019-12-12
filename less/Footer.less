@@ -3,24 +3,24 @@
 
 .footer--paper-images {
     a {
-        margin-left: 5em;
-        @media @to-small {
-            margin-left: 2em;
-        }
-        &:first-child {
-            margin-left: 0;
-        }
-        img {
-            opacity: .4;
-            height: 7vw;
-            max-height: 40px;
-        }
+	margin-left: 5em;
+	@media @to-small {
+	    margin-left: 2em;
+	}
+	&:first-child {
+	    margin-left: 0;
+	}
+	img {
+	    opacity: .4;
+	    height: 7vw;
+	    max-height: 40px;
+	}
     }
 }
 
 .footer--ksf-address {
     @media @to-small {
-        display: block;
+	display: block;
     }
 }
 
@@ -28,7 +28,7 @@
     margin-left: 1em;
     margin-right: 1em;
     @media @to-small {
-        display: none;
+	display: none;
     }
 }
 
@@ -42,4 +42,12 @@
     background: @grey-almostlight;
     margin-top: 2em;
     margin-bottom: 2em;
+}
+
+.footer--ksf-address {
+    div {
+	@media @to-small {
+	    margin: .5em;
+	}
+    }
 }
