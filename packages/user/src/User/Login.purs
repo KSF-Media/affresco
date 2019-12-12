@@ -2,10 +2,12 @@ module KSF.User.Login where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array (all, foldMap)
 import Data.Either (Either(..), either)
 import Data.Foldable (surround)
+import Data.List.NonEmpty (NonEmptyList(..), all)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
@@ -13,6 +15,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..), contains)
 import Data.String as String
+import Data.Validation.Semigroup (unV)
 import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
@@ -59,6 +62,12 @@ instance validatedLoginField :: Form.ValidatableField LoginField where
       case field of
         UsernameField -> \_field -> Form.validateEmptyField field "E-postadress krävs."
         PasswordField -> \_field -> Form.validateEmptyField field "Lösenord krävs."
+
+type LoginForm =
+  { username :: Maybe String
+  , password :: Maybe String
+  }
+
 data LoginStep = Login | Registration
 
 type Self = React.Self Props State
@@ -183,26 +192,49 @@ failOnEmailMismatch self email
       liftEffect $ self.setState _ { errors { login = Just LoginEmailMismatchError } }
       throwError $ error "Emails don't match"
 
-onLogin :: Self -> Effect Unit
-onLogin self@{ props, state } = props.launchAff_ do
-  user <- User.loginTraditional
-            { username: fromMaybe "" state.formEmail
-            , password: fromMaybe "" state.formPassword
+onLogin :: Self -> Form.ValidatedForm LoginField LoginForm -> Effect Unit
+onLogin self@{ props, state } = unV
+  (\errors -> do
+      self.setState _
+        { formEmail    = state.formEmail    <|> Just ""
+        , formPassword = state.formPassword <|> Just ""
+        })
+  logUserIn
+  where
+    logUserIn validForm
+      | Just validUsername <- validForm.username
+      , Just validPassword <- validForm.password
+      , not String.null $ validUsername
+      , not String.null $ validPassword
+      = props.launchAff_ do
+        user <- User.loginTraditional
+            { username: validUsername
+            , password: validPassword
             , mergeToken: toNullable $ map _.token state.merge
             }
-  case user of
-    Right _ ->
-      -- removing merge token from state in case of success
-      liftEffect $ self.setState _ { merge = Nothing }
-    Left LoginInvalidCredentials ->
-      liftEffect $ self.setState _ { errors { login = Just LoginInvalidCredentials } }
-    Left SomethingWentWrong ->
-      liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-    Left _ ->
-      throwError $ error "An unexpected error occurred during traditional login"
-  -- This call needs to be last, as it will unmount the login component.
-  -- (We cannot set state of an unmounted component)
-  liftEffect $ props.onUserFetch user
+        case user of
+          Right _ ->
+            -- removing merge token from state in case of success
+            liftEffect $ self.setState _ { merge = Nothing }
+          Left LoginInvalidCredentials ->
+            liftEffect $ self.setState _ { errors { login = Just LoginInvalidCredentials } }
+          Left SomethingWentWrong ->
+            liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
+          Left _ ->
+            throwError $ error "An unexpected error occurred during traditional login"
+        -- This call needs to be last, as it will unmount the login component.
+        -- (We cannot set state of an unmount
+        liftEffect $ props.onUserFetch user
+      | otherwise = Log.error "Strange, had validated form with invalid input values"
+
+loginFormValidations :: Self -> Form.ValidatedForm LoginField LoginForm
+loginFormValidations self =
+  { username: _
+  , password: _
+  }
+  <$> Form.validateField UsernameField self.state.formEmail []
+  <*> Form.validateField PasswordField self.state.formPassword []
+
 
 renderLogin :: Self -> JSX
 renderLogin self =
@@ -252,7 +284,7 @@ renderLoginForm self =
     loginForm :: JSX
     loginForm =
       DOM.form
-        { onSubmit: Events.handler preventDefault $ \event -> onLogin self
+        { onSubmit: Events.handler preventDefault $ \_ -> onLogin self $ loginFormValidations self
         , className: "pb2"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
@@ -280,6 +312,9 @@ renderLoginForm self =
                 }
             , DOM.input
                 { className: "button-green"
+                -- Disable login button only when true errors are found.
+                -- This is to prevent it from being disabled (grey) when opening the front page
+                , disabled: unV (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
                 , value: "Logga in"
                 , type: "submit"
                 }
@@ -387,7 +422,7 @@ renderMerge self@{ props } mergeInfo =
             ]
         }
       where
-        onSubmit = Events.handler preventDefault $ \event -> onLogin self
+        onSubmit = Events.handler preventDefault $ \event -> onLogin self $ loginFormValidations self
 
 isSocialLoginEnabled :: Set SocialLoginProvider -> SocialLoginProvider -> Boolean
 isSocialLoginEnabled disabledProviders provider = not $ Set.member provider disabledProviders

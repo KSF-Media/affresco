@@ -63,7 +63,6 @@ data RegistrationInputField
   | Password
   | ConfirmPassword (Maybe String)
 derive instance eqRegistrationInputField :: Eq RegistrationInputField
---derive instance ordRegistrationInputField :: Ord RegistrationInputField
 instance validatableFieldRegistrationInputField :: ValidatableField RegistrationInputField where
   validateField field value serverErrors = case field of
     FirstName                                  -> validateEmptyField FirstName "Förnamn krävs." value
@@ -395,7 +394,7 @@ formValidations :: Self -> ValidatedForm RegistrationInputField FormData
 formValidations self@{ state: { formData } } =
   { firstName: _
   , lastName: _
-  , streetAddress:    _
+  , streetAddress: _
   , city: _
   , country: _
   , zipCode: _
