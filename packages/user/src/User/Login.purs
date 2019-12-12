@@ -49,7 +49,7 @@ type Providers =
   , new :: User.Provider
   }
 
-data LoginField = EmailAddressField | PasswordField
+data LoginField = UsernameField | PasswordField
 
 derive instance eqLoginField :: Eq LoginField
 
@@ -57,7 +57,7 @@ instance validatedLoginField :: Form.ValidatableField LoginField where
   validateField field value serverErrors =
     Form.validateWithServerErrors serverErrors field value
       case field of
-        EmailAddressField ->  Form.validateEmailAddress
+        UsernameField -> \_field -> Form.validateEmptyField field "E-postadress krävs."
         PasswordField -> \_field -> Form.validateEmptyField field "Lösenord krävs."
 data LoginStep = Login | Registration
 
@@ -265,7 +265,7 @@ renderLoginForm self =
                 , onChange: \email -> self.setState _ { formEmail = email }
                 , validationError:
                    Form.inputFieldErrorMessage $
-                     Form.validateField EmailAddressField self.state.formEmail []
+                     Form.validateField UsernameField self.state.formEmail []
                 }
             , InputField.inputField
                 { type_: "password"
@@ -377,7 +377,7 @@ renderMerge self@{ props } mergeInfo =
                 , onChange: \email -> self.setState _ { formEmail = email }
                 , validationError:
                    Form.inputFieldErrorMessage $
-                     Form.validateField EmailAddressField self.state.formEmail []
+                     Form.validateField UsernameField self.state.formEmail []
                 }
             , DOM.input
                 { className: "button-green"
