@@ -4,10 +4,10 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (all, foldMap)
+import Data.Array (foldMap)
 import Data.Either (Either(..), either)
 import Data.Foldable (surround)
-import Data.List.NonEmpty (NonEmptyList(..), all)
+import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
@@ -216,14 +216,10 @@ onLogin self@{ props, state } = unV
           Right _ ->
             -- removing merge token from state in case of success
             liftEffect $ self.setState _ { merge = Nothing }
-          Left LoginInvalidCredentials ->
-            liftEffect $ self.setState _ { errors { login = Just LoginInvalidCredentials } }
-          Left SomethingWentWrong ->
-            liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-          Left _ ->
-            throwError $ error "An unexpected error occurred during traditional login"
+          Left err ->
+            liftEffect $ self.setState _ { errors { login = Just err } }
         -- This call needs to be last, as it will unmount the login component.
-        -- (We cannot set state of an unmount
+        -- (We cannot set state of an unmounted component)
         liftEffect $ props.onUserFetch user
       | otherwise = Log.error "Strange, had validated form with invalid input values"
 
