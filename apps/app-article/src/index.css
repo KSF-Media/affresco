@@ -446,3 +446,7 @@ body {
 .container-fluid.article {
     overflow-x: hidden;
 }
+
+.html iframe{
+    border: 0;
+}
