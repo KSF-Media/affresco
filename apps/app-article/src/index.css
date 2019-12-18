@@ -105,29 +105,35 @@ body {
 /*Ads*/
 #MOBPARAD {
     text-align: center;
-    /*margin-top:20px;*/
     margin-bottom: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 #MOBMITT {
     text-align: center;
     margin-bottom: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 #MOBNER {
     text-align: center;
     margin-bottom: 20px;
-    margin-top: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 #DIGIHELMOB {
     text-align: center;
     margin-bottom: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 .ksfDFPadHeader {
     /*display: none;*/
-    margin-left: 40px;
+    margin-left: 1em;
     color: #9b9b9b;
     font-size: 12px !important;
     text-transform: uppercase;
@@ -343,21 +349,17 @@ body {
     color:grey;
 }
 
-.manuallyRelated{
-    border-left: 3px solid #f07e26;
-}
-
 .relatedArticles .articleItem .category{
     color:#f07e26;
     font-size: 15px;
     display: inline-block;
+    margin-right: 12px;
 }
 
 .relatedArticles .articleItem .date{
     color: #818181;
     font-size: 15px;
     display: inline-block;
-    margin-left: 12px;
 }
 
 .relatedArticles .articleItem a {
@@ -435,4 +437,16 @@ body {
     border-radius: 50%;
     width:40px;
     height:40px;
+}
+
+.html iframe {
+    width: 100%;
+}
+
+.container-fluid.article {
+    overflow-x: hidden;
+}
+
+.html iframe{
+    border: 0;
 }

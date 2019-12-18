@@ -39,7 +39,7 @@ class RelatedArticles extends Component {
                 return (
                     <div key={index} className={"col-12 articleItem"}>
                         <div className={"row"}>
-                            <div className={"col-8 my-auto"} onClick={() => {
+                            <div className={"col-8 col-md-10 my-auto"} onClick={() => {
                                 window.location.href = "?uuid=" + item.uuid;
                             }} style={{paddingLeft: '0px'}}>
                                 <div>
@@ -58,7 +58,7 @@ class RelatedArticles extends Component {
                                     <div className={"date"}>{this.formatTime(item.publishingTime)}</div>
                                 </div>
                             </div>
-                            <div className={"col-4 articleImage"} onClick={() => {
+                            <div className={"col-4 col-md-2 articleImage"} onClick={() => {
                                 window.location.href = "?uuid=" + item.uuid;
                             }} style={{padding: '0px'}}>
                                 {

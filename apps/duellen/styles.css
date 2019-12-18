@@ -20,18 +20,37 @@ body {
   width: 100%;
   position: relative;
   font-family: 'Open Sans', sans-serif;
-  background-color: green;
-  color: white;
+  color: black;
 }
 .start {
-  background-color: orange;
+  border: 1px solid navy;
   width: 100%;
-  border: none;
   border-radius: 5px;
   padding: 10px;
   margin-top: 15px;
   margin-bottom: 15px;
-  color: white;
+  color: black;
+  background-color: white;
+  cursor: pointer;
+}
+.start:hover {
+  background-color: rgb(196, 196, 196);
+}
+.svarButton{
+  border: 1px solid navy;
+  width: 100%;
+  border: none;
+  border-radius: 5px;
+  padding: 5px;
+  color: black;
+  cursor: pointer;
+}
+.skipButton{
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  color: black;
+  border: 1px solid navy;
   cursor: pointer;
 }
 .start :hover {
@@ -42,7 +61,6 @@ h1 {
 }
 h2 {
   margin: 10px;
-  margin-bottom: 30px;
   font-weight: 600;
 }
 .slimh2 {
@@ -170,4 +188,20 @@ h2 {
 }
 .textRight {
   text-align: right;
+}
+.turn{
+  position: absolute;
+  transform-origin: 0% 50%;
+  transform: scalex(1.5) scaley(0.8);
+  margin-left: 5px;
+}
+.show-as-p{
+  text-decoration: none;
+  background: none;
+  border: none;
+  color: white;
+  outline: none;
+}
+button:focus {
+  outline: none;
 }

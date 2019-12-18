@@ -55,9 +55,11 @@ export default class Intro extends React.Component{
       action: 'Started Quiz'
     });
   }
+  
+  // Gets the week number when the question was published
   getweek(){
     var day = moment(this.state.quizData.publication_date.slice(0,10)).add(-1, 'days');
-      
+
     this.setState({
       week: day.week(),
     });
@@ -76,6 +78,11 @@ export default class Intro extends React.Component{
 			<div class="row">
 				<h2 class="col text-center font-weight-bold">{this.state.quizData.title}</h2>
 			</div>
+      <div class="row mt-4 mb-4">
+				<div class="col">
+					<h5>{ this.state.quizData.description}</h5>
+				</div>
+			</div>
 			<div class="row mb-3">
 				<div class="col-sm-6 text-center">
 					<img src={this.state.player1_img} class="introImg"></img>
@@ -84,11 +91,6 @@ export default class Intro extends React.Component{
 				<div class="col-sm-6 text-center">
 					<img src={this.state.player2_img} class="introImg"></img>
 					<h3>{this.state.player2_name}</h3>
-				</div>
-			</div>
-			<div class="row mt-4 mb-4">
-				<div class="col">
-					<h4>{ this.state.quizData.description }</h4>
 				</div>
 			</div>
 			<div class="row mb-3">

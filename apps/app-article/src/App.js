@@ -64,16 +64,18 @@ class App extends Component {
     }
 
     componentDidMount() {
+        if(window.ksfDfp){
+            window.ksfDfp.startUp();
+        }
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
         }
-
-        if (localStorage.getItem("fontSize")) {
-            this.setState({fontSize: parseFloat(localStorage.getItem("fontSize"))});
+        if (Cookies.get("fontSize")) {
+            this.setState({fontSize: parseFloat(Cookies.get("fontSize"))});
         }
 
         //In case User want to logout, the value should be false
-        if(Cookies.get('LoginStatus') != undefined && !Cookies.get('LoginStatus')){
+        if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
             //we remove it to avoid infinite loop
             Cookies.remove('LoginStatus');
             //TODO
@@ -92,6 +94,9 @@ class App extends Component {
 
     onLogout() {
         console.log("Logged out successfully!")
+        //Remove the current user from localstorage 
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("cachedArticles");
     }    
     getArticle() {
         let urlParams = getUrlParam();
@@ -270,11 +275,11 @@ class App extends Component {
     };
 
     loadScriptError(oError) {
-        // console.log('error: ', oError);
+         console.log('error: ', oError);
     }
 
     loadScriptSuccess(res) {
-        // console.log('success: ', res);
+         console.log('success: ', res);
     }
 
     // not the best solution but seems is working for now, delay the appending of script for each element in array
@@ -325,6 +330,7 @@ class App extends Component {
 
         if (this.state.user && typeof this.state.user.uuid != 'undefined') {
             push_data.userid = this.state.user.uuid;
+            push_data.cusno = this.state.user.cusno;
         }
 
         if (this.state.user && this.state.user.subs) {
@@ -341,7 +347,7 @@ class App extends Component {
 
             let authors = [];
             article.authors.map(author =>{
-                authors.push(author.authorByline);
+                authors.push(author.byline);
             });
 
             push_data.authors = authors;
@@ -402,8 +408,7 @@ class App extends Component {
 
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        this.fetchArticleFromApi(getUrlParam().has('uuid'));
-
+        this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
         //Call Android bridge 
         Android.isLoggedIn();        
     }
@@ -414,15 +419,17 @@ class App extends Component {
 
     showLogin = (e) => {
         e.preventDefault();
-        this.setState({appearLogin: true, showBuyOption: false});
+        this.setState({appearLogin: true, showBuyOption: false}, () => {
+            document.getElementById('loginForm').scrollIntoView();
+        });
     };
 
     increaseFontSize = () => {
         let increaseTextSize = parseFloat(this.state.fontSize) + parseFloat(this.state.fontSizeIncrementalValue);
         this.setState({fontSize: increaseTextSize}, () => {
-            localStorage.setItem("fontSize", this.state.fontSize);
+            Cookies.set("fontSize", this.state.fontSize, { expires: 365 });
             if (this.state.fontSize > this.state.fontSizeThreshold) {
-                localStorage.setItem("fontSize", "1");
+                Cookies.set("fontSize", "1", { expires: 365 });
                 this.setState({fontSize: 1}, () => {
                     this.resizeText(1);
                 });
@@ -441,7 +448,7 @@ class App extends Component {
         if (document.getElementsByClassName('preamble').length > 0) {
             const articleTitle = document.getElementsByClassName('preamble')[0];
             articleTitle.style.fontSize = newSize  + 0.05 + "rem";
-            articleTitle.style.lineHeight = "100%";
+            articleTitle.style.lineHeight = "120%";
         }
 
         const nodes = document.querySelectorAll('#content');
@@ -473,19 +480,18 @@ class App extends Component {
 
         const {isImageModalOpen} = this.state;
 
-        if (this.state.isLoading) {
-            return <Loading/>;
-        }
-
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Something wrong happened!"}/>;
+            return <ErrorPage message={"Laddar..."}/>;
         }
+        
         if(this.state.forceLoginView){
-            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>;
+            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>;
         }
 
         return (
-            <div className="App">                
+            <div className="App">
+                {this.state.isLoading ? <Loading/>:''}
+                                
                 {isImageModalOpen && (
                     <Lightbox
                         mainSrc={this.state.modalImage + '&width=1200'}
@@ -519,8 +525,15 @@ class App extends Component {
 
                                 {
                                     this.state.appearLogin ?
+                                        <div id={"loginForm"}><strong>Logga in: </strong></div>
+                                        :
+                                        ""
+                                }
+
+                                {
+                                    this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={[]}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>
                                         :
                                         ""
                                 }

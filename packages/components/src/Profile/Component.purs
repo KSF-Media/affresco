@@ -31,7 +31,6 @@ import KSF.InputField.Component as InputField
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
-import Persona as Persona
 import React.Basic (make, JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -110,7 +109,7 @@ profile = make component
   , didMount
   }
 
-addressArray :: Persona.Address -> Array String
+addressArray :: User.Address -> Array String
 addressArray { streetAddress, zipCode, city } =
   let takeJust = catMaybes <<< map Nullable.toMaybe
   in streetAddress : takeJust [ zipCode, city ]
@@ -207,7 +206,7 @@ render self@{ props: { profile: user } } =
         profileAddressEditing = DOM.div_
           [ DescriptionList.descriptionList
               { definitions:
-                  [ { term: "Adress:"
+                  [ { term: "Permanent adress:"
                     , description: [ editAddress self ]
                     }
                   ]
@@ -438,12 +437,12 @@ switchEditProgress :: Self -> EditField -> AsyncWrapper.Progress JSX -> Effect U
 switchEditProgress self EditName progress = self.setState _ { editName = progress }
 switchEditProgress self EditAddress progress = self.setState _ { editAddress = progress }
 
-isUpcomingPendingChange :: Maybe DateTime -> Persona.PendingAddressChange -> Boolean
+isUpcomingPendingChange :: Maybe DateTime -> User.PendingAddressChange -> Boolean
 isUpcomingPendingChange Nothing _ = true
 isUpcomingPendingChange (Just now) { startDate } =
   maybe true (_ > now) $ toDateTime startDate
 
-pendingAddressChangeText :: Persona.PendingAddressChange -> String
+pendingAddressChangeText :: User.PendingAddressChange -> String
 pendingAddressChangeText { address, startDate, endDate } =
   let addressString = formatAddress address
       pendingPeriod = formatDateString startDate
@@ -465,8 +464,10 @@ resetFields self EditName =
                            }
                   }
 
-formatAddress :: Persona.DeliveryAddress -> String
-formatAddress { streetAddress, zipcode, city } = intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
+formatAddress :: User.DeliveryAddress -> String
+formatAddress { temporaryName, streetAddress, zipcode, city } =
+  (maybe "" (_ <> ", ") $ toMaybe temporaryName) <>
+  intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
 
 formatDateString :: JSDate -> String
 formatDateString startDate
