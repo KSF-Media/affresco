@@ -24,7 +24,6 @@ export default class Question extends React.Component {
       progress: 1,
       hintPoint: 5,
       completed: 0,
-      latestScore: 0,
       tally: 0,
       displayResult: false,
       userInput: '',
