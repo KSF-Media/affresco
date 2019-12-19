@@ -27,6 +27,7 @@ export default class Intro extends React.Component{
     try {
       const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
       const quizData = await res.json();
+      console.log(quizData)
       this.setState({
         quizData: quizData,
       });
@@ -80,7 +81,7 @@ export default class Intro extends React.Component{
 			</div>
       <div class="row mt-4 mb-4">
 				<div class="col">
-					<h5>{ this.state.quizData.description}</h5>
+					<pre>{ this.state.quizData.description}</pre>
 				</div>
 			</div>
 			<div class="row mb-3">
