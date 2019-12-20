@@ -27,7 +27,6 @@ export default class Intro extends React.Component{
     try {
       const res = await fetch(backendURL + 'get/all/quizzes/as/json/' + this.props.match.params.id);
       const quizData = await res.json();
-      console.log(quizData)
       this.setState({
         quizData: quizData,
       });
