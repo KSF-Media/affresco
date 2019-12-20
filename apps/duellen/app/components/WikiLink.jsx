@@ -48,10 +48,6 @@ export default class WikiLink extends React.Component{
             {this.state.wikiresponse.map(({title, description}) => (
               <button key={title} onClick={() => this.props.onClick(title)} type="button" className="w-100 p-3 mb-2 bg-light text-black border">
                     <b>{title}</b>
-                    {/* Steffe wanted pepole to test with only the title
-                    <br/>
-                    {description}
-                    */}
               </button>
             ))}
         </div>
