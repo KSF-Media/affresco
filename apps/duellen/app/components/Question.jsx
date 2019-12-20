@@ -82,11 +82,21 @@ export default class Question extends React.Component {
     })
   }
   
-  loadMiddleScreen(){
+  loadMiddleScreen(answer){
+    if(answer === this.checkIfCorrect()){
+      this.setState({
+        right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p']
+      });
+    }else{
+      this.setState({
+      right: [...this.state.right, ' Du svarade fel på denna fråga.']
+      });
+    }
     this.setState({
       middleScreen: true,
       showPastHints: false,
       pastQuestionHints: [],
+      userInput: '',
     })
 
   }
@@ -141,8 +151,8 @@ export default class Question extends React.Component {
     this.handleResults()
     // Sets the user input to nothing so the input field is empty
     this.setState({
-      userInput: '',
       pastQuestionHints: [],
+      hintPoint: 0,
     })
   };
 
@@ -190,15 +200,6 @@ export default class Question extends React.Component {
 
   // Adds how the player did for each quiz
   handleResults(){
-    if(this.state.userInput === this.checkIfCorrect()){
-      this.setState({
-        right: [...this.state.right, ' Du svarade rätt på ledtråden värd ' + this.state.hintPoint + 'p']
-      });
-    }else{
-      this.setState({
-      right: [...this.state.right, ' Du svarade fel på denna fråga.']
-      });
-    }
   }
 
   //gets the next hint
@@ -227,7 +228,8 @@ export default class Question extends React.Component {
   // Gets the next question if the user answers correctly and the next hint if tha answer is wrong
   handleAnswer(answer){
     if (answer === this.checkIfCorrect()){
-      this.loadMiddleScreen()
+      this.loadMiddleScreen(answer)
+      this.handleResults()
     }else{
       this.getNextHint()
     }
@@ -262,6 +264,7 @@ export default class Question extends React.Component {
                         category={this.state.category} 
                         answer={this.state.answer}
                         onClick={this.loadNextQuestion.bind(this)}
+                        yourScore={this.state.hintPoint}
                         />
         )
       }else {
@@ -303,7 +306,7 @@ export default class Question extends React.Component {
             </div>
             <PastHints hints={this.state.pastQuestionHints} show={this.state.showPastHints} lasthint={this.state.hintPoint}></PastHints>
             <div className="row">
-              <div className="col">
+              <div className="col text-center">
                 <h4>{this.state.hint}</h4>
               </div>
             </div>

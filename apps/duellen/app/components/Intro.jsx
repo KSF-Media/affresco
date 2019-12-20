@@ -80,7 +80,7 @@ export default class Intro extends React.Component{
 			</div>
       <div class="row mt-4 mb-4">
 				<div class="col">
-					<h5>{ this.state.quizData.description}</h5>
+					<pre>{ this.state.quizData.description}</pre>
 				</div>
 			</div>
 			<div class="row mb-3">

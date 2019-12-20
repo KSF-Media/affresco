@@ -17,12 +17,12 @@ export default class MiddleScreen extends React.Component{
           nextButtonText: 'Nästa fråga',
           player1CurrentPoints: 0,
           player2CurrentPoints: 0,
+          yourScore: 0,
         }
       };
     // After each question this screen  is loaded to show the player how they did
     componentDidMount(){
       var nextQuestionText = 'Nästa fråga'
-      console.log(this.props.progress)
       if (this.props.progress == 4){
         nextQuestionText = "Avsluta och se dina resultat"
       }
@@ -38,6 +38,7 @@ export default class MiddleScreen extends React.Component{
         player1CurrentPoints: p1Score,
         player2CurrentPoints: p2Score,
         hasMounted: true,
+        yourScore: this.props.yourScore,
       })
     }
   
@@ -59,12 +60,13 @@ export default class MiddleScreen extends React.Component{
               <h2>Fråga {this.state.progress + 1}s svar</h2>
             </div>
             <div className="col-12 text-center">
-              <h2>{this.state.category} : {this.state.question}</h2>
+              <h2>{this.state.category}: {this.state.question}</h2>
             </div>
           </div>
           <div className="row">
             <div className="col text-center">
               <h4>Rätta svaret för frågan var: {this.state.answer}</h4>
+              <h6>Du fick {this.state.yourScore} poäng från den här frågan</h6>
             </div>
           </div>
           <div className="row mb-3">
