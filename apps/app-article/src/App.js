@@ -360,6 +360,9 @@ class App extends Component {
             push_data.is_authenticated = isUserLoggedIn();
             push_data.is_premium = article.premium ? 'PREMIUM' : 'FREE';
             push_data.url = article.shareUrl;
+            push_data.analyticsCategory = article.analyticsCategory;
+            push_data.analyticsSection = article.analyticsSection;
+            push_data.app_os = navigator.userAgent.match(/Android/) ? "Android" : "iOS";
         }
 
         window.dataLayer.push(push_data);
