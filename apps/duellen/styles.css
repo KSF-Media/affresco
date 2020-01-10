@@ -27,6 +27,7 @@ pre{
   margin-bottom: .5rem;
   font-weight: 500;
   line-height: 1.2;
+  white-space: pre-wrap;
 }
 .start {
   border: 1px solid navy;
