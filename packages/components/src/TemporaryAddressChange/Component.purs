@@ -21,6 +21,7 @@ import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.User as User
 import KSF.ValidatableForm as VF
+import KSF.CountryDropDown (countryDropDown)
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -131,6 +132,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
               , addressInput
               , zipInput
               , cityInput
+              , countryInput
               , temporaryNameInput
               , DOM.div
                   { children: [ submitFormButton ]
@@ -198,6 +200,14 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
         , validationError: Nothing
         , label: "Stad"
         }
+
+    countryInput =
+      countryDropDown
+        [ { countryCode: "FI", countryName: "Finland" }
+        , { countryCode: "AX", countryName: "Åland" }
+        ]
+        (\_ -> pure unit)
+        Nothing
 
     temporaryNameInput =
       InputField.inputField

@@ -274,7 +274,7 @@ editAddress self =
             , label: "Stad"
             , validationError: inputFieldErrorMessage $ validateField City self.state.address.city []
             }
-        , CountryDropDown.countryDropDown
+        , CountryDropDown.defaultCountryDropDown
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
             self.state.address.countryCode
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditAddress ] }
