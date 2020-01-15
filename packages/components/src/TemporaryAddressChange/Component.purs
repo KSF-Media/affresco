@@ -36,6 +36,7 @@ type State =
   , minEndDate    :: Maybe DateTime
   , streetAddress :: Maybe String
   , zipCode       :: Maybe String
+  , countryCode   :: Maybe String
   , temporaryName :: Maybe String
   }
 
@@ -58,16 +59,19 @@ data Action
 data AddressChangeFields
   = StreetAddress
   | Zip
+  | CountryCode
   | TemporaryName
 instance validatableFieldAddressChangeFields :: VF.ValidatableField AddressChangeFields where
   validateField field value _serverErrors = case field of
     StreetAddress -> VF.validateEmptyField field "Adress krävs." value
     Zip           -> VF.validateZipCode field value
+    CountryCode   -> VF.validateEmptyField field "Land krävs." value
     TemporaryName -> VF.noValidation value
 
 type AddressChange =
   { streetAddress :: Maybe String
   , zipCode       :: Maybe String
+  , countryCode   :: Maybe String
   , temporaryName :: Maybe String
   }
 
@@ -82,6 +86,7 @@ initialState =
   , minEndDate: Nothing
   , streetAddress: Nothing
   , zipCode: Nothing
+  , countryCode: Just "FI"
   , temporaryName: Nothing
   }
 
@@ -104,7 +109,7 @@ didMount self = do
   self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName }} =
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
@@ -125,7 +130,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
   where
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, countryCode, temporaryName })
           , children:
               [ startDayInput
               , endDayInput
@@ -206,8 +211,8 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
         [ { countryCode: "FI", countryName: "Finland" }
         , { countryCode: "AX", countryName: "Åland" }
         ]
-        (\_ -> pure unit)
-        Nothing
+        (\newCountryCode -> self.setState _ { countryCode = newCountryCode })
+        self.state.countryCode
 
     temporaryNameInput =
       InputField.inputField
@@ -236,6 +241,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
           (\_ -> liftEffect $ self.setState _
                     { streetAddress = self.state.streetAddress <|> Just ""
                     , zipCode = self.state.zipCode             <|> Just ""
+                    , countryCode = self.state.countryCode     <|> Just ""
                     })
           makeTemporaryAddressChange
           (validateTemporaryAddressChangeForm addressChangeFormValues)
@@ -243,10 +249,11 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
         makeTemporaryAddressChange :: AddressChange -> Aff Unit
         makeTemporaryAddressChange { streetAddress: Just streetAddress'
                                    , zipCode: Just zipCode'
+                                   , countryCode: Just countryCode'
                                    , temporaryName: temporaryName'
                                    } = do
           liftEffect $ self.props.onLoading
-          User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' temporaryName' >>=
+          User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' countryCode' temporaryName' >>=
             case _ of
               Right sub -> liftEffect $ self.props.onSuccess sub
               Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
@@ -286,8 +293,10 @@ validateTemporaryAddressChangeForm :: AddressChange -> VF.ValidatedForm AddressC
 validateTemporaryAddressChangeForm form =
   { streetAddress: _
   , zipCode: _
+  , countryCode: _
   , temporaryName: _
   }
   <$> VF.validateField StreetAddress form.streetAddress []
   <*> VF.validateField Zip form.zipCode []
+  <*> VF.validateField CountryCode form.countryCode []
   <*> VF.validateField TemporaryName form.temporaryName []
