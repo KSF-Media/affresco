@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+use File::Basename;
+
+my $app_dir = "../../apps/";
+my @app_directories = glob($app_dir . "*");
+
+sub create_deploy_trigger() {
+    foreach my $dir (@app_directories) {
+	opendir(my $dh, $dir);
+	# Is "output" directory found?
+	if (grep(/^output$/, readdir $dh)) {
+	    chdir $dir;
+	    # Check size of output directory and print to $app_dir/.deploy-trigger
+	    my $du_output = `du -sb output`;
+	    my ($dir_size) = split(/\t/, $du_output);
+
+	    my $trigger_file = "$dir/.deploy-trigger";
+	    my $app_name = basename($dir);
+
+	    if (my $build_size = get_current_build_size($trigger_file)) {
+		if ($dir_size != $build_size) {
+		    print "Build size for $app_name has changed, updating .deploy-trigger ..\n";
+		    write_build_size($build_size, $trigger_file);
+		}
+	    }
+	    else {
+		print "Trigger file for $app_name does not exist, creating one ..\n";
+		write_build_size($dir_size, $trigger_file);
+	    }
+	}
+	closedir $dh;
+    }
+}
+
+sub get_current_build_size() {
+    my $trigger_file = shift;
+    open(my $fh, '<', $trigger_file) or print "Could not check current build size, failed to open file '$trigger_file' $!\n" && return 0;
+    my $build_size = <$fh>;
+    close $fh;
+    return int($build_size);
+}
+
+sub write_build_size() {
+    my $build_size = shift;
+    my $trigger_file = shift;
+    open(my $fh, '>', "$trigger_file") or die "Could not open file '$trigger_file' $!";
+    print $fh $build_size . "\n";
+    close $fh;
+}
+
+create_deploy_trigger();
