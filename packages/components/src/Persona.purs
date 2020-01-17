@@ -103,16 +103,17 @@ temporaryAddressChange
   -> DateTime
   -> String
   -> String
+  -> String
   -> Maybe String
   -> Token
   -> Aff Subscription
-temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode temporaryName token = do
+temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode countryCode temporaryName token = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode, temporaryName: toNullable temporaryName }
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
     ]
     { authorization }
   where
