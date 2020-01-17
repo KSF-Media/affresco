@@ -15,7 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Foreign.Object as Object
-import KSF.CountryDropDown (countryDropDown)
+import KSF.CountryDropDown (defaultCountryDropDown)
 import KSF.InputField.Component as InputField
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateZipCode)
@@ -180,7 +180,7 @@ zipCodeInput self@{ state: { formData }} = InputField.inputField
 
 countryInput :: Self -> JSX
 countryInput self@{ state: { formData }} =
-  countryDropDown (\val -> self.setState _ { formData { country = val } }) formData.country
+  defaultCountryDropDown (\val -> self.setState _ { formData { country = val } }) formData.country
 
 phoneInput :: Self -> JSX
 phoneInput self@{ state: { formData }} = InputField.inputField
