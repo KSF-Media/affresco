@@ -268,7 +268,7 @@ renderLoginForm self =
       where
         loginWithSocial =
           DOM.span
-            { className: "login--login-with-some-text underline"
+            { className: "login--login-social-media-text underline"
             , children: [ DOM.text "Logga in med Facebook eller Google" ]
             , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
             }
