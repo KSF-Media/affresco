@@ -1,15 +1,22 @@
 #!/usr/bin/perl
-use warnings;
+BEGIN {
+    delete @ENV{qw(GIT_LITERAL_PATHSPECS)};
+}
+
 use strict;
+use warnings;
 
 use File::Basename;
+use Cwd;
 
-my $app_dir = "../../apps/";
+my $cwd = getcwd;
+my $app_dir = "apps/";
 my @app_directories = glob($app_dir . "*");
 
 sub create_deploy_trigger() {
     foreach my $dir (@app_directories) {
-	opendir(my $dh, $dir);
+	my $full_app_dir = "$cwd/$dir";
+	opendir(my $dh, $full_app_dir) or die "Could not open directory: '$full_app_dir'";
 	# Is "output" directory found?
 	if (grep(/^output$/, readdir $dh)) {
 	    chdir $dir;
@@ -17,7 +24,7 @@ sub create_deploy_trigger() {
 	    my $du_output = `du -sb output`;
 	    my ($dir_size) = split(/\t/, $du_output);
 
-	    my $trigger_file = "$dir/.deploy-trigger";
+	    my $trigger_file = "$full_app_dir/.deploy-trigger";
 	    my $app_name = basename($dir);
 
 	    if (my $build_size = get_current_build_size($trigger_file)) {
