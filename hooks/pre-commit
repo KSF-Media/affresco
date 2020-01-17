@@ -19,7 +19,7 @@ sub create_deploy_trigger() {
 	opendir(my $dh, $full_app_dir) or die "Could not open directory: '$full_app_dir'";
 	# Is "output" directory found?
 	if (grep(/^output$/, readdir $dh)) {
-	    chdir $dir;
+	    chdir $full_app_dir;
 	    # Check size of output directory and print to $app_dir/.deploy-trigger
 	    my $du_output = `du -sb output`;
 	    my ($dir_size) = split(/\t/, $du_output);
