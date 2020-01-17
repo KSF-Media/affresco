@@ -10,8 +10,10 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
 
-countryDropDown :: (Maybe String -> Effect Unit) -> Maybe String -> JSX
-countryDropDown onChange value =
+
+
+countryDropDown :: Array DropDownCountry -> (Maybe String -> Effect Unit) -> Maybe String -> JSX
+countryDropDown countries onChange value =
   DOM.div
     { className: "input-field--container"
     , children:
@@ -29,6 +31,11 @@ countryDropDown onChange value =
         { value: countryCode
         , children: [ DOM.text countryName ]
         }
+
+defaultCountryDropDown :: (Maybe String -> Effect Unit) -> Maybe String -> JSX
+defaultCountryDropDown =
+  countryDropDown countries
+  where
     countries =
       [ { countryCode: "FI", countryName: "Finland" }
       , { countryCode: "AX", countryName: "Åland" }
@@ -36,3 +43,8 @@ countryDropDown onChange value =
       , { countryCode: "NO", countryName: "Norge" }
       , { countryCode: "DK", countryName: "Danmark" }
       ]
+
+type DropDownCountry =
+  { countryCode :: String
+  , countryName :: String
+  }
