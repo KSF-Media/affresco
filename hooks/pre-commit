@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 
 BEGIN {
+    # This is to get git hooks working with magit
+    # https://magit.vc/manual/magit/My-Git-hooks-work-on-the-command_002dline-but-not-inside-Magit.html
     delete @ENV{qw(GIT_LITERAL_PATHSPECS)};
 }
 
