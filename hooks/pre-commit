@@ -27,7 +27,7 @@ sub create_deploy_trigger() {
 	if (grep(/^output$/, readdir DH)) {
 	    chdir $full_app_dir;
 	    # Calculate hash of build directory and write to file if changed
-	    my $build_hash_output = `find . -type f | xargs echo | sha256sum`;
+	    my $build_hash_output = `find . -type f | xargs cat | sha256sum`;
 	    my ($build_hash) = split(' ', $build_hash_output);
 	    my $build_hash_file = "$full_app_dir/$BUILD_HASH_FILENAME";
 	    my $app_name = basename($dir);
