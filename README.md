@@ -16,7 +16,7 @@ Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautifu
 
 ## Developing
 
-To install all packages run `yarn install` in the root of the repo. 
+To install all packages run `yarn install` in the root of the repo. As we are using git hooks, run `yarn copy-hooks` to set them up in your machine.
 
 You might also want to install the tools globally for more convenience: `npm install -g purescript spago parcel`
 
