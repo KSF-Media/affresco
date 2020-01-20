@@ -20,11 +20,8 @@ my $BUILD_HASH_FILENAME = '.build-size-sha256';
 sub create_deploy_trigger() {
     foreach my $dir (@APP_DIRECTORIES) {
 	my $full_app_dir = "$CWD/$dir";
-	opendir(DH, $full_app_dir)
-	    or die "Could not open directory: '$full_app_dir'";
 
-	# Is "output" directory found?
-	if (grep(/^output$/, readdir DH)) {
+	if (is_purescript_project($full_app_dir)) {
 	    chdir $full_app_dir;
 	    # Calculate hash of build directory and write to file if changed
 	    my $build_hash_output = `find ./output -type f | xargs cat | sha256sum`;
@@ -35,19 +32,28 @@ sub create_deploy_trigger() {
 	    given (get_current_build_hash($build_hash_file)) {
 		when ($_ eq 0) {
 		    print "Build hash for $app_name does not exist, creating one ..\n";
-		    write_build_size($build_hash, $build_hash_file);
+		    write_build_hash($build_hash, $build_hash_file);
+		}
+		when ($_ ne $build_hash) {
+		    print "Build hash for $app_name has changed, updating $BUILD_HASH_FILENAME ..\n";
+		    write_build_hash($build_hash, $build_hash_file);
 		}
 		default {
-		    my $current_build_hash = $_;
-		    if ($build_hash ne $current_build_hash) {
-			print "Build size for $app_name has changed, updating $BUILD_HASH_FILENAME ..\n";
-			write_build_size($build_hash, $build_hash_file);
-		    }
+		    print "No changes in the $app_name build hash.\n"
 		}
 	    }
 	}
-	closedir DH;
     }
+}
+
+# If an `output` directory is found, it's a Purescript project
+sub is_purescript_project() {
+    my $app_dir = shift;
+    opendir(DH, $app_dir)
+	or die "Could not open directory: '$app_dir'";
+    my $is_purescript_project = grep(/^output$/, readdir DH) ? 1 : 0;
+    closedir DH;
+    return $is_purescript_project;
 }
 
 sub get_current_build_hash() {
@@ -61,7 +67,7 @@ sub get_current_build_hash() {
     return $build_hash;
 }
 
-sub write_build_size() {
+sub write_build_hash() {
     my $build_size = shift;
     my $build_hash_file = shift;
     open(FH, '>', "$build_hash_file")
