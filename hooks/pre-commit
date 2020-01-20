@@ -1,61 +1,73 @@
 #!/usr/bin/perl
+
 BEGIN {
     delete @ENV{qw(GIT_LITERAL_PATHSPECS)};
 }
 
 use strict;
 use warnings;
+use experimental qw( switch );
 
 use File::Basename;
 use Cwd;
 
-my $cwd = getcwd;
-my $app_dir = "apps/";
-my @app_directories = glob($app_dir . "*");
+my $CWD = getcwd;
+my @APP_DIRECTORIES = glob('apps/*');
+my $BUILD_HASH_FILENAME = '.build-size-sha256';
 
 sub create_deploy_trigger() {
-    foreach my $dir (@app_directories) {
-	my $full_app_dir = "$cwd/$dir";
-	opendir(my $dh, $full_app_dir) or die "Could not open directory: '$full_app_dir'";
-	# Is "output" directory found?
-	if (grep(/^output$/, readdir $dh)) {
-	    chdir $full_app_dir;
-	    # Check size of output directory and print to $app_dir/.deploy-trigger
-	    my $du_output = `du -sb output`;
-	    my ($dir_size) = split(/\t/, $du_output);
+    foreach my $dir (@APP_DIRECTORIES) {
+	my $full_app_dir = "$CWD/$dir";
+	opendir(DH, $full_app_dir)
+	    or die "Could not open directory: '$full_app_dir'";
 
-	    my $trigger_file = "$full_app_dir/.deploy-trigger";
+	# Is "output" directory found?
+	if (grep(/^output$/, readdir DH)) {
+	    chdir $full_app_dir;
+	    # Calculate hash of build directory and write to file if changed
+	    my $build_hash_output = `find . -type f | xargs echo | sha256sum`;
+	    my ($build_hash) = split(' ', $build_hash_output);
+	    my $build_hash_file = "$full_app_dir/$BUILD_HASH_FILENAME";
 	    my $app_name = basename($dir);
 
-	    if (my $build_size = get_current_build_size($trigger_file)) {
-		if ($dir_size != $build_size) {
-		    print "Build size for $app_name has changed, updating .deploy-trigger ..\n";
-		    write_build_size($build_size, $trigger_file);
+	    given (get_current_build_hash($build_hash_file)) {
+		when ($_ eq 0) {
+		    print "Build hash for $app_name does not exist, creating one ..\n";
+		    write_build_size($build_hash, $build_hash_file);
+		}
+		default {
+		    my $current_build_hash = $_;
+		    if ($build_hash ne $current_build_hash) {
+			print "Build size for $app_name has changed, updating $BUILD_HASH_FILENAME ..\n";
+			write_build_size($build_hash, $build_hash_file);
+		    }
 		}
 	    }
-	    else {
-		print "Trigger file for $app_name does not exist, creating one ..\n";
-		write_build_size($dir_size, $trigger_file);
-	    }
 	}
-	closedir $dh;
+	closedir DH;
     }
 }
 
-sub get_current_build_size() {
-    my $trigger_file = shift;
-    open(my $fh, '<', $trigger_file) or print "Could not check current build size, failed to open file '$trigger_file' $!\n" && return 0;
-    my $build_size = <$fh>;
-    close $fh;
-    return int($build_size);
+sub get_current_build_hash() {
+    my $build_hash_file = shift;
+    open(FH, '<', $build_hash_file)
+	or print "Could not check current build size, failed to open file '$build_hash_file' $!\n"
+	&& return 0;
+    chomp(my @build_file_content = <FH>);
+    my ($build_hash) = reverse @build_file_content;
+    close FH;
+    return $build_hash;
 }
 
 sub write_build_size() {
     my $build_size = shift;
-    my $trigger_file = shift;
-    open(my $fh, '>', "$trigger_file") or die "Could not open file '$trigger_file' $!";
-    print $fh $build_size . "\n";
-    close $fh;
+    my $build_hash_file = shift;
+    open(FH, '>', "$build_hash_file")
+	or die "Could not open file '$build_hash_file' $!";
+    print FH "# SHA256 of the content of the build directory.\n"
+	   . "# This is used for triggering project deployment when there are updated dependecies.\n"
+	   . "$build_size\n";
+    close FH;
 }
 
 create_deploy_trigger();
