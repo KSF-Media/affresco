@@ -1,0 +1,81 @@
+#!/usr/bin/perl
+
+BEGIN {
+    # This is to get git hooks working with magit
+    # https://magit.vc/manual/magit/My-Git-hooks-work-on-the-command_002dline-but-not-inside-Magit.html
+    delete @ENV{qw(GIT_LITERAL_PATHSPECS)};
+}
+
+use strict;
+use warnings;
+use experimental qw( switch );
+
+use File::Basename;
+use Cwd;
+
+my $CWD = getcwd;
+my @APP_DIRECTORIES = glob('apps/*');
+my $BUILD_HASH_FILENAME = '.build-size-sha256';
+
+sub create_deploy_trigger() {
+    foreach my $dir (@APP_DIRECTORIES) {
+	my $full_app_dir = "$CWD/$dir";
+
+	if (is_purescript_project($full_app_dir)) {
+	    chdir $full_app_dir;
+	    # Calculate hash of build directory and write to file if changed
+	    my $build_hash_output = `find ./output -type f | xargs cat | sha256sum`;
+	    my ($build_hash) = split(' ', $build_hash_output);
+	    my $build_hash_file = "$full_app_dir/$BUILD_HASH_FILENAME";
+	    my $app_name = basename($dir);
+
+	    given (get_current_build_hash($build_hash_file)) {
+		when ($_ eq 0) {
+		    print "Build hash for $app_name does not exist, creating one ..\n";
+		    write_build_hash($build_hash, $build_hash_file);
+		}
+		when ($_ ne $build_hash) {
+		    print "Build hash for $app_name has changed, updating $BUILD_HASH_FILENAME ..\n";
+		    write_build_hash($build_hash, $build_hash_file);
+		}
+		default {
+		    print "No changes in the $app_name build hash.\n"
+		}
+	    }
+	}
+    }
+}
+
+# If an `output` directory is found, it's a Purescript project
+sub is_purescript_project() {
+    my $app_dir = shift;
+    opendir(DH, $app_dir)
+	or die "Could not open directory: '$app_dir'";
+    my $is_purescript_project = grep(/^output$/, readdir DH) ? 1 : 0;
+    closedir DH;
+    return $is_purescript_project;
+}
+
+sub get_current_build_hash() {
+    my $build_hash_file = shift;
+    open(FH, '<', $build_hash_file)
+	or print "Could not check current build size, failed to open file '$build_hash_file' $!\n"
+	&& return 0;
+    chomp(my @build_file_content = <FH>);
+    my ($build_hash) = reverse @build_file_content;
+    close FH;
+    return $build_hash;
+}
+
+sub write_build_hash() {
+    my $build_size = shift;
+    my $build_hash_file = shift;
+    open(FH, '>', "$build_hash_file")
+	or die "Could not open file '$build_hash_file' $!";
+    print FH "# SHA256 of the content of the build directory.\n"
+	   . "# This is used for triggering project deployment when there are updated dependecies.\n"
+	   . "$build_size\n";
+    close FH;
+}
+
+create_deploy_trigger();
