@@ -453,6 +453,8 @@ body {
 
 .articleItem {
     padding-top: 7px;
+    padding-bottom: 7px;
+    margin-bottom: 10px;
 }
 
 .card {
@@ -494,3 +496,4 @@ body {
         display: block;
     }
 }
+
