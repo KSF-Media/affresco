@@ -57,7 +57,6 @@ body {
     font-family: 'DuplexSerifBold', sans-serif;
     font-size: 2rem;
     letter-spacing:0px;
-    word-break: break-all;
 }
 
 .article .content .author {
@@ -106,29 +105,35 @@ body {
 /*Ads*/
 #MOBPARAD {
     text-align: center;
-    /*margin-top:20px;*/
     margin-bottom: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 #MOBMITT {
     text-align: center;
     margin-bottom: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 #MOBNER {
     text-align: center;
     margin-bottom: 20px;
-    margin-top: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 #DIGIHELMOB {
     text-align: center;
     margin-bottom: 20px;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 .ksfDFPadHeader {
     /*display: none;*/
-    margin-left: 40px;
+    margin-left: 1em;
     color: #9b9b9b;
     font-size: 12px !important;
     text-transform: uppercase;
@@ -239,9 +244,6 @@ body {
     margin-bottom:16px;
     overflow-wrap: break-word;
     /*font-size: 16px;*/
-    -webkit-hyphens: auto;
-    hyphens: auto;
-    word-break: break-all;
 }
 
 .premiumBox {
@@ -436,8 +438,13 @@ body {
     width:40px;
     height:40px;
 }
+
 .html iframe {
     width: 100%;
+}
+
+.container-fluid.article {
+    overflow-x: hidden;
 }
 
 .html iframe{
