@@ -18,17 +18,14 @@ class RelatedArticles extends Component {
                     </div>
                 </div>
                 <div className={"mobileView"}>
-                    <div className={"row"}>
-                        <MobileList articles = {this.props.relatedArticles}/>
-                    </div>
+                    <MobileList articles = {this.props.relatedArticles}/>
                 </div>
 
                 <div className={"tabletView"}>
-                    <div className={"row"}>
+                    <div className={"row articleItem"}>
                         <TabletList articles = {this.props.relatedArticles}/>
                     </div>
                 </div>
-                <div className={"col-12 bottomLine"}></div>
             </div>
         )
     }

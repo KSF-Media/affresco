@@ -32,7 +32,7 @@ const MobileList = (props) => {
         relatedArticles = props.articles.map((item, index) => {
             return (
                 <React.Fragment key={index}>
-                    <div className={"col-12 articleItem"}>
+                    <div className={"articleItem"}>
                         <div className={"row"}>
                             <div className={"col-8"} onClick={() => {
                                 window.location.href = "?uuid=" + item.uuid;
