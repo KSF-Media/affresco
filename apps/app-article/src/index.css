@@ -455,6 +455,7 @@ body {
     padding-top: 7px;
     padding-bottom: 7px;
     margin-bottom: 10px;
+    border-top: 1px solid #a8a8a8;
 }
 
 .card {
@@ -496,4 +497,3 @@ body {
         display: block;
     }
 }
-

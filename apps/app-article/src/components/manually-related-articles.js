@@ -42,13 +42,13 @@ class ManuallyRelatedArticles extends Component {
                     </div>
                 </div>
                 <div className={"mobileView"}>
-                    <div className={"row articleItem"}>
+                    <div className={"row"}>
                         <MobileList articles = {this.props.manuallyRelatedArticles}/>
                     </div>
                 </div>
 
                 <div className={"tabletView"}>
-                    <div className={"row articleItem"}>
+                    <div className={"row"}>
                         <TabletList articles = {this.props.manuallyRelatedArticles}/>
                     </div>
                 </div>

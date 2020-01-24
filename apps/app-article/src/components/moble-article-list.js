@@ -32,38 +32,42 @@ const MobileList = (props) => {
         relatedArticles = props.articles.map((item, index) => {
             return (
                 <React.Fragment key={index}>
-                    <div className={"col-8"} onClick={() => {
-                        window.location.href = "?uuid=" + item.uuid;
-                    }}>
-                        <div>
-                            <a className={"relatedArticlesItem"}
-                               href={"?uuid=" + item.uuid}>
+                    <div className={"col-12 articleItem"}>
+                        <div className={"row"}>
+                            <div className={"col-8"} onClick={() => {
+                                window.location.href = "?uuid=" + item.uuid;
+                            }}>
+                                <div>
+                                    <a className={"relatedArticlesItem"}
+                                       href={"?uuid=" + item.uuid}>
+                                        {
+                                            item.title.length > 80 ?
+                                                item.title.substring(0, 80) + "..."
+                                                :
+                                                item.title
+                                        }
+                                    </a>
+                                </div>
+                                <div className={"articleItemDetails"}>
+                                    <div className={"category"}>{getTag(item.tags)}</div>
+                                    <div className={"date"}>{formatTime(item.publishingTime)}</div>
+                                </div>
+                            </div>
+                            <div className={"col-4 articleImage"} onClick={() => {
+                                window.location.href = "?uuid=" + item.uuid;
+                            }}>
                                 {
-                                    item.title.length > 80 ?
-                                        item.title.substring(0, 80) + "..."
+                                    item.listImage === null ?
+                                        <img className="card-img-top"
+                                             src={hblDefaultImage}
+                                             alt=""/>
                                         :
-                                        item.title
+                                        <img className="card-img-top"
+                                             src={item.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}
+                                             alt=""/>
                                 }
-                            </a>
+                            </div>
                         </div>
-                        <div className={"articleItemDetails"}>
-                            <div className={"category"}>{getTag(item.tags)}</div>
-                            <div className={"date"}>{formatTime(item.publishingTime)}</div>
-                        </div>
-                    </div>
-                    <div className={"col-4 articleImage"} onClick={() => {
-                        window.location.href = "?uuid=" + item.uuid;
-                    }}>
-                        {
-                            item.listImage === null ?
-                                <img className="card-img-top"
-                                     src={hblDefaultImage}
-                                     alt=""/>
-                                :
-                                <img className="card-img-top"
-                                     src={item.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}
-                                     alt=""/>
-                        }
                     </div>
                 </React.Fragment>
             )
