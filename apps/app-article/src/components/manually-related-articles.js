@@ -7,32 +7,7 @@ class ManuallyRelatedArticles extends Component {
     constructor(props) {
         super(props);
     }
-
-    isArray(value) {
-        return value && typeof value === 'object' && value.constructor === Array;
-    }
-
-    formatTime(date){
-        let publishingDate = new Date(date);
-        let newPublishingDate = publishingDate.getDate() + '.' + (publishingDate.getMonth() + 1) + '.' + publishingDate.getFullYear() + ' ' + (publishingDate.getHours() < 10 ? '0' : '') + publishingDate.getHours() + ':' + (publishingDate.getMinutes() < 10 ? '0' : '') + publishingDate.getMinutes();
-        let todaysDate = new Date();
-        let publishedTime = (publishingDate.getHours() < 10 ? '0' : '') + publishingDate.getHours() + ':' + (publishingDate.getMinutes() < 10 ? '0' : '') + publishingDate.getMinutes();
-
-        if (publishingDate.setHours(0, 0, 0, 0) === todaysDate.setHours(0, 0, 0, 0)) {
-            newPublishingDate = publishedTime;
-        }
-        return newPublishingDate;
-    }
-
-    getTag(tags){
-        let tag = '';
-        if (tags.length > 0) {
-            tag = tags[0];
-        }
-        return tag;
-    }
-
-
+    
     render() {
         return (
             <div className={"relatedArticles"}>
