@@ -57,6 +57,7 @@ body {
     font-family: 'DuplexSerifBold', sans-serif;
     font-size: 2rem;
     letter-spacing:0px;
+    word-break: break-all;
 }
 
 .article .content .author {
@@ -105,35 +106,29 @@ body {
 /*Ads*/
 #MOBPARAD {
     text-align: center;
+    /*margin-top:20px;*/
     margin-bottom: 20px;
-    overflow: hidden;
-    max-width: 100%;
 }
 
 #MOBMITT {
     text-align: center;
     margin-bottom: 20px;
-    overflow: hidden;
-    max-width: 100%;
 }
 
 #MOBNER {
     text-align: center;
     margin-bottom: 20px;
-    overflow: hidden;
-    max-width: 100%;
+    margin-top: 20px;
 }
 
 #DIGIHELMOB {
     text-align: center;
     margin-bottom: 20px;
-    overflow: hidden;
-    max-width: 100%;
 }
 
 .ksfDFPadHeader {
     /*display: none;*/
-    margin-left: 1em;
+    margin-left: 40px;
     color: #9b9b9b;
     font-size: 12px !important;
     text-transform: uppercase;
@@ -244,6 +239,9 @@ body {
     margin-bottom:16px;
     overflow-wrap: break-word;
     /*font-size: 16px;*/
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    word-break: break-all;
 }
 
 .premiumBox {
@@ -438,15 +436,54 @@ body {
     width:40px;
     height:40px;
 }
-
 .html iframe {
     width: 100%;
 }
 
-.container-fluid.article {
-    overflow-x: hidden;
-}
-
 .html iframe{
     border: 0;
+}
+
+.articleItem {
+    padding-top: 7px;
+}
+
+.card {
+    border: 1px solid #d8d8d8;
+    margin-top: 20px;
+    min-height: 395px;
+    border-radius:0px !important;
+}
+
+/*Mobiles*/
+@media (min-width: 320px) and (max-width: 480px) {
+    .mobileView {
+        display: block;
+    }
+
+    .tabletView {
+        display: none;
+    }
+}
+
+/*Tablets*/
+@media (min-width: 768px) and (max-width: 1024px) {
+    .mobileView {
+        display: none;
+    }
+
+    .tabletView {
+        display: block;
+    }
+}
+
+/*Desktops*/
+@media (min-width: 1025px) and (max-width: 1480px) {
+    .mobileView {
+        display: none;
+    }
+
+    .tabletView {
+        display: block;
+    }
 }
