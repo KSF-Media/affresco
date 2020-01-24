@@ -463,6 +463,11 @@ body {
     border-radius:0px !important;
 }
 
+.card-img-top {
+    border-top-left-radius: 0px !important;
+    border-top-right-radius: 0px !important;
+}
+
 /*Mobiles*/
 @media (min-width: 320px) and (max-width: 480px) {
     .mobileView {
