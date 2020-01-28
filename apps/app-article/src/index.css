@@ -459,13 +459,17 @@ body {
 .card {
     border: 1px solid #d8d8d8;
     margin-top: 20px;
-    min-height: 395px;
+    min-height: 365px;
     border-radius:0px !important;
 }
 
 .card-img-top {
     border-top-left-radius: 0px !important;
     border-top-right-radius: 0px !important;
+}
+
+.card-body {
+    padding: 7px !important;
 }
 
 /*Mobiles*/

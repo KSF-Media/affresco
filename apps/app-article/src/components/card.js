@@ -40,7 +40,7 @@ const Card = (props) => {
                     </strong>
                 </h5>
 
-                <div className={"articleItemDetails"}>
+                <div className={"articleItemDetails"} style={{bottom: 0, position: 'absolute'}}>
                     <div className={"category"}>{getTag(props.article.tags)}</div>
                     <div className={"date"}>{formatTime(props.article.publishingTime)}</div>
                 </div>
