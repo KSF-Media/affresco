@@ -470,6 +470,7 @@ body {
 
 .card-body {
     padding: 7px !important;
+    min-height: 112px;
 }
 
 .card-title {
@@ -478,8 +479,8 @@ body {
 
 .article-premium-badge {
     position: absolute;
-    bottom: 5px;
-    left: 5px;
+    bottom: -4px;
+    left: 0px;
 }
 
 .article-main-image {
