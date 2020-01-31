@@ -11,7 +11,7 @@ const TabletList = (props) => {
     if (isArray(props.articles)) {
         relatedArticles = props.articles.map((item, index) => {
             return (
-                <div className={"col-4 mt-n1"} style={{padding: '5px'}} key={index}>
+                <div className={"col-4 mt-n1 "} style={{padding: '5px'}} key={index}>
                     <Card article = {item} />
                 </div>
             )

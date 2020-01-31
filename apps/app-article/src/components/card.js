@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import PremiumBadge from "./badge";
 
 
 const getTag = (tags) => {
@@ -24,7 +25,10 @@ const formatTime = (date) => {
 const Card = (props) => {
     return(
         <div className={"card"} onClick={() => { window.location.href = "?uuid=" + props.article.uuid; }}>
-            <img className={"card-img-top"} src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}/>
+            <div className={"article-main-image"} >
+                <div className={"article-premium-badge"}><PremiumBadge/></div>
+                <img className={"card-img-top"} src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}/>
+            </div>
             <div className={"card-body"}>
                 <h5 className={"card-title"}>
                     <strong>
@@ -42,7 +46,7 @@ const Card = (props) => {
 
                 <div className={"articleItemDetails"} style={{bottom: 0, position: 'absolute'}}>
                     <div className={"category"}>{getTag(props.article.tags)}</div>
-                    <div className={"date"}>{formatTime(props.article.publishingTime)}</div>
+                    <div className={"date"} style={{display: 'block'}}>{formatTime(props.article.publishingTime)}</div>
                 </div>
             </div>
         </div>

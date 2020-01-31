@@ -472,6 +472,24 @@ body {
     padding: 7px !important;
 }
 
+.card-title {
+    font-family:"DuplexSerifBold", sans-serif;
+}
+
+.article-premium-badge {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+}
+
+.article-main-image {
+    position: relative;
+}
+
+.mobileListItems a {
+    font-size: 22px;
+}
+
 /*Mobiles*/
 @media (min-width: 320px) and (max-width: 480px) {
     .mobileView {
@@ -480,6 +498,10 @@ body {
 
     .tabletView {
         display: none;
+    }
+
+    .mobileListItems a {
+        font-size: 16px;
     }
 }
 
@@ -491,6 +513,14 @@ body {
 
     .tabletView {
         display: block;
+    }
+
+    .mobileListItems a {
+        font-size: 22px;
+    }
+
+    .mobileListItems img {
+        width: 75%;
     }
 }
 

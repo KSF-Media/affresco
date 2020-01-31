@@ -14,7 +14,7 @@ class RelatedArticles extends Component {
             <div className={"relatedArticles"}>
                 <div className={"row"}>
                     <div className={"col-12"}>
-                        <h3 className={"latest"}>Mest lästa</h3>
+                        <h3 className={"latest"}>Andra läser</h3>
                     </div>
                 </div>
                 <div className={"mobileView"}>
