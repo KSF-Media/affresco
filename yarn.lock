@@ -823,9 +823,10 @@
     react-dom "^16.5.2"
 
 "@ksf-media/user@file:packages/user":
-  version "0.2.0"
+  version "0.2.1"
   dependencies:
     basscss "^8.1.0"
+    bottega "https://github.com/KSF-Media/bottega-javascript-client.git#d13f5d10c117079cb2fabd6f6a9efbcc8fc1fdce"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#d74a38a69b18f71a7a73da307b0afbf9d577e836"
     react "^16.5.2"
     react-dom "^16.5.2"
@@ -2119,6 +2120,12 @@ bootstrap@^4.3.1:
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.3.1.tgz#280ca8f610504d99d7b6b4bfc4b68cec601704ac"
   integrity sha512-rXqOmH1VilAt2DyPzluTi2blhk17bO7ef+zLLPlWvG494pDxcM234pJ8wTc/6R40UWizAIIMgxjvxZg5kmsbag==
+
+"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#d13f5d10c117079cb2fabd6f6a9efbcc8fc1fdce":
+  version "1.0.0"
+  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#d13f5d10c117079cb2fabd6f6a9efbcc8fc1fdce"
+  dependencies:
+    superagent "3.7.0"
 
 bowser@^1.7.3:
   version "1.9.4"
@@ -5756,9 +5763,9 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-"persona@git+https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
   version "1.3.0"
-  resolved "git+https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
   dependencies:
     superagent "3.7.0"
 
@@ -6456,6 +6463,16 @@ react-dom@>=15.5, "react-dom@^15.0.0 || ^16.0.0", react-dom@^16.3.0, react-dom@^
     prop-types "^15.6.2"
     scheduler "^0.15.0"
 
+react-dom@^16.12.0:
+  version "16.12.0"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.12.0.tgz#0da4b714b8d13c2038c9396b54a92baea633fe11"
+  integrity sha512-LMxFfAGrcS3kETtQaCkTKjMiifahaMySFDn71fZUNpPHZQEzmk/GiAeIT8JSOrHB23fnuCOMruL2a8NYlw+8Gw==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    scheduler "^0.18.0"
+
 react-event-listener@^0.6.0, react-event-listener@^0.6.2:
   version "0.6.6"
   resolved "https://registry.yarnpkg.com/react-event-listener/-/react-event-listener-0.6.6.tgz#758f7b991cad9086dd39fd29fad72127e1d8962a"
@@ -6711,6 +6728,15 @@ react@>=15.5, "react@^15.0.0 || ^16.0.0", react@^16.3.0, react@^16.5.2, react@^1
   version "16.9.0"
   resolved "https://registry.yarnpkg.com/react/-/react-16.9.0.tgz#40ba2f9af13bc1a38d75dbf2f4359a5185c4f7aa"
   integrity sha512-+7LQnFBwkiw+BobzOF6N//BdoNw0ouwmSJTEm9cglOOmsg/TMiFHZLe2sEoN5M7LgJTj9oHH0gxklfnQe66S1w==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+
+react@^16.12.0:
+  version "16.12.0"
+  resolved "https://registry.yarnpkg.com/react/-/react-16.12.0.tgz#0c0a9c6a142429e3614834d5a778e18aa78a0b83"
+  integrity sha512-fglqy3k5E+81pA8s+7K0/T3DBCF0ZDOher1elBFzF7O6arXJgzyu/FW+COxFvAWXJoJN9KIZbT2LXlukwphYTA==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
@@ -7080,6 +7106,14 @@ scheduler@^0.15.0:
   version "0.15.0"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.15.0.tgz#6bfcf80ff850b280fed4aeecc6513bc0b4f17f8e"
   integrity sha512-xAefmSfN6jqAa7Kuq7LIJY0bwAPG3xlCj0HMEBQk1lxYiDKZscY2xJ5U/61ZTrYbmNQbXa+gc7czPkVo11tnCg==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+
+scheduler@^0.18.0:
+  version "0.18.0"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.18.0.tgz#5901ad6659bc1d8f3fdaf36eb7a67b0d6746b1c4"
+  integrity sha512-agTSHR1Nbfi6ulI0kYNK0203joW2Y5W4po4l+v03tOoiJKpTBbxpNhWDvqc/4IcOw+KLmSiQLTasZ4cab2/UWQ==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
