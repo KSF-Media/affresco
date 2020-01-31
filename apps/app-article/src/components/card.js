@@ -26,7 +26,11 @@ const Card = (props) => {
     return(
         <div className={"card"} onClick={() => { window.location.href = "?uuid=" + props.article.uuid; }}>
             <div className={"article-main-image"} >
-                <div className={"article-premium-badge"}><PremiumBadge/></div>
+                {
+                    props.article.premium ?
+                        <div className={"article-premium-badge"}><PremiumBadge/></div>
+                        : ''
+                }
                 <img className={"card-img-top"} src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}/>
             </div>
             <div className={"card-body"}>
