@@ -469,3 +469,7 @@ type GdprConsent =
   , consentKey :: String
   , value      :: Boolean
   }
+
+data DeliveryReclamationClaim
+  = Extension
+  | NewDelivery
