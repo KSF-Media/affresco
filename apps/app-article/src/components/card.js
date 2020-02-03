@@ -33,7 +33,7 @@ const Card = (props) => {
                         : ''
                 }
                 {
-                    props.article.listImage.url === null 
+                    props.article.listImage.url != null
                         ? <img className={"card-img-top"} src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}/> 
                         : <img className="card-img-top"
                                src={hblDefaultImage}
