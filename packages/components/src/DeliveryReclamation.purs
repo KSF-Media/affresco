@@ -103,7 +103,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
 
     claimExtensionInput =
       InputField.inputField
-        { type_: "radio"
+        { type_: InputField.Radio
         , placeholder: "Placeholder"
         , name: "claim"
         , onChange: \newClaim ->
@@ -121,7 +121,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
 
     claimNewDeliveryInput =
       InputField.inputField
-        { type_: "radio"
+        { type_: InputField.Radio
         , placeholder: "Placeholder"
         , name: "claim"
         , onChange: \newClaim ->
@@ -136,6 +136,9 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         , label: "Text here"
         , validationError: Nothing
         }
+
+--submitForm :: Maybe DateTime -> Maybe DeliveryReclamationClaim -> Effect Unit
+--submitForm (Just date) (Just  )
 
 dateInput :: Self -> JSX
 dateInput self =
