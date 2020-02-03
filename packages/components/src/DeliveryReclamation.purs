@@ -91,6 +91,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           , children:
               [ publicationDayInput
               , claimExtensionInput
+              , claimNewDeliveryInput
               , DOM.div
                   { children: [ ]
                   , className: "mt2 clearfix"
@@ -101,6 +102,24 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
     publicationDayInput = dateInput self
 
     claimExtensionInput =
+      InputField.inputField
+        { type_: "radio"
+        , placeholder: "Placeholder"
+        , name: "claim"
+        , onChange: \newClaim ->
+                      let
+                        updateClaim x = self.setState _ { claim = x }
+                        parsed = read <$> newClaim
+                      in
+                        case parsed of
+                          Just value -> updateClaim value
+                          Nothing    -> updateClaim $ Nothing
+        , value: Nothing
+        , label: "Text here"
+        , validationError: Nothing
+        }
+
+    claimNewDeliveryInput =
       InputField.inputField
         { type_: "radio"
         , placeholder: "Placeholder"
