@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import PremiumBadge from "./badge";
+import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 
 
 const getTag = (tags) => {
