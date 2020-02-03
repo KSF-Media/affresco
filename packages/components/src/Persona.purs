@@ -13,9 +13,10 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
+import Data.String.Read
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
@@ -473,3 +474,10 @@ type GdprConsent =
 data DeliveryReclamationClaim
   = Extension
   | NewDelivery
+
+instance readDeliveryReclamationClaim :: Read DeliveryReclamationClaim where
+  read c =
+    case c of
+      "Extension"   -> pure Extension
+      "NewDelivery" -> pure NewDelivery
+      _             -> Nothing

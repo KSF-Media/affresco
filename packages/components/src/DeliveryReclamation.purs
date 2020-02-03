@@ -10,6 +10,7 @@ import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import Data.Validation.Semigroup (unV)
+import Data.String.Read
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -89,6 +90,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           { onSubmit: handler preventDefault (\_ -> pure unit)
           , children:
               [ publicationDayInput
+              , claimExtensionInput
               , DOM.div
                   { children: [ ]
                   , className: "mt2 clearfix"
@@ -97,6 +99,24 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           }
 
     publicationDayInput = dateInput self
+
+    claimExtensionInput =
+      InputField.inputField
+        { type_: "radio"
+        , placeholder: "Placeholder"
+        , name: "claim"
+        , onChange: \newClaim ->
+                      let
+                        updateClaim x = self.setState _ { claim = x }
+                        parsed = read <$> newClaim
+                      in
+                        case parsed of
+                          Just value -> updateClaim value
+                          Nothing    -> updateClaim $ Nothing
+        , value: Nothing
+        , label: "Text here"
+        , validationError: Nothing
+        }
 
 dateInput :: Self -> JSX
 dateInput self =
