@@ -31,7 +31,13 @@ const Card = (props) => {
                         <div className={"article-premium-badge"}><PremiumBadge/></div>
                         : ''
                 }
-                <img className={"card-img-top"} src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}/>
+                {
+                    props.article.listImage.url === null 
+                        ? <img className={"card-img-top"} src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}/> 
+                        : <img className="card-img-top"
+                               src={hblDefaultImage}
+                               alt=""/>
+                }
             </div>
             <div className={"card-body"}>
                 <h5 className={"card-title"}>
