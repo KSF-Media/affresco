@@ -54,6 +54,7 @@ render self@{ props, state } =
   DOM.div
     { className: classNameFromInputType props.type_
     , children:
+        -- The final order of the children is defined in css!
         [ inputLabel props.label props.name
         , DOM.input
             { type: show props.type_

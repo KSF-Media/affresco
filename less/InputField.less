@@ -39,6 +39,24 @@
     }
 }
 
+.input-field--radio-container {
+  display: grid;
+  grid-template-columns:
+    [radio-button] 2em
+    [label] auto;
+  input[type=radio] {
+    grid-column: radio-button;
+    grid-row: 1; /* NEW */
+  }
+  label {
+    grid-column: label;
+    grid-row: 1; /* NEW */
+  }
+  grid-column-gap: 20px;
+  grid-row-gap: auto;
+  align-items: baseline;
+}
+
 .input-field--input-label {
     text-align: left;
     font-size: 0.9em;
