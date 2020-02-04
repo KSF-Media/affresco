@@ -471,6 +471,16 @@ type GdprConsent =
   , value      :: Boolean
   }
 
+type DeliveryReclamation =
+  { subscriptionNumber :: Int
+  , customerNumber     :: Int
+  , number             :: Int
+  , date               :: JSDate
+  , publicationDate    :: JSDate
+  , claim              :: DeliveryReclamationClaim
+  , status             :: DeliveryReclamationStatus
+  }
+
 data DeliveryReclamationClaim
   = Extension
   | NewDelivery
@@ -481,3 +491,30 @@ instance readDeliveryReclamationClaim :: Read DeliveryReclamationClaim where
       "Extension"   -> pure Extension
       "NewDelivery" -> pure NewDelivery
       _             -> Nothing
+derive instance genericDeliveryReclamationClaim :: Generic DeliveryReclamationClaim _
+instance readForeignDeliveryReclamationClaim :: ReadForeign DeliveryReclamationClaim where
+  readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
+instance writeForeignDeliveryReclamationClaim :: WriteForeign DeliveryReclamationClaim where
+  writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
+instance showDeliveryReclamationClaim :: Show DeliveryReclamationClaim where
+  show = genericShow
+
+data DeliveryReclamationStatus
+  = Created
+  | Processing
+  | Processed
+
+instance readDeliveryReclamationStatus :: Read DeliveryReclamationStatus where
+  read c =
+    case c of
+      "Created"    -> pure Created
+      "Processing" -> pure Processing
+      "Processed"  -> pure Processed
+      _            -> Nothing
+derive instance genericDeliveryReclamationStatus :: Generic DeliveryReclamationStatus _
+instance readForeignDeliveryReclamationStatus :: ReadForeign DeliveryReclamationStatus where
+  readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
+instance writeForeignDeliveryReclamationStatus :: WriteForeign DeliveryReclamationStatus where
+  writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
+instance showDeliveryReclamationStatus :: Show DeliveryReclamationStatus where
+  show = genericShow
