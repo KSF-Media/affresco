@@ -16,7 +16,7 @@ import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
-import Data.String.Read
+import Data.String.Read (class Read)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
@@ -129,10 +129,11 @@ createDeliveryReclamation
   -> Aff DeliveryReclamation
 createDeliveryReclamation uuid subsno date claim token = do
   let dateISO = formatDate date
+  let claim'  = show claim
   callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { publicationDate: dateISO, claim: claim }
+    , unsafeToForeign { publicationDate: dateISO, claim: claim' }
     ]
     { authorization }
   where
