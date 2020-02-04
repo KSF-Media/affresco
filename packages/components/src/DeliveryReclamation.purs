@@ -1,16 +1,13 @@
 module KSF.DeliveryReclamation where
 
-import Prelude
+import Prelude (Unit, bind, discard, ($), (<$>), (>>=))
 
-import Control.Alt ((<|>))
-import Data.DateTime (DateTime, adjust)
+import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
-import Data.Time.Duration as Time.Duration
-import Data.Validation.Semigroup (unV)
-import Data.String.Read
+import Data.String.Read (read)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -21,8 +18,6 @@ import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.User as User
-import KSF.ValidatableForm as VF
-import KSF.CountryDropDown (countryDropDown)
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -43,7 +38,7 @@ type Props =
   , userUuid  :: Persona.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
-  , onSuccess :: Persona.Subscription -> Effect Unit
+  , onSuccess :: Persona.DeliveryReclamation -> Effect Unit
   , onError   :: Persona.InvalidDateInput -> Effect Unit
   }
 
@@ -87,19 +82,19 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
   where
     deliveryReclamationForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> pure unit)
+          { onSubmit: handler preventDefault (\_ -> submitForm publicationDate claim)
           , children:
               [ publicationDayInput
               , claimExtensionInput
               , claimNewDeliveryInput
               , DOM.div
-                  { children: [ ]
+                  { children: [ submitFormButton ]
                   , className: "mt2 clearfix"
                   }
               ]
           }
 
-    publicationDayInput = dateInput self
+    publicationDayInput = dateInput self self.state.publicationDate
 
     claimExtensionInput =
       InputField.inputField
@@ -114,7 +109,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
                         case parsed of
                           Just value -> updateClaim value
                           Nothing    -> updateClaim $ Nothing
-        , value: Nothing
+        , value: Just "Extension"
         , label: "Text here"
         , validationError: Nothing
         }
@@ -132,20 +127,39 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
                         case parsed of
                           Just value -> updateClaim value
                           Nothing    -> updateClaim $ Nothing
-        , value: Nothing
+        , value: Just "NewDelivery"
         , label: "Text here"
         , validationError: Nothing
         }
 
---submitForm :: Maybe DateTime -> Maybe DeliveryReclamationClaim -> Effect Unit
---submitForm (Just date) (Just  )
+    submitFormButton =
+      Grid.columnThird $
+        DOM.button
+          { type: "submit"
+          , children: [ DOM.text "Skicka" ]
+          , className: "button-green"
+          }
 
-dateInput :: Self -> JSX
-dateInput self =
+    submitForm :: Maybe DateTime -> Maybe Persona.DeliveryReclamationClaim -> Effect Unit
+    submitForm (Just date') (Just claim') = do
+      Aff.launchAff_ do
+        createDeliveryReclamation date' claim'
+      where
+        createDeliveryReclamation :: DateTime -> Persona.DeliveryReclamationClaim -> Aff Unit
+        createDeliveryReclamation date'' claim'' = do
+          liftEffect $ self.props.onLoading
+          User.createDeliveryReclamation self.props.userUuid self.props.subsno date'' claim'' >>=
+            case _ of
+              Right recl -> liftEffect $ self.props.onSuccess recl
+              Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
+    submitForm _ _ = Console.error "The entered information is incomplete."
+
+dateInput :: Self -> Maybe DateTime ->  JSX
+dateInput self value =
   DatePicker.datePicker
-      { onChange: (_ >>= \publicationDate -> self.setState (\currentState -> currentState{publicationDate = publicationDate}))
+      { onChange: (_ >>= \newPublicationDate -> self.setState _ { publicationDate = newPublicationDate })
       , className: "delivery-reclamation--date-picker"
-      , value: toNullable $ fromDateTime <$> self.state.publicationDate
+      , value: toNullable $ fromDateTime <$> value
       , format: "d.M.yyyy"
       , required: true
       , minDate: toNullable $ Nothing
