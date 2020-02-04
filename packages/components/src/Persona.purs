@@ -120,6 +120,24 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
   where
     authorization = oauthToken token
 
+createDeliveryReclamation
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DeliveryReclamationClaim
+  -> Token
+  -> Aff DeliveryReclamation
+createDeliveryReclamation uuid subsno date claim token = do
+  let dateISO = formatDate date
+  callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { publicationDate: dateISO, claim: claim }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
 formatDate :: DateTime -> String
 formatDate = format formatter
   where
