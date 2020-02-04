@@ -12,6 +12,7 @@ module KSF.User
   , updateUser
   , pauseSubscription
   , temporaryAddressChange
+  , createDeliveryReclamation
   , module Bottega
   )
 where
@@ -369,3 +370,17 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
       | otherwise -> do
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
+
+createDeliveryReclamation
+  :: Persona.UUID
+  -> Int
+  -> DateTime
+  -> PersonaReExport.DeliveryReclamationClaim
+  -> Aff (Either Persona.InvalidDateInput Persona.DeliveryReclamation)
+createDeliveryReclamation uuid subsno date claim = do
+  deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date claim <<< _.token =<< requireToken
+  case deliveryReclamation of
+    Right recl -> pure $ Right recl
+    Left err -> do
+      Console.error "Unexpected error when creating delivery reclamation."
+      pure $ Left Persona.InvalidUnexpected
