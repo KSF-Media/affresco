@@ -312,7 +312,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             , DOM.span
                 { className: "subscription--update-action-text"
                 , children:
-                    [ DOM.u_ [ DOM.text "Text here" ] ]
+                    [ DOM.u_ [ DOM.text "Delivery reclamation" ] ]
                 , onClick: showDeliveryReclamation
                 }
             ]

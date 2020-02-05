@@ -68,7 +68,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         [ Grid.row_
            [ DOM.div
                { className: "col col-11"
-               , children: [ DOM.h3_ [ DOM.text "Text here" ] ]
+               , children: [ DOM.h3_ [ DOM.text "Delivery Reclamation" ] ]
                }
            , DOM.div
                { className: "col-1 flex delivery-reclamation--close-icon"
@@ -94,7 +94,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
               ]
           }
 
-    publicationDayInput = dateInput self self.state.publicationDate
+    publicationDayInput = dateInput self self.state.publicationDate "Publication date"
 
     claimExtensionInput =
       InputField.inputField
@@ -110,7 +110,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
                           Just value -> updateClaim value
                           Nothing    -> updateClaim $ Nothing
         , value: Just "Extension"
-        , label: "Text here"
+        , label: "Extension"
         , validationError: Nothing
         }
 
@@ -128,7 +128,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
                           Just value -> updateClaim value
                           Nothing    -> updateClaim $ Nothing
         , value: Just "NewDelivery"
-        , label: "Text here"
+        , label: "New delivery"
         , validationError: Nothing
         }
 
@@ -154,16 +154,22 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
               Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
     submitForm _ _ = Console.error "The entered information is incomplete."
 
-dateInput :: Self -> Maybe DateTime ->  JSX
-dateInput self value =
-  DatePicker.datePicker
-      { onChange: (_ >>= \newPublicationDate -> self.setState _ { publicationDate = newPublicationDate })
-      , className: "delivery-reclamation--date-picker"
-      , value: toNullable $ fromDateTime <$> value
-      , format: "d.M.yyyy"
-      , required: true
-      , minDate: toNullable $ Nothing
-      , maxDate: toNullable $ fromDateTime <$> self.state.maxPublicationDate
-      , disabled : false
-      , locale: "sv-FI"
-      }
+dateInput :: Self -> Maybe DateTime -> String ->  JSX
+dateInput self value label =
+  Grid.row
+    [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
+    , Grid.row_
+        [ DatePicker.datePicker
+            { onChange: (_ >>= \newPublicationDate -> self.setState _ { publicationDate = newPublicationDate })
+            , className: "delivery-reclamation--date-picker"
+            , value: toNullable $ fromDateTime <$> value
+            , format: "d.M.yyyy"
+            , required: true
+            , minDate: toNullable $ Nothing
+            , maxDate: toNullable $ fromDateTime <$> self.state.maxPublicationDate
+            , disabled : false
+            , locale: "sv-FI"
+            }
+        ]
+    ]
+    $ Just { extraClasses: [ "mb2" ] }
