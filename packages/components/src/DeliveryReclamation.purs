@@ -2,11 +2,13 @@ module KSF.DeliveryReclamation where
 
 import Prelude (Unit, bind, discard, ($), (<$>), (>>=), (=<<))
 
+import Data.Array (snoc)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
+import Data.Foldable (foldMap)
 import Data.String.Read (read)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -29,6 +31,7 @@ type State =
   { publicationDate    :: Maybe DateTime
   , claim              :: Maybe User.DeliveryReclamationClaim
   , maxPublicationDate :: Maybe DateTime
+  , validationError    :: Maybe String
   }
 
 type Self = React.Self Props State
@@ -50,6 +53,7 @@ initialState =
   { publicationDate: Nothing
   , claim: Nothing
   , maxPublicationDate: Nothing
+  , validationError: Nothing
   }
 
 component :: React.Component Props
@@ -87,11 +91,11 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
               [ publicationDayInput
               , claimExtensionInput
               , claimNewDeliveryInput
-              , DOM.div
-                  { children: [ submitFormButton ]
-                  , className: "mt2 clearfix"
-                  }
-              ]
+              ] `snoc`foldMap errorMessage self.state.validationError
+                `snoc` DOM.div
+                        { children: [ submitFormButton ]
+                        , className: "mt2 clearfix"
+                        }
           }
 
     publicationDayInput = dateInput self self.state.publicationDate "Utgivningsdatum"
@@ -118,6 +122,9 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         , validationError: Nothing
         }
 
+    errorMessage =
+      InputField.errorMessage
+
     submitFormButton =
       Grid.columnThird $
         DOM.button
@@ -138,6 +145,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
             case _ of
               Right recl -> liftEffect $ self.props.onSuccess recl
               Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
+    submitForm _ Nothing = self.setState _ { validationError = Just "Please select an option." }
     submitForm _ _ = Console.error "The entered information is incomplete."
 
 dateInput :: Self -> Maybe DateTime -> String ->  JSX
