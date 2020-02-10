@@ -1,6 +1,6 @@
 module KSF.DeliveryReclamation where
 
-import Prelude (Unit, bind, discard, ($), (<$>), (>>=))
+import Prelude (Unit, bind, discard, ($), (<$>), (>>=), (=<<))
 
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
@@ -101,14 +101,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         { type_: InputField.Radio
         , placeholder: "Placeholder"
         , name: "claim"
-        , onChange: \newClaim ->
-                      let
-                        updateClaim x = self.setState _ { claim = x }
-                        parsed = read <$> newClaim
-                      in
-                        case parsed of
-                          Just value -> updateClaim value
-                          Nothing    -> updateClaim $ Nothing
+        , onChange: \newClaim -> self.setState _ { claim = read =<< newClaim }
         , value: Just "Extension"
         , label: "Jag vill förlänga prenumerationen"
         , validationError: Nothing
@@ -119,14 +112,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         { type_: InputField.Radio
         , placeholder: "Placeholder"
         , name: "claim"
-        , onChange: \newClaim ->
-                      let
-                        updateClaim x = self.setState _ { claim = x }
-                        parsed = read <$> newClaim
-                      in
-                        case parsed of
-                          Just value -> updateClaim value
-                          Nothing    -> updateClaim $ Nothing
+        , onChange: \newClaim -> self.setState _ { claim = read =<< newClaim }
         , value: Just "NewDelivery"
         , label: "Jag vill få tidningen"
         , validationError: Nothing
