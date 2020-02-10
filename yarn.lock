@@ -826,12 +826,8 @@
   version "0.2.1"
   dependencies:
     basscss "^8.1.0"
-<<<<<<< HEAD
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#d13f5d10c117079cb2fabd6f6a9efbcc8fc1fdce"
-    persona "https://github.com/KSF-Media/persona-javascript-client.git#d74a38a69b18f71a7a73da307b0afbf9d577e836"
-=======
     persona "https://github.com/KSF-Media/persona-javascript-client.git#781e4cc3d685919c3786cf49eff5106551f2dd57"
->>>>>>> Add DeliveryReclamation component
     react "^16.5.2"
     react-dom "^16.5.2"
 
