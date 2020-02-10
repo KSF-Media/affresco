@@ -244,7 +244,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                          { wrapperProgress = AsyncWrapper.Success
                          }
         , onError: \_ ->
-            self.setState _ { wrapperProgress = AsyncWrapper.Error "Something went wrong. Please try again." }
+            self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
         }
 
     pauseContainer children =
@@ -312,7 +312,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             , DOM.span
                 { className: "subscription--update-action-text"
                 , children:
-                    [ DOM.u_ [ DOM.text "Delivery reclamation" ] ]
+                    [ DOM.u_ [ DOM.text "Reklamation av utebliven tidning" ] ]
                 , onClick: showDeliveryReclamation
                 }
             ]

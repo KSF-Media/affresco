@@ -68,7 +68,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         [ Grid.row_
            [ DOM.div
                { className: "col col-11"
-               , children: [ DOM.h3_ [ DOM.text "Delivery Reclamation" ] ]
+               , children: [ DOM.h3_ [ DOM.text "Reklamation" ] ]
                }
            , DOM.div
                { className: "col-1 flex delivery-reclamation--close-icon"
@@ -94,7 +94,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
               ]
           }
 
-    publicationDayInput = dateInput self self.state.publicationDate "Publication date"
+    publicationDayInput = dateInput self self.state.publicationDate "Utgivningsdatum"
 
     claimExtensionInput =
       InputField.inputField
@@ -110,7 +110,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
                           Just value -> updateClaim value
                           Nothing    -> updateClaim $ Nothing
         , value: Just "Extension"
-        , label: "Extension"
+        , label: "Jag vill förlänga prenumerationen"
         , validationError: Nothing
         }
 
@@ -128,7 +128,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
                           Just value -> updateClaim value
                           Nothing    -> updateClaim $ Nothing
         , value: Just "NewDelivery"
-        , label: "New delivery"
+        , label: "Jag vill få tidningen"
         , validationError: Nothing
         }
 
