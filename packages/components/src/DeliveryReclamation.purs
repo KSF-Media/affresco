@@ -105,7 +105,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         { type_: InputField.Radio
         , placeholder: "Placeholder"
         , name: "claim"
-        , onChange: \newClaim -> self.setState _ { claim = read =<< newClaim }
+        , onChange: radioButtonOnChange self
         , value: Just "Extension"
         , label: "Jag vill förlänga prenumerationen"
         , validationError: Nothing
@@ -116,7 +116,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         { type_: InputField.Radio
         , placeholder: "Placeholder"
         , name: "claim"
-        , onChange: \newClaim -> self.setState _ { claim = read =<< newClaim }
+        , onChange: radioButtonOnChange self
         , value: Just "NewDelivery"
         , label: "Jag vill få tidningen"
         , validationError: Nothing
@@ -145,8 +145,15 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
             case _ of
               Right recl -> liftEffect $ self.props.onSuccess recl
               Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
-    submitForm _ Nothing = self.setState _ { validationError = Just "Please select an option." }
+    submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
     submitForm _ _ = Console.error "The entered information is incomplete."
+
+radioButtonOnChange :: Self ->  Maybe String -> Effect Unit
+radioButtonOnChange self newClaim = do
+                                      self.setState _ { claim = read =<< newClaim
+                                                      , validationError = Nothing
+                                                      }
+
 
 dateInput :: Self -> Maybe DateTime -> String ->  JSX
 dateInput self value label =
