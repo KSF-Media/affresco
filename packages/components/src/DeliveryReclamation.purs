@@ -103,7 +103,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
     claimExtensionInput =
       InputField.inputField
         { type_: InputField.Radio
-        , placeholder: "Placeholder"
+        , placeholder: "Extension"
         , name: "claim"
         , onChange: radioButtonOnChange self
         , value: Just "Extension"
@@ -114,7 +114,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
     claimNewDeliveryInput =
       InputField.inputField
         { type_: InputField.Radio
-        , placeholder: "Placeholder"
+        , placeholder: "New delivery"
         , name: "claim"
         , onChange: radioButtonOnChange self
         , value: Just "NewDelivery"
@@ -149,10 +149,9 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
     submitForm _ _ = Console.error "The entered information is incomplete."
 
 radioButtonOnChange :: Self ->  Maybe String -> Effect Unit
-radioButtonOnChange self newClaim = do
-                                      self.setState _ { claim = read =<< newClaim
-                                                      , validationError = Nothing
-                                                      }
+radioButtonOnChange self newClaim = self.setState _ { claim = read =<< newClaim
+                                                    , validationError = Nothing
+                                                    }
 
 
 dateInput :: Self -> Maybe DateTime -> String ->  JSX
