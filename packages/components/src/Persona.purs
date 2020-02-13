@@ -83,9 +83,11 @@ register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
 
-registerWithEmail :: Email -> Aff LoginResponse
-registerWithEmail email =
-  callApi usersApi "usersTemporaryPost" [ unsafeToForeign email ] {}
+type NewUserWithEmail = { emailAddress :: Email }
+
+registerWithEmail :: NewUserWithEmail -> Aff LoginResponse
+registerWithEmail newEmailUser =
+  callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
 
 pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Subscription
 pauseSubscription uuid subsno startDate endDate token = do

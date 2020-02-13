@@ -9,6 +9,7 @@ module KSF.User
   , someAuth
   , facebookSdk
   , createUser
+  , createUserWithEmail
   , updateUser
   , pauseSubscription
   , temporaryAddressChange
@@ -94,7 +95,7 @@ createUser newUser = do
 
 createUserWithEmail :: Persona.Email -> Aff (Either UserError Persona.User)
 createUserWithEmail email = do
-  newUser <- try $ Persona.registerWithEmail email
+  newUser <- try $ Persona.registerWithEmail { emailAddress: email }
   case newUser of
     Left err
       | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
