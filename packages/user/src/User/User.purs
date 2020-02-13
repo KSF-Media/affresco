@@ -92,6 +92,23 @@ createUser newUser = do
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin user
 
+createUserWithEmail :: Persona.Email -> Aff (Either UserError Persona.User)
+createUserWithEmail email = do
+  newUser <- try $ Persona.registerWithEmail email
+  case newUser of
+    Left err
+      | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
+          Console.error errData.email_address_in_use_registration.description
+          pure $ Left RegistrationEmailInUse
+      | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+          Console.error errData.invalid_form_fields.description
+          pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
+      | otherwise -> do
+          Console.error "An unexpected error occurred during registration"
+          pure $ Left $ UnexpectedError err
+    Right user -> finalizeLogin user
+
+
 getUser :: Persona.UUID -> Persona.Token -> Aff Persona.User
 getUser uuid token = do
   userResponse <- try do
