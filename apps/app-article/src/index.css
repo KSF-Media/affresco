@@ -393,6 +393,7 @@ body {
     width: auto;
     font-size: 10px;
     margin-top: 1px;
+    font-family: sans-serif;
 }
 
 .relatedArticles h3 {
@@ -426,7 +427,7 @@ body {
 }
 
 .articleImage {
-    margin-top:10px;
+    margin-top:3px;
     margin-bottom:10px;
     text-align: right;
 }
@@ -449,4 +450,89 @@ body {
 
 .html iframe{
     border: 0;
+}
+
+.articleItem {
+    padding-top: 7px;
+    border-top: 1px solid #a8a8a8;
+}
+
+.card {
+    border: 1px solid #d8d8d8;
+    margin-top: 20px;
+    min-height: 365px;
+    border-radius:0px !important;
+}
+
+.card-img-top {
+    border-top-left-radius: 0px !important;
+    border-top-right-radius: 0px !important;
+}
+
+.card-body {
+    padding: 7px !important;
+    min-height: 112px;
+}
+
+.card-title {
+    font-family:"DuplexSerifBold", sans-serif;
+}
+
+.article-premium-badge {
+    position: absolute;
+    bottom: -3px;
+    left: 0px;
+}
+
+.article-main-image {
+    position: relative;
+}
+
+.mobileListItems a {
+    font-size: 22px;
+}
+
+/*Mobiles*/
+@media (min-width: 320px) and (max-width: 480px) {
+    .mobileView {
+        display: block;
+    }
+
+    .tabletView {
+        display: none;
+    }
+
+    .mobileListItems a {
+        font-size: 16px;
+    }
+}
+
+/*Tablets*/
+@media (min-width: 768px) and (max-width: 1024px) {
+    .mobileView {
+        display: none;
+    }
+
+    .tabletView {
+        display: block;
+    }
+
+    .mobileListItems a {
+        font-size: 22px;
+    }
+
+    .mobileListItems img {
+        width: 75%;
+    }
+}
+
+/*Desktops*/
+@media (min-width: 1025px) and (max-width: 1480px) {
+    .mobileView {
+        display: none;
+    }
+
+    .tabletView {
+        display: block;
+    }
 }
