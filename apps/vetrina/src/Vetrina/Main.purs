@@ -3,14 +3,18 @@ module Vetrina.Main where
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Monad.Error.Class (throwError)
 import Data.Array (all)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
+import Effect.Aff as Aff
 import Effect.Class.Console as Console
+import Effect.Exception (error)
 import KSF.InputField.Component as InputField
+import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
 import React.Basic (JSX)
@@ -84,7 +88,26 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
-  (\validForm -> Console.log "YO!")
+  (createNewAccount <<< _.emailAddress)
+
+createNewAccount :: Maybe String -> Effect Unit
+createNewAccount (Just emailString) = Aff.launchAff_ do
+  newUser <- User.createUserWithEmail (User.Email emailString)
+  case newUser of
+    Right user -> pure user
+    Left User.RegistrationEmailInUse -> do
+      -- liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
+      throwError $ error "email in use"
+    Left (User.InvalidFormFields errors) -> do
+      -- liftEffect $ handleServerErrs errors
+      throwError $ error "invalid form fields"
+    _ -> do
+      Console.error unexpectedErr
+      throwError $ error unexpectedErr
+      where
+        unexpectedErr = "An unexpected error occurred during registration"
+
+createNewAccount Nothing = pure unit
 
 confirmButton :: Self -> JSX
 confirmButton self =

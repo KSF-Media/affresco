@@ -83,6 +83,12 @@ register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
 
+type NewUserWithEmail = { emailAddress :: Email }
+
+registerWithEmail :: NewUserWithEmail -> Aff LoginResponse
+registerWithEmail newEmailUser =
+  callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
+
 pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Subscription
 pauseSubscription uuid subsno startDate endDate token = do
   let startDateISO = formatDate startDate
