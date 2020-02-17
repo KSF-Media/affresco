@@ -22,6 +22,13 @@ callApi :: forall res opts. Api -> String -> Array Foreign -> { | opts } -> Aff 
 callApi api methodName req opts =
   fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
+createOrder :: UserAuth -> NewOrder -> Aff Order
+createOrder { userId, authToken } newOrder =
+  callApi ordersApi "orderPost" [ unsafeToForeign newOrder ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
+
 getOrder :: UserAuth -> OrderNumber -> Aff Order
 getOrder { userId, authToken } orderNumber =
   callApi ordersApi "orderOrderNumberGet" [ unsafeToForeign orderNumber ] { authorization, authUser }
@@ -41,3 +48,9 @@ type OrderStatus =
   { status :: String -- TODO: Use enum
   , time   :: String
   }
+
+type NewOrder =
+  { packageId      :: String
+  , period         :: Int
+  , payAmountCents :: Int
+}
