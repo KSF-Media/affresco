@@ -15,6 +15,7 @@ module KSF.User
   , pauseSubscription
   , temporaryAddressChange
   , createOrder
+  , payOrder
   , module Api
   )
 where
@@ -49,7 +50,7 @@ import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
 import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as PersonaReExport
 import Persona as Persona
-import Bottega (NewOrder) as BottegaReExport
+import Bottega (NewOrder, PaymentMethod(..), OrderNumber) as BottegaReExport
 import Bottega as Bottega
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -396,6 +397,14 @@ createOrder :: Bottega.NewOrder -> Aff (Either String Bottega.Order)
 createOrder newOrder = do
   tokens <- requireToken
   order <- try $ Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder
+  case order of
+    Right o  -> pure $ Right o
+    Left err -> pure $ Left "ERROR" -- TODO: Fix errors
+
+payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either String Bottega.Order)
+payOrder orderNum paymentMethod = do
+  tokens <- requireToken
+  order <- try $ Bottega.payOrder { userId: tokens.uuid, authToken: tokens.token } orderNum paymentMethod
   case order of
     Right o  -> pure $ Right o
     Left err -> pure $ Left "ERROR" -- TODO: Fix errors

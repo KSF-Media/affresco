@@ -3,6 +3,9 @@ module Bottega where
 import Prelude
 
 import Data.Function.Uncurried (Fn4, runFn4)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
+import Data.String (toLower)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Foreign (Foreign, unsafeToForeign)
@@ -44,6 +47,13 @@ getOrder { userId, authToken } orderNumber =
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
+payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff Order
+payOrder { userId, authToken } orderNumber paymentMethod =
+  callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
+
 newtype OrderNumber = OrderNumber String
 
 type Order =
@@ -62,3 +72,8 @@ type NewOrder =
   , period         :: Int
   , payAmountCents :: Int
   }
+
+data PaymentMethod = CreditCard
+derive instance genericProvider :: Generic PaymentMethod _
+instance showProvider :: Show PaymentMethod where
+  show = genericShow

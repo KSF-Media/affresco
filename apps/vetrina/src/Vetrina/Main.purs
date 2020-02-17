@@ -2,14 +2,17 @@ module Vetrina.Main where
 
 import Prelude
 
+import Bottega (Order)
 import Bottega as Bottega
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (all)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Traversable (foldMap)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -18,11 +21,10 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
 import KSF.InputField.Component as InputField
-import KSF.PaymentMethod (PaymentMethod(..))
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
-import KSF.User (User)
+import KSF.User (OrderNumber, PaymentMethod(..), User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
@@ -49,7 +51,7 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccoun
 type NewAccountForm =
   { emailAddress     :: Maybe String
   , productSelection :: Product
-  , paymentMethod    :: Maybe PaymentMethod
+  , paymentMethod    :: Maybe User.PaymentMethod
   }
 
 app :: React.Component Props
@@ -101,15 +103,14 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
   , value: form.emailAddress
   }
 
-
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
-  (\validForm -> Aff.launchAff_ do
-      user <- createNewAccount self validForm.emailAddress
-      case user of
-        Right u -> createOrder u self.state.form.productSelection
-        Left _ -> pure $ Left "nope"
+  (\validForm -> Aff.launchAff_ $ runExceptT do
+      user  <- ExceptT $ createNewAccount self validForm.emailAddress
+      order <- ExceptT $ createOrder user self.state.form.productSelection
+      a <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
+      pure unit
   )
 
 createNewAccount :: Self -> Maybe String -> Aff (Either String User)
@@ -134,8 +135,12 @@ createNewAccount _ Nothing = pure $ Left ""
 
 createOrder :: User -> Product -> Aff (Either String Bottega.Order)
 createOrder user product = do
-  let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil product.price * 100 }
+  let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
   User.createOrder newOrder
+
+payOrder :: Order -> PaymentMethod -> Aff (Either String Order)
+payOrder order paymentMethod =
+  User.payOrder order.orderNumber paymentMethod
 
 confirmButton :: Self -> JSX
 confirmButton self =
