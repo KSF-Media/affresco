@@ -11,6 +11,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff as Aff
+import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
 import KSF.InputField.Component as InputField
@@ -18,6 +19,7 @@ import KSF.PaymentMethod (PaymentMethod(..))
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
+import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
@@ -31,6 +33,7 @@ type Props = {}
 type State =
   { form :: NewAccountForm
   , serverErrors :: Array (Form.ValidationError NewAccountInputField)
+  , user :: Maybe User
   }
 type Self = React.Self Props State
 
@@ -51,6 +54,7 @@ app = React.component
   { displayName: "Vetrina"
   , initialState: { form: { emailAddress: Nothing, productSelection: Product.hblPremium, paymentMethod: Nothing }
                   , serverErrors: []
+                  , user: Nothing
                   }
   , receiveProps
   , render
@@ -98,13 +102,13 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
-  (createNewAccount <<< _.emailAddress)
+  (createNewAccount self <<< _.emailAddress)
 
-createNewAccount :: Maybe String -> Effect Unit
-createNewAccount (Just emailString) = Aff.launchAff_ do
+createNewAccount :: Self -> Maybe String -> Effect Unit
+createNewAccount self (Just emailString) = Aff.launchAff_ do
   newUser <- User.createUserWithEmail (User.Email emailString)
   case newUser of
-    Right user -> pure user
+    Right user -> liftEffect $ self.setState _ { user = Just user }
     Left User.RegistrationEmailInUse -> do
       -- liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
       throwError $ error "email in use"
@@ -116,7 +120,10 @@ createNewAccount (Just emailString) = Aff.launchAff_ do
       throwError $ error unexpectedErr
       where
         unexpectedErr = "An unexpected error occurred during registration"
-createNewAccount Nothing = pure unit
+createNewAccount _ Nothing = pure unit
+
+createOrder :: User -> Effect Unit
+createOrder user = pure unit
 
 confirmButton :: Self -> JSX
 confirmButton self =
