@@ -14,6 +14,7 @@ module KSF.User
   , updateUser
   , pauseSubscription
   , temporaryAddressChange
+  , createOrder
   , module Api
   )
 where

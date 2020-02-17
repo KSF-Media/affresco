@@ -1,5 +1,7 @@
 module Bottega where
 
+import Prelude
+
 import Data.Function.Uncurried (Fn4, runFn4)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
@@ -24,10 +26,16 @@ callApi api methodName req opts =
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder =
-  callApi ordersApi "orderPost" [ unsafeToForeign newOrder ] { authorization, authUser }
+  callApi ordersApi "orderPost" [ unsafeToForeign $ addPrefix newOrder ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
+
+    addPrefix o =
+      { buyingOptionPackage: o.packageId
+      , buyingOptionPeriod: o.period
+      , buyingOptionPayAmountCents: o.payAmountCents
+      }
 
 getOrder :: UserAuth -> OrderNumber -> Aff Order
 getOrder { userId, authToken } orderNumber =
@@ -53,4 +61,4 @@ type NewOrder =
   { packageId      :: String
   , period         :: Int
   , payAmountCents :: Int
-}
+  }

@@ -2,14 +2,17 @@ module Vetrina.Main where
 
 import Prelude
 
+import Bottega as Bottega
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (all)
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Int (ceil)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -102,13 +105,20 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
-  (createNewAccount self <<< _.emailAddress)
+  (\validForm -> Aff.launchAff_ do
+      user <- createNewAccount self validForm.emailAddress
+      case user of
+        Right u -> createOrder u self.state.form.productSelection
+        Left _ -> pure $ Left "nope"
+  )
 
-createNewAccount :: Self -> Maybe String -> Effect Unit
-createNewAccount self (Just emailString) = Aff.launchAff_ do
+createNewAccount :: Self -> Maybe String -> Aff (Either String User)
+createNewAccount self (Just emailString) = do
   newUser <- User.createUserWithEmail (User.Email emailString)
   case newUser of
-    Right user -> liftEffect $ self.setState _ { user = Just user }
+    Right user -> do
+      liftEffect $ self.setState _ { user = Just user }
+      pure $ Right user
     Left User.RegistrationEmailInUse -> do
       -- liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
       throwError $ error "email in use"
@@ -120,10 +130,12 @@ createNewAccount self (Just emailString) = Aff.launchAff_ do
       throwError $ error unexpectedErr
       where
         unexpectedErr = "An unexpected error occurred during registration"
-createNewAccount _ Nothing = pure unit
+createNewAccount _ Nothing = pure $ Left ""
 
-createOrder :: User -> Effect Unit
-createOrder user = pure unit
+createOrder :: User -> Product -> Aff (Either String Bottega.Order)
+createOrder user product = do
+  let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil product.price * 100 }
+  User.createOrder newOrder
 
 confirmButton :: Self -> JSX
 confirmButton self =
