@@ -24,6 +24,7 @@ import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
+import KSF.Api (UUID, Token (..))
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
@@ -136,11 +137,6 @@ formatDate = format formatter
       , dash
       , DayOfMonthTwoDigits
       ]
-
-newtype Token = Token String
-derive newtype instance showToken :: Show Token
-derive newtype instance readforeignToken :: ReadForeign Token
-derive newtype instance writeforeignToken :: WriteForeign Token
 
 newtype Email = Email String
 derive newtype instance showEmail :: Show Email
@@ -316,11 +312,6 @@ newtype MergeToken = MergeToken String
 derive newtype instance showMergeToken :: Show MergeToken
 derive newtype instance readMergeToken :: ReadForeign MergeToken
 derive newtype instance writeMergeToken :: WriteForeign MergeToken
-
-newtype UUID = UUID String
-derive newtype instance showUUID :: Show UUID
-derive newtype instance readforeignUUID :: ReadForeign UUID
-derive newtype instance writeforeignUUID :: WriteForeign UUID
 
 type User =
   { uuid :: UUID

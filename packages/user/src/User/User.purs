@@ -3,6 +3,7 @@ module KSF.User
   , MergeInfo
   , ValidationServerError
   , module PersonaReExport
+  , module BottegaReExport
   , loginTraditional
   , magicLogin
   , logout
@@ -13,7 +14,7 @@ module KSF.User
   , updateUser
   , pauseSubscription
   , temporaryAddressChange
-  , module Bottega
+  , module Api
   )
 where
 
@@ -40,12 +41,14 @@ import Effect.Exception (Error, throw)
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
+import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken) as Api
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), UUID, Email(..), Token(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as PersonaReExport
 import Persona as Persona
+import Bottega (NewOrder) as BottegaReExport
 import Bottega as Bottega
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -110,7 +113,7 @@ createUserWithEmail email = do
     Right user -> finalizeLogin user
 
 
-getUser :: Persona.UUID -> Persona.Token -> Aff Persona.User
+getUser :: Api.UUID -> Api.Token -> Aff Persona.User
 getUser uuid token = do
   userResponse <- try do
     Persona.getUser uuid token
@@ -127,7 +130,7 @@ getUser uuid token = do
       Console.info "User fetched successfully"
       pure user
 
-updateUser :: Persona.UUID -> Persona.UserUpdate -> Aff (Either UserError Persona.User)
+updateUser :: Api.UUID -> Persona.UserUpdate -> Aff (Either UserError Persona.User)
 updateUser uuid update = do
   newUser <- try $ Persona.updateUser uuid update <<< _.token =<< requireToken
   case newUser of
@@ -174,7 +177,7 @@ magicLogin callback = do
 someAuth
   :: Maybe MergeInfo
   -> Persona.Email
-  -> Persona.Token
+  -> Api.Token
   -> Persona.Provider
   -> Aff (Either UserError Persona.User)
 someAuth mergeInfo email token provider = do
@@ -317,8 +320,8 @@ finalizeLogin loginResponse = do
 
 loadToken :: forall m. MonadEffect m => m (Maybe Persona.LoginResponse)
 loadToken = liftEffect $ runMaybeT do
-  token <- map Persona.Token $ MaybeT $ LocalStorage.getItem "token"
-  uuid <- map Persona.UUID $ MaybeT $ LocalStorage.getItem "uuid"
+  token <- map Api.Token $ MaybeT $ LocalStorage.getItem "token"
+  uuid <- map Api.UUID $ MaybeT $ LocalStorage.getItem "uuid"
   pure { token, ssoCode: Nullable.toNullable Nothing, uuid }
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m Unit
@@ -326,8 +329,8 @@ saveToken { token, ssoCode, uuid } = liftEffect do
   for_ (Nullable.toMaybe ssoCode) $ \code -> do
     config <- JanrainSSO.loadConfig
     for_ (Nullable.toMaybe config) \conf -> JanrainSSO.setSession conf code
-  LocalStorage.setItem "token" case token of Persona.Token a -> a
-  LocalStorage.setItem "uuid" case uuid of Persona.UUID a -> a
+  LocalStorage.setItem "token" case token of Api.Token a -> a
+  LocalStorage.setItem "uuid" case uuid of Api.UUID a -> a
 
 deleteToken :: Effect Unit
 deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid" ]
@@ -339,8 +342,8 @@ requireToken =
     Just loginResponse -> pure loginResponse
 
 jsUpdateGdprConsent
-  :: Persona.UUID
-  -> Persona.Token
+  :: Api.UUID
+  -> Api.Token
   -> Array Persona.GdprConsent
   -> Effect Unit
   -> Effect Unit
@@ -351,7 +354,7 @@ facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
 pauseSubscription
-  :: Persona.UUID
+  :: Api.UUID
   -> Int
   -> DateTime
   -> DateTime
@@ -368,7 +371,7 @@ pauseSubscription userUuid subsno startDate endDate = do
           pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
 
 temporaryAddressChange
-  :: Persona.UUID
+  :: Api.UUID
   -> Int
   -> DateTime
   -> DateTime
@@ -387,3 +390,11 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
       | otherwise -> do
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
+
+createOrder :: Bottega.NewOrder -> Aff (Either String Bottega.Order)
+createOrder newOrder = do
+  tokens <- requireToken
+  order <- try $ Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder
+  case order of
+    Right o  -> pure $ Right o
+    Left err -> pure $ Left "ERROR" -- TODO: Fix errors
