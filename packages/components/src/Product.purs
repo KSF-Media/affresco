@@ -34,7 +34,7 @@ productOption product checked =
                 , name: "product"
                 , id: "hbl-premium"
                 , value: "hbl-premium"
-                , checked
+   --             , checked
                 }
             ]
         , DOM.label

@@ -5,11 +5,13 @@ import Prelude
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.String (toLower)
+import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
-import Foreign (Foreign, unsafeToForeign)
+import Foreign (Foreign, F, unsafeToForeign)
+import Foreign.Generic.EnumEncoding (genericDecodeEnum)
 import KSF.Api (UUID, UserAuth, oauthToken)
+import Simple.JSON (class ReadForeign, read', readImpl, read_)
 
 foreign import data Api :: Type
 foreign import ordersApi :: Api
@@ -29,16 +31,10 @@ callApi api methodName req opts =
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder =
-  callApi ordersApi "orderPost" [ unsafeToForeign $ addPrefix newOrder ] { authorization, authUser }
+  callApi ordersApi "orderPost" [ unsafeToForeign newOrder ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
-
-    addPrefix o =
-      { buyingOptionPackage: o.packageId
-      , buyingOptionPeriod: o.period
-      , buyingOptionPayAmountCents: o.payAmountCents
-      }
 
 getOrder :: UserAuth -> OrderNumber -> Aff Order
 getOrder { userId, authToken } orderNumber =
@@ -47,7 +43,7 @@ getOrder { userId, authToken } orderNumber =
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff Order
+payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
 payOrder { userId, authToken } orderNumber paymentMethod =
   callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
   where
@@ -74,6 +70,12 @@ type NewOrder =
   }
 
 data PaymentMethod = CreditCard
+
 derive instance genericProvider :: Generic PaymentMethod _
 instance showProvider :: Show PaymentMethod where
   show = genericShow
+
+newtype PaymentTerminalUrl = PaymentTerminalUrl String
+
+derive instance genericPaymentTerminalUrl :: Generic PaymentTerminalUrl _
+derive newtype instance showPaymentTerminalUrl :: Show PaymentTerminalUrl

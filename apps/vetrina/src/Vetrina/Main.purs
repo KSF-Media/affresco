@@ -2,8 +2,6 @@ module Vetrina.Main where
 
 import Prelude
 
-import Bottega (Order)
-import Bottega as Bottega
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT(..), runExceptT)
@@ -24,7 +22,7 @@ import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
-import KSF.User (OrderNumber, PaymentMethod(..), User)
+import KSF.User (OrderNumber, PaymentMethod(..), User, Order, PaymentTerminalUrl(..))
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
@@ -39,6 +37,7 @@ type State =
   { form :: NewAccountForm
   , serverErrors :: Array (Form.ValidationError NewAccountInputField)
   , user :: Maybe User
+  , terminalUrl :: Maybe PaymentTerminalUrl
   }
 type Self = React.Self Props State
 
@@ -60,6 +59,7 @@ app = React.component
   , initialState: { form: { emailAddress: Nothing, productSelection: Product.hblPremium, paymentMethod: Nothing }
                   , serverErrors: []
                   , user: Nothing
+                  , terminalUrl: Nothing
                   }
   , receiveProps
   , render
@@ -70,15 +70,18 @@ app = React.component
 
 render :: Self -> JSX
 render self =
-  DOM.div
-    { className: "vetrina--new-account-container"
-    , children: newAccountForm self
-        [ emailAddressInput self
-        , Product.productOption Product.hblPremium true
-        , PaymentMethod.paymentMethod (\m -> Console.log $ "AAAAHGH " <> (maybe "" PaymentMethod.paymentMethodString m))
-        , confirmButton self
-        ]
-    }
+  case self.state.terminalUrl of
+    Nothing ->
+      DOM.div
+        { className: "vetrina--new-account-container"
+        , children: newAccountForm self
+            [ emailAddressInput self
+            , Product.productOption Product.hblPremium true
+            , PaymentMethod.paymentMethod (\m -> Console.log $ "AAAAHGH " <> (maybe "" PaymentMethod.paymentMethodString m))
+            , confirmButton self
+            ]
+        }
+    Just url -> netsTerminalIframe url
 
 newAccountForm :: Self -> Array JSX -> Array JSX
 newAccountForm self children =
@@ -109,7 +112,8 @@ submitNewAccountForm self@{ state: { form } } = unV
   (\validForm -> Aff.launchAff_ $ runExceptT do
       user  <- ExceptT $ createNewAccount self validForm.emailAddress
       order <- ExceptT $ createOrder user self.state.form.productSelection
-      a <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
+      (PaymentTerminalUrl a) <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
+      Console.log $ "NETS URL" <> a
       pure unit
   )
 
@@ -133,12 +137,12 @@ createNewAccount self (Just emailString) = do
         unexpectedErr = "An unexpected error occurred during registration"
 createNewAccount _ Nothing = pure $ Left ""
 
-createOrder :: User -> Product -> Aff (Either String Bottega.Order)
+createOrder :: User -> Product -> Aff (Either String Order)
 createOrder user product = do
   let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
   User.createOrder newOrder
 
-payOrder :: Order -> PaymentMethod -> Aff (Either String Order)
+payOrder :: Order -> PaymentMethod -> Aff (Either String PaymentTerminalUrl)
 payOrder order paymentMethod =
   User.payOrder order.orderNumber paymentMethod
 
@@ -163,3 +167,12 @@ formValidations self@{ state: { form } } =
   , paymentMethod: form.paymentMethod
   }
   <$> Form.validateField EmailAddress form.emailAddress []
+
+
+netsTerminalIframe :: PaymentTerminalUrl -> JSX
+netsTerminalIframe (PaymentTerminalUrl url) =
+  DOM.iframe
+    { src: url
+    , width: "500px"
+    , height: "1000px"
+    }
