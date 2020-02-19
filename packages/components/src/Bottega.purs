@@ -75,7 +75,4 @@ derive instance genericProvider :: Generic PaymentMethod _
 instance showProvider :: Show PaymentMethod where
   show = genericShow
 
-newtype PaymentTerminalUrl = PaymentTerminalUrl String
-
-derive instance genericPaymentTerminalUrl :: Generic PaymentTerminalUrl _
-derive newtype instance showPaymentTerminalUrl :: Show PaymentTerminalUrl
+type PaymentTerminalUrl = { paymentTerminalUrl :: String }
