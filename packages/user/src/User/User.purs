@@ -16,6 +16,7 @@ module KSF.User
   , temporaryAddressChange
   , createOrder
   , payOrder
+  , getOrder
   , module Api
   )
 where
@@ -405,6 +406,14 @@ payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either String B
 payOrder orderNum paymentMethod = do
   tokens <- requireToken
   order <- try $ Bottega.payOrder { userId: tokens.uuid, authToken: tokens.token } orderNum paymentMethod
+  case order of
+    Right o  -> pure $ Right o
+    Left err -> pure $ Left "ERROR" -- TODO: Fix errors
+
+getOrder :: Bottega.OrderNumber -> Aff (Either String Bottega.Order)
+getOrder orderNum = do
+  tokens <- requireToken
+  order <- try $ Bottega.getOrder { userId: tokens.uuid, authToken: tokens.token } orderNum
   case order of
     Right o  -> pure $ Right o
     Left err -> pure $ Left "ERROR" -- TODO: Fix errors
