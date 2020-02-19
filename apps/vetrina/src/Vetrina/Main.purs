@@ -80,28 +80,30 @@ app = make component
                   }
   , render
   , didMount
-  , didUpdate
+  --, didUpdate
   }
 
 didMount :: Self -> Effect Unit
 didMount self = do
   pure unit
 
-didUpdate :: Self -> PrevState -> Effect Unit
-didUpdate self prevState = do
-  case self.state.purchaseState, self.state.newOrder of
-    CapturePayment _, Just order -> updatePoller order
-    ProcessPayment, Just order -> updatePoller order
-    _, _ -> Aff.launchAff_ killPoller
-  where
-    killPoller = Aff.killFiber (error "Canceled poller") self.state.poller
-    updatePoller :: Order -> Effect Unit
-    updatePoller order = do
-      newPoller <- Aff.launchAff do
-            killPoller
-            newPoller <- Aff.forkAff $ pollOrder self (Right order)
-            Aff.joinFiber newPoller
-      self.setState _ { poller = newPoller }
+-- didUpdate :: Self -> PrevState -> Effect Unit
+-- didUpdate self prevState = do
+--   case self.state.purchaseState, self.state.newOrder of
+--     CapturePayment _, Just order -> updatePoller order
+--     ProcessPayment, Just order -> updatePoller order
+--     _, _ -> Aff.launchAff_ killPoller
+--   where
+killPoller :: Self -> Aff Unit
+killPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
+
+updatePoller :: Self -> Order -> Effect Unit
+updatePoller self order = do
+  newPoller <- Aff.launchAff do
+        killPoller self
+        newPoller <- Aff.forkAff $ pollOrder self (Right order)
+        Aff.joinFiber newPoller
+  self.setState _ { poller = newPoller }
 
 pollOrder :: Self -> Either String Order -> Aff Unit
 pollOrder self (Right order) = do
@@ -165,13 +167,20 @@ submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccou
 submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ do
-      eitherTerminalUrl <- runExceptT do
+      eitherRes <- runExceptT do
         user  <- ExceptT $ createNewAccount self validForm.emailAddress
         order <- ExceptT $ createOrder user self.state.form.productSelection
         paymentUrl <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
-        pure paymentUrl
-      case eitherTerminalUrl of
-        Right terminalUrl -> liftEffect $ self.setState _ { purchaseState = CapturePayment terminalUrl }
+        pure { paymentUrl, order, user }
+      case eitherRes of
+        Right { paymentUrl, order, user } ->
+          liftEffect do
+            self.setState _
+              { purchaseState = CapturePayment paymentUrl
+              , newOrder = Just order
+              , user = Just user
+              }
+            updatePoller self order
         Left (err :: String) ->
           -- TODO: Show error
           pure unit
@@ -200,6 +209,7 @@ createNewAccount _ Nothing = pure $ Left ""
 createOrder :: User -> Product -> Aff (Either String Order)
 createOrder user product = do
   let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
+
   User.createOrder newOrder
 
 payOrder :: Order -> PaymentMethod -> Aff (Either String PaymentTerminalUrl)
