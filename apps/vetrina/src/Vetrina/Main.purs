@@ -10,7 +10,6 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Traversable (foldMap)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -22,24 +21,37 @@ import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
-import KSF.User (OrderNumber, PaymentMethod(..), User, Order, PaymentTerminalUrl(..))
+import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl(..))
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
-import React.Basic (JSX)
-import React.Basic.Compat as React
+import React.Basic (JSX, make)
+import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 
 type Props = {}
+
 type State =
   { form :: NewAccountForm
   , serverErrors :: Array (Form.ValidationError NewAccountInputField)
   , user :: Maybe User
-  , terminalUrl :: Maybe PaymentTerminalUrl
+  , newOrder :: Maybe Order
+  , purchaseState :: PurchaseState
+  , poller :: Aff.Fiber Unit
   }
 type Self = React.Self Props State
+
+type PrevState = { prevProps :: Props, prevState :: State }
+
+data PurchaseState
+  = NewPurchase
+  | CapturePayment PaymentTerminalUrl
+  | ProcessPayment
+  | PurchaseFailed
+  | PurchaseDone
+derive instance eqPurchaseState :: Eq PurchaseState
 
 data NewAccountInputField = EmailAddress
 derive instance eqNewAccountInputField :: Eq NewAccountInputField
@@ -53,35 +65,78 @@ type NewAccountForm =
   , paymentMethod    :: Maybe User.PaymentMethod
   }
 
-app :: React.Component Props
-app = React.component
-  { displayName: "Vetrina"
-  , initialState: { form: { emailAddress: Nothing, productSelection: Product.hblPremium, paymentMethod: Nothing }
+component :: React.Component Props
+component = React.createComponent "Vetrina"
+
+app :: Props -> JSX
+app = make component
+  { initialState: { form: { emailAddress: Nothing, productSelection: Product.hblPremium, paymentMethod: Nothing }
                   , serverErrors: []
+                  , purchaseState: NewPurchase
                   , user: Nothing
-                  , terminalUrl: Nothing
+                    --Just { paymentTerminalUrl: "https://test.epayment.nets.eu/Terminal/default.aspx?merchantId=504230&transactionId=b07d56bf0a1a413399d6723dbf802d02"}
+                  , newOrder: Nothing
+                  , poller: pure unit
                   }
-  , receiveProps
   , render
+  , didMount
+  , didUpdate
   }
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  pure unit
+
+didUpdate :: Self -> PrevState -> Effect Unit
+didUpdate self prevState = do
+  case self.state.purchaseState, self.state.newOrder of
+    CapturePayment _, Just order -> updatePoller order
+    ProcessPayment, Just order -> updatePoller order
+    _, _ -> Aff.launchAff_ killPoller
   where
-    receiveProps _ = do
-      pure unit
+    killPoller = Aff.killFiber (error "Canceled poller") self.state.poller
+    updatePoller :: Order -> Effect Unit
+    updatePoller order = do
+      newPoller <- Aff.launchAff do
+            killPoller
+            newPoller <- Aff.forkAff $ pollOrder self (Right order)
+            Aff.joinFiber newPoller
+      self.setState _ { poller = newPoller }
+
+pollOrder :: Self -> Either String Order -> Aff Unit
+pollOrder self (Right order) = do
+  Aff.delay $ Aff.Milliseconds 1000.0
+  case order.orderStatus.status of
+    "started" -> do
+      liftEffect $ Console.log "Order started"
+      pollOrder self =<< User.getOrder order.orderNumber
+    "completed" ->
+      liftEffect do
+        Console.log "Order done"
+        self.setState _ { purchaseState = PurchaseDone }
+    "failed" -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
+    _ -> do
+      liftEffect $ Console.log "polling"
+      pollOrder self =<< User.getOrder order.orderNumber
+pollOrder _ _ = pure unit -- TODO: Handle errors
 
 render :: Self -> JSX
 render self =
-  case self.state.terminalUrl of
-    Nothing ->
+  case self.state.purchaseState of
+    NewPurchase ->
       DOM.div
         { className: "vetrina--new-account-container"
         , children: newAccountForm self
             [ emailAddressInput self
             , Product.productOption Product.hblPremium true
-            , PaymentMethod.paymentMethod (\m -> Console.log $ "AAAAHGH " <> (maybe "" PaymentMethod.paymentMethodString m))
+            , PaymentMethod.paymentMethod (\m -> pure unit)
             , confirmButton self
             ]
         }
-    Just url -> netsTerminalIframe url
+    (CapturePayment url) -> netsTerminalIframe url
+    ProcessPayment -> DOM.text "PROCESSING PAYMENT"
+    PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
+    PurchaseDone -> DOM.text "PURCHASE DONE"
 
 newAccountForm :: Self -> Array JSX -> Array JSX
 newAccountForm self children =
@@ -109,12 +164,17 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
-  (\validForm -> Aff.launchAff_ $ runExceptT do
-      user  <- ExceptT $ createNewAccount self validForm.emailAddress
-      order <- ExceptT $ createOrder user self.state.form.productSelection
-      (PaymentTerminalUrl a) <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
-      Console.log $ "NETS URL" <> a
-      pure unit
+  (\validForm -> Aff.launchAff_ do
+      eitherTerminalUrl <- runExceptT do
+        user  <- ExceptT $ createNewAccount self validForm.emailAddress
+        order <- ExceptT $ createOrder user self.state.form.productSelection
+        paymentUrl <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
+        pure paymentUrl
+      case eitherTerminalUrl of
+        Right terminalUrl -> liftEffect $ self.setState _ { purchaseState = CapturePayment terminalUrl }
+        Left (err :: String) ->
+          -- TODO: Show error
+          pure unit
   )
 
 createNewAccount :: Self -> Maybe String -> Aff (Either String User)
@@ -170,9 +230,9 @@ formValidations self@{ state: { form } } =
 
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
-netsTerminalIframe (PaymentTerminalUrl url) =
+netsTerminalIframe { paymentTerminalUrl } =
   DOM.iframe
-    { src: url
+    { src: paymentTerminalUrl
     , width: "500px"
     , height: "1000px"
     }
