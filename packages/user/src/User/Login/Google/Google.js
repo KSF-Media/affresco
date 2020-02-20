@@ -16,7 +16,7 @@ function initSuccess(args) {
     GoogleAuth.isSignedIn.listen(setUser(args.onSuccess));
     if (GoogleAuth.isSignedIn.get()) {
       var user = GoogleAuth.currentUser.get();
-      args.onSuccess(user);
+      args.onSuccess(mkAuthResponse(user));
     }
     else {
       GoogleAuth.signIn();
@@ -35,9 +35,17 @@ function setUser(onSuccess) {
     if (isSignedIn) {
       var GoogleAuth = gapi.auth2.getAuthInstance();
       var user = GoogleAuth.currentUser.get();
-      onSuccess(user);
+      onSuccess(mkAuthResponse(user));
     }
   }
+}
+
+function mkAuthResponse(user) {
+    var userProfile = user.getBasicProfile(),
+	userAuth = user.getAuthResponse(true), // When `true`, access_token is included
+	userEmail = userProfile.getEmail(),
+	userAccessToken = userAuth.access_token;
+    return { accessToken: userAccessToken, email: userEmail };
 }
 
 exports.isSignedIn_ = function() {
