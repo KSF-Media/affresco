@@ -16,7 +16,6 @@ function initSuccess(args) {
     GoogleAuth.isSignedIn.listen(setUser(args.onSuccess));
     if (GoogleAuth.isSignedIn.get()) {
       var user = GoogleAuth.currentUser.get();
-      console.info("GoogleAuth.currentUser", user)
       args.onSuccess(user);
     }
     else {
@@ -36,7 +35,6 @@ function setUser(onSuccess) {
     if (isSignedIn) {
       var GoogleAuth = gapi.auth2.getAuthInstance();
       var user = GoogleAuth.currentUser.get();
-      console.info("GoogleAuth.currentUser", user)
       onSuccess(user);
     }
   }
