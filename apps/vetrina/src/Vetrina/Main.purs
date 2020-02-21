@@ -21,7 +21,7 @@ import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
-import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl(..))
+import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl(..), OrderStatusState(..))
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
@@ -75,26 +75,12 @@ app = make component
                   , serverErrors: []
                   , purchaseState: NewPurchase
                   , user: Nothing
-                    --Just { paymentTerminalUrl: "https://test.epayment.nets.eu/Terminal/default.aspx?merchantId=504230&transactionId=b07d56bf0a1a413399d6723dbf802d02"}
                   , newOrder: Nothing
                   , poller: pure unit
                   }
   , render
-  , didMount
-  --, didUpdate
   }
 
-didMount :: Self -> Effect Unit
-didMount self = do
-  pure unit
-
--- didUpdate :: Self -> PrevState -> Effect Unit
--- didUpdate self prevState = do
---   case self.state.purchaseState, self.state.newOrder of
---     CapturePayment _, Just order -> updatePoller order
---     ProcessPayment, Just order -> updatePoller order
---     _, _ -> Aff.launchAff_ killPoller
---   where
 killPoller :: Self -> Aff Unit
 killPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
 
@@ -109,16 +95,15 @@ updatePoller self order = do
 pollOrder :: Self -> Either String Order -> Aff Unit
 pollOrder self (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
-  liftEffect $ Console.log $ "STATUS: " <> show order.number <> ", " <> show order.user <> ", " <> order.status.state <> ", " <> order.status.time
   case order.status.state of
-    "started" -> do
+    OrderStarted -> do
       liftEffect $ Console.log "Order started"
       pollOrder self =<< User.getOrder order.number
-    "completed" ->
+    OrderCompleted ->
       liftEffect do
         Console.log "Order done"
         self.setState _ { purchaseState = PurchaseDone, poller = pure unit }
-    "failed" -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed, poller = pure unit }
+    OrderFailed -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed, poller = pure unit }
     _ -> do
       liftEffect $ Console.log "polling"
       pollOrder self =<< User.getOrder order.number
@@ -211,7 +196,6 @@ createNewAccount _ Nothing = pure $ Left ""
 createOrder :: User -> Product -> Aff (Either String Order)
 createOrder user product = do
   let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
-
   User.createOrder newOrder
 
 payOrder :: Order -> PaymentMethod -> Aff (Either String PaymentTerminalUrl)

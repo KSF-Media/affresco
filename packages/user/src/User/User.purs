@@ -51,7 +51,7 @@ import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
 import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as PersonaReExport
 import Persona as Persona
-import Bottega (NewOrder, PaymentMethod(..), OrderNumber, Order, PaymentTerminalUrl(..)) as BottegaReExport
+import Bottega (NewOrder, PaymentMethod(..), OrderNumber, Order(..), PaymentTerminalUrl(..), OrderStatusState(..)) as BottegaReExport
 import Bottega as Bottega
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
