@@ -228,6 +228,5 @@ netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
   DOM.iframe
     { src: paymentTerminalUrl
-    , width: "500px"
-    , height: "1000px"
+    , className: "vetrina--payment-terminal"
     }
