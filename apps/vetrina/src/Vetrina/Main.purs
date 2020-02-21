@@ -9,7 +9,7 @@ import Data.Array (all)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -21,7 +21,7 @@ import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
-import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl(..), OrderStatusState(..))
+import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
@@ -30,7 +30,6 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
-import Unsafe.Coerce (unsafeCoerce)
 
 type Props = {}
 

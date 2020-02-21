@@ -2,19 +2,13 @@ module Bottega where
 
 import Prelude
 
-import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..))
-import Data.String (toLower)
-import Effect.Aff (Aff, throwError)
+import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
-import Effect.Class (liftEffect)
-import Effect.Exception (throw)
-import Foreign (Foreign, F, unsafeToForeign)
-import Foreign.Generic.EnumEncoding (genericDecodeEnum)
+import Foreign (Foreign, unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
 import Simple.JSON (class ReadForeign, read, readImpl)
 
