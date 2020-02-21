@@ -53,13 +53,13 @@ payOrder { userId, authToken } orderNumber paymentMethod =
 newtype OrderNumber = OrderNumber String
 
 type Order =
-  { orderNumber :: OrderNumber
-  , orderUser   :: UUID
-  , orderStatus :: OrderStatus
+  { number :: OrderNumber
+  , user   :: UUID
+  , status :: OrderStatus
   }
 
 type OrderStatus =
-  { status :: String -- TODO: Use enum
+  { state  :: String -- TODO: Use enum
   , time   :: String
   }
 

@@ -30,6 +30,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
+import Unsafe.Coerce (unsafeCoerce)
 
 type Props = {}
 
@@ -108,18 +109,19 @@ updatePoller self order = do
 pollOrder :: Self -> Either String Order -> Aff Unit
 pollOrder self (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
-  case order.orderStatus.status of
+  liftEffect $ Console.log $ "STATUS: " <> show order.number <> ", " <> show order.user <> ", " <> order.status.state <> ", " <> order.status.time
+  case order.status.state of
     "started" -> do
       liftEffect $ Console.log "Order started"
-      pollOrder self =<< User.getOrder order.orderNumber
+      pollOrder self =<< User.getOrder order.number
     "completed" ->
       liftEffect do
         Console.log "Order done"
-        self.setState _ { purchaseState = PurchaseDone }
-    "failed" -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
+        self.setState _ { purchaseState = PurchaseDone, poller = pure unit }
+    "failed" -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed, poller = pure unit }
     _ -> do
       liftEffect $ Console.log "polling"
-      pollOrder self =<< User.getOrder order.orderNumber
+      pollOrder self =<< User.getOrder order.number
 pollOrder _ _ = pure unit -- TODO: Handle errors
 
 render :: Self -> JSX
@@ -214,7 +216,7 @@ createOrder user product = do
 
 payOrder :: Order -> PaymentMethod -> Aff (Either String PaymentTerminalUrl)
 payOrder order paymentMethod =
-  User.payOrder order.orderNumber paymentMethod
+  User.payOrder order.number paymentMethod
 
 confirmButton :: Self -> JSX
 confirmButton self =

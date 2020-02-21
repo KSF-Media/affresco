@@ -826,7 +826,7 @@
   version "0.2.1"
   dependencies:
     basscss "^8.1.0"
-    bottega "https://github.com/KSF-Media/bottega-javascript-client.git#f35a21b7261cd91f643bb8324ecb19b773efedc0"
+    bottega "https://github.com/KSF-Media/bottega-javascript-client.git#6549e2f7b753c64054b786d181b8025e11c14d63"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#fd8052cccd8b5dc97ae5cfaf9fb0a649da40e897"
     react "^16.5.2"
     react-dom "^16.5.2"
@@ -2121,9 +2121,9 @@ bootstrap@^4.3.1:
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.3.1.tgz#280ca8f610504d99d7b6b4bfc4b68cec601704ac"
   integrity sha512-rXqOmH1VilAt2DyPzluTi2blhk17bO7ef+zLLPlWvG494pDxcM234pJ8wTc/6R40UWizAIIMgxjvxZg5kmsbag==
 
-"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#f35a21b7261cd91f643bb8324ecb19b773efedc0":
+"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#6549e2f7b753c64054b786d181b8025e11c14d63":
   version "1.0.0"
-  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#f35a21b7261cd91f643bb8324ecb19b773efedc0"
+  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#6549e2f7b753c64054b786d181b8025e11c14d63"
   dependencies:
     superagent "3.7.0"
 

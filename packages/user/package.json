@@ -9,7 +9,7 @@
     "react-dom": "^16.5.2",
     "basscss": "^8.1.0",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#fd8052cccd8b5dc97ae5cfaf9fb0a649da40e897",
-    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f35a21b7261cd91f643bb8324ecb19b773efedc0"
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#6549e2f7b753c64054b786d181b8025e11c14d63"
   },
   "scripts": {
     "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less ../../less/ksf-utils.less ../../less/InputField.less"
