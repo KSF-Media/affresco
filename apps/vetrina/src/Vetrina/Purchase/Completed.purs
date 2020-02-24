@@ -71,6 +71,7 @@ setPasswordForm self@{ state: { passwordForm } } =
             }
         , DOM.input
             { type: "submit"
+            , className: "vetrina-purchase-completed--submit-password"
             , disabled: isFormInvalid $ formValidations self
             , value: "Skicka"
             }
