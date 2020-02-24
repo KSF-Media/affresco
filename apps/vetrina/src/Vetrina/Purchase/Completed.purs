@@ -3,7 +3,6 @@ module Vetrina.Purchase.Completed where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -15,8 +14,11 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
+import Web.HTML (window) as HTML
+import Web.HTML.Location (setHref)  as HTML
+import Web.HTML.Window (location) as HTML
 
-type Props = {}
+type Props = { redirectArticleUrl :: Maybe String }
 
 type State = { passwordForm :: PasswordForm }
 
@@ -85,11 +87,14 @@ submitNewPassword self@{ state: { passwordForm } } form =
       Left errs -> self.setState _ { passwordForm { newPassword = passwordForm.newPassword <|> Just "" } }
       Right validForm
         | Just newPw <- validForm.newPassword -> do
-          -- TODO: call Persona
-          Console.log "NEW PASSWORD!"
+          -- TODO: call Persona and login
+          case self.props.redirectArticleUrl of
+            -- Redirect customer back to the article
+            Just url -> HTML.setHref url =<< HTML.location =<< HTML.window
+            Nothing -> pure unit
           pure unit
         | otherwise ->
-          Console.error "New password seemd OK, but is not defined"
+          Console.error "New password seemed OK, but is not defined"
 
 formValidations :: Self -> ValidatedForm PasswordFormField PasswordForm
 formValidations self@{ state: { passwordForm } } =
