@@ -1,32 +1,33 @@
-.pod {
-  margin-bottom: 30px;
-  .pod-description{
+.pod-description{
+  float: left;
+  width: 100%;
+  img.pod-avatar {
+    width: 100px;
     float: left;
-    width: 100%;
-    img.pod-avatar {
-      width: 100px;
-      float: left;
-      margin-right: 15px;
-    }
+    margin-right: 15px;
   }
-  .pod-tracklist{
-    padding-top: 30px;
+}
+.pod-tracklist{
+  padding-top: 30px;
+  float: left;
+  width: 100%;
+}
+.pod-track {
+  background: #eceae6;
+  padding: 15px;
+  margin-bottom: 15px;
+  >div{display: flex;}
+  .description .artwork{
+    width: 100px;
     float: left;
-    width: 100%;
+    margin-right: 15px;
   }
-  .pod-track {
-    background: #eceae6;
-    padding: 15px;
-    margin-bottom: 15px;;
-    .description .artwork{
-      width: 100px;
-      float: left;
-      margin-right: 15px;
-    }
-    .media iframe {
-      border: 0;
-      width: 100%;
-      height: 160px;
-    }
+  .media iframe {
+    border: 0;
+    width: 100%;
+    height: 160px;
+  }
+  .pod-track-description{
+    margin-left: 15px;
   }
 }

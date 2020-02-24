@@ -1,30 +1,9 @@
 // src/PodList.js
 import React from "react";
 
-import TrackList from "./Tracklist.js"
+import LatestTrackTrackList from "./LatestTracsklist.js"
 
-class PodList extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loaded: false,
-      userIds: this.props.userIds || [],
-      podcasts: []
-    }
-  }
-
-  componentDidMount() {
-    const promises = this.state.userIds.map(id => 
-      fetch(`https://api.soundcloud.com/users/${id}/?client_id=${process.env.CLIENT_ID}`)
-      .then(res => res.json())
-    );
-    Promise.all(promises).then(
-      json => {
-        this.setState({podcasts: [...json]});
-        // console.log("Pods: ", this.state.podcasts);
-      }
-    )
-  }
+class PodTracksList extends React.Component {
 
   render() {
     const listItems = this.state.podcasts.map((p, k) => {
@@ -56,4 +35,4 @@ class PodList extends React.Component {
   }
 }
 
-export default PodList;
+export default PodTracksList;
