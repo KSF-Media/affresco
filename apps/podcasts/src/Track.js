@@ -20,10 +20,10 @@ class Track extends React.Component {
     const trackDetails = this.state.expanded
       ? (
         <div>  
-          <div className="media">
+          <div className="track-details-media">
             <iframe src={"https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/"+ t.id +"&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&show_artwork=false"}></iframe>
           </div>
-          <div className="description">
+          <div className="track-details-description">
             {t.description}
           </div>
         </div>
