@@ -30,6 +30,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
+import Vetrina.Purchase.Completed as PurchaseCompleted
 
 type Props = {}
 
@@ -96,6 +97,7 @@ pollOrder self (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case order.status.state of
     OrderStarted -> do
+      -- TODO: show loading spinner
       liftEffect $ Console.log "Order started"
       pollOrder self =<< User.getOrder order.number
     OrderCompleted ->
@@ -124,7 +126,7 @@ render self =
     (CapturePayment url) -> netsTerminalIframe url
     ProcessPayment -> DOM.text "PROCESSING PAYMENT"
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
-    PurchaseDone -> DOM.text "PURCHASE DONE"
+    PurchaseDone -> PurchaseCompleted.completed { redirectArticleUrl: Nothing }
 
 newAccountForm :: Self -> Array JSX -> Array JSX
 newAccountForm self children =
