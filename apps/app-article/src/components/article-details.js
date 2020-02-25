@@ -61,7 +61,7 @@ const ArticleDetails = (props) => {
                                 }
                                 {
                                     props.premium ?
-                                        <PremiumBadge/>
+                                        <div className="article-info"><span className="article-opinion-type">LEDARE</span> <PremiumBadge/></div>
                                         : ''
                                 }
                             </div>
