@@ -9,7 +9,7 @@ import Data.Array (all, any)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -42,6 +42,7 @@ type State =
   , newOrder :: Maybe Order
   , purchaseState :: PurchaseState
   , poller :: Aff.Fiber Unit
+  , isLoading :: Maybe Spinner.Loading
   }
 type Self = React.Self Props State
 
@@ -78,6 +79,7 @@ app = make component
                   , user: Nothing
                   , newOrder: Nothing
                   , poller: pure unit
+                  , isLoading: Nothing
                   }
   , render
   }
@@ -117,7 +119,9 @@ pollOrder self (Left err) = liftEffect do
 
 render :: Self -> JSX
 render self =
-  case self.state.purchaseState of
+  if isJust self.state.isLoading
+  then Spinner.loadingSpinner
+  else case self.state.purchaseState of
     NewPurchase ->
       DOM.div
         { className: "vetrina--new-account-container"
@@ -156,10 +160,13 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
   , value: form.emailAddress
   }
 
+setLoading :: Maybe Spinner.Loading -> State -> State
+setLoading loading = _ { isLoading = loading }
+
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
-  (\validForm -> Aff.launchAff_ do
+  (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
         user  <- ExceptT $ createNewAccount self validForm.emailAddress
         order <- ExceptT $ createOrder user self.state.form.productSelection
