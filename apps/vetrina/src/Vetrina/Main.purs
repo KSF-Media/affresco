@@ -21,6 +21,7 @@ import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
+import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -104,7 +105,7 @@ pollOrder self (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case order.status.state of
     OrderStarted -> do
-      -- TODO: show loading spinner
+      liftEffect $ self.setState _ { purchaseState = ProcessPayment }
       pollOrder self =<< User.getOrder order.number
     OrderCompleted ->
       liftEffect $ self.setState _ { purchaseState = PurchaseDone }
@@ -128,7 +129,7 @@ render self =
             ]
         }
     (CapturePayment url) -> netsTerminalIframe url
-    ProcessPayment -> DOM.text "PROCESSING PAYMENT"
+    ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
     PurchaseDone -> PurchaseCompleted.completed { redirectArticleUrl: Nothing }
 
