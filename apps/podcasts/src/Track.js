@@ -17,6 +17,7 @@ class Track extends React.Component {
 
   render() {
     const t = this.props.t;
+    const cssClass = this.state.expanded ? 'pod-track expanded' : 'pod-track';
     const trackDetails = this.state.expanded
       ? (
         <div>  
@@ -33,8 +34,7 @@ class Track extends React.Component {
       );
     return (
       <div
-        onClick={this.toggleTrack}
-        className="pod-track">
+        className={cssClass}>
         <div>
           <div className="pod-track-artwork">
             <img
@@ -43,9 +43,18 @@ class Track extends React.Component {
             />
           </div>  
           <div className="pod-track-description">
-            <div className="pod-podname">{t.user.username}</div>
-            <h2 className="title">{t.title}</h2>
-            <div className="created">{t.created_at}</div>
+            <div>
+              <div className="pod-podname">{t.user.username}</div>
+              <h2 className="title">{t.title}</h2>
+              <div className="created">{t.created_at}</div>
+            </div>
+            <div>
+              <a
+                onClick={this.toggleTrack}
+              >
+                <img className="pod-play" src="https://cdn.ksfmedia.fi/icons/play-button.png" />
+              </a>
+            </div>
           </div>
         </div>
         <div>{trackDetails}</div>

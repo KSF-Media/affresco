@@ -1,25 +1,44 @@
-.pod-description{
-  float: left;
-  width: 100%;
-  img.pod-avatar {
-    width: 100px;
-    float: left;
-    margin-right: 15px;
+@import '../../less/ksf-fonts.less';
+
+.pod-app {
+  margin: 0;
+  ul.pod-nav {
+    list-style: none;
+    padding: 0;
+    li {
+      float: left;
+      display: inline-block;
+      margin: 5px;
+      padding: 5px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    li:hover {
+      background: #e0e0e0;
+    }
+    li.label {
+      cursor: auto;
+      color: #666;
+      background: transparent;
+    }
+    li.active {
+      background: #333;
+      color: #fff;
+    }
   }
 }
 .pod-tracklist{
   padding-top: 30px;
   float: left;
   width: 100%;
+  font-family: 'Duplex Sans', sans-serif;
 }
 .pod-track {
   background: #eceae6;
   padding: 15px;
   margin-bottom: 15px;
   >div{display: flex;}
-  .description .artwork{
-    width: 100px;
-    float: left;
+  .artwork{
     margin-right: 15px;
   }
   .track-details-media{
@@ -30,12 +49,25 @@
       margin: 15px 0;
     }
   } 
+  .pod-track-description{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    .pod-podname {
+      text-transform: uppercase;
+    }
+  }
   .track-details-description{
     font-size: .875rem;
     color: #666;
     line-height: 1.5rem;
-  } 
-  .pod-track-description{
-    margin-left: 15px;
   }
+  img.pod-play {
+    transition: all .2s;
+    cursor: pointer;
+  }
+}
+.expanded img.pod-play {
+  transform: rotate(90deg);
 }
