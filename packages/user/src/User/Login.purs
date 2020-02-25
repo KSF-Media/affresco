@@ -435,9 +435,7 @@ googleLogin self =
     else mempty
   where
     onGoogleLogin :: Google.AuthResponse -> Effect Unit
-    onGoogleLogin { "Zi": { access_token: accessToken }
-                  , w3: { "U3": Google.Email email }
-                  } = self.props.launchAff_ do
+    onGoogleLogin { accessToken, email: (Google.Email email) } = self.props.launchAff_ do
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = Just email }
