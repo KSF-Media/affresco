@@ -8,6 +8,8 @@
     , "prelude"
     , "simple-json"
     , "now"
+    , "affresco-components"
+    , "affresco-user"
     ]
 , packages =
     ../../packages.dhall
