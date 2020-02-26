@@ -28,22 +28,10 @@ import KSF.Api (UUID, Token (..))
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
-foreign import data Api :: Type
+import OpenApiClient
+
 foreign import loginApi :: Api
 foreign import usersApi :: Api
-
-foreign import callApi_
-  :: forall req res opts
-   . Fn4
-       Api
-       String
-       req
-       { | opts }
-       (EffectFnAff res)
-
-callApi :: forall res opts. Api -> String -> Array Foreign -> { | opts } -> Aff res
-callApi api methodName req opts =
-  fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
 login :: LoginData -> Aff LoginResponse
 login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
