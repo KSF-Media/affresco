@@ -50,7 +50,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates, DeliveryReclamationClaim) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates, DeliveryReclamation, DeliveryReclamationClaim) as PersonaReExport
 import Persona as Persona
 import Bottega (NewOrder, PaymentMethod(..), OrderNumber, Order(..), PaymentTerminalUrl(..), OrderStatusState(..)) as BottegaReExport
 import Bottega as Bottega
@@ -396,7 +396,7 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
           pure $ Left Persona.InvalidUnexpected
 
 createDeliveryReclamation
-  :: Persona.UUID
+  :: Api.UUID
   -> Int
   -> DateTime
   -> PersonaReExport.DeliveryReclamationClaim

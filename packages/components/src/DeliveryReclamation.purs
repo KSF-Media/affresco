@@ -20,7 +20,6 @@ import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.User as User
-import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -38,11 +37,11 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , userUuid  :: Persona.UUID
+  , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
-  , onSuccess :: Persona.DeliveryReclamation -> Effect Unit
-  , onError   :: Persona.InvalidDateInput -> Effect Unit
+  , onSuccess :: User.DeliveryReclamation -> Effect Unit
+  , onError   :: User.InvalidDateInput -> Effect Unit
   }
 
 deliveryReclamation :: Props -> JSX
@@ -133,12 +132,12 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           , className: "button-green"
           }
 
-    submitForm :: Maybe DateTime -> Maybe Persona.DeliveryReclamationClaim -> Effect Unit
+    submitForm :: Maybe DateTime -> Maybe User.DeliveryReclamationClaim -> Effect Unit
     submitForm (Just date') (Just claim') = do
       Aff.launchAff_ do
         createDeliveryReclamation date' claim'
       where
-        createDeliveryReclamation :: DateTime -> Persona.DeliveryReclamationClaim -> Aff Unit
+        createDeliveryReclamation :: DateTime -> User.DeliveryReclamationClaim -> Aff Unit
         createDeliveryReclamation date'' claim'' = do
           liftEffect $ self.props.onLoading
           User.createDeliveryReclamation self.props.userUuid self.props.subsno date'' claim'' >>=
