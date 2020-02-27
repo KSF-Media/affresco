@@ -1,6 +1,6 @@
 {
   "name": "@ksf-media/user",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "User component for KSF Media apps",
   "main": "index.js",
   "license": "MIT",
@@ -8,8 +8,8 @@
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "basscss": "^8.1.0",
-    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#d13f5d10c117079cb2fabd6f6a9efbcc8fc1fdce",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#781e4cc3d685919c3786cf49eff5106551f2dd57"
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#fd8052cccd8b5dc97ae5cfaf9fb0a649da40e897",
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#6549e2f7b753c64054b786d181b8025e11c14d63"
   },
   "scripts": {
     "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less ../../less/ksf-utils.less ../../less/InputField.less"

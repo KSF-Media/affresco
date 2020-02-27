@@ -25,25 +25,14 @@ import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
+import KSF.Api (UUID, Token (..))
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
-foreign import data Api :: Type
+import OpenApiClient
+
 foreign import loginApi :: Api
 foreign import usersApi :: Api
-
-foreign import callApi_
-  :: forall req res opts
-   . Fn4
-       Api
-       String
-       req
-       { | opts }
-       (EffectFnAff res)
-
-callApi :: forall res opts. Api -> String -> Array Foreign -> { | opts } -> Aff res
-callApi api methodName req opts =
-  fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
 login :: LoginData -> Aff LoginResponse
 login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
@@ -83,6 +72,12 @@ logout uuid token =
 register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
+
+type NewUserWithEmail = { emailAddress :: Email }
+
+registerWithEmail :: NewUserWithEmail -> Aff LoginResponse
+registerWithEmail newEmailUser =
+  callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
 
 pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Subscription
 pauseSubscription uuid subsno startDate endDate token = do
@@ -150,11 +145,6 @@ formatDate = format formatter
       , dash
       , DayOfMonthTwoDigits
       ]
-
-newtype Token = Token String
-derive newtype instance showToken :: Show Token
-derive newtype instance readforeignToken :: ReadForeign Token
-derive newtype instance writeforeignToken :: WriteForeign Token
 
 newtype Email = Email String
 derive newtype instance showEmail :: Show Email
@@ -330,11 +320,6 @@ newtype MergeToken = MergeToken String
 derive newtype instance showMergeToken :: Show MergeToken
 derive newtype instance readMergeToken :: ReadForeign MergeToken
 derive newtype instance writeMergeToken :: WriteForeign MergeToken
-
-newtype UUID = UUID String
-derive newtype instance showUUID :: Show UUID
-derive newtype instance readforeignUUID :: ReadForeign UUID
-derive newtype instance writeforeignUUID :: WriteForeign UUID
 
 type User =
   { uuid :: UUID

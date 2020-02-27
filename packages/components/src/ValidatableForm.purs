@@ -2,14 +2,15 @@ module KSF.ValidatableForm where
 
 import Prelude
 
-import Data.Array (filter, find)
+import Data.Array (all, filter, find)
 import Data.Either (Either(..))
 import Data.List.NonEmpty (NonEmptyList, head)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
-import Data.Validation.Semigroup (V, andThen, invalid, unV)
+import Data.Validation.Semigroup (V, andThen, invalid, toEither, unV)
+import Effect (Effect)
 
 class ValidatableField a where
   validateField :: a -> Maybe String -> Array (ValidationError a) -> ValidatedForm a (Maybe String)
@@ -23,6 +24,15 @@ data ValidationError a
   | InvalidEmailInUse a String
   | InvalidNotInitialized a -- Fictional state only to be set when the form is first rendered
 
+
+validateForm :: forall a b. ValidatedForm a b -> (Either (NonEmptyList (ValidationError a)) b -> Effect Unit) -> Effect Unit
+validateForm form callback = unV (callback <<< Left) (callback <<< Right) form
+
+isFormInvalid :: forall a b. ValidatedForm a b -> Boolean
+isFormInvalid form
+  | Left errs <- toEither form
+  = not $ all isNotInitialized errs
+  | otherwise = false
 
 noValidation :: forall a. Maybe String -> ValidatedForm a (Maybe String)
 noValidation v = pure v

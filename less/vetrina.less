@@ -1,0 +1,34 @@
+@import (reference) 'ksf-colors';
+@import (reference) 'ksf-variables';
+@import 'ksf-fonts';
+@import 'Components';
+@import 'Product';
+
+body {
+    font-family: 'Duplex Sans', sans-serif;
+    font-weight: 300;
+    background-color: @grey-light;
+    margin: 0;
+}
+
+.vetrina--new-account-container {
+    display: grid;
+    grid-template-rows: auto auto;
+}
+
+.vetrina--payment-terminal {
+    width: 100%;
+    min-height: 500px;
+    border: none;
+}
+
+.vetrina-purchase-completed--submit-password {
+    &:disabled { background: grey }
+    background: green;
+    color: @white;
+    width: 100%;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-weight: 500;
+}
