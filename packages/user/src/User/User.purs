@@ -24,6 +24,8 @@ where
 
 import Prelude
 
+import Bottega (NewOrder, PaymentMethod(..), OrderNumber, Order(..), PaymentTerminalUrl(..), OrderStatusState(..)) as BottegaReExport
+import Bottega as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
@@ -42,6 +44,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Exception (Error, throw)
+import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
@@ -52,8 +55,6 @@ import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
 import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates, DeliveryReclamation, DeliveryReclamationClaim) as PersonaReExport
 import Persona as Persona
-import Bottega (NewOrder, PaymentMethod(..), OrderNumber, Order(..), PaymentTerminalUrl(..), OrderStatusState(..)) as BottegaReExport
-import Bottega as Bottega
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -410,25 +411,18 @@ createDeliveryReclamation uuid subsno date claim = do
       pure $ Left Persona.InvalidUnexpected
 
 createOrder :: Bottega.NewOrder -> Aff (Either String Bottega.Order)
-createOrder newOrder = do
-  tokens <- requireToken
-  order <- try $ Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder
-  case order of
-    Right o  -> pure $ Right o
-    Left err -> pure $ Left "ERROR" -- TODO: Fix errors
+createOrder newOrder = callBottega \tokens -> Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder
 
 payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either String Bottega.PaymentTerminalUrl)
-payOrder orderNum paymentMethod = do
-  tokens <- requireToken
-  order <- try $ Bottega.payOrder { userId: tokens.uuid, authToken: tokens.token } orderNum paymentMethod
-  case order of
-    Right o  -> pure $ Right o
-    Left err -> pure $ Left "ERROR" -- TODO: Fix errors
+payOrder orderNum paymentMethod = callBottega $ \tokens ->  Bottega.payOrder { userId: tokens.uuid, authToken: tokens.token } orderNum paymentMethod
 
 getOrder :: Bottega.OrderNumber -> Aff (Either String Bottega.Order)
-getOrder orderNum = do
+getOrder orderNum = callBottega $ \tokens -> Bottega.getOrder { userId: tokens.uuid, authToken: tokens.token } orderNum
+
+callBottega :: forall a. (Persona.LoginResponse -> Aff a) -> Aff (Either String a)
+callBottega f = do
   tokens <- requireToken
-  order <- try $ Bottega.getOrder { userId: tokens.uuid, authToken: tokens.token } orderNum
-  case order of
-    Right o  -> pure $ Right o
-    Left err -> pure $ Left "ERROR" -- TODO: Fix errors
+  (try $ f tokens) >>= case _ of
+    Right a  -> pure $ Right a
+    -- TODO: Come up with better errors
+    Left err -> pure $ Left $ Error.message err

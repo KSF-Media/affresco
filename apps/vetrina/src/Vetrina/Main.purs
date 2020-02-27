@@ -5,7 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT(..), runExceptT)
-import Data.Array (all)
+import Data.Array (all, any)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
@@ -81,13 +81,20 @@ app = make component
   , render
   }
 
-killPoller :: Self -> Aff Unit
-killPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
+didUpdate :: Self -> PrevState -> Effect Unit
+didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
 
-updatePoller :: Self -> Order -> Effect Unit
-updatePoller self order = do
+stopOrderPollerOnCompletedState :: Self -> Aff Unit
+stopOrderPollerOnCompletedState self =
+  when (any (_ == self.state.purchaseState) [ PurchaseFailed, PurchaseDone ]) $ killOrderPoller self
+
+killOrderPoller :: Self -> Aff Unit
+killOrderPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
+
+startOrderPoller :: Self -> Order -> Effect Unit
+startOrderPoller self order = do
   newPoller <- Aff.launchAff do
-        killPoller self
+        killOrderPoller self
         newPoller <- Aff.forkAff $ pollOrder self (Right order)
         Aff.joinFiber newPoller
   self.setState _ { poller = newPoller }
@@ -98,17 +105,14 @@ pollOrder self (Right order) = do
   case order.status.state of
     OrderStarted -> do
       -- TODO: show loading spinner
-      liftEffect $ Console.log "Order started"
       pollOrder self =<< User.getOrder order.number
     OrderCompleted ->
-      liftEffect do
-        Console.log "Order done"
-        self.setState _ { purchaseState = PurchaseDone, poller = pure unit }
-    OrderFailed -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed, poller = pure unit }
-    _ -> do
-      liftEffect $ Console.log "polling"
-      pollOrder self =<< User.getOrder order.number
-pollOrder _ _ = pure unit -- TODO: Handle errors
+      liftEffect $ self.setState _ { purchaseState = PurchaseDone }
+    OrderFailed -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
+    _ -> pollOrder self =<< User.getOrder order.number
+pollOrder self (Left err) = liftEffect do
+  Console.error err
+  self.setState _ { purchaseState = PurchaseFailed }
 
 render :: Self -> JSX
 render self =
@@ -168,10 +172,11 @@ submitNewAccountForm self@{ state: { form } } = unV
               , newOrder = Just order
               , user = Just user
               }
-            updatePoller self order
-        Left (err :: String) ->
-          -- TODO: Show error
-          pure unit
+            startOrderPoller self order
+        Left (err :: String) -> do
+          liftEffect do
+            Console.error err
+            self.setState _ { purchaseState = PurchaseFailed }
   )
 
 createNewAccount :: Self -> Maybe String -> Aff (Either String User)
