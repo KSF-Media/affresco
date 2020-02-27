@@ -66,11 +66,11 @@ class App extends React.Component {
     return (
       <div className="pod-app">
         <ul className="pod-nav">
-          <li className="label">Filtrera podcasts</li>
+          <li className="label">Filtrera:</li>
           {usersList}
           {resetList}
         </ul>
-        <Route path="/" render={ (props) => <LatestTracksList tracks={sortedTracks} />} />
+        <Route path="/" render={ (props) => <LatestTracksList tracks={sortedTracks} selectUser={this.selectUser} />} />
       </div>
     )
   }

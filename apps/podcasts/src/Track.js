@@ -44,14 +44,15 @@ class Track extends React.Component {
           </div>  
           <div className="pod-track-description">
             <div>
-              <div className="pod-podname">{t.user.username}</div>
-              <h2 className="title">{t.title}</h2>
+              <div className="pod-podname"
+                onClick={() => this.props.selectUser(t.user.id)}
+              >
+                {t.user.username}</div>
+              <h2  onClick={this.toggleTrack} className="title">{t.title}</h2>
               <div className="created">{t.created_at}</div>
             </div>
             <div>
-              <a
-                onClick={this.toggleTrack}
-              >
+              <a onClick={this.toggleTrack}>
                 <img className="pod-play" src="https://cdn.ksfmedia.fi/icons/play-button.png" />
               </a>
             </div>

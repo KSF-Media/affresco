@@ -19,7 +19,7 @@ class LatestTracksList extends React.Component {
 
   render() {
     const trackList = this.props.tracks.map((t, k) => (
-      <Track t={t} key={k} />
+      <Track t={t} key={k} selectUser={this.props.selectUser} />
     ));
 
     return (
