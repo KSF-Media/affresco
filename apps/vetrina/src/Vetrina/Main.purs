@@ -81,13 +81,13 @@ app = make component
   , render
   }
 
-killPoller :: Self -> Aff Unit
-killPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
+killOrderPoller :: Self -> Aff Unit
+killOrderPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
 
-updatePoller :: Self -> Order -> Effect Unit
-updatePoller self order = do
+startOrderPoller :: Self -> Order -> Effect Unit
+startOrderPoller self order = do
   newPoller <- Aff.launchAff do
-        killPoller self
+        killOrderPoller self
         newPoller <- Aff.forkAff $ pollOrder self (Right order)
         Aff.joinFiber newPoller
   self.setState _ { poller = newPoller }
@@ -168,10 +168,11 @@ submitNewAccountForm self@{ state: { form } } = unV
               , newOrder = Just order
               , user = Just user
               }
-            updatePoller self order
-        Left (err :: String) ->
-          -- TODO: Show error
-          pure unit
+            startOrderPoller self order
+        Left (err :: String) -> do
+          liftEffect do
+            Console.error err
+            self.setState _ { purchaseState = PurchaseFailed }
   )
 
 createNewAccount :: Self -> Maybe String -> Aff (Either String User)
