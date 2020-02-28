@@ -13,9 +13,10 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
+import Data.String.Read (class Read)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
@@ -109,6 +110,25 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
     , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
+createDeliveryReclamation
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DeliveryReclamationClaim
+  -> Token
+  -> Aff DeliveryReclamation
+createDeliveryReclamation uuid subsno date claim token = do
+  let dateISO = formatDate date
+  let claim'  = show claim
+  callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { publicationDate: dateISO, claim: claim' }
     ]
     { authorization }
   where
@@ -454,3 +474,51 @@ type GdprConsent =
   , consentKey :: String
   , value      :: Boolean
   }
+
+type DeliveryReclamation =
+  { subscriptionNumber :: Int
+  , customerNumber     :: Int
+  , number             :: Int
+  , date               :: JSDate
+  , publicationDate    :: JSDate
+  , claim              :: DeliveryReclamationClaim
+  , status             :: DeliveryReclamationStatus
+  }
+
+data DeliveryReclamationClaim
+  = Extension
+  | NewDelivery
+
+instance readDeliveryReclamationClaim :: Read DeliveryReclamationClaim where
+  read c =
+    case c of
+      "Extension"   -> pure Extension
+      "NewDelivery" -> pure NewDelivery
+      _             -> Nothing
+derive instance genericDeliveryReclamationClaim :: Generic DeliveryReclamationClaim _
+instance readForeignDeliveryReclamationClaim :: ReadForeign DeliveryReclamationClaim where
+  readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
+instance writeForeignDeliveryReclamationClaim :: WriteForeign DeliveryReclamationClaim where
+  writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
+instance showDeliveryReclamationClaim :: Show DeliveryReclamationClaim where
+  show = genericShow
+
+data DeliveryReclamationStatus
+  = Created
+  | Processing
+  | Processed
+
+instance readDeliveryReclamationStatus :: Read DeliveryReclamationStatus where
+  read c =
+    case c of
+      "Created"    -> pure Created
+      "Processing" -> pure Processing
+      "Processed"  -> pure Processed
+      _            -> Nothing
+derive instance genericDeliveryReclamationStatus :: Generic DeliveryReclamationStatus _
+instance readForeignDeliveryReclamationStatus :: ReadForeign DeliveryReclamationStatus where
+  readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
+instance writeForeignDeliveryReclamationStatus :: WriteForeign DeliveryReclamationStatus where
+  writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
+instance showDeliveryReclamationStatus :: Show DeliveryReclamationStatus where
+  show = genericShow
