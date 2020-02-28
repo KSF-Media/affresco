@@ -125,7 +125,7 @@ initialState =
 
 firstNameInput :: Self -> JSX
 firstNameInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Text
+  { type_: "text"
   , label: "Förnamn"
   , name: "firstName"
   , placeholder: "Förnamn"
@@ -136,7 +136,7 @@ firstNameInput self@{ state: { formData }} = InputField.inputField
 
 lastNameInput :: Self -> JSX
 lastNameInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Text
+  { type_: "text"
   , label: "Efternamn"
   , name: "lastName"
   , placeholder: "Efternamn"
@@ -147,7 +147,7 @@ lastNameInput self@{ state: { formData }} = InputField.inputField
 
 streetAddressInput :: Self -> JSX
 streetAddressInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Text
+  { type_: "text"
   , label: "Adress"
   , name: "streetAddress"
   , placeholder: "Adress"
@@ -158,7 +158,7 @@ streetAddressInput self@{ state: { formData }} = InputField.inputField
 
 cityInput :: Self -> JSX
 cityInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Text
+  { type_: "text"
   , label: "Stad"
   , name: "city"
   , placeholder: "Stad"
@@ -169,7 +169,7 @@ cityInput self@{ state: { formData }} = InputField.inputField
 
 zipCodeInput :: Self -> JSX
 zipCodeInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Text
+  { type_: "text"
   , label: "Postnummer"
   , name: "zipCode"
   , placeholder: "Postnummer"
@@ -184,7 +184,7 @@ countryInput self@{ state: { formData }} =
 
 phoneInput :: Self -> JSX
 phoneInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Text
+  { type_: "text"
   , label: "Telefon"
   , name: "phone"
   , placeholder: "Telefon"
@@ -195,7 +195,7 @@ phoneInput self@{ state: { formData }} = InputField.inputField
 
 emailAddressInput :: Self -> JSX
 emailAddressInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Email
+  { type_: "email"
   , label: "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
@@ -210,7 +210,7 @@ emailAddressInput self@{ state: { formData }} = InputField.inputField
 passwordInput :: Self -> JSX
 passwordInput self@{ state: { formData, serverErrors }} = InputField.inputField
     { placeholder: "Lösenord (minst 6 tecken)"
-    , type_: InputField.Password
+    , type_: "password"
     , label: "Lösenord"
     , name: "password"
     , onChange: \val -> self.setState _ { formData { password = val }
@@ -224,7 +224,7 @@ passwordInput self@{ state: { formData, serverErrors }} = InputField.inputField
 confirmPasswordInput :: Self -> JSX
 confirmPasswordInput self@{ state: { formData }} = InputField.inputField
     { placeholder: "Bekräfta lösenord"
-    , type_: InputField.Password
+    , type_: "password"
     , label: "Bekräfta lösenord"
     , name: "confirmPassword"
     , onChange: \val -> self.setState _ { formData { confirmPassword = val } }
