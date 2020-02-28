@@ -61,7 +61,7 @@ const ArticleDetails = (props) => {
                                 }
                                 {
                                     props.premium ?
-                                        <div className="article-info"><span className="article-opinion-type">{props.articleTypeDetails.title}</span> <PremiumBadge/></div>
+                                        <div className="article-info"><span className="article-opinion-type">{!!props.articleTypeDetails ? props.articleTypeDetails.title : ''}</span> <PremiumBadge/></div>
                                         : ''
                                 }
                             </div>
