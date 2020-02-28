@@ -5,9 +5,6 @@ import Prelude
 import Data.Array (snoc)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe, fromMaybe, isJust)
-import Data.String (toLower)
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
 import Effect (Effect)
 import React.Basic (JSX)
 import React.Basic as React
@@ -18,7 +15,7 @@ import React.Basic.Events (handler)
 type Self = React.Self Props State
 
 type Props =
-  { type_           :: InputType
+  { type_           :: String
   , placeholder     :: String
   , name            :: String
   , value           :: Maybe String
@@ -29,12 +26,6 @@ type Props =
 
 type State =
   { inputValue :: String }
-
-data InputType = Text | Password | Email | Radio
-
-derive instance genericInputType :: Generic InputType _
-instance showInputType :: Show InputType where
-  show = toLower <<< genericShow
 
 component :: React.Component Props
 component = React.createComponent "InputField"
@@ -52,12 +43,11 @@ inputField = React.make component
 render :: Self -> JSX
 render self@{ props, state } =
   DOM.div
-    { className: classNameFromInputType props.type_
+    { className: "input-field--container"
     , children:
-        -- The final order of the children is defined in css!
         [ inputLabel props.label props.name
         , DOM.input
-            { type: show props.type_
+            { type: props.type_
             , placeholder: props.label
             , name: props.name
             , value: state.inputValue
@@ -72,10 +62,6 @@ render self@{ props, state } =
         ] `snoc` foldMap errorMessage props.validationError
     }
 
-classNameFromInputType :: InputType -> String
-classNameFromInputType inputType = case inputType of
-                                     Radio -> "input-field--radio-container"
-                                     _     -> "input-field--container"
 errorMessage :: String -> JSX
 errorMessage e =
   DOM.span

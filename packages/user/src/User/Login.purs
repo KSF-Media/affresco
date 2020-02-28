@@ -285,7 +285,7 @@ renderLoginForm self =
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
-                { type_: InputField.Text
+                { type_: "text"
                 , placeholder: "E-postadress"
                 , label: "E-postadress"
                 , name: "accountEmail"
@@ -296,7 +296,7 @@ renderLoginForm self =
                      Form.validateField UsernameField self.state.formEmail []
                 }
             , InputField.inputField
-                { type_: InputField.Password
+                { type_: "password"
                 , placeholder: "Lösenord"
                 , label: "Lösenord"
                 , name: "accountPassword"
@@ -400,7 +400,7 @@ renderMerge self@{ props } mergeInfo =
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
-                { type_: InputField.Text
+                { type_: "text"
                 , placeholder: ""
                 , label: ""
                 , name: ""

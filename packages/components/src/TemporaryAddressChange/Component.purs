@@ -173,7 +173,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     addressInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: "text"
         , placeholder: "Gatuadress"
         , name: "address"
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
@@ -184,7 +184,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     zipInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: "text"
         , placeholder: "Postnummer"
         , name: "zipCode"
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
@@ -195,7 +195,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     cityInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: "text"
         , placeholder: "Stad"
         , name: "city"
         -- We don't care about the city input, as on the server side, the city is inferred by the zip code
@@ -215,7 +215,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     temporaryNameInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: "text"
         , placeholder: "Tillfällig namnändring eller C/O"
         , name: "temporaryName"
         , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
