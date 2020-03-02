@@ -67,6 +67,7 @@ data OrderStatusState
   | OrderStarted
   | OrderCompleted
   | OrderFailed
+  | OrderCanceled
   | UnknownState
 
 derive instance genericOrderStatusState :: Generic OrderStatusState _
@@ -78,6 +79,7 @@ instance readOrderStatusState :: ReadForeign OrderStatusState where
       "started"   -> pure OrderStarted
       "completed" -> pure OrderCompleted
       "failed"    -> pure OrderFailed
+      "canceled"  -> pure OrderCanceled
       _           -> pure UnknownState
 
 type NewOrder =
