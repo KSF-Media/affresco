@@ -1,0 +1,16 @@
+.spinner--loading-spinner {
+    display: grid;
+    align-content: center;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: @grey-light;
+    z-index: @loading;
+    .spinner--spinner-image {
+	background-image: url("../images/loader-gif.gif");
+	background-size: 32px 32px;
+	width: 32px;
+	height: 32px;
+    }
+}

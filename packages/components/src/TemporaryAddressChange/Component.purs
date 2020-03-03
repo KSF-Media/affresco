@@ -22,7 +22,6 @@ import KSF.InputField.Component as InputField
 import KSF.User as User
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
-import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -44,11 +43,11 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , userUuid  :: Persona.UUID
+  , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
-  , onSuccess :: Persona.Subscription -> Effect Unit
-  , onError   :: Persona.InvalidDateInput -> Effect Unit
+  , onSuccess :: User.Subscription -> Effect Unit
+  , onError   :: User.InvalidDateInput -> Effect Unit
   }
 
 data Action
