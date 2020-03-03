@@ -1,6 +1,5 @@
 module Persona where
 
-import OpenApiClient
 import Prelude
 
 import Control.Alt ((<|>))
@@ -9,7 +8,6 @@ import Control.MonadPlus (guard)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..), hush)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
@@ -19,7 +17,6 @@ import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
-import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
@@ -29,6 +26,8 @@ import KSF.Api (UUID, Token(..))
 import KSF.Api.Package (Package, Campaign)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
+
+import OpenApiClient (Api, callApi)
 
 foreign import loginApi :: Api
 foreign import usersApi :: Api

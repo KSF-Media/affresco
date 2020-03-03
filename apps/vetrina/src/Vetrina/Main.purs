@@ -99,7 +99,7 @@ didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
 
 stopOrderPollerOnCompletedState :: Self -> Aff Unit
 stopOrderPollerOnCompletedState self =
-  when (any (_ == self.state.purchaseState) [ PurchaseFailed, PurchaseDone ]) $ killOrderPoller self
+  when (any (_ == self.state.purchaseState) [ PurchaseFailed, PurchaseDone, NewPurchase ]) $ killOrderPoller self
 
 killOrderPoller :: Self -> Aff Unit
 killOrderPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
@@ -119,10 +119,11 @@ pollOrder self (Right order) = do
     OrderStarted -> do
       liftEffect $ self.setState _ { purchaseState = ProcessPayment }
       pollOrder self =<< User.getOrder order.number
-    OrderCompleted ->
-      liftEffect $ self.setState _ { purchaseState = PurchaseDone }
-    OrderFailed -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
-    _ -> pollOrder self =<< User.getOrder order.number
+    OrderCompleted -> liftEffect $ self.setState _ { purchaseState = PurchaseDone }
+    OrderFailed    -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
+    OrderCanceled  -> liftEffect $ self.setState _ { purchaseState = NewPurchase }
+    OrderCreated   -> pollOrder self =<< User.getOrder order.number
+    UnknownState   -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
 pollOrder self (Left err) = liftEffect do
   Console.error err
   self.setState _ { purchaseState = PurchaseFailed }
