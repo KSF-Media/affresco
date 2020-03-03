@@ -1,16 +1,9 @@
 module OpenApiClient where
 
-import Prelude
-
-import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn4, runFn4)
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
-import Foreign (Foreign, unsafeToForeign)
-import KSF.Api (UUID, UserAuth, oauthToken)
-import Simple.JSON (class ReadForeign, read, readImpl)
+import Foreign (Foreign)
 
 foreign import data Api :: Type
 
