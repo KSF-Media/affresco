@@ -10,3 +10,4 @@ Bottega.ApiClient.instance.timeout = {
 };
 
 exports.ordersApi = new Bottega.OrdersApi(Bottega.ApiClient.instance);
+exports.packagesApi = new Bottega.PackagesApi(Bottega.ApiClient.instance);

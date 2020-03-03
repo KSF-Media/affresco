@@ -17,6 +17,7 @@ module KSF.User
   , createOrder
   , payOrder
   , getOrder
+  , getPackages
   , module Api
   )
 where
@@ -48,6 +49,7 @@ import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken) as Api
+import KSF.Api.Package (Package)
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
@@ -411,3 +413,6 @@ callBottega f = do
     Right a  -> pure $ Right a
     -- TODO: Come up with better errors
     Left err -> pure $ Left $ Error.message err
+
+getPackages :: Aff (Array Package)
+getPackages = Bottega.getPackages
