@@ -492,6 +492,11 @@ body {
     font-size: 22px;
 }
 
+.article-opinion-type {
+    font-size: 12px;
+    font-weight: 700;
+}
+
 /*Mobiles*/
 @media (min-width: 320px) and (max-width: 480px) {
     .mobileView {

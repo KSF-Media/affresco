@@ -39,6 +39,7 @@ class App extends Component {
             publishingTime: null,
             updateTime: null,
             category: null,
+            articleTypeDetails: null,
             relatedArticles: [],
             shareUrl: null,
             infogram: {
@@ -188,6 +189,7 @@ class App extends Component {
                         publishingTime: article.publishingTime,
                         updateTime: article.updateTime,
                         shareUrl: article.shareUrl,
+                        articleTypeDetails: article.articleTypeDetails
                     }, () => {
                         if (article.externalScripts != null) {
                             this.appendThirdPartyScript(article.externalScripts);
@@ -229,6 +231,7 @@ class App extends Component {
                         publishingTime: data.not_entitled.articlePreview.publishingTime,
                         updateTime: data.not_entitled.articlePreview.updateTime,
                         shareUrl: data.not_entitled.articlePreview.shareUrl,
+                        articleTypeDetails: data.not_entitled.articlePreview.articleTypeDetails
                     }, () => {
                         this.resizeText(this.state.fontSize);
                         if (data.not_entitled.articlePreview.externalScripts != null) {
@@ -250,6 +253,7 @@ class App extends Component {
                         publishingTime: data.publishingTime,
                         updateTime: data.updateTime,
                         shareUrl: data.shareUrl,
+                        articleTypeDetails:data.articleTypeDetails
                     }, () => {
                         if (data.externalScripts != null) {
                             this.appendThirdPartyScript(data.externalScripts);
@@ -514,7 +518,7 @@ class App extends Component {
                         <Additional preamble={this.state.preamble} increaseFontSize={this.increaseFontSize}/>
                         <ArticleDetails category={this.state.category} premium={this.state.premium}
                                         authors={this.state.authors} publishingTime={this.state.publishingTime}
-                                        updateTime={this.state.updateTime}/>
+                                        updateTime={this.state.updateTime} articleTypeDetails={this.state.articleTypeDetails}/>
                         <Content body={this.state.body}
                                  showHighResolutionImage={this.showHighResolutionImage}/>
                         <div className={"row"}>
