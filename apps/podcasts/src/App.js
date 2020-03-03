@@ -1,5 +1,5 @@
 import React from "react";
-import {Link, Route} from "react-router-dom";
+import {Route, Switch, HashRouter} from "react-router-dom";
 
 import LatestTracksList from "./LatestTracsklist.js";
 
@@ -70,7 +70,16 @@ class App extends React.Component {
           {usersList}
           {resetList}
         </ul>
-        <Route path="/" render={ (props) => <LatestTracksList tracks={sortedTracks} selectUser={this.selectUser} />} />
+        <HashRouter>
+          <Switch>
+            <Route
+              exact path="/"
+              render={() => <LatestTracksList tracks={sortedTracks} selectUser={this.selectUser} />} />
+            <Route
+              path="/:uid"
+              render={(props) => <LatestTracksList {...props} tracks={sortedTracks} selectUser={this.selectUser} />} />
+          </Switch>
+        </HashRouter>
       </div>
     )
   }
