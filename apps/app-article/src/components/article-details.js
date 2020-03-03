@@ -1,6 +1,14 @@
 import React, {Component, Fragment} from 'react';
 import PremiumBadge from "./badge";
 
+const ArticleType = (props) => { 
+    return (
+      <span className="article-opinion-type">
+        {!!props.articleTypeDetails ? props.articleTypeDetails.title.toUpperCase() : ""}
+      </span>
+    );
+}
+
 const ArticleDetails = (props) => {
 
     let publishingDate = new Date(props.publishingTime);
@@ -61,7 +69,7 @@ const ArticleDetails = (props) => {
                                 }
                                 {
                                     props.premium ?
-                                        <div className="article-info"><span className="article-opinion-type">{!!props.articleTypeDetails ? props.articleTypeDetails.title : ''}</span> <PremiumBadge/></div>
+                                        <div className="article-info"><ArticleType articleTypeDetails={props.articleTypeDetails}/> <PremiumBadge/></div>
                                         : ''
                                 }
                             </div>
@@ -90,7 +98,7 @@ const ArticleDetails = (props) => {
                             }
                             {
                                 props.premium ?
-                                    <PremiumBadge/>
+                                    <div className="article-info"><ArticleType articleTypeDetails={props.articleTypeDetails}/> <PremiumBadge/></div>
                                     : ''
                             }
                         </div>
