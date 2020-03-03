@@ -33,13 +33,7 @@ readOrder orderObj = do
   orderStatus <- case read orderObj.status.state of
     Right status -> pure status
     Left err     -> pure UnknownState
-  pure { number: orderObj.number
-       , user: orderObj.user
-       , status:
-           { state: orderStatus
-           , time: orderObj.status.time
-           }
-       }
+  pure $ orderObj { status { state = orderStatus } }
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
 payOrder { userId, authToken } orderNumber paymentMethod =
