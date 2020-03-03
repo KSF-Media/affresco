@@ -16,30 +16,30 @@ foreign import ordersApi :: Api
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder =
-  callApi ordersApi "orderPost" [ unsafeToForeign newOrder ] { authorization, authUser }
+  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 getOrder :: UserAuth -> OrderNumber -> Aff Order
 getOrder { userId, authToken } orderNumber = do
-  orderObj <- callApi ordersApi "orderOrderNumberGet" [ unsafeToForeign orderNumber ] { authorization, authUser }
-  readOrder orderObj
+  readOrder =<< callApi ordersApi "orderOrderNumberGet" [ unsafeToForeign orderNumber ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
-    readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: Foreign, time :: String } } -> Aff Order
-    readOrder orderObj = do
-      orderStatus <- case read orderObj.status.state of
-        Right status -> pure status
-        Left err     -> pure UnknownState
-      pure { number: orderObj.number
-           , user: orderObj.user
-           , status:
-               { state: orderStatus
-               , time: orderObj.status.time
-               }
+
+readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: Foreign, time :: String } } -> Aff Order
+readOrder orderObj = do
+  orderStatus <- case read orderObj.status.state of
+    Right status -> pure status
+    Left err     -> pure UnknownState
+  pure { number: orderObj.number
+       , user: orderObj.user
+       , status:
+           { state: orderStatus
+           , time: orderObj.status.time
            }
+       }
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
 payOrder { userId, authToken } orderNumber paymentMethod =
