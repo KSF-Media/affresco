@@ -12,17 +12,8 @@ type Product =
   , price       :: Number
   }
 
--- TODO: Fetch these from server
-hblPremium :: Product
-hblPremium =
-  { name: "HBL Premium"
-  , id: "HBL WEBB"
-  , description: "Alla artiklar på hbl.fi"
-  , price: 6.9
-  }
-
-productOption :: Product -> Boolean -> JSX
-productOption product checked =
+product :: Product -> JSX
+product p =
   DOM.div
     { className: "product--container"
     , children:
@@ -39,18 +30,18 @@ productOption product checked =
             ]
         , DOM.label
             { htmlFor: "hbl-premium"
-            , children: [ productInfo product ]
+            , children: [ productInfo p ]
             }
         ]
     }
 
 productInfo :: Product -> JSX
-productInfo product =
+productInfo p =
   DOM.div
     { className: "product--product-info"
     , children:
-        [ DOM.h1_ [ DOM.text product.name ]
-        , DOM.p_  [ DOM.text product.description ]
-        , DOM.p_  [ DOM.text $ show product.price ]
+        [ DOM.h1_ [ DOM.text p.name ]
+        , DOM.p_  [ DOM.text p.description ]
+        , DOM.p_  [ DOM.text $ show p.price ]
         ]
     }
