@@ -17,11 +17,12 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
-import KSF.Api.Package (Package, PackageName(..))
+import KSF.Api.Package (Package, PackageName(..), findPackage)
 import KSF.Api.Package as Package
 import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
+import KSF.Product.HblPremium as HblPremium
 import KSF.Product.HblPremium as Product
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
@@ -92,7 +93,7 @@ app = make component
 didMount :: Self -> Effect Unit
 didMount self = Aff.launchAff_ do
   packages <- User.getPackages
-  liftEffect $ self.setState _ { packages = packages }
+  liftEffect $ self.setState _ { packages = packages, form { productSelection = HblPremium.toProduct <$> (findPackage HblPremium packages) } }
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
