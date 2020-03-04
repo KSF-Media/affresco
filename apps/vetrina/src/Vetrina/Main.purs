@@ -83,7 +83,7 @@ app = make component
                   , user: Nothing
                   , newOrder: Nothing
                   , poller: pure unit
-                  , isLoading: Nothing
+                  , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
                   , packages: []
                   }
   , render
@@ -92,8 +92,12 @@ app = make component
 
 didMount :: Self -> Effect Unit
 didMount self = Aff.launchAff_ do
-  packages <- User.getPackages
-  liftEffect $ self.setState _ { packages = packages, form { productSelection = HblPremium.toProduct <$> (findPackage HblPremium packages) } }
+  Aff.finally
+    -- When packages have been set, hide loading spinner
+    (liftEffect $ self.setState \s -> s { isLoading = Nothing })
+    do
+      packages <- User.getPackages
+      liftEffect $ self.setState _ { packages = packages, form { productSelection = HblPremium.toProduct <$> (findPackage HblPremium packages) } }
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
