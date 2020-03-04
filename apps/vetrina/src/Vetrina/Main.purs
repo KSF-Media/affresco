@@ -69,7 +69,7 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccoun
 type NewAccountForm =
   { emailAddress     :: Maybe String
   , productSelection :: Maybe Product
-  , paymentMethod    :: Maybe User.PaymentMethod
+  , paymentMethod    :: User.PaymentMethod
   }
 
 component :: React.Component Props
@@ -77,7 +77,7 @@ component = React.createComponent "Vetrina"
 
 app :: Props -> JSX
 app = make component
-  { initialState: { form: { emailAddress: Nothing, productSelection: Nothing, paymentMethod: Nothing }
+  { initialState: { form: { emailAddress: Nothing, productSelection: Nothing, paymentMethod: CreditCard }
                   , serverErrors: []
                   , purchaseState: NewPurchase
                   , user: Nothing
@@ -184,9 +184,9 @@ submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
-        user  <- ExceptT $ createNewAccount self validForm.emailAddress
-        order <- ExceptT $ createOrder user validForm.productSelection
-        paymentUrl <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
+        user       <- ExceptT $ createNewAccount self validForm.emailAddress
+        order      <- ExceptT $ createOrder user validForm.productSelection
+        paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
         pure { paymentUrl, order, user }
       case eitherRes of
         Right { paymentUrl, order, user } ->
