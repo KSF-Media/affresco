@@ -16,6 +16,6 @@ toProduct :: Package -> Product.Product
 toProduct  { name, id, offers } =
   { name: name
   , id:   id
-  , description: "Alla artiklar på hbl.fi YOLO"
+  , description: "Alla artiklar på hbl.fi"
   , price: maybe 100.0 (_.monthlyPrice >>> toNumber >>> (_ / 100.0)) $ Array.head offers
   }
