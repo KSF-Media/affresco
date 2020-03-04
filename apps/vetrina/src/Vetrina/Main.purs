@@ -7,9 +7,11 @@ import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (all, any)
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Int (ceil)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -17,7 +19,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
-import KSF.Api.Package (Package, PackageName(..), findPackage)
+import KSF.Api.Package (Package, PackageName(..), PackageValidationError(..))
 import KSF.Api.Package as Package
 import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
@@ -58,6 +60,7 @@ data PurchaseState
   | ProcessPayment
   | PurchaseFailed
   | PurchaseDone
+  | PurchaseUnexpectedError
 derive instance eqPurchaseState :: Eq PurchaseState
 
 data NewAccountInputField = EmailAddress
@@ -97,7 +100,21 @@ didMount self = Aff.launchAff_ do
     (liftEffect $ self.setState \s -> s { isLoading = Nothing })
     do
       packages <- User.getPackages
-      liftEffect $ self.setState _ { packages = packages, form { productSelection = HblPremium.toProduct <$> (findPackage HblPremium packages) } }
+      case NonEmptyArray.head $ packagesToShow packages of
+        Right p -> liftEffect $ self.setState _
+                     { packages = packages
+                     , form { productSelection = Just $ HblPremium.toProduct p }
+                     }
+        Left err -> liftEffect do
+          case err of
+            PackageOffersMissing -> Console.error "Missing offers in package"
+            PackageNotFound      -> Console.error "Did not find package from server"
+          self.setState _ { purchaseState = PurchaseUnexpectedError }
+
+packagesToShow :: Array Package -> NonEmptyArray (Either PackageValidationError Package)
+packagesToShow packages =
+  let supportedPackages = NonEmptyArray.singleton HblPremium
+  in map (\p -> Package.validatePackage =<< Package.findPackage p packages) supportedPackages
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -143,7 +160,7 @@ render self =
         { className: "vetrina--new-account-container"
         , children: newAccountForm self
             [ emailAddressInput self
-            , maybe mempty Product.hblPremium $ Package.findPackage HblPremium self.state.packages
+            , maybe mempty Product.hblPremium self.state.form.productSelection
             , PaymentMethod.paymentMethod (\m -> pure unit)
             , confirmButton self
             ]
@@ -152,6 +169,7 @@ render self =
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
     PurchaseDone -> PurchaseCompleted.completed { redirectArticleUrl: Nothing }
+    PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
 
 newAccountForm :: Self -> Array JSX -> Array JSX
 newAccountForm self children =

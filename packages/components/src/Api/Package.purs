@@ -3,9 +3,10 @@ module KSF.Api.Package where
 import Prelude
 
 import Data.Array (find)
+import Data.Array as Array
+import Data.Either (Either(..))
 import Data.JSDate (JSDate)
-import Data.Maybe (Maybe)
-import Data.NonEmpty (NonEmpty)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 
 type Package =
@@ -61,10 +62,25 @@ type Campaign =
   , name :: String
   }
 
+-- The packages we know how to render properly
 data PackageName = HblPremium
 
 toPackageId :: PackageName -> String
 toPackageId HblPremium = "HBL WEBB"
 
-findPackage :: PackageName -> Array Package -> Maybe Package
-findPackage packageName = find (\p -> p.id == toPackageId packageName)
+findPackage :: PackageName -> Array Package -> Either PackageValidationError Package
+findPackage packageName packages =
+  case find (\p -> p.id == toPackageId packageName) packages of
+    Just p  -> Right p
+    Nothing -> Left PackageNotFound
+
+data PackageValidationError
+  = PackageOffersMissing
+  | PackageNotFound
+
+validatePackage :: Package -> Either PackageValidationError Package
+validatePackage p =
+  -- See that there are offers found
+  if Array.null p.offers
+  then Left PackageOffersMissing
+  else Right p
