@@ -5,13 +5,13 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT(..), runExceptT)
-import Data.Array (all, any)
+import Data.Array (all, any, snoc)
 import Data.Array as Array
-import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Int (ceil)
 import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Traversable (for_)
+import Data.Tuple (Tuple(..))
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -19,13 +19,11 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
-import KSF.Api.Package (Package, PackageName(..), PackageValidationError(..))
-import KSF.Api.Package as Package
+import KSF.Api.Package (PackageName(..), PackageValidationError(..))
 import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
-import KSF.Product.HblPremium as HblPremium
-import KSF.Product.HblPremium as Product
+import KSF.Product as Product
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
 import KSF.User as User
@@ -48,7 +46,7 @@ type State =
   , purchaseState :: PurchaseState
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
-  , packages      :: Array Package
+  , products      :: Array Product
   }
 type Self = React.Self Props State
 
@@ -87,7 +85,7 @@ app = make component
                   , newOrder: Nothing
                   , poller: pure unit
                   , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
-                  , packages: []
+                  , products: []
                   }
   , render
   , didMount
@@ -100,21 +98,32 @@ didMount self = Aff.launchAff_ do
     (liftEffect $ self.setState \s -> s { isLoading = Nothing })
     do
       packages <- User.getPackages
-      case NonEmptyArray.head $ packagesToShow packages of
-        Right p -> liftEffect $ self.setState _
-                     { packages = packages
-                     , form { productSelection = Just $ HblPremium.toProduct p }
-                     }
-        Left err -> liftEffect do
-          case err of
-            PackageOffersMissing -> Console.error "Missing offers in package"
-            PackageNotFound      -> Console.error "Did not find package from server"
-          self.setState _ { purchaseState = PurchaseUnexpectedError }
+      let (Tuple invalidProducts validProducts) =
+            map (Product.toProduct packages) productsToShow # partitionValidProducts
 
-packagesToShow :: Array Package -> NonEmptyArray (Either PackageValidationError Package)
-packagesToShow packages =
-  let supportedPackages = NonEmptyArray.singleton HblPremium
-  in map (\p -> Package.validatePackage =<< Package.findPackage p packages) supportedPackages
+      for_ invalidProducts $ \err -> case err of
+        PackageOffersMissing -> Console.error "Missing offers in package"
+        PackageNotFound      -> Console.error "Did not find package from server"
+
+      case Array.head validProducts of
+        Just p -> liftEffect $ self.setState _
+                     { products = validProducts
+                     , form { productSelection = Just p }
+                     }
+        -- Did not get any valid packages from the server
+        Nothing -> liftEffect $ self.setState _ { purchaseState = PurchaseUnexpectedError }
+
+-- TODO: `partitionEithers` could be in some util module
+partitionValidProducts :: Array (Either PackageValidationError Product) -> Tuple (Array PackageValidationError) (Array Product)
+partitionValidProducts = Array.foldl
+  (\(Tuple lefts rights) eitherProduct ->
+    case eitherProduct of
+      Right p  -> Tuple lefts              (rights `snoc` p)
+      Left err -> Tuple (lefts `snoc` err) rights)
+  (Tuple [] [])
+
+productsToShow :: Array PackageName
+productsToShow = [ HblPremium ]
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -160,7 +169,7 @@ render self =
         { className: "vetrina--new-account-container"
         , children: newAccountForm self
             [ emailAddressInput self
-            , maybe mempty Product.hblPremium self.state.form.productSelection
+            , maybe mempty Product.productRender self.state.form.productSelection
             , PaymentMethod.paymentMethod (\m -> pure unit)
             , confirmButton self
             ]

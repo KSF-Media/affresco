@@ -2,6 +2,12 @@ module KSF.Product where
 
 import Prelude
 
+import Data.Array as Array
+import Data.Either (Either(..))
+import Data.Int (toNumber)
+import Data.Maybe (Maybe(..))
+import KSF.Api.Package (Package, PackageName(..), PackageValidationError(..))
+import KSF.Api.Package as Package
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
@@ -12,8 +18,8 @@ type Product =
   , price       :: Number
   }
 
-product :: Product -> JSX
-product p =
+productRender :: Product -> JSX
+productRender p =
   DOM.div
     { className: "product--container"
     , children:
@@ -45,3 +51,19 @@ productInfo p =
         , DOM.p_  [ DOM.text $ show p.price ]
         ]
     }
+
+toProduct :: Array Package -> PackageName -> Either PackageValidationError Product
+toProduct packages packageName = do
+  validPackage <- Package.validatePackage =<< Package.findPackage packageName packages
+  -- TODO: Can we take price from the first offer?
+  case Array.head validPackage.offers of
+    Just { monthlyPrice } -> Right $
+      { name: validPackage.name
+      , id: validPackage.id
+      , description: productDescription packageName
+      , price: (toNumber monthlyPrice) / 100.0
+      }
+    _ -> Left PackageOffersMissing
+
+productDescription :: PackageName -> String
+productDescription HblPremium =  "Alla artiklar på hbl.fi"
