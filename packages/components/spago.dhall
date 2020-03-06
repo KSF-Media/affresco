@@ -18,6 +18,7 @@
     , "facebook"
     , "now"
     , "validation"
+    , "read"
     ]
 , packages =
     ../../packages.dhall

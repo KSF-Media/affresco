@@ -191,7 +191,7 @@ newAccountForm self children =
 
 emailAddressInput :: Self -> JSX
 emailAddressInput self@{ state: { form }} = InputField.inputField
-  { type_: "email"
+  { type_: InputField.Email
   , label: "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
