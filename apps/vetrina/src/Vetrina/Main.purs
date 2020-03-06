@@ -34,6 +34,8 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import Vetrina.Purchase.Completed as PurchaseCompleted
 
+foreign import sentryDsn_ :: Effect String
+
 type Props = {}
 
 type State =
@@ -90,7 +92,8 @@ app = make component
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  logger <- Sentry.mkLogger "" Nothing
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing
   self.setState _ { logger = Just logger }
 
 didUpdate :: Self -> PrevState -> Effect Unit
