@@ -248,7 +248,7 @@ editAddress self =
     { className: "profile--edit-address"
     , children:
         [ InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "streetAddress"
             , placeholder: "Gatuadress"
             , value: self.state.address.streetAddress
@@ -257,7 +257,7 @@ editAddress self =
             , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress []
             }
         , InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "zipCode"
             , placeholder: "Postnummer"
             , value: self.state.address.zipCode
@@ -266,7 +266,7 @@ editAddress self =
             , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode []
             }
         , InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "city"
             , placeholder: "Stad"
             , value: self.state.address.city
@@ -325,7 +325,7 @@ editName self =
     { className: "profile--edit-name"
     , children:
         [ InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "firstName"
             , placeholder: "Förnamn"
             , value: self.state.name.firstName
@@ -334,7 +334,7 @@ editName self =
             , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName []
             }
         , InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "lastName"
             , placeholder: "Efternamn"
             , value: self.state.name.lastName

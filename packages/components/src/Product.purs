@@ -2,6 +2,12 @@ module KSF.Product where
 
 import Prelude
 
+import Data.Array as Array
+import Data.Either (Either(..))
+import Data.Int (toNumber)
+import Data.Maybe (Maybe(..))
+import KSF.Api.Package (Package, PackageName(..), PackageValidationError(..))
+import KSF.Api.Package as Package
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
@@ -12,17 +18,8 @@ type Product =
   , price       :: Number
   }
 
--- TODO: Fetch these from server
-hblPremium :: Product
-hblPremium =
-  { name: "HBL Premium"
-  , id: "HBL WEBB"
-  , description: "Alla artiklar på hbl.fi"
-  , price: 6.9
-  }
-
-productOption :: Product -> Boolean -> JSX
-productOption product checked =
+productRender :: Product -> JSX
+productRender p =
   DOM.div
     { className: "product--container"
     , children:
@@ -39,18 +36,34 @@ productOption product checked =
             ]
         , DOM.label
             { htmlFor: "hbl-premium"
-            , children: [ productInfo product ]
+            , children: [ productInfo p ]
             }
         ]
     }
 
 productInfo :: Product -> JSX
-productInfo product =
+productInfo p =
   DOM.div
     { className: "product--product-info"
     , children:
-        [ DOM.h1_ [ DOM.text product.name ]
-        , DOM.p_  [ DOM.text product.description ]
-        , DOM.p_  [ DOM.text $ show product.price ]
+        [ DOM.h1_ [ DOM.text p.name ]
+        , DOM.p_  [ DOM.text p.description ]
+        , DOM.p_  [ DOM.text $ show p.price ]
         ]
     }
+
+toProduct :: Array Package -> PackageName -> Either PackageValidationError Product
+toProduct packages packageName = do
+  validPackage <- Package.validatePackage =<< Package.findPackage packageName packages
+  -- TODO: Can we take price from the first offer?
+  case Array.head validPackage.offers of
+    Just { monthlyPrice } -> Right $
+      { name: validPackage.name
+      , id: validPackage.id
+      , description: productDescription packageName
+      , price: (toNumber monthlyPrice) / 100.0
+      }
+    _ -> Left PackageOffersMissing
+
+productDescription :: PackageName -> String
+productDescription HblPremium =  "Alla artiklar på hbl.fi"

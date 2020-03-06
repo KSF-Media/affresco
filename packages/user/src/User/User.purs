@@ -14,9 +14,11 @@ module KSF.User
   , updateUser
   , pauseSubscription
   , temporaryAddressChange
+  , createDeliveryReclamation
   , createOrder
   , payOrder
   , getOrder
+  , getPackages
   , module Api
   )
 where
@@ -48,11 +50,12 @@ import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken) as Api
+import KSF.Api.Package (Package)
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates, DeliveryReclamation, DeliveryReclamationClaim) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -395,6 +398,20 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
 
+createDeliveryReclamation
+  :: Api.UUID
+  -> Int
+  -> DateTime
+  -> PersonaReExport.DeliveryReclamationClaim
+  -> Aff (Either Persona.InvalidDateInput Persona.DeliveryReclamation)
+createDeliveryReclamation uuid subsno date claim = do
+  deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date claim <<< _.token =<< requireToken
+  case deliveryReclamation of
+    Right recl -> pure $ Right recl
+    Left err -> do
+      Console.error "Unexpected error when creating delivery reclamation."
+      pure $ Left Persona.InvalidUnexpected
+
 createOrder :: Bottega.NewOrder -> Aff (Either String Bottega.Order)
 createOrder newOrder = callBottega \tokens -> Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder
 
@@ -411,3 +428,6 @@ callBottega f = do
     Right a  -> pure $ Right a
     -- TODO: Come up with better errors
     Left err -> pure $ Left $ Error.message err
+
+getPackages :: Aff (Array Package)
+getPackages = Bottega.getPackages

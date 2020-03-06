@@ -8,11 +8,13 @@ import Data.Generic.Rep.Show (genericShow)
 import Effect.Aff (Aff)
 import Foreign (Foreign, unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
+import KSF.Api.Package (Package)
 import Simple.JSON (class ReadForeign, read, readImpl)
 
 import OpenApiClient (Api, callApi)
 
 foreign import ordersApi :: Api
+foreign import packagesApi :: Api
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder =
@@ -41,6 +43,9 @@ payOrder { userId, authToken } orderNumber paymentMethod =
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
+
+getPackages :: Aff (Array Package)
+getPackages = callApi packagesApi "packageGet" [] {}
 
 newtype OrderNumber = OrderNumber String
 

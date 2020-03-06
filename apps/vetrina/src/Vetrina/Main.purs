@@ -5,11 +5,13 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT(..), runExceptT)
-import Data.Array (all, any)
+import Data.Array (all, any, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Traversable (for_)
+import Data.Tuple (Tuple(..))
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -17,6 +19,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
+import KSF.Api.Package (PackageName(..), PackageValidationError(..))
 import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
@@ -39,13 +42,14 @@ foreign import sentryDsn_ :: Effect String
 type Props = {}
 
 type State =
-  { form :: NewAccountForm
-  , serverErrors :: Array (Form.ValidationError NewAccountInputField)
-  , user :: Maybe User
-  , newOrder :: Maybe Order
+  { form          :: NewAccountForm
+  , serverErrors  :: Array (Form.ValidationError NewAccountInputField)
+  , user          :: Maybe User
+  , newOrder      :: Maybe Order
   , purchaseState :: PurchaseState
-  , poller :: Aff.Fiber Unit
-  , isLoading :: Maybe Spinner.Loading
+  , poller        :: Aff.Fiber Unit
+  , isLoading     :: Maybe Spinner.Loading
+  , products      :: Array Product
   , logger :: Maybe Sentry.Logger
   }
 type Self = React.Self Props State
@@ -58,6 +62,7 @@ data PurchaseState
   | ProcessPayment
   | PurchaseFailed
   | PurchaseDone
+  | PurchaseUnexpectedError
 derive instance eqPurchaseState :: Eq PurchaseState
 
 data NewAccountInputField = EmailAddress
@@ -68,8 +73,8 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccoun
 
 type NewAccountForm =
   { emailAddress     :: Maybe String
-  , productSelection :: Product
-  , paymentMethod    :: Maybe User.PaymentMethod
+  , productSelection :: Maybe Product
+  , paymentMethod    :: User.PaymentMethod
   }
 
 component :: React.Component Props
@@ -77,13 +82,14 @@ component = React.createComponent "Vetrina"
 
 app :: Props -> JSX
 app = make component
-  { initialState: { form: { emailAddress: Nothing, productSelection: Product.hblPremium, paymentMethod: Nothing }
+  { initialState: { form: { emailAddress: Nothing, productSelection: Nothing, paymentMethod: CreditCard }
                   , serverErrors: []
                   , purchaseState: NewPurchase
                   , user: Nothing
                   , newOrder: Nothing
                   , poller: pure unit
-                  , isLoading: Nothing
+                  , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
+                  , products: []
                   , logger: Nothing
                   }
   , render
@@ -91,10 +97,42 @@ app = make component
   }
 
 didMount :: Self -> Effect Unit
-didMount self = do
+didMount self =
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing
   self.setState _ { logger = Just logger }
+  Aff.launchAff_ do
+    Aff.finally
+      -- When packages have been set, hide loading spinner
+      (liftEffect $ self.setState \s -> s { isLoading = Nothing })
+      do
+        packages <- User.getPackages
+        let (Tuple invalidProducts validProducts) =
+              map (Product.toProduct packages) productsToShow # partitionValidProducts
+
+        for_ invalidProducts $ \err -> case err of
+          PackageOffersMissing -> Console.error "Missing offers in package"
+          PackageNotFound      -> Console.error "Did not find package from server"
+
+        case Array.head validProducts of
+          Just p -> liftEffect $ self.setState _
+                       { products = validProducts
+                       , form { productSelection = Just p }
+                       }
+          -- Did not get any valid packages from the server
+          Nothing -> liftEffect $ self.setState _ { purchaseState = PurchaseUnexpectedError }
+
+-- TODO: `partitionEithers` could be in some util module
+partitionValidProducts :: Array (Either PackageValidationError Product) -> Tuple (Array PackageValidationError) (Array Product)
+partitionValidProducts = Array.foldl
+  (\(Tuple lefts rights) eitherProduct ->
+    case eitherProduct of
+      Right p  -> Tuple lefts              (rights `snoc` p)
+      Left err -> Tuple (lefts `snoc` err) rights)
+  (Tuple [] [])
+
+productsToShow :: Array PackageName
+productsToShow = [ HblPremium ]
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -141,7 +179,7 @@ render self =
         { className: "vetrina--new-account-container"
         , children: newAccountForm self
             [ emailAddressInput self
-            , Product.productOption Product.hblPremium true
+            , maybe mempty Product.productRender self.state.form.productSelection
             , PaymentMethod.paymentMethod (\m -> pure unit)
             , confirmButton self
             ]
@@ -150,6 +188,7 @@ render self =
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
     PurchaseDone -> PurchaseCompleted.completed { redirectArticleUrl: Nothing }
+    PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
 
 newAccountForm :: Self -> Array JSX -> Array JSX
 newAccountForm self children =
@@ -162,7 +201,7 @@ newAccountForm self children =
 
 emailAddressInput :: Self -> JSX
 emailAddressInput self@{ state: { form }} = InputField.inputField
-  { type_: "email"
+  { type_: InputField.Email
   , label: "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
@@ -182,9 +221,9 @@ submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
-        user <- ExceptT $ createNewAccount self validForm.emailAddress
-        order <- ExceptT $ createOrder user self.state.form.productSelection
-        paymentUrl <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
+        user       <- ExceptT $ createNewAccount self validForm.emailAddress
+        order      <- ExceptT $ createOrder user validForm.productSelection
+        paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
         pure { paymentUrl, order, user }
       case eitherRes of
         Right { paymentUrl, order, user } ->
@@ -221,10 +260,12 @@ createNewAccount self (Just emailString) = do
         unexpectedErr = "An unexpected error occurred during registration"
 createNewAccount _ Nothing = pure $ Left ""
 
-createOrder :: User -> Product -> Aff (Either String Order)
-createOrder user product = do
+createOrder :: User -> Maybe Product -> Aff (Either String Order)
+createOrder user (Just product) = do
   let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
   User.createOrder newOrder
+createOrder _ Nothing =
+  pure $ Left "Tried to create order with no order."
 
 payOrder :: Order -> PaymentMethod -> Aff (Either String PaymentTerminalUrl)
 payOrder order paymentMethod =

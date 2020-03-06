@@ -244,10 +244,6 @@ body {
     margin-bottom:16px;
     overflow-wrap: break-word;
     word-wrap: break-word;
-    -webkit-hyphens: auto;
-    -ms-hyphens: auto;
-    -moz-hyphens: auto;
-    hyphens: auto;
 }
 
 .premiumBox {
