@@ -50,7 +50,7 @@ type State =
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
   , products      :: Array Product
-  , logger :: Maybe Sentry.Logger
+  , logger        :: Sentry.Logger
   }
 type Self = React.Self Props State
 
@@ -90,7 +90,7 @@ app = make component
                   , poller: pure unit
                   , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
                   , products: []
-                  , logger: Nothing
+                  , logger: Sentry.emptyLogger
                   }
   , render
   , didMount
@@ -100,7 +100,7 @@ didMount :: Self -> Effect Unit
 didMount self = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing
-  self.setState _ { logger = Just logger }
+  self.setState _ { logger = logger }
   Aff.launchAff_ do
     Aff.finally
       -- When packages have been set, hide loading spinner
@@ -110,9 +110,15 @@ didMount self = do
         let (Tuple invalidProducts validProducts) =
               map (Product.toProduct packages) productsToShow # partitionValidProducts
 
-        for_ invalidProducts $ \err -> case err of
-          PackageOffersMissing -> Console.error "Missing offers in package"
-          PackageNotFound      -> Console.error "Did not find package from server"
+        for_ invalidProducts $ \err -> liftEffect $ case err of
+          PackageOffersMissing -> do
+            -- TODO: Add package id/name/something
+            logger.log "Missing offers in package" Sentry.Warning
+            Console.error "Missing offers in package"
+          PackageNotFound -> do
+            -- TODO: Add package id/name/something
+            logger.log "Did not find package from server" Sentry.Warning
+            Console.error "Did not find package from server"
 
         case Array.head validProducts of
           Just p -> liftEffect $ self.setState _
@@ -120,7 +126,9 @@ didMount self = do
                        , form { productSelection = Just p }
                        }
           -- Did not get any valid packages from the server
-          Nothing -> liftEffect $ self.setState _ { purchaseState = PurchaseUnexpectedError }
+          Nothing -> liftEffect do
+            logger.log "Could not show any products to customer!" Sentry.Fatal
+            self.setState _ { purchaseState = PurchaseUnexpectedError }
 
 -- TODO: `partitionEithers` could be in some util module
 partitionValidProducts :: Array (Either PackageValidationError Product) -> Tuple (Array PackageValidationError) (Array Product)
@@ -161,8 +169,11 @@ pollOrder self (Right order) = do
       pollOrder self =<< User.getOrder order.number
     OrderCompleted -> liftEffect $ self.setState _ { purchaseState = PurchaseDone }
     OrderFailed    -> liftEffect do
+      self.state.logger.log "Order failed for customer" Sentry.Warning
       self.setState _ { purchaseState = PurchaseFailed }
-    OrderCanceled  -> liftEffect $ self.setState _ { purchaseState = NewPurchase }
+    OrderCanceled  -> liftEffect do
+      self.state.logger.log "Customer canceled order" Sentry.Warning
+      self.setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder self =<< User.getOrder order.number
     UnknownState   -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
 pollOrder self (Left err) = liftEffect do
@@ -222,6 +233,8 @@ submitNewAccountForm self@{ state: { form } } = unV
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
         user       <- ExceptT $ createNewAccount self validForm.emailAddress
+        -- Set user id to Sentry
+        ExceptT $ Right unit <$ (liftEffect $ self.state.logger.setUser $ Just user)
         order      <- ExceptT $ createOrder user validForm.productSelection
         paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
         pure { paymentUrl, order, user }
