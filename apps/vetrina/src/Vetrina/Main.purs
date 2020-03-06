@@ -9,7 +9,7 @@ import Data.Array (all, any, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Traversable (for_)
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semigroup (toEither, unV)
@@ -97,7 +97,7 @@ app = make component
   }
 
 didMount :: Self -> Effect Unit
-didMount self =
+didMount self = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing
   self.setState _ { logger = Just logger }
