@@ -54,7 +54,7 @@ productInfo p =
 
 toProduct :: Array Package -> PackageName -> Either PackageValidationError Product
 toProduct packages packageName = do
-  validPackage <- Package.validatePackage =<< Package.findPackage packageName packages
+  validPackage <- Package.validatePackage packageName =<< Package.findPackage packageName packages
   -- TODO: Can we take price from the first offer?
   case Array.head validPackage.offers of
     Just { monthlyPrice } -> Right $
@@ -63,7 +63,7 @@ toProduct packages packageName = do
       , description: productDescription packageName
       , price: (toNumber monthlyPrice) / 100.0
       }
-    _ -> Left PackageOffersMissing
+    _ -> Left $ PackageOffersMissing packageName
 
 productDescription :: PackageName -> String
 productDescription HblPremium =  "Alla artiklar på hbl.fi"

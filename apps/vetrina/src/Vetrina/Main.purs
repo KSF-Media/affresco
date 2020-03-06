@@ -111,13 +111,13 @@ didMount self = do
               map (Product.toProduct packages) productsToShow # partitionValidProducts
 
         for_ invalidProducts $ \err -> liftEffect $ case err of
-          PackageOffersMissing -> do
+          PackageOffersMissing packageName -> do
             -- TODO: Add package id/name/something
-            logger.log "Missing offers in package" Sentry.Warning
+            logger.log ("Missing offers in package: " <> show packageName) Sentry.Warning
             Console.error "Missing offers in package"
-          PackageNotFound -> do
+          PackageNotFound packageName -> do
             -- TODO: Add package id/name/something
-            logger.log "Did not find package from server" Sentry.Warning
+            logger.log ("Did not find package from server: " <> show packageName) Sentry.Warning
             Console.error "Did not find package from server"
 
         case Array.head validProducts of
