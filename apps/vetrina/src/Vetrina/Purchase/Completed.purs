@@ -64,7 +64,7 @@ setPasswordForm self@{ state: { passwordForm } } =
     , children:
         [ InputField.inputField
             { placeholder: "Lösenord (minst 6 tecken)"
-            , type_: "password"
+            , type_: InputField.Password
             , label: "Lösenord"
             , name: "password"
             , onChange: \val -> self.setState _ { passwordForm { newPassword = val } }
