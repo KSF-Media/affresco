@@ -9,7 +9,7 @@ import Data.Array (all, any)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -21,6 +21,7 @@ import KSF.InputField.Component as InputField
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
+import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
 import KSF.User as User
@@ -43,6 +44,7 @@ type State =
   , purchaseState :: PurchaseState
   , poller :: Aff.Fiber Unit
   , isLoading :: Maybe Spinner.Loading
+  , logger :: Maybe Sentry.Logger
   }
 type Self = React.Self Props State
 
@@ -80,9 +82,16 @@ app = make component
                   , newOrder: Nothing
                   , poller: pure unit
                   , isLoading: Nothing
+                  , logger: Nothing
                   }
   , render
+  , didMount
   }
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  logger <- Sentry.mkLogger "" Nothing
+  self.setState _ { logger = Just logger }
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -110,7 +119,8 @@ pollOrder self (Right order) = do
       liftEffect $ self.setState _ { purchaseState = ProcessPayment }
       pollOrder self =<< User.getOrder order.number
     OrderCompleted -> liftEffect $ self.setState _ { purchaseState = PurchaseDone }
-    OrderFailed    -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
+    OrderFailed    -> liftEffect do
+      self.setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect $ self.setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder self =<< User.getOrder order.number
     UnknownState   -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
@@ -169,7 +179,7 @@ submitNewAccountForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
-        user  <- ExceptT $ createNewAccount self validForm.emailAddress
+        user <- ExceptT $ createNewAccount self validForm.emailAddress
         order <- ExceptT $ createOrder user self.state.form.productSelection
         paymentUrl <- ExceptT $ payOrder order $ fromMaybe CreditCard self.state.form.paymentMethod
         pure { paymentUrl, order, user }
