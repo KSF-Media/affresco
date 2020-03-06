@@ -4,8 +4,8 @@ exports.initSentry_ = function(sentryDsn) {
     window.sentry = Sentry;
     return Sentry;
 };
-exports.captureMessage_ = function(sentry, message) {
-    return sentry.captureMessage(message);
+exports.captureMessage_ = function(sentry, message, level) {
+    return sentry.captureMessage(message, level);
 };
 exports.captureException_ = function(sentry, err) {
     return sentry.captureException(err);
