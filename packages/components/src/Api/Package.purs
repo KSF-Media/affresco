@@ -72,7 +72,7 @@ instance showPackageName :: Show PackageName where
   show = genericShow
 
 toPackageId :: PackageName -> String
-toPackageId HblPremium = "HBL WEvBB"
+toPackageId HblPremium = "HBL WEBB"
 
 findPackage :: PackageName -> Array Package -> Either PackageValidationError Package
 findPackage packageName packages =
