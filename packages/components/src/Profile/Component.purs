@@ -1,4 +1,4 @@
-module KSF.Profile.Component where
+  module KSF.Profile.Component where
 
 import Prelude
 
@@ -141,7 +141,7 @@ render self@{ props: { profile: user } } =
         , readyView: profileNameReady
         , editingView: \_ -> profileNameEditing
         , loadingView: profileNameLoading
-        , successView: profileNameReady
+        , successView: \_ -> profileNameReady
         , errorView: \e -> DOM.text e
         }
       where
@@ -183,7 +183,7 @@ render self@{ props: { profile: user } } =
         , readyView: profileAddressReady
         , editingView: \_ -> profileAddressEditing
         , loadingView: profileAddressLoading
-        , successView: profileAddressReady
+        , successView: \_ -> profileAddressReady
         , errorView: \e -> DOM.text e
         }
       where
@@ -312,7 +312,7 @@ editAddress self =
         case newUser of
           Right u -> liftEffect do
             self.props.onUpdate u
-            self.setState _ { editAddress = Success }
+            self.setState _ { editAddress = Success Nothing }
           Left err -> do
             Console.error "Unexpected error when updating name."
             liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
@@ -370,7 +370,7 @@ editName self =
           case newUser of
             Right u -> liftEffect do
               self.props.onUpdate u
-              self.setState _ { editName = Success }
+              self.setState _ { editName = Success Nothing }
             Left err -> do
               Console.error "Unexpected error when updating name."
               liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
