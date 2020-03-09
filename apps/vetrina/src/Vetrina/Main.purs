@@ -3,7 +3,6 @@ module Vetrina.Main where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (all, any, snoc)
 import Data.Array as Array
@@ -17,10 +16,10 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Exception (error)
 import KSF.Api.Package (PackageName(..), PackageValidationError(..))
 import KSF.InputField.Component as InputField
+import KSF.JSError as Error
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
@@ -112,13 +111,9 @@ didMount self = do
 
         for_ invalidProducts $ \err -> liftEffect $ case err of
           PackageOffersMissing packageName -> do
-            -- TODO: Add package id/name/something
-            logger.log ("Missing offers in package: " <> show packageName) Sentry.Warning
-            Console.error "Missing offers in package"
+            logger.error $ Error.packageError $ "Missing offers in package: " <> show packageName
           PackageNotFound packageName -> do
-            -- TODO: Add package id/name/something
-            logger.log ("Did not find package from server: " <> show packageName) Sentry.Warning
-            Console.error "Did not find package from server"
+            logger.error $ Error.packageError $ "Did not find package from server: " <> show packageName
 
         case Array.head validProducts of
           Just p -> liftEffect $ self.setState _
@@ -127,7 +122,7 @@ didMount self = do
                        }
           -- Did not get any valid packages from the server
           Nothing -> liftEffect do
-            logger.log "Could not show any products to customer!" Sentry.Fatal
+            logger.error $ Error.packageError "Could not show any products to customer."
             self.setState _ { purchaseState = PurchaseUnexpectedError }
 
 -- TODO: `partitionEithers` could be in some util module
@@ -161,7 +156,7 @@ startOrderPoller self order = do
   self.setState _ { poller = newPoller }
 
 pollOrder :: Self -> Either String Order -> Aff Unit
-pollOrder self (Right order) = do
+pollOrder self@{ state: { logger } } (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case order.status.state of
     OrderStarted -> do
@@ -169,16 +164,18 @@ pollOrder self (Right order) = do
       pollOrder self =<< User.getOrder order.number
     OrderCompleted -> liftEffect $ self.setState _ { purchaseState = PurchaseDone }
     OrderFailed    -> liftEffect do
-      self.state.logger.log "Order failed for customer" Sentry.Warning
+      logger.error $ Error.orderError "Order failed for customer"
       self.setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
-      self.state.logger.log "Customer canceled order" Sentry.Warning
+      self.state.logger.log "Customer canceled order" Sentry.Info
       self.setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder self =<< User.getOrder order.number
-    UnknownState   -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
-pollOrder self (Left err) = liftEffect do
-  Console.error err
-  self.setState _ { purchaseState = PurchaseFailed }
+    UnknownState   -> liftEffect do
+      logger.error $ Error.orderError "Got UnknownState from server"
+      self.setState _ { purchaseState = PurchaseFailed }
+pollOrder { setState, state: { logger } } (Left err) = liftEffect do
+  logger.error $ Error.orderError $ "Failed to get order from server: " <> err
+  setState _ { purchaseState = PurchaseFailed }
 
 render :: Self -> JSX
 render self =
@@ -228,13 +225,13 @@ setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { isLoading = loading }
 
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
-submitNewAccountForm self@{ state: { form } } = unV
+submitNewAccountForm self@{ state: { form, logger } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
         user       <- ExceptT $ createNewAccount self validForm.emailAddress
         -- Set user id to Sentry
-        ExceptT $ Right unit <$ (liftEffect $ self.state.logger.setUser $ Just user)
+        ExceptT $ Right unit <$ (liftEffect $ logger.setUser $ Just user)
         order      <- ExceptT $ createOrder user validForm.productSelection
         paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
         pure { paymentUrl, order, user }
@@ -243,34 +240,32 @@ submitNewAccountForm self@{ state: { form } } = unV
           liftEffect do
             self.setState _
               { purchaseState = CapturePayment paymentUrl
-              , newOrder = Just order
-              , user = Just user
+              , newOrder      = Just order
+              , user          = Just user
               }
             startOrderPoller self order
         Left (err :: String) -> do
           liftEffect do
-            Console.error err
+            logger.error $ Error.orderError $ "Failed to place an order: " <> err
             self.setState _ { purchaseState = PurchaseFailed }
   )
 
 createNewAccount :: Self -> Maybe String -> Aff (Either String User)
-createNewAccount self (Just emailString) = do
+createNewAccount self@{ state: { logger } } (Just emailString) = do
   newUser <- User.createUserWithEmail (User.Email emailString)
   case newUser of
     Right user -> do
       liftEffect $ self.setState _ { user = Just user }
       pure $ Right user
     Left User.RegistrationEmailInUse -> do
-      -- liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
-      throwError $ error "email in use"
+      -- TODO: Handle existing email
+      pure $ Left "email in use"
     Left (User.InvalidFormFields errors) -> do
-      -- liftEffect $ handleServerErrs errors
-      throwError $ error "invalid form fields"
-    _ -> do
-      Console.error unexpectedErr
-      throwError $ error unexpectedErr
-      where
-        unexpectedErr = "An unexpected error occurred during registration"
+      -- TODO: Handle invalid fields
+      pure $ Left "invalid form fields"
+    _ ->
+      pure $ Left "Could not create a new account"
+
 createNewAccount _ Nothing = pure $ Left ""
 
 createOrder :: User -> Maybe Product -> Aff (Either String Order)
