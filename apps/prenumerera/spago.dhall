@@ -20,6 +20,7 @@
     , "facebook"
     , "now"
     , "react-basic-router"
+	, "uuid"
     ]
 , packages =
     ../../packages.dhall

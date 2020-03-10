@@ -8,8 +8,10 @@
     "build": "spago build && parcel build index.html --no-cache"
   },
   "dependencies": {
+    "@sentry/browser": "^5.13.2",
     "create-react-class": "^15.6.3",
     "react": "^16.12.0",
-    "react-dom": "^16.12.0"
+    "react-dom": "^16.12.0",
+    "uuid-validate": "^0.0.3"
   }
 }

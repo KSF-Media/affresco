@@ -3,7 +3,6 @@ module Vetrina.Main where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (all, any, snoc)
 import Data.Array as Array
@@ -17,13 +16,14 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Exception (error)
 import KSF.Api.Package (PackageName(..), PackageValidationError(..))
 import KSF.InputField.Component as InputField
+import KSF.JSError as Error
 import KSF.PaymentMethod as PaymentMethod
 import KSF.Product (Product)
 import KSF.Product as Product
+import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
 import KSF.User as User
@@ -36,6 +36,8 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import Vetrina.Purchase.Completed as PurchaseCompleted
 
+foreign import sentryDsn_ :: Effect String
+
 type Props = {}
 
 type State =
@@ -47,6 +49,7 @@ type State =
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
   , products      :: Array Product
+  , logger        :: Sentry.Logger
   }
 type Self = React.Self Props State
 
@@ -86,32 +89,41 @@ app = make component
                   , poller: pure unit
                   , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
                   , products: []
+                  , logger: Sentry.emptyLogger
                   }
   , render
   , didMount
   }
 
 didMount :: Self -> Effect Unit
-didMount self = Aff.launchAff_ do
-  Aff.finally
-    -- When packages have been set, hide loading spinner
-    (liftEffect $ self.setState \s -> s { isLoading = Nothing })
-    do
-      packages <- User.getPackages
-      let (Tuple invalidProducts validProducts) =
-            map (Product.toProduct packages) productsToShow # partitionValidProducts
+didMount self = do
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing
+  self.setState _ { logger = logger }
+  Aff.launchAff_ do
+    Aff.finally
+      -- When packages have been set, hide loading spinner
+      (liftEffect $ self.setState \s -> s { isLoading = Nothing })
+      do
+        packages <- User.getPackages
+        let (Tuple invalidProducts validProducts) =
+              map (Product.toProduct packages) productsToShow # partitionValidProducts
 
-      for_ invalidProducts $ \err -> case err of
-        PackageOffersMissing -> Console.error "Missing offers in package"
-        PackageNotFound      -> Console.error "Did not find package from server"
+        for_ invalidProducts $ \err -> liftEffect $ case err of
+          PackageOffersMissing packageName -> do
+            logger.error $ Error.packageError $ "Missing offers in package: " <> show packageName
+          PackageNotFound packageName -> do
+            logger.error $ Error.packageError $ "Did not find package from server: " <> show packageName
 
-      case Array.head validProducts of
-        Just p -> liftEffect $ self.setState _
-                     { products = validProducts
-                     , form { productSelection = Just p }
-                     }
-        -- Did not get any valid packages from the server
-        Nothing -> liftEffect $ self.setState _ { purchaseState = PurchaseUnexpectedError }
+        case Array.head validProducts of
+          Just p -> liftEffect $ self.setState _
+                       { products = validProducts
+                       , form { productSelection = Just p }
+                       }
+          -- Did not get any valid packages from the server
+          Nothing -> liftEffect do
+            logger.error $ Error.packageError "Could not show any products to customer."
+            self.setState _ { purchaseState = PurchaseUnexpectedError }
 
 -- TODO: `partitionEithers` could be in some util module
 partitionValidProducts :: Array (Either PackageValidationError Product) -> Tuple (Array PackageValidationError) (Array Product)
@@ -144,20 +156,26 @@ startOrderPoller self order = do
   self.setState _ { poller = newPoller }
 
 pollOrder :: Self -> Either String Order -> Aff Unit
-pollOrder self (Right order) = do
+pollOrder self@{ state: { logger } } (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case order.status.state of
     OrderStarted -> do
       liftEffect $ self.setState _ { purchaseState = ProcessPayment }
       pollOrder self =<< User.getOrder order.number
     OrderCompleted -> liftEffect $ self.setState _ { purchaseState = PurchaseDone }
-    OrderFailed    -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
-    OrderCanceled  -> liftEffect $ self.setState _ { purchaseState = NewPurchase }
+    OrderFailed    -> liftEffect do
+      logger.error $ Error.orderError "Order failed for customer"
+      self.setState _ { purchaseState = PurchaseFailed }
+    OrderCanceled  -> liftEffect do
+      self.state.logger.log "Customer canceled order" Sentry.Info
+      self.setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder self =<< User.getOrder order.number
-    UnknownState   -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
-pollOrder self (Left err) = liftEffect do
-  Console.error err
-  self.setState _ { purchaseState = PurchaseFailed }
+    UnknownState   -> liftEffect do
+      logger.error $ Error.orderError "Got UnknownState from server"
+      self.setState _ { purchaseState = PurchaseFailed }
+pollOrder { setState, state: { logger } } (Left err) = liftEffect do
+  logger.error $ Error.orderError $ "Failed to get order from server: " <> err
+  setState _ { purchaseState = PurchaseFailed }
 
 render :: Self -> JSX
 render self =
@@ -207,11 +225,13 @@ setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { isLoading = loading }
 
 submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
-submitNewAccountForm self@{ state: { form } } = unV
+submitNewAccountForm self@{ state: { form, logger } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
         user       <- ExceptT $ createNewAccount self validForm.emailAddress
+        -- Set user id to Sentry
+        ExceptT $ Right unit <$ (liftEffect $ logger.setUser $ Just user)
         order      <- ExceptT $ createOrder user validForm.productSelection
         paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
         pure { paymentUrl, order, user }
@@ -220,34 +240,32 @@ submitNewAccountForm self@{ state: { form } } = unV
           liftEffect do
             self.setState _
               { purchaseState = CapturePayment paymentUrl
-              , newOrder = Just order
-              , user = Just user
+              , newOrder      = Just order
+              , user          = Just user
               }
             startOrderPoller self order
         Left (err :: String) -> do
           liftEffect do
-            Console.error err
+            logger.error $ Error.orderError $ "Failed to place an order: " <> err
             self.setState _ { purchaseState = PurchaseFailed }
   )
 
 createNewAccount :: Self -> Maybe String -> Aff (Either String User)
-createNewAccount self (Just emailString) = do
+createNewAccount self@{ state: { logger } } (Just emailString) = do
   newUser <- User.createUserWithEmail (User.Email emailString)
   case newUser of
     Right user -> do
       liftEffect $ self.setState _ { user = Just user }
       pure $ Right user
     Left User.RegistrationEmailInUse -> do
-      -- liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
-      throwError $ error "email in use"
+      -- TODO: Handle existing email
+      pure $ Left "email in use"
     Left (User.InvalidFormFields errors) -> do
-      -- liftEffect $ handleServerErrs errors
-      throwError $ error "invalid form fields"
-    _ -> do
-      Console.error unexpectedErr
-      throwError $ error unexpectedErr
-      where
-        unexpectedErr = "An unexpected error occurred during registration"
+      -- TODO: Handle invalid fields
+      pure $ Left "invalid form fields"
+    _ ->
+      pure $ Left "Could not create a new account"
+
 createNewAccount _ Nothing = pure $ Left ""
 
 createOrder :: User -> Maybe Product -> Aff (Either String Order)
