@@ -10,6 +10,7 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Int (ceil)
 import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Nullable (toNullable)
 import Data.Traversable (for_)
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semigroup (toEither, unV)
@@ -47,6 +48,7 @@ type State =
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
   , products      :: Array Product
+  , accountStatus :: AccountStatus
   }
 type Self = React.Self Props State
 
@@ -61,24 +63,42 @@ data PurchaseState
   | PurchaseUnexpectedError
 derive instance eqPurchaseState :: Eq PurchaseState
 
-data NewAccountInputField = EmailAddress
+data NewAccountInputField
+  = EmailAddress
+  | ExistingPassword
 derive instance eqNewAccountInputField :: Eq NewAccountInputField
 instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccountInputField where
-  validateField EmailAddress value serverErrors =
-    Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
+  validateField field value serverErrors = case field of
+    EmailAddress     -> Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
+    ExistingPassword -> Form.validateEmptyField ExistingPassword "Lösenord krävs." value
 
 type NewAccountForm =
   { emailAddress     :: Maybe String
+  , existingPassword :: Maybe String
   , productSelection :: Maybe Product
   , paymentMethod    :: User.PaymentMethod
   }
+
+data AccountStatus
+  = NewAccount
+  | ExistingAccount
+
+data OrderFailure
+  = EmailInUse
+  | FormFieldError (Array NewAccountInputField)
+  | UnrecognizedError String
 
 component :: React.Component Props
 component = React.createComponent "Vetrina"
 
 app :: Props -> JSX
 app = make component
-  { initialState: { form: { emailAddress: Nothing, productSelection: Nothing, paymentMethod: CreditCard }
+  { initialState: { form:
+                      { emailAddress: Nothing
+                      , existingPassword: Nothing
+                      , productSelection: Nothing
+                      , paymentMethod: CreditCard
+                      }
                   , serverErrors: []
                   , purchaseState: NewPurchase
                   , user: Nothing
@@ -86,6 +106,7 @@ app = make component
                   , poller: pure unit
                   , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
                   , products: []
+                  , accountStatus: NewAccount
                   }
   , render
   , didMount
@@ -169,6 +190,9 @@ render self =
         { className: "vetrina--new-account-container"
         , children: newAccountForm self
             [ emailAddressInput self
+            , case self.state.accountStatus of
+                NewAccount      -> mempty
+                ExistingAccount -> passwordInput self
             , maybe mempty Product.productRender self.state.form.productSelection
             , PaymentMethod.paymentMethod (\m -> pure unit)
             , confirmButton self
@@ -185,7 +209,7 @@ newAccountForm self children =
   Array.singleton $
     DOM.form
       { className: "vetrina--new-account-form"
-      , onSubmit: handler preventDefault $ (\_ -> submitNewAccountForm self $ formValidations self)
+      , onSubmit: handler preventDefault $ (\_ -> submitNewOrderForm self $ formValidations self)
       , children
       }
 
@@ -195,23 +219,47 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
   , label: "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
-  , onChange: (\val -> self.setState _ { form { emailAddress = val }
-                                         -- Clear server errors of EmailAddress when typing
+  , onChange: (\val -> self.setState _ { form { emailAddress = val
+                                              -- If email value is changed, we must consider it as another
+                                              -- attempt of creating a new account (it might be that
+                                              -- an account with previous email exists, and we are
+                                              -- asking the user to log in right now, so changing
+                                              -- the email cancels that)
+                                              , existingPassword = Nothing
+                                              }
+                                       -- Look comment about `existingPassword` above ^
+                                       , accountStatus = NewAccount
+                                       -- Clear server errors of EmailAddress when typing
                                        , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
                                        })
   , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress form.emailAddress self.state.serverErrors
   , value: form.emailAddress
   }
 
+passwordInput :: Self -> JSX
+passwordInput self = InputField.inputField
+  { type_: InputField.Password
+  , placeholder: "Lösenord"
+  , label: "Lösenord"
+  , name: "accountPassword"
+  , value: Nothing
+  , onChange: \pw -> self.setState _ { form { existingPassword = pw } }
+  , validationError:
+      Form.inputFieldErrorMessage $
+      Form.validateField ExistingPassword self.state.form.existingPassword []
+  }
+
 setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { isLoading = loading }
 
-submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
-submitNewAccountForm self@{ state: { form } } = unV
+submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
+submitNewOrderForm self@{ state: { form } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
-        user       <- ExceptT $ createNewAccount self validForm.emailAddress
+        user <- ExceptT $ case self.state.accountStatus of
+          NewAccount      -> createNewAccount self validForm.emailAddress
+          ExistingAccount -> loginToExistingAccount validForm.emailAddress validForm.existingPassword
         order      <- ExceptT $ createOrder user validForm.productSelection
         paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
         pure { paymentUrl, order, user }
@@ -224,13 +272,15 @@ submitNewAccountForm self@{ state: { form } } = unV
               , user = Just user
               }
             startOrderPoller self order
-        Left (err :: String) -> do
-          liftEffect do
-            Console.error err
-            self.setState _ { purchaseState = PurchaseFailed }
+        Left err -> case err of
+          UnrecognizedError e ->
+            liftEffect do
+              Console.error e
+              self.setState _ { purchaseState = PurchaseFailed }
+          EmailInUse -> liftEffect $ self.setState _ { accountStatus = ExistingAccount }
   )
 
-createNewAccount :: Self -> Maybe String -> Aff (Either String User)
+createNewAccount :: Self -> Maybe String -> Aff (Either OrderFailure User)
 createNewAccount self (Just emailString) = do
   newUser <- User.createUserWithEmail (User.Email emailString)
   case newUser of
@@ -239,7 +289,8 @@ createNewAccount self (Just emailString) = do
       pure $ Right user
     Left User.RegistrationEmailInUse -> do
       -- liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
-      throwError $ error "email in use"
+--      throwError $ error "email in use"
+      pure $ Left EmailInUse
     Left (User.InvalidFormFields errors) -> do
       -- liftEffect $ handleServerErrs errors
       throwError $ error "invalid form fields"
@@ -248,18 +299,37 @@ createNewAccount self (Just emailString) = do
       throwError $ error unexpectedErr
       where
         unexpectedErr = "An unexpected error occurred during registration"
-createNewAccount _ Nothing = pure $ Left ""
+createNewAccount _ Nothing = pure $ Left $ UnrecognizedError ""
 
-createOrder :: User -> Maybe Product -> Aff (Either String Order)
+loginToExistingAccount :: Self -> Maybe String -> Maybe String -> Aff (Either OrderFailure User)
+loginToExistingAccount self (Just username) (Just password) = do
+  let login = { username, password, mergeToken: toNullable Nothing }
+  eitherUser <- User.loginTraditional login
+  case eitherUser of
+    Right u  -> pure $ Right u
+    Left err
+      | User.LoginInvalidCredentials <- err ->
+loginToExistingAccount _ _ _ =
+  pure $ Left $ FormFieldError [ EmailAddress, ExistingPassword ]
+
+
+createOrder :: User -> Maybe Product -> Aff (Either OrderFailure Order)
 createOrder user (Just product) = do
+  -- TODO: fix period etc.
   let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
-  User.createOrder newOrder
+  eitherOrder <- User.createOrder newOrder
+  pure $ case eitherOrder of
+    Right order -> Right order
+    Left err    -> Left $ UnrecognizedError err
 createOrder _ Nothing =
-  pure $ Left "Tried to create order with no order."
+  pure $ Left $ UnrecognizedError "Tried to create order with no order."
 
-payOrder :: Order -> PaymentMethod -> Aff (Either String PaymentTerminalUrl)
+payOrder :: Order -> PaymentMethod -> Aff (Either OrderFailure PaymentTerminalUrl)
 payOrder order paymentMethod =
-  User.payOrder order.number paymentMethod
+  User.payOrder order.number paymentMethod >>= \eitherUrl ->
+    pure $ case eitherUrl of
+      Right url -> Right url
+      Left err  -> Left $ UnrecognizedError err
 
 confirmButton :: Self -> JSX
 confirmButton self =
@@ -278,11 +348,15 @@ confirmButton self =
 formValidations :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm
 formValidations self@{ state: { form } } =
   { emailAddress: _
+  , existingPassword: _
   , productSelection: form.productSelection
   , paymentMethod: form.paymentMethod
   }
   <$> Form.validateField EmailAddress form.emailAddress []
-
+  <*> (case self.state.accountStatus of
+            ExistingAccount -> Form.validateField ExistingPassword form.existingPassword []
+            -- If NewAccount, we don't need to validate the password field
+            NewAccount      -> pure form.existingPassword)
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
