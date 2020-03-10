@@ -2,7 +2,6 @@ exports.initSentry_ = function(sentryDsn) {
     var Sentry = require('@sentry/browser')
     if (sentryDsn && sentryDsn.length > 1) {
         Sentry.init({ dsn: sentryDsn });
-        window.sentry = Sentry;
         return Sentry;
     }
     else {
