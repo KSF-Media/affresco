@@ -285,7 +285,7 @@ renderLoginForm self =
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
-                { type_: "text"
+                { type_: InputField.Text
                 , placeholder: "E-postadress"
                 , label: "E-postadress"
                 , name: "accountEmail"
@@ -296,7 +296,7 @@ renderLoginForm self =
                      Form.validateField UsernameField self.state.formEmail []
                 }
             , InputField.inputField
-                { type_: "password"
+                { type_: InputField.Password
                 , placeholder: "Lösenord"
                 , label: "Lösenord"
                 , name: "accountPassword"
@@ -400,7 +400,7 @@ renderMerge self@{ props } mergeInfo =
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
-                { type_: "text"
+                { type_: InputField.Text
                 , placeholder: ""
                 , label: ""
                 , name: ""
@@ -435,9 +435,7 @@ googleLogin self =
     else mempty
   where
     onGoogleLogin :: Google.AuthResponse -> Effect Unit
-    onGoogleLogin { "Zi": { access_token: accessToken }
-                  , w3: { "U3": Google.Email email }
-                  } = self.props.launchAff_ do
+    onGoogleLogin { accessToken, email: (Google.Email email) } = self.props.launchAff_ do
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = Just email }

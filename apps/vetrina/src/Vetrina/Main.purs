@@ -2,23 +2,309 @@ module Vetrina.Main where
 
 import Prelude
 
-import React.Basic (JSX)
-import React.Basic.Compat as React
+import Control.Alt ((<|>))
+import Control.Monad.Except (ExceptT(..), runExceptT)
+import Data.Array (all, any, snoc)
+import Data.Array as Array
+import Data.Either (Either(..))
+import Data.Int (ceil)
+import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Traversable (for_)
+import Data.Tuple (Tuple(..))
+import Data.Validation.Semigroup (toEither, unV)
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Exception (error)
+import KSF.Api.Package (PackageName(..), PackageValidationError(..))
+import KSF.InputField.Component as InputField
+import KSF.JSError as Error
+import KSF.PaymentMethod as PaymentMethod
+import KSF.Product (Product)
+import KSF.Product as Product
+import KSF.Sentry as Sentry
+import KSF.Spinner as Spinner
+import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
+import KSF.User as User
+import KSF.ValidatableForm (isNotInitialized)
+import KSF.ValidatableForm as Form
+import React.Basic (JSX, make)
+import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler)
+import Vetrina.Purchase.Completed as PurchaseCompleted
+
+foreign import sentryDsn_ :: Effect String
 
 type Props = {}
-type State = {}
 
-app :: React.Component Props
-app = React.component
-  { displayName: "Vetrina"
-  , initialState: {}
-  , receiveProps
-  , render
+type State =
+  { form          :: NewAccountForm
+  , serverErrors  :: Array (Form.ValidationError NewAccountInputField)
+  , user          :: Maybe User
+  , newOrder      :: Maybe Order
+  , purchaseState :: PurchaseState
+  , poller        :: Aff.Fiber Unit
+  , isLoading     :: Maybe Spinner.Loading
+  , products      :: Array Product
+  , logger        :: Sentry.Logger
   }
-  where
-    receiveProps _ = do
-      pure unit
+type Self = React.Self Props State
 
-    render { state, setState } =
-      DOM.h1_ [ DOM.text "Vetrina!" ]
+type PrevState = { prevProps :: Props, prevState :: State }
+
+data PurchaseState
+  = NewPurchase
+  | CapturePayment PaymentTerminalUrl
+  | ProcessPayment
+  | PurchaseFailed
+  | PurchaseDone
+  | PurchaseUnexpectedError
+derive instance eqPurchaseState :: Eq PurchaseState
+
+data NewAccountInputField = EmailAddress
+derive instance eqNewAccountInputField :: Eq NewAccountInputField
+instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccountInputField where
+  validateField EmailAddress value serverErrors =
+    Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
+
+type NewAccountForm =
+  { emailAddress     :: Maybe String
+  , productSelection :: Maybe Product
+  , paymentMethod    :: User.PaymentMethod
+  }
+
+component :: React.Component Props
+component = React.createComponent "Vetrina"
+
+app :: Props -> JSX
+app = make component
+  { initialState: { form: { emailAddress: Nothing, productSelection: Nothing, paymentMethod: CreditCard }
+                  , serverErrors: []
+                  , purchaseState: NewPurchase
+                  , user: Nothing
+                  , newOrder: Nothing
+                  , poller: pure unit
+                  , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
+                  , products: []
+                  , logger: Sentry.emptyLogger
+                  }
+  , render
+  , didMount
+  }
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing
+  self.setState _ { logger = logger }
+  Aff.launchAff_ do
+    Aff.finally
+      -- When packages have been set, hide loading spinner
+      (liftEffect $ self.setState \s -> s { isLoading = Nothing })
+      do
+        packages <- User.getPackages
+        let (Tuple invalidProducts validProducts) =
+              map (Product.toProduct packages) productsToShow # partitionValidProducts
+
+        for_ invalidProducts $ \err -> liftEffect $ case err of
+          PackageOffersMissing packageName -> do
+            logger.error $ Error.packageError $ "Missing offers in package: " <> show packageName
+          PackageNotFound packageName -> do
+            logger.error $ Error.packageError $ "Did not find package from server: " <> show packageName
+
+        case Array.head validProducts of
+          Just p -> liftEffect $ self.setState _
+                       { products = validProducts
+                       , form { productSelection = Just p }
+                       }
+          -- Did not get any valid packages from the server
+          Nothing -> liftEffect do
+            logger.error $ Error.packageError "Could not show any products to customer."
+            self.setState _ { purchaseState = PurchaseUnexpectedError }
+
+-- TODO: `partitionEithers` could be in some util module
+partitionValidProducts :: Array (Either PackageValidationError Product) -> Tuple (Array PackageValidationError) (Array Product)
+partitionValidProducts = Array.foldl
+  (\(Tuple lefts rights) eitherProduct ->
+    case eitherProduct of
+      Right p  -> Tuple lefts              (rights `snoc` p)
+      Left err -> Tuple (lefts `snoc` err) rights)
+  (Tuple [] [])
+
+productsToShow :: Array PackageName
+productsToShow = [ HblPremium ]
+
+didUpdate :: Self -> PrevState -> Effect Unit
+didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
+
+stopOrderPollerOnCompletedState :: Self -> Aff Unit
+stopOrderPollerOnCompletedState self =
+  when (any (_ == self.state.purchaseState) [ PurchaseFailed, PurchaseDone, NewPurchase ]) $ killOrderPoller self
+
+killOrderPoller :: Self -> Aff Unit
+killOrderPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
+
+startOrderPoller :: Self -> Order -> Effect Unit
+startOrderPoller self order = do
+  newPoller <- Aff.launchAff do
+        killOrderPoller self
+        newPoller <- Aff.forkAff $ pollOrder self (Right order)
+        Aff.joinFiber newPoller
+  self.setState _ { poller = newPoller }
+
+pollOrder :: Self -> Either String Order -> Aff Unit
+pollOrder self@{ state: { logger } } (Right order) = do
+  Aff.delay $ Aff.Milliseconds 1000.0
+  case order.status.state of
+    OrderStarted -> do
+      liftEffect $ self.setState _ { purchaseState = ProcessPayment }
+      pollOrder self =<< User.getOrder order.number
+    OrderCompleted -> liftEffect $ self.setState _ { purchaseState = PurchaseDone }
+    OrderFailed    -> liftEffect do
+      logger.error $ Error.orderError "Order failed for customer"
+      self.setState _ { purchaseState = PurchaseFailed }
+    OrderCanceled  -> liftEffect do
+      self.state.logger.log "Customer canceled order" Sentry.Info
+      self.setState _ { purchaseState = NewPurchase }
+    OrderCreated   -> pollOrder self =<< User.getOrder order.number
+    UnknownState   -> liftEffect do
+      logger.error $ Error.orderError "Got UnknownState from server"
+      self.setState _ { purchaseState = PurchaseFailed }
+pollOrder { setState, state: { logger } } (Left err) = liftEffect do
+  logger.error $ Error.orderError $ "Failed to get order from server: " <> err
+  setState _ { purchaseState = PurchaseFailed }
+
+render :: Self -> JSX
+render self =
+  if isJust self.state.isLoading
+  then Spinner.loadingSpinner
+  else case self.state.purchaseState of
+    NewPurchase ->
+      DOM.div
+        { className: "vetrina--new-account-container"
+        , children: newAccountForm self
+            [ emailAddressInput self
+            , maybe mempty Product.productRender self.state.form.productSelection
+            , PaymentMethod.paymentMethod (\m -> pure unit)
+            , confirmButton self
+            ]
+        }
+    (CapturePayment url) -> netsTerminalIframe url
+    ProcessPayment -> Spinner.loadingSpinner
+    PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
+    PurchaseDone -> PurchaseCompleted.completed { redirectArticleUrl: Nothing }
+    PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
+
+newAccountForm :: Self -> Array JSX -> Array JSX
+newAccountForm self children =
+  Array.singleton $
+    DOM.form
+      { className: "vetrina--new-account-form"
+      , onSubmit: handler preventDefault $ (\_ -> submitNewAccountForm self $ formValidations self)
+      , children
+      }
+
+emailAddressInput :: Self -> JSX
+emailAddressInput self@{ state: { form }} = InputField.inputField
+  { type_: InputField.Email
+  , label: "E-postadress"
+  , name: "emailAddress"
+  , placeholder: "E-postadress"
+  , onChange: (\val -> self.setState _ { form { emailAddress = val }
+                                         -- Clear server errors of EmailAddress when typing
+                                       , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
+                                       })
+  , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress form.emailAddress self.state.serverErrors
+  , value: form.emailAddress
+  }
+
+setLoading :: Maybe Spinner.Loading -> State -> State
+setLoading loading = _ { isLoading = loading }
+
+submitNewAccountForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
+submitNewAccountForm self@{ state: { form, logger } } = unV
+  (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
+  (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
+      eitherRes <- runExceptT do
+        user       <- ExceptT $ createNewAccount self validForm.emailAddress
+        -- Set user id to Sentry
+        ExceptT $ Right unit <$ (liftEffect $ logger.setUser $ Just user)
+        order      <- ExceptT $ createOrder user validForm.productSelection
+        paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
+        pure { paymentUrl, order, user }
+      case eitherRes of
+        Right { paymentUrl, order, user } ->
+          liftEffect do
+            self.setState _
+              { purchaseState = CapturePayment paymentUrl
+              , newOrder      = Just order
+              , user          = Just user
+              }
+            startOrderPoller self order
+        Left (err :: String) -> do
+          liftEffect do
+            logger.error $ Error.orderError $ "Failed to place an order: " <> err
+            self.setState _ { purchaseState = PurchaseFailed }
+  )
+
+createNewAccount :: Self -> Maybe String -> Aff (Either String User)
+createNewAccount self@{ state: { logger } } (Just emailString) = do
+  newUser <- User.createUserWithEmail (User.Email emailString)
+  case newUser of
+    Right user -> do
+      liftEffect $ self.setState _ { user = Just user }
+      pure $ Right user
+    Left User.RegistrationEmailInUse -> do
+      -- TODO: Handle existing email
+      pure $ Left "email in use"
+    Left (User.InvalidFormFields errors) -> do
+      -- TODO: Handle invalid fields
+      pure $ Left "invalid form fields"
+    _ ->
+      pure $ Left "Could not create a new account"
+
+createNewAccount _ Nothing = pure $ Left ""
+
+createOrder :: User -> Maybe Product -> Aff (Either String Order)
+createOrder user (Just product) = do
+  let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
+  User.createOrder newOrder
+createOrder _ Nothing =
+  pure $ Left "Tried to create order with no order."
+
+payOrder :: Order -> PaymentMethod -> Aff (Either String PaymentTerminalUrl)
+payOrder order paymentMethod =
+  User.payOrder order.number paymentMethod
+
+confirmButton :: Self -> JSX
+confirmButton self =
+  DOM.input
+    { type: "submit"
+    , className: "registration--create-button mt2"
+    , disabled: isFormInvalid
+    , value: "Skapa konto"
+    }
+  where
+    isFormInvalid
+      | Left errs <- toEither $ formValidations self
+      = not $ all isNotInitialized errs
+      | otherwise = false
+
+formValidations :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm
+formValidations self@{ state: { form } } =
+  { emailAddress: _
+  , productSelection: form.productSelection
+  , paymentMethod: form.paymentMethod
+  }
+  <$> Form.validateField EmailAddress form.emailAddress []
+
+
+netsTerminalIframe :: PaymentTerminalUrl -> JSX
+netsTerminalIframe { paymentTerminalUrl } =
+  DOM.iframe
+    { src: paymentTerminalUrl
+    , className: "vetrina--payment-terminal"
+    }

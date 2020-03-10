@@ -243,7 +243,7 @@ body {
 .html {
     margin-bottom:16px;
     overflow-wrap: break-word;
-    /*font-size: 16px;*/
+    word-wrap: break-word;
 }
 
 .premiumBox {
@@ -490,6 +490,11 @@ body {
 
 .mobileListItems a {
     font-size: 22px;
+}
+
+.article-opinion-type {
+    font-size: 14px;
+    font-weight: 700;
 }
 
 /*Mobiles*/

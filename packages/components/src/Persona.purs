@@ -8,41 +8,30 @@ import Control.MonadPlus (guard)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..), hush)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.Function.Uncurried (Fn4, runFn4)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
+import Data.String.Read (class Read)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
-import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Exception (Error)
 import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
+import KSF.Api (UUID, Token(..))
+import KSF.Api.Package (Package, Campaign)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
 
-foreign import data Api :: Type
+import OpenApiClient (Api, callApi)
+
 foreign import loginApi :: Api
 foreign import usersApi :: Api
-
-foreign import callApi_
-  :: forall req res opts
-   . Fn4
-       Api
-       String
-       req
-       { | opts }
-       (EffectFnAff res)
-
-callApi :: forall res opts. Api -> String -> Array Foreign -> { | opts } -> Aff res
-callApi api methodName req opts =
-  fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
 login :: LoginData -> Aff LoginResponse
 login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
@@ -83,6 +72,12 @@ register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
 
+type NewUserWithEmail = { emailAddress :: Email }
+
+registerWithEmail :: NewUserWithEmail -> Aff LoginResponse
+registerWithEmail newEmailUser =
+  callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
+
 pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> Token -> Aff Subscription
 pauseSubscription uuid subsno startDate endDate token = do
   let startDateISO = formatDate startDate
@@ -119,6 +114,25 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
   where
     authorization = oauthToken token
 
+createDeliveryReclamation
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DeliveryReclamationClaim
+  -> Token
+  -> Aff DeliveryReclamation
+createDeliveryReclamation uuid subsno date claim token = do
+  let dateISO = formatDate date
+  let claim'  = show claim
+  callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { publicationDate: dateISO, claim: claim' }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
 formatDate :: DateTime -> String
 formatDate = format formatter
   where
@@ -130,11 +144,6 @@ formatDate = format formatter
       , dash
       , DayOfMonthTwoDigits
       ]
-
-newtype Token = Token String
-derive newtype instance showToken :: Show Token
-derive newtype instance readforeignToken :: ReadForeign Token
-derive newtype instance writeforeignToken :: WriteForeign Token
 
 newtype Email = Email String
 derive newtype instance showEmail :: Show Email
@@ -311,11 +320,6 @@ derive newtype instance showMergeToken :: Show MergeToken
 derive newtype instance readMergeToken :: ReadForeign MergeToken
 derive newtype instance writeMergeToken :: WriteForeign MergeToken
 
-newtype UUID = UUID String
-derive newtype instance showUUID :: Show UUID
-derive newtype instance readforeignUUID :: ReadForeign UUID
-derive newtype instance writeforeignUUID :: WriteForeign UUID
-
 type User =
   { uuid :: UUID
   , email :: String
@@ -373,7 +377,7 @@ type Subscription =
   , kind                  :: String
   , state                 :: SubscriptionState
   , pricegroup            :: String
-  , package               :: ModelPackage
+  , package               :: Package
   , dates                 :: SubscriptionDates
   , campaign              :: Campaign
   , paused                :: Nullable (Array PausedSubscription)
@@ -400,59 +404,6 @@ instance ordSubscriptionState :: Ord SubscriptionState where
         then Right st
         else Left st
 
-type ModelPackage =
-  { id          :: String
-  , name        :: String
-  , paper       :: { code :: String, name :: String }
-  , products    :: Array Product
-  , offers      :: Array PackageOffer
-  , campaigns   :: Array Campaign
-  , nextDelivery :: Nullable JSDate
-  , description  :: Nullable PackageDescription
-  , digitalOnly :: Boolean
-  }
-
-type PackageDescription =
-  { brand     :: String
-  , brandLong :: String
-  , descShort :: String
-  , descLong  :: String
-  , url       :: String
-  , days      :: String
-  , weekdays  :: String
-  , frequency :: { amount :: Int, unit :: String }
-  , includes  :: Array String
-  }
-
-type PackageOffer =
-  { months       :: Int
-  , totalPrice   :: Int
-  , monthlyPrice :: Int
-  }
-
-type Product =
-  { id :: String
-  , name :: String
-  , active :: ActiveDays
-  , nextDelivery :: Nullable JSDate
-  }
-
-type ActiveDays =
-  { mon :: Boolean
-  , tue :: Boolean
-  , wed :: Boolean
-  , thu :: Boolean
-  , fri :: Boolean
-  , sat :: Boolean
-  , sun :: Boolean
-  }
-
-type Campaign =
-  { no   :: Int
-  , id   :: String
-  , name :: String
-  }
-
 type SubscriptionDates =
   { lenMonths           :: Nullable Int
   , lenDays             :: Nullable Int
@@ -469,3 +420,51 @@ type GdprConsent =
   , consentKey :: String
   , value      :: Boolean
   }
+
+type DeliveryReclamation =
+  { subscriptionNumber :: Int
+  , customerNumber     :: Int
+  , number             :: Int
+  , date               :: JSDate
+  , publicationDate    :: JSDate
+  , claim              :: DeliveryReclamationClaim
+  , status             :: DeliveryReclamationStatus
+  }
+
+data DeliveryReclamationClaim
+  = Extension
+  | NewDelivery
+
+instance readDeliveryReclamationClaim :: Read DeliveryReclamationClaim where
+  read c =
+    case c of
+      "Extension"   -> pure Extension
+      "NewDelivery" -> pure NewDelivery
+      _             -> Nothing
+derive instance genericDeliveryReclamationClaim :: Generic DeliveryReclamationClaim _
+instance readForeignDeliveryReclamationClaim :: ReadForeign DeliveryReclamationClaim where
+  readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
+instance writeForeignDeliveryReclamationClaim :: WriteForeign DeliveryReclamationClaim where
+  writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
+instance showDeliveryReclamationClaim :: Show DeliveryReclamationClaim where
+  show = genericShow
+
+data DeliveryReclamationStatus
+  = Created
+  | Processing
+  | Processed
+
+instance readDeliveryReclamationStatus :: Read DeliveryReclamationStatus where
+  read c =
+    case c of
+      "Created"    -> pure Created
+      "Processing" -> pure Processing
+      "Processed"  -> pure Processed
+      _            -> Nothing
+derive instance genericDeliveryReclamationStatus :: Generic DeliveryReclamationStatus _
+instance readForeignDeliveryReclamationStatus :: ReadForeign DeliveryReclamationStatus where
+  readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
+instance writeForeignDeliveryReclamationStatus :: WriteForeign DeliveryReclamationStatus where
+  writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
+instance showDeliveryReclamationStatus :: Show DeliveryReclamationStatus where
+  show = genericShow
