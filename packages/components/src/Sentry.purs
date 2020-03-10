@@ -13,8 +13,6 @@ import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
 import KSF.User as User
 
-newtype SentryIssueId = SentryIssueId String
-
 foreign import initSentry_       :: EffectFn1 String Sentry
 foreign import captureMessage_   :: EffectFn3 Sentry String String Unit
 foreign import captureException_ :: EffectFn2 Sentry Error Unit
