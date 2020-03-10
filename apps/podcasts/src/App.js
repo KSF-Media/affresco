@@ -8,7 +8,7 @@ class App extends React.Component {
     super(props);
     this.state = {
       loaded: false,
-      userIds: this.props.userIds || [],
+      userIds: process.env.PODCAST_IDS.split(",") || [],
       users: [],
       tracks: [],
       selectedUser: null
