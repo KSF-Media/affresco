@@ -159,9 +159,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             { wrapperState: self.state.wrapperProgress
             , readyView: pauseContainer [ pauseIcon, temporaryAddressChangeIcon, deliveryReclamationIcon ]
             , editingView: identity
-            , successView: \succ -> case succ of
-                                      Just msg  -> successContainer [ successMessage msg, DOM.div { className: "subscription--update-success check-icon" } ]
-                                      otherwise -> successContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
+            , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             , loadingView: identity
             }
