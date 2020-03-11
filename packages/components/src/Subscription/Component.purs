@@ -159,10 +159,16 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             { wrapperState: self.state.wrapperProgress
             , readyView: pauseContainer [ pauseIcon, temporaryAddressChangeIcon, deliveryReclamationIcon ]
             , editingView: identity
-            , successView: pauseContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
+            , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             , loadingView: identity
             }
+
+          successMessage msg =
+            DOM.div
+              { className: "success-text"
+              , children: [ DOM.text msg ]
+              }
 
           errorMessage msg =
             DOM.div
@@ -192,7 +198,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
                        self.setState _
                          { pendingAddressChanges = toMaybe newPendingChanges
-                         , wrapperProgress = AsyncWrapper.Success
+                         , wrapperProgress = AsyncWrapper.Success Nothing
                          }
 
         , onError: \(err :: User.InvalidDateInput) ->
@@ -215,7 +221,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           , onSuccess: \pausedSubscription ->
                          self.setState _
                            { pausedSubscriptions = toMaybe pausedSubscription.paused
-                           , wrapperProgress = AsyncWrapper.Success
+                           , wrapperProgress = AsyncWrapper.Success Nothing
                            }
 
           , onError: \err ->
@@ -241,7 +247,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
         , onSuccess: \_ ->
                        self.setState _
-                         { wrapperProgress = AsyncWrapper.Success
+                         { wrapperProgress = AsyncWrapper.Success (Just "Tack, åtgärden lyckades!")
                          }
         , onError: \_ ->
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
@@ -249,6 +255,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     pauseContainer children =
       DOM.div { className: "subscription--pause-container flex", children }
+
+    successContainer children =
+      DOM.div { className: "subscription--success-container flex", children }
 
     errorContainer children =
       DOM.div { className: "subscription--error-container flex", children }
