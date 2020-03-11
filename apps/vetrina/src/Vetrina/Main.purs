@@ -18,7 +18,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Exception (error)
+import Effect.Exception (error, message)
 import KSF.Api.Package (PackageName(..), PackageValidationError(..))
 import KSF.InputField.Component as InputField
 import KSF.JSError as Error
@@ -92,6 +92,7 @@ data OrderFailure
   = EmailInUse
   | FormFieldError (Array NewAccountInputField)
   | AuthenticationError
+  | ServerError
   | UnrecognizedError String
 
 component :: React.Component Props
@@ -228,11 +229,11 @@ render self =
     PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
 
 orderErrorMessage :: OrderFailure -> JSX
-orderErrorMessage failure = InputField.errorMessage $
+orderErrorMessage failure =
   case failure of
-    AuthenticationError -> "Kombinationen av e-postadress och lösenord finns inte"
-    EmailInUse -> "Email already exists, please log in"
-    _ -> "DUNNO WHAT HAPPEN"
+    AuthenticationError -> InputField.errorMessage "Kombinationen av e-postadress och lösenord finns inte"
+    EmailInUse -> DOM.text "Email already exists, please log in" -- TODO: Waiting for copy
+    _ -> DOM.text "Något gick fel vid inloggningen. Vänligen försök om en stund igen."
 
 newAccountForm :: Self -> Array JSX -> Array JSX
 newAccountForm self children =
@@ -283,7 +284,7 @@ setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { isLoading = loading }
 
 submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
-submitNewOrderForm self@{ state: { form } } = unV
+submitNewOrderForm self@{ state: { form, logger } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
@@ -307,7 +308,7 @@ submitNewOrderForm self@{ state: { form } } = unV
         Left err
           | UnrecognizedError e <- err ->
             liftEffect do
-              logger.error $ Error.orderError $ "Failed to place an order: " <> err
+              logger.error $ Error.orderError $ "Failed to place an order: " <> e
               self.setState _ { purchaseState = PurchaseFailed }
           | EmailInUse <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount, orderFailure = Just EmailInUse }
           | otherwise -> liftEffect $ self.setState _ { orderFailure = Just err }
@@ -320,14 +321,9 @@ createNewAccount self@{ state: { logger } } (Just emailString) = do
     Right user -> do
       liftEffect $ self.setState _ { user = Just user }
       pure $ Right user
-    Left User.RegistrationEmailInUse -> do
-      -- liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
---      throwError $ error "email in use"
-      pure $ Left EmailInUse
-    Left (User.InvalidFormFields errors) -> do
-      -- TODO: Handle invalid fields
-      pure $ Left "invalid form fields"
-    _ -> pure $ Left "Could not create a new account"
+    Left User.RegistrationEmailInUse -> pure $ Left EmailInUse
+    Left (User.InvalidFormFields errors) -> pure $ Left $ UnrecognizedError "invalid form fields"
+    _ -> pure $ Left $ UnrecognizedError "Could not create a new account"
 
 createNewAccount _ Nothing = pure $ Left $ UnrecognizedError ""
 
@@ -343,6 +339,10 @@ loginToExistingAccount self (Just username) (Just password) = do
       | User.LoginTokenInvalid <- err -> pure $ Left $ UnrecognizedError "login token invalid"
       -- TODO: Think about this
       | User.InvalidFormFields _ <- err -> pure $ Left $ UnrecognizedError "invalid form fields"
+      | User.SomethingWentWrong <- err -> pure $ Left $ ServerError
+      | User.UnexpectedError jsError <- err -> do
+        liftEffect $ self.state.logger.error $ Error.loginError $ message jsError
+        pure $ Left $ ServerError
       | otherwise -> pure $ Left $ UnrecognizedError ""
 
 loginToExistingAccount _ _ _ =
