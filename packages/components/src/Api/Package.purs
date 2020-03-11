@@ -5,6 +5,8 @@ import Prelude
 import Data.Array (find)
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
@@ -65,6 +67,10 @@ type Campaign =
 -- The packages we know how to render properly
 data PackageName = HblPremium
 
+derive instance genericPackageName :: Generic PackageName _
+instance showPackageName :: Show PackageName where
+  show = genericShow
+
 toPackageId :: PackageName -> String
 toPackageId HblPremium = "HBL WEBB"
 
@@ -72,15 +78,15 @@ findPackage :: PackageName -> Array Package -> Either PackageValidationError Pac
 findPackage packageName packages =
   case find (\p -> p.id == toPackageId packageName) packages of
     Just p  -> Right p
-    Nothing -> Left PackageNotFound
+    Nothing -> Left $ PackageNotFound packageName
 
 data PackageValidationError
-  = PackageOffersMissing
-  | PackageNotFound
+  = PackageOffersMissing PackageName
+  | PackageNotFound PackageName
 
-validatePackage :: Package -> Either PackageValidationError Package
-validatePackage p =
+validatePackage :: PackageName -> Package -> Either PackageValidationError Package
+validatePackage packageName p =
   -- See that there are offers found
   if Array.null p.offers
-  then Left PackageOffersMissing
+  then Left $ PackageOffersMissing packageName
   else Right p

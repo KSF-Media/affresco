@@ -26,6 +26,14 @@ let additions =
           , repo = "https://github.com/KSF-Media/purescript-react-basic-router.git"
           , version = "03b5ce8462f57d930929dc6d037b1093fece2128"
           }
+      , uuid =
+	      { dependencies =
+		    [ "effect"
+			, "maybe"
+			]
+	      , repo = "https://github.com/spicydonuts/purescript-uuid.git"
+		  , version = "572191b9f8053bc618c325289be9d6464865b12c"
+	      }
       , affresco-components =
           ./packages/components/spago.dhall as Location
       , affresco-user =
