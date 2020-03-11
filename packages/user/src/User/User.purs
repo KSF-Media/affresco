@@ -150,8 +150,7 @@ loginTraditional loginData = do
   case loginResponse of
     Right lr -> finalizeLogin lr
     Left err
-      | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err
-      -> do
+      | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
           Console.error errData.invalid_credentials.description
           pure $ Left LoginInvalidCredentials
       | Just serverError <- Persona.internalServerError err -> do
