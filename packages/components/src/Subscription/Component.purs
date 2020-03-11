@@ -160,8 +160,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             , readyView: pauseContainer [ pauseIcon, temporaryAddressChangeIcon, deliveryReclamationIcon ]
             , editingView: identity
             , successView: \succ -> case succ of
-                                      Just msg  -> pauseContainer [ successMessage msg, DOM.div { className: "subscription--update-success check-icon" } ]
-                                      otherwise -> pauseContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
+                                      Just msg  -> successContainer [ successMessage msg, DOM.div { className: "subscription--update-success check-icon" } ]
+                                      otherwise -> successContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             , loadingView: identity
             }
@@ -257,6 +257,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     pauseContainer children =
       DOM.div { className: "subscription--pause-container flex", children }
+
+    successContainer children =
+      DOM.div { className: "subscription--success-container flex", children }
 
     errorContainer children =
       DOM.div { className: "subscription--error-container flex", children }
