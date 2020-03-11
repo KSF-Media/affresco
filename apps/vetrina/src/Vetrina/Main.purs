@@ -8,6 +8,7 @@ import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (all, any, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Foldable (foldMap)
 import Data.Int (ceil)
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Nullable (toNullable)
@@ -49,6 +50,7 @@ type State =
   , isLoading     :: Maybe Spinner.Loading
   , products      :: Array Product
   , accountStatus :: AccountStatus
+  , orderFailure  :: Maybe OrderFailure
   }
 type Self = React.Self Props State
 
@@ -86,6 +88,7 @@ data AccountStatus
 data OrderFailure
   = EmailInUse
   | FormFieldError (Array NewAccountInputField)
+  | AuthenticationError
   | UnrecognizedError String
 
 component :: React.Component Props
@@ -107,6 +110,7 @@ app = make component
                   , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
                   , products: []
                   , accountStatus: NewAccount
+                  , orderFailure: Nothing
                   }
   , render
   , didMount
@@ -189,7 +193,8 @@ render self =
       DOM.div
         { className: "vetrina--new-account-container"
         , children: newAccountForm self
-            [ emailAddressInput self
+            [ foldMap orderErrorMessage self.state.orderFailure
+            , emailAddressInput self
             , case self.state.accountStatus of
                 NewAccount      -> mempty
                 ExistingAccount -> passwordInput self
@@ -203,6 +208,13 @@ render self =
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
     PurchaseDone -> PurchaseCompleted.completed { redirectArticleUrl: Nothing }
     PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
+
+orderErrorMessage :: OrderFailure -> JSX
+orderErrorMessage failure = InputField.errorMessage $
+  case failure of
+    AuthenticationError -> "Kombinationen av e-postadress och lösenord finns inte"
+    EmailInUse -> "Email already exists, please log in"
+    _ -> "DUNNO WHAT HAPPEN"
 
 newAccountForm :: Self -> Array JSX -> Array JSX
 newAccountForm self children =
@@ -259,7 +271,7 @@ submitNewOrderForm self@{ state: { form } } = unV
       eitherRes <- runExceptT do
         user <- ExceptT $ case self.state.accountStatus of
           NewAccount      -> createNewAccount self validForm.emailAddress
-          ExistingAccount -> loginToExistingAccount validForm.emailAddress validForm.existingPassword
+          ExistingAccount -> loginToExistingAccount self validForm.emailAddress validForm.existingPassword
         order      <- ExceptT $ createOrder user validForm.productSelection
         paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
         pure { paymentUrl, order, user }
@@ -268,16 +280,18 @@ submitNewOrderForm self@{ state: { form } } = unV
           liftEffect do
             self.setState _
               { purchaseState = CapturePayment paymentUrl
-              , newOrder = Just order
-              , user = Just user
+              , newOrder      = Just order
+              , user          = Just user
+              , orderFailure  = Nothing
               }
             startOrderPoller self order
-        Left err -> case err of
-          UnrecognizedError e ->
+        Left err
+          | UnrecognizedError e <- err ->
             liftEffect do
               Console.error e
               self.setState _ { purchaseState = PurchaseFailed }
-          EmailInUse -> liftEffect $ self.setState _ { accountStatus = ExistingAccount }
+          | EmailInUse <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount, orderFailure = Just EmailInUse }
+          | otherwise -> liftEffect $ self.setState _ { orderFailure = Just err }
   )
 
 createNewAccount :: Self -> Maybe String -> Aff (Either OrderFailure User)
@@ -308,7 +322,13 @@ loginToExistingAccount self (Just username) (Just password) = do
   case eitherUser of
     Right u  -> pure $ Right u
     Left err
-      | User.LoginInvalidCredentials <- err ->
+      | User.LoginInvalidCredentials <- err -> pure $ Left AuthenticationError
+      -- TODO: This is needed when we have magic login enabled
+      | User.LoginTokenInvalid <- err -> pure $ Left $ UnrecognizedError "login token invalid"
+      -- TODO: Think about this
+      | User.InvalidFormFields _ <- err -> pure $ Left $ UnrecognizedError "invalid form fields"
+      | otherwise -> pure $ Left $ UnrecognizedError ""
+
 loginToExistingAccount _ _ _ =
   pure $ Left $ FormFieldError [ EmailAddress, ExistingPassword ]
 
