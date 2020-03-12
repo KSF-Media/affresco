@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (all, any, snoc)
 import Data.Array as Array
-import Data.Either (Either(..))
+import Data.Either (Either(..), hush)
 import Data.Foldable (foldMap)
 import Data.Int (ceil)
 import Data.Maybe (Maybe(..), isJust, maybe)
@@ -131,6 +131,9 @@ didMount self = do
       -- When packages have been set, hide loading spinner
       (liftEffect $ self.setState \s -> s { isLoading = Nothing })
       do
+        -- Try to login with local storage information and set user to state
+        User.magicLogin $ hush >>> \maybeUser -> self.setState _ { user = maybeUser }
+
         packages <- User.getPackages
         let (Tuple invalidProducts validProducts) =
               map (Product.toProduct packages) productsToShow # partitionValidProducts
@@ -213,7 +216,7 @@ render self =
         { className: "vetrina--new-account-container"
         , children: newAccountForm self
             [ foldMap orderErrorMessage self.state.orderFailure
-            , emailAddressInput self
+            , maybe (emailAddressInput self) showLoggedInAccount self.state.user
             , case self.state.accountStatus of
                 NewAccount      -> mempty
                 ExistingAccount -> passwordInput self
@@ -266,6 +269,10 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
   , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress form.emailAddress self.state.serverErrors
   , value: form.emailAddress
   }
+
+-- TODO: Waiting for copy
+showLoggedInAccount :: User.User -> JSX
+showLoggedInAccount user = DOM.text $ "Logged in as " <> user.email
 
 passwordInput :: Self -> JSX
 passwordInput self = InputField.inputField
