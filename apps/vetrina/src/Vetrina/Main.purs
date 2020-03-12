@@ -126,9 +126,12 @@ didMount self = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing
   self.setState _ { logger = logger }
+  -- Before rendering the form, we need to:
+  -- 1. fetch packages from the server, so we can actually show things to purchase
+  -- 2. fetch the user if access token is found in the browser
   Aff.launchAff_ do
     Aff.finally
-      -- When packages have been set, hide loading spinner
+      -- When packages have been set (and user fetched), hide loading spinner
       (liftEffect $ self.setState \s -> s { isLoading = Nothing })
       do
         -- Try to login with local storage information and set user to state
