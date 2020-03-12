@@ -298,9 +298,12 @@ submitNewOrderForm self@{ state: { form, logger } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
       eitherRes <- runExceptT do
-        user <- ExceptT $ case self.state.accountStatus of
-          NewAccount      -> createNewAccount self validForm.emailAddress
-          ExistingAccount -> loginToExistingAccount self validForm.emailAddress validForm.existingPassword
+        -- If user is found in state, clearly they already have an accout and are logged in
+        user <- ExceptT $ case self.state.user of
+          Just u  -> pure $ Right u
+          Nothing -> case self.state.accountStatus of
+            NewAccount      -> createNewAccount self validForm.emailAddress
+            ExistingAccount -> loginToExistingAccount self validForm.emailAddress validForm.existingPassword
         ExceptT $ Right unit <$ (liftEffect $ logger.setUser $ Just user)
         order      <- ExceptT $ createOrder user validForm.productSelection
         paymentUrl <- ExceptT $ payOrder order self.state.form.paymentMethod
@@ -398,7 +401,10 @@ formValidations self@{ state: { form } } =
   , productSelection: form.productSelection
   , paymentMethod: form.paymentMethod
   }
-  <$> Form.validateField EmailAddress form.emailAddress []
+  <$> (if isNothing self.state.user
+       then Form.validateField EmailAddress form.emailAddress []
+       -- If User is already set, we don't care about the email input
+       else pure form.emailAddress)
   <*> (case self.state.accountStatus of
             ExistingAccount -> Form.validateField ExistingPassword form.existingPassword []
             -- If NewAccount, we don't need to validate the password field
