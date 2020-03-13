@@ -16,6 +16,7 @@ type Product =
   , id          :: String
   , description :: String
   , price       :: Number
+  , packageName :: Package.PackageName
   }
 
 productRender :: Product -> JSX
@@ -62,6 +63,7 @@ toProduct packages packageName = do
       , id: validPackage.id
       , description: productDescription packageName
       , price: (toNumber monthlyPrice) / 100.0
+      , packageName
       }
     _ -> Left $ PackageOffersMissing packageName
 
