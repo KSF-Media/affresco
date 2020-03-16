@@ -8,7 +8,7 @@
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "basscss": "^8.1.0",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#fd8052cccd8b5dc97ae5cfaf9fb0a649da40e897",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#aa81a87b3119c11a326ae43b5eea764ef09147c5",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
   },
   "scripts": {

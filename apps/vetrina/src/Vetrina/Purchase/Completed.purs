@@ -4,10 +4,12 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import KSF.InputField.Component as InputField
+import KSF.Sentry as Sentry
+import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isFormInvalid, validateField, validateForm, validatePassword)
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -15,10 +17,14 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import Web.HTML (window) as HTML
-import Web.HTML.Location (setHref)  as HTML
+import Web.HTML.Location (setHref) as HTML
 import Web.HTML.Window (location) as HTML
 
-type Props = { redirectArticleUrl :: Maybe String }
+type Props =
+  { redirectArticleUrl :: Maybe String
+  , user :: Maybe User.User
+  , logger :: Sentry.Logger
+  }
 
 type State = { passwordForm :: PasswordForm }
 
@@ -38,6 +44,11 @@ data PasswordFormField = NewPassword
 instance validatableFieldPasswordFormField :: ValidatableField PasswordFormField where
   validateField _ value _ = validatePassword NewPassword value
 
+didMount :: Self -> Effect Unit
+didMount { props } = do
+  when (isNothing props.user) do
+    props.logger.log "Did not get user to Purchase.Completed phase" Sentry.Warning
+
 render :: Self -> JSX
 render self =
   DOM.div
@@ -45,7 +56,9 @@ render self =
     , children:
         [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
         , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
-        , setPassword self
+        , case self.props.user of
+             Just user | not user.hasCompletedRegistration -> setPassword self
+             _ -> mempty
         ]
     }
 

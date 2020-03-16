@@ -330,6 +330,7 @@ type User =
   , subs :: Array Subscription
   , consent :: Array GdprConsent
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
+  , hasCompletedRegistration :: Boolean
   }
 
 type NewUser =
