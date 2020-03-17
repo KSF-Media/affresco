@@ -198,7 +198,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
                        self.setState _
                          { pendingAddressChanges = toMaybe newPendingChanges
-                         , wrapperProgress = AsyncWrapper.Success Nothing
+                         , wrapperProgress = AsyncWrapper.Success successText
                          }
 
         , onError: \(err :: User.InvalidDateInput) ->
@@ -221,7 +221,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           , onSuccess: \pausedSubscription ->
                          self.setState _
                            { pausedSubscriptions = toMaybe pausedSubscription.paused
-                           , wrapperProgress = AsyncWrapper.Success Nothing
+                           , wrapperProgress = AsyncWrapper.Success successText
                            }
 
           , onError: \err ->
@@ -247,7 +247,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
         , onSuccess: \_ ->
                        self.setState _
-                         { wrapperProgress = AsyncWrapper.Success (Just "Tack, åtgärden lyckades!")
+                         { wrapperProgress = AsyncWrapper.Success successText
                          }
         , onError: \_ ->
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
@@ -258,6 +258,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     successContainer children =
       DOM.div { className: "subscription--success-container flex", children }
+
+    successText = Just "Tack, åtgärden lyckades!"
 
     errorContainer children =
       DOM.div { className: "subscription--error-container flex", children }
