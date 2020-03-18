@@ -6,7 +6,12 @@ import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), isNothing)
 import Effect (Effect)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Exception (Error)
+import Effect.Exception as Error
+import KSF.Api (Password(..))
 import KSF.InputField.Component as InputField
 import KSF.Sentry as Sentry
 import KSF.User as User
@@ -21,9 +26,10 @@ import Web.HTML.Location (setHref) as HTML
 import Web.HTML.Window (location) as HTML
 
 type Props =
-  { redirectArticleUrl :: Maybe String
-  , user :: Maybe User.User
-  , logger :: Sentry.Logger
+  { onSuccess :: Effect Unit
+  , onError   :: Error -> Effect Unit
+  , user      :: Maybe User.User
+  , logger    :: Sentry.Logger
   }
 
 type State = { passwordForm :: PasswordForm }
@@ -99,13 +105,14 @@ submitNewPassword self@{ state: { passwordForm } } form =
     \eitherValidForm -> case eitherValidForm of
       Left errs -> self.setState _ { passwordForm { newPassword = passwordForm.newPassword <|> Just "" } }
       Right validForm
-        | Just newPw <- validForm.newPassword -> do
-          -- TODO: call Persona and login
-          case self.props.redirectArticleUrl of
-            -- Redirect customer back to the article
-            Just url -> HTML.setHref url =<< HTML.location =<< HTML.window
-            Nothing -> pure unit
-          pure unit
+        | Just user <- self.props.user
+        , Just password <- validForm.newPassword -> Aff.launchAff_ do
+          -- TODO: Add confirm password field
+          eitherError <- User.updatePassword user.uuid (Password password) (Password password)
+          liftEffect $ case eitherError of
+            -- TODO: Think about errors
+            Left err -> self.props.onError $ Error.error $ "nope"
+            Right _  -> self.props.onSuccess
         | otherwise ->
           Console.error "New password seemed OK, but is not defined"
 
