@@ -23,12 +23,11 @@ import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
-import KSF.Api (UUID, Token(..))
+import KSF.Api (Password(..), Token(..), UUID)
 import KSF.Api.Package (Package, Campaign)
+import OpenApiClient (Api, callApi)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
 import Simple.JSON as JSON
-
-import OpenApiClient (Api, callApi)
 
 foreign import loginApi :: Api
 foreign import usersApi :: Api
@@ -59,6 +58,11 @@ updateUser uuid update token =
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
+  where
+    authorization = oauthToken token
+
+updatePassword :: UUID -> Password -> Password -> Token -> Aff Unit
+updatePassword uuid password confirmPassword token = callApi usersApi "usersUuidPasswordPut" [ unsafeToForeign uuid, unsafeToForeign { password, confirmPassword } ] { authorization }
   where
     authorization = oauthToken token
 
