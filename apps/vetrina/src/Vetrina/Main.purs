@@ -236,7 +236,7 @@ render self =
     (CapturePayment url) -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
-    PurchaseDone -> PurchaseCompleted.completed { onError: pure unit, onClose: pure unit, user: self.state.user, logger: self.state.logger }
+    PurchaseDone -> PurchaseCompleted.completed { onError: \_ -> pure unit, onSuccess: pure unit, user: self.state.user, logger: self.state.logger }
     PurchaseSubscriptionExists ->
       DOM.div_
         -- TODO: Waiting for copy
