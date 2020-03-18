@@ -497,6 +497,16 @@ body {
     font-weight: 700;
 }
 
+.advertorial-top-box-left {
+    background-color: #c4e4e6;
+    color: #000;
+    text-transform: uppercase;
+    font-weight: 900;
+    font-size: 0.95em;
+    padding: 10px 20px 9px;
+    margin-bottom: 10px;
+}
+
 /*Mobiles*/
 @media (min-width: 320px) and (max-width: 480px) {
     .mobileView {
