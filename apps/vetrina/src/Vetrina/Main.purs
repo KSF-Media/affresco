@@ -239,7 +239,7 @@ render self =
     PurchaseDone ->
       PurchaseCompleted.completed
         { onError: \_ -> pure unit
-        , onComplete: pure unit
+        , onComplete: self.props.onClose
         , user: self.state.user
         , logger: self.state.logger
         }
@@ -300,6 +300,7 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
 showLoggedInAccount :: User.User -> JSX
 showLoggedInAccount user = DOM.text $ "Logged in as " <> user.email
 
+-- TODO: Show forgot password link
 passwordInput :: Self -> JSX
 passwordInput self = InputField.inputField
   { type_: InputField.Password
