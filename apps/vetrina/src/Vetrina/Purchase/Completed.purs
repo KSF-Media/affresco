@@ -14,7 +14,7 @@ import KSF.Api (Password(..))
 import KSF.InputField.Component as InputField
 import KSF.Sentry as Sentry
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isFormInvalid, validateField, validateForm, validatePassword)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isFormInvalid, validateField, validateForm, validatePassword, validatePasswordComparison)
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -23,7 +23,7 @@ import React.Basic.Events (handler, handler_)
 
 type Props =
   { onComplete :: Effect Unit
-  , onError    :: Error -> Effect Unit
+  , onError    :: User.UserError -> Effect Unit
   , user       :: Maybe User.User
   , logger     :: Sentry.Logger
   }
@@ -37,14 +37,23 @@ component = React.createComponent "PurchaseCompleted"
 
 completed :: Props -> JSX
 completed = make component
-  { initialState: { passwordForm: { newPassword: Nothing }, user: Nothing }
+  { initialState: { passwordForm: { newPassword: Nothing, confirmPassword: Nothing }, user: Nothing }
   , render
   }
 
-type PasswordForm = { newPassword :: Maybe String }
-data PasswordFormField = NewPassword
+type PasswordForm =
+  { newPassword     :: Maybe String
+  , confirmPassword :: Maybe String
+  }
+
+data PasswordFormField
+  = NewPassword
+  | ConfirmPassword (Maybe String)
+
 instance validatableFieldPasswordFormField :: ValidatableField PasswordFormField where
-  validateField _ value _ = validatePassword NewPassword value
+  validateField field value _ = case field of
+    NewPassword -> validatePassword NewPassword value
+    confirmPw@(ConfirmPassword originalPassword) -> validatePasswordComparison NewPassword confirmPw originalPassword value
 
 didMount :: Self -> Effect Unit
 didMount { setState, props } = do
@@ -59,12 +68,13 @@ render self =
     , children:
         [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
         , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
-        , case self.props.user of
-             Just user ->
-               if not user.hasCompletedRegistration
-               then setPassword self
-               else completeButton self
-             _ -> mempty -- TODO: What do here?
+        -- , case self.props.user of
+        --      Just user ->
+        --        if not user.hasCompletedRegistration
+        --        then setPassword self
+        --        else completeButton self
+        --      _ -> mempty -- TODO: What do here?
+        , setPassword self
         ]
     }
 
@@ -97,6 +107,15 @@ setPasswordForm self@{ state: { passwordForm } } =
             , value: passwordForm.newPassword
             , validationError: inputFieldErrorMessage $ validateField NewPassword passwordForm.newPassword []
             }
+        , InputField.inputField
+            { placeholder: "Bekräfta lösenord"
+            , type_: InputField.Password
+            , label: "Bekräfta lösenord"
+            , name: "confirmPassword"
+            , onChange: \val -> self.setState _ { passwordForm { confirmPassword = val } }
+            , value: passwordForm.confirmPassword
+            , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword passwordForm.newPassword) passwordForm.confirmPassword []
+            }
         , DOM.input
             { type: "submit"
             , className: "vetrina-purchase-completed--submit-password"
@@ -113,16 +132,20 @@ submitNewPassword self@{ state: { passwordForm } } form =
       Left errs -> self.setState _ { passwordForm { newPassword = passwordForm.newPassword <|> Just "" } }
       Right validForm
         | Just user <- self.props.user
-        , Just password <- validForm.newPassword -> Aff.launchAff_ do
-          -- TODO: Add confirm password field
+        , Just password <- validForm.newPassword
+        , Just confirmPasword <- validForm.confirmPassword
+        -> Aff.launchAff_ do
           eitherUser <- User.updatePassword user.uuid (Password password) (Password password)
           liftEffect $ case eitherUser of
-            -- TODO: Think about errors
-            Left err -> self.props.onError $ Error.error $ "nope"
+            Left err -> self.props.onError err
             Right u -> self.setState _ { user = Just u }
         | otherwise ->
           self.props.logger.log "Purchase.Completed: Tried to submit invalid password form" Sentry.Warning
 
 formValidations :: Self -> ValidatedForm PasswordFormField PasswordForm
 formValidations self@{ state: { passwordForm } } =
-  { newPassword: _ } <$> validateField NewPassword passwordForm.newPassword []
+  { newPassword: _
+  , confirmPassword: _
+  }
+  <$> validateField NewPassword passwordForm.newPassword []
+  <*> validateField (ConfirmPassword passwordForm.newPassword) passwordForm.confirmPassword []
