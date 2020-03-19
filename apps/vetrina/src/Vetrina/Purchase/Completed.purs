@@ -8,8 +8,6 @@ import Data.Maybe (Maybe(..), isNothing)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Exception (Error)
-import Effect.Exception as Error
 import KSF.Api (Password(..))
 import KSF.InputField.Component as InputField
 import KSF.Sentry as Sentry
