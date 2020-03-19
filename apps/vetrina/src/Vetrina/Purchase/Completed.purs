@@ -68,13 +68,12 @@ render self =
     , children:
         [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
         , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
-        -- , case self.props.user of
-        --      Just user ->
-        --        if not user.hasCompletedRegistration
-        --        then setPassword self
-        --        else completeButton self
-        --      _ -> mempty -- TODO: What do here?
-        , setPassword self
+        , case self.props.user of
+             Just user ->
+               if not user.hasCompletedRegistration
+               then setPassword self
+               else completeButton self
+             _ -> mempty -- TODO: What do here?
         ]
     }
 
