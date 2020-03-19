@@ -67,9 +67,8 @@ render self =
         [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
         , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
         , case self.props.user of
-             user
-               | Just u <- user, not u.hasCompletedRegistration -> setPassword self
-               | otherwise -> completeButton self
+             Just u | not u.hasCompletedRegistration -> setPassword self
+             _ -> completeButton self
         ]
     }
 
