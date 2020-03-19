@@ -8,7 +8,6 @@ import Data.Maybe (Maybe(..), isNothing)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Exception (Error)
 import Effect.Exception as Error
 import KSF.Api (Password(..))
@@ -20,19 +19,16 @@ import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler)
-import Web.HTML (window) as HTML
-import Web.HTML.Location (setHref) as HTML
-import Web.HTML.Window (location) as HTML
+import React.Basic.Events (handler, handler_)
 
 type Props =
-  { onSuccess :: Effect Unit
-  , onError   :: Error -> Effect Unit
-  , user      :: Maybe User.User
-  , logger    :: Sentry.Logger
+  { onComplete :: Effect Unit
+  , onError    :: Error -> Effect Unit
+  , user       :: Maybe User.User
+  , logger     :: Sentry.Logger
   }
 
-type State = { passwordForm :: PasswordForm }
+type State = { passwordForm :: PasswordForm, user :: Maybe User.User }
 
 type Self = React.Self Props State
 
@@ -41,7 +37,7 @@ component = React.createComponent "PurchaseCompleted"
 
 completed :: Props -> JSX
 completed = make component
-  { initialState: { passwordForm: { newPassword: Nothing } }
+  { initialState: { passwordForm: { newPassword: Nothing }, user: Nothing }
   , render
   }
 
@@ -51,7 +47,8 @@ instance validatableFieldPasswordFormField :: ValidatableField PasswordFormField
   validateField _ value _ = validatePassword NewPassword value
 
 didMount :: Self -> Effect Unit
-didMount { props } = do
+didMount { setState, props } = do
+  setState _ { user = props.user }
   when (isNothing props.user) do
     props.logger.log "Did not get user to Purchase.Completed phase" Sentry.Warning
 
@@ -63,9 +60,19 @@ render self =
         [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
         , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
         , case self.props.user of
-             Just user | not user.hasCompletedRegistration -> setPassword self
-             _ -> mempty
+             Just user ->
+               if not user.hasCompletedRegistration
+               then setPassword self
+               else completeButton self
+             _ -> mempty -- TODO: What do here?
         ]
+    }
+
+completeButton :: Self -> JSX
+completeButton self =
+  DOM.button
+    { children: [ DOM.text "OK" ]
+    , onClick: handler_ $ self.props.onComplete
     }
 
 setPassword :: Self -> JSX
@@ -108,13 +115,13 @@ submitNewPassword self@{ state: { passwordForm } } form =
         | Just user <- self.props.user
         , Just password <- validForm.newPassword -> Aff.launchAff_ do
           -- TODO: Add confirm password field
-          eitherError <- User.updatePassword user.uuid (Password password) (Password password)
-          liftEffect $ case eitherError of
+          eitherUser <- User.updatePassword user.uuid (Password password) (Password password)
+          liftEffect $ case eitherUser of
             -- TODO: Think about errors
             Left err -> self.props.onError $ Error.error $ "nope"
-            Right _  -> self.props.onSuccess
+            Right u -> self.setState _ { user = Just u }
         | otherwise ->
-          Console.error "New password seemed OK, but is not defined"
+          self.props.logger.log "Purchase.Completed: Tried to submit invalid password form" Sentry.Warning
 
 formValidations :: Self -> ValidatedForm PasswordFormField PasswordForm
 formValidations self@{ state: { passwordForm } } =

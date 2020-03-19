@@ -145,12 +145,12 @@ updateUser uuid update = do
     Right user -> pure $ Right user
     Left err   -> pure $ Left $ UnexpectedError err
 
-updatePassword :: Api.UUID -> Api.Password -> Api.Password -> Aff (Either UserError Unit)
+updatePassword :: Api.UUID -> Api.Password -> Api.Password -> Aff (Either UserError Persona.User)
 updatePassword uuid password confirmPassword = do
-  res <- try $ Persona.updatePassword uuid password confirmPassword <<< _.token =<< requireToken
-  case res of
-    Left err -> pure $ Left $ UnexpectedError err
-    _ -> pure $ Right unit
+  eitherUser <- try $ Persona.updatePassword uuid password confirmPassword <<< _.token =<< requireToken
+  case eitherUser of
+    Left err   -> pure $ Left $ UnexpectedError err
+    Right user -> pure $ Right user
 
 loginTraditional :: Persona.LoginData -> Aff (Either UserError Persona.User)
 loginTraditional loginData = do

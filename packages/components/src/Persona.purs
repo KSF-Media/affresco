@@ -61,7 +61,7 @@ updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut"
   where
     authorization = oauthToken token
 
-updatePassword :: UUID -> Password -> Password -> Token -> Aff Unit
+updatePassword :: UUID -> Password -> Password -> Token -> Aff User
 updatePassword uuid password confirmPassword token = callApi usersApi "usersUuidPasswordPut" [ unsafeToForeign uuid, unsafeToForeign { password, confirmPassword } ] { authorization }
   where
     authorization = oauthToken token
