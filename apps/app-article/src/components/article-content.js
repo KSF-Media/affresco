@@ -21,6 +21,10 @@ class Content extends Component {
                 return this.renderFactBox(block, key);
             } else if (blockType === 'quote') {
                 return this.renderQuotes(block, key);
+            } else if (blockType === 'question') {
+                return this.renderQuestion(block, key);
+            } else if (blockType === 'footnote') {
+                return this.renderFootnote(block, key);
             }
         } else {
             console.log('couldn\'t render ' + {blockType});
@@ -104,6 +108,18 @@ class Content extends Component {
         document.getElementById('expandFactBox-' + key).style.display = "none";
         document.getElementById('expandOpacity').style.display = "none";
         document.getElementById('expandOpacity2').style.display = "none";
+    }
+
+    renderQuestion(block, key) {
+        return (
+            <h4 className={"headline headline-question"} key={key}><i>{block.question}</i></h4>
+        );
+    }
+
+    renderFootnote(block, key) {
+        return (
+            <div className={"html text-footnote"} key={key}><i>{block.footnote}</i></div>
+        );
     }
 
     render() {
