@@ -16,6 +16,11 @@ derive newtype instance writeforeignToken :: WriteForeign Token
 
 newtype Password = Password String
 
+data InvalidateCache = InvalidateCache
+
+invalidateCacheHeader :: InvalidateCache -> String
+invalidateCacheHeader _ = "max-age=0"
+
 oauthToken :: Token -> String
 oauthToken (Token token) = "OAuth " <> token
 

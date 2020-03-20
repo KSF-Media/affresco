@@ -50,6 +50,7 @@ import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
+import KSF.Api (InvalidateCache)
 import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Package (Package)
 import KSF.JanrainSSO as JanrainSSO
@@ -102,7 +103,7 @@ createUser newUser = do
       | otherwise -> do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
-    Right user -> finalizeLogin user
+    Right user -> finalizeLogin Nothing user
 
 createUserWithEmail :: Persona.Email -> Aff (Either UserError Persona.User)
 createUserWithEmail email = do
@@ -118,13 +119,13 @@ createUserWithEmail email = do
       | otherwise -> do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
-    Right user -> finalizeLogin user
+    Right user -> finalizeLogin Nothing user
 
 
-getUser :: Api.UUID -> Api.Token -> Aff Persona.User
-getUser uuid token = do
+getUser :: Maybe InvalidateCache -> Api.UUID -> Api.Token -> Aff Persona.User
+getUser maybeInvalidateCache uuid token = do
   userResponse <- try do
-    Persona.getUser uuid token
+    Persona.getUser maybeInvalidateCache uuid token
   case userResponse of
     Left err
       | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
@@ -156,7 +157,7 @@ loginTraditional :: Persona.LoginData -> Aff (Either UserError Persona.User)
 loginTraditional loginData = do
   loginResponse <- try $ Persona.login loginData
   case loginResponse of
-    Right lr -> finalizeLogin lr
+    Right lr -> finalizeLogin Nothing lr
     Left err
       | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
           Console.error errData.invalid_credentials.description
@@ -169,17 +170,17 @@ loginTraditional loginData = do
           pure $ Left $ UnexpectedError err
 
 -- | Tries to login with token in local storage or, if that fails, SSO.
-magicLogin :: (Either UserError Persona.User -> Effect Unit) -> Aff Unit
-magicLogin callback = do
+magicLogin :: Maybe InvalidateCache -> (Either UserError Persona.User -> Effect Unit) -> Aff Unit
+magicLogin maybeInvalidateCache callback = do
   loadedToken <- loadToken
   case loadedToken of
     Just token -> do
       Console.log "Successfully loaded the saved token from local storage"
-      user <- finalizeLogin token
+      user <- finalizeLogin maybeInvalidateCache token
       liftEffect $ callback user
     Nothing -> do
       Console.log "Couldn't load the saved token, giving SSO a try"
-      loginSso callback `catchError` case _ of
+      loginSso maybeInvalidateCache callback `catchError` case _ of
         err | Just serverError <- Persona.internalServerError err -> do
                 Console.error "Something went wrong with SSO login"
                 liftEffect $ callback $ Left SomethingWentWrong
@@ -190,19 +191,20 @@ magicLogin callback = do
                 throwError err
 
 someAuth
-  :: Maybe MergeInfo
+  :: Maybe InvalidateCache
+  -> Maybe MergeInfo
   -> Persona.Email
   -> Api.Token
   -> Persona.Provider
   -> Aff (Either UserError Persona.User)
-someAuth mergeInfo email token provider = do
+someAuth maybeInvalidateCache mergeInfo email token provider = do
   loginResponse <- try $ Persona.loginSome
       { provider: show provider
       , someToken: token
       , mergeToken: toNullable $ map _.token mergeInfo
       }
   case loginResponse of
-    Right t -> finalizeLogin t
+    Right t -> finalizeLogin maybeInvalidateCache t
     Left err
       | Just (errData :: Persona.EmailAddressInUse) <- Persona.errorData err -> do
           Console.error errData.email_address_in_use.description
@@ -221,8 +223,8 @@ someAuth mergeInfo email token provider = do
            Console.error "An unexpected error occurred during SoMe login"
            pure $ Left $ UnexpectedError err
 
-loginSso :: (Either UserError Persona.User -> Effect Unit) -> Aff Unit
-loginSso callback = do
+loginSso :: Maybe InvalidateCache -> (Either UserError Persona.User -> Effect Unit) -> Aff Unit
+loginSso maybeInvalidateCache callback = do
   config <- liftEffect $ JanrainSSO.loadConfig
   case Nullable.toMaybe config of
     Nothing -> do
@@ -256,7 +258,7 @@ loginSso callback = do
                               Console.error "An unexpected error occurred during SSO login"
                               liftEffect $ callback $ Left $ UnexpectedError err
                               throwError err
-               user <- finalizeLogin loginResponse
+               user <- finalizeLogin maybeInvalidateCache loginResponse
                liftEffect $ callback user
             }
 
@@ -315,11 +317,11 @@ logoutJanrain = do
       liftEffect $ JanrainSSO.checkSession conf
       JanrainSSO.endSession conf
 
-finalizeLogin :: Persona.LoginResponse -> Aff (Either UserError Persona.User)
-finalizeLogin loginResponse = do
+finalizeLogin :: Maybe InvalidateCache -> Persona.LoginResponse -> Aff (Either UserError Persona.User)
+finalizeLogin maybeInvalidateCache loginResponse = do
   saveToken loginResponse
   userResponse <- try do
-    Persona.getUser loginResponse.uuid loginResponse.token
+    Persona.getUser maybeInvalidateCache loginResponse.uuid loginResponse.token
   case userResponse of
     Left err
       | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do

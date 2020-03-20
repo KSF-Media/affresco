@@ -168,7 +168,7 @@ login = make component
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
-  props.launchAff_ $ User.magicLogin \user -> do
+  props.launchAff_ $ User.magicLogin Nothing \user -> do
     case user of
       Left _ -> self.setState _ { errors { login = Just SomethingWentWrong } }
       Right _ -> pure unit
@@ -440,7 +440,7 @@ googleLogin self =
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = Just email }
 
-      user <- User.someAuth self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
@@ -506,7 +506,7 @@ facebookLogin self =
       -- setting the email in the state to eventually send it from the merge view form
       liftEffect $ self.setState _ { formEmail = Just email }
       let (FB.AccessToken fbAccessToken) = accessToken
-      user <- User.someAuth self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
