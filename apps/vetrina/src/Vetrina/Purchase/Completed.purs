@@ -128,9 +128,9 @@ submitNewPassword self@{ state: { passwordForm } } form =
       Right validForm
         | Just user <- self.props.user
         , Just password <- validForm.newPassword
-        , Just confirmPasword <- validForm.confirmPassword
+        , Just confirmPassword <- validForm.confirmPassword
         -> Aff.launchAff_ do
-          eitherUser <- User.updatePassword user.uuid (Password password) (Password password)
+          eitherUser <- User.updatePassword user.uuid (Password password) (Password confirmPassword)
           liftEffect $ case eitherUser of
             Left err -> self.props.onError err
             Right u  -> self.setState _ { user = Just u }
