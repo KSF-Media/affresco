@@ -37,6 +37,7 @@ completed :: Props -> JSX
 completed = make component
   { initialState: { passwordForm: { newPassword: Nothing, confirmPassword: Nothing }, user: Nothing }
   , render
+  , didMount
   }
 
 type PasswordForm =
@@ -66,7 +67,7 @@ render self =
     , children:
         [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
         , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
-        , case self.props.user of
+        , case self.state.user of
              Just u | not u.hasCompletedRegistration -> setPassword self
              _ -> completeButton self
         ]
@@ -132,7 +133,7 @@ submitNewPassword self@{ state: { passwordForm } } form =
           eitherUser <- User.updatePassword user.uuid (Password password) (Password password)
           liftEffect $ case eitherUser of
             Left err -> self.props.onError err
-            Right u -> self.setState _ { user = Just u }
+            Right u  -> self.setState _ { user = Just u }
         | otherwise ->
           self.props.logger.log "Purchase.Completed: Tried to submit invalid password form" Sentry.Warning
 
