@@ -551,3 +551,19 @@ body {
         display: block;
     }
 }
+
+.ksf-bright-star{
+    background-image: url('./assets/images/star-fill.png');
+    width: 23px;
+    height: 23px;
+    display: inline-block;
+    margin-bottom: -4px;
+}
+
+.ksf-dim-star{
+    background-image: url('./assets/images/star-empty.png');
+    width: 23px;
+    height: 23px;
+    display: inline-block;
+    margin-bottom: -4px;
+}

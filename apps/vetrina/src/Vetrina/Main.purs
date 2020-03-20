@@ -236,7 +236,17 @@ render self =
     (CapturePayment url) -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
-    PurchaseDone -> PurchaseCompleted.completed { redirectArticleUrl: Nothing }
+    PurchaseDone ->
+      PurchaseCompleted.completed
+        -- TODO: The onError callback is invoked if setting the new password fails.
+        -- We should think how to handle this. Probably we don't want to
+        -- show an ORDER FAILED message, but rather just inform the user that
+        -- something went wrong and please try to set the password again some other time.
+        { onError: \_ -> pure unit
+        , onComplete: self.props.onClose
+        , user: self.state.user
+        , logger: self.state.logger
+        }
     PurchaseSubscriptionExists ->
       DOM.div_
         -- TODO: Waiting for copy
@@ -294,6 +304,7 @@ emailAddressInput self@{ state: { form }} = InputField.inputField
 showLoggedInAccount :: User.User -> JSX
 showLoggedInAccount user = DOM.text $ "Logged in as " <> user.email
 
+-- TODO: Show forgot password link
 passwordInput :: Self -> JSX
 passwordInput self = InputField.inputField
   { type_: InputField.Password
