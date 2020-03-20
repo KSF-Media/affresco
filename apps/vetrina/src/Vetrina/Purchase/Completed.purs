@@ -6,7 +6,6 @@ import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), isJust, isNothing)
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api (Password(..))
