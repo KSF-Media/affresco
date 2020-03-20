@@ -512,6 +512,17 @@ class App extends Component {
                 <div className={"container-fluid article"}>
                     <React.Fragment>
                         <Tag tags={this.state.tags}/>
+                        {
+                            this.state.category === 'Advertorial' ? 
+                                <div>
+                                    <div className={"row"}>
+                                        <div class="advertorial-top-box">
+                                            <div class="advertorial-top-box-left">ANNONS</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            :   ''
+                        }
                         <Title title={this.state.title}/>
                         <Header showHighResolutionImg={this.showHighResolutionImage} mainImage={this.state.mainImage}
                                 caption={caption} appendBylineLabel={appendBylineLabel} byline={byline}/>
