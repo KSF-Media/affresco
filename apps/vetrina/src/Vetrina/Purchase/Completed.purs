@@ -4,13 +4,15 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isJust, isNothing)
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api (Password(..))
 import KSF.InputField.Component as InputField
 import KSF.Sentry as Sentry
+import KSF.Spinner as Spinner
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isFormInvalid, validateField, validateForm, validatePassword, validatePasswordComparison)
 import React.Basic (JSX, make)
@@ -26,7 +28,11 @@ type Props =
   , logger     :: Sentry.Logger
   }
 
-type State = { passwordForm :: PasswordForm, user :: Maybe User.User }
+type State =
+  { passwordForm :: PasswordForm
+  , user         :: Maybe User.User
+  , isLoading    :: Maybe Spinner.Loading
+  }
 
 type Self = React.Self Props State
 
@@ -35,7 +41,14 @@ component = React.createComponent "PurchaseCompleted"
 
 completed :: Props -> JSX
 completed = make component
-  { initialState: { passwordForm: { newPassword: Nothing, confirmPassword: Nothing }, user: Nothing }
+  { initialState:
+      { passwordForm:
+          { newPassword: Nothing
+          , confirmPassword: Nothing
+          }
+      , user: Nothing
+      , isLoading: Nothing
+      }
   , render
   , didMount
   }
@@ -62,16 +75,19 @@ didMount { setState, props } = do
 
 render :: Self -> JSX
 render self =
-  DOM.div
-    { className: "vetrina-purchase-completed--container"
-    , children:
-        [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
-        , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
-        , case self.state.user of
-             Just u | not u.hasCompletedRegistration -> setPassword self
-             _ -> completeButton self
-        ]
-    }
+  if isJust self.state.isLoading
+  then Spinner.loadingSpinner
+  else
+    DOM.div
+      { className: "vetrina-purchase-completed--container"
+      , children:
+          [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
+          , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
+          , case self.state.user of
+              Just u | not u.hasCompletedRegistration -> setPassword self
+              _ -> completeButton self
+          ]
+      }
 
 completeButton :: Self -> JSX
 completeButton self =
@@ -129,7 +145,7 @@ submitNewPassword self@{ state: { passwordForm } } form =
         | Just user <- self.props.user
         , Just password <- validForm.newPassword
         , Just confirmPassword <- validForm.confirmPassword
-        -> Aff.launchAff_ do
+        -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
           eitherUser <- User.updatePassword user.uuid (Password password) (Password confirmPassword)
           liftEffect $ case eitherUser of
             Left err -> self.props.onError err
