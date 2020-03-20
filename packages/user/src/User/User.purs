@@ -12,6 +12,7 @@ module KSF.User
   , createUser
   , createUserWithEmail
   , updateUser
+  , updatePassword
   , pauseSubscription
   , temporaryAddressChange
   , createDeliveryReclamation
@@ -49,7 +50,7 @@ import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
-import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken) as Api
+import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Package (Package)
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
@@ -143,6 +144,13 @@ updateUser uuid update = do
   case newUser of
     Right user -> pure $ Right user
     Left err   -> pure $ Left $ UnexpectedError err
+
+updatePassword :: Api.UUID -> Api.Password -> Api.Password -> Aff (Either UserError Persona.User)
+updatePassword uuid password confirmPassword = do
+  eitherUser <- try $ Persona.updatePassword uuid password confirmPassword <<< _.token =<< requireToken
+  case eitherUser of
+    Left err   -> pure $ Left $ UnexpectedError err
+    Right user -> pure $ Right user
 
 loginTraditional :: Persona.LoginData -> Aff (Either UserError Persona.User)
 loginTraditional loginData = do

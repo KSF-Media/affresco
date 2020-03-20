@@ -14,6 +14,8 @@ derive newtype instance showToken :: Show Token
 derive newtype instance readforeignToken :: ReadForeign Token
 derive newtype instance writeforeignToken :: WriteForeign Token
 
+newtype Password = Password String
+
 oauthToken :: Token -> String
 oauthToken (Token token) = "OAuth " <> token
 
