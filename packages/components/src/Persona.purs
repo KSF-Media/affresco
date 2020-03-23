@@ -12,7 +12,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
 import Data.String.Read (class Read)
@@ -23,7 +23,7 @@ import Foreign (Foreign, readNullOrUndefined, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
-import KSF.Api (Password(..), Token(..), UUID)
+import KSF.Api (InvalidateCache, Password, Token(..), UUID, invalidateCacheHeader)
 import KSF.Api.Package (Package, Campaign)
 import OpenApiClient (Api, callApi)
 import Simple.JSON (class ReadForeign, class WriteForeign, readImpl)
@@ -41,10 +41,16 @@ loginSome loginData = callApi loginApi "loginSomePost" [ unsafeToForeign loginDa
 loginSso :: LoginDataSso -> Aff LoginResponse
 loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
-getUser :: UUID -> Token -> Aff User
-getUser uuid token = callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] { authorization }
+getUser :: Maybe InvalidateCache -> UUID -> Token -> Aff User
+getUser invalidateCache uuid token =
+  callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
   where
+    headers =
+      { authorization
+      , cacheControl: fromMaybe mempty maybeCacheControl
+      }
     authorization = oauthToken token
+    maybeCacheControl = invalidateCacheHeader <$> invalidateCache
 
 updateUser :: UUID -> UserUpdate -> Token -> Aff User
 updateUser uuid update token =

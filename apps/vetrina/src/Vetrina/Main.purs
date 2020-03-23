@@ -19,6 +19,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error, message)
+import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (PackageName(..), PackageValidationError(..), Package)
 import KSF.Api.Package as Package
 import KSF.InputField.Component as InputField
@@ -140,8 +141,7 @@ didMount self = do
       (liftEffect $ self.setState \s -> s { isLoading = Nothing })
       do
         -- Try to login with local storage information and set user to state
-        User.magicLogin $ hush >>> \maybeUser -> self.setState _ { user = maybeUser }
-
+        User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser -> self.setState _ { user = maybeUser }
         packages <- User.getPackages
         let (Tuple invalidProducts validProducts) =
               map (Product.toProduct packages) productsToShow # partitionValidProducts
@@ -318,13 +318,10 @@ passwordInput self = InputField.inputField
       Form.validateField ExistingPassword self.state.form.existingPassword []
   }
 
-setLoading :: Maybe Spinner.Loading -> State -> State
-setLoading loading = _ { isLoading = loading }
-
 submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewOrderForm self@{ state: { form, logger } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
-  (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< setLoading) do
+  (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
       eitherRes <- runExceptT do
         -- If user is found in state, clearly they already have an accout and are logged in
         user <- ExceptT $ case self.state.user of

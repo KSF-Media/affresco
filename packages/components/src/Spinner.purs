@@ -54,3 +54,6 @@ loadingSpinner =
             }
         ]
     }
+
+setSpinner :: forall r. Maybe Loading -> { isLoading :: Maybe Loading | r } -> { isLoading :: Maybe Loading | r }
+setSpinner loading = _ { isLoading = loading }
