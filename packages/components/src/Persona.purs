@@ -12,7 +12,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
 import Data.String.Read (class Read)
@@ -47,7 +47,7 @@ getUser invalidateCache uuid token =
   where
     headers =
       { authorization
-      , cacheControl: fromMaybe mempty maybeCacheControl
+      , cacheControl: toNullable maybeCacheControl
       }
     authorization = oauthToken token
     maybeCacheControl = invalidateCacheHeader <$> invalidateCache
