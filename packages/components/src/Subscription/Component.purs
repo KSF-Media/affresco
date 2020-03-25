@@ -94,6 +94,7 @@ didMount self = do
     , pausedSubscriptions = toMaybe self.props.subscription.paused
     , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
     }
+  self.props.logger.setUser $ Just self.props.user
 
 render :: Self -> JSX
 render self@{ props: props@{ subscription: sub@{ package } } } =
