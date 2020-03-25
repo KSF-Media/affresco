@@ -21,6 +21,7 @@ module KSF.User
   , getOrder
   , getPackages
   , module Api
+  , module Subscription
   )
 where
 
@@ -53,11 +54,13 @@ import Foreign.Object (Object)
 import KSF.Api (InvalidateCache)
 import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Package (Package)
+import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
+import KSF.Error as KSF.Error
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryAddress, PendingAddressChange, Address, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates, DeliveryReclamation, DeliveryReclamationClaim) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -162,7 +165,7 @@ loginTraditional loginData = do
       | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
           Console.error errData.invalid_credentials.description
           pure $ Left LoginInvalidCredentials
-      | Just serverError <- Persona.internalServerError err -> do
+      | Just serverError <- KSF.Error.internalServerError err -> do
           Console.error "Something went wrong with traditional login"
           pure $ Left SomethingWentWrong
       | otherwise -> do
@@ -181,7 +184,7 @@ magicLogin maybeInvalidateCache callback = do
     Nothing -> do
       Console.log "Couldn't load the saved token, giving SSO a try"
       loginSso maybeInvalidateCache callback `catchError` case _ of
-        err | Just serverError <- Persona.internalServerError err -> do
+        err | Just serverError <- KSF.Error.internalServerError err -> do
                 Console.error "Something went wrong with SSO login"
                 liftEffect $ callback $ Left SomethingWentWrong
                 throwError err
@@ -216,7 +219,7 @@ someAuth maybeInvalidateCache mergeInfo email token provider = do
               , newProvider: provider
               , userEmail: email
               }
-      | Just serverError <- Persona.internalServerError err -> do
+      | Just serverError <- KSF.Error.internalServerError err -> do
            Console.error "Something went wrong with SoMe login"
            pure $ Left SomethingWentWrong
       | otherwise -> do
@@ -249,7 +252,7 @@ loginSso maybeInvalidateCache callback = do
              Aff.launchAff_ do
                loginResponse <-
                  Persona.loginSso { accessToken, uuid } `catchError` case _ of
-                      err | Just serverError <- Persona.internalServerError err -> do
+                      err | Just serverError <- KSF.Error.internalServerError err -> do
                               -- TODO: What is the desired action here?
                               Console.error "Something went wrong with SSO login"
                               liftEffect $ callback $ Left SomethingWentWrong
@@ -375,7 +378,7 @@ pauseSubscription
   -> Int
   -> DateTime
   -> DateTime
-  -> Aff (Either Persona.InvalidDateInput Persona.Subscription)
+  -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 pauseSubscription userUuid subsno startDate endDate = do
   pausedSub <- try $ Persona.pauseSubscription userUuid subsno startDate endDate <<< _.token =<< requireToken
   case pausedSub of
@@ -396,7 +399,7 @@ temporaryAddressChange
   -> String
   -> String
   -> Maybe String
-  -> Aff (Either Persona.InvalidDateInput Persona.Subscription)
+  -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode countryCode temporaryName = do
   addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode countryCode temporaryName <<< _.token =<< requireToken
   case addressChangedSub of
