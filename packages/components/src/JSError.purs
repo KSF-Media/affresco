@@ -10,6 +10,7 @@ foreign import packageError       :: String -> Error
 foreign import orderError         :: String -> Error
 foreign import loginError         :: String -> Error
 foreign import subscriptionError_ :: String -> Error
+foreign import userError          :: String -> Error
 
 data SubscriptionError
   = SubscriptionTemporaryAddressChange

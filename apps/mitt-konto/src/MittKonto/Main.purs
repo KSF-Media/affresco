@@ -197,6 +197,7 @@ userView { setState, state: { logger } } user = React.fragment
         profileComponentBlock = componentBlockContent $ Profile.profile
           { profile: user
           , onUpdate: setState <<< setLoggedInUser <<< Just
+          , logger
           }
 
     subscriptionsView =

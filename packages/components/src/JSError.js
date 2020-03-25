@@ -14,6 +14,10 @@ exports.subscriptionError_ = function(message) {
   return new SubscriptionError(message);
 };
 
+exports.userError = function(message) {
+  return new UserError(message);
+}
+
 class OrderError extends Error {
   constructor(message) {
     super(message);
@@ -39,5 +43,12 @@ class SubscriptionError extends Error {
   constructor(message) {
     super(message);
     this.name = 'SubscriptionError';
+  }
+}
+
+class UserError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'UserError';
   }
 }
