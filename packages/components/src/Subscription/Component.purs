@@ -13,7 +13,6 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
 import Effect (Effect)
-import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
