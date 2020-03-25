@@ -247,6 +247,8 @@ data InvalidDateInput
 derive instance genericInvaliDateInput :: Generic InvalidDateInput _
 instance readInvalidDateInput :: ReadForeign InvalidDateInput where
   readImpl a = genericDecodeEnum defaultGenericEnumOptions a <|> pure InvalidUnexpected
+instance showSubscriptionError :: Show InvalidDateInput where
+  show = genericShow
 
 type InvalidDates = PersonaError
   ( invalid_param ::

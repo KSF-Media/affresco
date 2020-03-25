@@ -176,7 +176,7 @@ footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: Self -> User -> JSX
-userView { setState } user = React.fragment
+userView { setState, state: { logger } } user = React.fragment
   [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -209,7 +209,7 @@ userView { setState } user = React.fragment
             subs -> do
               map subscriptionComponentBlockContent subs `snoc` cancelSubscription
               where
-                subscriptionView subscription = Subscription.subscription { subscription, user }
+                subscriptionView subscription = Subscription.subscription { subscription, user, logger }
                 subscriptionComponentBlockContent subscription
                   -- If the subscription has a canceled state, we want to add extra css to it.
                   | Subscription.isSubscriptionCanceled subscription =
