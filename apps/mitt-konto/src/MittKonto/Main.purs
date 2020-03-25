@@ -22,12 +22,13 @@ import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
+import KSF.JSError as Error
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.Subscription.Component (subscription) as Subscription
-import KSF.User (User)
+import KSF.User (User, UserError(..))
 import KSF.User (logout) as User
 import KSF.User.Login (login) as Login
 import React.Basic (JSX, make)
@@ -36,7 +37,7 @@ import React.Basic.DOM as DOM
 import Tracking as Tracking
 
 foreign import images :: { subscribe :: String }
-foreign import sentryDsn_ :: String
+foreign import sentryDsn_ :: Effect String
 
 type Props =
   {}
@@ -84,6 +85,9 @@ didMount :: Self -> Effect Unit
 didMount self = do
   tracker <- Tracking.newTracker
   Tracking.pushPageLoad tracker
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing
+  self.setState _ { logger = logger }
 
 render :: Self -> JSX
 render self@{ state, setState } =
@@ -330,7 +334,7 @@ userView { setState } user = React.fragment
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Self -> JSX
-loginView { state, setState } = React.fragment
+loginView self@{ state: state@{ logger }, setState } = React.fragment
   [ DOM.div_
       case state.showWelcome of
         false -> []
@@ -350,11 +354,11 @@ loginView { state, setState } = React.fragment
           , onUserFetch:
             case _ of
               Left err -> do
-                log "Fetching user failed"
-                setState $ setLoggedInUser Nothing
+                logger.error $ Error.loginError $ show err
+                self.setState $ setLoggedInUser Nothing
               Right user -> do
-                log "Fetching user succeeded"
                 setState $ setLoggedInUser $ Just user
+                logger.setUser $ Just user
           , launchAff_:
               Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)
