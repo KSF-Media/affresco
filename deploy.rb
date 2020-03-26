@@ -15,6 +15,9 @@ env_variables = {
   ],
   "duellen" => %w[
     PRODUCTION_DUELLEN_URL
+  ],
+  "sentry" => %w[
+    PRODUCTION_SENTRY_DSN
   ]
 }
 
@@ -23,7 +26,8 @@ apps = {
   "mitt-konto" => {
     "env_variables" =>
     env_variables["social_login"] +
-    env_variables["persona"]
+    env_variables["persona"] +
+    env_variables["sentry"]
   },
   "prenumerera" => {
     "env_variables" =>
