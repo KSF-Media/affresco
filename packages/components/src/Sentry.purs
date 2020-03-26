@@ -4,7 +4,8 @@ import Prelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -17,7 +18,7 @@ foreign import initSentry_       :: EffectFn1 String Sentry
 foreign import captureMessage_   :: EffectFn3 Sentry String String Unit
 foreign import captureException_ :: EffectFn2 Sentry Error Unit
 foreign import setTag_           :: EffectFn3 Sentry String UUID.UUID Unit
-foreign import setUser_          :: EffectFn2 Sentry String Unit
+foreign import setUser_          :: EffectFn2 Sentry (Nullable String) Unit
 foreign import data Sentry       :: Type
 
 data LogLevel
@@ -61,8 +62,7 @@ mkLogger sentryDsn maybeUser = do
     }
 
 setUser :: Sentry -> Maybe User.User -> Effect Unit
-setUser sentry (Just user) = runEffectFn2 setUser_ sentry user.cusno
-setUser _ Nothing = pure unit
+setUser sentry user = runEffectFn2 setUser_ sentry $ toNullable (_.cusno <$> user)
 
 log :: Sentry -> String -> LogLevel -> Effect Unit
 log sentry msg level = runEffectFn3 captureMessage_ sentry msg $ show level
