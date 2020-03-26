@@ -28,6 +28,8 @@ import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.InputField.Component as InputField
+import KSF.JSError as Error
+import KSF.Sentry as Sentry
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
@@ -42,6 +44,7 @@ type Self = React.Self Props State
 type Props =
   { profile :: User
   , onUpdate :: User -> Effect Unit
+  , logger :: Sentry.Logger
   }
 
 type State =
@@ -314,9 +317,9 @@ editAddress self =
             self.props.onUpdate u
             self.setState _ { editAddress = Success Nothing }
           Left err -> do
-            Console.error "Unexpected error when updating name."
-            liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
-            throwError $ error "Unexpected error when updating name."
+            liftEffect do
+              self.props.logger.error $ Error.userError $ show err
+              self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
     updateAddress _ = pure unit
 
 editName :: Self -> JSX
@@ -372,8 +375,9 @@ editName self =
               self.props.onUpdate u
               self.setState _ { editName = Success Nothing }
             Left err -> do
-              Console.error "Unexpected error when updating name."
-              liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
+              liftEffect do
+                self.props.logger.error $ Error.userError $ show err
+                self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
               throwError $ error "Unexpected error when updating name."
       updateName _ = pure unit
 

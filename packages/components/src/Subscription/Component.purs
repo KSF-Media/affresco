@@ -15,14 +15,15 @@ import Data.String (trim)
 import Effect (Effect)
 import Effect.Now as Now
 import KSF.AsyncWrapper as AsyncWrapper
+import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
+import KSF.JSError as Error
 import KSF.PauseSubscription.Component as PauseSubscription
+import KSF.Sentry as Sentry
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
-import KSF.DeliveryReclamation as DeliveryReclamation
-
-import KSF.User as User
 import KSF.User (User, InvalidDateInput(..))
+import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -33,6 +34,7 @@ type Self = React.Self Props State
 type Props =
   { subscription :: User.Subscription
   , user :: User
+  , logger :: Sentry.Logger
   }
 
 type State =
@@ -92,6 +94,7 @@ didMount self = do
     , pausedSubscriptions = toMaybe self.props.subscription.paused
     , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
     }
+  self.props.logger.setUser $ Just self.props.user
 
 render :: Self -> JSX
 render self@{ props: props@{ subscription: sub@{ package } } } =
@@ -201,7 +204,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                          , wrapperProgress = AsyncWrapper.Success successText
                          }
 
-        , onError: \(err :: User.InvalidDateInput) ->
+        , onError: \(err :: User.InvalidDateInput) -> do
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
                   startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
                   lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
@@ -209,7 +212,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidStartDate   -> startDateError
                     InvalidLength      -> lengthError
                     _                  -> unexpectedError
-              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+              self.props.logger.error
+                $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange $ show err
+              self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
 
     pauseSubscriptionComponent =
@@ -224,7 +229,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                            , wrapperProgress = AsyncWrapper.Success successText
                            }
 
-          , onError: \err ->
+          , onError: \err -> do
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
                   startDateError = "Din begäran om uppehåll i beställningen misslyckades. Uppehåll kan endast påbörjas fr.o.m. följande dag."
                   lengthError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehålls perioden är för kort eller lång. Uppehållsperioden bör vara mellan 7 dagar och 3 månader långt."
@@ -236,7 +241,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidOverlapping -> overlappingError
                     InvalidTooRecent   -> tooRecentError
                     InvalidUnexpected  -> unexpectedError
-              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+              self.props.logger.error $ Error.subscriptionError Error.SubscriptionPause $ show err
+              self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
     deliveryReclamationComponent =
@@ -249,7 +255,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                        self.setState _
                          { wrapperProgress = AsyncWrapper.Success successText
                          }
-        , onError: \_ ->
+        , onError: \err -> do
+            self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
         }
 
