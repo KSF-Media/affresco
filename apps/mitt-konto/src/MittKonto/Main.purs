@@ -355,7 +355,11 @@ loginView self@{ state: state@{ logger }, setState } = React.fragment
           , onUserFetch:
             case _ of
               Left err -> do
-                logger.error $ Error.loginError $ show err
+                case err of
+                  SomethingWentWrong -> logger.error $ Error.loginError $ show err
+                  UnexpectedError e  -> logger.error $ Error.loginError $ message e
+                  -- If any other UserError occurs, only send an Info event of it
+                  _ -> logger.log (show err) Sentry.Info
                 self.setState $ setLoggedInUser Nothing
               Right user -> do
                 setState $ setLoggedInUser $ Just user
