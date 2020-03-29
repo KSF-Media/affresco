@@ -17,21 +17,25 @@ class Track extends React.Component {
 
   render() {
     const t = this.props.t;
+    const trackID = t.guid._text.split('tracks/')[1];
     const cssClass = this.state.expanded ? 'pod-track expanded' : 'pod-track';
     const trackDetails = this.state.expanded
       ? (
         <div>  
           <div className="track-details-media">
-            <iframe src={"https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/"+ t.id +"&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&show_artwork=false"}></iframe>
+            <iframe 
+              src={`https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&show_artwork=false`}>
+            </iframe>
           </div>
           <div className="track-details-description">
-            {t.description}
+            {t.description._text}
           </div>
         </div>
       )
       : (
         <div></div>
       );
+
     return (
       <div
         className={cssClass}>
@@ -39,17 +43,19 @@ class Track extends React.Component {
           <div className="pod-track-artwork">
             <img
                 className="artwork"
-                src={t.artwork_url}
+                src={t['itunes:image']._attributes.href}
             />
           </div>  
           <div className="pod-track-description">
             <div>
-              <div className="pod-podname"
-                onClick={() => this.props.selectUser(t.user.id)}
+              <div
+                className="pod-podname"
+                onClick={() => this.props.selectPodcast(t.podcast)}
               >
-                {t.user.username}</div>
-              <h2  onClick={this.toggleTrack} className="title">{t.title}</h2>
-              <div className="created">{t.created_at}</div>
+                {t.podcast  }
+              </div>
+              <h2  onClick={this.toggleTrack} className="title">{t.title._text}</h2>
+              <div className="created">{t.pubDate._text}</div>
             </div>
             <div>
               <a onClick={this.toggleTrack}>
