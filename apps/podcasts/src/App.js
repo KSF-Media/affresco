@@ -20,7 +20,7 @@ class App extends React.Component {
       fetch(process.env.NODE_ENV === 'development'
         ? `http://localhost:9000/getPodcast?id=${id}`
         : `/.netlify/functions/getPodcast?id=${id}`
-        ).then(res => res.json())
+      ).then(res => res.json())
     );
     Promise.all(podRequests).then(jsons => {
       jsons.map(json => {
