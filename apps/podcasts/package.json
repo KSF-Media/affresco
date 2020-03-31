@@ -24,6 +24,7 @@
   },
   "scripts": {
     "start": "parcel ./src/index.html --https",
+    "prebuild": "yarn install",
     "build": "parcel build ./src/index.html --no-content-hash",
     "lambda-serve": "netlify-lambda serve functions",
     "lambda-build": "netlify-lambda build functions"
