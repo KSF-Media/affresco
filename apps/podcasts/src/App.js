@@ -6,7 +6,7 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      podcastIds: window.podcastIds || [],
+      podcastIds: process.env.PODCAST_IDS.split(',') || [],
       podcasts: [],
       tracks: [],
       selectedPodcast: null,
