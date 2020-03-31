@@ -1,3 +1,3 @@
 [build]
     Functions = "lambda"
-    Command = "yarn lambda-build"
+    Command = "yarn build && yarn lambda-build"
