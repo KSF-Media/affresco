@@ -20,7 +20,8 @@ exports.setTag_ = function(sentry, key, value) {
     return sendSentryEvent(sentry, 'setTag', key, value);
 };
 exports.setUser_ = function(sentry, cusno) {
-    return sendSentryEvent(sentry, 'setUser', {id: cusno});
+    // Empty object is used for istance when user logs out from the system
+    return sendSentryEvent(sentry, 'setUser', cusno === null ? {} : {id: cusno});
 };
 
 function sendSentryEvent(sentry, fnName, ...args) {

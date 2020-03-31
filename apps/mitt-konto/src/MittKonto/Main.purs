@@ -13,9 +13,8 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
 import Effect.Class.Console as Console
-import Effect.Exception (Error, error)
+import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
@@ -156,14 +155,16 @@ withSpinner setLoadingState action = do
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: Self -> JSX
-navbarView { state, setState } =
+navbarView self@{ state, setState } =
     Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
           Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
-            liftEffect $ setState $ setLoggedInUser Nothing
+            liftEffect do
+              self.state.logger.setUser Nothing
+              setState $ setLoggedInUser Nothing
       }
 
 alertView :: Alert -> JSX
@@ -355,7 +356,11 @@ loginView self@{ state: state@{ logger }, setState } = React.fragment
           , onUserFetch:
             case _ of
               Left err -> do
-                logger.error $ Error.loginError $ show err
+                case err of
+                  SomethingWentWrong -> logger.error $ Error.loginError $ show err
+                  UnexpectedError e  -> logger.error $ Error.loginError $ message e
+                  -- If any other UserError occurs, only send an Info event of it
+                  _ -> logger.log (show err) Sentry.Info
                 self.setState $ setLoggedInUser Nothing
               Right user -> do
                 setState $ setLoggedInUser $ Just user
