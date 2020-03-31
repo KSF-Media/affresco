@@ -1,6 +1,7 @@
 import React from "react";
 
 import Track from "./Track.js";
+import "./less/main.less"
 
 class App extends React.Component {
   constructor(props) {
