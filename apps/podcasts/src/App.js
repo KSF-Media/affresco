@@ -50,7 +50,7 @@ class App extends React.Component {
   render() {
     // JSX: list of podcasts
     const podcatsList = this.state.podcasts.map((name, key) => {
-      let buttonClass = this.state.selectedPodcast === name ? 'active' : '';
+      let buttonClass = (this.state.selectedPodcast === name || !this.state.selectedPodcast) ? 'active' : '';
       return <li className={buttonClass} onClick={() => this.selectPodcast(name)} key={key}>{name}</li>
     });
     // JSX: Rest button to show all podcasts
