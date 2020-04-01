@@ -7,7 +7,8 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      podcastIds: process.env.PODCAST_IDS.split(',') || [],
+      podcastIds: window.pod_ids || process.env.PODCAST_IDS.split(',') || [],
+      podAppUlr: window.pod_app_url || '',
       podcasts: [],
       tracks: [],
       selectedPodcast: null,
@@ -20,7 +21,7 @@ class App extends React.Component {
     const podRequests = this.state.podcastIds.map(id => 
       fetch(process.env.NODE_ENV === 'development'
         ? `http://localhost:9000/getPodcast?id=${id}`
-        : `/.netlify/functions/getPodcast?id=${id}`
+        : `${this.state.podAppUlr}/.netlify/functions/getPodcast?id=${id}`
       ).then(res => res.json())
     );
     Promise.all(podRequests).then(jsons => {
