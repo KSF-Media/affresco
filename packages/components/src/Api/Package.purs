@@ -5,7 +5,6 @@ import Prelude
 import Data.Array (find)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Eq (class Eq)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)

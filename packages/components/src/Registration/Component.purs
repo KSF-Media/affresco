@@ -7,7 +7,6 @@ import Control.Monad.Error.Class (throwError)
 import Data.Array (all, cons)
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
-import Data.JSDate (JSDate)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..))
 import Data.Validation.Semigroup (toEither, unV)
