@@ -5,6 +5,7 @@ import Prelude
 import Data.Array (find)
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Eq (class Eq)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate)
@@ -70,6 +71,7 @@ data PackageName = HblPremium
 derive instance genericPackageName :: Generic PackageName _
 instance showPackageName :: Show PackageName where
   show = genericShow
+derive instance eqPackageName :: Eq PackageName
 
 toPackageId :: PackageName -> String
 toPackageId HblPremium = "HBL WEBB"

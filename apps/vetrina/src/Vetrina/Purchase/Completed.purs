@@ -111,7 +111,7 @@ setPasswordForm self@{ state: { passwordForm } } =
         [ InputField.inputField
             { placeholder: "Lösenord (minst 6 tecken)"
             , type_: InputField.Password
-            , label: "Lösenord"
+            , label: Just "Lösenord"
             , name: "password"
             , onChange: \val -> self.setState _ { passwordForm { newPassword = val } }
             , value: passwordForm.newPassword
@@ -120,7 +120,7 @@ setPasswordForm self@{ state: { passwordForm } } =
         , InputField.inputField
             { placeholder: "Bekräfta lösenord"
             , type_: InputField.Password
-            , label: "Bekräfta lösenord"
+            , label: Just "Bekräfta lösenord"
             , name: "confirmPassword"
             , onChange: \val -> self.setState _ { passwordForm { confirmPassword = val } }
             , value: passwordForm.confirmPassword

@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT)
-import Data.Array (all, any, snoc)
+import Data.Array (all, any, find, head, intercalate, length, snoc)
 import Data.Array as Array
 import Data.Either (Either(..), hush, isRight, note)
 import Data.Foldable (foldMap)
@@ -33,7 +33,7 @@ import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatus
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
-import React.Basic (JSX, make)
+import React.Basic (JSX, fragment, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -42,7 +42,7 @@ import Vetrina.Purchase.Completed as PurchaseCompleted
 
 foreign import sentryDsn_ :: Effect String
 
-type Props = { onClose :: Effect Unit }
+type Props = { onClose :: Effect Unit, products :: Array Product }
 
 type State =
   { form          :: NewAccountForm
@@ -52,7 +52,6 @@ type State =
   , purchaseState :: PurchaseState
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
-  , products      :: Array Product
   , accountStatus :: AccountStatus
   , orderFailure  :: Maybe OrderFailure
   , logger        :: Sentry.Logger
@@ -117,8 +116,7 @@ app = make component
                   , user: Nothing
                   , newOrder: Nothing
                   , poller: pure unit
-                  , isLoading: Just Spinner.Loading -- Let's show spinner until packages have been fetched
-                  , products: []
+                  , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
                   , accountStatus: NewAccount
                   , orderFailure: Nothing
                   , logger: Sentry.emptyLogger
@@ -133,46 +131,18 @@ didMount self = do
   logger <- Sentry.mkLogger sentryDsn Nothing
   self.setState _ { logger = logger }
   -- Before rendering the form, we need to:
-  -- 1. fetch packages from the server, so we can actually show things to purchase
-  -- 2. fetch the user if access token is found in the browser
+  -- 1. fetch the user if access token is found in the browser
   Aff.launchAff_ do
     Aff.finally
-      -- When packages have been set (and user fetched), hide loading spinner
+      -- When user has been fetched, hide loading spinner
       (liftEffect $ self.setState \s -> s { isLoading = Nothing })
       do
         -- Try to login with local storage information and set user to state
         User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser -> self.setState _ { user = maybeUser }
-        packages <- User.getPackages
-        let (Tuple invalidProducts validProducts) =
-              map (Product.toProduct packages) productsToShow # partitionValidProducts
 
-        for_ invalidProducts $ \err -> liftEffect $ case err of
-          PackageOffersMissing packageName -> do
-            logger.error $ Error.packageError $ "Missing offers in package: " <> show packageName
-          PackageNotFound packageName -> do
-            logger.error $ Error.packageError $ "Did not find package from server: " <> show packageName
-
-        case Array.head validProducts of
-          Just p -> liftEffect $ self.setState _
-                       { products = validProducts
-                       , form { productSelection = Just p }
-                       }
-          -- Did not get any valid packages from the server
-          Nothing -> liftEffect do
-            logger.error $ Error.packageError "Could not show any products to customer."
-            self.setState _ { purchaseState = PurchaseUnexpectedError }
-
--- TODO: `partitionEithers` could be in some util module
-partitionValidProducts :: Array (Either PackageValidationError Product) -> Tuple (Array PackageValidationError) (Array Product)
-partitionValidProducts = Array.foldl
-  (\(Tuple lefts rights) eitherProduct ->
-    case eitherProduct of
-      Right p  -> Tuple lefts              (rights `snoc` p)
-      Left err -> Tuple (lefts `snoc` err) rights)
-  (Tuple [] [])
-
-productsToShow :: Array PackageName
-productsToShow = [ HblPremium ]
+        -- If there is only one product given, automatically select that for the customer
+        when (length self.props.products == 1) $
+          liftEffect $ self.setState _ { form { productSelection = head self.props.products } }
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -221,16 +191,18 @@ render self =
   else case self.state.purchaseState of
     NewPurchase ->
       DOM.div
-        { className: "vetrina--new-account-container"
-        , children: newAccountForm self
+        { className: "vetrina--container"
+        , children:
             [ foldMap orderErrorMessage self.state.orderFailure
-            , maybe (emailAddressInput self) showLoggedInAccount self.state.user
-            , case self.state.accountStatus of
-                NewAccount      -> mempty
-                ExistingAccount -> passwordInput self
-            , maybe mempty Product.productRender self.state.form.productSelection
-            , PaymentMethod.paymentMethod (\m -> pure unit)
-            , confirmButton self
+            , renderProducts self.props.products
+            , newAccountForm self
+                [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
+                , case self.state.accountStatus of
+                    NewAccount      -> mempty
+                    ExistingAccount -> passwordInput self
+                , acceptTermsCheckbox
+                , confirmButton self
+                ]
             ]
         }
     (CapturePayment url) -> netsTerminalIframe url
@@ -261,6 +233,11 @@ render self =
 
     PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
 
+renderProducts :: Array Product -> JSX
+renderProducts products =
+  let descriptions = map ( _.description) products
+  in fragment $ map (DOM.p_ <<< Array.singleton <<< intercalate (DOM.br {}) <<< map DOM.text) descriptions
+
 orderErrorMessage :: OrderFailure -> JSX
 orderErrorMessage failure =
   case failure of
@@ -268,11 +245,10 @@ orderErrorMessage failure =
     EmailInUse -> DOM.text "Email already exists, please log in" -- TODO: Waiting for copy
     _ -> DOM.text "Något gick fel. Vänligen försök om en stund igen."
 
-newAccountForm :: Self -> Array JSX -> Array JSX
+newAccountForm :: Self -> Array JSX -> JSX
 newAccountForm self children =
-  Array.singleton $
     DOM.form
-      { className: "vetrina--new-account-form"
+      { className: "vetrina--purchase-form"
       , onSubmit: handler preventDefault $ (\_ -> submitNewOrderForm self $ formValidations self)
       , children
       }
@@ -280,7 +256,7 @@ newAccountForm self children =
 emailAddressInput :: Self -> JSX
 emailAddressInput self@{ state: { form }} = InputField.inputField
   { type_: InputField.Email
-  , label: "E-postadress"
+  , label: Nothing
   , name: "emailAddress"
   , placeholder: "E-postadress"
   , onChange: (\val -> self.setState _ { form { emailAddress = val
@@ -309,7 +285,7 @@ passwordInput :: Self -> JSX
 passwordInput self = InputField.inputField
   { type_: InputField.Password
   , placeholder: "Lösenord"
-  , label: "Lösenord"
+  , label: Just "Lösenord"
   , name: "accountPassword"
   , value: Nothing
   , onChange: \pw -> self.setState _ { form { existingPassword = pw } }
@@ -317,6 +293,28 @@ passwordInput self = InputField.inputField
       Form.inputFieldErrorMessage $
       Form.validateField ExistingPassword self.state.form.existingPassword []
   }
+
+acceptTermsCheckbox :: JSX
+acceptTermsCheckbox =
+  let id    = "accept-terms"
+      label = """Jag godkänner KSF Medias användarvillkor och
+                 bekräftar att jag har läst och förstått integritets-policyn"""
+  in DOM.div
+    { className: "vetrina--checbox-container"
+    , children:
+        [ DOM.input
+            { className: "vetrina--checkbox"
+            , type: "checkbox"
+            , id
+            , required: true
+            }
+        , DOM.label
+            { className: "vetrina--checkbox-label"
+            , htmlFor: id
+            , children: [ DOM.text label ]
+            }
+        ]
+    }
 
 submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
 submitNewOrderForm self@{ state: { form, logger } } = unV
@@ -389,7 +387,6 @@ loginToExistingAccount self (Just username) (Just password) = do
 loginToExistingAccount _ _ _ =
   pure $ Left $ FormFieldError [ EmailAddress, ExistingPassword ]
 
-
 createOrder :: User -> Product -> Aff (Either OrderFailure Order)
 createOrder user product = do
   -- TODO: fix period etc.
@@ -410,9 +407,9 @@ confirmButton :: Self -> JSX
 confirmButton self =
   DOM.input
     { type: "submit"
-    , className: "registration--create-button mt2"
+    , className: "vetrina--button mt2"
     , disabled: isFormInvalid
-    , value: "Skapa konto"
+    , value: "Beställ"
     }
   where
     isFormInvalid
