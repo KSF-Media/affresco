@@ -7,6 +7,8 @@ import Control.Monad.Error.Class (throwError)
 import Data.Array (all, cons)
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
+import Data.JSDate (JSDate)
+import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..))
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
@@ -324,10 +326,12 @@ submitForm self@{ state: { formData } } = unV
             }
         }
   )
-  createUser
+  \validForm -> do
+    nowISO <- JSDate.toISOString =<< JSDate.now
+    createUser nowISO validForm
   where
-    createUser form
-      | Just user <- mkNewUser form = self.props.onRegister do
+    createUser date form
+      | Just user <- mkNewUser form date = self.props.onRegister do
           createdUser <- User.createUser user
           case createdUser of
             Right u -> pure u
@@ -366,8 +370,8 @@ submitForm self@{ state: { formData } } = unV
             "password"     -> self.setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` self.state.serverErrors }
             _              -> pure unit
 
-mkNewUser :: FormData -> Maybe Persona.NewUser
-mkNewUser f =
+mkNewUser :: FormData -> String -> Maybe Persona.NewUser
+mkNewUser f nowISO =
   { firstName: _
   , lastName: _
   , emailAddress: _
@@ -378,6 +382,12 @@ mkNewUser f =
   , zipCode: _
   , country: _
   , phone: _
+  , legalConsents:
+      [ { consentId: "legal_acceptance_v1"
+        , screenName: "legalAcceptanceScreen"
+        , dateAccepted: nowISO
+        }
+      ]
   }
   <$> f.firstName
   <*> f.lastName

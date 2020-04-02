@@ -9,6 +9,7 @@ import Data.Array as Array
 import Data.Either (Either(..), hush, isRight, note)
 import Data.Foldable (foldMap)
 import Data.Int (ceil)
+import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
 import Data.Nullable (toNullable)
 import Data.Traversable (for_)
@@ -366,7 +367,13 @@ userHasPackage packageName = isRight <<< Package.findPackage packageName
 
 createNewAccount :: Self -> Maybe String -> Aff (Either OrderFailure User)
 createNewAccount self@{ state: { logger } } (Just emailString) = do
-  newUser <- User.createUserWithEmail (User.Email emailString)
+  nowISO <- liftEffect $ JSDate.toISOString =<< JSDate.now
+  let legalConsent =
+        { consentId: "legal_acceptance_v1"
+        , screenName: "legalAcceptanceScreen"
+        , dateAccepted: nowISO
+        }
+  newUser <- User.createUserWithEmail { emailAddress: User.Email emailString, legalConsents: [ legalConsent ] }
   case newUser of
     Right user -> do
       liftEffect $ self.setState _ { user = Just user }

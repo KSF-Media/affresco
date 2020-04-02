@@ -80,9 +80,12 @@ register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
 
-type NewUserWithEmail = { emailAddress :: Email }
+type NewTemporaryUser =
+  { emailAddress :: Email
+  , legalConsents :: Array LegalConsent
+  }
 
-registerWithEmail :: NewUserWithEmail -> Aff LoginResponse
+registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
   callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
 
@@ -323,6 +326,7 @@ type NewUser =
   , city :: String
   , country :: String
   , phone :: String
+  , legalConsents :: Array LegalConsent
   }
 
 type Address =
@@ -340,6 +344,12 @@ type GdprConsent =
   { brand      :: String
   , consentKey :: String
   , value      :: Boolean
+  }
+
+type LegalConsent =
+  { consentId :: String
+  , screenName :: String
+  , dateAccepted :: String
   }
 
 type DeliveryReclamation =
