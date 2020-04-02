@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT)
-import Data.Array (all, any, find, head, intercalate, length, snoc)
+import Data.Array (all, any, head, intercalate, length)
 import Data.Array as Array
 import Data.Either (Either(..), hush, isRight, note)
 import Data.Foldable (foldMap)
@@ -12,8 +12,6 @@ import Data.Int (ceil)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
 import Data.Nullable (toNullable)
-import Data.Traversable (for_)
-import Data.Tuple (Tuple(..))
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -21,11 +19,10 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (PackageName(..), PackageValidationError(..), Package)
+import KSF.Api.Package (PackageName, Package)
 import KSF.Api.Package as Package
 import KSF.InputField.Component as InputField
 import KSF.JSError as Error
-import KSF.PaymentMethod as PaymentMethod
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
