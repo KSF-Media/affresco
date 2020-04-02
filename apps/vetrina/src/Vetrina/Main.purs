@@ -446,7 +446,12 @@ formValidations self@{ state: { form } } =
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
-  DOM.iframe
-    { src: paymentTerminalUrl
-    , className: "vetrina--payment-terminal"
+  DOM.div
+    { className: "vetrina--container"
+    , children:
+        [ DOM.iframe
+            { src: paymentTerminalUrl
+            , className: "vetrina--payment-terminal"
+            }
+        ]
     }
