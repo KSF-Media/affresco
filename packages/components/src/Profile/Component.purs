@@ -256,7 +256,7 @@ editAddress self =
             , placeholder: "Gatuadress"
             , value: self.state.address.streetAddress
             , onChange: \newStreetAddr -> self.setState _ { address { streetAddress = newStreetAddr } }
-            , label: "Gatuadress"
+            , label: Just "Gatuadress"
             , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress []
             }
         , InputField.inputField
@@ -265,7 +265,7 @@ editAddress self =
             , placeholder: "Postnummer"
             , value: self.state.address.zipCode
             , onChange: \newZip -> self.setState _ { address { zipCode = newZip } }
-            , label: "Postnummer"
+            , label: Just "Postnummer"
             , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode []
             }
         , InputField.inputField
@@ -274,7 +274,7 @@ editAddress self =
             , placeholder: "Stad"
             , value: self.state.address.city
             , onChange: \newCity -> self.setState _ { address { city = newCity } }
-            , label: "Stad"
+            , label: Just "Stad"
             , validationError: inputFieldErrorMessage $ validateField City self.state.address.city []
             }
         , CountryDropDown.defaultCountryDropDown
@@ -333,7 +333,7 @@ editName self =
             , placeholder: "Förnamn"
             , value: self.state.name.firstName
             , onChange: \newFirstName -> self.setState _ { name { firstName = newFirstName } }
-            , label: "Förnamn"
+            , label: Just "Förnamn"
             , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName []
             }
         , InputField.inputField
@@ -342,7 +342,7 @@ editName self =
             , placeholder: "Efternamn"
             , value: self.state.name.lastName
             , onChange: \newLastName -> self.setState _ { name { lastName = newLastName } }
-            , label: "Efternamn"
+            , label: Just "Efternamn"
             , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName []
             }
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }

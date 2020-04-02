@@ -287,7 +287,7 @@ renderLoginForm self =
             , InputField.inputField
                 { type_: InputField.Text
                 , placeholder: "E-postadress"
-                , label: "E-postadress"
+                , label: Just "E-postadress"
                 , name: "accountEmail"
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
@@ -298,7 +298,7 @@ renderLoginForm self =
             , InputField.inputField
                 { type_: InputField.Password
                 , placeholder: "Lösenord"
-                , label: "Lösenord"
+                , label: Just "Lösenord"
                 , name: "accountPassword"
                 , value: Nothing
                 , onChange: \pw -> self.setState _ { formPassword = pw }
@@ -402,7 +402,7 @@ renderMerge self@{ props } mergeInfo =
             , InputField.inputField
                 { type_: InputField.Text
                 , placeholder: ""
-                , label: ""
+                , label: Nothing
                 , name: ""
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
