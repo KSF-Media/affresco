@@ -25,8 +25,6 @@ import KSF.Api.Package as Package
 import KSF.InputField.Component as InputField
 import KSF.JSError as Error
 import KSF.PaymentMethod as PaymentMethod
-import KSF.Product (Product)
-import KSF.Product as Product
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
@@ -99,6 +97,15 @@ data OrderFailure
   | AuthenticationError
   | ServerError
   | UnrecognizedError String
+
+type Product =
+  { name        :: String
+  , id          :: String
+  , description :: Array String
+  , price       :: Number
+  , packageName :: Package.PackageName
+  , imageUrl    :: Maybe String -- TODO: What to do with this?
+  }
 
 component :: React.Component Props
 component = React.createComponent "Vetrina"
