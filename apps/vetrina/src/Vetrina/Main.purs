@@ -194,26 +194,22 @@ render self =
   if isJust self.state.isLoading
   then Spinner.loadingSpinner
   else case self.state.purchaseState of
-    NewPurchase ->
-      DOM.div
-        { className: "vetrina--container"
-        , children:
-            [ foldMap orderErrorMessage self.state.orderFailure
-            , renderProducts self.props.products
-            , newAccountForm self
-                [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
-                , case self.state.accountStatus of
-                    NewAccount      -> mempty
-                    ExistingAccount -> passwordInput self
-                , acceptTermsCheckbox
-                , confirmButton self
-                ]
-            ]
-        }
-    (CapturePayment url) -> netsTerminalIframe url
+    NewPurchase -> vetrinaContainer
+      [ foldMap orderErrorMessage self.state.orderFailure
+      , renderProducts self.props.products
+      , newAccountForm self
+          [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
+          , case self.state.accountStatus of
+              NewAccount      -> mempty
+              ExistingAccount -> passwordInput self
+          , acceptTermsCheckbox
+          , confirmButton self
+          ]
+      ]
+    (CapturePayment url) -> vetrinaContainer [ netsTerminalIframe url ]
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
-    PurchaseDone ->
+    PurchaseDone -> vetrinaContainer $ Array.singleton $
       PurchaseCompleted.completed
         -- TODO: The onError callback is invoked if setting the new password fails.
         -- We should think how to handle this. Probably we don't want to
@@ -238,6 +234,13 @@ render self =
 
     PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
 
+vetrinaContainer :: Array JSX -> JSX
+vetrinaContainer children =
+  DOM.div
+    { className: "vetrina--container"
+    , children
+    }
+
 renderProducts :: Array Product -> JSX
 renderProducts products =
   let descriptions = map ( _.description) products
@@ -253,7 +256,7 @@ orderErrorMessage failure =
 newAccountForm :: Self -> Array JSX -> JSX
 newAccountForm self children =
     DOM.form
-      { className: "vetrina--purchase-form"
+      { className: "vetrina--form"
       , onSubmit: handler preventDefault $ (\_ -> submitNewOrderForm self $ formValidations self)
       , children
       }
@@ -446,12 +449,7 @@ formValidations self@{ state: { form } } =
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
-  DOM.div
-    { className: "vetrina--container"
-    , children:
-        [ DOM.iframe
-            { src: paymentTerminalUrl
-            , className: "vetrina--payment-terminal"
-            }
-        ]
+  DOM.iframe
+    { src: paymentTerminalUrl
+    , className: "vetrina--payment-terminal"
     }
