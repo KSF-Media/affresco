@@ -145,9 +145,9 @@ body {
     margin-top: 20px;
 }
 
-.factBox {
+.genericBox {
     padding:10px;
-    background: #edebea;
+    background: #f7f6f5;
     size: 16px;
     margin-bottom: 20px;
     height: 248px;
@@ -156,8 +156,27 @@ body {
     position: relative;
 }
 
-.factBox .expand {
-    background: #edebea;
+.genericBox-border-hbl {
+    border-top: 5px solid #f07e26;
+    border-bottom: 2px solid #f07e26;
+}
+
+.genericBox-border-vn {
+    border-top: 5px solid #C90C0F;
+    border-bottom: 4px solid #C90C0F;
+}
+
+.genericBox-border-on {
+    border-top: 5px solid #518196;
+    border-bottom: 2px solid #518196;
+}
+
+.genericBox .fakta {
+    text-transform: uppercase;
+}
+
+.genericBox .expand {
+    background: #f7f6f5;
     padding: 10px;
     position: absolute;
     bottom: 0;
@@ -169,8 +188,8 @@ body {
     /*opacity: .9;*/
 }
 
-.factBox .expandOpacity {
-    background: #edebea;
+.genericBox .expandOpacity {
+    background: #f7f6f5;
     padding: 10px;
     position: absolute;
     bottom: 47px;
@@ -182,8 +201,8 @@ body {
     opacity: .3;
 }
 
-.factBox .expandOpacity2 {
-    background: #edebea;
+.genericBox .expandOpacity2 {
+    background: #f7f6f5;
     padding: 10px;
     position: absolute;
     bottom: 28px;
@@ -196,7 +215,6 @@ body {
 }
 
 .expand i {
-    border: solid black;
     border-width: 0 3px 3px 0;
     display: inline-block;
     padding: 4px;
@@ -213,9 +231,11 @@ body {
 }
 
 
-.factBox h4{
+.genericBox h3{
     margin-top: 5px;
     margin-bottom: 10px;
+    font-size: 1.75rem;
+    font-family: "Duplex Sans Bold", sans-serif;
 }
 
 .fakta {
@@ -224,19 +244,19 @@ body {
     font-weight: bolder;
 }
 
-.factBox ul {
+.genericBox ul {
     padding-right: 0;
     padding-left: 0;
     list-style-type: none;
 }
 
-.factBox li {
+.genericBox li {
     margin-bottom: 15px;
     border-bottom: 1px solid #80808029;
     padding-bottom: 10px;
 }
 
-.factBox li:last-child {
+.genericBox li:last-child {
     border: 0px;
 }
 
@@ -273,11 +293,40 @@ body {
 }
 
 .articleTag {
-    color: #f07e26;
     text-transform: uppercase;
     font-family: Roboto, sans-serif;
     font-weight: bold;
     font-size: 14px;
+}
+
+.brandColor-hbl {
+    color: #f07e26;
+}
+.brandColor-vn {
+    color: #C90C0F;
+}
+.brandColor-on {
+    color: #518196;
+}
+
+.brandBg-hbl {
+    background: #f07e26;
+}
+.brandBg-vn {
+    background: #C90C0F;
+}
+.brandBg-on {
+    background: #518196;
+}
+
+.border-hbl {
+    border: solid #f07e26;
+}
+.border-vn {
+    border: solid #C90C0F;
+}
+.border-on {
+    border: solid #518196;
 }
 
 .beta {
@@ -350,7 +399,6 @@ body {
 }
 
 .relatedArticles .articleItem .category{
-    color:#f07e26;
     font-size: 15px;
     display: inline-block;
     margin-right: 12px;
@@ -387,7 +435,6 @@ body {
 }
 
 .premiumBadge{
-    background: #f07e26;
     color: white;
     padding: 3px 3px 2px;
     width: auto;
@@ -407,8 +454,8 @@ body {
 }
 
 .quotePlaceHolder {
-    border-top: 1px solid #a6a6a6;
-    border-bottom: 1px solid #a6a6a6;
+    border-top: 1px solid #e4e1e1;
+    border-bottom: 1px solid #e4e1e1;
     padding-top: 25px;
     padding-bottom: 25px;
     color: #464646;

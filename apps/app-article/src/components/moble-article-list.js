@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
+import {getBrandValueParam} from "../helper";
 
 
 const isArray = (value) => {
@@ -49,7 +50,7 @@ const MobileList = (props) => {
                                     </a>
                                 </div>
                                 <div className={"articleItemDetails"}>
-                                    <div className={"category"}>{getTag(item.tags)}</div>
+                                    <div className={`category brandColor-${getBrandValueParam()}`}>{getTag(item.tags)}</div>
                                     <div className={"date"}>{formatTime(item.publishingTime)}</div>
                                 </div>
                             </div>
