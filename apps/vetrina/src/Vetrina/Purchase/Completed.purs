@@ -89,7 +89,7 @@ render self =
 completeButton :: Self -> JSX
 completeButton self =
   DOM.button
-    { className: "vetrina--button"
+    { className: "vetrina--button vetrina--completed-close"
     , children: [ DOM.text "Tillbaka till artikeln" ] -- TODO: This text may vary depending on use case
     , onClick: handler_ $ self.props.onComplete
     }
