@@ -8,13 +8,19 @@
 body {
     font-family: 'Duplex Sans', sans-serif;
     font-weight: 300;
-    background-color: @grey-light;
+    background-color: @nude;
     margin: 0;
 }
 
-.vetrina--new-account-container {
+.vetrina--container {
     display: grid;
-    grid-template-rows: auto auto;
+    justify-content: center;
+    grid-template-columns: minmax(100px, 505px);
+    p { text-align: center }
+}
+
+.vetrina--product-description {
+    text-align: center;
 }
 
 .vetrina--payment-terminal {
@@ -23,9 +29,52 @@ body {
     border: none;
 }
 
+.vetrina--purchase-form {
+    max-width: 600px;
+    display: grid;
+    justify-items: center;
+    .input-field--container {
+        width: 100%;
+    }
+}
+
+.vetrina--checbox-container {
+    display: flex;
+    align-items: start;
+    margin-top: 1em;
+    input[type=checkbox] {
+        margin-right: 1em;
+    }
+}
+
+.vetrina--button {
+    &:disabled {
+        background: grey;
+        &:hover { background-color: grey }
+        cursor: auto;
+    }
+    &:hover { background-color: #00b9c4 }
+    font-family: 'Duplex Sans Titling', sans-serif;
+    font-weight: bold !important;
+    font-size: 16px;
+    line-height: 16px;
+    letter-spacing: 0.015em;
+    background: #00a1ab;
+    color: @white;
+    width: 100%;
+    border: none;
+    border-radius: 5px;
+    padding: 12px;
+    font-weight: 500;
+    margin-top: 2em;
+    max-width: 100px;
+    cursor: pointer;
+}
+
+
 .vetrina-purchase-completed--submit-password {
     &:disabled { background: grey }
-    background: green;
+    background: #00a1ab;
     color: @white;
     width: 100%;
     border: none;
@@ -33,4 +82,8 @@ body {
     padding: 10px;
     font-weight: 500;
     margin-top: .5em;
+}
+
+.product--container {
+    text-align: center;
 }

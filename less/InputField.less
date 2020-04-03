@@ -5,38 +5,44 @@
 .input-field--container {
     display: grid;
     grid-template-rows:
-	[label] 1.2em
-	[input-field] 2.5em
-	[error-message] 1em;
+        [label] 1.2em
+        [input-field] 2.5em
+        [error-message] 1em;
     grid-column-gap: 20px;
     grid-row-gap: auto;
     align-items: baseline;
     input[type=text], input[type=password], input[type=email], select {
-	width: 100%;
-	max-height: 2.5em;
-	font-size: 1em;
-	border-style: solid;
-	border-width: 1px;
-	border-color: @color-input-border;
-	padding: 8px 10px 8px;
-	background: @white;
-	box-sizing: border-box;
+        width: 100%;
+        max-height: 2.5em;
+        font-size: 1em;
+        border-style: solid;
+        border-width: 1px;
+        border-color: @color-input-border;
+        padding: 8px 10px 8px;
+        background: @white;
+        box-sizing: border-box;
     }
     select {
-	max-width: 100%;
-	font-weight: 400;
-	font-family: 'Duplex Sans', sans-serif;
-	-webkit-appearance: none;
-	-moz-appearance: none;
-	appearance: none;
-	padding: 8px 36px 6px 8px;
-	background: url(@icon-triangle-down) no-repeat @white;
-	background-position: right 15px center;
-	background-size: 8px;
+        max-width: 100%;
+        font-weight: 400;
+        font-family: 'Duplex Sans', sans-serif;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding: 8px 36px 6px 8px;
+        background: url(@icon-triangle-down) no-repeat @white;
+        background-position: right 15px center;
+        background-size: 8px;
     }
     @media @to-medium {
-	grid-template-columns: 1fr;
+        grid-template-columns: 1fr;
     }
+}
+
+.input-field--no-label {
+    grid-template-rows:
+        [input-field] 2.5em
+        [error-message] 1em !important;
 }
 
 .input-field--radio-container {

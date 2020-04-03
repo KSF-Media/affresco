@@ -106,7 +106,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         , name: "claim"
         , onChange: radioButtonOnChange self
         , value: Just "Extension"
-        , label: "Jag klarar mig utan den uteblivna tidningen, förläng i stället min prenumeration med en dag"
+        , label: Just "Jag klarar mig utan den uteblivna tidningen, förläng i stället min prenumeration med en dag"
         , validationError: Nothing
         }
 
@@ -117,7 +117,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         , name: "claim"
         , onChange: radioButtonOnChange self
         , value: Just "NewDelivery"
-        , label: "Jag vill att den uteblivna tidningen levereras till mig"
+        , label: Just "Jag vill att den uteblivna tidningen levereras till mig"
         , validationError: Nothing
         }
 

@@ -5,24 +5,28 @@
   "license": "MIT",
   "dependencies": {
     "@babel/polyfill": "^7.8.3",
-    "parcel": "^1.12.4",
-    "parcel-bundler": "^1.10.3",
+    "axios": "^0.19.2",
+    "netlify-lambda": "^1.6.3",
+    "parcel-bundler": "^1.12.3",
     "purescript": "^0.13.2",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "react-router-dom": "^5.1.2",
-    "soundcloud-audio": "^1.4.0",
+    "slugify": "^1.4.0",
+    "xml-js": "^1.6.11",
     "uglify-js": "^3.6.0",
     "yarn": "^1.17.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.8.4",
+    "@babel/core": "^7.0.0-0",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/preset-env": "^7.8.4",
-    "@babel/preset-react": "^7.8.3"
+    "@babel/preset-react": "^7.9.1"
   },
   "scripts": {
     "start": "parcel ./src/index.html --https",
-    "build": "parcel build ./src/index.html --no-content-hash"
+    "prebuild": "yarn install",
+    "build": "parcel build ./src/index.html --no-content-hash",
+    "lambda-serve": "netlify-lambda serve functions",
+    "lambda-build": "netlify-lambda build functions"
   }
 }
