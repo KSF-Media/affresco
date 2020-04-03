@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -77,21 +77,20 @@ render self =
   if isJust self.state.isLoading
   then Spinner.loadingSpinner
   else
-    DOM.div
-      { className: "vetrina-purchase-completed--container"
-      , children:
-          [ DOM.h1_ [ DOM.text "Tack för din prenumeration!" ]
-          , DOM.p_ [ DOM.text "Vi har skickat en prenumerationsbekräftelse och instruktioner om hur du tar i bruk våra digitala tjänster till din e-postadress. (Kolla vid behov också i skräppostmappen.)" ]
-          , case self.state.user of
-              Just u | not u.hasCompletedRegistration -> setPassword self
-              _ -> completeButton self
-          ]
-      }
+    DOM.h1_ [ DOM.text "Tack för din beställning!" ]
+    <> case self.state.user of
+        Just u | not u.hasCompletedRegistration ->
+          DOM.p_ [ DOM.text "Nästan klar! Vänligen mata in önskad lösenord för ditt nya KSF Media konto." ]
+          <> setPassword self
+        _ -> DOM.p_ [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi" ] -- TODO: Should this come from props?
+             <> DOM.p_ [ DOM.text $ "Vi har skickat ett bekräftelses-epost till " <> (fromMaybe "" $ map _.email self.props.user) ]
+             <> completeButton self
 
 completeButton :: Self -> JSX
 completeButton self =
   DOM.button
-    { children: [ DOM.text "OK" ]
+    { className: "vetrina--button"
+    , children: [ DOM.text "Tillbaka till artikeln" ] -- TODO: This text may vary depending on use case
     , onClick: handler_ $ self.props.onComplete
     }
 
@@ -105,13 +104,13 @@ setPassword self =
 setPasswordForm :: Self -> JSX
 setPasswordForm self@{ state: { passwordForm } } =
   DOM.form
-    { className: ""
+    { className: "vetrina--form"
     , onSubmit: handler preventDefault $ (\_ -> submitNewPassword self $ formValidations self)
     , children:
         [ InputField.inputField
-            { placeholder: "Lösenord (minst 6 tecken)"
+            { placeholder: "Önskad lösenord (minst 6 tecken)"
             , type_: InputField.Password
-            , label: Just "Lösenord"
+            , label: Nothing
             , name: "password"
             , onChange: \val -> self.setState _ { passwordForm { newPassword = val } }
             , value: passwordForm.newPassword
@@ -120,7 +119,7 @@ setPasswordForm self@{ state: { passwordForm } } =
         , InputField.inputField
             { placeholder: "Bekräfta lösenord"
             , type_: InputField.Password
-            , label: Just "Bekräfta lösenord"
+            , label: Nothing
             , name: "confirmPassword"
             , onChange: \val -> self.setState _ { passwordForm { confirmPassword = val } }
             , value: passwordForm.confirmPassword
@@ -128,9 +127,9 @@ setPasswordForm self@{ state: { passwordForm } } =
             }
         , DOM.input
             { type: "submit"
-            , className: "vetrina-purchase-completed--submit-password"
+            , className: "vetrina--button vetrina--completed-"
             , disabled: isFormInvalid $ formValidations self
-            , value: "Skicka"
+            , value: "Fortsätt"
             }
         ]
     }
