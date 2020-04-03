@@ -70,6 +70,7 @@ data PackageName = HblPremium
 derive instance genericPackageName :: Generic PackageName _
 instance showPackageName :: Show PackageName where
   show = genericShow
+derive instance eqPackageName :: Eq PackageName
 
 toPackageId :: PackageName -> String
 toPackageId HblPremium = "HBL WEBB"

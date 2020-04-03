@@ -1,6 +1,6 @@
 {
   "name": "@ksf-media/user",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "User component for KSF Media apps",
   "main": "index.js",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "basscss": "^8.1.0",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#555ae55c199e18e96565ffc670108c5efefd940b",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d01ae692f9d69d26067cfff47d8c93cd040698d6",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
   },
   "scripts": {

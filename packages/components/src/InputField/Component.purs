@@ -4,10 +4,10 @@ import Prelude
 
 import Data.Array (snoc)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe, fromMaybe, isJust)
-import Data.String (toLower)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
+import Data.Maybe (Maybe, fromMaybe, isJust, isNothing)
+import Data.String (toLower)
 import Effect (Effect)
 import React.Basic (JSX)
 import React.Basic as React
@@ -23,7 +23,7 @@ type Props =
   , name            :: String
   , value           :: Maybe String
   , onChange        :: Maybe String -> Effect Unit
-  , label           :: String
+  , label           :: Maybe String
   , validationError :: Maybe String
   }
 
@@ -52,13 +52,14 @@ inputField = React.make component
 render :: Self -> JSX
 render self@{ props, state } =
   DOM.div
-    { className: classNameFromInputType props.type_
+    { className: classNameFromInputType props.type_ <>
+        if isNothing props.label then " input-field--no-label" else ""
     , children:
         -- The final order of the children is defined in css!
-        [ inputLabel props.label props.name
+        [ foldMap (inputLabel props.name) props.label
         , DOM.input
             { type: show props.type_
-            , placeholder: props.label
+            , placeholder: props.placeholder
             , name: props.name
             , value: state.inputValue
             , onChange: handler targetValue \maybeNewVal -> do
@@ -84,7 +85,7 @@ errorMessage e =
     }
 
 inputLabel :: String -> String -> JSX
-inputLabel labelText labelFor =
+inputLabel labelFor labelText =
   DOM.label
     { className: "input-field--input-label"
     , children: [ DOM.text labelText ]

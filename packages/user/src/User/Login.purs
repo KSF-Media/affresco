@@ -254,7 +254,8 @@ renderLoginForm self =
         [ foldMap formatErrorMessage self.state.errors.social
         , loginForm
         , forgotPassword
-        , register
+        , forgotEmail
+        , buySubscription
         , socialLogins
         ]
     }
@@ -287,7 +288,7 @@ renderLoginForm self =
             , InputField.inputField
                 { type_: InputField.Text
                 , placeholder: "E-postadress"
-                , label: "E-postadress"
+                , label: Just "E-postadress"
                 , name: "accountEmail"
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
@@ -298,7 +299,7 @@ renderLoginForm self =
             , InputField.inputField
                 { type_: InputField.Password
                 , placeholder: "Lösenord"
-                , label: "Lösenord"
+                , label: Just "Lösenord"
                 , name: "accountPassword"
                 , value: Nothing
                 , onChange: \pw -> self.setState _ { formPassword = pw }
@@ -313,22 +314,6 @@ renderLoginForm self =
                 , disabled: unV (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
                 , value: "Logga in"
                 , type: "submit"
-                }
-            ]
-        }
-    register :: JSX
-    register =
-      DOM.div
-        { className: "center"
-        , children:
-            [ DOM.text "Inget konto? "
-            , DOM.a
-                { className: ""
-                , href: "#"
-                , children: [ DOM.text "Registrera dig!" ]
-                , onClick: handler_ do
-                    self.props.onRegister
-                    self.setState _ { loginViewStep = Registration }
                 }
             ]
         }
@@ -402,7 +387,7 @@ renderMerge self@{ props } mergeInfo =
             , InputField.inputField
                 { type_: InputField.Text
                 , placeholder: ""
-                , label: ""
+                , label: Nothing
                 , name: ""
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
@@ -549,21 +534,47 @@ loginButton text =
     , value: text
     }
 
-forgotPasswordUrl :: String
-forgotPasswordUrl = "https://www.hbl.fi/losenord/"
-
-forgotPassword :: JSX
-forgotPassword =
+buySubscription :: JSX
+buySubscription =
   DOM.div
-    { className: "underline center mb1"
+    { className: "center"
     , children:
-        [ DOM.a
-            { href: forgotPasswordUrl
-            , children: [ DOM.text "Glömt lösenordet?" ]
+        [ DOM.text "Är du inte prenumerant? "
+        , DOM.a
+            { className: "underline" 
+            , href: "https://prenumerera.ksfmedia.fi/"
+            , children: [ DOM.text "Köp en prenumeration!" ]
             }
         ]
     }
 
+forgotPassword :: JSX
+forgotPassword =
+  DOM.div
+    { className: "center mb1"
+    , children:
+      [ DOM.text "Glömt lösenordet? "
+        , DOM.a
+            { href: "https://www.hbl.fi/losenord/"
+            , children: [ DOM.text "Klicka här!" ]
+            }
+        ]
+    }
+
+forgotEmail :: JSX
+forgotEmail =
+  DOM.div
+    { className: "center mb1"
+    , children:
+      [ DOM.text "Glömt din e-post? "
+      , DOM.a
+          { className: "underline center mb1"
+          , href: "https://www.hbl.fi/kundservice/"
+          , children: [ DOM.text "Ta kontakt med vår kundtjänst!" ]
+          }
+      ]
+    }
+         
 formatErrorMessage :: UserError -> JSX
 formatErrorMessage err =
   DOM.div

@@ -60,7 +60,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -108,9 +108,9 @@ createUser newUser = do
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin Nothing user
 
-createUserWithEmail :: Persona.Email -> Aff (Either UserError Persona.User)
-createUserWithEmail email = do
-  newUser <- try $ Persona.registerWithEmail { emailAddress: email }
+createUserWithEmail :: Persona.NewTemporaryUser -> Aff (Either UserError Persona.User)
+createUserWithEmail newTemporaryUser = do
+  newUser <- try $ Persona.registerWithEmail newTemporaryUser
   case newUser of
     Left err
       | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
