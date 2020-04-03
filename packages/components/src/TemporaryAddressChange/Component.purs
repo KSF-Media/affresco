@@ -178,7 +178,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , name: "address"
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
         , value: Nothing
-        , label: "Gatuadress"
+        , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
         }
 
@@ -189,7 +189,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , name: "zipCode"
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
         , value: Nothing
-        , label: "Postnummer"
+        , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
         }
 
@@ -202,7 +202,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , onChange: \_ -> pure unit
         , value: Nothing
         , validationError: Nothing
-        , label: "Stad"
+        , label: Just "Stad"
         }
 
     countryInput =
@@ -221,7 +221,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
         , value: Nothing
         , validationError: Nothing
-        , label: "Tillfällig namnändring eller C/O"
+        , label: Just "Tillfällig namnändring eller C/O"
         }
 
     submitFormButton =
