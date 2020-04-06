@@ -154,7 +154,7 @@ didMount self = do
           liftEffect $ self.setState _ { form { productSelection = head self.props.products } }
 
 didUpdate :: Self -> PrevState -> Effect Unit
-didUpdate self prevSelf = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
+didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
 
 stopOrderPollerOnCompletedState :: Self -> Aff Unit
 stopOrderPollerOnCompletedState self =
