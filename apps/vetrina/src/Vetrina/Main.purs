@@ -183,12 +183,16 @@ pollOrder setState state@{ logger } (Right order) = do
       liftEffect $ setState _ { purchaseState = ProcessPayment }
       pollOrder setState state =<< User.getOrder order.number
     OrderCompleted -> do
-      let chooseAccountStatus user =
-            if user.hasCompletedRegistration
-            then ExistingAccount
-            else NewAccount
-          userAccountStatus = maybe NewAccount chooseAccountStatus state.user
-      liftEffect $ setState _ { purchaseState = PurchaseCompleted userAccountStatus }
+      let userAccountStatus = maybe NewAccount chooseAccountStatus state.user
+          -- If new user, show set password form. Otherwise we're done.
+          nextPurchaseStep = case userAccountStatus of
+            NewAccount      -> PurchaseSetPassword
+            ExistingAccount -> PurchaseCompleted userAccountStatus
+      liftEffect $ setState _ { purchaseState = nextPurchaseStep }
+      where
+        chooseAccountStatus user
+          | user.hasCompletedRegistration = ExistingAccount
+          | otherwise = NewAccount
     OrderFailed    -> liftEffect do
       logger.error $ Error.orderError "Order failed for customer"
       setState _ { purchaseState = PurchaseFailed }
