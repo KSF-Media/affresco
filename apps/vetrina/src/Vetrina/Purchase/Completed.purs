@@ -22,14 +22,14 @@ completed props =
                ExistingAccount -> DOM.text "Tack för din beställning!"
                NewAccount      -> DOM.text "Ditt KSF Media konto är klart!"
           ]
-  <> DOM.p_ [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi" ] -- TODO: Should this come from props?
-  <> DOM.p_ [ DOM.text $ "Vi har skickat ett bekräftelses-epost till " <> (fromMaybe "" $ map _.email props.user) ]
+  <> DOM.p_ [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi." ] -- TODO: Should this come from props?
+  <> DOM.p_ [ DOM.text $ "Vi har skickat en bekräftelse till " <> (fromMaybe "" $ map _.email props.user) ]
   <> completeButton props
 
 completeButton :: Props -> JSX
 completeButton props =
   DOM.button
     { className: "vetrina--button vetrina--completed-close"
-    , children: [ DOM.text "Tillbaka till artikeln" ] -- TODO: This text may vary depending on use case
+    , children: [ DOM.text "Fortsätt läsa artikeln" ] -- TODO: This text may vary depending on use case
     , onClick: handler_ $ props.onClose
     }

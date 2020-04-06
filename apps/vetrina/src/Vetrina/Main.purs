@@ -281,7 +281,9 @@ newAccountForm self children =
       }
 
 emailAddressInput :: Self -> JSX
-emailAddressInput self@{ state: { form }} = InputField.inputField
+emailAddressInput self@{ state: { form }} =
+  DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
+  <> InputField.inputField
   { type_: InputField.Email
   , label: Nothing
   , name: "emailAddress"

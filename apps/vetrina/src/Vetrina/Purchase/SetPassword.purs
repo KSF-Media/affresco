@@ -78,7 +78,7 @@ render self =
     DOM.h1_ [ DOM.text "Tack för din beställning!" ]
     <> case self.props.user of
         Just u ->
-          DOM.p_ [ DOM.text "Nästan klar! Vänligen mata in önskad lösenord för ditt nya KSF Media konto." ]
+          DOM.p_ [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
           <> setNewPassword self
         _ -> DOM.text "SOMETHING WENT WRONG!"
 
@@ -96,7 +96,7 @@ setPasswordForm self@{ state: { passwordForm } } =
     , onSubmit: handler preventDefault $ (\_ -> submitNewPassword self $ formValidations self)
     , children:
         [ InputField.inputField
-            { placeholder: "Önskad lösenord (minst 6 tecken)"
+            { placeholder: "Önskat lösenord (minst 6 tecken)"
             , type_: InputField.Password
             , label: Nothing
             , name: "password"
