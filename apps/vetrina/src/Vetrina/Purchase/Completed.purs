@@ -2,36 +2,22 @@ module Vetrina.Purchase.Completed where
 
 import Prelude
 
-import Control.Alt ((<|>))
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
-import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import KSF.Api (Password(..))
-import KSF.InputField.Component as InputField
-import KSF.Sentry as Sentry
-import KSF.Spinner as Spinner
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isFormInvalid, validateField, validateForm, validatePassword, validatePasswordComparison)
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (handler_)
+import Vetrina.Types (AccountStatus(..))
 
 type Props =
-  { onComplete :: Effect Unit
-  , onError    :: User.UserError -> Effect Unit
-  , user       :: Maybe User.User
-  , logger     :: Sentry.Logger
+  { onClose       :: Effect Unit
+  , user          :: Maybe User.User
+  , accountStatus :: AccountStatus
   }
 
-type State =
-  { passwordForm :: PasswordForm
-  , user         :: Maybe User.User
-  , isLoading    :: Maybe Spinner.Loading
-  }
+type State = { user :: Maybe User.User  }
 
 type Self = React.Self Props State
 
@@ -40,121 +26,24 @@ component = React.createComponent "PurchaseCompleted"
 
 completed :: Props -> JSX
 completed = make component
-  { initialState:
-      { passwordForm:
-          { newPassword: Nothing
-          , confirmPassword: Nothing
-          }
-      , user: Nothing
-      , isLoading: Nothing
-      }
+  { initialState: { user: Nothing }
   , render
-  , didMount
   }
-
-type PasswordForm =
-  { newPassword     :: Maybe String
-  , confirmPassword :: Maybe String
-  }
-
-data PasswordFormField
-  = NewPassword
-  | ConfirmPassword (Maybe String)
-
-instance validatableFieldPasswordFormField :: ValidatableField PasswordFormField where
-  validateField field value _ = case field of
-    NewPassword -> validatePassword NewPassword value
-    confirmPw@(ConfirmPassword originalPassword) -> validatePasswordComparison NewPassword confirmPw originalPassword value
-
-didMount :: Self -> Effect Unit
-didMount { setState, props } = do
-  setState _ { user = props.user }
-  when (isNothing props.user) do
-    props.logger.log "Did not get user to Purchase.Completed phase" Sentry.Warning
 
 render :: Self -> JSX
 render self =
-  if isJust self.state.isLoading
-  then Spinner.loadingSpinner
-  else
-    DOM.h1_ [ DOM.text "Tack för din beställning!" ]
-    <> case self.state.user of
-        Just u | not u.hasCompletedRegistration ->
-          DOM.p_ [ DOM.text "Nästan klar! Vänligen mata in önskad lösenord för ditt nya KSF Media konto." ]
-          <> setPassword self
-        _ -> DOM.p_ [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi" ] -- TODO: Should this come from props?
-             <> DOM.p_ [ DOM.text $ "Vi har skickat ett bekräftelses-epost till " <> (fromMaybe "" $ map _.email self.props.user) ]
-             <> completeButton self
+  DOM.h1_ [ case self.props.accountStatus of
+               ExistingAccount -> DOM.text "Tack för din beställning!"
+               NewAccount      -> DOM.text "Ditt KSF Media konto är klart!"
+          ]
+  <> DOM.p_ [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi" ] -- TODO: Should this come from props?
+  <> DOM.p_ [ DOM.text $ "Vi har skickat ett bekräftelses-epost till " <> (fromMaybe "" $ map _.email self.props.user) ]
+  <> completeButton self
 
 completeButton :: Self -> JSX
 completeButton self =
   DOM.button
     { className: "vetrina--button vetrina--completed-close"
     , children: [ DOM.text "Tillbaka till artikeln" ] -- TODO: This text may vary depending on use case
-    , onClick: handler_ $ self.props.onComplete
+    , onClick: handler_ $ self.props.onClose
     }
-
-setPassword :: Self -> JSX
-setPassword self =
-  DOM.div
-    { className: "vetrina-purchanse-completed--set-password"
-    , children: [ setPasswordForm self ]
-    }
-
-setPasswordForm :: Self -> JSX
-setPasswordForm self@{ state: { passwordForm } } =
-  DOM.form
-    { className: "vetrina--form"
-    , onSubmit: handler preventDefault $ (\_ -> submitNewPassword self $ formValidations self)
-    , children:
-        [ InputField.inputField
-            { placeholder: "Önskad lösenord (minst 6 tecken)"
-            , type_: InputField.Password
-            , label: Nothing
-            , name: "password"
-            , onChange: \val -> self.setState _ { passwordForm { newPassword = val } }
-            , value: passwordForm.newPassword
-            , validationError: inputFieldErrorMessage $ validateField NewPassword passwordForm.newPassword []
-            }
-        , InputField.inputField
-            { placeholder: "Bekräfta lösenord"
-            , type_: InputField.Password
-            , label: Nothing
-            , name: "confirmPassword"
-            , onChange: \val -> self.setState _ { passwordForm { confirmPassword = val } }
-            , value: passwordForm.confirmPassword
-            , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword passwordForm.newPassword) passwordForm.confirmPassword []
-            }
-        , DOM.input
-            { type: "submit"
-            , className: "vetrina--button vetrina--completed-"
-            , disabled: isFormInvalid $ formValidations self
-            , value: "Fortsätt"
-            }
-        ]
-    }
-
-submitNewPassword :: Self -> ValidatedForm PasswordFormField PasswordForm -> Effect Unit
-submitNewPassword self@{ state: { passwordForm } } form =
-  validateForm form $
-    \eitherValidForm -> case eitherValidForm of
-      Left errs -> self.setState _ { passwordForm { newPassword = passwordForm.newPassword <|> Just "" } }
-      Right validForm
-        | Just user <- self.props.user
-        , Just password <- validForm.newPassword
-        , Just confirmPassword <- validForm.confirmPassword
-        -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
-          eitherUser <- User.updatePassword user.uuid (Password password) (Password confirmPassword)
-          liftEffect $ case eitherUser of
-            Left err -> self.props.onError err
-            Right u  -> self.setState _ { user = Just u }
-        | otherwise ->
-          self.props.logger.log "Purchase.Completed: Tried to submit invalid password form" Sentry.Warning
-
-formValidations :: Self -> ValidatedForm PasswordFormField PasswordForm
-formValidations self@{ state: { passwordForm } } =
-  { newPassword: _
-  , confirmPassword: _
-  }
-  <$> validateField NewPassword passwordForm.newPassword []
-  <*> validateField (ConfirmPassword passwordForm.newPassword) passwordForm.confirmPassword []
