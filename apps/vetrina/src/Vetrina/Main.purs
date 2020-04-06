@@ -213,7 +213,9 @@ render self =
   then Spinner.loadingSpinner
   else case self.state.purchaseState of
     NewPurchase -> vetrinaContainer
-      [ foldMap orderErrorMessage self.state.orderFailure
+      [ DOM.h1_ [ title self ]
+      , DOM.p_ [ description self ]
+      , foldMap orderErrorMessage self.state.orderFailure
       , renderProducts self.props.products
       , newAccountForm self
           [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
@@ -273,8 +275,19 @@ orderErrorMessage :: OrderFailure -> JSX
 orderErrorMessage failure =
   case failure of
     AuthenticationError -> InputField.errorMessage "Kombinationen av e-postadress och lösenord finns inte"
-    EmailInUse -> DOM.text "Email already exists, please log in" -- TODO: Waiting for copy
+    EmailInUse -> mempty -- TODO: Waiting for copy
     _ -> DOM.text "Något gick fel. Vänligen försök om en stund igen."
+
+title :: Self -> JSX
+title self@{ state: { accountStatus } } = case accountStatus of
+                                            NewAccount ->      DOM.text "Hej kära läsare!"
+                                            ExistingAccount -> DOM.text "Du har redan ett KSF Media-konto"
+
+description :: Self -> JSX
+description self@{ state: { accountStatus } } = case accountStatus of
+                                                  NewAccount ->      DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
+                                                  ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+
 
 newAccountForm :: Self -> Array JSX -> JSX
 newAccountForm self children =
