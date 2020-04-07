@@ -3,15 +3,15 @@ module Vetrina.Main where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Except (ExceptT(..), runExceptT)
+import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Data.Array (all, head, intercalate, length)
 import Data.Array as Array
 import Data.Either (Either(..), hush, isRight, note)
 import Data.Foldable (foldMap)
 import Data.Int (ceil)
 import Data.JSDate as JSDate
-import Data.Maybe (Maybe(..), isJust, isNothing, maybe)
-import Data.Nullable (toNullable)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Nullable (toMaybe, toNullable)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -147,7 +147,11 @@ didMount self = do
       (liftEffect $ self.setState \s -> s { isLoading = Nothing })
       do
         -- Try to login with local storage information and set user to state
-        User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser -> self.setState _ { user = maybeUser }
+        User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser ->
+          let newState = case maybeUser of
+               Just user -> self.state { user = maybeUser, accountStatus = LoggedInAccount user }
+               Nothing   -> self.state { user = maybeUser }
+          in self.setState \_ -> newState
 
         -- If there is only one product given, automatically select that for the customer
         when (length self.props.products == 1) $
@@ -187,7 +191,7 @@ pollOrder setState state@{ logger } (Right order) = do
           -- If new user, show set password form. Otherwise we're done.
           nextPurchaseStep = case userAccountStatus of
             NewAccount      -> PurchaseSetPassword
-            ExistingAccount -> PurchaseCompleted userAccountStatus
+            _               -> PurchaseCompleted userAccountStatus
       liftEffect $ setState _ { purchaseState = nextPurchaseStep }
       where
         chooseAccountStatus user
@@ -218,10 +222,10 @@ render self =
       , foldMap orderErrorMessage self.state.orderFailure
       , renderProducts self.props.products
       , accountForm self
-          [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
-          , case self.state.accountStatus of
+          [ case self.state.accountStatus of
               NewAccount      -> acceptTermsCheckbox
               ExistingAccount -> passwordInput self
+              LoggedInAccount user -> showLoggedInAccount user
           , confirmButton self
           , case self.state.accountStatus of
               NewAccount      -> mempty
@@ -281,14 +285,17 @@ orderErrorMessage failure =
     _ -> DOM.text "Något gick fel. Vänligen försök om en stund igen."
 
 title :: Self -> JSX
-title self@{ state: { accountStatus } } = case accountStatus of
+title { state: { accountStatus } } = case accountStatus of
                                             NewAccount ->      DOM.text "Hej kära läsare!"
                                             ExistingAccount -> DOM.text "Du har redan ett KSF Media-konto"
+                                            LoggedInAccount user -> DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
 
 description :: Self -> JSX
-description self@{ state: { accountStatus } } = case accountStatus of
+description { state: { accountStatus } } = case accountStatus of
                                                   NewAccount ->      DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
-                                                  ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media-lösenord."
+                                                  ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+                                                  LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
+
 
 resetPasswordLink :: JSX
 resetPasswordLink = DOM.p_
@@ -313,7 +320,7 @@ emailAddressInput :: Self -> JSX
 emailAddressInput self@{ state: { form, accountStatus }} =
   case accountStatus of
     NewAccount -> DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
-    ExistingAccount -> mempty
+    _ -> mempty
   <> InputField.inputField
   { type_: InputField.Email
   , label: Nothing
@@ -387,6 +394,11 @@ submitNewOrderForm self@{ state: { form, logger } } = unV
           Nothing -> case self.state.accountStatus of
             NewAccount      -> createNewAccount self validForm.emailAddress
             ExistingAccount -> loginToExistingAccount self validForm.emailAddress validForm.existingPassword
+            -- Should not ever come to this
+            LoggedInAccount _ -> do
+              liftEffect $ logger.log "Impossible happened! Logged in but could not find user" Sentry.Warning
+              pure $ Left $ UnrecognizedError "Could not find logged in user"
+
         ExceptT $ Right unit <$ (liftEffect $ logger.setUser $ Just user)
         product    <- ExceptT $ pure $ note (FormFieldError [ ProductSelection ]) self.state.form.productSelection
         when (userHasPackage product.packageName $ map _.package user.subs)
@@ -496,7 +508,9 @@ formValidations self@{ state: { form } } =
   <*> (case self.state.accountStatus of
             ExistingAccount -> Form.validateField ExistingPassword form.existingPassword []
             -- If NewAccount, we don't need to validate the password field
-            NewAccount      -> pure form.existingPassword)
+            NewAccount      -> pure form.existingPassword
+            -- If LoggedInAccount, we don't need to validate the password field
+            LoggedInAccount _ -> pure form.existingPassword)
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =

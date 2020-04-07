@@ -19,8 +19,8 @@ type Props =
 completed :: Props -> JSX
 completed props =
   DOM.h1_ [ case props.accountStatus of
-               ExistingAccount -> DOM.text "Tack för din beställning!"
                NewAccount      -> DOM.text "Ditt KSF Media konto är klart!"
+               _               -> DOM.text "Tack för din beställning!"
           ]
   <> DOM.p_ [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi." ] -- TODO: Should this come from props?
   <> DOM.p_ [ DOM.text $ "Vi har skickat en bekräftelse till " <> (fromMaybe "" $ map _.email props.user) ]
