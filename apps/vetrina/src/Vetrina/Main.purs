@@ -46,7 +46,7 @@ type Props =
   }
 
 type State =
-  { form          :: NewAccountForm
+  { form          :: AccountForm
   , serverErrors  :: Array (Form.ValidationError NewAccountInputField)
   , user          :: Maybe User
   , newOrder      :: Maybe Order
@@ -85,7 +85,7 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccoun
     ExistingPassword -> Form.validateEmptyField ExistingPassword "Lösenord krävs." value
     ProductSelection -> Form.validateEmptyField ProductSelection "Produkt krävs." value
 
-type NewAccountForm =
+type AccountForm =
   { emailAddress     :: Maybe String
   , existingPassword :: Maybe String
   , productSelection :: Maybe Product
@@ -217,7 +217,7 @@ render self =
       , DOM.p_ [ description self ]
       , foldMap orderErrorMessage self.state.orderFailure
       , renderProducts self.props.products
-      , newAccountForm self
+      , accountForm self
           [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
           , case self.state.accountStatus of
               NewAccount      -> mempty
@@ -289,8 +289,8 @@ description self@{ state: { accountStatus } } = case accountStatus of
                                                   ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
 
 
-newAccountForm :: Self -> Array JSX -> JSX
-newAccountForm self children =
+accountForm :: Self -> Array JSX -> JSX
+accountForm self children =
     DOM.form
       { className: "vetrina--form"
       , onSubmit: handler preventDefault $ (\_ -> submitNewOrderForm self $ formValidations self)
@@ -362,7 +362,7 @@ acceptTermsCheckbox =
         ]
     }
 
-submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
+submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField AccountForm -> Effect Unit
 submitNewOrderForm self@{ state: { form, logger } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
@@ -468,7 +468,7 @@ confirmButton self =
       = not $ all isNotInitialized errs
       | otherwise = false
 
-formValidations :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm
+formValidations :: Self -> Form.ValidatedForm NewAccountInputField AccountForm
 formValidations self@{ state: { form } } =
   { emailAddress: _
   , existingPassword: _
