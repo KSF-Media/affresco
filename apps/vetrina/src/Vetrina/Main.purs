@@ -294,7 +294,8 @@ resetPasswordLink :: JSX
 resetPasswordLink = DOM.p_
                       [ DOM.text "Glömt lösenordet? "
                       , DOM.a
-                          { href: "https://www.hbl.fi/losenord/"
+                          { className: "vetrina--link"
+                          , href: "https://www.hbl.fi/losenord/"
                           , children: [ DOM.text "Klicka här"]
                           , target: "_blank"
                           }
