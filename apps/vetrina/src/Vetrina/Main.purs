@@ -220,9 +220,8 @@ render self =
       , accountForm self
           [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
           , case self.state.accountStatus of
-              NewAccount      -> mempty
+              NewAccount      -> acceptTermsCheckbox
               ExistingAccount -> passwordInput self
-          , acceptTermsCheckbox
           , confirmButton self
           ]
       ]
@@ -298,8 +297,10 @@ accountForm self children =
       }
 
 emailAddressInput :: Self -> JSX
-emailAddressInput self@{ state: { form }} =
-  DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
+emailAddressInput self@{ state: { form, accountStatus }} =
+  case accountStatus of
+    NewAccount -> DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
+    ExistingAccount -> mempty
   <> InputField.inputField
   { type_: InputField.Email
   , label: Nothing
