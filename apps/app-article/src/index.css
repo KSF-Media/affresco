@@ -171,7 +171,7 @@ body {
     border-bottom: 2px solid #518196;
 }
 
-.genericBox .fakta {
+.genericBox .genericBox-headline {
     text-transform: uppercase;
 }
 
@@ -238,7 +238,7 @@ body {
     font-family: "Duplex Sans Bold", sans-serif;
 }
 
-.fakta {
+.genericBox-headline {
     font-size: 18px;
     font-family: sans-serif;
     font-weight: bolder;

@@ -18,6 +18,12 @@ class Content extends Component {
                 return this.renderImage(block, key);
             } else if (blockType === 'html') {
                 return this.renderHtml(block, key);
+            } else if (blockType === 'factbox') {
+                block.box.headline = 'Facta';
+                block.box.title = block.factBox.title;
+                block.box.content = block.factBox.content;
+                block.box.type = 'fact';
+                return this.renderGenericBox(block, key);
             } else if (blockType === 'box') {
                 return this.renderGenericBox(block, key);
             } else if (blockType === 'quote') {
@@ -74,7 +80,7 @@ class Content extends Component {
     renderGenericBox(block, key) {
         return (
             <div className={`genericBox genericBox-border-${getBrandValueParam()}`} key={key} id={"genericBox-" + key}>
-                <div className={"fakta"}>{block.box && block.box.headline}</div>
+                <div className={"genericBox-headline"}>{block.box && block.box.type === "fact" ? 'FAKTA': ''}</div>
                 <h3>{block && block.box && block.box.title}</h3>
                 <ul className={"factboxList"}>
                     { block.box && 
