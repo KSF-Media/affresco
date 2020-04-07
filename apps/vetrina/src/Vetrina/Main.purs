@@ -344,7 +344,7 @@ passwordInput :: Self -> JSX
 passwordInput self = InputField.inputField
   { type_: InputField.Password
   , placeholder: "Lösenord"
-  , label: Just "Lösenord"
+  , label: Nothing
   , name: "accountPassword"
   , value: Nothing
   , onChange: \pw -> self.setState _ { form { existingPassword = pw } }
