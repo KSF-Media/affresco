@@ -224,10 +224,10 @@ render self =
           , confirmButton self
           ]
       ]
-    (CapturePayment url) -> vetrinaContainer [ netsTerminalIframe url ]
+    CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
-    PurchaseSetPassword ->
+    PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
       Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
         -- We should think how to handle this. Probably we don't want to
