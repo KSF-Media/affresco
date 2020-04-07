@@ -17,15 +17,17 @@ class Track extends React.Component {
 
   render() {
     const t = this.props.t;
-    const trackID = t.guid._text.split('tracks/')[1];
     const cssClass = this.state.expanded ? 'pod-track expanded' : 'pod-track';
     const trackDetails = this.state.expanded
       ? (
         <div>  
           <div className="track-details-media">
-            <iframe 
-              src={`https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&show_artwork=false`}>
-            </iframe>
+            <audio
+              type={t.enclosure._attributes.type}
+              src={t.enclosure._attributes.url}
+              controls
+              autoPlay
+            />
           </div>
           <div className="track-details-description">
             {t.description._text}
