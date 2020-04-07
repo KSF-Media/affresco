@@ -223,6 +223,9 @@ render self =
               NewAccount      -> acceptTermsCheckbox
               ExistingAccount -> passwordInput self
           , confirmButton self
+          , case self.state.accountStatus of
+              NewAccount      -> mempty
+              ExistingAccount -> resetPasswordLink
           ]
       ]
     CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
@@ -287,6 +290,15 @@ description self@{ state: { accountStatus } } = case accountStatus of
                                                   NewAccount ->      DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
                                                   ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
 
+resetPasswordLink :: JSX
+resetPasswordLink = DOM.p_
+                      [ DOM.text "Glömt lösenordet? "
+                      , DOM.a
+                          { href: "https://www.hbl.fi/losenord/"
+                          , children: [ DOM.text "Klicka här"]
+                          , target: "_blank"
+                          }
+                      ]
 
 accountForm :: Self -> Array JSX -> JSX
 accountForm self children =
