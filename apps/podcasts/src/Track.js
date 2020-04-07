@@ -4,7 +4,7 @@ class Track extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      expanded: false
+      expanded: props.expanded
     }
     this.toggleTrack = this.toggleTrack.bind(this);
   }
