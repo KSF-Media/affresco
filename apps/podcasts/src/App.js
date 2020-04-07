@@ -78,8 +78,8 @@ class App extends React.Component {
     });
     // JSX: List of tracks
     const trackList = sortedTracks.map((t, k) => {
-      let pid = t.guid._text.split('/')[1];
-      return <Track t={t} key={`${pid}-${k}`} selectPodcast={this.selectPodcast} expanded={false} />
+      let id = t.guid._text.split('/')[1];
+      return <Track t={t} key={id} selectPodcast={this.selectPodcast} expanded={false} />
     }
     );
 

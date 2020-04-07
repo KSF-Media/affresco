@@ -18,6 +18,7 @@ class Track extends React.Component {
   render() {
     const t = this.props.t;
     const cssClass = this.state.expanded ? 'pod-track expanded' : 'pod-track';
+    const trackDescription = t.description._text.split('\n').map((p, key) => <p key={key}>{p}</p>)
     const trackDetails = this.state.expanded
       ? (
         <div>  
@@ -30,7 +31,7 @@ class Track extends React.Component {
             />
           </div>
           <div className="track-details-description">
-            {t.description._text}
+            {trackDescription}
           </div>
         </div>
       )
