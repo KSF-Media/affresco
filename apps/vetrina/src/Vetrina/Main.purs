@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT)
-import Data.Array (all, any, head, intercalate, length)
+import Data.Array (all, head, intercalate, length)
 import Data.Array as Array
 import Data.Either (Either(..), hush, isRight, note)
 import Data.Foldable (foldMap)
@@ -34,11 +34,16 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import Vetrina.Purchase.Completed as PurchaseCompleted
+import Vetrina.Purchase.Completed as Purchase.Completed
+import Vetrina.Purchase.SetPassword as Purchase.SetPassword
+import Vetrina.Types (AccountStatus(..))
 
 foreign import sentryDsn_ :: Effect String
 
-type Props = { onClose :: Effect Unit, products :: Array Product }
+type Props =
+  { onClose  :: Effect Unit
+  , products :: Array Product
+  }
 
 type State =
   { form          :: NewAccountForm
@@ -52,7 +57,10 @@ type State =
   , orderFailure  :: Maybe OrderFailure
   , logger        :: Sentry.Logger
   }
+
 type Self = React.Self Props State
+
+type SetState = (State -> State) -> Effect Unit
 
 type PrevState = { prevProps :: Props, prevState :: State }
 
@@ -61,10 +69,10 @@ data PurchaseState
   | CapturePayment PaymentTerminalUrl
   | ProcessPayment
   | PurchaseFailed
-  | PurchaseDone
+  | PurchaseSetPassword
+  | PurchaseCompleted AccountStatus
   | PurchaseSubscriptionExists
   | PurchaseUnexpectedError
-derive instance eqPurchaseState :: Eq PurchaseState
 
 data NewAccountInputField
   = EmailAddress
@@ -83,10 +91,6 @@ type NewAccountForm =
   , productSelection :: Maybe Product
   , paymentMethod    :: User.PaymentMethod
   }
-
-data AccountStatus
-  = NewAccount
-  | ExistingAccount
 
 data OrderFailure
   = EmailInUse
@@ -154,38 +158,52 @@ didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
 
 stopOrderPollerOnCompletedState :: Self -> Aff Unit
 stopOrderPollerOnCompletedState self =
-  when (any (_ == self.state.purchaseState) [ PurchaseFailed, PurchaseDone, NewPurchase ]) $ killOrderPoller self
+  case self.state.purchaseState of
+    PurchaseFailed      -> killOrderPoller self.state
+    PurchaseCompleted _ -> killOrderPoller self.state
+    NewPurchase         -> killOrderPoller self.state
+    _                   -> pure unit
 
-killOrderPoller :: Self -> Aff Unit
-killOrderPoller self = Aff.killFiber (error "Canceled poller") self.state.poller
+killOrderPoller :: State -> Aff Unit
+killOrderPoller state = Aff.killFiber (error "Canceled poller") state.poller
 
-startOrderPoller :: Self -> Order -> Effect Unit
-startOrderPoller self order = do
+startOrderPoller :: SetState -> State -> Order -> Effect Unit
+startOrderPoller setState state order = do
   newPoller <- Aff.launchAff do
-        killOrderPoller self
-        newPoller <- Aff.forkAff $ pollOrder self (Right order)
+        killOrderPoller state
+        newPoller <- Aff.forkAff $ pollOrder setState state (Right order)
         Aff.joinFiber newPoller
-  self.setState _ { poller = newPoller }
+  setState _ { poller = newPoller }
 
-pollOrder :: Self -> Either String Order -> Aff Unit
-pollOrder self@{ state: { logger } } (Right order) = do
+pollOrder :: SetState -> State -> Either String Order -> Aff Unit
+pollOrder setState state@{ logger } (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case order.status.state of
     OrderStarted -> do
-      liftEffect $ self.setState _ { purchaseState = ProcessPayment }
-      pollOrder self =<< User.getOrder order.number
-    OrderCompleted -> liftEffect $ self.setState _ { purchaseState = PurchaseDone }
+      liftEffect $ setState _ { purchaseState = ProcessPayment }
+      pollOrder setState state =<< User.getOrder order.number
+    OrderCompleted -> do
+      let userAccountStatus = maybe NewAccount chooseAccountStatus state.user
+          -- If new user, show set password form. Otherwise we're done.
+          nextPurchaseStep = case userAccountStatus of
+            NewAccount      -> PurchaseSetPassword
+            ExistingAccount -> PurchaseCompleted userAccountStatus
+      liftEffect $ setState _ { purchaseState = nextPurchaseStep }
+      where
+        chooseAccountStatus user
+          | user.hasCompletedRegistration = ExistingAccount
+          | otherwise = NewAccount
     OrderFailed    -> liftEffect do
       logger.error $ Error.orderError "Order failed for customer"
-      self.setState _ { purchaseState = PurchaseFailed }
+      setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
-      self.state.logger.log "Customer canceled order" Sentry.Info
-      self.setState _ { purchaseState = NewPurchase }
-    OrderCreated   -> pollOrder self =<< User.getOrder order.number
+      logger.log "Customer canceled order" Sentry.Info
+      setState _ { purchaseState = NewPurchase }
+    OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
     UnknownState   -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
-      self.setState _ { purchaseState = PurchaseFailed }
-pollOrder { setState, state: { logger } } (Left err) = liftEffect do
+      setState _ { purchaseState = PurchaseFailed }
+pollOrder setState { logger } (Left err) = liftEffect do
   logger.error $ Error.orderError $ "Failed to get order from server: " <> err
   setState _ { purchaseState = PurchaseFailed }
 
@@ -194,35 +212,37 @@ render self =
   if isJust self.state.isLoading
   then Spinner.loadingSpinner
   else case self.state.purchaseState of
-    NewPurchase ->
-      DOM.div
-        { className: "vetrina--container"
-        , children:
-            [ foldMap orderErrorMessage self.state.orderFailure
-            , renderProducts self.props.products
-            , newAccountForm self
-                [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
-                , case self.state.accountStatus of
-                    NewAccount      -> mempty
-                    ExistingAccount -> passwordInput self
-                , acceptTermsCheckbox
-                , confirmButton self
-                ]
-            ]
-        }
-    (CapturePayment url) -> netsTerminalIframe url
+    NewPurchase -> vetrinaContainer
+      [ foldMap orderErrorMessage self.state.orderFailure
+      , renderProducts self.props.products
+      , newAccountForm self
+          [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
+          , case self.state.accountStatus of
+              NewAccount      -> mempty
+              ExistingAccount -> passwordInput self
+          , acceptTermsCheckbox
+          , confirmButton self
+          ]
+      ]
+    CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
-    PurchaseDone ->
-      PurchaseCompleted.completed
+    PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
+      Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
         -- We should think how to handle this. Probably we don't want to
         -- show an ORDER FAILED message, but rather just inform the user that
         -- something went wrong and please try to set the password again some other time.
         { onError: \_ -> pure unit
-        , onComplete: self.props.onClose
+        , onSuccess: self.setState _ { purchaseState = PurchaseCompleted NewAccount }
         , user: self.state.user
         , logger: self.state.logger
+        }
+    PurchaseCompleted accountStatus -> vetrinaContainer $ Array.singleton $
+      Purchase.Completed.completed
+        { onClose: self.props.onClose
+        , user: self.state.user
+        , accountStatus
         }
     PurchaseSubscriptionExists ->
       DOM.div_
@@ -235,8 +255,14 @@ render self =
             , children: [ DOM.text "OK" ]
             }
         ]
-
     PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
+
+vetrinaContainer :: Array JSX -> JSX
+vetrinaContainer children =
+  DOM.div
+    { className: "vetrina--container"
+    , children
+    }
 
 renderProducts :: Array Product -> JSX
 renderProducts products =
@@ -253,13 +279,15 @@ orderErrorMessage failure =
 newAccountForm :: Self -> Array JSX -> JSX
 newAccountForm self children =
     DOM.form
-      { className: "vetrina--purchase-form"
+      { className: "vetrina--form"
       , onSubmit: handler preventDefault $ (\_ -> submitNewOrderForm self $ formValidations self)
       , children
       }
 
 emailAddressInput :: Self -> JSX
-emailAddressInput self@{ state: { form }} = InputField.inputField
+emailAddressInput self@{ state: { form }} =
+  DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
+  <> InputField.inputField
   { type_: InputField.Email
   , label: Nothing
   , name: "emailAddress"
@@ -342,13 +370,14 @@ submitNewOrderForm self@{ state: { form, logger } } = unV
       case eitherRes of
         Right { paymentUrl, order, user } ->
           liftEffect do
-            self.setState _
-              { purchaseState = CapturePayment paymentUrl
-              , newOrder      = Just order
-              , user          = Just user
-              , orderFailure  = Nothing
-              }
-            startOrderPoller self order
+            let newState = self.state { purchaseState = CapturePayment paymentUrl
+                                      , newOrder      = Just order
+                                      , user          = Just user
+                                      , orderFailure  = Nothing
+                                      }
+            self.setState \_ -> newState
+            -- NOTE: We need to pass the updated state here, not `self.state`.
+            startOrderPoller self.setState newState order
         Left err
           | UnrecognizedError e <- err ->
             liftEffect do
@@ -372,9 +401,7 @@ createNewAccount self@{ state: { logger } } (Just emailString) = do
         }
   newUser <- User.createUserWithEmail { emailAddress: User.Email emailString, legalConsents: [ legalConsent ] }
   case newUser of
-    Right user -> do
-      liftEffect $ self.setState _ { user = Just user }
-      pure $ Right user
+    Right user -> pure $ Right user
     Left User.RegistrationEmailInUse -> pure $ Left EmailInUse
     Left (User.InvalidFormFields errors) -> pure $ Left $ UnrecognizedError "invalid form fields"
     _ -> pure $ Left $ UnrecognizedError "Could not create a new account"
@@ -446,12 +473,7 @@ formValidations self@{ state: { form } } =
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
-  DOM.div
-    { className: "vetrina--container"
-    , children:
-        [ DOM.iframe
-            { src: paymentTerminalUrl
-            , className: "vetrina--payment-terminal"
-            }
-        ]
+  DOM.iframe
+    { src: paymentTerminalUrl
+    , className: "vetrina--payment-terminal"
     }
