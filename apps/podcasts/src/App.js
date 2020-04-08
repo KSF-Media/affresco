@@ -77,8 +77,10 @@ class App extends React.Component {
       return y - x;
     });
     // JSX: List of tracks
-    const trackList = sortedTracks.map((t, k) => 
-      <Track t={t} key={k} selectPodcast={this.selectPodcast} />
+    const trackList = sortedTracks.map((t, k) => {
+      let id = t.guid._text.split('/')[1];
+      return <Track t={t} id={id} key={id} selectPodcast={this.selectPodcast} expanded={false} />
+    }
     );
 
     return (
