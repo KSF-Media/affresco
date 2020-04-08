@@ -228,8 +228,9 @@ render self =
               LoggedInAccount user -> showLoggedInAccount user
           , confirmButton self
           , case self.state.accountStatus of
-              NewAccount      -> mempty
               ExistingAccount -> resetPasswordLink
+              _               -> mempty
+
           ]
       ]
     CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
