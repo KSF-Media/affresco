@@ -288,7 +288,7 @@ title self@{ state: { accountStatus } } = case accountStatus of
 description :: Self -> JSX
 description self@{ state: { accountStatus } } = case accountStatus of
                                                   NewAccount ->      DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
-                                                  ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+                                                  ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media-lösenord."
 
 resetPasswordLink :: JSX
 resetPasswordLink = DOM.p_
