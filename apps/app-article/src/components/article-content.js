@@ -85,7 +85,12 @@ class Content extends Component {
     renderGenericBox(block, key) {
         return (
             <div className={`genericBox genericBox-border-${getBrandValueParam()}`} key={key} id={"genericBox-" + key}>
-                <div className={"genericBox-headline"}>{block.box && block.box.type === "fact" ? 'FAKTA': ''}</div>
+                {
+                    block.box && block.box.headline ?  
+                    <div className={"genericBox-headline"}>{block.box.headline}</div>
+                    : 
+                    <div className={"genericBox-headline"}>{block.box.type === "fact" ? 'FAKTA': ''}</div>
+                }
                 <h3>{block && block.box && block.box.title}</h3>
                 <ul className={"factboxList"}>
                     { block.box && 
