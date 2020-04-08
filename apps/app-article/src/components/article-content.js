@@ -19,11 +19,16 @@ class Content extends Component {
             } else if (blockType === 'html') {
                 return this.renderHtml(block, key);
             } else if (blockType === 'factbox') {
-                block.box.headline = 'Facta';
-                block.box.title = block.factBox.title;
-                block.box.content = block.factBox.content;
-                block.box.type = 'fact';
-                return this.renderGenericBox(block, key);
+                const factBox = {
+                    box:
+                    {
+                      headline: "FAKTA",
+                      title: block.factBox.title,
+                      content: block.factBox.content,
+                      type: 'fact',
+                     }
+                  }
+                return this.renderGenericBox(factBox, key);
             } else if (blockType === 'box') {
                 return this.renderGenericBox(block, key);
             } else if (blockType === 'quote') {
