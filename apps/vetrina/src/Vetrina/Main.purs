@@ -46,7 +46,7 @@ type Props =
   }
 
 type State =
-  { form          :: NewAccountForm
+  { form          :: AccountForm
   , serverErrors  :: Array (Form.ValidationError NewAccountInputField)
   , user          :: Maybe User
   , newOrder      :: Maybe Order
@@ -85,7 +85,7 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccoun
     ExistingPassword -> Form.validateEmptyField ExistingPassword "Lösenord krävs." value
     ProductSelection -> Form.validateEmptyField ProductSelection "Produkt krävs." value
 
-type NewAccountForm =
+type AccountForm =
   { emailAddress     :: Maybe String
   , existingPassword :: Maybe String
   , productSelection :: Maybe Product
@@ -213,15 +213,19 @@ render self =
   then Spinner.loadingSpinner
   else case self.state.purchaseState of
     NewPurchase -> vetrinaContainer
-      [ foldMap orderErrorMessage self.state.orderFailure
+      [ DOM.h1_ [ title self ]
+      , DOM.p_ [ description self ]
+      , foldMap orderErrorMessage self.state.orderFailure
       , renderProducts self.props.products
-      , newAccountForm self
+      , accountForm self
           [ maybe (emailAddressInput self) showLoggedInAccount self.state.user
           , case self.state.accountStatus of
-              NewAccount      -> mempty
+              NewAccount      -> acceptTermsCheckbox
               ExistingAccount -> passwordInput self
-          , acceptTermsCheckbox
           , confirmButton self
+          , case self.state.accountStatus of
+              NewAccount      -> mempty
+              ExistingAccount -> resetPasswordLink
           ]
       ]
     CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
@@ -273,11 +277,32 @@ orderErrorMessage :: OrderFailure -> JSX
 orderErrorMessage failure =
   case failure of
     AuthenticationError -> InputField.errorMessage "Kombinationen av e-postadress och lösenord finns inte"
-    EmailInUse -> DOM.text "Email already exists, please log in" -- TODO: Waiting for copy
+    EmailInUse -> mempty -- TODO: Waiting for copy
     _ -> DOM.text "Något gick fel. Vänligen försök om en stund igen."
 
-newAccountForm :: Self -> Array JSX -> JSX
-newAccountForm self children =
+title :: Self -> JSX
+title self@{ state: { accountStatus } } = case accountStatus of
+                                            NewAccount ->      DOM.text "Hej kära läsare!"
+                                            ExistingAccount -> DOM.text "Du har redan ett KSF Media-konto"
+
+description :: Self -> JSX
+description self@{ state: { accountStatus } } = case accountStatus of
+                                                  NewAccount ->      DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
+                                                  ExistingAccount -> DOM.text "Vänligen logga in med ditt KSF Media-lösenord."
+
+resetPasswordLink :: JSX
+resetPasswordLink = DOM.p_
+                      [ DOM.text "Glömt lösenordet? "
+                      , DOM.a
+                          { className: "vetrina--link"
+                          , href: "https://www.hbl.fi/losenord/"
+                          , children: [ DOM.text "Klicka här"]
+                          , target: "_blank"
+                          }
+                      ]
+
+accountForm :: Self -> Array JSX -> JSX
+accountForm self children =
     DOM.form
       { className: "vetrina--form"
       , onSubmit: handler preventDefault $ (\_ -> submitNewOrderForm self $ formValidations self)
@@ -285,8 +310,10 @@ newAccountForm self children =
       }
 
 emailAddressInput :: Self -> JSX
-emailAddressInput self@{ state: { form }} =
-  DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
+emailAddressInput self@{ state: { form, accountStatus }} =
+  case accountStatus of
+    NewAccount -> DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
+    ExistingAccount -> mempty
   <> InputField.inputField
   { type_: InputField.Email
   , label: Nothing
@@ -318,7 +345,7 @@ passwordInput :: Self -> JSX
 passwordInput self = InputField.inputField
   { type_: InputField.Password
   , placeholder: "Lösenord"
-  , label: Just "Lösenord"
+  , label: Nothing
   , name: "accountPassword"
   , value: Nothing
   , onChange: \pw -> self.setState _ { form { existingPassword = pw } }
@@ -349,7 +376,7 @@ acceptTermsCheckbox =
         ]
     }
 
-submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm -> Effect Unit
+submitNewOrderForm :: Self -> Form.ValidatedForm NewAccountInputField AccountForm -> Effect Unit
 submitNewOrderForm self@{ state: { form, logger } } = unV
   (\errors -> self.setState _ { form { emailAddress = form.emailAddress <|> Just "" } })
   (\validForm -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
@@ -455,7 +482,7 @@ confirmButton self =
       = not $ all isNotInitialized errs
       | otherwise = false
 
-formValidations :: Self -> Form.ValidatedForm NewAccountInputField NewAccountForm
+formValidations :: Self -> Form.ValidatedForm NewAccountInputField AccountForm
 formValidations self@{ state: { form } } =
   { emailAddress: _
   , existingPassword: _
