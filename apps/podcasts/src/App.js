@@ -63,7 +63,7 @@ class App extends React.Component {
       : null
     // JSX: Loading indicator
     const spinner = this.state.loading === true
-      ? <div>Laddar...</div>
+      ? <div className="spinner"><img src="https://cdn.ksfmedia.fi/icons/loader-gif.gif" /></div>
       : null;
 
     // Filter tracks by selected podcast
