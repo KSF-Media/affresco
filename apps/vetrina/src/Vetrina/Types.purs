@@ -6,7 +6,7 @@ import KSF.User as User
 
 data AccountStatus
   = NewAccount
-  | ExistingAccount
+  | ExistingAccount String
   | LoggedInAccount User.User
 
 type Product =
