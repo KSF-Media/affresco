@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import PremiumBadge from "./badge";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
+import {getBrandValueParam} from "../helper";
 
 
 const getTag = (tags) => {
@@ -56,7 +57,7 @@ const Card = (props) => {
                 </h5>
 
                 <div className={"articleItemDetails"} style={{bottom: 0, position: 'absolute'}}>
-                    <div className={"category"}>{getTag(props.article.tags)}</div>
+                    <div className={`category brandColor-${getBrandValueParam()}`}>{getTag(props.article.tags)}</div>
                     <div className={"date"} style={{display: 'block'}}>{formatTime(props.article.publishingTime)}</div>
                 </div>
             </div>
