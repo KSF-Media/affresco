@@ -51,7 +51,7 @@ class Track extends React.Component {
     return (
       <div
         className={cssClass}>
-        <div>
+        <div className="pod-track-header">
           <div className="pod-track-artwork">
             <img
                 className="artwork"
