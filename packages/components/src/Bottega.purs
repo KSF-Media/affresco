@@ -50,14 +50,15 @@ getPackages = callApi packagesApi "packageGet" [] {}
 newtype OrderNumber = OrderNumber String
 
 type Order =
-  { number :: OrderNumber
-  , user   :: UUID
-  , status :: OrderStatus
+  { number     :: OrderNumber
+  , user       :: UUID
+  , status     :: OrderStatus
   }
 
 type OrderStatus =
-  { state  :: OrderStatusState
-  , time   :: String
+  { state      :: OrderStatusState
+  , time       :: String
+  , failReason :: Maybe OrderStatusFailReason
   }
 
 data OrderStatusState
@@ -79,6 +80,27 @@ instance readOrderStatusState :: ReadForeign OrderStatusState where
       "failed"    -> pure OrderFailed
       "canceled"  -> pure OrderCanceled
       _           -> pure UnknownState
+
+data OrderStatusFailReason
+  = NetsInternalError
+  | NetsIssuerError
+  | NetsCanceled
+  | SubscriptionExistsError
+  | SubscriptionError
+  | OrderNotFound
+
+derive instance genericOrderStatusFailReason :: Generic OrderStatusFailReason _
+instance readOrderStatusFailReason :: ReadForeign OrderStatusFailReason where
+  readImpl foreignOrderStatusFailReason = do
+    foreignOrderStatusFailReasonString :: String <- readImpl foreignOrderStatusFailReason
+    case foreignOrderStatusFailReasonString of
+      "NetsInternalError"       -> pure NetsInternalError
+      "NetsIssuerError"         -> pure NetsIssuerError
+      "NetsCanceled"            -> pure NetsCanceled
+      "SubscriptionExistsError" -> pure SubscriptionExistsError
+      "SubscriptionError"       -> pure SubscriptionError
+      "OrderNotFound"           -> pure OrderNotFound
+      _                         -> pure UnknownReason
 
 type NewOrder =
   { packageId      :: String
