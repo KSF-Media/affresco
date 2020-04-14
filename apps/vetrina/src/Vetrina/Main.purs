@@ -46,6 +46,7 @@ foreign import sentryDsn_ :: Effect String
 
 type Props =
   { onClose  :: Effect Unit
+  , onLogin  :: Effect Unit
   , products :: Array Product
   }
 
@@ -79,24 +80,6 @@ data PurchaseState
   | PurchaseCompleted AccountStatus
   | PurchaseSubscriptionExists
   | PurchaseUnexpectedError
-
--- data NewAccountInputField
---   = EmailAddress
---   | ExistingPassword
---   | ProductSelection
--- derive instance eqNewAccountInputField :: Eq NewAccountInputField
--- instance validatableFieldNewAccountInputField :: Form.ValidatableField NewAccountInputField where
---   validateField field value serverErrors = case field of
---     EmailAddress     -> Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
---     ExistingPassword -> Form.validateEmptyField ExistingPassword "Lösenord krävs." value
---     ProductSelection -> Form.validateEmptyField ProductSelection "Produkt krävs." value
-
--- type AccountForm =
---   { emailAddress     :: Maybe String
---   , existingPassword :: Maybe String
---   , productSelection :: Maybe Product
---   , paymentMethod    :: User.PaymentMethod
---   }
 
 data OrderFailure
   = EmailInUse String
@@ -209,30 +192,16 @@ render self =
   then Spinner.loadingSpinner
   else case self.state.purchaseState of
     NewPurchase -> vetrinaContainer $ Array.singleton $
-                   Purchase.NewPurchase.newPurchase { accountStatus: self.state.accountStatus
-                                                    , products: self.props.products
-                                                    , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
-                                                    , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
-                                                    , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
-                                                    , paymentMethod: self.state.paymentMethod
-                                                    , productSelection: self.state.productSelection
-                                                    }
-      -- [ DOM.h1_ [ title self ]
-      -- , DOM.p_ [ description self ]
-      -- , foldMap orderErrorMessage self.state.orderFailure
-      -- , renderProducts self.props.products
-      -- , accountForm self
-      --     [ case self.state.accountStatus of
-      --         NewAccount      -> acceptTermsCheckbox
-      --         ExistingAccount -> passwordInput self
-      --         LoggedInAccount user -> showLoggedInAccount user
-      --     , confirmButton self
-      --     , case self.state.accountStatus of
-      --         ExistingAccount -> resetPasswordLink
-      --         _               -> mempty
-
-      --     ]
-      -- ]
+      Purchase.NewPurchase.newPurchase
+        { accountStatus: self.state.accountStatus
+        , products: self.props.products
+        , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
+        , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
+        , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
+        , paymentMethod: self.state.paymentMethod
+        , productSelection: self.state.productSelection
+        , onLogin: self.props.onLogin
+        }
     CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
@@ -258,9 +227,7 @@ render self =
         -- TODO: Waiting for copy
         [ DOM.text "You already have this subscription. Go back to article"
         , DOM.button
-            { onClick: handler_ do
-                 self.setState _ { purchaseState = NewPurchase }
-                 self.props.onClose
+            { onClick: handler_ self.props.onClose
             , children: [ DOM.text "OK" ]
             }
         ]
@@ -280,13 +247,9 @@ orderErrorMessage failure =
     EmailInUse _ -> mempty -- TODO: Waiting for copy
     _ -> DOM.text "Något gick fel. Vänligen försök om en stund igen."
 
--- TODO: Waiting for copy
-showLoggedInAccount :: User.User -> JSX
-showLoggedInAccount user = DOM.text $ "Logged in as " <> user.email
-
+-- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
 mkPurchaseWithNewAccount :: Self -> NewPurchase.NewAccountForm -> Effect Unit
 mkPurchaseWithNewAccount self validForm = mkPurchase self validForm $ createNewAccount self validForm.emailAddress
-
 
 mkPurchaseWithExistingAccount :: Self -> NewPurchase.ExistingAccountForm -> Effect Unit
 mkPurchaseWithExistingAccount self validForm =
@@ -308,8 +271,6 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
 
     product       <- ExceptT $ pure $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- ExceptT $ pure $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
-
-    liftEffect$ Console.log $ "USER HAS!" <> show (userHasPackage product.packageName $ map _.package user.subs)
 
     when (userHasPackage product.packageName $ map _.package user.subs)
       $ ExceptT $ pure $ Left SubscriptionExists
@@ -336,7 +297,7 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
           self.setState _ { purchaseState = PurchaseFailed }
       | emailInUse@(EmailInUse email) <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount email, orderFailure = Just emailInUse }
       | SubscriptionExists <- err -> liftEffect $ self.setState _ { purchaseState = PurchaseSubscriptionExists }
-      | otherwise -> liftEffect $ self.setState _ { orderFailure = Just err }
+      | otherwise -> liftEffect $ self.setState _ { orderFailure = Just err, purchaseState = PurchaseFailed }
 
 userHasPackage :: PackageName -> Array Package -> Boolean
 userHasPackage packageName = isRight <<< Package.findPackage packageName
