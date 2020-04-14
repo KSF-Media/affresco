@@ -5,6 +5,8 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
 import Effect.Aff (Aff)
 import Foreign (Foreign, unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
@@ -30,12 +32,19 @@ getOrder { userId, authToken } orderNumber = do
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: Foreign, time :: String } } -> Aff Order
+readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: Foreign, time :: String, failReason :: Nullable Foreign } } -> Aff Order
 readOrder orderObj = do
   orderStatus <- case read orderObj.status.state of
     Right status -> pure status
     Left err     -> pure UnknownState
-  pure $ orderObj { status { state = orderStatus } }
+  failureReason <- case orderStatus of
+    UnknownState -> pure Nothing
+    _ -> case toMaybe orderObj.status.failReason of
+      Just reason -> case read reason of
+                       Right result -> pure (Just result)
+                       Left err     -> pure Nothing
+      Nothing     -> pure Nothing
+  pure $ orderObj { status { state = orderStatus, failReason = failureReason } }
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
 payOrder { userId, authToken } orderNumber paymentMethod =
@@ -88,6 +97,7 @@ data OrderStatusFailReason
   | SubscriptionExistsError
   | SubscriptionError
   | OrderNotFound
+  | UnknownReason
 
 derive instance genericOrderStatusFailReason :: Generic OrderStatusFailReason _
 instance readOrderStatusFailReason :: ReadForeign OrderStatusFailReason where
