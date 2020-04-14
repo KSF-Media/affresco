@@ -34,7 +34,6 @@ type State =
        { emailAddress :: Maybe String
        , password     :: Maybe String
        }
-  , isLoading           :: Maybe Spinner.Loading
   , accountStatus       :: AccountStatus
   , serverErrors        :: Array (Form.ValidationError FormInputField)
   , productSelection    :: Maybe Product
@@ -96,7 +95,6 @@ newPurchase = make component
                       { emailAddress: Nothing
                       , password: Nothing
                       }
-                  , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
                   , accountStatus: NewAccount
                   , serverErrors: []
                   , productSelection: Nothing
