@@ -32,18 +32,17 @@ getOrder { userId, authToken } orderNumber = do
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: Foreign, time :: String, failReason :: Nullable Foreign } } -> Aff Order
+readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: Foreign, time :: String, failReason :: Nullable String } } -> Aff Order
 readOrder orderObj = do
   orderStatus <- case read orderObj.status.state of
     Right status -> pure status
     Left err     -> pure UnknownState
   failureReason <- case orderStatus of
     UnknownState -> pure Nothing
-    _ -> case toMaybe orderObj.status.failReason of
-      Just reason -> case read reason of
-                       Right result -> pure (Just result)
-                       Left err     -> pure Nothing
-      Nothing     -> pure Nothing
+    _ -> pure $ do
+      reasonString <- toMaybe orderObj.status.failReason
+      reason       <- parseFailReason reasonString
+      pure reason
   pure $ orderObj { status { state = orderStatus, failReason = failureReason } }
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
@@ -99,18 +98,16 @@ data OrderStatusFailReason
   | OrderNotFound
   | UnknownReason
 
-derive instance genericOrderStatusFailReason :: Generic OrderStatusFailReason _
-instance readOrderStatusFailReason :: ReadForeign OrderStatusFailReason where
-  readImpl foreignOrderStatusFailReason = do
-    foreignOrderStatusFailReasonString :: String <- readImpl foreignOrderStatusFailReason
-    case foreignOrderStatusFailReasonString of
-      "NetsInternalError"       -> pure NetsInternalError
-      "NetsIssuerError"         -> pure NetsIssuerError
-      "NetsCanceled"            -> pure NetsCanceled
-      "SubscriptionExistsError" -> pure SubscriptionExistsError
-      "SubscriptionError"       -> pure SubscriptionError
-      "OrderNotFound"           -> pure OrderNotFound
-      _                         -> pure UnknownReason
+parseFailReason :: String -> Maybe OrderStatusFailReason
+parseFailReason reason =
+  case reason of
+    "NetsInternalError"       -> pure NetsInternalError
+    "NetsIssuerError"         -> pure NetsIssuerError
+    "NetsCanceled"            -> pure NetsCanceled
+    "SubscriptionExistsError" -> pure SubscriptionExistsError
+    "SubscriptionError"       -> pure SubscriptionError
+    "OrderNotFound"           -> pure OrderNotFound
+    _                         -> pure UnknownReason
 
 type NewOrder =
   { packageId      :: String
