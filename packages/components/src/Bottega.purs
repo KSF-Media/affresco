@@ -5,7 +5,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Effect.Aff (Aff)
 import Foreign (Foreign, unsafeToForeign)
@@ -32,18 +32,10 @@ getOrder { userId, authToken } orderNumber = do
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: Foreign, time :: String, failReason :: Nullable String } } -> Aff Order
+readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: String, time :: String, failReason :: Nullable String } } -> Aff Order
 readOrder orderObj = do
-  orderStatus <- case read orderObj.status.state of
-    Right status -> pure status
-    Left err     -> pure UnknownState
-  failureReason <- case orderStatus of
-    UnknownState -> pure Nothing
-    _ -> pure $ do
-      reasonString <- toMaybe orderObj.status.failReason
-      reason       <- parseFailReason reasonString
-      pure reason
-  pure $ orderObj { status { state = orderStatus, failReason = failureReason } }
+  let state = parseStatus orderObj.status.state (toMaybe orderObj.status.failReason)
+  pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
 payOrder { userId, authToken } orderNumber paymentMethod =
@@ -66,28 +58,26 @@ type Order =
 type OrderStatus =
   { state      :: OrderStatusState
   , time       :: String
-  , failReason :: Maybe OrderStatusFailReason
   }
 
 data OrderStatusState
   = OrderCreated
   | OrderStarted
   | OrderCompleted
-  | OrderFailed
+  | OrderFailed OrderStatusFailReason
   | OrderCanceled
   | UnknownState
 
-derive instance genericOrderStatusState :: Generic OrderStatusState _
-instance readOrderStatusState :: ReadForeign OrderStatusState where
-  readImpl foreignOrderStatusState = do
-    orderStatusStateString :: String <- readImpl foreignOrderStatusState
-    case orderStatusStateString of
-      "created"   -> pure OrderCreated
-      "started"   -> pure OrderStarted
-      "completed" -> pure OrderCompleted
-      "failed"    -> pure OrderFailed
-      "canceled"  -> pure OrderCanceled
-      _           -> pure UnknownState
+parseStatus :: String -> Maybe String -> OrderStatusState
+parseStatus state maybeFailReason =
+    case state of
+      "created"   -> OrderCreated
+      "started"   -> OrderStarted
+      "completed" -> OrderCompleted
+      "failed"    -> OrderFailed $ maybe UnknownReason parseFailReason maybeFailReason
+      "canceled"  -> OrderCanceled
+      _           -> UnknownState
+
 
 data OrderStatusFailReason
   = NetsInternalError
@@ -98,16 +88,16 @@ data OrderStatusFailReason
   | OrderNotFound
   | UnknownReason
 
-parseFailReason :: String -> Maybe OrderStatusFailReason
+parseFailReason :: String -> OrderStatusFailReason
 parseFailReason reason =
   case reason of
-    "NetsInternalError"       -> pure NetsInternalError
-    "NetsIssuerError"         -> pure NetsIssuerError
-    "NetsCanceled"            -> pure NetsCanceled
-    "SubscriptionExistsError" -> pure SubscriptionExistsError
-    "SubscriptionError"       -> pure SubscriptionError
-    "OrderNotFound"           -> pure OrderNotFound
-    _                         -> pure UnknownReason
+    "NetsInternalError"       -> NetsInternalError
+    "NetsIssuerError"         -> NetsIssuerError
+    "NetsCanceled"            -> NetsCanceled
+    "SubscriptionExistsError" -> SubscriptionExistsError
+    "SubscriptionError"       -> SubscriptionError
+    "OrderNotFound"           -> OrderNotFound
+    _                         -> UnknownReason
 
 type NewOrder =
   { packageId      :: String
