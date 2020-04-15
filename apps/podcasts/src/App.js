@@ -53,7 +53,7 @@ class App extends React.Component {
       let buttonClass = (this.state.selectedPodcast === name || !this.state.selectedPodcast) ? 'active' : '';
       return <li className={buttonClass} onClick={() => this.selectPodcast(name)} key={key}>{name}</li>
     });
-    // JSX: Rest button to show all podcasts
+    // JSX: Reset button to show all podcasts
     const resetListButton = this.state.selectedPodcast
       ? <li onClick={() => {this.setState({selectedPodcast: null})}}>Se alla</li>
       : null;
@@ -63,7 +63,7 @@ class App extends React.Component {
       : null
     // JSX: Loading indicator
     const spinner = this.state.loading === true
-      ? <div>Laddar...</div>
+      ? <div className="spinner"><img src="https://cdn.ksfmedia.fi/icons/loader-gif.gif" /></div>
       : null;
 
     // Filter tracks by selected podcast
@@ -77,9 +77,10 @@ class App extends React.Component {
       return y - x;
     });
     // JSX: List of tracks
-    const trackList = sortedTracks.map((t, k) => 
-      <Track t={t} key={k} selectPodcast={this.selectPodcast} />
-    );
+    const trackList = sortedTracks.map((t, k) => {
+      let id = t.guid._text.split('/')[1];
+      return <Track t={t} id={id} key={id} selectPodcast={this.selectPodcast} expanded={false} />
+    });
 
     return (
       <div className="pod-app">

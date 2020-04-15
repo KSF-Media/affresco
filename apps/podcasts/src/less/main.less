@@ -30,59 +30,68 @@
       color: #fff;
     }
   }
-}
-.pod-tracklist{
-  padding-top: 30px;
-  float: left;
-  width: 100%;
-  font-family: 'Duplex Sans', sans-serif;
-}
-.pod-track {
-  background: #eceae6;
-  padding: 15px;
-  margin-bottom: 15px;
-  >div{display: flex;}
-  .artwork{
-    margin-right: 15px;
-    width: 15vW;
-    height: auto;
-  }
-  h2 {
-    margin: 1rem 0;
-    cursor: pointer;
-  }
-  .created {
-    font-size: .875rem;
-    color: #999;
-  }
-  .track-details-media{
-    iframe {
-      border: 0;
-      width: 100%;
-      height: 160px;
-      margin: 15px 0;
-    }
-  } 
-  .pod-track-description{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  .pod-tracklist{
+    padding-top: 30px;
+    float: left;
     width: 100%;
-    .pod-podname {
-      text-transform: uppercase;
+    font-family: 'Duplex Sans', sans-serif;
+  }
+  .pod-track {
+    background: #eceae6;
+    padding: 15px;
+    margin-bottom: 15px;
+    div.pod-track-header{
+      display: flex;
+    }
+    .artwork{
+      margin-right: 15px;
+      width: 15vW;
+      height: auto;
+    }
+    h2 {
+      margin: .875rem 0;
+      cursor: pointer;
+    }
+    .created {
+      font-size: .875rem;
+      color: #999;
+    }
+    .track-details-media {
+      iframe {
+        border: 0;
+        width: 100%;
+        height: 160px;
+        margin: 15px 0;
+      }
+    } 
+    .pod-track-description{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      .pod-podname {
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+    }
+    .track-details-description{
+      font-size: .875rem;
+      color: #666;
+      line-height: 1.5rem;
+    }
+    img.pod-play {
+      transition: all .2s;
       cursor: pointer;
     }
   }
-  .track-details-description{
-    font-size: .875rem;
-    color: #666;
-    line-height: 1.5rem;
+  .expanded img.pod-play {
+    transform: rotate(90deg);
   }
-  img.pod-play {
-    transition: all .2s;
-    cursor: pointer;
+  .spinner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
   }
-}
-.expanded img.pod-play {
-  transform: rotate(90deg);
 }

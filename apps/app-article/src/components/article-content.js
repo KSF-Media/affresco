@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import quoteIcon from "../assets/images/quotes-png-11.png";
+import { getBrandValueParam } from '../helper';
 
 class Content extends Component {
     constructor(props) {
@@ -18,7 +19,18 @@ class Content extends Component {
             } else if (blockType === 'html') {
                 return this.renderHtml(block, key);
             } else if (blockType === 'factbox') {
-                return this.renderFactBox(block, key);
+                const factBox = {
+                    box:
+                    {
+                      headline: "FAKTA",
+                      title: block.factBox.title,
+                      content: block.factBox.content,
+                      type: 'fact',
+                     }
+                  }
+                return this.renderGenericBox(factBox, key);
+            } else if (blockType === 'box') {
+                return this.renderGenericBox(block, key);
             } else if (blockType === 'quote') {
                 return this.renderQuotes(block, key);
             } else if (blockType === 'question') {
@@ -70,14 +82,19 @@ class Content extends Component {
         );
     }
 
-    renderFactBox(block, key) {
+    renderGenericBox(block, key) {
         return (
-            <div className={"factBox"} key={key} id={"factBox-" + key}>
-                <div className={"fakta"}>FAKTA</div>
-                <h4>{block.factBox.title}</h4>
+            <div className={`genericBox genericBox-border-${getBrandValueParam()}`} key={key} id={"genericBox-" + key}>
+                {
+                    block.box && block.box.headline ?  
+                    <div className={"genericBox-headline"}>{block.box.headline}</div>
+                    : 
+                    <div className={"genericBox-headline"}>{block.box.type === "fact" ? 'FAKTA': ''}</div>
+                }
+                <h3>{block && block.box && block.box.title}</h3>
                 <ul className={"factboxList"}>
-                    {
-                        block.factBox.content.map((fact, key) => {
+                    { block.box && 
+                        block.box.content.map((fact, key) => {
                             return (
                                 <li key={key} dangerouslySetInnerHTML={{__html: fact}}/>
                             )
@@ -89,8 +106,8 @@ class Content extends Component {
                 <div className={"expand"} id={"expandFactBox-" + key} onClick={() => {
                     this.expandFaktBox(key)
                 }}>
-                    <div style={{display:'inline-block'}}><span>VIK UT</span></div>
-                    <div style={{display:'inline-block'}}><i className="arrow down"/></div>
+                    <div class={`brandColor-${getBrandValueParam()}`} style={{display:'inline-block'}}><span>VIK UT</span></div>
+                    <div style={{display:'inline-block'}}><i className={`arrow down border-${getBrandValueParam()}`}/></div>
                 </div>
             </div>
         );
@@ -104,7 +121,7 @@ class Content extends Component {
     }
 
     expandFaktBox(key) {
-        document.getElementById('factBox-' + key).style.height = "auto";
+        document.getElementById('genericBox-' + key).style.height = "auto";
         document.getElementById('expandFactBox-' + key).style.display = "none";
         document.getElementById('expandOpacity').style.display = "none";
         document.getElementById('expandOpacity2').style.display = "none";
