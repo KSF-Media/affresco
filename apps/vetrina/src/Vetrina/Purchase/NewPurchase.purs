@@ -117,17 +117,15 @@ didMount self = do
 
 render :: Self -> JSX
 render self =
-
-     DOM.h1_ [ title self.state.accountStatus ]
-    <> DOM.p
-        { className: "vetrina--description-text"
-        , children: [ description self.state.accountStatus ]
-        }
-    <> renderProducts self.props.products
-    <> notes self.state.accountStatus
-    <> form self
-    <> links self
-
+  DOM.h1_ [ title self.state.accountStatus ]
+  <> DOM.p
+       { className: "vetrina--description-text"
+       , children: [ description self.state.accountStatus ]
+       }
+  <> renderProducts self.props.products
+  <> notes self.state.accountStatus
+  <> form self
+  <> links self
 
 title :: AccountStatus -> JSX
 title accountStatus = case accountStatus of
