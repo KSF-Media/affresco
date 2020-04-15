@@ -11,7 +11,6 @@ import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import KSF.InputField.Component as InputField
-import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -125,7 +124,7 @@ render self =
         , children: [ description self.state.accountStatus ]
         }
     <> renderProducts self.props.products
-    <> DOM.p_ [ notes self.state.accountStatus ]
+    <> notes self.state.accountStatus
     <> form self
     <> links self
 
@@ -144,8 +143,8 @@ description accountStatus = case accountStatus of
 
 notes :: AccountStatus -> JSX
 notes accountStatus = case accountStatus of
-    NewAccount        -> DOM.text "Börja med att fylla i din e-post."
-    LoggedInAccount _ -> DOM.text "Klicka på \"Beställ\" här nedan för att läsa artikeln."
+    NewAccount        -> DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
+    LoggedInAccount _ -> DOM.p_ [ DOM.text "Klicka på \"Beställ\" här nedan för att läsa artikeln." ]
     _                 -> mempty
 
 renderProducts :: Array Product -> JSX
