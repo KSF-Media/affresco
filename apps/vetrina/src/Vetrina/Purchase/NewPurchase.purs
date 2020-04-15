@@ -313,17 +313,23 @@ emailInput self _ =
       _ -> mempty
 
 passwordInput :: Self -> JSX
-passwordInput self = InputField.inputField
-  { type_: InputField.Password
-  , placeholder: "Lösenord"
-  , label: Nothing
-  , name: "password"
-  , value: self.state.existingAccountForm.password
-  , onChange: \pw -> self.setState _ { existingAccountForm { password = pw } }
-  , validationError:
-      Form.inputFieldErrorMessage $
-      Form.validateField Password self.state.existingAccountForm.password []
-  }
+passwordInput self =
+  DOM.div
+    { className: "vetrina--input-wrapper"
+    , children:
+        [ InputField.inputField
+            { type_: InputField.Password
+            , placeholder: "Lösenord"
+            , label: Nothing
+            , name: "password"
+            , value: self.state.existingAccountForm.password
+            , onChange: \pw -> self.setState _ { existingAccountForm { password = pw } }
+            , validationError:
+              Form.inputFieldErrorMessage $
+              Form.validateField Password self.state.existingAccountForm.password []
+            }
+        ]
+    }
 
 acceptTermsCheckbox :: JSX
 acceptTermsCheckbox =
