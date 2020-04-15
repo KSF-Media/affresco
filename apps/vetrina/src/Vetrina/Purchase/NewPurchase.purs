@@ -160,14 +160,6 @@ form self = DOM.form $
   , children: emailInput self self.state.accountStatus `cons` children
   }
   where
-    buttonValue = case self.state.accountStatus of
-      NewAccount        -> "Beställ"
-      ExistingAccount _ -> "Logga in"
-      LoggedInAccount _ -> "Beställ"
-    buttonDisabled =  case self.state.accountStatus of
-      NewAccount        -> isFormInvalid $ newAccountFormValidations self
-      ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations self
-      LoggedInAccount _ -> isFormInvalid $ loggedInAccountFormValidations self
     onSubmit = handler preventDefault $ case self.state.accountStatus of
       NewAccount ->
         (\_ -> unV
