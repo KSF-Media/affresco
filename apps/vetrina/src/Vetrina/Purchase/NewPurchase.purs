@@ -279,14 +279,19 @@ emailInput :: Self -> AccountStatus -> JSX
 emailInput _ (LoggedInAccount _) = mempty
 emailInput self _ =
   let emailValue = self.state.existingAccountForm.emailAddress <|> self.state.newAccountForm.emailAddress
-  in InputField.inputField
-     { type_: InputField.Email
-     , label: Nothing
-     , name: "emailAddress"
-     , placeholder: "E-postaddress"
-     , onChange: onChange
-     , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress emailValue self.state.serverErrors
-     , value: emailValue
+  in DOM.div
+     { className: "vetrina--new-purchase-email"
+     , children:
+         [ InputField.inputField
+             { type_: InputField.Email
+             , label: Nothing
+             , name: "emailAddress"
+             , placeholder: "E-postaddress"
+             , onChange: onChange
+             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress emailValue self.state.serverErrors
+             , value: emailValue
+             }
+         ]
      }
   where
     onChange = case self.state.accountStatus of
