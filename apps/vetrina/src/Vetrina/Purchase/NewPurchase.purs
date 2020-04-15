@@ -118,17 +118,17 @@ didMount self = do
 
 render :: Self -> JSX
 render self =
-  DOM.div_
-    [ DOM.h1_ [ title self.state.accountStatus ]
-    , DOM.p
-        { className: "vetrina--new-purchase-description"
+
+     DOM.h1_ [ title self.state.accountStatus ]
+    <> DOM.p
+        { className: "vetrina--description-text"
         , children: [ description self.state.accountStatus ]
         }
-    , renderProducts self.props.products
-    , DOM.p_ [ notes self.state.accountStatus ]
-    , form self
-    , links self
-    ]
+    <> renderProducts self.props.products
+    <> DOM.p_ [ notes self.state.accountStatus ]
+    <> form self
+    <> links self
+
 
 title :: AccountStatus -> JSX
 title accountStatus = case accountStatus of
@@ -280,7 +280,7 @@ emailInput _ (LoggedInAccount _) = mempty
 emailInput self _ =
   let emailValue = self.state.existingAccountForm.emailAddress <|> self.state.newAccountForm.emailAddress
   in DOM.div
-     { className: "vetrina--new-purchase-email"
+     { className: "vetrina--input-wrapper"
      , children:
          [ InputField.inputField
              { type_: InputField.Email

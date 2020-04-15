@@ -22,8 +22,14 @@ completed props =
                NewAccount      -> DOM.text "Ditt KSF Media konto är klart!"
                _               -> DOM.text "Tack för din beställning!"
           ]
-  <> DOM.p_ [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi." ] -- TODO: Should this come from props?
-  <> DOM.p_ [ DOM.text $ "Vi har skickat en bekräftelse till " <> (fromMaybe "" $ map _.email props.user) ]
+  <> DOM.p
+       { className: "vetrina--description-text"
+       , children: [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi." ] -- TODO: Should this come from props?
+       }
+  <> DOM.p
+       { className: "vetrina--description-text"
+       , children: [ DOM.text $ "Vi har skickat en bekräftelse till " <> (fromMaybe "" $ map _.email props.user) ]
+       }
   <> completeButton props
 
 completeButton :: Props -> JSX

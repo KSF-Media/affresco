@@ -20,6 +20,9 @@ body {
     justify-content: center;
     grid-template-columns: minmax(100px, 505px);
     h1, p { text-align: center }
+    .vetrina--description-text:not(:first-of-type) {
+        margin-top: 0;
+    }
 }
 
 .vetrina--product-description {
@@ -116,13 +119,12 @@ body {
     justify-self: center;
 }
 
-.vetrina--new-purchase-description {
+.vetrina--description-text {
     font-size: 1.2em;
-    margin: 2em;
 }
 
 // A wrapper to the input field to control the width
-.vetrina--new-purchase-email {
+.vetrina--input-wrapper {
     width: 80%;
     @media @to-xsmall {
         width: 100%;
