@@ -111,6 +111,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                , description:
                    [ DOM.text $ translateStatus props.subscription.state ]
                    <> (map DOM.text $ foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
+                   <> if maybe true Array.null self.state.pausedSubscriptions
+                      then []
+                      else [ removeSubscriptionPauses ]
                }
              ]
              <> deliveryAddress
@@ -295,6 +298,23 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             { updateAction = Just PauseSubscription
             , wrapperProgress = AsyncWrapper.Editing pauseSubscriptionComponent
             }
+
+    removeSubscriptionPauses =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--unpause-icon circle" }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Remove all pauses" ] ]
+              }
+          ]
+        , onClick: handler_ $
+           self.setState _
+             { updateAction = Nothing }
+        }
 
     temporaryAddressChangeIcon =
       DOM.div
