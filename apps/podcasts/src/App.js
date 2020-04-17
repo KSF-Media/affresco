@@ -12,17 +12,24 @@ class App extends React.Component {
       podcasts: [],
       tracks: [],
       selectedPodcast: null,
-      loading: null
+      loading: null,
+      loadedPodcasts: null
     }
   }
 
   componentDidMount() {
-    this.setState({loading: true});
+    this.setState({
+      loading: true,
+      loadedPodcasts: 0
+    });
     const podRequests = this.state.podcastIds.map(id => 
       fetch(process.env.NODE_ENV === 'development'
         ? `http://localhost:9000/getPodcast?id=${id}`
         : `${this.state.podAppUlr}/.netlify/functions/getPodcast?id=${id}`
-      ).then(res => res.json())
+      ).then(res => {
+        this.setState({loadedPodcasts: this.state.loadedPodcasts+1});
+        return res.json()
+      })
     );
     Promise.all(podRequests).then(jsons => {
       jsons.map(json => {
@@ -59,11 +66,25 @@ class App extends React.Component {
       : null;
     // JSX: Podcasts nav menu
     const podcastNav = this.state.podcasts.length > 1
-      ? <ul className="pod-nav"><li className="label">Välj podd:</li>{podcatsList}{resetListButton}</ul>
+      ? <nav className="pod-nav">
+          <div className="label">Välj podd</div>
+          <ul>
+            {podcatsList}
+            {resetListButton}
+          </ul>
+        </nav>
       : null
     // JSX: Loading indicator
     const spinner = this.state.loading === true
-      ? <div className="spinner"><img src="https://cdn.ksfmedia.fi/icons/loader-gif.gif" /></div>
+      ? <div className="loading">
+          <p>Laddar</p>
+          <div className="progress">
+            <div
+              className="progress-bar"
+              style={{width: `${100 * this.state.loadedPodcasts / this.state.podcastIds.length}%`}}>
+            </div>
+          </div>
+        </div>
       : null;
 
     // Filter tracks by selected podcast
