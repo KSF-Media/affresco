@@ -172,7 +172,7 @@ pollOrder setState state@{ logger } (Right order) = do
         chooseAccountStatus user
           | user.hasCompletedRegistration = ExistingAccount user.email
           | otherwise = NewAccount
-    OrderFailed    -> liftEffect do
+    OrderFailed reason -> liftEffect do
       logger.error $ Error.orderError "Order failed for customer"
       setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
