@@ -78,7 +78,10 @@ render self =
     DOM.h1_ [ DOM.text "Tack för din beställning!" ]
     <> case self.props.user of
         Just u ->
-          DOM.p_ [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
+          DOM.p
+            { className: "vetrina--description-text"
+            , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
+            }
           <> setNewPassword self
         _ -> DOM.text "SOMETHING WENT WRONG!"
 
@@ -95,27 +98,32 @@ setPasswordForm self@{ state: { passwordForm } } =
     { className: "vetrina--form"
     , onSubmit: handler preventDefault $ (\_ -> submitNewPassword self $ formValidations self)
     , children:
-        [ InputField.inputField
-            { placeholder: "Önskat lösenord (minst 6 tecken)"
-            , type_: InputField.Password
-            , label: Nothing
-            , name: "password"
-            , onChange: \val -> self.setState _ { passwordForm { newPassword = val } }
-            , value: passwordForm.newPassword
-            , validationError: inputFieldErrorMessage $ validateField NewPassword passwordForm.newPassword []
-            }
-        , InputField.inputField
-            { placeholder: "Bekräfta lösenord"
-            , type_: InputField.Password
-            , label: Nothing
-            , name: "confirmPassword"
-            , onChange: \val -> self.setState _ { passwordForm { confirmPassword = val } }
-            , value: passwordForm.confirmPassword
-            , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword passwordForm.newPassword) passwordForm.confirmPassword []
+        [ DOM.div
+            { className: "vetrina--input-wrapper"
+            , children:
+                [ InputField.inputField
+                   { placeholder: "Önskat lösenord (minst 6 tecken)"
+                   , type_: InputField.Password
+                   , label: Nothing
+                   , name: "password"
+                   , onChange: \val -> self.setState _ { passwordForm { newPassword = val } }
+                   , value: passwordForm.newPassword
+                   , validationError: inputFieldErrorMessage $ validateField NewPassword passwordForm.newPassword []
+                   }
+                , InputField.inputField
+                    { placeholder: "Bekräfta lösenord"
+                    , type_: InputField.Password
+                    , label: Nothing
+                    , name: "confirmPassword"
+                    , onChange: \val -> self.setState _ { passwordForm { confirmPassword = val } }
+                    , value: passwordForm.confirmPassword
+                    , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword passwordForm.newPassword) passwordForm.confirmPassword []
+                    }
+                ]
             }
         , DOM.input
             { type: "submit"
-            , className: "vetrina--button vetrina--completed-"
+            , className: "vetrina--button vetrina--completed"
             , disabled: isFormInvalid $ formValidations self
             , value: "Fortsätt"
             }
