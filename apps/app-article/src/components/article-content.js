@@ -88,7 +88,6 @@ class Content extends Component {
                 if(currentIndex === 0){
                     return acc; 
                 }
-                console.log(item)
                 return acc + item.length
             }, 0);
             return totalCharacters;
