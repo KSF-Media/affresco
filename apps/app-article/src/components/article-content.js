@@ -82,9 +82,23 @@ class Content extends Component {
         );
     }
 
+    countBlockChatacters(block){ 
+        if(block){
+            const totalCharacters = block.reduce((acc, item, currentIndex) => {
+                if(currentIndex === 0){
+                    return acc; 
+                }
+                console.log(item)
+                return acc + item.length
+            }, 0);
+            return totalCharacters;
+        }
+        return 0;
+    }
+
     renderGenericBox(block, key) {
         return (
-            <div className={`genericBox genericBox-border-${getBrandValueParam()}`} key={key} id={"genericBox-" + key}>
+            <div className={`genericBox ${this.countBlockChatacters(block.box.content) > 400 ? '':'genericBoxAutoHeight'} genericBox-border-${getBrandValueParam()} `} key={key} id={"genericBox-" + key}>
                 {
                     block.box && block.box.headline ?  
                     <div className={"genericBox-headline"}>{block.box.headline}</div>
@@ -101,14 +115,15 @@ class Content extends Component {
                         })
                     }
                 </ul>
-                <div className={"expandOpacity"} id={"expandOpacity"}></div>
-                <div className={"expandOpacity2"} id={"expandOpacity2"}></div>
-                <div className={"expand"} id={"expandFactBox-" + key} onClick={() => {
-                    this.expandFaktBox(key)
-                }}>
+                
+                { block && block.box && block.box.content && this.countBlockChatacters(block.box.content) > 400 && 
+                <div className={"expand"} id={"expandFactBox-" + key} onClick={() => {this.expandFaktBox(key)}}>
+                    <div className={"expandOpacity"} id={"expandOpacity"}></div>
+                    <div className={"expandOpacity2"} id={"expandOpacity2"}></div>
                     <div class={`brandColor-${getBrandValueParam()}`} style={{display:'inline-block'}}><span>VIK UT</span></div>
                     <div style={{display:'inline-block'}}><i className={`arrow down border-${getBrandValueParam()}`}/></div>
                 </div>
+                }
             </div>
         );
     }
