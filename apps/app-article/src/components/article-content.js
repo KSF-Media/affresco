@@ -84,10 +84,7 @@ class Content extends Component {
 
     countBlockChatacters(block){ 
         if(block){
-            const totalCharacters = block.reduce((acc, item, currentIndex) => {
-                if(currentIndex === 0){
-                    return acc; 
-                }
+            const totalCharacters = block.reduce((acc, item) => {
                 return acc + item.length
             }, 0);
             return totalCharacters;
