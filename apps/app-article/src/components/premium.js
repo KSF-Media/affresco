@@ -20,7 +20,7 @@ const PremiumBox = (props) => {
                 vill.
             </p>
             <p><a id="prenumerera-redirect--login"
-                  href="https://prenumerera.ksfmedia.fi?redirect_to=https://www.hbl.fi/artikel/vansterforbundets-kandidat-polisanmaler-attack-i-ostra-centrum-det-var-inte-taget-ur-intet/#/hbl"
+                  href={`https://prenumerera.ksfmedia.fi?redirect_to=${window.location.href}`}
                   className="btn btn-cta">Köp nu!</a>
             </p>
             <p className="cta-login-existing">Redan kund? <a
