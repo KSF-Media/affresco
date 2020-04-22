@@ -61,7 +61,7 @@ render self@{ props, state } =
             { type: show props.type_
             , placeholder: props.placeholder
             , name: props.name
-            , value: state.inputValue
+            , value: fromMaybe state.inputValue props.value
             , onChange: handler targetValue \maybeNewVal -> do
                 self.setState _ { inputValue = fromMaybe "" maybeNewVal }
                 props.onChange maybeNewVal

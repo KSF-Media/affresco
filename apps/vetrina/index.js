@@ -20,7 +20,9 @@ var hblPremium = {
 
 function main() {
   const myComponent = (
-    <Main.app products={[hblPremium]} onClose={() => { location.reload() }}/>
+    <Main.app products={[hblPremium]}
+              onClose={() => { location.reload() }}
+              onLogin={() => console.log("Let me in!") } />
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));
