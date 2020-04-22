@@ -20,6 +20,9 @@ body {
     justify-content: center;
     grid-template-columns: minmax(100px, 505px);
     h1, p { text-align: center }
+    .vetrina--description-text:not(:first-of-type) {
+        margin-top: 0;
+    }
 }
 
 .vetrina--product-description {
@@ -36,6 +39,7 @@ body {
     max-width: 600px;
     display: grid;
     justify-items: center;
+    margin-top: 1em;
     .input-field--container {
         width: 100%;
     }
@@ -57,6 +61,9 @@ body {
         cursor: auto;
     }
     &:hover { background-color: #00b9c4 }
+    &:only-child {
+        margin: 0;
+    }
     font-family: 'Duplex Sans Titling', sans-serif;
     font-weight: bold !important;
     font-size: 16px;
@@ -69,15 +76,27 @@ body {
     border-radius: 5px;
     padding: 12px;
     font-weight: 500;
-    margin-top: 1em;
+    margin-top: 2em;
     max-width: 200px;
     cursor: pointer;
+}
+
+.vetrina--links {
+    margin-top: 2em;
+    display: grid;
+    text-align: center;
+    grid-row-gap: 0.5em;
 }
 
 .vetrina--link {
   color: #00a1ab;
   outline: 0;
   text-decoration: none;
+}
+
+.vetrina--login-callback {
+  color: #00a1ab;
+  cursor: pointer;
 }
 
 .vetrina-purchase-completed--submit-password {
@@ -98,4 +117,16 @@ body {
 
 .vetrina--completed-close {
     justify-self: center;
+}
+
+.vetrina--description-text {
+    font-size: 1.2em;
+}
+
+// A wrapper to the input field to control the width
+.vetrina--input-wrapper {
+    width: 80%;
+    @media @to-xsmall {
+        width: 100%;
+    }
 }
