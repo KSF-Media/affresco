@@ -356,7 +356,7 @@ class App extends Component {
 
             push_data.authors = authors;
             push_data.category = article.articleType;
-            push_data.brand = 'hbl.fi';
+            push_data.brand = getBrandValueParam() + '.fi';
             push_data.tags = article.tags;
             push_data.publish_date = article.publishingTime;
             push_data.update_date = article.publishingTime;
@@ -367,6 +367,7 @@ class App extends Component {
             push_data.analyticsCategory = article.analyticsCategory;
             push_data.analyticsSection = article.analyticsSection;
             push_data.app_os = navigator.userAgent.match(/Android/) ? "Android" : "iOS";
+            push_data.articlePriority = article.articlePriority;
         }
 
         window.dataLayer.push(push_data);
