@@ -40,6 +40,7 @@ import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
+import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Types (AccountStatus(..), Product)
 
 foreign import sentryDsn_ :: Effect String
@@ -204,7 +205,9 @@ render self =
         }
     CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
     ProcessPayment -> Spinner.loadingSpinner
-    PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
+    PurchaseFailed -> Purchase.Error.error
+      { onRetry: pure unit
+      }
     PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
       Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
@@ -231,7 +234,9 @@ render self =
             , children: [ DOM.text "OK" ]
             }
         ]
-    PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
+    PurchaseUnexpectedError -> Purchase.Error.error
+      { onRetry: pure unit
+      }
 
 vetrinaContainer :: Array JSX -> JSX
 vetrinaContainer children =
