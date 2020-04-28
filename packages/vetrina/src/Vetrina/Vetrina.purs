@@ -1,23 +1,19 @@
-module Vetrina.Main where
+module Vetrina where
 
 import Prelude
 
-import Control.Alt ((<|>))
-import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
-import Data.Array (all, head, intercalate, length)
+import Control.Monad.Except (ExceptT(..), runExceptT)
+import Data.Array (head, length)
 import Data.Array as Array
 import Data.Either (Either(..), hush, isRight, note)
-import Data.Foldable (foldMap)
 import Data.Int (ceil)
 import Data.JSDate as JSDate
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
-import Data.Nullable (toMaybe, toNullable)
-import Data.Validation.Semigroup (toEither, unV)
+import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Nullable (toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Exception (error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (PackageName, Package)
@@ -28,13 +24,10 @@ import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
 import KSF.User as User
-import KSF.ValidatableForm (isNotInitialized)
-import KSF.ValidatableForm as Form
-import React.Basic (JSX, fragment, make)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (handler_)
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
@@ -51,9 +44,7 @@ type Props =
   }
 
 type State =
-  { -- form          :: AccountForm
-  --, serverErrors  :: Array (Form.ValidationError NewAccountInputField)
-   user          :: Maybe User
+  { user          :: Maybe User
   , newOrder      :: Maybe Order
   , purchaseState :: PurchaseState
   , poller        :: Aff.Fiber Unit
@@ -92,8 +83,8 @@ data OrderFailure
 component :: React.Component Props
 component = React.createComponent "Vetrina"
 
-app :: Props -> JSX
-app = make component
+vetrina :: Props -> JSX
+vetrina = make component
   { initialState: { user: Nothing
                   , newOrder: Nothing
                   , purchaseState: NewPurchase
