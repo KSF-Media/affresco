@@ -6,7 +6,6 @@ import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (head, length)
 import Data.Array as Array
 import Data.Either (Either(..), hush, note)
-import Data.Int (ceil)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Nullable (toNullable)
@@ -329,7 +328,7 @@ loginToExistingAccount _ _ _ =
 createOrder :: User -> Product -> Aff (Either OrderFailure Order)
 createOrder user product = do
   -- TODO: fix period etc.
-  let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
+  let newOrder = { packageId: product.id, period: 1, payAmountCents: product.priceCents }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of
     Right order -> Right order

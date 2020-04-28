@@ -12,6 +12,6 @@ type Product =
   { name        :: String
   , id          :: String
   , description :: Array String
-  , price       :: Number
+  , priceCents  :: Int
   , imageUrl    :: Maybe String -- TODO: What to do with this?
   }
