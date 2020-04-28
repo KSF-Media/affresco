@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (head, length)
 import Data.Array as Array
-import Data.Either (Either(..), hush, isRight, note)
+import Data.Either (Either(..), hush, note)
 import Data.Int (ceil)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), isJust, maybe)
@@ -16,8 +16,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (PackageName, Package)
-import KSF.Api.Package as Package
+import KSF.Api.Package (Package, PackageId)
 import KSF.InputField.Component as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
@@ -263,7 +262,7 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
     product       <- ExceptT $ pure $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- ExceptT $ pure $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
-    when (userHasPackage product.packageName $ map _.package user.subs)
+    when (userHasPackage product.id $ map _.package user.subs)
       $ ExceptT $ pure $ Left SubscriptionExists
 
     order <- ExceptT $ createOrder user product
@@ -290,8 +289,8 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
       | SubscriptionExists <- err -> liftEffect $ self.setState _ { purchaseState = PurchaseSubscriptionExists }
       | otherwise -> liftEffect $ self.setState _ { orderFailure = Just err, purchaseState = PurchaseFailed }
 
-userHasPackage :: PackageName -> Array Package -> Boolean
-userHasPackage packageName = isRight <<< Package.findPackage packageName
+userHasPackage :: PackageId -> Array Package -> Boolean
+userHasPackage packageId = Array.any (\p -> packageId == p.id)
 
 createNewAccount :: Self -> Maybe String -> Aff (Either OrderFailure User)
 createNewAccount self@{ state: { logger } } (Just emailString) = do

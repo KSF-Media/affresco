@@ -1,7 +1,6 @@
 module Vetrina.Types where
 
 import Data.Maybe (Maybe)
-import KSF.Api.Package as Package
 import KSF.User as User
 
 data AccountStatus
@@ -14,6 +13,5 @@ type Product =
   , id          :: String
   , description :: Array String
   , price       :: Number
-  , packageName :: Package.PackageName
   , imageUrl    :: Maybe String -- TODO: What to do with this?
   }
