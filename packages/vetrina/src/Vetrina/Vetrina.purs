@@ -1,4 +1,4 @@
-module Vetrina where
+module KSF.Vetrina where
 
 import Prelude
 
