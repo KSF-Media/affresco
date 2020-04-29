@@ -205,9 +205,10 @@ render self =
         }
     CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
     ProcessPayment -> Spinner.loadingSpinner
-    PurchaseFailed -> Purchase.Error.error
-      { onRetry: pure unit
-      }
+    PurchaseFailed -> vetrinaContainer $ Array.singleton $
+      Purchase.Error.error
+        { onRetry: pure unit
+        }
     PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
       Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
@@ -234,9 +235,10 @@ render self =
             , children: [ DOM.text "OK" ]
             }
         ]
-    PurchaseUnexpectedError -> Purchase.Error.error
-      { onRetry: pure unit
-      }
+    PurchaseUnexpectedError -> vetrinaContainer $ Array.singleton $
+      Purchase.Error.error
+        { onRetry: pure unit
+        }
 
 vetrinaContainer :: Array JSX -> JSX
 vetrinaContainer children =
