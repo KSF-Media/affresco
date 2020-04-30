@@ -53,14 +53,12 @@ type Props =
 
 type State =
   { -- form          :: AccountForm
-  --, serverErrors  :: Array (Form.ValidationError NewAccountInputField)
-   user          :: Maybe User
-  , newOrder      :: Maybe Order
+    --, serverErrors  :: Array (Form.ValidationError NewAccountInputField)
+    user          :: Maybe User
   , purchaseState :: PurchaseState
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
   , accountStatus :: AccountStatus
-  , orderFailure  :: Maybe OrderFailure
   , logger        :: Sentry.Logger
   , productSelection :: Maybe Product
   , paymentMethod :: User.PaymentMethod
@@ -96,12 +94,10 @@ component = React.createComponent "Vetrina"
 app :: Props -> JSX
 app = make component
   { initialState: { user: Nothing
-                  , newOrder: Nothing
                   , purchaseState: NewPurchase
                   , poller: pure unit
                   , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
                   , accountStatus: NewAccount
-                  , orderFailure: Nothing
                   , logger: Sentry.emptyLogger
                   , productSelection: Nothing
                   , paymentMethod: CreditCard
@@ -290,9 +286,7 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
     Right { paymentUrl, order, user } ->
       liftEffect do
         let newState = self.state { purchaseState = CapturePayment paymentUrl
-                                  , newOrder      = Just order
                                   , user          = Just user
-                                  , orderFailure  = Nothing
                                   }
         self.setState \_ -> newState
         -- NOTE: We need to pass the updated state here, not `self.state`.
@@ -302,9 +296,9 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
         liftEffect do
           logger.error $ Error.orderError $ "Failed to place an order: " <> e
           self.setState _ { purchaseState = PurchaseFailed }
-      | emailInUse@(EmailInUse email) <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount email, orderFailure = Just emailInUse }
+      | emailInUse@(EmailInUse email) <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount email }
       | SubscriptionExists <- err -> liftEffect $ self.setState _ { purchaseState = PurchaseSubscriptionExists }
-      | otherwise -> liftEffect $ self.setState _ { orderFailure = Just err, purchaseState = PurchaseFailed }
+      | otherwise -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
 
 userHasPackage :: PackageName -> Array Package -> Boolean
 userHasPackage packageName = isRight <<< Package.findPackage packageName
