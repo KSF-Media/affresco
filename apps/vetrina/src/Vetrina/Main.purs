@@ -93,19 +93,23 @@ data OrderFailure
 component :: React.Component Props
 component = React.createComponent "Vetrina"
 
+
+initialState :: State
+initialState = { user: Nothing
+               , newOrder: Nothing
+               , purchaseState: NewPurchase
+               , poller: pure unit
+               , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
+               , accountStatus: NewAccount
+               , orderFailure: Nothing
+               , logger: Sentry.emptyLogger
+               , productSelection: Nothing
+               , paymentMethod: CreditCard
+               }
+
 app :: Props -> JSX
 app = make component
-  { initialState: { user: Nothing
-                  , newOrder: Nothing
-                  , purchaseState: NewPurchase
-                  , poller: pure unit
-                  , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
-                  , accountStatus: NewAccount
-                  , orderFailure: Nothing
-                  , logger: Sentry.emptyLogger
-                  , productSelection: Nothing
-                  , paymentMethod: CreditCard
-                  }
+  { initialState: initialState
   , render
   , didMount
   }
@@ -207,7 +211,7 @@ render self =
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> vetrinaContainer $ Array.singleton $
       Purchase.Error.error
-        { onRetry: pure unit
+        { onRetry: self.setState \_ -> initialState
         }
     PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
       Purchase.SetPassword.setPassword
@@ -237,7 +241,7 @@ render self =
         ]
     PurchaseUnexpectedError -> vetrinaContainer $ Array.singleton $
       Purchase.Error.error
-        { onRetry: pure unit
+        { onRetry: self.setState \_ -> initialState
         }
 
 vetrinaContainer :: Array JSX -> JSX
