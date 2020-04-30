@@ -207,7 +207,7 @@ render self =
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> vetrinaContainer $ Array.singleton $
       Purchase.Error.error
-        { onRetry: self.setState \_ -> initialState
+        { onRetry: self.setState _ { purchaseState = NewPurchase }
         }
     PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
       Purchase.SetPassword.setPassword
@@ -237,7 +237,7 @@ render self =
         ]
     PurchaseUnexpectedError -> vetrinaContainer $ Array.singleton $
       Purchase.Error.error
-        { onRetry: self.setState \_ -> initialState
+        { onRetry: self.setState _ { purchaseState = NewPurchase }
         }
 
 vetrinaContainer :: Array JSX -> JSX
