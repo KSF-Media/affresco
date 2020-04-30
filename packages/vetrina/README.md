@@ -6,7 +6,7 @@ Install it from npm `yarn add @ksf-media/vetrina` and just import it into your p
 ```javascript
 import ReactDOM from 'react-dom';
 import { Vetrina } from '@ksf-media/vetrina';
-var renderLogin = function() {
+var renderVetrina = function() {
   ReactDOM.render(
     <Vetrina products={[{id: "HBL", description: "HBL is amazing!", priceCents: 990 }]} />
     , document.getElementById('vetrina'));
@@ -25,6 +25,8 @@ The props/callbacks for `Vetrina` are
     - an array of `Products` we want to be subscribeable, see type of `Product` below
     - `products={[id: "HBL", description: "HBL is amazing!", priceCents: 990 }]}`
 
+NOTE: Currently, the `products` array only supports one element.
+
 ### Product
 
 ```purescript
@@ -34,6 +36,8 @@ type Product =
   , priceCents  :: Int -- The product price in cents
   }
 ```
+
+The `Product` must have each attribute defined.
 
 ### Getting it up and running
 
