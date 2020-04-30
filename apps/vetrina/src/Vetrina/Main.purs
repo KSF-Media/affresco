@@ -119,15 +119,19 @@ didMount self = do
       (liftEffect $ self.setState \s -> s { isLoading = Nothing })
       do
         -- Try to login with local storage information and set user to state
-        User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser ->
-          let newState = case maybeUser of
-               Just user -> self.state { user = maybeUser, accountStatus = LoggedInAccount user }
-               Nothing   -> self.state { user = maybeUser }
-          in self.setState \_ -> newState
+        tryMagicLogin self
 
         -- If there is only one product given, automatically select that for the customer
         when (length self.props.products == 1) $
           liftEffect $ self.setState _ { productSelection = head self.props.products }
+
+tryMagicLogin :: Self -> Aff Unit
+tryMagicLogin self =
+  User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser ->
+    let newState = case maybeUser of
+         Just user -> self.state { user = maybeUser, accountStatus = LoggedInAccount user }
+         Nothing   -> self.state { user = maybeUser }
+    in self.setState \_ -> newState
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -203,7 +207,7 @@ render self =
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed -> vetrinaContainer $ Array.singleton $
       Purchase.Error.error
-        { onRetry: self.setState _ { purchaseState = NewPurchase }
+        { onRetry: onRetry
         }
     PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
       Purchase.SetPassword.setPassword
@@ -233,8 +237,12 @@ render self =
         ]
     PurchaseUnexpectedError -> vetrinaContainer $ Array.singleton $
       Purchase.Error.error
-        { onRetry: self.setState _ { purchaseState = NewPurchase }
+        { onRetry: onRetry
         }
+  where
+    onRetry = do
+      Aff.launchAff_ $ tryMagicLogin self
+      self.setState _ { purchaseState = NewPurchase }
 
 vetrinaContainer :: Array JSX -> JSX
 vetrinaContainer children =
