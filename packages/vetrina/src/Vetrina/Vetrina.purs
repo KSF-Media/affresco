@@ -2,18 +2,18 @@ module KSF.Vetrina where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..), runExceptT)
-import Data.Array (head, length)
+import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
+import Data.Array (head, length, mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), hush, note)
 import Data.JSDate as JSDate
-import Data.Maybe (Maybe(..), isJust, maybe)
-import Data.Nullable (toNullable)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Exception (error, message)
+import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
 import KSF.InputField.Component as InputField
@@ -31,14 +31,34 @@ import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
-import Vetrina.Types (AccountStatus(..), Product)
+import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 
 foreign import sentryDsn_ :: Effect String
+
+type JSProps =
+  { onClose :: Nullable (Effect Unit)
+  , onLogin :: Nullable (Effect Unit)
+  , products :: Nullable (Array JSProduct)
+  }
 
 type Props =
   { onClose  :: Effect Unit
   , onLogin  :: Effect Unit
-  , products :: Array Product
+  , products :: Either Error (Array Product)
+  }
+
+fromJSProps :: JSProps -> Props
+fromJSProps jsProps =
+  { onClose: fromMaybe (pure unit) $ toMaybe jsProps.onClose
+  , onLogin: fromMaybe (pure unit) $ toMaybe jsProps.onLogin
+  , products:
+      let productError = error "Did not get any valid products in props!"
+      in case toMaybe jsProps.products of
+          Just jsProducts
+            | products <- mapMaybe fromJSProduct jsProducts
+            , not null products -> Right products
+            | otherwise -> Left productError
+          Nothing -> Left productError
   }
 
 type State =
@@ -50,6 +70,7 @@ type State =
   , accountStatus :: AccountStatus
   , orderFailure  :: Maybe OrderFailure
   , logger        :: Sentry.Logger
+  , products      :: Array Product
   , productSelection :: Maybe Product
   , paymentMethod :: User.PaymentMethod
   }
@@ -81,21 +102,29 @@ data OrderFailure
 component :: React.Component Props
 component = React.createComponent "Vetrina"
 
+jsComponent :: React.ReactComponent JSProps
+jsComponent = React.toReactComponent fromJSProps component { initialState, render, didMount }
+
 vetrina :: Props -> JSX
 vetrina = make component
-  { initialState: { user: Nothing
-                  , newOrder: Nothing
-                  , purchaseState: NewPurchase
-                  , poller: pure unit
-                  , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
-                  , accountStatus: NewAccount
-                  , orderFailure: Nothing
-                  , logger: Sentry.emptyLogger
-                  , productSelection: Nothing
-                  , paymentMethod: CreditCard
-                  }
+  { initialState
   , render
   , didMount
+  }
+
+initialState :: State
+initialState =
+  { user: Nothing
+  , newOrder: Nothing
+  , purchaseState: NewPurchase
+  , poller: pure unit
+  , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
+  , accountStatus: NewAccount
+  , orderFailure: Nothing
+  , logger: Sentry.emptyLogger
+  , products: []
+  , productSelection: Nothing
+  , paymentMethod: CreditCard
   }
 
 didMount :: Self -> Effect Unit
@@ -117,9 +146,17 @@ didMount self = do
                Nothing   -> self.state { user = maybeUser }
           in self.setState \_ -> newState
 
+        products <- liftEffect $ case self.props.products of
+          Right p -> pure p
+          Left err -> do
+            self.setState _ { purchaseState = PurchaseUnexpectedError }
+            logger.error err
+            throwError err
+
+        liftEffect $ self.setState _ { products = products }
         -- If there is only one product given, automatically select that for the customer
-        when (length self.props.products == 1) $
-          liftEffect $ self.setState _ { productSelection = head self.props.products }
+        when (length products == 1) $
+          liftEffect $ self.setState _ { productSelection = head products }
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -183,7 +220,7 @@ render self =
     NewPurchase -> vetrinaContainer $ Array.singleton $
       Purchase.NewPurchase.newPurchase
         { accountStatus: self.state.accountStatus
-        , products: self.props.products
+        , products: self.state.products
         , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
         , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
         , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
