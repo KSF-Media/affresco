@@ -241,19 +241,20 @@ render self =
         }
   where
     onRetry = do
-      Aff.launchAff_ $ tryMagicLogin self
-      self.setState _ { purchaseState = NewPurchase }
+      case self.state.user of
+        Just user -> self.setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
+        Nothing   -> self.setState _ { purchaseState = NewPurchase }
 
 vetrinaContainer :: Self -> Array JSX -> JSX
 vetrinaContainer self@{ state: { purchaseState } } children =
   let errorClassString = "vetrina--purchase-error"
       errorClass       = case purchaseState of
-                           PurchaseFailed          -> " " <> errorClassString
-                           PurchaseUnexpectedError -> " " <> errorClassString
+                           PurchaseFailed          -> errorClassString
+                           PurchaseUnexpectedError -> errorClassString
                            otherwise               -> mempty
   in
     DOM.div
-      { className: "vetrina--container" <> errorClass
+      { className: "vetrina--container " <> errorClass
       , children
       }
 
