@@ -178,7 +178,9 @@ pollOrder setState state@{ logger } (Right order) = do
       setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
-      setState _ { purchaseState = NewPurchase }
+      case state.user of
+        Just user -> setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
+        Nothing   -> setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
     UnknownState   -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
