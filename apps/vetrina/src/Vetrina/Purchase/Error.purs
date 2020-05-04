@@ -17,7 +17,15 @@ error props =
           ]
   <> DOM.p
        { className: "vetrina--description-text"
-       , children: [ DOM.text "Klicka nedan för pröva på nytt eller ta kontakt med vår kundservice på pren@hbl.fi. Vi beklagar strulet!"
+       , children: [ DOM.text "Klicka nedan för pröva på nytt eller ta kontakt med vår kundservice på "
+                   , DOM.b_ [ DOM.text "pren@hbl.fi"
+                           ]
+                   , DOM.text "."
+                   ]
+       }
+  <> DOM.p
+       { className: "vetrina--description-text"
+       , children: [ DOM.text "Vi beklagar strulet!"
                    ]
        }
   <> retryButton props
