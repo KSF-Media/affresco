@@ -11,7 +11,7 @@ window.onload = function () {
         let pSelf = ptag;
         let pSelfContent = pSelf.innerHTML.replace(/[^A-Za-z0-9]/g, '');
         let pSelfClass = pSelf.classList.contains(expectedClass);
-        if ((pBeforeContent !== "" && pSelfContent !== "" && !(/^\s*$/.test(pBeforeContent)) && !(/^\s*$/.test(pSelfContent))) && (pSelf.nodeName === expectedType && pBefore.nodeName === expectedType) && (pBeforeClass && pSelfClass)) {
+        if ((!(/^\s*$/.test(pBeforeContent)) && !(/^\s*$/.test(pSelfContent))) && (pSelf.nodeName === expectedType && pBefore.nodeName === expectedType) && (pBeforeClass && pSelfClass)) {
             response = true;
         }
         return response;
