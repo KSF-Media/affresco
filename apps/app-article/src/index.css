@@ -92,14 +92,96 @@ body {
     overflow:hidden;
 }
 
-.loading {
-    display: block;
-    margin: 150px auto;
-    width: 50%;
+.loading-wrapper {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translateX(-50%) translateY(-50%);
+            transform: translateX(-50%) translateY(-50%);
 }
 
-.loading img {
-    width: 200px;
+.loading {
+	border-radius: 50%;
+	margin: 10px;
+	height: 50px;
+    width: 50px;
+	transform: scale(8);
+}
+
+@keyframes pulse-hbl {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 #f07e26;
+	}
+	
+	70% {
+		transform: scale(1);
+		box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+	}
+	
+	100% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+	}
+}
+
+@keyframes pulse-on {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 #518196;
+	}
+	
+	70% {
+		transform: scale(1);
+		box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+	}
+	
+	100% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+	}
+}
+
+@keyframes pulse-vn {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 #C90C0F;
+	}
+	
+	70% {
+		transform: scale(1);
+		box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+	}
+	
+	100% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+	}
+}
+
+.loading-hbl {
+    animation: pulse-hbl 2s infinite;
+    background-image: url('./assets/images/app-loader-hbl.png');
+    background-repeat: no-repeat;
+    background-size:contain;
+}
+
+.loading-on {
+    animation: pulse-on 2s infinite;
+    background-image: url('./assets/images/app-loader-on.png');
+    background-repeat: no-repeat;
+    background-size:contain;
+}
+
+.loading-vn {
+    animation: pulse-vn 2s infinite;
+    background-image: url('./assets/images/app-loader-vn.png');
+    background-repeat: no-repeat;
+    background-size:contain;
+}
+
+.loading-wrapper img {
+    width: 50px;
 }
 
 /*Ads*/

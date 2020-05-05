@@ -1,10 +1,10 @@
 import React, {Component} from 'react';
-import loadingIcon from "../assets/images/loading.gif";
+import {getBrandValueParam} from '../helper'
 
 const Loading = () => {
     return(
-        <div className="loading">
-            <img src={loadingIcon} />
+        <div className="loading-wrapper">
+            <div className={`loading loading-${getBrandValueParam()}`}></div>
         </div>
     )
 };

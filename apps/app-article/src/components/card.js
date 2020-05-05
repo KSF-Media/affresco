@@ -26,7 +26,7 @@ const formatTime = (date) => {
 
 const Card = (props) => {
     return(
-        <div className={"card"} onClick={() => { window.location.href = "?uuid=" + props.article.uuid; }}>
+        <div className={"card"} onClick={() => { window.location.href = "?uuid=" + props.article.uuid + "&paper=" + getBrandValueParam(); }}>
             <div className={"article-main-image"} >
                 {
                     props.article.premium ?
