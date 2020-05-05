@@ -1,65 +1,75 @@
-module Vetrina.Main where
+module KSF.Vetrina where
 
 import Prelude
 
-import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
-import Data.Array (all, head, intercalate, length)
+import Data.Array (head, length, mapMaybe, null)
 import Data.Array as Array
-import Data.Either (Either(..), hush, isRight, note)
-import Data.Foldable (foldMap)
-import Data.Int (ceil)
+import Data.Either (Either(..), hush, note)
 import Data.JSDate as JSDate
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
-import Data.Nullable (toMaybe, toNullable)
-import Data.Validation.Semigroup (toEither, unV)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
-import Effect.Exception (error, message)
+import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (PackageName, Package)
-import KSF.Api.Package as Package
+import KSF.Api.Package (Package, PackageId)
 import KSF.InputField.Component as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
 import KSF.User as User
-import KSF.ValidatableForm (isNotInitialized)
-import KSF.ValidatableForm as Form
-import React.Basic (JSX, fragment, make)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (handler_)
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
+import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 import Vetrina.Purchase.Error as Purchase.Error
-import Vetrina.Types (AccountStatus(..), Product)
 
 foreign import sentryDsn_ :: Effect String
+
+type JSProps =
+  { onClose :: Nullable (Effect Unit)
+  , onLogin :: Nullable (Effect Unit)
+  , products :: Nullable (Array JSProduct)
+  }
 
 type Props =
   { onClose  :: Effect Unit
   , onLogin  :: Effect Unit
-  , products :: Array Product
+  , products :: Either Error (Array Product)
+  }
+
+fromJSProps :: JSProps -> Props
+fromJSProps jsProps =
+  { onClose: fromMaybe (pure unit) $ toMaybe jsProps.onClose
+  , onLogin: fromMaybe (pure unit) $ toMaybe jsProps.onLogin
+  , products:
+      let productError = error "Did not get any valid products in props!"
+      in case toMaybe jsProps.products of
+          Just jsProducts
+            | products <- mapMaybe fromJSProduct jsProducts
+            , not null products -> Right products
+            | otherwise -> Left productError
+          Nothing -> Left productError
   }
 
 type State =
-  { -- form          :: AccountForm
-    --, serverErrors  :: Array (Form.ValidationError NewAccountInputField)
-    user          :: Maybe User
+  { user          :: Maybe User
   , purchaseState :: PurchaseState
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
   , accountStatus :: AccountStatus
   , logger        :: Sentry.Logger
+  , products      :: Array Product
   , productSelection :: Maybe Product
   , paymentMethod :: User.PaymentMethod
   }
@@ -91,19 +101,27 @@ data OrderFailure
 component :: React.Component Props
 component = React.createComponent "Vetrina"
 
-app :: Props -> JSX
-app = make component
-  { initialState: { user: Nothing
-                  , purchaseState: NewPurchase
-                  , poller: pure unit
-                  , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
-                  , accountStatus: NewAccount
-                  , logger: Sentry.emptyLogger
-                  , productSelection: Nothing
-                  , paymentMethod: CreditCard
-                  }
+jsComponent :: React.ReactComponent JSProps
+jsComponent = React.toReactComponent fromJSProps component { initialState, render, didMount }
+
+vetrina :: Props -> JSX
+vetrina = make component
+  { initialState
   , render
   , didMount
+  }
+
+initialState :: State
+initialState =
+  { user: Nothing
+  , purchaseState: NewPurchase
+  , poller: pure unit
+  , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
+  , accountStatus: NewAccount
+  , logger: Sentry.emptyLogger
+  , products: []
+  , productSelection: Nothing
+  , paymentMethod: CreditCard
   }
 
 didMount :: Self -> Effect Unit
@@ -121,9 +139,17 @@ didMount self = do
         -- Try to login with local storage information and set user to state
         tryMagicLogin self
 
+        products <- liftEffect $ case self.props.products of
+          Right p -> pure p
+          Left err -> do
+            self.setState _ { purchaseState = PurchaseUnexpectedError }
+            logger.error err
+            throwError err
+
+        liftEffect $ self.setState _ { products = products }
         -- If there is only one product given, automatically select that for the customer
-        when (length self.props.products == 1) $
-          liftEffect $ self.setState _ { productSelection = head self.props.products }
+        when (length products == 1) $
+          liftEffect $ self.setState _ { productSelection = head products }
 
 tryMagicLogin :: Self -> Aff Unit
 tryMagicLogin self =
@@ -197,7 +223,7 @@ render self =
     NewPurchase -> vetrinaContainer self $ Array.singleton $
       Purchase.NewPurchase.newPurchase
         { accountStatus: self.state.accountStatus
-        , products: self.props.products
+        , products: self.state.products
         , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
         , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
         , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
@@ -292,7 +318,7 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
     product       <- ExceptT $ pure $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- ExceptT $ pure $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
-    when (userHasPackage product.packageName $ map _.package user.subs)
+    when (userHasPackage product.id $ map _.package user.subs)
       $ ExceptT $ pure $ Left SubscriptionExists
 
     order <- ExceptT $ createOrder user product
@@ -317,8 +343,8 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
       | SubscriptionExists <- err -> liftEffect $ self.setState _ { purchaseState = PurchaseSubscriptionExists }
       | otherwise -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
 
-userHasPackage :: PackageName -> Array Package -> Boolean
-userHasPackage packageName = isRight <<< Package.findPackage packageName
+userHasPackage :: PackageId -> Array Package -> Boolean
+userHasPackage packageId = Array.any (\p -> packageId == p.id)
 
 createNewAccount :: Self -> Maybe String -> Aff (Either OrderFailure User)
 createNewAccount self@{ state: { logger } } (Just emailString) = do
@@ -357,7 +383,7 @@ loginToExistingAccount _ _ _ =
 createOrder :: User -> Product -> Aff (Either OrderFailure Order)
 createOrder user product = do
   -- TODO: fix period etc.
-  let newOrder = { packageId: product.id, period: 1, payAmountCents: ceil $ product.price * 100.0 }
+  let newOrder = { packageId: product.id, period: 1, payAmountCents: product.priceCents }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of
     Right order -> Right order
