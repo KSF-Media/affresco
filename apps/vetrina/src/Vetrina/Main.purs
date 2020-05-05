@@ -40,6 +40,7 @@ import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
+import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Types (AccountStatus(..), Product)
 
 foreign import sentryDsn_ :: Effect String
@@ -52,14 +53,12 @@ type Props =
 
 type State =
   { -- form          :: AccountForm
-  --, serverErrors  :: Array (Form.ValidationError NewAccountInputField)
-   user          :: Maybe User
-  , newOrder      :: Maybe Order
+    --, serverErrors  :: Array (Form.ValidationError NewAccountInputField)
+    user          :: Maybe User
   , purchaseState :: PurchaseState
   , poller        :: Aff.Fiber Unit
   , isLoading     :: Maybe Spinner.Loading
   , accountStatus :: AccountStatus
-  , orderFailure  :: Maybe OrderFailure
   , logger        :: Sentry.Logger
   , productSelection :: Maybe Product
   , paymentMethod :: User.PaymentMethod
@@ -95,12 +94,10 @@ component = React.createComponent "Vetrina"
 app :: Props -> JSX
 app = make component
   { initialState: { user: Nothing
-                  , newOrder: Nothing
                   , purchaseState: NewPurchase
                   , poller: pure unit
                   , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
                   , accountStatus: NewAccount
-                  , orderFailure: Nothing
                   , logger: Sentry.emptyLogger
                   , productSelection: Nothing
                   , paymentMethod: CreditCard
@@ -122,15 +119,19 @@ didMount self = do
       (liftEffect $ self.setState \s -> s { isLoading = Nothing })
       do
         -- Try to login with local storage information and set user to state
-        User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser ->
-          let newState = case maybeUser of
-               Just user -> self.state { user = maybeUser, accountStatus = LoggedInAccount user }
-               Nothing   -> self.state { user = maybeUser }
-          in self.setState \_ -> newState
+        tryMagicLogin self
 
         -- If there is only one product given, automatically select that for the customer
         when (length self.props.products == 1) $
           liftEffect $ self.setState _ { productSelection = head self.props.products }
+
+tryMagicLogin :: Self -> Aff Unit
+tryMagicLogin self =
+  User.magicLogin (Just InvalidateCache) $ hush >>> \maybeUser ->
+    let newState = case maybeUser of
+         Just user -> self.state { user = maybeUser, accountStatus = LoggedInAccount user }
+         Nothing   -> self.state { user = maybeUser }
+    in self.setState \_ -> newState
 
 didUpdate :: Self -> PrevState -> Effect Unit
 didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
@@ -177,7 +178,9 @@ pollOrder setState state@{ logger } (Right order) = do
       setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
-      setState _ { purchaseState = NewPurchase }
+      case state.user of
+        Just user -> setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
+        Nothing   -> setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
     UnknownState   -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
@@ -191,7 +194,7 @@ render self =
   if isJust self.state.isLoading
   then Spinner.loadingSpinner
   else case self.state.purchaseState of
-    NewPurchase -> vetrinaContainer $ Array.singleton $
+    NewPurchase -> vetrinaContainer self $ Array.singleton $
       Purchase.NewPurchase.newPurchase
         { accountStatus: self.state.accountStatus
         , products: self.props.products
@@ -202,10 +205,13 @@ render self =
         , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
         }
-    CapturePayment url -> vetrinaContainer [ netsTerminalIframe url ]
+    CapturePayment url -> vetrinaContainer self [ netsTerminalIframe url ]
     ProcessPayment -> Spinner.loadingSpinner
-    PurchaseFailed -> DOM.text "PURCHASE FAILED :~("
-    PurchaseSetPassword -> vetrinaContainer $ Array.singleton $
+    PurchaseFailed -> vetrinaContainer self $ Array.singleton $
+      Purchase.Error.error
+        { onRetry: onRetry
+        }
+    PurchaseSetPassword -> vetrinaContainer self $ Array.singleton $
       Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
         -- We should think how to handle this. Probably we don't want to
@@ -216,7 +222,7 @@ render self =
         , user: self.state.user
         , logger: self.state.logger
         }
-    PurchaseCompleted accountStatus -> vetrinaContainer $ Array.singleton $
+    PurchaseCompleted accountStatus -> vetrinaContainer self $ Array.singleton $
       Purchase.Completed.completed
         { onClose: self.props.onClose
         , user: self.state.user
@@ -231,14 +237,28 @@ render self =
             , children: [ DOM.text "OK" ]
             }
         ]
-    PurchaseUnexpectedError -> DOM.text "SOMETHING WENT HORRIBLY WRONG SERVER SIDE"
+    PurchaseUnexpectedError -> vetrinaContainer self $ Array.singleton $
+      Purchase.Error.error
+        { onRetry: onRetry
+        }
+  where
+    onRetry = do
+      case self.state.user of
+        Just user -> self.setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
+        Nothing   -> self.setState _ { purchaseState = NewPurchase }
 
-vetrinaContainer :: Array JSX -> JSX
-vetrinaContainer children =
-  DOM.div
-    { className: "vetrina--container"
-    , children
-    }
+vetrinaContainer :: Self -> Array JSX -> JSX
+vetrinaContainer self@{ state: { purchaseState } } children =
+  let errorClassString = "vetrina--purchase-error"
+      errorClass       = case purchaseState of
+                           PurchaseFailed          -> errorClassString
+                           PurchaseUnexpectedError -> errorClassString
+                           otherwise               -> mempty
+  in
+    DOM.div
+      { className: "vetrina--container " <> errorClass
+      , children
+      }
 
 orderErrorMessage :: OrderFailure -> JSX
 orderErrorMessage failure =
@@ -283,9 +303,7 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
     Right { paymentUrl, order, user } ->
       liftEffect do
         let newState = self.state { purchaseState = CapturePayment paymentUrl
-                                  , newOrder      = Just order
                                   , user          = Just user
-                                  , orderFailure  = Nothing
                                   }
         self.setState \_ -> newState
         -- NOTE: We need to pass the updated state here, not `self.state`.
@@ -295,9 +313,9 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
         liftEffect do
           logger.error $ Error.orderError $ "Failed to place an order: " <> e
           self.setState _ { purchaseState = PurchaseFailed }
-      | emailInUse@(EmailInUse email) <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount email, orderFailure = Just emailInUse }
+      | emailInUse@(EmailInUse email) <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount email }
       | SubscriptionExists <- err -> liftEffect $ self.setState _ { purchaseState = PurchaseSubscriptionExists }
-      | otherwise -> liftEffect $ self.setState _ { orderFailure = Just err, purchaseState = PurchaseFailed }
+      | otherwise -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
 
 userHasPackage :: PackageName -> Array Package -> Boolean
 userHasPackage packageName = isRight <<< Package.findPackage packageName
