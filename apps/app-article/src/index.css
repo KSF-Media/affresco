@@ -710,3 +710,15 @@ body {
     padding-top: 5px;
     border-top: 1px solid rgb(158, 158, 158);
 }
+
+.article .hbl a {
+    color: #f07e26;
+}
+
+.article .on a {
+    color: #518196;
+}
+
+.article .vn a {
+    color: #C90C0F;
+}
