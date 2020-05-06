@@ -1,6 +1,6 @@
 {
   "name": "@ksf-media/vetrina",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Vetrina, frontend for purchasing our products",
   "license": "MIT",
   "scripts": {
