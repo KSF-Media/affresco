@@ -11,8 +11,10 @@ import Data.JSDate (JSDate)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 
+type PackageId = String
+
 type Package =
-  { id           :: String
+  { id           :: PackageId
   , name         :: String
   , paper        :: { code :: String, name :: String }
   , products     :: Array Product
@@ -63,31 +65,3 @@ type Campaign =
   , id   :: String
   , name :: String
   }
-
--- The packages we know how to render properly
-data PackageName = HblPremium
-
-derive instance genericPackageName :: Generic PackageName _
-instance showPackageName :: Show PackageName where
-  show = genericShow
-derive instance eqPackageName :: Eq PackageName
-
-toPackageId :: PackageName -> String
-toPackageId HblPremium = "HBL WEBB"
-
-findPackage :: PackageName -> Array Package -> Either PackageValidationError Package
-findPackage packageName packages =
-  case find (\p -> p.id == toPackageId packageName) packages of
-    Just p  -> Right p
-    Nothing -> Left $ PackageNotFound packageName
-
-data PackageValidationError
-  = PackageOffersMissing PackageName
-  | PackageNotFound PackageName
-
-validatePackage :: PackageName -> Package -> Either PackageValidationError Package
-validatePackage packageName p =
-  -- See that there are offers found
-  if Array.null p.offers
-  then Left $ PackageOffersMissing packageName
-  else Right p
