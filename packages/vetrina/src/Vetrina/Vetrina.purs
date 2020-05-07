@@ -216,11 +216,11 @@ pollOrder setState { logger } (Left err) = liftEffect do
   setState _ { purchaseState = PurchaseFailed }
 
 render :: Self -> JSX
-render self =
+render self = vetrinaContainer self $
   if isJust self.state.isLoading
   then Spinner.loadingSpinner
   else case self.state.purchaseState of
-    NewPurchase -> vetrinaContainer self $ Array.singleton $
+    NewPurchase ->
       Purchase.NewPurchase.newPurchase
         { accountStatus: self.state.accountStatus
         , products: self.state.products
@@ -231,13 +231,13 @@ render self =
         , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
         }
-    CapturePayment url -> vetrinaContainer self [ netsTerminalIframe url ]
+    CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
-    PurchaseFailed -> vetrinaContainer self $ Array.singleton $
+    PurchaseFailed ->
       Purchase.Error.error
         { onRetry: onRetry
         }
-    PurchaseSetPassword -> vetrinaContainer self $ Array.singleton $
+    PurchaseSetPassword ->
       Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
         -- We should think how to handle this. Probably we don't want to
@@ -248,7 +248,7 @@ render self =
         , user: self.state.user
         , logger: self.state.logger
         }
-    PurchaseCompleted accountStatus -> vetrinaContainer self $ Array.singleton $
+    PurchaseCompleted accountStatus ->
       Purchase.Completed.completed
         { onClose: self.props.onClose
         , user: self.state.user
@@ -263,7 +263,7 @@ render self =
             , children: [ DOM.text "OK" ]
             }
         ]
-    PurchaseUnexpectedError -> vetrinaContainer self $ Array.singleton $
+    PurchaseUnexpectedError ->
       Purchase.Error.error
         { onRetry: onRetry
         }
@@ -273,8 +273,8 @@ render self =
         Just user -> self.setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
         Nothing   -> self.setState _ { purchaseState = NewPurchase }
 
-vetrinaContainer :: Self -> Array JSX -> JSX
-vetrinaContainer self@{ state: { purchaseState } } children =
+vetrinaContainer :: Self -> JSX -> JSX
+vetrinaContainer self@{ state: { purchaseState } } child =
   let errorClassString = "vetrina--purchase-error"
       errorClass       = case purchaseState of
                            PurchaseFailed          -> errorClassString
@@ -283,7 +283,7 @@ vetrinaContainer self@{ state: { purchaseState } } children =
   in
     DOM.div
       { className: "vetrina--container " <> errorClass
-      , children
+      , children: [ child ]
       }
 
 orderErrorMessage :: OrderFailure -> JSX
