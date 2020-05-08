@@ -3,9 +3,10 @@ module KSF.Vetrina where
 import Prelude
 
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
+import Control.Monad.Except.Trans (except)
 import Data.Array (head, length, mapMaybe, null)
 import Data.Array as Array
-import Data.Either (Either(..), hush, note)
+import Data.Either (Either(..), hush, isRight, note)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -312,21 +313,22 @@ mkPurchase
   -> Effect Unit
 mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
   eitherRes <- runExceptT do
-    user <- ExceptT affUser
-    ExceptT $ Right unit <$ (liftEffect do
-                                self.setState _ { user = Just user }
-                                logger.setUser $ Just user)
+    user <- ExceptT $ affUser >>= \eitherUser -> do
+      -- If we get the user, set it to Sentry and to state
+      when (isRight eitherUser) $ liftEffect do
+        self.setState _ { user = hush eitherUser }
+        logger.setUser $ hush eitherUser
+      pure eitherUser
 
-    product       <- ExceptT $ pure $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
-    paymentMethod <- ExceptT $ pure $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
+    product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
+    paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
     when (userHasPackage product.id $ map _.package user.subs)
-      $ ExceptT $ pure $ Left SubscriptionExists
+      $ except $ Left SubscriptionExists
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
     pure { paymentUrl, order, user }
-
   case eitherRes of
     Right { paymentUrl, order, user } ->
       liftEffect do
