@@ -205,9 +205,7 @@ pollOrder setState state@{ logger } (Right order) = do
       setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
-      case state.user of
-        Just user -> setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
-        Nothing   -> setState _ { purchaseState = NewPurchase }
+      setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
     UnknownState   -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
@@ -236,7 +234,7 @@ render self = vetrinaContainer self $
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed ->
       Purchase.Error.error
-        { onRetry: onRetry
+        { onRetry
         }
     PurchaseSetPassword ->
       Purchase.SetPassword.setPassword
@@ -266,13 +264,10 @@ render self = vetrinaContainer self $
         ]
     PurchaseUnexpectedError ->
       Purchase.Error.error
-        { onRetry: onRetry
+        { onRetry
         }
   where
-    onRetry = do
-      case self.state.user of
-        Just user -> self.setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
-        Nothing   -> self.setState _ { purchaseState = NewPurchase }
+    onRetry = self.setState _ { purchaseState = NewPurchase }
 
 vetrinaContainer :: Self -> JSX -> JSX
 vetrinaContainer self@{ state: { purchaseState } } child =
@@ -314,10 +309,14 @@ mkPurchase
 mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
   eitherRes <- runExceptT do
     user <- ExceptT $ affUser >>= \eitherUser -> do
-      -- If we get the user, set it to Sentry and to state
-      when (isRight eitherUser) $ liftEffect do
-        self.setState _ { user = hush eitherUser }
-        logger.setUser $ hush eitherUser
+      case eitherUser of
+        -- If we get the user, set it to Sentry and to state
+        Right user -> liftEffect do
+          self.setState _ { user = Just user
+                          , accountStatus = LoggedInAccount user
+                          }
+          logger.setUser $ Just user
+        _ -> pure unit
       pure eitherUser
 
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
@@ -332,9 +331,7 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
   case eitherRes of
     Right { paymentUrl, order, user } ->
       liftEffect do
-        let newState = self.state { purchaseState = CapturePayment paymentUrl
-                                  , user          = Just user
-                                  }
+        let newState = self.state { purchaseState = CapturePayment paymentUrl }
         self.setState \_ -> newState
         -- NOTE: We need to pass the updated state here, not `self.state`.
         startOrderPoller self.setState newState order
