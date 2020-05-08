@@ -27,12 +27,12 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import Vetrina.Purchase.Completed as Purchase.Completed
+import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
-import Vetrina.Purchase.Error as Purchase.Error
 
 foreign import sentryDsn_ :: Effect String
 
@@ -313,7 +313,9 @@ mkPurchase
 mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
   eitherRes <- runExceptT do
     user <- ExceptT affUser
-    ExceptT $ Right unit <$ (liftEffect $ logger.setUser $ Just user)
+    ExceptT $ Right unit <$ (liftEffect do
+                                self.setState _ { user = Just user }
+                                logger.setUser $ Just user)
 
     product       <- ExceptT $ pure $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- ExceptT $ pure $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
