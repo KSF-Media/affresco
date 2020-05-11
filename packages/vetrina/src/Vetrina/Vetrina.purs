@@ -166,10 +166,10 @@ didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
 stopOrderPollerOnCompletedState :: Self -> Aff Unit
 stopOrderPollerOnCompletedState self =
   case self.state.purchaseState of
-    PurchaseFailed Nothing -> killOrderPoller self.state
-    PurchaseCompleted _    -> killOrderPoller self.state
-    NewPurchase            -> killOrderPoller self.state
-    _                      -> pure unit
+    PurchaseFailed _    -> killOrderPoller self.state
+    PurchaseCompleted _ -> killOrderPoller self.state
+    NewPurchase         -> killOrderPoller self.state
+    _                   -> pure unit
 
 killOrderPoller :: State -> Aff Unit
 killOrderPoller state = Aff.killFiber (error "Canceled poller") state.poller
