@@ -40,14 +40,15 @@ type State =
   }
 
 type Props =
-  { accountStatus :: AccountStatus
-  , products :: Array Product
-  , mkPurchaseWithNewAccount :: NewAccountForm -> Effect Unit
+  { accountStatus                 :: AccountStatus
+  , products                      :: Array Product
+  , errorMessage                  :: JSX
+  , mkPurchaseWithNewAccount      :: NewAccountForm -> Effect Unit
   , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
   , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
-  , paymentMethod :: PaymentMethod
-  , productSelection :: Maybe Product
-  , onLogin :: Effect Unit
+  , paymentMethod                 :: PaymentMethod
+  , productSelection              :: Maybe Product
+  , onLogin                       :: Effect Unit
   }
 
 data FormInputField
@@ -157,7 +158,7 @@ form self = DOM.form $
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
-  , children: emailInput self self.state.accountStatus `cons` children
+  , children: self.props.errorMessage `cons` (emailInput self self.state.accountStatus `cons` children)
   }
   where
     onSubmit = handler preventDefault $ case self.state.accountStatus of
