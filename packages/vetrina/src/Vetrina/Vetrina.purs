@@ -3,9 +3,10 @@ module KSF.Vetrina where
 import Prelude
 
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
+import Control.Monad.Except.Trans (except)
 import Data.Array (head, length, mapMaybe, null)
 import Data.Array as Array
-import Data.Either (Either(..), hush, note)
+import Data.Either (Either(..), hush, isRight, note)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -27,12 +28,12 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import Vetrina.Purchase.Completed as Purchase.Completed
+import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
-import Vetrina.Purchase.Error as Purchase.Error
 
 foreign import sentryDsn_ :: Effect String
 
@@ -204,9 +205,7 @@ pollOrder setState state@{ logger } (Right order) = do
       setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
-      case state.user of
-        Just user -> setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
-        Nothing   -> setState _ { purchaseState = NewPurchase }
+      setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
     UnknownState   -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
@@ -235,7 +234,7 @@ render self = vetrinaContainer self $
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed ->
       Purchase.Error.error
-        { onRetry: onRetry
+        { onRetry
         }
     PurchaseSetPassword ->
       Purchase.SetPassword.setPassword
@@ -265,13 +264,10 @@ render self = vetrinaContainer self $
         ]
     PurchaseUnexpectedError ->
       Purchase.Error.error
-        { onRetry: onRetry
+        { onRetry
         }
   where
-    onRetry = do
-      case self.state.user of
-        Just user -> self.setState _ { purchaseState = NewPurchase, accountStatus = LoggedInAccount user }
-        Nothing   -> self.setState _ { purchaseState = NewPurchase }
+    onRetry = self.setState _ { purchaseState = NewPurchase }
 
 vetrinaContainer :: Self -> JSX -> JSX
 vetrinaContainer self@{ state: { purchaseState } } child =
@@ -312,25 +308,30 @@ mkPurchase
   -> Effect Unit
 mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
   eitherRes <- runExceptT do
-    user <- ExceptT affUser
-    ExceptT $ Right unit <$ (liftEffect $ logger.setUser $ Just user)
+    user <- ExceptT $ affUser >>= \eitherUser -> do
+      case eitherUser of
+        -- If we get the user, set it to Sentry and to state
+        Right user -> liftEffect do
+          self.setState _ { user = Just user
+                          , accountStatus = LoggedInAccount user
+                          }
+          logger.setUser $ Just user
+        _ -> pure unit
+      pure eitherUser
 
-    product       <- ExceptT $ pure $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
-    paymentMethod <- ExceptT $ pure $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
+    product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
+    paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
     when (userHasPackage product.id $ map _.package user.subs)
-      $ ExceptT $ pure $ Left SubscriptionExists
+      $ except $ Left SubscriptionExists
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
     pure { paymentUrl, order, user }
-
   case eitherRes of
     Right { paymentUrl, order, user } ->
       liftEffect do
-        let newState = self.state { purchaseState = CapturePayment paymentUrl
-                                  , user          = Just user
-                                  }
+        let newState = self.state { purchaseState = CapturePayment paymentUrl }
         self.setState \_ -> newState
         -- NOTE: We need to pass the updated state here, not `self.state`.
         startOrderPoller self.setState newState order
