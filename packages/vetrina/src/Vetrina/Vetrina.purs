@@ -86,11 +86,9 @@ data PurchaseState
   = NewPurchase
   | CapturePayment PaymentTerminalUrl
   | ProcessPayment
-  | PurchaseFailed
+  | PurchaseFailed (Maybe OrderFailure)
   | PurchaseSetPassword
   | PurchaseCompleted AccountStatus
-  | PurchaseSubscriptionExists
-  | PurchaseUnexpectedError
 
 data OrderFailure
   = EmailInUse String
@@ -99,6 +97,7 @@ data OrderFailure
   | AuthenticationError
   | ServerError
   | UnrecognizedError String
+  | UnexpectedError
 
 component :: React.Component Props
 component = React.createComponent "Vetrina"
@@ -144,7 +143,7 @@ didMount self = do
         products <- liftEffect $ case self.props.products of
           Right p -> pure p
           Left err -> do
-            self.setState _ { purchaseState = PurchaseUnexpectedError }
+            self.setState _ { purchaseState = PurchaseFailed $ Just UnexpectedError }
             logger.error err
             throwError err
 
@@ -167,10 +166,10 @@ didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
 stopOrderPollerOnCompletedState :: Self -> Aff Unit
 stopOrderPollerOnCompletedState self =
   case self.state.purchaseState of
-    PurchaseFailed      -> killOrderPoller self.state
-    PurchaseCompleted _ -> killOrderPoller self.state
-    NewPurchase         -> killOrderPoller self.state
-    _                   -> pure unit
+    PurchaseFailed Nothing -> killOrderPoller self.state
+    PurchaseCompleted _    -> killOrderPoller self.state
+    NewPurchase            -> killOrderPoller self.state
+    _                      -> pure unit
 
 killOrderPoller :: State -> Aff Unit
 killOrderPoller state = Aff.killFiber (error "Canceled poller") state.poller
@@ -215,10 +214,10 @@ pollOrder setState state@{ logger } (Right order) = do
     OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
     UnknownState   -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
-      setState _ { purchaseState = PurchaseFailed }
+      setState _ { purchaseState = PurchaseFailed Nothing }
 pollOrder setState { logger } (Left err) = liftEffect do
   logger.error $ Error.orderError $ "Failed to get order from server: " <> err
-  setState _ { purchaseState = PurchaseFailed }
+  setState _ { purchaseState = PurchaseFailed $ Just ServerError }
 
 render :: Self -> JSX
 render self = vetrinaContainer self $
@@ -238,10 +237,32 @@ render self = vetrinaContainer self $
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
-    PurchaseFailed ->
-      Purchase.Error.error
-        { onRetry
-        }
+    PurchaseFailed failure ->
+      case failure of
+        Just SubscriptionExists ->
+          DOM.div_
+            -- TODO: Waiting for copy
+            [ DOM.text "You already have this subscription. Go back to article"
+            , DOM.button
+                { onClick: handler_ self.props.onClose
+                , children: [ DOM.text "OK" ]
+                }
+            ]
+        Just AuthenticationError ->
+          Purchase.NewPurchase.newPurchase
+            { accountStatus: self.state.accountStatus
+            , products: self.state.products
+            , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
+            , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
+            , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
+            , paymentMethod: self.state.paymentMethod
+            , productSelection: self.state.productSelection
+            , onLogin: self.props.onLogin
+            }
+        _ ->
+          Purchase.Error.error
+            { onRetry: onRetry
+            }
     PurchaseSetPassword ->
       Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
@@ -259,13 +280,6 @@ render self = vetrinaContainer self $
         , user: self.state.user
         , accountStatus
         }
-    PurchaseSubscriptionExists ->
-      Purchase.SubscriptionExists.subscriptionExists
-        { onClose: self.props.onClose }
-    PurchaseUnexpectedError ->
-      Purchase.Error.error
-        { onRetry
-        }
   where
     onRetry = self.setState _ { purchaseState = NewPurchase }
 
@@ -273,9 +287,10 @@ vetrinaContainer :: Self -> JSX -> JSX
 vetrinaContainer self@{ state: { purchaseState } } child =
   let errorClassString = "vetrina--purchase-error"
       errorClass       = case purchaseState of
-                           PurchaseFailed          -> errorClassString
-                           PurchaseUnexpectedError -> errorClassString
-                           otherwise               -> mempty
+                           PurchaseFailed (Just SubscriptionExists)  -> mempty
+                           PurchaseFailed (Just AuthenticationError) -> mempty
+                           PurchaseFailed _                          -> errorClassString
+                           otherwise                                 -> mempty
   in
     DOM.div
       { className: "vetrina--container " <> errorClass
