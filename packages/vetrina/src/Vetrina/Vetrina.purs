@@ -228,6 +228,7 @@ render self = vetrinaContainer self $
       Purchase.NewPurchase.newPurchase
         { accountStatus: self.state.accountStatus
         , products: self.state.products
+        , errorMessage : mempty
         , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
         , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
         , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
@@ -252,6 +253,7 @@ render self = vetrinaContainer self $
           Purchase.NewPurchase.newPurchase
             { accountStatus: self.state.accountStatus
             , products: self.state.products
+            , errorMessage: orderErrorMessage AuthenticationError
             , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
             , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
             , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
