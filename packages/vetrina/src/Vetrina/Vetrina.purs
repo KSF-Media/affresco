@@ -17,7 +17,6 @@ import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
-import KSF.InputField.Component as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
@@ -26,6 +25,7 @@ import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
 import Record (merge)
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
@@ -33,7 +33,6 @@ import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
-import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 
 foreign import sentryDsn_ :: Effect String
@@ -200,19 +199,13 @@ pollOrder setState state@{ logger } (Right order) = do
           | user.hasCompletedRegistration = ExistingAccount user.email
           | otherwise = NewAccount
     OrderFailed reason -> liftEffect do
-<<<<<<< HEAD
       case reason of
         SubscriptionExistsError -> do
           logger.log "Tried to make purchase to with already existing subscription" Sentry.Info
-          setState _ { purchaseState = PurchaseSubscriptionExists }
+          setState _ { purchaseState = PurchaseFailed SubscriptionExists }
         _ -> do
           logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
-          setState _ { purchaseState = PurchaseFailed }
-=======
-      logger.error $ Error.orderError "Order failed for customer"
-      -- TODO: Should we do case analysis on the type of error?
-      setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
->>>>>>> Fix Vetrina module
+          setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
       setState _ { purchaseState = NewPurchase }
@@ -245,7 +238,7 @@ render self = vetrinaContainer self $
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed failure ->
       case failure of
-        Just SubscriptionExists ->
+        SubscriptionExists ->
           DOM.div_
             -- TODO: Waiting for copy
             [ DOM.text "You already have this subscription. Go back to article"
@@ -254,7 +247,7 @@ render self = vetrinaContainer self $
                 , children: [ DOM.text "OK" ]
                 }
             ]
-        Just AuthenticationError ->
+        AuthenticationError ->
           Purchase.NewPurchase.newPurchase
             { accountStatus: self.state.accountStatus
             , products: self.state.products
@@ -354,14 +347,14 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
         startOrderPoller self.setState newState order
     Left err -> do
       case err of
-        UnrecognizedError e -> liftEffect $ logger.error $ Error.orderError $ "Failed to place an order: " <> e
+        UnexpectedError e -> liftEffect $ logger.error $ Error.orderError $ "Failed to place an order: " <> e
         _ -> pure unit
 
       let errState = { user: hush eitherUser } `merge` case err of
             emailInUse@(EmailInUse email) -> self.state { accountStatus = ExistingAccount email }
-            SubscriptionExists            -> self.state { purchaseState = PurchaseSubscriptionExists }
+            SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
             -- TODO: Handle all cases explicitly
-            _                             -> self.state { purchaseState = PurchaseFailed }
+            _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
       liftEffect $ self.setState \_ -> errState
 
 userHasPackage :: PackageId -> Array Package -> Boolean
