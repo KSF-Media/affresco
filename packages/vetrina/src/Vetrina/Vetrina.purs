@@ -96,8 +96,7 @@ data OrderFailure
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
   | ServerError
-  | UnrecognizedError String
-  | UnexpectedError
+  | UnexpectedError String
 
 component :: React.Component Props
 component = React.createComponent "Vetrina"
@@ -143,7 +142,7 @@ didMount self = do
         products <- liftEffect $ case self.props.products of
           Right p -> pure p
           Left err -> do
-            self.setState _ { purchaseState = PurchaseFailed $ Just UnexpectedError }
+            self.setState _ { purchaseState = PurchaseFailed $ Just $ UnexpectedError ""  }
             logger.error err
             throwError err
 
@@ -374,9 +373,9 @@ createNewAccount self@{ state: { logger } } (Just emailString) = do
   case newUser of
     Right user -> pure $ Right user
     Left User.RegistrationEmailInUse -> pure $ Left $ EmailInUse emailString
-    Left (User.InvalidFormFields errors) -> pure $ Left $ UnrecognizedError "invalid form fields"
-    _ -> pure $ Left $ UnrecognizedError "Could not create a new account"
-createNewAccount _ Nothing = pure $ Left $ UnrecognizedError ""
+    Left (User.InvalidFormFields errors) -> pure $ Left $ UnexpectedError "invalid form fields"
+    _ -> pure $ Left $ UnexpectedError "Could not create a new account"
+createNewAccount _ Nothing = pure $ Left $ UnexpectedError ""
 
 loginToExistingAccount :: Self -> Maybe String -> Maybe String -> Aff (Either OrderFailure User)
 loginToExistingAccount self (Just username) (Just password) = do
@@ -387,12 +386,12 @@ loginToExistingAccount self (Just username) (Just password) = do
     Left err
       | User.LoginInvalidCredentials <- err -> pure $ Left AuthenticationError
       -- TODO: Think about this
-      | User.InvalidFormFields _ <- err -> pure $ Left $ UnrecognizedError "invalid form fields"
+      | User.InvalidFormFields _ <- err -> pure $ Left $ UnexpectedError "invalid form fields"
       | User.SomethingWentWrong <- err -> pure $ Left $ ServerError
       | User.UnexpectedError jsError <- err -> do
         liftEffect $ self.state.logger.error $ Error.loginError $ message jsError
         pure $ Left $ ServerError
-      | otherwise -> pure $ Left $ UnrecognizedError ""
+      | otherwise -> pure $ Left $ UnexpectedError ""
 loginToExistingAccount _ _ _ =
   pure $ Left $ FormFieldError [ EmailAddress, Password ]
 
@@ -403,14 +402,14 @@ createOrder user product = do
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of
     Right order -> Right order
-    Left err    -> Left $ UnrecognizedError err
+    Left err    -> Left $ UnexpectedError err
 
 payOrder :: Order -> PaymentMethod -> Aff (Either OrderFailure PaymentTerminalUrl)
 payOrder order paymentMethod =
   User.payOrder order.number paymentMethod >>= \eitherUrl ->
     pure $ case eitherUrl of
       Right url -> Right url
-      Left err  -> Left $ UnrecognizedError err
+      Left err  -> Left $ UnexpectedError err
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
