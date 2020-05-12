@@ -5,6 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array (all, cons, intercalate)
 import Data.Array as Array
+import Data.Foldable (foldMap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toMaybe)
@@ -40,14 +41,15 @@ type State =
   }
 
 type Props =
-  { accountStatus :: AccountStatus
-  , products :: Array Product
-  , mkPurchaseWithNewAccount :: NewAccountForm -> Effect Unit
+  { accountStatus                 :: AccountStatus
+  , products                      :: Array Product
+  , errorMessage                  :: Maybe String
+  , mkPurchaseWithNewAccount      :: NewAccountForm -> Effect Unit
   , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
   , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
-  , paymentMethod :: PaymentMethod
-  , productSelection :: Maybe Product
-  , onLogin :: Effect Unit
+  , paymentMethod                 :: PaymentMethod
+  , productSelection              :: Maybe Product
+  , onLogin                       :: Effect Unit
   }
 
 data FormInputField
@@ -157,7 +159,7 @@ form self = DOM.form $
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
-  , children: emailInput self self.state.accountStatus `cons` children
+  , children: (foldMap formatErrorMessage self.props.errorMessage) `cons` (emailInput self self.state.accountStatus `cons` children)
   }
   where
     onSubmit = handler preventDefault $ case self.state.accountStatus of
@@ -263,6 +265,9 @@ isFormInvalid validations
   | Left errs <- toEither validations
   = not $ all isNotInitialized errs
   | otherwise = false
+
+formatErrorMessage :: String -> JSX
+formatErrorMessage message = InputField.errorMessage message
 
 emailInput :: Self -> AccountStatus -> JSX
 emailInput _ (LoggedInAccount _) = mempty
