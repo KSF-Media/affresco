@@ -21,7 +21,7 @@ import KSF.InputField.Component as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
-import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
+import KSF.User (Order, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl, User)
 import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -202,8 +202,13 @@ pollOrder setState state@{ logger } (Right order) = do
           | user.hasCompletedRegistration = ExistingAccount user.email
           | otherwise = NewAccount
     OrderFailed reason -> liftEffect do
-      logger.error $ Error.orderError "Order failed for customer"
-      setState _ { purchaseState = PurchaseFailed }
+      case reason of
+        SubscriptionExistsError -> do
+          logger.log "Tried to make purchase to with already existing subscription" Sentry.Info
+          setState _ { purchaseState = PurchaseSubscriptionExists }
+        _ -> do
+          logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
+          setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
       setState _ { purchaseState = NewPurchase }
