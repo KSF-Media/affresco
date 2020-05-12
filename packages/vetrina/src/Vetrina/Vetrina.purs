@@ -6,7 +6,7 @@ import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (head, length, mapMaybe, null)
 import Data.Array as Array
-import Data.Either (Either(..), hush, isRight, note)
+import Data.Either (Either(..), either, hush, note)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -21,18 +21,19 @@ import KSF.InputField.Component as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
-import KSF.User (PaymentMethod(..), User, Order, PaymentTerminalUrl, OrderStatusState(..))
+import KSF.User (Order, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl, User)
 import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
+import Record (merge)
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
+import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 
 foreign import sentryDsn_ :: Effect String
@@ -201,8 +202,13 @@ pollOrder setState state@{ logger } (Right order) = do
           | user.hasCompletedRegistration = ExistingAccount user.email
           | otherwise = NewAccount
     OrderFailed reason -> liftEffect do
-      logger.error $ Error.orderError "Order failed for customer"
-      setState _ { purchaseState = PurchaseFailed }
+      case reason of
+        SubscriptionExistsError -> do
+          logger.log "Tried to make purchase to with already existing subscription" Sentry.Info
+          setState _ { purchaseState = PurchaseSubscriptionExists }
+        _ -> do
+          logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
+          setState _ { purchaseState = PurchaseFailed }
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
       setState _ { purchaseState = NewPurchase }
@@ -254,14 +260,8 @@ render self = vetrinaContainer self $
         , accountStatus
         }
     PurchaseSubscriptionExists ->
-      DOM.div_
-        -- TODO: Waiting for copy
-        [ DOM.text "You already have this subscription. Go back to article"
-        , DOM.button
-            { onClick: handler_ self.props.onClose
-            , children: [ DOM.text "OK" ]
-            }
-        ]
+      Purchase.SubscriptionExists.subscriptionExists
+        { onClose: self.props.onClose }
     PurchaseUnexpectedError ->
       Purchase.Error.error
         { onRetry
@@ -307,18 +307,9 @@ mkPurchase
   -> Aff (Either OrderFailure User.User)
   -> Effect Unit
 mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
-  eitherRes <- runExceptT do
-    user <- ExceptT $ affUser >>= \eitherUser -> do
-      case eitherUser of
-        -- If we get the user, set it to Sentry and to state
-        Right user -> liftEffect do
-          self.setState _ { user = Just user
-                          , accountStatus = LoggedInAccount user
-                          }
-          logger.setUser $ Just user
-        _ -> pure unit
-      pure eitherUser
-
+  eitherUser <- affUser
+  eitherOrder <- runExceptT do
+    user          <- except eitherUser
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
@@ -327,22 +318,30 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
-    pure { paymentUrl, order, user }
-  case eitherRes of
-    Right { paymentUrl, order, user } ->
+    pure { paymentUrl, order }
+  case eitherOrder of
+    Right { paymentUrl, order } ->
       liftEffect do
-        let newState = self.state { purchaseState = CapturePayment paymentUrl }
+        let newState =
+              self.state { purchaseState = CapturePayment paymentUrl
+                         , user = hush eitherUser
+                         , accountStatus = newAccountStatus
+                         }
+            newAccountStatus = either (const NewAccount) LoggedInAccount eitherUser
         self.setState \_ -> newState
         -- NOTE: We need to pass the updated state here, not `self.state`.
         startOrderPoller self.setState newState order
-    Left err
-      | UnrecognizedError e <- err ->
-        liftEffect do
-          logger.error $ Error.orderError $ "Failed to place an order: " <> e
-          self.setState _ { purchaseState = PurchaseFailed }
-      | emailInUse@(EmailInUse email) <- err -> liftEffect $ self.setState _ { accountStatus = ExistingAccount email }
-      | SubscriptionExists <- err -> liftEffect $ self.setState _ { purchaseState = PurchaseSubscriptionExists }
-      | otherwise -> liftEffect $ self.setState _ { purchaseState = PurchaseFailed }
+    Left err -> do
+      case err of
+        UnrecognizedError e -> liftEffect $ logger.error $ Error.orderError $ "Failed to place an order: " <> e
+        _ -> pure unit
+
+      let errState = { user: hush eitherUser } `merge` case err of
+            emailInUse@(EmailInUse email) -> self.state { accountStatus = ExistingAccount email }
+            SubscriptionExists            -> self.state { purchaseState = PurchaseSubscriptionExists }
+            -- TODO: Handle all cases explicitly
+            _                             -> self.state { purchaseState = PurchaseFailed }
+      liftEffect $ self.setState \_ -> errState
 
 userHasPackage :: PackageId -> Array Package -> Boolean
 userHasPackage packageId = Array.any (\p -> packageId == p.id)
