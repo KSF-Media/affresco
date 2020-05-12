@@ -86,7 +86,7 @@ data PurchaseState
   = NewPurchase
   | CapturePayment PaymentTerminalUrl
   | ProcessPayment
-  | PurchaseFailed (Maybe OrderFailure)
+  | PurchaseFailed OrderFailure
   | PurchaseSetPassword
   | PurchaseCompleted AccountStatus
 
@@ -142,7 +142,7 @@ didMount self = do
         products <- liftEffect $ case self.props.products of
           Right p -> pure p
           Left err -> do
-            self.setState _ { purchaseState = PurchaseFailed $ Just $ UnexpectedError ""  }
+            self.setState _ { purchaseState = PurchaseFailed $ UnexpectedError ""  }
             logger.error err
             throwError err
 
@@ -200,6 +200,7 @@ pollOrder setState state@{ logger } (Right order) = do
           | user.hasCompletedRegistration = ExistingAccount user.email
           | otherwise = NewAccount
     OrderFailed reason -> liftEffect do
+<<<<<<< HEAD
       case reason of
         SubscriptionExistsError -> do
           logger.log "Tried to make purchase to with already existing subscription" Sentry.Info
@@ -207,16 +208,21 @@ pollOrder setState state@{ logger } (Right order) = do
         _ -> do
           logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
           setState _ { purchaseState = PurchaseFailed }
+=======
+      logger.error $ Error.orderError "Order failed for customer"
+      -- TODO: Should we do case analysis on the type of error?
+      setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
+>>>>>>> Fix Vetrina module
     OrderCanceled  -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
       setState _ { purchaseState = NewPurchase }
     OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
     UnknownState   -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
-      setState _ { purchaseState = PurchaseFailed Nothing }
+      setState _ { purchaseState = PurchaseFailed ServerError }
 pollOrder setState { logger } (Left err) = liftEffect do
   logger.error $ Error.orderError $ "Failed to get order from server: " <> err
-  setState _ { purchaseState = PurchaseFailed $ Just ServerError }
+  setState _ { purchaseState = PurchaseFailed ServerError }
 
 render :: Self -> JSX
 render self = vetrinaContainer self $
@@ -288,10 +294,10 @@ vetrinaContainer :: Self -> JSX -> JSX
 vetrinaContainer self@{ state: { purchaseState } } child =
   let errorClassString = "vetrina--purchase-error"
       errorClass       = case purchaseState of
-                           PurchaseFailed (Just SubscriptionExists)  -> mempty
-                           PurchaseFailed (Just AuthenticationError) -> mempty
-                           PurchaseFailed _                          -> errorClassString
-                           otherwise                                 -> mempty
+                           PurchaseFailed SubscriptionExists  -> mempty
+                           PurchaseFailed AuthenticationError -> mempty
+                           PurchaseFailed _                   -> errorClassString
+                           otherwise                          -> mempty
   in
     DOM.div
       { className: "vetrina--container " <> errorClass
