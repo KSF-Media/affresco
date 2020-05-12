@@ -25,7 +25,6 @@ import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
 import Record (merge)
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
@@ -33,6 +32,7 @@ import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
+import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 
 foreign import sentryDsn_ :: Effect String
@@ -239,14 +239,8 @@ render self = vetrinaContainer self $
     PurchaseFailed failure ->
       case failure of
         SubscriptionExists ->
-          DOM.div_
-            -- TODO: Waiting for copy
-            [ DOM.text "You already have this subscription. Go back to article"
-            , DOM.button
-                { onClick: handler_ self.props.onClose
-                , children: [ DOM.text "OK" ]
-                }
-            ]
+          Purchase.SubscriptionExists.subscriptionExists
+            { onClose: self.props.onClose }
         AuthenticationError ->
           Purchase.NewPurchase.newPurchase
             { accountStatus: self.state.accountStatus
@@ -353,6 +347,7 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
       let errState = { user: hush eitherUser } `merge` case err of
             emailInUse@(EmailInUse email) -> self.state { accountStatus = ExistingAccount email }
             SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
+            AuthenticationError           -> self.state { purchaseState = PurchaseFailed AuthenticationError }
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
       liftEffect $ self.setState \_ -> errState
