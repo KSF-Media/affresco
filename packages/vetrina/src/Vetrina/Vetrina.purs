@@ -228,7 +228,7 @@ render self = vetrinaContainer self $
       Purchase.NewPurchase.newPurchase
         { accountStatus: self.state.accountStatus
         , products: self.state.products
-        , errorMessage : mempty
+        , errorMessage : Nothing
         , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
         , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
         , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
@@ -253,7 +253,7 @@ render self = vetrinaContainer self $
           Purchase.NewPurchase.newPurchase
             { accountStatus: self.state.accountStatus
             , products: self.state.products
-            , errorMessage: orderErrorMessage AuthenticationError
+            , errorMessage: Just $ orderErrorMessage AuthenticationError
             , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
             , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
             , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
@@ -299,12 +299,11 @@ vetrinaContainer self@{ state: { purchaseState } } child =
       , children: [ child ]
       }
 
-orderErrorMessage :: OrderFailure -> JSX
+orderErrorMessage :: OrderFailure -> String
 orderErrorMessage failure =
   case failure of
-    AuthenticationError -> InputField.errorMessage "Kombinationen av e-postadress och lösenord finns inte"
-    EmailInUse _ -> mempty -- TODO: Waiting for copy
-    _ -> DOM.text "Något gick fel. Vänligen försök om en stund igen."
+    AuthenticationError -> "Kombinationen av e-postadress och lösenord finns inte"
+    _                   -> "Något gick fel. Vänligen försök om en stund igen."
 
 -- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
 mkPurchaseWithNewAccount :: Self -> NewPurchase.NewAccountForm -> Effect Unit
