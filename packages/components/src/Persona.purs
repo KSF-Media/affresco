@@ -102,6 +102,20 @@ pauseSubscription uuid subsno startDate endDate token = do
   where
     authorization = oauthToken token
 
+unpauseSubscription :: UUID -> Int -> Maybe DateTime -> Token -> Aff Subscription
+unpauseSubscription uuid subsno maybeStartDate token = do
+  let maybeStartDateISO = formatDate <$> maybeStartDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
+    ([ unsafeToForeign uuid
+     , unsafeToForeign subsno
+     ] <> case maybeStartDateISO of
+            Nothing -> []
+            Just startDateISO -> [ unsafeToForeign { startDate: startDateISO } ]
+    )
+    { authorization }
+  where
+    authorization = oauthToken token
+
 temporaryAddressChange
   :: UUID
   -> Int

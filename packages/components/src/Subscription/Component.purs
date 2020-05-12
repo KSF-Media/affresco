@@ -12,8 +12,11 @@ import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
+import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Class (liftEffect)
 import Effect.Now as Now
+import Effect.Aff as Aff
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -311,9 +314,20 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                   [ DOM.u_ [ DOM.text "Remove all pauses" ] ]
               }
           ]
-        , onClick: handler_ $
+        , onClick: handler_ $ do
            self.setState _
-             { updateAction = Nothing }
+             { wrapperProgress = AsyncWrapper.Loading mempty }
+           Aff.launchAff_ $ do
+             unpausedSubscription <- Aff.try $ do
+               User.unpauseSubscription props.user.uuid props.subscription.subsno Nothing
+             case unpausedSubscription of
+                 Left err -> do
+                   liftEffect $ self.setState _
+                     { wrapperProgress = AsyncWrapper.Error "Failed to unpause subscription" }
+                 Right newSubscription -> liftEffect $ self.setState _
+                   { pausedSubscriptions = toMaybe newSubscription.paused
+                   , wrapperProgress = AsyncWrapper.Success $ Just "Successfully unpaused subscription"
+                   }
         }
 
     temporaryAddressChangeIcon =
