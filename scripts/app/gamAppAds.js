@@ -145,7 +145,7 @@ var ksfDfp = {};
             googletag.enableServices();
 
             googletag.pubads().addEventListener("slotRenderEnded", function(event) {
-                if (event !== "undefined" && event.size !== null) {
+                if (typeof event !== 'undefined' && event.size != null) {
                     var contentUnitDiv;
                     var headerToShow;
                     contentUnitDiv = event.slot.getSlotElementId();
@@ -181,14 +181,16 @@ var ksfDfp = {};
         ksfDfp.closeSlotAfterCallback = function(slot) {
             // this is used to close third party ad calls that has been abandoned and returned using a callback
             var divToClose = document.getElementById(slot);
+            if(typeof divToClose !== 'undefined' && divToClose != null){
             divToClose.style.display = "none";
             var headerToClose = document.getElementsByClassName('ksfDFPadHeader ' + slot);
-            if (headerToClose[0] !== "undefined") {
+            if (typeof headerToClose[0] !== 'undefined' && headerToClose[0] != null) {
                 let unclosed = headerToClose.length - 1;
                 while(unclosed >= 0){
                      headerToClose[unclosed].style.display = "none";
                      unclosed = unclosed - 1;
                 }
+            }
             }
         };
 
