@@ -36,11 +36,11 @@ const MobileList = (props) => {
                     <div className={"articleItem mobileListItems"}>
                         <div className={"row"}>
                             <div className={"col-8"} onClick={() => {
-                                window.location.href = "?uuid=" + item.uuid;
+                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam();
                             }}>
                                 <div>
                                     <a className={"relatedArticlesItem"}
-                                       href={"?uuid=" + item.uuid}>
+                                       href={"?uuid=" + item.uuid + "&paper=" + getBrandValueParam()}>
                                         {
                                             item.title.length > 80 ?
                                                 item.title.substring(0, 80) + "..."
@@ -55,7 +55,7 @@ const MobileList = (props) => {
                                 </div>
                             </div>
                             <div className={"col-4 articleImage"} onClick={() => {
-                                window.location.href = "?uuid=" + item.uuid;
+                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam();
                             }}>
                                 {
                                     item.listImage === null ?

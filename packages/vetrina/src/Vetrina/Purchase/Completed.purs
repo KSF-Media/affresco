@@ -19,7 +19,7 @@ type Props =
 completed :: Props -> JSX
 completed props =
   DOM.h1_ [ case props.accountStatus of
-               NewAccount      -> DOM.text "Ditt KSF Media konto är klart!"
+               NewAccount      -> DOM.text "Ditt KSF Media-konto är klart!"
                _               -> DOM.text "Tack för din beställning!"
           ]
   <> DOM.p
