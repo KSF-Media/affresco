@@ -185,7 +185,7 @@ var ksfDfp = {};
             divToClose.style.display = "none";
             var headerToClose = document.getElementsByClassName('ksfDFPadHeader ' + slot);
             if (typeof headerToClose[0] !== 'undefined' && headerToClose[0] != null) {
-                let unclosed = headerToClose.length - 1;
+                var unclosed = headerToClose.length - 1;
                 while(unclosed >= 0){
                      headerToClose[unclosed].style.display = "none";
                      unclosed = unclosed - 1;
