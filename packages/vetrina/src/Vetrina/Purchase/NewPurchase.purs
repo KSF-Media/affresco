@@ -37,7 +37,7 @@ type State =
        }
   , accountStatus       :: AccountStatus
   , serverErrors        :: Array (Form.ValidationError FormInputField)
-  , displayErrorMessage :: Boolean
+  , errorMessage        :: JSX
   , productSelection    :: Maybe Product
   , paymentMethod       :: Maybe PaymentMethod
   }
@@ -100,7 +100,7 @@ newPurchase props = make component
                       }
                   , accountStatus: NewAccount
                   , serverErrors: []
-                  , displayErrorMessage: isJust props.errorMessage
+                  , errorMessage: foldMap formatErrorMessage props.errorMessage
                   , productSelection: Nothing
                   , paymentMethod: Nothing
                   }
@@ -163,7 +163,7 @@ form self = DOM.form $
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
-  , children: (guard self.state.displayErrorMessage $ errorMessage self) `cons` (emailInput self self.state.accountStatus `cons` children)
+  , children: self.state.errorMessage `cons` (emailInput self self.state.accountStatus `cons` children)
   }
   where
     onSubmit = handler preventDefault $ case self.state.accountStatus of
@@ -270,9 +270,6 @@ isFormInvalid validations
   = not $ all isNotInitialized errs
   | otherwise = false
 
-errorMessage :: Self -> JSX
-errorMessage self = foldMap formatErrorMessage self.props.errorMessage
-
 formatErrorMessage :: String -> JSX
 formatErrorMessage message = InputField.errorMessage message
 
@@ -300,7 +297,7 @@ emailInput self _ =
          self.setState _
            { newAccountForm { emailAddress = val }
            , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
-           , displayErrorMessage = false
+           , errorMessage = mempty
            }
       ExistingAccount _ -> \val ->
         self.setState _
@@ -311,7 +308,7 @@ emailInput self _ =
             -- and we are asking the user to log in right now, changing the email should cancel that)
           , accountStatus = NewAccount
           , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
-          , displayErrorMessage = false
+          , errorMessage = mempty
           }
       _ -> mempty
 
