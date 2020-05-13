@@ -158,12 +158,14 @@ var ksfDfp = {};
                     if (ksfDfp.closableAdSlots.indexOf(contentUnitDiv) === -1) {
                         headerToShow.insertAdjacentHTML("beforebegin",
                             '<header class="ksfDFPadHeader ' + contentUnitDiv +
-                            '" style="width: ' + event.size[0] + 'px">annons</header>');
-                    } else {
+                            '" style="width: ' + event.size[0] + 'px"><span>annons</span></header>');
+                        headerToShow.insertAdjacentHTML("afterend", '<header class="ksfDFPadHeader ' + contentUnitDiv +
+                            '"><span>annons slut</span></header>');
+                        } else {
                         headerToShow.insertAdjacentHTML("afterbegin",
                             '<header class="ksfDFPadHeader  sticky"  id="' +
                             contentUnitDiv +
-                            '_header" >annons<p><a href="#" title="stäng annons" onclick="return ksfDfp.closeInterstitial(\'' +
+                            '_header" ><span>annons</span><p><a href="#" title="stäng annons" onclick="return ksfDfp.closeInterstitial(\'' +
                             contentUnitDiv + '\');">x</a></p></header>');
                     }
                 }
@@ -182,7 +184,11 @@ var ksfDfp = {};
             divToClose.style.display = "none";
             var headerToClose = document.getElementsByClassName('ksfDFPadHeader ' + slot);
             if (headerToClose[0] !== "undefined") {
-                headerToClose[0].style.display = "none !important";
+                let unclosed = headerToClose.length - 1;
+                while(unclosed >= 0){
+                     headerToClose[unclosed].style.display = "none";
+                     unclosed = unclosed - 1;
+                }
             }
         };
 
