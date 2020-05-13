@@ -558,13 +558,13 @@ class App extends Component {
                                 }
                             </div>
                         </div>
-                        <div id="MOBNER"></div>
                         {
                             this.state.relatedArticles.length > 0 ?
                                 <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
                                 :
                                 ''
                         }
+                        <div id="MOBNER"></div>
                         <RelatedArticles relatedArticles={this.state.mostReadArticles}/>
                     </React.Fragment>
                 </div>

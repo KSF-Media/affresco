@@ -16,12 +16,23 @@ my $CWD = getcwd;
 my @APP_DIRECTORIES = glob('apps/*');
 my $BUILD_HASH_FILENAME = '.build-size-sha256';
 
+# App name and app build directory.
+# For JS projects, we need to point to the most relevant
+# PureScript package they use
+my %APPS_TO_WATCH = (
+    'mitt-konto'      => '/apps/mitt-konto',
+    'prenumerera'     => '/apps/prenumerera',
+    'vetrina-staging' => '/packages/vetrina',
+    'app-article'     => '/packages/user'
+);
+
 sub create_deploy_trigger() {
     foreach my $dir (@APP_DIRECTORIES) {
         my $full_app_dir = "$CWD/$dir";
-
-        if (is_purescript_project($full_app_dir)) {
-            chdir $full_app_dir;
+        my $app_name = basename($dir);
+        if (exists $APPS_TO_WATCH{$app_name}) {
+            my $app_build_dir = $CWD . $APPS_TO_WATCH{$app_name};
+            chdir $app_build_dir;
             # Calculate hash of build directory and write to file if changed
             my $build_hash_output = `find ./output -type f | xargs cat | sha256sum`;
             my ($build_hash) = split(' ', $build_hash_output);
@@ -43,16 +54,6 @@ sub create_deploy_trigger() {
             }
         }
     }
-}
-
-# If an `output` directory is found, it's a Purescript project
-sub is_purescript_project() {
-    my $app_dir = shift;
-    opendir(DH, $app_dir)
-        or die "Could not open directory: '$app_dir'";
-    my $is_purescript_project = grep(/^output$/, readdir DH) ? 1 : 0;
-    closedir DH;
-    return $is_purescript_project;
 }
 
 sub get_current_build_hash() {

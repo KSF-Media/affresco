@@ -88,6 +88,10 @@ data OrderStatusFailReason
   | OrderNotFound
   | UnknownReason
 
+derive instance genericOrderStatusFailReason :: Generic OrderStatusFailReason _
+instance showOrderStatusFailReason :: Show OrderStatusFailReason where
+  show = genericShow
+
 parseFailReason :: String -> OrderStatusFailReason
 parseFailReason reason =
   case reason of
@@ -107,8 +111,8 @@ type NewOrder =
 
 data PaymentMethod = CreditCard
 
-derive instance genericProvider :: Generic PaymentMethod _
-instance showProvider :: Show PaymentMethod where
+derive instance genericPaymentMethod :: Generic PaymentMethod _
+instance showPaymentMethod :: Show PaymentMethod where
   show = genericShow
 
 type PaymentTerminalUrl = { paymentTerminalUrl :: String }

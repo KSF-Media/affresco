@@ -5,7 +5,7 @@
 @import 'Product';
 @import 'Spinner';
 
-body {
+.vetrina--container {
     font-family: 'Duplex Sans', sans-serif;
     font-weight: 300;
     background-color: @nude;
@@ -13,9 +13,6 @@ body {
     .spinner--loading-spinner {
         background-color: @nude;
     }
-}
-
-.vetrina--container {
     display: grid;
     justify-content: center;
     grid-template-columns: minmax(100px, 505px);
@@ -79,6 +76,7 @@ body {
     font-weight: 500;
     margin-top: 2em;
     max-width: 200px;
+    max-height: 3em;
     cursor: pointer;
 }
 
