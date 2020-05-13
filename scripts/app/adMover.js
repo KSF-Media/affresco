@@ -1,16 +1,16 @@
 window.onload = function () {
     "use strict";
-    let ksfAdMover = {};
+    var ksfAdMover = {};
     ksfAdMover.checkPara = function (ptag, expectedType, expectedClass) {
-        let response = false;
+        var response = false;
         expectedType = expectedType.toUpperCase(); // nodeName is always uppercase
         // check that the surrounding paragraphs are OK when placing the in text ad
-        let pBefore = ptag.previousElementSibling;
-        let pBeforeContent = pBefore.innerHTML.replace(/[^A-Za-z0-9]/g, '');
-        let pBeforeClass = pBefore.classList.contains(expectedClass);
-        let pSelf = ptag;
-        let pSelfContent = pSelf.innerHTML.replace(/[^A-Za-z0-9]/g, '');
-        let pSelfClass = pSelf.classList.contains(expectedClass);
+        var pBefore = ptag.previousElementSibling;
+        var pBeforeContent = pBefore.innerHTML.replace(/[^A-Za-z0-9]/g, '');
+        var pBeforeClass = pBefore.classList.contains(expectedClass);
+        var pSelf = ptag;
+        var pSelfContent = pSelf.innerHTML.replace(/[^A-Za-z0-9]/g, '');
+        var pSelfClass = pSelf.classList.contains(expectedClass);
         if ((!(/^\s*$/.test(pBeforeContent)) && !(/^\s*$/.test(pSelfContent))) && (pSelf.nodeName === expectedType && pBefore.nodeName === expectedType) && (pBeforeClass && pSelfClass)) {
             response = true;
         }
@@ -47,7 +47,7 @@ window.onload = function () {
         ksfAdMover.placementElement = ksfAdMover.paras[ksfAdMover.placementPositionNum];
         if (ksfAdMover.placementElement && ksfAdMover.letTheBoxMove) {
             // verify that the new placement is OK. This requires the new placement to be surrounded by non-empty text tags.
-            let isParaOK = ksfAdMover.checkPara(ksfAdMover.placementElement, ksfAdMover.paragraphType, ksfAdMover.paragraphClass); // element + expected type and class name
+            var isParaOK = ksfAdMover.checkPara(ksfAdMover.placementElement, ksfAdMover.paragraphType, ksfAdMover.paragraphClass); // element + expected type and class name
             if (!isParaOK) {
                 //last ditch attempt or give up
                 ksfAdMover.placementElement = ksfAdMover.paras[ksfAdMover.placementPositionNum - 2];
