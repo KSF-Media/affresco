@@ -6,7 +6,7 @@
     "purescript": "^0.13.6",
     "spago": "^0.15.2",
     "yarn": "^1.22.4",
-    "uglify-js": "^3.6.0"
+    "uglify-es": "^3.3.9"
   },
   "bootstrap": {
     "useWorkspaces": true,
