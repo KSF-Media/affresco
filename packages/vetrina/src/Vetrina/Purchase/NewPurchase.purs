@@ -7,7 +7,8 @@ import Data.Array (all, cons, intercalate)
 import Data.Array as Array
 import Data.Foldable (foldMap)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
@@ -36,6 +37,7 @@ type State =
        }
   , accountStatus       :: AccountStatus
   , serverErrors        :: Array (Form.ValidationError FormInputField)
+  , errorMessage        :: JSX
   , productSelection    :: Maybe Product
   , paymentMethod       :: Maybe PaymentMethod
   }
@@ -87,7 +89,7 @@ component :: React.Component Props
 component = React.createComponent "NewPurchase"
 
 newPurchase :: Props -> JSX
-newPurchase = make component
+newPurchase props = make component
   { initialState: { newAccountForm:
                       { emailAddress: Nothing
                       , acceptLegalTerms: false
@@ -98,12 +100,14 @@ newPurchase = make component
                       }
                   , accountStatus: NewAccount
                   , serverErrors: []
+                  , errorMessage: foldMap formatErrorMessage props.errorMessage
                   , productSelection: Nothing
                   , paymentMethod: Nothing
                   }
   , render
   , didMount
   }
+  props
 
 didMount :: Self -> Effect Unit
 didMount self = do
@@ -159,7 +163,7 @@ form self = DOM.form $
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
-  , children: (foldMap formatErrorMessage self.props.errorMessage) `cons` (emailInput self self.state.accountStatus `cons` children)
+  , children: self.state.errorMessage `cons` (emailInput self self.state.accountStatus `cons` children)
   }
   where
     onSubmit = handler preventDefault $ case self.state.accountStatus of
@@ -293,6 +297,7 @@ emailInput self _ =
          self.setState _
            { newAccountForm { emailAddress = val }
            , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
+           , errorMessage = mempty
            }
       ExistingAccount _ -> \val ->
         self.setState _
@@ -303,6 +308,7 @@ emailInput self _ =
             -- and we are asking the user to log in right now, changing the email should cancel that)
           , accountStatus = NewAccount
           , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
+          , errorMessage = mempty
           }
       _ -> mempty
 
