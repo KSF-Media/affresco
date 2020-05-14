@@ -64,7 +64,7 @@ derive instance eqNewAccountInputField :: Eq FormInputField
 instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInputField where
   validateField field value serverErrors = case field of
     EmailAddress     -> Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
-    Password         -> Form.noValidation value
+    Password         -> Form.validateEmptyField Password "Lösenord krävs." value
     ProductSelection -> Form.noValidation value
     PaymentMethod    -> Form.noValidation value
 
