@@ -345,7 +345,9 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
         _ -> pure unit
 
       let errState = { user: hush eitherUser } `merge` case err of
-            emailInUse@(EmailInUse email) -> self.state { accountStatus = ExistingAccount email }
+            emailInUse@(EmailInUse email) -> self.state { accountStatus = ExistingAccount email
+                                                        , purchaseState = NewPurchase
+                                                        }
             SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
             AuthenticationError           -> self.state { purchaseState = PurchaseFailed AuthenticationError }
             -- TODO: Handle all cases explicitly
