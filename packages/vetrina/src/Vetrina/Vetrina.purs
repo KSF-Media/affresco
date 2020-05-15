@@ -48,7 +48,7 @@ type Props =
   { onClose         :: Effect Unit
   , onLogin         :: Effect Unit
   , products        :: Either Error (Array Product)
-  , unexpectedError :: Maybe JSX
+  , unexpectedError :: JSX
   }
 
 fromJSProps :: JSProps -> Props
@@ -63,7 +63,7 @@ fromJSProps jsProps =
             , not null products -> Right products
             | otherwise -> Left productError
           Nothing -> Left productError
-  , unexpectedError : toMaybe jsProps.unexpectedError
+  , unexpectedError : fromMaybe mempty $ toMaybe jsProps.unexpectedError
   }
 
 type State =
@@ -76,7 +76,6 @@ type State =
   , products         :: Array Product
   , productSelection :: Maybe Product
   , paymentMethod    :: User.PaymentMethod
-  , unexpectedError  :: JSX
   }
 
 type Self = React.Self Props State
@@ -92,11 +91,11 @@ data PurchaseState
   | PurchaseFailed OrderFailure
   | PurchaseSetPassword
   | PurchaseCompleted AccountStatus
-  | UnexpectedServerError
 
 data OrderFailure
   = EmailInUse String
   | SubscriptionExists
+  | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
   | ServerError
@@ -126,41 +125,34 @@ initialState =
   , products: []
   , productSelection: Nothing
   , paymentMethod: CreditCard
-  , unexpectedError: mempty
   }
 
 didMount :: Self -> Effect Unit
-didMount self =
-  case self.props.unexpectedError of
-    Just view ->
-      self.setState _ { purchaseState   = UnexpectedServerError
-                      , unexpectedError = view
-                      }
-    Nothing -> do
-      sentryDsn <- sentryDsn_
-      logger <- Sentry.mkLogger sentryDsn Nothing
-      self.setState _ { logger = logger }
-      -- Before rendering the form, we need to:
-      -- 1. fetch the user if access token is found in the browser
-      Aff.launchAff_ do
-        Aff.finally
-          -- When user has been fetched, hide loading spinner
-          (liftEffect $ self.setState \s -> s { isLoading = Nothing })
-          do
-            -- Try to login with local storage information and set user to state
-            tryMagicLogin self
+didMount self = do
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing
+  self.setState _ { logger = logger }
+  -- Before rendering the form, we need to:
+  -- 1. fetch the user if access token is found in the browser
+  Aff.launchAff_ do
+    Aff.finally
+      -- When user has been fetched, hide loading spinner
+      (liftEffect $ self.setState \s -> s { isLoading = Nothing })
+      do
+        -- Try to login with local storage information and set user to state
+        tryMagicLogin self
 
-            products <- liftEffect $ case self.props.products of
-              Right p -> pure p
-              Left err -> do
-                self.setState _ { purchaseState = PurchaseFailed $ UnexpectedError ""  }
-                logger.error err
-                throwError err
+        products <- liftEffect $ case self.props.products of
+          Right p -> pure p
+          Left err -> do
+            self.setState _ { purchaseState = PurchaseFailed $ InitializationError }
+            logger.error err
+            throwError err
 
-            liftEffect $ self.setState _ { products = products }
-            -- If there is only one product given, automatically select that for the customer
-            when (length products == 1) $
-              liftEffect $ self.setState _ { productSelection = head products }
+        liftEffect $ self.setState _ { products = products }
+        -- If there is only one product given, automatically select that for the customer
+        when (length products == 1) $
+          liftEffect $ self.setState _ { productSelection = head products }
 
 tryMagicLogin :: Self -> Aff Unit
 tryMagicLogin self =
@@ -265,6 +257,10 @@ render self = vetrinaContainer self $
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
             }
+        ServerError -> self.props.unexpectedError
+        UnexpectedError _ -> self.props.unexpectedError
+        InitializationError ->
+          self.props.unexpectedError
         _ ->
           Purchase.Error.error
             { onRetry: onRetry
@@ -286,8 +282,6 @@ render self = vetrinaContainer self $
         , user: self.state.user
         , accountStatus
         }
-    UnexpectedServerError ->
-      self.state.unexpectedError
   where
     onRetry = self.setState _ { purchaseState = NewPurchase }
 
