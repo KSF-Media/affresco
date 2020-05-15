@@ -257,8 +257,14 @@ render self = vetrinaContainer self $
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
             }
-        ServerError -> self.props.unexpectedError
-        UnexpectedError _ -> self.props.unexpectedError
+        ServerError ->
+          Purchase.Error.error
+            { onRetry: onRetry
+            }
+        UnexpectedError _ ->
+          Purchase.Error.error
+            { onRetry: onRetry
+            }
         InitializationError ->
           self.props.unexpectedError
         _ ->
