@@ -327,7 +327,7 @@ body {
 .genericBox h3{
     margin-top: 5px;
     margin-bottom: 10px;
-    font-size: 1.75rem;
+    font-size: 1.35rem;
     font-family: "Duplex Sans Bold", sans-serif;
 }
 
@@ -345,7 +345,6 @@ body {
 
 .genericBox li {
     margin-bottom: 15px;
-    border-bottom: 1px solid #80808029;
     padding-bottom: 10px;
 }
 
@@ -694,22 +693,24 @@ body {
 
 .ksf-bright-star{
     background-image: url('./assets/images/star-fill.png');
-    width: 23px;
-    height: 23px;
+    width: 18px;
+    height: 18px;
     display: inline-block;
-    margin-bottom: -4px;
+    margin-bottom: -2px;
 }
 
 .ksf-dim-star{
     background-image: url('./assets/images/star-empty.png');
-    width: 23px;
-    height: 23px;
+    width: 18px;
+    height: 18px;
     display: inline-block;
-    margin-bottom: -4px;
+    margin-bottom: -2px;
 }
 
-.headline-question {
+.headline-question  {
     margin-bottom: 2px;
+    font-size: 1.06em !important;
+    font-weight: bolder;
 }
 
 .text-footnote {
