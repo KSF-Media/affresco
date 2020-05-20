@@ -15,17 +15,20 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
+import KSF.Helpers as Helpers
 import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import Tracking as Tracking
 
 type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
+  , cusno     :: String
   , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
@@ -184,6 +187,11 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
   Aff.launchAff_ $
     User.pauseSubscription userUuid subsno start end >>=
       case _ of
-        Right sub -> liftEffect $ props.onSuccess sub
-        Left invalidDateInput -> liftEffect $ props.onError invalidDateInput
+        Right sub -> liftEffect do
+          props.onSuccess sub
+          Tracking.pauseSubscription props.cusno subsno (Helpers.formatDate start) (Helpers.formatDate end) "success"
+        Left invalidDateInput -> liftEffect do
+          props.onError invalidDateInput
+          Tracking.pauseSubscription props.cusno subsno (Helpers.formatDate start) (Helpers.formatDate end) "error: invalid date input"
+  
 submitForm _ _ = Console.error "Pause subscription dates were not defined."

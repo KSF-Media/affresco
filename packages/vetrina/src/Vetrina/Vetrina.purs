@@ -207,6 +207,8 @@ pollOrder setState state@{ logger } (Right order) = do
       productPrice <- liftEffect $ LocalStorage.getItem "productPrice" --analytics
       liftEffect $ Tracking.transaction order.number productId productPrice --analyics
       liftEffect $ setState _ { purchaseState = nextPurchaseStep }
+      tracker <- liftEffect $ Tracking.newTracker
+      liftEffect $ Tracking.transaction tracker
       where
         chooseAccountStatus user
           | user.hasCompletedRegistration = ExistingAccount user.email

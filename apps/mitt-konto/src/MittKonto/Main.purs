@@ -33,7 +33,6 @@ import KSF.User.Login (login) as Login
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import Tracking as Tracking
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String
@@ -79,11 +78,9 @@ app = make component
   , didMount
   , render
   }
-
+  
 didMount :: Self -> Effect Unit
 didMount self = do
-  tracker <- Tracking.newTracker
-  Tracking.pushPageLoad tracker
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   self.setState _ { logger = logger }

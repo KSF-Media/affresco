@@ -39,6 +39,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
+import Tracking as Tracking
 
 type Self = React.Self Props State
 
@@ -334,10 +335,12 @@ editAddress self =
           Right u -> liftEffect do
             self.props.onUpdate u
             self.setState _ { editAddress = Success Nothing }
+            Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating name"
           Left err -> do
             liftEffect do
               self.props.logger.error $ Error.userError $ show err
               self.setState _ { editAddress = AsyncWrapper.Error "Adressändringen misslyckades." }
+              Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating name"
     updateAddress _ = pure unit
 
 editName :: Self -> JSX
@@ -391,12 +394,15 @@ editName self =
           newUser <- User.updateUser self.props.profile.uuid $ User.UpdateName { firstName: fname, lastName: lname }
           case newUser of
             Right u -> liftEffect do
+              Tracking.changeName self.props.profile.cusno "success"
               self.props.onUpdate u
               self.setState _ { editName = Success Nothing }
+              Tracking.changeName self.props.profile.cusno "error: unexpected error when updating name"
             Left err -> do
               liftEffect do
                 self.props.logger.error $ Error.userError $ show err
                 self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
+                Tracking.changeName self.props.profile.cusno "error: unexpected error when updating name"
               throwError $ error "Unexpected error when updating name."
       updateName _ = pure unit
 

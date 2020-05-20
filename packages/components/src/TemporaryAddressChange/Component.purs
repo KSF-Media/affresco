@@ -18,6 +18,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
+import KSF.Helpers (formatDate)
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
@@ -28,6 +29,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import Tracking as Tracking
 
 type State =
   { startDate      :: Maybe DateTime
@@ -45,6 +47,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
+  , cusno     :: String
   , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
@@ -266,10 +269,18 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
                                    , temporaryName: temporaryName'
                                    } = do
           liftEffect $ self.props.onLoading
+          let startDate''  = formatDate startDate'
+              endDate''    = case endDate' of
+                Just ed       -> formatDate ed
+                Nothing       -> "indefinite length"          
           User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' countryCode' temporaryName' >>=
             case _ of
-              Right sub -> liftEffect $ self.props.onSuccess sub
-              Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
+              Right sub -> liftEffect do
+                self.props.onSuccess sub          
+                Tracking.tempAddressChange self.props.cusno self.props.subsno startDate'' endDate'' "success"
+              Left invalidDateInput -> liftEffect do
+                self.props.onError invalidDateInput
+                Tracking.tempAddressChange self.props.cusno self.props.subsno startDate'' endDate'' "error: invalidDateInput"
         makeTemporaryAddressChange _ = Console.error "Form should be valid, however it looks like it's not"
     submitForm _ _ _ = Console.error "Temporary address change dates were not defined."
 
@@ -313,3 +324,4 @@ validateTemporaryAddressChangeForm form =
   <*> VF.validateField Zip form.zipCode []
   <*> VF.validateField CountryCode form.countryCode []
   <*> VF.validateField TemporaryName form.temporaryName []
+

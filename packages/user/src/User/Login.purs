@@ -37,6 +37,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
+import Tracking as Tracking
 
 foreign import hideLoginLinks :: Boolean
 
@@ -133,7 +134,7 @@ type Props =
   , launchAff_ :: Aff Unit -> Effect Unit
   , disableSocialLogins :: Set SocialLoginProvider
   }
-
+  
 type State =
   { formEmail :: Maybe String
   , formPassword :: Maybe String
@@ -172,8 +173,11 @@ didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
   props.launchAff_ $ User.magicLogin Nothing \user -> do
     case user of
-      Left _ -> self.setState _ { errors { login = Just SomethingWentWrong } }
-      Right _ -> pure unit
+      Left _ -> do
+        self.setState _ { errors { login = Just SomethingWentWrong } }
+      Right user' -> do
+        Tracking.login user'.cusno "magic login" "success"
+        pure unit
     props.onUserFetch user
 
 render :: Self -> JSX
@@ -215,11 +219,13 @@ onLogin self@{ props, state } = unV
             , mergeToken: toNullable $ map _.token state.merge
             }
         case user of
-          Right _ ->
+          Right user' -> liftEffect do
             -- removing merge token from state in case of success
-            liftEffect $ self.setState _ { merge = Nothing }
-          Left err ->
-            liftEffect $ self.setState _ { errors { login = Just err } }
+            self.setState _ { merge = Nothing }
+            Tracking.login user'.cusno "email login" "success"
+          Left err -> liftEffect do
+            self.setState _ { errors { login = Just err } }
+            Tracking.login "" "email login" "error"
         -- This call needs to be last, as it will unmount the login component.
         -- (We cannot set state of an unmounted component)
         liftEffect $ props.onUserFetch user
@@ -429,6 +435,9 @@ googleLogin self =
 
       user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
       finalizeSomeAuth self user
+      case user of
+        Left err -> liftEffect $ Tracking.login "" "google login" "error"
+        Right user' -> liftEffect $ Tracking.login user'.cusno "google login" "success"
       liftEffect $ self.props.onUserFetch user
 
     -- | Handles Google login errors. The matched cases are:
@@ -468,12 +477,13 @@ facebookLogin self =
       sdk <- User.facebookSdk
       FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
       case authResponse of
-        Nothing -> do
-          liftEffect Facebook.Success.unsetFacebookSuccess
+        Nothing -> liftEffect do
+          Facebook.Success.unsetFacebookSuccess
           Log.error "Facebook login failed"
+          Tracking.login "" "facebook login" "error: Facebook login failed"
         Just auth -> do
           liftEffect Facebook.Success.setFacebookSuccess
-          fetchFacebookUser auth sdk
+          fetchFacebookUser auth sdk          
       where
         loginOptions :: FB.LoginOptions
         loginOptions = FB.LoginOptions { scopes: map FB.Scope [ "public_profile", "email" ] }
@@ -494,6 +504,10 @@ facebookLogin self =
       liftEffect $ self.setState _ { formEmail = Just email }
       let (FB.AccessToken fbAccessToken) = accessToken
       user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+      case user of
+        Left err -> liftEffect $ Tracking.login "" "facebook login" "error: could not fetch user"
+        Right user' -> liftEffect $ Tracking.login user'.cusno "facebook login" "success"
+      liftEffect $ self.props.onUserFetch user
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
