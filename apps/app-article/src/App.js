@@ -63,10 +63,9 @@ class App extends Component {
             forceLoginView: false
         };
     }
-
     componentDidMount() {
-        if(window.ksfDfp){
-            window.ksfDfp.startUp();
+        if (window.ksfDfp) {
+            window.addEventListener('load', window.ksfDfp.startUp);
         }
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
@@ -92,9 +91,13 @@ class App extends Component {
             this.getMostReadArticles();
         }
     }
-
+    componentDidUpdate(){
+        } 
+componentWillUnmount() {
+   window.removeEventListener('load', window.ksfDfp.startUp);
+}  
     onLogout() {
-        console.log("Logged out successfully!")
+        console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
         localStorage.removeItem("cachedArticles");
@@ -198,6 +201,7 @@ class App extends Component {
                         this.resizeText(this.state.fontSize);
                         document.title = this.state.title;
                         this.pushLoadingArticleToGoogleTagManager(article);
+
                         this.cleanCache();
                     });
                 } else {

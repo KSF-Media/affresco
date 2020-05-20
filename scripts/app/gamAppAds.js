@@ -39,9 +39,10 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
     ksfDfp.mover.paragraphClass = 'html'; // the name of the css class of egible paragraphs
     ksfDfp.mover.articleContainerName = 'App'; // the class of the main article container. Could make sense to have this as id. But it is a class in the documents.
     ksfDfp.mover.articleTextContainerName = 'content'; // this is an id
-    ksfDfp.mover.minimumTextLength = 5; // text with less paragraphs are not touched
+    ksfDfp.mover.minimumTextLength = 7; // text with less paragraphs are not touched
     ksfDfp.mover.adDivToMove = "DIGIHELMOB"; // name of the div that we should move up
     ksfDfp.mover.done = false;
+    ksfDfp.mover.report = 'OK';
     ksfDfp.bannerMover = function() {
         let textDivTop = window.document.getElementsByClassName(ksfDfp.mover.articleContainerName);
         if (!(textDivTop[0] === undefined)) {
@@ -51,6 +52,7 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
             let paras = textDivTop[0].querySelectorAll(ksfDfp.mover.paragraphType + '.' + ksfDfp.mover.paragraphClass);
             let parasNum = paras.length;
             if (parasNum < ksfDfp.mover.minimumTextLength) {
+                ksfDfp.mover.report = 'Short text ' + parasNum;
                 // not worth moving ads in very short texts
                 ksfDfp.mover.letTheBoxMove = false;
             }
@@ -60,12 +62,14 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
                 // verify that the new placement is OK. This requires the new placement to be surrounded by non-empty text tags.
                 let isParaOK = ksfDfp.mover.checkPara(placementElement, ksfDfp.mover.paragraphType, ksfDfp.mover.paragraphClass); // element + expected type and class name
                 if (!isParaOK) {
+                    ksfDfp.mover.report = 'First attempt failed ' + placementPositionNum;
                     //last ditch attempt or give up
                     placementElement = paras[placementPositionNum - 2];
                     isParaOK = ksfDfp.mover.checkPara(placementElement, ksfDfp.mover.paragraphType, ksfDfp.mover.paragraphClass);
                     // if still not OK, we chicken out
                     if (!isParaOK) {
                         ksfDfp.mover.letTheBoxMove = false;
+                        ksfDfp.mover.report = 'Both attempts failed ' + placementPositionNum;
                     }
                 }
                 let adDivToMoveElement = window.document.getElementById(ksfDfp.mover.adDivToMove);
@@ -75,12 +79,12 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
                         ksfDfp.mover.done = true; // don't run this more than once
                     }
                 } else {
-                    console.log('I was expecting an specific ad div to be here, it was not!');
+                    ksfDfp.mover.report = 'Could not find specified div to move';
                 }
             }
             // found the necessary text containers
         } else {
-            console.log('failed to find top container!');
+            ksfDfp.mover.report = 'Failed to find top container';
         }
 
     };
@@ -103,30 +107,37 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
         ksfDfp.onSwitch = false;
         console.log('We will not show ads on this page load!');
     }
-
     if (ksfDfp.onSwitch) {
         ksfDfp.activated = false;
         ksfDfp.startUp = function() {
-            ksfDfp.activated = true;
-            // using interactive instead of complete improves loading speed somewhat
-            // activate display for all slots
-            var n = ksfDfp.numberOfSlots - 1;
-            var slotId = [];
-            var slotW = [];
-            var slotOK = [];
-            while (n > -1) {
-                // avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop only list. Should be reworked.
-                slotId[n] = ksfDfp.slots[n][0];
-                slotW[n] = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
-                slotOK[n] = false;
+            if (!ksfDfp.activated) {
+                ksfDfp.activated = true;
+                // move slots that are to be repositioned in the document
+                if (!ksfDfp.mover.done) {
+                    // timeout is really ugly but the react onload in componentdidmount is not reliable. This is even recommended by some. Without it long articles will fail. With it some short articles fail. 
+                    window.setTimeout(ksfDfp.bannerMover, 200);
+                }
+                // activate display for all slots
+                var n = ksfDfp.numberOfSlots - 1;
+                var slotId = [];
+                var slotW = [];
+                var slotOK = [];
+                while (n > -1) {
+                    // avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop only list. Should be reworked.
+                    slotId[n] = ksfDfp.slots[n][0];
+                    slotW[n] = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
+                    slotOK[n] = false;
 
-                if (slotW[n] <= ksfDfp.w) {
-                    slotOK[n] = true;
+                    if (slotW[n] <= ksfDfp.w) {
+                        slotOK[n] = true;
+                    }
+                    if (window.document.getElementById(slotId[n]) && slotOK[n]) {
+                        ksfDfp.displayBanner(slotId[n]);
+                    }
+                    n = n - 1;
                 }
-                if (window.document.getElementById(slotId[n]) && slotOK[n]) {
-                    ksfDfp.displayBanner(slotId[n]);
-                }
-                n = n - 1;
+            } else {
+                console.log('Already activated. Not running again!');
             }
         };
         ksfDfp.account = "/21664538223/";
@@ -209,19 +220,13 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
 
             googletag.pubads().addEventListener("slotRenderEnded", function(event) {
                 if (typeof event !== 'undefined' && event.size != null) {
-                    // move slots that are to be repositioned in the document
-                    if (!ksfDfp.mover.done) {
-                        setTimeout(() => {
-                            ksfDfp.bannerMover();
-                        }, 200);
-                    }
+
                     var contentUnitDiv;
                     var headerToShow;
                     contentUnitDiv = event.slot.getSlotElementId();
 
                     // show ad headline fitting to the ad format. Out of page slots should have a headline that allows viewers to close the ad
-                    // only show ad hedline for ads that are actually supposed to render
-                    //                    contentUnitDiv = event.slot.getSlotElementId(); // this line is probably not needed?
+                    // only show ad headline for ads that are actually supposed to render
                     headerToShow = document.getElementById(contentUnitDiv);
                     // show ad header or a special ad header for ads that require a close button
                     if (ksfDfp.closableAdSlots.indexOf(contentUnitDiv) === -1) {
@@ -239,6 +244,7 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
                     }
                 }
             });
+
         });
 
         ksfDfp.closeInterstitial = function(interstitialDivName) {
