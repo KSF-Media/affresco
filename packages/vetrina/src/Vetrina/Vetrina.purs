@@ -41,12 +41,14 @@ type JSProps =
   { onClose :: Nullable (Effect Unit)
   , onLogin :: Nullable (Effect Unit)
   , products :: Nullable (Array JSProduct)
+  , unexpectedError :: Nullable JSX
   }
 
 type Props =
-  { onClose  :: Effect Unit
-  , onLogin  :: Effect Unit
-  , products :: Either Error (Array Product)
+  { onClose         :: Effect Unit
+  , onLogin         :: Effect Unit
+  , products        :: Either Error (Array Product)
+  , unexpectedError :: JSX
   }
 
 fromJSProps :: JSProps -> Props
@@ -61,18 +63,19 @@ fromJSProps jsProps =
             , not null products -> Right products
             | otherwise -> Left productError
           Nothing -> Left productError
+  , unexpectedError : fromMaybe mempty $ toMaybe jsProps.unexpectedError
   }
 
 type State =
-  { user          :: Maybe User
-  , purchaseState :: PurchaseState
-  , poller        :: Aff.Fiber Unit
-  , isLoading     :: Maybe Spinner.Loading
-  , accountStatus :: AccountStatus
-  , logger        :: Sentry.Logger
-  , products      :: Array Product
+  { user             :: Maybe User
+  , purchaseState    :: PurchaseState
+  , poller           :: Aff.Fiber Unit
+  , isLoading        :: Maybe Spinner.Loading
+  , accountStatus    :: AccountStatus
+  , logger           :: Sentry.Logger
+  , products         :: Array Product
   , productSelection :: Maybe Product
-  , paymentMethod :: User.PaymentMethod
+  , paymentMethod    :: User.PaymentMethod
   }
 
 type Self = React.Self Props State
@@ -92,6 +95,7 @@ data PurchaseState
 data OrderFailure
   = EmailInUse String
   | SubscriptionExists
+  | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
   | ServerError
@@ -141,7 +145,7 @@ didMount self = do
         products <- liftEffect $ case self.props.products of
           Right p -> pure p
           Left err -> do
-            self.setState _ { purchaseState = PurchaseFailed $ UnexpectedError ""  }
+            self.setState _ { purchaseState = PurchaseFailed $ InitializationError }
             logger.error err
             throwError err
 
@@ -253,6 +257,16 @@ render self = vetrinaContainer self $
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
             }
+        ServerError ->
+          Purchase.Error.error
+            { onRetry: onRetry
+            }
+        UnexpectedError _ ->
+          Purchase.Error.error
+            { onRetry: onRetry
+            }
+        InitializationError ->
+          self.props.unexpectedError
         _ ->
           Purchase.Error.error
             { onRetry: onRetry

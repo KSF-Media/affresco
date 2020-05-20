@@ -1,8 +1,8 @@
 # ksf-media/vetrina
- 
+
 ## For javascript use
 
-Install it from npm `yarn add @ksf-media/vetrina` and just import it into your project: 
+Install it from npm `yarn add @ksf-media/vetrina` and just import it into your project:
 ```javascript
 import ReactDOM from 'react-dom';
 import { Vetrina } from '@ksf-media/vetrina';
@@ -24,6 +24,9 @@ The props/callbacks for `Vetrina` are
 - products
     - an array of `Products` we want to be subscribeable, see type of `Product` below
     - `products={[id: "HBL", description: "HBL is amazing!", priceCents: 990 }]}`
+- unexpectedError
+    - a view to be rendered when an unexpected error occurs
+    - `<div>Error!</div>`
 
 NOTE: Currently, the `products` array only supports one element.
 
@@ -48,4 +51,3 @@ Depending on the production environment we're in (dev, prod), the configuration 
 - `BOTTEGA_URL`
 
 [dotenv](https://github.com/motdotla/dotenv) is used for setting the variables in place.
-
