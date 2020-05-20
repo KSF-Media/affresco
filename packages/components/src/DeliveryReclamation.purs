@@ -1,14 +1,13 @@
 module KSF.DeliveryReclamation where
 
-import Prelude (Unit, bind, discard, ($), (<$>), (>>=), (=<<))
-
 import Data.Array (snoc)
 import Data.DateTime (DateTime)
-import Data.Either (Either(..))
+import Data.Either (Either(..), fromRight)
+import Data.Foldable (foldMap)
+import Data.Formatter.DateTime (Formatter, format, parseFormatString)
 import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
-import Data.Foldable (foldMap)
 import Data.String.Read (read)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -20,11 +19,16 @@ import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.User as User
+import Partial.Unsafe (unsafePartial)
+import Persona (DeliveryReclamationClaim(..))
+import Prelude (Unit, bind, discard, ($), (<$>), (>>=), (=<<))
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import Tracking as Tracking
+
 
 type State =
   { publicationDate    :: Maybe DateTime
@@ -133,7 +137,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           }
 
     submitForm :: Maybe DateTime -> Maybe User.DeliveryReclamationClaim -> Effect Unit
-    submitForm (Just date') (Just claim') = do
+    submitForm (Just date') (Just claim') = do      
       Aff.launchAff_ do
         createDeliveryReclamation date' claim'
       where
@@ -142,7 +146,12 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           liftEffect $ self.props.onLoading
           User.createDeliveryReclamation self.props.userUuid self.props.subsno date'' claim'' >>=
             case _ of
-              Right recl -> liftEffect $ self.props.onSuccess recl
+              Right recl -> do
+                liftEffect $ self.props.onSuccess recl
+                tracker <- liftEffect $ Tracking.newTracker
+                case claim' of
+                  NewDelivery -> liftEffect $ Tracking.reclamationEvent tracker self.props.subsno (displayDate date') "New delivery"
+                  Extension -> liftEffect $ Tracking.reclamationEvent tracker self.props.subsno (displayDate date') "Extension" 
               Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
     submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
     submitForm _ _ = Console.error "The entered information is incomplete."
@@ -172,3 +181,13 @@ dateInput self value label =
         ]
     ]
     $ Just { extraClasses: [ "mb2" ] }
+
+
+displayDate :: DateTime -> String
+displayDate d = 
+    format displayFormatter d
+
+displayFormatter :: Formatter
+displayFormatter =  unsafePartial fromRight $ parseFormatString "DD.MM.YYYY"
+
+

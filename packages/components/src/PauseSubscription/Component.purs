@@ -21,6 +21,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import Tracking as Tracking
 
 type Self = React.Self Props State
 
@@ -183,6 +184,10 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
   Aff.launchAff_ $
     User.pauseSubscription userUuid subsno start end >>=
       case _ of
-        Right sub -> liftEffect $ props.onSuccess sub
+        Right sub -> do
+          liftEffect $ props.onSuccess sub
+          tracker <- liftEffect $ Tracking.newTracker
+          liftEffect $ Tracking.pauseSubscription tracker subsno
         Left invalidDateInput -> liftEffect $ props.onError invalidDateInput
+  
 submitForm _ _ = Console.error "Pause subscription dates were not defined."

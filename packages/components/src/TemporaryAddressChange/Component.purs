@@ -27,6 +27,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import Tracking as Tracking
 
 type State =
   { startDate     :: Maybe DateTime
@@ -251,10 +252,13 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
                                    , countryCode: Just countryCode'
                                    , temporaryName: temporaryName'
                                    } = do
-          liftEffect $ self.props.onLoading
+          liftEffect $ self.props.onLoading          
           User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' countryCode' temporaryName' >>=
             case _ of
-              Right sub -> liftEffect $ self.props.onSuccess sub
+              Right sub -> do
+                liftEffect $ self.props.onSuccess sub
+                tracker <- liftEffect $ Tracking.newTracker
+                liftEffect $ Tracking.tempAdressChange tracker self.props.subsno
               Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
         makeTemporaryAddressChange _ = Console.error "Form should be valid, however it looks like it's not"
     submitForm _ _ _ = Console.error "Temporary address change dates were not defined."
