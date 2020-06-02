@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.7.2 (28276) - http://www.bohemiancoding.com/sketch -->
+    <title>mus-play</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="64px-Line" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="mus-play"></g>
+        <path d="M50.236,28.685 L20.298,8.729 C19.544,8.245 18.771,8 18,8 C15.794,8 14,9.794 14,12 L14,52 C14,54.206 15.794,56 18,56 C18.771,56 19.544,55.755 20.314,55.262 L50.243,35.313 C51.343,34.567 51.999,33.329 51.999,32.001 C52,30.671 51.343,29.433 50.236,28.685 L50.236,28.685 Z M49.127,33.651 L19.221,53.588 C18.787,53.865 18.388,54 18,54 C16.897,54 16,53.103 16,52 L16,12 C16,10.897 16.897,10 18,10 C18.388,10 18.787,10.135 19.205,10.402 L49.122,30.343 C49.672,30.716 50,31.335 50,31.999 C50,32.663 49.671,33.283 49.127,33.651 L49.127,33.651 Z" id="Shape" fill="#000000"></path>
+    </g>
+</svg>
