@@ -11,7 +11,7 @@ class App extends React.Component {
       podAppUlr: window.pod_app_url || '',
       podcasts: [],
       tracks: [],
-      selectedPodcast: "",
+      selectedPodcast: null,
       loading: null,
       loadedPodcasts: null
     }
@@ -57,7 +57,7 @@ class App extends React.Component {
   render() {
     // JSX: Reset button to show all podcasts
     const resetListButton = this.state.selectedPodcast
-      ? <li onClick={() => {this.setState({selectedPodcast: ""})}}>Se alla</li>
+      ? <li onClick={() => {this.setState({selectedPodcast: null})}}>Se alla</li>
       : null;
     // JSX: Podcasts nav menu
     const podcastNav = this.state.podcasts.length > 1
