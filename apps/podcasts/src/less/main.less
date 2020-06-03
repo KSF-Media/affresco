@@ -21,7 +21,6 @@
       align-items: center;
     }
     ul {
-      display: flex;
       list-style: none;
       margin: 0;
       padding: 0;
@@ -45,6 +44,19 @@
       li.active {
         background: #333;
         color: #fff;
+      }
+    }
+    .nav {
+      display: none;
+      &.nav-sm {
+        @media screen and (max-width: 767px) {
+          display: block;
+        }
+      }
+      &.nav-lg {
+        @media screen and (min-width: 768px) {
+          display: flex;
+        }
       }
     }
   }
