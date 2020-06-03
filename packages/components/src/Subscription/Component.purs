@@ -311,7 +311,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           , DOM.span
               { className: "subscription--update-action-text"
               , children:
-                  [ DOM.u_ [ DOM.text "Remove all pauses" ] ]
+                  [ DOM.u_ [ DOM.text "Ta bort alla uppehåll" ] ]
               }
           ]
         , onClick: handler_ $ do
@@ -323,10 +323,10 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              case unpausedSubscription of
                  Left err -> do
                    liftEffect $ self.setState _
-                     { wrapperProgress = AsyncWrapper.Error "Failed to unpause subscription" }
+                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
                  Right newSubscription -> liftEffect $ self.setState _
                    { pausedSubscriptions = toMaybe newSubscription.paused
-                   , wrapperProgress = AsyncWrapper.Success $ Just "Successfully unpaused subscription"
+                   , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
                    }
         }
 
