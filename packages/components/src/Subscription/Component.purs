@@ -319,7 +319,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              { wrapperProgress = AsyncWrapper.Loading mempty }
            Aff.launchAff_ $ do
              unpausedSubscription <- Aff.try $ do
-               User.unpauseSubscription props.user.uuid props.subscription.subsno Nothing
+               User.unpauseSubscription props.user.uuid props.subscription.subsno
              case unpausedSubscription of
                  Left err -> do
                    liftEffect $ self.setState _

@@ -394,10 +394,9 @@ pauseSubscription userUuid subsno startDate endDate = do
 unpauseSubscription
   :: Api.UUID
   -> Int
-  -> Maybe DateTime
   -> Aff Subscription.Subscription
-unpauseSubscription userUuid subsno startDate = do
-  Persona.unpauseSubscription userUuid subsno startDate <<< _.token =<< requireToken
+unpauseSubscription userUuid subsno = do
+  Persona.unpauseSubscription userUuid subsno <<< _.token =<< requireToken
 
 temporaryAddressChange
   :: Api.UUID
