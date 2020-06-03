@@ -72,17 +72,6 @@ class App extends React.Component {
             }
             {resetListButton}
           </ul>
-          <select
-            className="nav nav-sm"
-            value={this.state.selectedPodcast}
-            onChange={e => this.selectPodcast(e.target.value)}>
-            <option value="">- Alla -</option>
-            {
-              this.state.podcasts.map((name, key) => {
-              return <option key={key} value={name}>{name}</option>
-              })
-            }
-          </select>
         </nav>
       : null
 

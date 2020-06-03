@@ -21,42 +21,31 @@
       align-items: center;
     }
     ul {
+      display: flex;
+      flex-flow: wrap;
       list-style: none;
       margin: 0;
       padding: 0;
       li {
         text-align: center;
         justify-content: center;
-        margin: 0 1px 0 0;
+        margin: 0 5px 5px 0;
         padding: 5px;
         cursor: pointer;
         border-radius: 3px;
+        border: solid 2px #333;
         transition: all .2s;
         text-transform: uppercase;
         font-size: .875rem;
         font-family: 'Duplex Sans', sans-serif;
-        background: #e0e0e0;
+        background: #fff;
       }
       li:hover {
-        background: #a0a0a0;
-        color: #fff;
+        background: #e0e0e0;
       }
       li.active {
         background: #333;
         color: #fff;
-      }
-    }
-    .nav {
-      display: none;
-      &.nav-sm {
-        @media screen and (max-width: 767px) {
-          display: block;
-        }
-      }
-      &.nav-lg {
-        @media screen and (min-width: 768px) {
-          display: flex;
-        }
       }
     }
   }
@@ -78,7 +67,7 @@
       height: auto;
     }
     h2 {
-      margin: .875rem 0;
+      margin: .5rem 0;
       cursor: pointer;
     }
     .created {
