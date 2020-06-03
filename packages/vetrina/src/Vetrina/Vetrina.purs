@@ -423,7 +423,12 @@ payOrder order paymentMethod =
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
-  DOM.iframe
-    { src: paymentTerminalUrl
-    , className: "vetrina--payment-terminal"
+  DOM.div
+    { className: "vetrina--payment-wrapper"
+    , children:
+      [ DOM.iframe
+        { src: paymentTerminalUrl
+        , className: "vetrina--payment-terminal"
+        }
+      ]
     }
