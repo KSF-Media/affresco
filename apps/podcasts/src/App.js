@@ -62,7 +62,7 @@ class App extends React.Component {
     // JSX: Podcasts nav menu
     const podcastNav = this.state.podcasts.length > 1
       ? <nav className="pod-nav">
-          <div className="label">Välj podd</div>
+          <div className="label">Sortera enligt podd</div>
           <ul className="nav nav-lg">
             {
               this.state.podcasts.map((name, key) => {
