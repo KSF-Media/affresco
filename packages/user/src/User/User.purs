@@ -21,6 +21,7 @@ module KSF.User
   , payOrder
   , getOrder
   , getPackages
+  , getUserEntitlementsLoadToken
   , module Api
   , module Subscription
   )
@@ -41,13 +42,15 @@ import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
+import Data.Set (Set)
+import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
 import Effect.Class.Console as Log
-import Effect.Exception (Error, throw)
+import Effect.Exception (Error, error, throw)
 import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
@@ -142,6 +145,25 @@ getUser maybeInvalidateCache uuid token = do
     Right user -> do
       Console.info "User fetched successfully"
       pure user
+
+getUserEntitlementsLoadToken :: Aff (Either UserError (Set String))
+getUserEntitlementsLoadToken = do
+  tokens <- loadToken
+  case tokens of
+    Just { uuid, token } -> getUserEntitlements uuid token
+    _ -> pure $ Left (UnexpectedError $ error "Could not load tokens from local storage")
+
+getUserEntitlements :: Api.UUID -> Api.Token -> Aff (Either UserError (Set String))
+getUserEntitlements uuid token = do
+  eitherEntitlements <- try $ Persona.getUserEntitlements uuid token
+  case eitherEntitlements of
+    Right entitlements -> pure $ Right $ Set.fromFoldable entitlements
+    Left err
+      | Just (_ :: Persona.TokenInvalid) <- Persona.errorData err ->
+        pure $ Left LoginTokenInvalid
+      -- TODO: Handle other errors as well
+      | otherwise ->
+        pure $ Left $ UnexpectedError err
 
 updateUser :: Api.UUID -> Persona.UserUpdate -> Aff (Either UserError Persona.User)
 updateUser uuid update = do

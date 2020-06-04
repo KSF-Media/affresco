@@ -50,6 +50,10 @@ getUser invalidateCache uuid token =
     authorization = oauthToken token
     maybeCacheControl = invalidateCacheHeader <$> invalidateCache
 
+getUserEntitlements :: UUID -> Token -> Aff (Array String)
+getUserEntitlements uuid token =
+  callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign uuid ] { authorization: oauthToken token }
+
 updateUser :: UUID -> UserUpdate -> Token -> Aff User
 updateUser uuid update token =
   let
