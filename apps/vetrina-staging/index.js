@@ -14,5 +14,7 @@ ReactDom.render(
 <div>
     <Vetrina  products={[hblPremium]}
               onClose={() => { location.reload() }}
-              onLogin={() => console.log("Let me in!") } />
+              onLogin={() => console.log("Let me in!") }
+              unexpectedError={<div>ERROR :~(</div>}
+              accessEntitlements={["hbl-web"]} />
 </div>, document.getElementById("root"));

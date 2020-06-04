@@ -10,6 +10,8 @@ import Data.Either (Either(..), either, hush, note)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Set as Set
+import Data.Set (Set)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -38,17 +40,19 @@ import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 foreign import sentryDsn_ :: Effect String
 
 type JSProps =
-  { onClose :: Nullable (Effect Unit)
-  , onLogin :: Nullable (Effect Unit)
-  , products :: Nullable (Array JSProduct)
-  , unexpectedError :: Nullable JSX
+  { onClose            :: Nullable (Effect Unit)
+  , onLogin            :: Nullable (Effect Unit)
+  , products           :: Nullable (Array JSProduct)
+  , unexpectedError    :: Nullable JSX
+  , accessEntitlements :: Nullable (Array String)
   }
 
 type Props =
-  { onClose         :: Effect Unit
-  , onLogin         :: Effect Unit
-  , products        :: Either Error (Array Product)
-  , unexpectedError :: JSX
+  { onClose            :: Effect Unit
+  , onLogin            :: Effect Unit
+  , products           :: Either Error (Array Product)
+  , unexpectedError    :: JSX
+  , accessEntitlements :: Set String
   }
 
 fromJSProps :: JSProps -> Props
@@ -63,7 +67,8 @@ fromJSProps jsProps =
             , not null products -> Right products
             | otherwise -> Left productError
           Nothing -> Left productError
-  , unexpectedError : fromMaybe mempty $ toMaybe jsProps.unexpectedError
+  , unexpectedError: fromMaybe mempty $ toMaybe jsProps.unexpectedError
+  , accessEntitlements: maybe Set.empty Set.fromFoldable $ toMaybe jsProps.accessEntitlements
   }
 
 type State =
@@ -338,6 +343,10 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
     when (userHasPackage product.id $ map _.package user.subs)
       $ except $ Left SubscriptionExists
 
+    userEntitlements <- ExceptT getUserEntitlements
+    when (isUserEntitled self.props.accessEntitlements userEntitlements)
+      $ except $ Left SubscriptionExists
+
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
     pure { paymentUrl, order }
@@ -370,6 +379,17 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
 
 userHasPackage :: PackageId -> Array Package -> Boolean
 userHasPackage packageId = Array.any (\p -> packageId == p.id)
+
+isUserEntitled :: Set String -> Set String -> Boolean
+isUserEntitled accessEntitlements userEntitlements =
+  not $ Set.isEmpty $ Set.intersection accessEntitlements userEntitlements
+
+getUserEntitlements :: Aff (Either OrderFailure (Set String))
+getUserEntitlements = do
+  eitherEntitlements <- User.getUserEntitlementsLoadToken
+  pure case eitherEntitlements of
+    Right entitlements -> Right entitlements
+    Left err -> Left (UnexpectedError $ show err)
 
 createNewAccount :: Self -> Maybe String -> Aff (Either OrderFailure User)
 createNewAccount self@{ state: { logger } } (Just emailString) = do

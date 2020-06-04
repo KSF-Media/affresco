@@ -25,8 +25,12 @@ The props/callbacks for `Vetrina` are
     - an array of `Products` we want to be subscribeable, see type of `Product` below
     - `products={[id: "HBL", description: "HBL is amazing!", priceCents: 990 }]}`
 - unexpectedError
-    - a view to be rendered when an unexpected error occurs
+    - a view to be rendered when an unexpected error occurs (for example, if vetrina fails to initialize entirely)
     - `<div>Error!</div>`
+- accessEntitlements
+    - a list of entitlement names required to do the action the parent wants
+    - if at least one of the entitlements given matches with the user entitlements, vetrina will not proceed with the purchase
+    - `[ "hbl-web", "hbl-epaper" ]`
 
 NOTE: Currently, the `products` array only supports one element.
 
