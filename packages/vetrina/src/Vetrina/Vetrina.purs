@@ -68,7 +68,7 @@ fromJSProps jsProps =
             | otherwise -> Left productError
           Nothing -> Left productError
   , unexpectedError: fromMaybe mempty $ toMaybe jsProps.unexpectedError
-  , accessEntitlements: fromMaybe Set.empty (Set.fromFoldable <$> toMaybe jsProps.accessEntitlements)
+  , accessEntitlements: maybe Set.empty Set.fromFoldable $ toMaybe jsProps.accessEntitlements
   }
 
 type State =
