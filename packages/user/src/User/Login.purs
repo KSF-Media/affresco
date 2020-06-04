@@ -38,6 +38,8 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 
+foreign import hideBuySubscriptionLink :: Boolean
+
 data SocialLoginProvider = Facebook | Google
 derive instance eqSocialLoginOption :: Eq SocialLoginProvider
 derive instance ordSocialLoginOption :: Ord SocialLoginProvider
@@ -255,7 +257,7 @@ renderLoginForm self =
         , loginForm
         , forgotPassword
         , forgotEmail
-        , buySubscription
+        , if hideBuySubscriptionLink then mempty else buySubscription
         , socialLogins
         ]
     }
@@ -541,7 +543,7 @@ buySubscription =
     , children:
         [ DOM.text "Är du inte prenumerant? "
         , DOM.a
-            { className: "underline" 
+            { className: "underline"
             , href: "https://prenumerera.ksfmedia.fi/"
             , children: [ DOM.text "Köp en prenumeration!" ]
             }
@@ -574,7 +576,7 @@ forgotEmail =
           }
       ]
     }
-         
+
 formatErrorMessage :: UserError -> JSX
 formatErrorMessage err =
   DOM.div
