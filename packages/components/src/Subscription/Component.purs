@@ -114,9 +114,6 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                , description:
                    [ DOM.text $ translateStatus props.subscription.state ]
                    <> (map DOM.text $ foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
-                   <> if maybe true Array.null self.state.pausedSubscriptions
-                      then []
-                      else [ removeSubscriptionPauses ]
                }
              ]
              <> deliveryAddress
@@ -166,7 +163,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: actionsContainer [ pauseIcon, temporaryAddressChangeIcon, deliveryReclamationIcon ]
+            , readyView: actionsContainer $ [ pauseIcon ]
+                                            <> (if maybe true Array.null self.state.pausedSubscriptions
+                                                then mempty
+                                                else [ removeSubscriptionPauses ])
+                                            <> [ temporaryAddressChangeIcon, deliveryReclamationIcon ]
             , editingView: identity
             , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
@@ -188,15 +189,15 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             DOM.span
               { className: "subscription--try-update-again"
               , children: [ DOM.text "Försök igen" ]
-              , onClick: handler_ $ self.setState _ { wrapperProgress = AsyncWrapper.Editing updateActionComponent }
+              , onClick: handler_ $ self.setState _ { wrapperProgress = updateProgress }
               }
             where
-              updateActionComponent =
+              updateProgress =
                 case self.state.updateAction of
-                  Just PauseSubscription -> pauseSubscriptionComponent
-                  Just TemporaryAddressChange -> temporaryAddressChangeComponent
-                  Just DeliveryReclamation -> deliveryReclamationComponent
-                  Nothing -> mempty
+                  Just PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
+                  Just TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
+                  Just DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
+                  Nothing                     -> AsyncWrapper.Ready
 
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
