@@ -55,11 +55,6 @@ class App extends React.Component {
   }
 
   render() {
-    // JSX: list of podcasts
-    const podcatsList = this.state.podcasts.map((name, key) => {
-      let buttonClass = (this.state.selectedPodcast === name || !this.state.selectedPodcast) ? 'active' : '';
-      return <li className={buttonClass} onClick={() => this.selectPodcast(name)} key={key}>{name}</li>
-    });
     // JSX: Reset button to show all podcasts
     const resetListButton = this.state.selectedPodcast
       ? <li onClick={() => {this.setState({selectedPodcast: null})}}>Se alla</li>
@@ -67,13 +62,19 @@ class App extends React.Component {
     // JSX: Podcasts nav menu
     const podcastNav = this.state.podcasts.length > 1
       ? <nav className="pod-nav">
-          <div className="label">Välj podd</div>
-          <ul>
-            {podcatsList}
+          <div className="label">Sortera enligt podd</div>
+          <ul className="nav nav-lg">
+            {
+              this.state.podcasts.map((name, key) => {
+                let buttonClass = (this.state.selectedPodcast === name || !this.state.selectedPodcast) ? 'active' : '';
+                return <li className={buttonClass} onClick={() => this.selectPodcast(name)} key={key}>{name}</li>
+              })
+            }
             {resetListButton}
           </ul>
         </nav>
       : null
+
     // JSX: Loading indicator
     const spinner = this.state.loading === true
       ? <div className="loading">
