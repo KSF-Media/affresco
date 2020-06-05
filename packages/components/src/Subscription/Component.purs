@@ -163,11 +163,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: actionsContainer $ [ pauseIcon ]
-                                            <> (if maybe true Array.null self.state.pausedSubscriptions
-                                                then mempty
-                                                else [ removeSubscriptionPauses ])
-                                            <> [ temporaryAddressChangeIcon, deliveryReclamationIcon ]
+            , readyView: actionsContainer $ [ pauseIcon
+                                            , if maybe true Array.null self.state.pausedSubscriptions
+                                              then mempty
+                                              else removeSubscriptionPauses
+                                            , temporaryAddressChangeIcon
+                                            , deliveryReclamationIcon
+                                            ]
             , editingView: identity
             , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
