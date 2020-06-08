@@ -14,6 +14,7 @@ module KSF.User
   , updateUser
   , updatePassword
   , pauseSubscription
+  , unpauseSubscription
   , temporaryAddressChange
   , createDeliveryReclamation
   , createOrder
@@ -411,6 +412,13 @@ pauseSubscription userUuid subsno startDate endDate = do
       | otherwise -> do
           Console.error "Unexpected error when pausing subscription."
           pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
+
+unpauseSubscription
+  :: Api.UUID
+  -> Int
+  -> Aff Subscription.Subscription
+unpauseSubscription userUuid subsno = do
+  Persona.unpauseSubscription userUuid subsno <<< _.token =<< requireToken
 
 temporaryAddressChange
   :: Api.UUID

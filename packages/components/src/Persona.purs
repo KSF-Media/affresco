@@ -106,6 +106,16 @@ pauseSubscription uuid subsno startDate endDate token = do
   where
     authorization = oauthToken token
 
+unpauseSubscription :: UUID -> Int -> Token -> Aff Subscription
+unpauseSubscription uuid subsno token = do
+  callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
+    ([ unsafeToForeign uuid
+     , unsafeToForeign subsno
+     ])
+    { authorization }
+  where
+    authorization = oauthToken token
+
 temporaryAddressChange
   :: UUID
   -> Int

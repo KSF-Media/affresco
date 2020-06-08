@@ -12,8 +12,11 @@ import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
+import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Class (liftEffect)
 import Effect.Now as Now
+import Effect.Aff as Aff
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -160,7 +163,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: actionsContainer [ pauseIcon, temporaryAddressChangeIcon, deliveryReclamationIcon ]
+            , readyView: actionsContainer $ [ pauseIcon
+                                            , if maybe true Array.null self.state.pausedSubscriptions
+                                              then mempty
+                                              else removeSubscriptionPauses
+                                            , temporaryAddressChangeIcon
+                                            , deliveryReclamationIcon
+                                            ]
             , editingView: identity
             , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
@@ -182,15 +191,15 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             DOM.span
               { className: "subscription--try-update-again"
               , children: [ DOM.text "Försök igen" ]
-              , onClick: handler_ $ self.setState _ { wrapperProgress = AsyncWrapper.Editing updateActionComponent }
+              , onClick: handler_ $ self.setState _ { wrapperProgress = updateProgress }
               }
             where
-              updateActionComponent =
+              updateProgress =
                 case self.state.updateAction of
-                  Just PauseSubscription -> pauseSubscriptionComponent
-                  Just TemporaryAddressChange -> temporaryAddressChangeComponent
-                  Just DeliveryReclamation -> deliveryReclamationComponent
-                  Nothing -> mempty
+                  Just PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
+                  Just TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
+                  Just DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
+                  Nothing                     -> AsyncWrapper.Ready
 
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
@@ -295,6 +304,34 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             { updateAction = Just PauseSubscription
             , wrapperProgress = AsyncWrapper.Editing pauseSubscriptionComponent
             }
+
+    removeSubscriptionPauses =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--unpause-icon circle" }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Ta bort alla uppehåll" ] ]
+              }
+          ]
+        , onClick: handler_ $ do
+           self.setState _
+             { wrapperProgress = AsyncWrapper.Loading mempty }
+           Aff.launchAff_ $ do
+             unpausedSubscription <- Aff.try $ do
+               User.unpauseSubscription props.user.uuid props.subscription.subsno
+             case unpausedSubscription of
+                 Left err -> do
+                   liftEffect $ self.setState _
+                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                 Right newSubscription -> liftEffect $ self.setState _
+                   { pausedSubscriptions = toMaybe newSubscription.paused
+                   , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
+                   }
+        }
 
     temporaryAddressChangeIcon =
       DOM.div
