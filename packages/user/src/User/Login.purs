@@ -38,7 +38,7 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 
-foreign import hideBuySubscriptionLink :: Boolean
+foreign import hideLoginLinks :: Boolean
 
 data SocialLoginProvider = Facebook | Google
 derive instance eqSocialLoginOption :: Eq SocialLoginProvider
@@ -255,9 +255,9 @@ renderLoginForm self =
     , children:
         [ foldMap formatErrorMessage self.state.errors.social
         , loginForm
-        , forgotPassword
-        , forgotEmail
-        , if hideBuySubscriptionLink then mempty else buySubscription
+        , if hideLoginLinks
+          then mempty
+          else forgotPassword <> forgotEmail <> buySubscription
         , socialLogins
         ]
     }
