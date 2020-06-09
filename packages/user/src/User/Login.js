@@ -1,3 +1,3 @@
 "use strict";
 
-exports.hideBuySubscriptionLink = process.env.HIDE_BUY_SUBSCRIPTION_LINK === 'true';
+exports.hideLoginLinks = process.env.HIDE_LOGIN_LINKS === 'true';
