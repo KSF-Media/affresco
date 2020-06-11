@@ -354,6 +354,8 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
   case eitherOrder of
     Right { paymentUrl, order } ->
       liftEffect do
+--        tracker <- liftEffect $ Tracking.newTracker
+--        Tracking.transaction tracker
         let newState =
               self.state { purchaseState = CapturePayment paymentUrl
                          , user = hush eitherUser

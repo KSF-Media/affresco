@@ -6,7 +6,7 @@ import Prelude (Unit)
 
 foreign import data Tracker :: Type
 foreign import newTracker :: Effect Tracker
-foreign import transaction :: Effect Tracker
+foreign import transaction :: Tracker -> Effect Unit
 
 -- More about the data layer:
 -- https://developers.google.com/tag-manager/devguide
