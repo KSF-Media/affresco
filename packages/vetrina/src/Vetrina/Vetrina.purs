@@ -28,6 +28,7 @@ import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Record (merge)
+import Tracking as Tracking
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
