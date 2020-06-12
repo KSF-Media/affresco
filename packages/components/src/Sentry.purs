@@ -11,12 +11,12 @@ import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Effect.Exception (Error)
-import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4, runEffectFn1, runEffectFn2, runEffectFn3, runEffectFn4)
 import KSF.User as User
 
 foreign import initSentry_       :: EffectFn1 String Sentry
-foreign import captureMessage_   :: EffectFn3 Sentry String String Unit
-foreign import captureException_ :: EffectFn2 Sentry Error Unit
+foreign import captureMessage_   :: EffectFn4 Sentry String String String Unit
+foreign import captureException_ :: EffectFn3 Sentry String Error Unit
 foreign import setTag_           :: EffectFn3 Sentry String String Unit
 foreign import setUser_          :: EffectFn2 Sentry (Nullable String) Unit
 foreign import data Sentry       :: Type
@@ -52,21 +52,20 @@ mkLogger sentryDsn maybeUser appNameTag = do
   sessionId <- UUID.genUUID
   -- Set sessionId to Sentry
   -- This is to batch requests together if no User if ever set.
-  runEffectFn3 setTag_ sentry "sessionId" $ show sessionId
-  runEffectFn3 setTag_ sentry "appName" appNameTag
+  runEffectFn3 setTag_ sentry "sessionId" $ UUID.toString sessionId
   -- Set cusno to Sentry
   setUser sentry maybeUser
   pure
-    { log: log sentry
+    { log: log sentry appNameTag
     , setUser: setUser sentry
-    , error: captureException sentry
+    , error: captureException sentry appNameTag
     }
 
 setUser :: Sentry -> Maybe User.User -> Effect Unit
 setUser sentry user = runEffectFn2 setUser_ sentry $ toNullable (_.cusno <$> user)
 
-log :: Sentry -> String -> LogLevel -> Effect Unit
-log sentry msg level = runEffectFn3 captureMessage_ sentry msg $ show level
+log :: Sentry -> String -> String -> LogLevel -> Effect Unit
+log sentry appNameTag msg level = runEffectFn4 captureMessage_ sentry appNameTag msg $ show level
 
-captureException :: Sentry -> Error -> Effect Unit
-captureException sentry = runEffectFn2 captureException_ sentry
+captureException :: Sentry -> String -> Error -> Effect Unit
+captureException sentry appNameTag = runEffectFn3 captureException_ sentry appNameTag
