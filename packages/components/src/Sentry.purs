@@ -17,7 +17,7 @@ import KSF.User as User
 foreign import initSentry_       :: EffectFn1 String Sentry
 foreign import captureMessage_   :: EffectFn3 Sentry String String Unit
 foreign import captureException_ :: EffectFn2 Sentry Error Unit
-foreign import setTag_           :: EffectFn3 Sentry String UUID.UUID Unit
+foreign import setTag_           :: EffectFn3 Sentry String String Unit
 foreign import setUser_          :: EffectFn2 Sentry (Nullable String) Unit
 foreign import data Sentry       :: Type
 
@@ -46,13 +46,14 @@ emptyLogger =
   , error: const $ pure unit
   }
 
-mkLogger :: String -> Maybe User.User -> Effect Logger
-mkLogger sentryDsn maybeUser = do
+mkLogger :: String -> Maybe User.User -> String -> Effect Logger
+mkLogger sentryDsn maybeUser appNameTag = do
   sentry <- runEffectFn1 initSentry_ sentryDsn
   sessionId <- UUID.genUUID
   -- Set sessionId to Sentry
   -- This is to batch requests together if no User if ever set.
-  runEffectFn3 setTag_ sentry "sessionId" sessionId
+  runEffectFn3 setTag_ sentry "sessionId" $ show sessionId
+  runEffectFn3 setTag_ sentry "appName" appNameTag
   -- Set cusno to Sentry
   setUser sentry maybeUser
   pure

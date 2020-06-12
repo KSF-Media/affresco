@@ -135,7 +135,7 @@ initialState =
 didMount :: Self -> Effect Unit
 didMount self = do
   sentryDsn <- sentryDsn_
-  logger <- Sentry.mkLogger sentryDsn Nothing
+  logger <- Sentry.mkLogger sentryDsn Nothing "vetrina"
   self.setState _ { logger = logger }
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
