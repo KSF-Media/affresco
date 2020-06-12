@@ -10,23 +10,29 @@ exports.initSentry_ = function(sentryDsn) {
     }
 };
 
-exports.captureMessage_ = function(sentry, message, level) {
-    return sendSentryEvent(sentry, 'captureMessage', message, level);
+exports.captureMessage_ = function(sentry, appName, message, level) {
+    return sendSentryEvent(sentry, appName, 'captureMessage', message, level);
 };
-exports.captureException_ = function(sentry, err) {
-    return sendSentryEvent(sentry, 'captureException', err);
+exports.captureException_ = function(sentry, appName, err) {
+    return sendSentryEvent(sentry, appName, 'captureException', err);
 };
 exports.setTag_ = function(sentry, key, value) {
-    return sendSentryEvent(sentry, 'setTag', key, value);
+    return sendSentryEvent(sentry, null, 'setTag', key, value);
 };
 exports.setUser_ = function(sentry, cusno) {
     // Empty object is used for istance when user logs out from the system
-    return sendSentryEvent(sentry, 'setUser', cusno === null ? {} : {id: cusno});
+    return sendSentryEvent(sentry, null, 'setUser', cusno === null ? {} : {id: cusno});
 };
 
-function sendSentryEvent(sentry, fnName, ...args) {
+function sendSentryEvent(sentry, appName, fnName, ...args) {
     if (sentry && typeof sentry[fnName] === 'function') {
-        return sentry[fnName](...args);
+      return sentry.withScope(function(scope) {
+        // Let's add app name tag for this call only, if `appName` is defined
+        if (typeof appName === 'string') {
+          scope.setTag("appName", appName);
+        }
+        sentry[fnName](...args);
+      });
     }
     else {
       console.log('Tried to send something to Sentry, but not initialized.', fnName, args);

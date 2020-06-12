@@ -85,7 +85,7 @@ didMount self = do
   tracker <- Tracking.newTracker
   Tracking.pushPageLoad tracker
   sentryDsn <- sentryDsn_
-  logger <- Sentry.mkLogger sentryDsn Nothing
+  logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   self.setState _ { logger = logger }
 
 render :: Self -> JSX
