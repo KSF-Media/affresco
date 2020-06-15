@@ -10,8 +10,8 @@ import Data.Either (Either(..), either, hush, note)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
-import Data.Set as Set
 import Data.Set (Set)
+import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -20,6 +20,7 @@ import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
 import KSF.JSError as Error
+import KSF.LocalStorage as LocalStorage
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (Order, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl, User)
@@ -203,6 +204,9 @@ pollOrder setState state@{ logger } (Right order) = do
           nextPurchaseStep = case userAccountStatus of
             NewAccount      -> PurchaseSetPassword
             _               -> PurchaseCompleted userAccountStatus
+      product_id <- liftEffect $ LocalStorage.getItem "product_id" --analytics
+      product_price <- liftEffect $ LocalStorage.getItem "product_price" --analytics
+      liftEffect $ Tracking.transaction order.number product_id product_price --analyics
       liftEffect $ setState _ { purchaseState = nextPurchaseStep }
       where
         chooseAccountStatus user
@@ -350,12 +354,12 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
+    liftEffect $ LocalStorage.setItem "product_id" product.id -- for analytics
+    liftEffect $ LocalStorage.setItem "product_price" $ show product.priceCents -- for analytics
     pure { paymentUrl, order }
   case eitherOrder of
     Right { paymentUrl, order } ->
       liftEffect do
---        tracker <- liftEffect $ Tracking.newTracker
---        Tracking.transaction tracker
         let newState =
               self.state { purchaseState = CapturePayment paymentUrl
                          , user = hush eitherUser

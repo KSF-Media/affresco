@@ -1,13 +1,14 @@
 module Tracking where
 
+import Data.Function.Uncurried (Fn3, runFn3)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import Foreign (Foreign)
-import Prelude (Unit)
+import KSF.User (OrderNumber)
+import Prelude (Unit, pure, unit)
 
 foreign import data Tracker :: Type
-foreign import newTracker :: Effect Tracker
-foreign import transaction :: Tracker -> Effect Unit
+foreign import transaction_ :: Fn3 OrderNumber String String (Effect Unit)
 
--- More about the data layer:
--- https://developers.google.com/tag-manager/devguide
-type DataLayer = Array Foreign
+transaction :: OrderNumber -> Maybe String -> Maybe String -> Effect Unit
+transaction ord (Just t) (Just p)  = runFn3 transaction_ ord t p
+transaction ord _ _ = pure unit
