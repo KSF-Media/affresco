@@ -10,5 +10,5 @@ foreign import data Tracker :: Type
 foreign import transaction_ :: Fn3 OrderNumber String String (Effect Unit)
 
 transaction :: OrderNumber -> Maybe String -> Maybe String -> Effect Unit
-transaction ord (Just t) (Just p)  = runFn3 transaction_ ord t p
-transaction ord _ _ = pure unit
+transaction orderNumber (Just productId) (Just productPrice)  = runFn3 transaction_ orderNumber productId productPrice
+transaction orderNumber _ _ = pure unit

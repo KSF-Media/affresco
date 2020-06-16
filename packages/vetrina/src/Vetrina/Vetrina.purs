@@ -10,6 +10,7 @@ import Data.Either (Either(..), either, hush, note)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.String.Read (read)
 import Data.Set (Set)
 import Data.Set as Set
 import Effect (Effect)
