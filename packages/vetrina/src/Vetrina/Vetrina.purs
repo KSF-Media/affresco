@@ -205,9 +205,9 @@ pollOrder setState state@{ logger } (Right order) = do
           nextPurchaseStep = case userAccountStatus of
             NewAccount      -> PurchaseSetPassword
             _               -> PurchaseCompleted userAccountStatus
-      product_id <- liftEffect $ LocalStorage.getItem "product_id" --analytics
-      product_price <- liftEffect $ LocalStorage.getItem "product_price" --analytics
-      liftEffect $ Tracking.transaction order.number product_id product_price --analyics
+      productId <- liftEffect $ LocalStorage.getItem "productId" --analytics
+      productPrice <- liftEffect $ LocalStorage.getItem "productPrice" --analytics
+      liftEffect $ Tracking.transaction order.number productId productPrice --analyics
       liftEffect $ setState _ { purchaseState = nextPurchaseStep }
       where
         chooseAccountStatus user
@@ -355,8 +355,8 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
-    liftEffect $ LocalStorage.setItem "product_id" product.id -- for analytics
-    liftEffect $ LocalStorage.setItem "product_price" $ show product.priceCents -- for analytics
+    liftEffect $ LocalStorage.setItem "productId" product.id -- for analytics
+    liftEffect $ LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
     pure { paymentUrl, order }
   case eitherOrder of
     Right { paymentUrl, order } ->
