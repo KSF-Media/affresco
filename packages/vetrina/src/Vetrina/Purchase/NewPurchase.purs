@@ -5,9 +5,9 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array (all, cons, intercalate)
 import Data.Array as Array
-import Data.Foldable (foldMap)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Foldable (foldMap)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
@@ -123,6 +123,14 @@ didMount self = do
 render :: Self -> JSX
 render self =
   DOM.h1_ [ title self.state.accountStatus ]
+  <> case self.state.accountStatus of
+    LoggedInAccount user
+      | isNothing $ toMaybe user.firstName ->
+        DOM.div
+          { className: "vetrina--temporary-user-email"
+          , children: [ DOM.text user.email ]
+          }
+    _ -> mempty
   <> DOM.p
        { className: "vetrina--description-text"
        , children: [ description self.state.accountStatus ]
