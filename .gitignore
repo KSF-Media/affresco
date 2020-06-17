@@ -9,6 +9,7 @@ package-lock.json
 .DS_Store
 
 packages/*/index.js
+!packages/article/index.js
 apps/app-article/index.js
 apps/*/output
 .env.production
