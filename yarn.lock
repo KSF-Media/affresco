@@ -2143,7 +2143,7 @@
     react-dom "^16.5.2"
 
 "@ksf-media/user@file:packages/user":
-  version "0.2.4"
+  version "0.2.5"
   dependencies:
     basscss "^8.1.0"
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
@@ -2152,7 +2152,7 @@
     react-dom "^16.5.2"
 
 "@ksf-media/vetrina@file:packages/vetrina":
-  version "1.0.5"
+  version "1.0.10"
   dependencies:
     "@sentry/browser" "^5.13.2"
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
@@ -8625,10 +8625,17 @@ purescript-installer@^0.2.0:
     which "^1.3.1"
     zen-observable "^0.8.14"
 
-purescript@^0.13.2, purescript@^0.13.6:
+purescript@^0.13.2:
   version "0.13.6"
   resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.13.6.tgz#f5f77680dd7a50b7e63ba671bd85e2ac121318b0"
   integrity sha512-PC93xqr0zDs5l5xnfTlptKzv5jBWbML+dwtpDCZkOOH7h9wgLusQfU4PNfHvdwrSmsBntalGm+Cbd6VrokN7Sg==
+  dependencies:
+    purescript-installer "^0.2.0"
+
+purescript@^0.13.8:
+  version "0.13.8"
+  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.13.8.tgz#acab6f3008d75b8046478c8c1d6124079dc96f7e"
+  integrity sha512-1ZyVEVFLgcEcjPXxJYeVEyYn66DF2DnOLTWzo/K/MrQUF2chdLSyZ8sJpcarWyrz2HxXaubYceYbo5KexKzynA==
   dependencies:
     purescript-installer "^0.2.0"
 
