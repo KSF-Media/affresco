@@ -7,6 +7,7 @@ import Control.Monad.Error.Class (throwError)
 import Data.Array (all, cons)
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
+import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..))
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
@@ -15,7 +16,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Foreign.Object as Object
-import KSF.CountryDropDown (countryDropDown)
+import KSF.CountryDropDown (defaultCountryDropDown)
 import KSF.InputField.Component as InputField
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateZipCode)
@@ -125,8 +126,8 @@ initialState =
 
 firstNameInput :: Self -> JSX
 firstNameInput self@{ state: { formData }} = InputField.inputField
-  { type_: "text"
-  , label: "Förnamn"
+  { type_: InputField.Text
+  , label: Just "Förnamn"
   , name: "firstName"
   , placeholder: "Förnamn"
   , onChange: (\val -> self.setState _ { formData { firstName = val } })
@@ -136,8 +137,8 @@ firstNameInput self@{ state: { formData }} = InputField.inputField
 
 lastNameInput :: Self -> JSX
 lastNameInput self@{ state: { formData }} = InputField.inputField
-  { type_: "text"
-  , label: "Efternamn"
+  { type_: InputField.Text
+  , label: Just "Efternamn"
   , name: "lastName"
   , placeholder: "Efternamn"
   , onChange: (\val -> self.setState _ { formData { lastName = val }})
@@ -147,8 +148,8 @@ lastNameInput self@{ state: { formData }} = InputField.inputField
 
 streetAddressInput :: Self -> JSX
 streetAddressInput self@{ state: { formData }} = InputField.inputField
-  { type_: "text"
-  , label: "Adress"
+  { type_: InputField.Text
+  , label: Just "Adress"
   , name: "streetAddress"
   , placeholder: "Adress"
   , onChange: (\val -> self.setState _ { formData { streetAddress = val } })
@@ -158,8 +159,8 @@ streetAddressInput self@{ state: { formData }} = InputField.inputField
 
 cityInput :: Self -> JSX
 cityInput self@{ state: { formData }} = InputField.inputField
-  { type_: "text"
-  , label: "Stad"
+  { type_: InputField.Text
+  , label: Just "Stad"
   , name: "city"
   , placeholder: "Stad"
   , onChange: (\val -> self.setState _ { formData { city = val } })
@@ -169,8 +170,8 @@ cityInput self@{ state: { formData }} = InputField.inputField
 
 zipCodeInput :: Self -> JSX
 zipCodeInput self@{ state: { formData }} = InputField.inputField
-  { type_: "text"
-  , label: "Postnummer"
+  { type_: InputField.Text
+  , label: Just "Postnummer"
   , name: "zipCode"
   , placeholder: "Postnummer"
   , onChange: (\val -> self.setState _ { formData { zipCode = val } })
@@ -180,12 +181,12 @@ zipCodeInput self@{ state: { formData }} = InputField.inputField
 
 countryInput :: Self -> JSX
 countryInput self@{ state: { formData }} =
-  countryDropDown (\val -> self.setState _ { formData { country = val } }) formData.country
+  defaultCountryDropDown (\val -> self.setState _ { formData { country = val } }) formData.country
 
 phoneInput :: Self -> JSX
 phoneInput self@{ state: { formData }} = InputField.inputField
-  { type_: "text"
-  , label: "Telefon"
+  { type_: InputField.Text
+  , label: Just "Telefon"
   , name: "phone"
   , placeholder: "Telefon"
   , onChange: (\val -> self.setState _ { formData { phone = val } })
@@ -195,8 +196,8 @@ phoneInput self@{ state: { formData }} = InputField.inputField
 
 emailAddressInput :: Self -> JSX
 emailAddressInput self@{ state: { formData }} = InputField.inputField
-  { type_: "email"
-  , label: "E-postadress"
+  { type_: InputField.Email
+  , label: Just "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
   , onChange: (\val -> self.setState _ { formData { emailAddress = val }
@@ -210,8 +211,8 @@ emailAddressInput self@{ state: { formData }} = InputField.inputField
 passwordInput :: Self -> JSX
 passwordInput self@{ state: { formData, serverErrors }} = InputField.inputField
     { placeholder: "Lösenord (minst 6 tecken)"
-    , type_: "password"
-    , label: "Lösenord"
+    , type_: InputField.Password
+    , label: Just "Lösenord"
     , name: "password"
     , onChange: \val -> self.setState _ { formData { password = val }
                                          -- Clear server errors of Password when typing
@@ -224,8 +225,8 @@ passwordInput self@{ state: { formData, serverErrors }} = InputField.inputField
 confirmPasswordInput :: Self -> JSX
 confirmPasswordInput self@{ state: { formData }} = InputField.inputField
     { placeholder: "Bekräfta lösenord"
-    , type_: "password"
-    , label: "Bekräfta lösenord"
+    , type_: InputField.Password
+    , label: Just "Bekräfta lösenord"
     , name: "confirmPassword"
     , onChange: \val -> self.setState _ { formData { confirmPassword = val } }
     , value: formData.confirmPassword
@@ -324,10 +325,12 @@ submitForm self@{ state: { formData } } = unV
             }
         }
   )
-  createUser
+  \validForm -> do
+    nowISO <- JSDate.toISOString =<< JSDate.now
+    createUser nowISO validForm
   where
-    createUser form
-      | Just user <- mkNewUser form = self.props.onRegister do
+    createUser date form
+      | Just user <- mkNewUser form date = self.props.onRegister do
           createdUser <- User.createUser user
           case createdUser of
             Right u -> pure u
@@ -366,8 +369,8 @@ submitForm self@{ state: { formData } } = unV
             "password"     -> self.setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` self.state.serverErrors }
             _              -> pure unit
 
-mkNewUser :: FormData -> Maybe Persona.NewUser
-mkNewUser f =
+mkNewUser :: FormData -> String -> Maybe Persona.NewUser
+mkNewUser f nowISO =
   { firstName: _
   , lastName: _
   , emailAddress: _
@@ -378,6 +381,12 @@ mkNewUser f =
   , zipCode: _
   , country: _
   , phone: _
+  , legalConsents:
+      [ { consentId: "legal_acceptance_v1"
+        , screenName: "legalAcceptanceScreen"
+        , dateAccepted: nowISO
+        }
+      ]
   }
   <$> f.firstName
   <*> f.lastName

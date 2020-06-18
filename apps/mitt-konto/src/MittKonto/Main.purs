@@ -13,42 +13,47 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
 import Effect.Class.Console as Console
-import Effect.Exception (Error, error)
+import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
+import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
+import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
+import KSF.JSError as Error
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.Profile.Component as Profile
-import KSF.Subscription.Component as Subscription
+import KSF.Sentry as Sentry
+import KSF.Subscription.Component (subscription) as Subscription
+import KSF.User (User, UserError(..))
 import KSF.User (logout) as User
 import KSF.User.Login (login) as Login
-import Persona as Persona
-import React.Basic (JSX)
-import React.Basic.Compat as React
+import React.Basic (JSX, make)
+import React.Basic as React
 import React.Basic.DOM as DOM
 import Tracking as Tracking
 
 foreign import images :: { subscribe :: String }
+foreign import sentryDsn_ :: Effect String
 
 type Props =
   {}
 
 type State =
   { paper :: Navbar.Paper
-  , loggedInUser :: Maybe Persona.User
+  , loggedInUser :: Maybe User
   , loading :: Maybe Loading
   , showWelcome :: Boolean
   , alert :: Maybe Alert
+  , logger :: Sentry.Logger
   }
 
 setLoading :: Maybe Loading -> State -> State
 setLoading loading = _ { loading = loading }
 
-setLoggedInUser :: Maybe Persona.User -> State -> State
+setLoggedInUser :: Maybe User -> State -> State
 setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
 
 setAlert :: Maybe Alert -> State -> State
@@ -56,44 +61,53 @@ setAlert alert = _ { alert = alert }
 
 data Loading = Loading
 
-type SetState = (State -> State) -> Effect Unit
+type Self = React.Self Props State
 
-app :: React.Component Props
-app = React.component
-  { displayName: "App"
-  , initialState:
+component :: React.Component Props
+component = React.createComponent "MittKonto"
+
+app :: Props -> JSX
+app = make component
+  { initialState:
       { paper: KSF
       , loggedInUser: Nothing
       , loading: Nothing
       , showWelcome: true
       , alert: Nothing
+      , logger: Sentry.emptyLogger
       }
-  , receiveProps
+  , didMount
   , render
   }
-  where
-    receiveProps _ = do
-      tracker <- Tracking.newTracker
-      Tracking.pushPageLoad tracker
-    render { state, setState } =
-      React.fragment
-        [ navbarView { state, setState }
-        , classy DOM.div "mt4 mb4"
-            [ foldMap alertView state.alert ]
-        , classy DOM.div "mt4 mb4 clearfix"
-            [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-                [ mittKonto ]
-            ]
-        , footerView
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  tracker <- Tracking.newTracker
+  Tracking.pushPageLoad tracker
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
+  self.setState _ { logger = logger }
+
+render :: Self -> JSX
+render self@{ state, setState } =
+  React.fragment
+    [ navbarView self
+    , classy DOM.div "mt4 mb4"
+        [ foldMap alertView state.alert ]
+    , classy DOM.div "mt4 mb4 clearfix"
+        [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
+            [ mittKonto ]
         ]
-     where
-       mittKonto =
-         classy DOM.div "mitt-konto--container clearfix"
-           [ foldMap loadingIndicator state.loading
-           , case state.loggedInUser of
-               Just user -> userView { user, setState }
-               Nothing   -> loginView { state, setState }
-           ]
+    , footerView
+    ]
+ where
+   mittKonto =
+     classy DOM.div "mitt-konto--container clearfix"
+       [ foldMap loadingIndicator state.loading
+       , case state.loggedInUser of
+           Just user -> userView self user
+           Nothing   -> loginView self
+       ]
 
 loadingIndicator :: Loading -> JSX
 loadingIndicator Loading =
@@ -140,15 +154,17 @@ withSpinner setLoadingState action = do
      Aff.killFiber (error "Action is done") loadingFiber
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: { state :: State, setState :: SetState } -> JSX
-navbarView { state, setState } =
+navbarView :: Self -> JSX
+navbarView self@{ state, setState } =
     Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
           Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
-            liftEffect $ setState $ setLoggedInUser Nothing
+            liftEffect do
+              self.state.logger.setUser Nothing
+              setState $ setLoggedInUser Nothing
       }
 
 alertView :: Alert -> JSX
@@ -160,8 +176,8 @@ footerView :: React.JSX
 footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: forall r. { user :: Persona.User, setState :: SetState | r } -> JSX
-userView { user, setState } = React.fragment
+userView :: Self -> User -> JSX
+userView { setState, state: { logger } } user = React.fragment
   [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -182,6 +198,7 @@ userView { user, setState } = React.fragment
         profileComponentBlock = componentBlockContent $ Profile.profile
           { profile: user
           , onUpdate: setState <<< setLoggedInUser <<< Just
+          , logger
           }
 
     subscriptionsView =
@@ -194,10 +211,10 @@ userView { user, setState } = React.fragment
             subs -> do
               map subscriptionComponentBlockContent subs `snoc` cancelSubscription
               where
-                subscriptionView subscription = Subscription.subscription { subscription, user }
+                subscriptionView subscription = Subscription.subscription { subscription, user, logger }
                 subscriptionComponentBlockContent subscription
                   -- If the subscription has a canceled state, we want to add extra css to it.
-                  | Persona.isSubscriptionCanceled subscription =
+                  | Subscription.isSubscriptionCanceled subscription =
                       DOM.div
                         { className: "mitt-konto--canceled-subscription"
                         , children: [ componentBlockContent $ subscriptionView subscription ]
@@ -318,8 +335,8 @@ userView { user, setState } = React.fragment
         }
 
 -- | Login page with welcoming header, description text and login form.
-loginView :: { state :: State, setState :: SetState } -> JSX
-loginView { state, setState } = React.fragment
+loginView :: Self -> JSX
+loginView self@{ state: state@{ logger }, setState } = React.fragment
   [ DOM.div_
       case state.showWelcome of
         false -> []
@@ -339,11 +356,15 @@ loginView { state, setState } = React.fragment
           , onUserFetch:
             case _ of
               Left err -> do
-                log "Fetching user failed"
-                setState $ setLoggedInUser Nothing
+                case err of
+                  SomethingWentWrong -> logger.error $ Error.loginError $ show err
+                  UnexpectedError e  -> logger.error $ Error.loginError $ message e
+                  -- If any other UserError occurs, only send an Info event of it
+                  _ -> logger.log (show err) Sentry.Info
+                self.setState $ setLoggedInUser Nothing
               Right user -> do
-                log "Fetching user succeeded"
                 setState $ setLoggedInUser $ Just user
+                logger.setUser $ Just user
           , launchAff_:
               Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)
@@ -396,7 +417,7 @@ loginView { state, setState } = React.fragment
 
 errorAlert :: Error -> Maybe Alert
 errorAlert err = oneOf
-  [ do { method, url } <- Persona.networkError err
+  [ do { method, url } <- KSF.Error.networkError err
        pure
          { level: Alert.danger
          , title: "Anslutningen misslyckades."

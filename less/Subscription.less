@@ -17,7 +17,7 @@
             width: 100%;
         }
     }
-    .pause-subscription--container, .temporary-address-change--container {
+    .pause-subscription--container, .temporary-address-change--container, .delivery-reclamation--container {
         margin-top: 0;
         @media @to-xlarge {
             margin-top: 1.5em;
@@ -31,7 +31,7 @@
     }
 }
 
-.subscription--pause-container {
+.subscription--actions-container {
     align-items: flex-end;
     flex-direction: column;
     margin-top: 0;
@@ -46,13 +46,40 @@
     }
 }
 
+.subscription--success-container {
+  justify-content: flex-end;
+  align-items: center;
+  flex-direction: row;
+  margin-top: 0;
+  @media @to-xlarge {
+      margin-top: 1.5em;
+  }
+  @media @to-medium {
+      margin-top: 0;
+  }
+  @media @to-xsmall {
+      margin-top: 1.5em;
+  }
+}
+
 .subscription--pause-icon {
     display: block;
     width: 30px;
     height: 30px;
     background-position: center;
     background-repeat: no-repeat, repeat;
-    background-image: url('../images/tim-pocket-watch.svg');
+    background-image: url('../images/pause.svg');
+    background-size: 20px;
+    cursor: pointer;
+}
+
+.subscription--unpause-icon {
+    display: block;
+    width: 30px;
+    height: 30px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-image: url('../images/start.svg');
     background-size: 20px;
     cursor: pointer;
 }
@@ -68,6 +95,16 @@
     cursor: pointer;
 }
 
+.subscription--delivery-reclamation-icon {
+    display: block;
+    width: 30px;
+    height: 30px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-image: url('../images/delivery-reclamation.svg');
+    background-size: 20px;
+    cursor: pointer;
+}
 
 .subscription--update-action-text {
     cursor: pointer;
@@ -75,6 +112,10 @@
 
 .subscription--update-success {
     min-height: 30px;
+}
+
+.subscription--update-success:first-child {
+    margin-right: 0.5em;
 }
 
 .subscription--try-update-again {

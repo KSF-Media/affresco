@@ -1,0 +1,26 @@
+@import (reference) 'ksf-colors';
+
+.delivery-reclamation--container {
+    h3 { margin-top: 0 };
+    justify-content: flex-end;
+
+}
+
+.delivery-reclamation--close-icon {
+    justify-content: right;
+    align-items: center;
+    height: 1.5em;
+    .close-icon {
+	cursor: pointer;
+    }
+}
+
+.delivery-reclamation--date-picker {
+    width: 100%;
+    .react-date-picker__wrapper {
+	width: 100%;
+	border-color: @grey-mediumlight;
+	border-radius: 3px;
+	padding: 3px;
+    }
+}

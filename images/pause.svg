@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.7.2 (28276) - http://www.bohemiancoding.com/sketch -->
+    <title>mus-pause</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="64px-Line" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="mus-pause"></g>
+        <path d="M24,10 L20,10 C17.794,10 16,11.794 16,14 L16,50 C16,52.206 17.794,54 20,54 L24,54 C26.206,54 28,52.206 28,50 L28,14 C28,11.794 26.206,10 24,10 L24,10 Z M26,50 C26,51.103 25.103,52 24,52 L20,52 C18.897,52 18,51.103 18,50 L18,14 C18,12.897 18.897,12 20,12 L24,12 C25.103,12 26,12.897 26,14 L26,50 L26,50 Z" id="Shape" fill="#000000"></path>
+        <path d="M44,10 L40,10 C37.794,10 36,11.794 36,14 L36,50 C36,52.206 37.794,54 40,54 L44,54 C46.206,54 48,52.206 48,50 L48,14 C48,11.794 46.206,10 44,10 L44,10 Z M46,50 C46,51.103 45.103,52 44,52 L40,52 C38.897,52 38,51.103 38,50 L38,14 C38,12.897 38.897,12 40,12 L44,12 C45.103,12 46,12.897 46,14 L46,50 L46,50 Z" id="Shape" fill="#000000"></path>
+    </g>
+</svg>

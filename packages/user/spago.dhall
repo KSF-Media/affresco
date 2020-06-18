@@ -18,6 +18,7 @@
     , "facebook"
     , "now"
     , "affresco-components"
+    , "uuid"
     ]
 , packages =
     ../../packages.dhall

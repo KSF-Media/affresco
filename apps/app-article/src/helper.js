@@ -8,6 +8,14 @@ export const shareArticle = (title, url, description) => {
 
 export const getUrlParam =() => {return new URLSearchParams(window.location.search)};
 
+export const getBrandValueParam = () => {
+    let urlParams = getUrlParam();
+    if (urlParams.has('paper')) {
+       return urlParams.get('paper')
+    }
+    return 'hbl'
+}
+
 async function AndroidNativeShare(Title, URL, Description) {
     if (typeof navigator.share === 'undefined' || !navigator.share) {
         // alert('Your browser does not support Android Native Share, it\'s tested on chrome 63+');

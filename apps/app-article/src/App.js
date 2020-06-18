@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import {isUserLoggedIn, getUrlParam} from "./helper";
+import {isUserLoggedIn, getUrlParam, getBrandValueParam} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -39,6 +39,7 @@ class App extends Component {
             publishingTime: null,
             updateTime: null,
             category: null,
+            articleTypeDetails: null,
             relatedArticles: [],
             shareUrl: null,
             infogram: {
@@ -62,10 +63,9 @@ class App extends Component {
             forceLoginView: false
         };
     }
-
     componentDidMount() {
-        if(window.ksfDfp){
-            window.ksfDfp.startUp();
+        if (window.ksfDfp) {
+            window.addEventListener('load', window.ksfDfp.startUp);
         }
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
@@ -91,9 +91,13 @@ class App extends Component {
             this.getMostReadArticles();
         }
     }
-
+    componentDidUpdate(){
+        } 
+componentWillUnmount() {
+   window.removeEventListener('load', window.ksfDfp.startUp);
+}  
     onLogout() {
-        console.log("Logged out successfully!")
+        console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
         localStorage.removeItem("cachedArticles");
@@ -188,6 +192,7 @@ class App extends Component {
                         publishingTime: article.publishingTime,
                         updateTime: article.updateTime,
                         shareUrl: article.shareUrl,
+                        articleTypeDetails: article.articleTypeDetails
                     }, () => {
                         if (article.externalScripts != null) {
                             this.appendThirdPartyScript(article.externalScripts);
@@ -196,6 +201,7 @@ class App extends Component {
                         this.resizeText(this.state.fontSize);
                         document.title = this.state.title;
                         this.pushLoadingArticleToGoogleTagManager(article);
+
                         this.cleanCache();
                     });
                 } else {
@@ -229,6 +235,7 @@ class App extends Component {
                         publishingTime: data.not_entitled.articlePreview.publishingTime,
                         updateTime: data.not_entitled.articlePreview.updateTime,
                         shareUrl: data.not_entitled.articlePreview.shareUrl,
+                        articleTypeDetails: data.not_entitled.articlePreview.articleTypeDetails
                     }, () => {
                         this.resizeText(this.state.fontSize);
                         if (data.not_entitled.articlePreview.externalScripts != null) {
@@ -250,6 +257,7 @@ class App extends Component {
                         publishingTime: data.publishingTime,
                         updateTime: data.updateTime,
                         shareUrl: data.shareUrl,
+                        articleTypeDetails:data.articleTypeDetails
                     }, () => {
                         if (data.externalScripts != null) {
                             this.appendThirdPartyScript(data.externalScripts);
@@ -352,7 +360,7 @@ class App extends Component {
 
             push_data.authors = authors;
             push_data.category = article.articleType;
-            push_data.brand = 'hbl.fi';
+            push_data.brand = getBrandValueParam() + '.fi';
             push_data.tags = article.tags;
             push_data.publish_date = article.publishingTime;
             push_data.update_date = article.publishingTime;
@@ -360,6 +368,10 @@ class App extends Component {
             push_data.is_authenticated = isUserLoggedIn();
             push_data.is_premium = article.premium ? 'PREMIUM' : 'FREE';
             push_data.url = article.shareUrl;
+            push_data.analyticsCategory = article.analyticsCategory;
+            push_data.analyticsSection = article.analyticsSection;
+            push_data.app_os = navigator.userAgent.match(/Android/) ? "Android" : "iOS";
+            push_data.articlePriority = article.articlePriority;
         }
 
         window.dataLayer.push(push_data);
@@ -505,13 +517,24 @@ class App extends Component {
                 <div className={"container-fluid article"}>
                     <React.Fragment>
                         <Tag tags={this.state.tags}/>
+                        {
+                            this.state.category === 'Advertorial' ? 
+                                <div>
+                                    <div className={"row"}>
+                                        <div class="advertorial-top-box">
+                                            <div class="advertorial-top-box-left">ANNONS</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            :   ''
+                        }
                         <Title title={this.state.title}/>
                         <Header showHighResolutionImg={this.showHighResolutionImage} mainImage={this.state.mainImage}
                                 caption={caption} appendBylineLabel={appendBylineLabel} byline={byline}/>
                         <Additional preamble={this.state.preamble} increaseFontSize={this.increaseFontSize}/>
                         <ArticleDetails category={this.state.category} premium={this.state.premium}
                                         authors={this.state.authors} publishingTime={this.state.publishingTime}
-                                        updateTime={this.state.updateTime}/>
+                                        updateTime={this.state.updateTime} articleTypeDetails={this.state.articleTypeDetails}/>
                         <Content body={this.state.body}
                                  showHighResolutionImage={this.showHighResolutionImage}/>
                         <div className={"row"}>
@@ -539,13 +562,13 @@ class App extends Component {
                                 }
                             </div>
                         </div>
-                        <div id="MOBNER"></div>
                         {
                             this.state.relatedArticles.length > 0 ?
                                 <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
                                 :
                                 ''
                         }
+                        <div id="MOBNER"></div>
                         <RelatedArticles relatedArticles={this.state.mostReadArticles}/>
                     </React.Fragment>
                 </div>
@@ -587,7 +610,7 @@ const Tag = (props) => {
 
     return (
         <div className={"row"}>
-            <div className={"col-12 mt-2 mb-1 articleTag"}>
+            <div className={`col-12 mt-2 mb-1 articleTag brandColor-${getBrandValueParam()}`}>
                 {tag}
             </div>
         </div>

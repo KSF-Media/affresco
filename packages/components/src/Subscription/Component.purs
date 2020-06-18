@@ -12,15 +12,21 @@ import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
+import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Class (liftEffect)
 import Effect.Now as Now
+import Effect.Aff as Aff
 import KSF.AsyncWrapper as AsyncWrapper
+import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
+import KSF.JSError as Error
 import KSF.PauseSubscription.Component as PauseSubscription
+import KSF.Sentry as Sentry
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
-import KSF.User as User
 import KSF.User (User, InvalidDateInput(..))
+import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -31,6 +37,7 @@ type Self = React.Self Props State
 type Props =
   { subscription :: User.Subscription
   , user :: User
+  , logger :: Sentry.Logger
   }
 
 type State =
@@ -44,6 +51,7 @@ type State =
 data SubscriptionUpdateAction
   = PauseSubscription
   | TemporaryAddressChange
+  | DeliveryReclamation
 
 type Subscription =
   { package :: { name :: String
@@ -89,6 +97,7 @@ didMount self = do
     , pausedSubscriptions = toMaybe self.props.subscription.paused
     , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
     }
+  self.props.logger.setUser $ Just self.props.user
 
 render :: Self -> JSX
 render self@{ props: props@{ subscription: sub@{ package } } } =
@@ -154,12 +163,24 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: pauseContainer [ pauseIcon, temporaryAddressChangeIcon ]
+            , readyView: actionsContainer $ [ pauseIcon
+                                            , if maybe true Array.null self.state.pausedSubscriptions
+                                              then mempty
+                                              else removeSubscriptionPauses
+                                            , temporaryAddressChangeIcon
+                                            , deliveryReclamationIcon
+                                            ]
             , editingView: identity
-            , successView: pauseContainer [ DOM.div { className: "subscription--update-success check-icon" } ]
+            , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
             , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
             , loadingView: identity
             }
+
+          successMessage msg =
+            DOM.div
+              { className: "success-text"
+              , children: [ DOM.text msg ]
+              }
 
           errorMessage msg =
             DOM.div
@@ -170,14 +191,15 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             DOM.span
               { className: "subscription--try-update-again"
               , children: [ DOM.text "Försök igen" ]
-              , onClick: handler_ $ self.setState _ { wrapperProgress = AsyncWrapper.Editing updateActionComponent }
+              , onClick: handler_ $ self.setState _ { wrapperProgress = updateProgress }
               }
             where
-              updateActionComponent =
+              updateProgress =
                 case self.state.updateAction of
-                  Just PauseSubscription -> pauseSubscriptionComponent
-                  Just TemporaryAddressChange -> temporaryAddressChangeComponent
-                  Nothing -> mempty
+                  Just PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
+                  Just TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
+                  Just DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
+                  Nothing                     -> AsyncWrapper.Ready
 
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
@@ -188,10 +210,10 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
                        self.setState _
                          { pendingAddressChanges = toMaybe newPendingChanges
-                         , wrapperProgress = AsyncWrapper.Success
+                         , wrapperProgress = AsyncWrapper.Success successText
                          }
 
-        , onError: \(err :: User.InvalidDateInput) ->
+        , onError: \(err :: User.InvalidDateInput) -> do
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
                   startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
                   lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
@@ -199,7 +221,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidStartDate   -> startDateError
                     InvalidLength      -> lengthError
                     _                  -> unexpectedError
-              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+              self.props.logger.error
+                $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange $ show err
+              self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
 
     pauseSubscriptionComponent =
@@ -211,10 +235,10 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           , onSuccess: \pausedSubscription ->
                          self.setState _
                            { pausedSubscriptions = toMaybe pausedSubscription.paused
-                           , wrapperProgress = AsyncWrapper.Success
+                           , wrapperProgress = AsyncWrapper.Success successText
                            }
 
-          , onError: \err ->
+          , onError: \err -> do
               let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
                   startDateError = "Din begäran om uppehåll i beställningen misslyckades. Uppehåll kan endast påbörjas fr.o.m. följande dag."
                   lengthError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehålls perioden är för kort eller lång. Uppehållsperioden bör vara mellan 7 dagar och 3 månader långt."
@@ -226,11 +250,32 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidOverlapping -> overlappingError
                     InvalidTooRecent   -> tooRecentError
                     InvalidUnexpected  -> unexpectedError
-              in self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+              self.props.logger.error $ Error.subscriptionError Error.SubscriptionPause $ show err
+              self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
-    pauseContainer children =
-      DOM.div { className: "subscription--pause-container flex", children }
+    deliveryReclamationComponent =
+      DeliveryReclamation.deliveryReclamation
+        { subsno:   props.subscription.subsno
+        , userUuid: props.user.uuid
+        , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+        , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+        , onSuccess: \_ ->
+                       self.setState _
+                         { wrapperProgress = AsyncWrapper.Success successText
+                         }
+        , onError: \err -> do
+            self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
+            self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+        }
+
+    actionsContainer children =
+      DOM.div { className: "subscription--actions-container flex", children }
+
+    successContainer children =
+      DOM.div { className: "subscription--success-container flex", children }
+
+    successText = Just "Tack, åtgärden lyckades!"
 
     errorContainer children =
       DOM.div { className: "subscription--error-container flex", children }
@@ -260,6 +305,34 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             , wrapperProgress = AsyncWrapper.Editing pauseSubscriptionComponent
             }
 
+    removeSubscriptionPauses =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--unpause-icon circle" }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Ta bort alla uppehåll" ] ]
+              }
+          ]
+        , onClick: handler_ $ do
+           self.setState _
+             { wrapperProgress = AsyncWrapper.Loading mempty }
+           Aff.launchAff_ $ do
+             unpausedSubscription <- Aff.try $ do
+               User.unpauseSubscription props.user.uuid props.subscription.subsno
+             case unpausedSubscription of
+                 Left err -> do
+                   liftEffect $ self.setState _
+                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                 Right newSubscription -> liftEffect $ self.setState _
+                   { pausedSubscriptions = toMaybe newSubscription.paused
+                   , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
+                   }
+        }
+
     temporaryAddressChangeIcon =
       DOM.div
         { className: "subscription--action-item"
@@ -281,6 +354,29 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             self.setState _
               { updateAction = Just TemporaryAddressChange
               , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
+              }
+
+    deliveryReclamationIcon =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+            [ DOM.div
+                { className: "subscription--delivery-reclamation-icon circle"
+                , onClick: showDeliveryReclamation
+                }
+            , DOM.span
+                { className: "subscription--update-action-text"
+                , children:
+                    [ DOM.u_ [ DOM.text "Reklamation av utebliven tidning" ] ]
+                , onClick: showDeliveryReclamation
+                }
+            ]
+        }
+        where
+          showDeliveryReclamation = handler_ $ do
+            self.setState _
+              { updateAction = Just DeliveryReclamation
+              , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
               }
 
     billingPeriodEndDate =

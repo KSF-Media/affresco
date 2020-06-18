@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import quoteIcon from "../assets/images/quotes-png-11.png";
+import { getBrandValueParam } from '../helper';
 
 class Content extends Component {
     constructor(props) {
@@ -18,9 +19,24 @@ class Content extends Component {
             } else if (blockType === 'html') {
                 return this.renderHtml(block, key);
             } else if (blockType === 'factbox') {
-                return this.renderFactBox(block, key);
+                const factBox = {
+                    box:
+                    {
+                      headline: "FAKTA",
+                      title: block.factBox.title,
+                      content: block.factBox.content,
+                      type: 'fact',
+                     }
+                  }
+                return this.renderGenericBox(factBox, key);
+            } else if (blockType === 'box') {
+                return this.renderGenericBox(block, key);
             } else if (blockType === 'quote') {
                 return this.renderQuotes(block, key);
+            } else if (blockType === 'question') {
+                return this.renderQuestion(block, key);
+            } else if (blockType === 'footnote') {
+                return this.renderFootnote(block, key);
             }
         } else {
             console.log('couldn\'t render ' + {blockType});
@@ -66,28 +82,44 @@ class Content extends Component {
         );
     }
 
-    renderFactBox(block, key) {
+    countBlockChatacters(block){ 
+        if(block){
+            const totalCharacters = block.reduce((acc, item) => {
+                return acc + item.length
+            }, 0);
+            return totalCharacters;
+        }
+        return 0;
+    }
+
+    renderGenericBox(block, key) {
         return (
-            <div className={"factBox"} key={key} id={"factBox-" + key}>
-                <div className={"fakta"}>FAKTA</div>
-                <h4>{block.factBox.title}</h4>
+            <div className={`genericBox ${this.countBlockChatacters(block.box.content) > 400 ? '':'genericBoxAutoHeight'} genericBox-border-${getBrandValueParam()} `} key={key} id={"genericBox-" + key}>
+                {
+                    block.box && block.box.headline ?  
+                    <div className={"genericBox-headline"}>{block.box.headline}</div>
+                    : 
+                    <div className={"genericBox-headline"}>{block.box.type === "fact" ? 'FAKTA': ''}</div>
+                }
+                <h3>{block && block.box && block.box.title}</h3>
                 <ul className={"factboxList"}>
-                    {
-                        block.factBox.content.map((fact, key) => {
+                    { block.box && 
+                        block.box.content.map((fact, key) => {
                             return (
                                 <li key={key} dangerouslySetInnerHTML={{__html: fact}}/>
                             )
                         })
                     }
                 </ul>
-                <div className={"expandOpacity"} id={"expandOpacity"}></div>
-                <div className={"expandOpacity2"} id={"expandOpacity2"}></div>
-                <div className={"expand"} id={"expandFactBox-" + key} onClick={() => {
-                    this.expandFaktBox(key)
-                }}>
-                    <div style={{display:'inline-block'}}><span>VIK UT</span></div>
-                    <div style={{display:'inline-block'}}><i className="arrow down"/></div>
+                
+                { block && block.box && block.box.content && this.countBlockChatacters(block.box.content) > 400 && 
+                <div className={"expand"} id={"expandFactBox-" + key} onClick={() => {this.expandFaktBox(key)}}>
+                    <div className={"expandOpacity"} id={"expandOpacity"}></div>
+                    <div className={"expandOpacity2"} id={"expandOpacity2"}></div>
+                    <div class={`brandColor-${getBrandValueParam()}`} style={{display:'inline-block'}}><span>VIK UT</span></div>
+                    <div style={{display:'inline-block'}}><i className={`arrow down border-${getBrandValueParam()}`}/></div>
                 </div>
+                }
             </div>
         );
     }
@@ -100,16 +132,28 @@ class Content extends Component {
     }
 
     expandFaktBox(key) {
-        document.getElementById('factBox-' + key).style.height = "auto";
+        document.getElementById('genericBox-' + key).style.height = "auto";
         document.getElementById('expandFactBox-' + key).style.display = "none";
         document.getElementById('expandOpacity').style.display = "none";
         document.getElementById('expandOpacity2').style.display = "none";
     }
 
+    renderQuestion(block, key) {
+        return (
+            <h4 className={"headline headline-question"} key={key}><i>{block.question}</i></h4>
+        );
+    }
+
+    renderFootnote(block, key) {
+        return (
+            <div className={"html text-footnote"} key={key}><i>{block.footnote}</i></div>
+        );
+    }
+
     render() {
         return (
             <div className={"row"}>
-                <div className={"col-sm-12 content text-left mt-2"} id={"content"}
+                <div className={`col-sm-12 content text-left mt-2 ${getBrandValueParam()}`} id={"content"}
                      style={{wordWrap: 'break-word'}}>
                     <div id="MOBPARAD"></div>
                     {

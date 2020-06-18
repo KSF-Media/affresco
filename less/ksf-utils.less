@@ -16,7 +16,7 @@
     display: block;
     width: 14px;
     height: 14px;
-    background-position: center;
+    background-position: top;
     background-repeat: no-repeat, repeat;
     background-image: url('../images/check.svg');
     background-size: 30px;
@@ -24,8 +24,8 @@
 
 .button-green {
     &:disabled {
-        background: grey;
-        cursor: auto;
+	background: grey;
+	cursor: auto;
     }
     background: green;
     color: @white;
@@ -61,4 +61,8 @@
 
 .error-text {
     color: red;
+}
+
+.success-text {
+    color: green;
 }

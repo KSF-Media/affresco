@@ -22,6 +22,13 @@ body {
   font-family: 'Open Sans', sans-serif;
   color: black;
 }
+pre{
+  font-size: 1.25rem;
+  margin-bottom: .5rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: pre-wrap;
+}
 .start {
   border: 1px solid navy;
   width: 100%;
@@ -199,7 +206,6 @@ h2 {
   text-decoration: none;
   background: none;
   border: none;
-  color: white;
   outline: none;
 }
 button:focus {

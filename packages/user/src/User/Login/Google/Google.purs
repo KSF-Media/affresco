@@ -10,8 +10,8 @@ import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 newtype Email = Email String
 
 type AuthResponse =
-  { "Zi" :: { access_token :: String }
-  , w3 :: { "U3" :: Email }
+  { accessToken :: String
+  , email :: Email
   }
 
 type Error =

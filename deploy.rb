@@ -1,3 +1,5 @@
+require 'open3'
+
 # Common env variables groupped by their purpose
 env_variables = {
   "social_login" => %w[
@@ -13,6 +15,9 @@ env_variables = {
   ],
   "duellen" => %w[
     PRODUCTION_DUELLEN_URL
+  ],
+  "sentry" => %w[
+    PRODUCTION_SENTRY_DSN
   ]
 }
 
@@ -21,7 +26,8 @@ apps = {
   "mitt-konto" => {
     "env_variables" =>
     env_variables["social_login"] +
-    env_variables["persona"]
+    env_variables["persona"] +
+    env_variables["sentry"]
   },
   "prenumerera" => {
     "env_variables" =>
@@ -64,7 +70,10 @@ end
 
 def run_command(command)
   puts "Running '#{command}'"
-  system(command) or abort("'#{command}' failed.")
+  stdout, stderr, status = Open3.capture3(command)
+  if status.exitstatus != 0
+    abort("'#{command}' failed: #{stderr}")
+  end
 end
 
 build_commands = [

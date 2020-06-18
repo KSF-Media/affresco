@@ -1,4 +1,4 @@
-module KSF.Profile.Component where
+  module KSF.Profile.Component where
 
 import Prelude
 
@@ -28,6 +28,8 @@ import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.InputField.Component as InputField
+import KSF.JSError as Error
+import KSF.Sentry as Sentry
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
@@ -42,6 +44,7 @@ type Self = React.Self Props State
 type Props =
   { profile :: User
   , onUpdate :: User -> Effect Unit
+  , logger :: Sentry.Logger
   }
 
 type State =
@@ -141,7 +144,7 @@ render self@{ props: { profile: user } } =
         , readyView: profileNameReady
         , editingView: \_ -> profileNameEditing
         , loadingView: profileNameLoading
-        , successView: profileNameReady
+        , successView: \_ -> profileNameReady
         , errorView: \e -> DOM.text e
         }
       where
@@ -183,7 +186,7 @@ render self@{ props: { profile: user } } =
         , readyView: profileAddressReady
         , editingView: \_ -> profileAddressEditing
         , loadingView: profileAddressLoading
-        , successView: profileAddressReady
+        , successView: \_ -> profileAddressReady
         , errorView: \e -> DOM.text e
         }
       where
@@ -248,33 +251,33 @@ editAddress self =
     { className: "profile--edit-address"
     , children:
         [ InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "streetAddress"
             , placeholder: "Gatuadress"
             , value: self.state.address.streetAddress
             , onChange: \newStreetAddr -> self.setState _ { address { streetAddress = newStreetAddr } }
-            , label: "Gatuadress"
+            , label: Just "Gatuadress"
             , validationError: inputFieldErrorMessage $ validateField StreetAddress self.state.address.streetAddress []
             }
         , InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "zipCode"
             , placeholder: "Postnummer"
             , value: self.state.address.zipCode
             , onChange: \newZip -> self.setState _ { address { zipCode = newZip } }
-            , label: "Postnummer"
+            , label: Just "Postnummer"
             , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode []
             }
         , InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "city"
             , placeholder: "Stad"
             , value: self.state.address.city
             , onChange: \newCity -> self.setState _ { address { city = newCity } }
-            , label: "Stad"
+            , label: Just "Stad"
             , validationError: inputFieldErrorMessage $ validateField City self.state.address.city []
             }
-        , CountryDropDown.countryDropDown
+        , CountryDropDown.defaultCountryDropDown
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
             self.state.address.countryCode
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditAddress ] }
@@ -312,11 +315,11 @@ editAddress self =
         case newUser of
           Right u -> liftEffect do
             self.props.onUpdate u
-            self.setState _ { editAddress = Success }
+            self.setState _ { editAddress = Success Nothing }
           Left err -> do
-            Console.error "Unexpected error when updating name."
-            liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
-            throwError $ error "Unexpected error when updating name."
+            liftEffect do
+              self.props.logger.error $ Error.userError $ show err
+              self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
     updateAddress _ = pure unit
 
 editName :: Self -> JSX
@@ -325,21 +328,21 @@ editName self =
     { className: "profile--edit-name"
     , children:
         [ InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "firstName"
             , placeholder: "Förnamn"
             , value: self.state.name.firstName
             , onChange: \newFirstName -> self.setState _ { name { firstName = newFirstName } }
-            , label: "Förnamn"
+            , label: Just "Förnamn"
             , validationError: inputFieldErrorMessage $ validateField FirstName self.state.name.firstName []
             }
         , InputField.inputField
-            { type_: "text"
+            { type_: InputField.Text
             , name: "lastName"
             , placeholder: "Efternamn"
             , value: self.state.name.lastName
             , onChange: \newLastName -> self.setState _ { name { lastName = newLastName } }
-            , label: "Efternamn"
+            , label: Just "Efternamn"
             , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName []
             }
         , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }
@@ -370,10 +373,11 @@ editName self =
           case newUser of
             Right u -> liftEffect do
               self.props.onUpdate u
-              self.setState _ { editName = Success }
+              self.setState _ { editName = Success Nothing }
             Left err -> do
-              Console.error "Unexpected error when updating name."
-              liftEffect $ self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
+              liftEffect do
+                self.props.logger.error $ Error.userError $ show err
+                self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
               throwError $ error "Unexpected error when updating name."
       updateName _ = pure unit
 

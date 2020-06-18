@@ -47,11 +47,7 @@ export default class WikiLink extends React.Component{
           <div className="w-100">
             {this.state.wikiresponse.map(({title, description}) => (
               <button key={title} onClick={() => this.props.onClick(title)} type="button" className="w-100 p-3 mb-2 bg-light text-black border">
-                  <p>
                     <b>{title}</b>
-                    <br/>
-                    {description}
-                  </p>
               </button>
             ))}
         </div>
@@ -59,7 +55,6 @@ export default class WikiLink extends React.Component{
     }else{
       return(
         <div>
-
         </div>
       )
     }

@@ -38,6 +38,8 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 
+foreign import hideLoginLinks :: Boolean
+
 data SocialLoginProvider = Facebook | Google
 derive instance eqSocialLoginOption :: Eq SocialLoginProvider
 derive instance ordSocialLoginOption :: Ord SocialLoginProvider
@@ -168,7 +170,7 @@ login = make component
 
 didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
-  props.launchAff_ $ User.magicLogin \user -> do
+  props.launchAff_ $ User.magicLogin Nothing \user -> do
     case user of
       Left _ -> self.setState _ { errors { login = Just SomethingWentWrong } }
       Right _ -> pure unit
@@ -253,8 +255,9 @@ renderLoginForm self =
     , children:
         [ foldMap formatErrorMessage self.state.errors.social
         , loginForm
-        , forgotPassword
-        , register
+        , if hideLoginLinks
+          then mempty
+          else forgotPassword <> forgotEmail <> buySubscription
         , socialLogins
         ]
     }
@@ -268,7 +271,7 @@ renderLoginForm self =
       where
         loginWithSocial =
           DOM.span
-            { className: "login--login-with-some-text underline"
+            { className: "login--login-social-media-text underline"
             , children: [ DOM.text "Logga in med Facebook eller Google" ]
             , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
             }
@@ -285,9 +288,9 @@ renderLoginForm self =
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
-                { type_: "text"
+                { type_: InputField.Text
                 , placeholder: "E-postadress"
-                , label: "E-postadress"
+                , label: Just "E-postadress"
                 , name: "accountEmail"
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
@@ -296,9 +299,9 @@ renderLoginForm self =
                      Form.validateField UsernameField self.state.formEmail []
                 }
             , InputField.inputField
-                { type_: "password"
+                { type_: InputField.Password
                 , placeholder: "Lösenord"
-                , label: "Lösenord"
+                , label: Just "Lösenord"
                 , name: "accountPassword"
                 , value: Nothing
                 , onChange: \pw -> self.setState _ { formPassword = pw }
@@ -313,22 +316,6 @@ renderLoginForm self =
                 , disabled: unV (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
                 , value: "Logga in"
                 , type: "submit"
-                }
-            ]
-        }
-    register :: JSX
-    register =
-      DOM.div
-        { className: "center"
-        , children:
-            [ DOM.text "Inget konto? "
-            , DOM.a
-                { className: ""
-                , href: "#"
-                , children: [ DOM.text "Registrera dig!" ]
-                , onClick: handler_ do
-                    self.props.onRegister
-                    self.setState _ { loginViewStep = Registration }
                 }
             ]
         }
@@ -400,9 +387,9 @@ renderMerge self@{ props } mergeInfo =
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
-                { type_: "text"
+                { type_: InputField.Text
                 , placeholder: ""
-                , label: ""
+                , label: Nothing
                 , name: ""
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
@@ -435,14 +422,12 @@ googleLogin self =
     else mempty
   where
     onGoogleLogin :: Google.AuthResponse -> Effect Unit
-    onGoogleLogin { "Zi": { access_token: accessToken }
-                  , w3: { "U3": Google.Email email }
-                  } = self.props.launchAff_ do
+    onGoogleLogin { accessToken, email: (Google.Email email) } = self.props.launchAff_ do
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = Just email }
 
-      user <- User.someAuth self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
@@ -508,7 +493,7 @@ facebookLogin self =
       -- setting the email in the state to eventually send it from the merge view form
       liftEffect $ self.setState _ { formEmail = Just email }
       let (FB.AccessToken fbAccessToken) = accessToken
-      user <- User.someAuth self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
@@ -551,19 +536,45 @@ loginButton text =
     , value: text
     }
 
-forgotPasswordUrl :: String
-forgotPasswordUrl = "https://www.hbl.fi/losenord/"
+buySubscription :: JSX
+buySubscription =
+  DOM.div
+    { className: "center"
+    , children:
+        [ DOM.text "Är du inte prenumerant? "
+        , DOM.a
+            { className: "underline"
+            , href: "https://prenumerera.ksfmedia.fi/"
+            , children: [ DOM.text "Köp en prenumeration!" ]
+            }
+        ]
+    }
 
 forgotPassword :: JSX
 forgotPassword =
   DOM.div
-    { className: "underline center mb1"
+    { className: "center mb1"
     , children:
-        [ DOM.a
-            { href: forgotPasswordUrl
-            , children: [ DOM.text "Glömt lösenordet?" ]
+      [ DOM.text "Glömt lösenordet? "
+        , DOM.a
+            { href: "https://www.hbl.fi/losenord/"
+            , children: [ DOM.text "Klicka här!" ]
             }
         ]
+    }
+
+forgotEmail :: JSX
+forgotEmail =
+  DOM.div
+    { className: "center mb1"
+    , children:
+      [ DOM.text "Glömt din e-post? "
+      , DOM.a
+          { className: "underline center mb1"
+          , href: "https://www.hbl.fi/kundservice/"
+          , children: [ DOM.text "Ta kontakt med vår kundtjänst!" ]
+          }
+      ]
     }
 
 formatErrorMessage :: UserError -> JSX

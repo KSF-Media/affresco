@@ -66,8 +66,8 @@ export default class Resultat extends React.Component{
  };
 
  render() {
-    const shareUrl = 'http://hbl.fi';
-    const title = 'Duellen Digitalt!';
+    const shareUrl = window.location.href;
+    const title = 'Duellen Digitalt!\nFörsök få mer än ' + this.props.tally + " poäng så vinner du mig\n";
     const hashtag = '#duellen';
     const hashtags = ['duellen','hbl'];
     return (
@@ -82,7 +82,7 @@ export default class Resultat extends React.Component{
             onClick={this.handleChange}
             style={{backgroundColor:'white'}}
           >
-            <Tab label="Dina resultat" value={0} style={{backgroundColor:'white', color:'black'}}/>
+            <Tab label="Resultat" value={0} style={{backgroundColor:'white', color:'black'}}/>
             <Tab label="Rätta svar" value={1} style={{backgroundColor:'white', color:'black'}}/>
           </Tabs>
           <EmailDialog />

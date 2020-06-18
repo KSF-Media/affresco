@@ -1,15 +1,6 @@
-/*
- *      This implementation of Google Ad Manager code for mobile web web apps is pure Javascript. It supports:
- *      a kill switch for all banners,
- *      gam:s own lazy loading,
- *      banners of varying height on the same ad slot,
- *      banner that display outside of iframes when requested with post message, usable for  banner types that do not display well in iframes. Such as parallax banners etc.
- *      in page-banners that require a close button
- *      functionality for handling GDPR tracking ad choice using a DFP key-value pair read by campaigns. Trafficers can set exclusion for ads that contains trackers. 
- *      Joachim Fagerholm 20190916
- */
 var googletag = googletag || {};
 var ksfDfp = {};
+ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
 
 (function() {
     'use strict';
@@ -20,6 +11,82 @@ var ksfDfp = {};
         googletag.cmd.push(function() {
             googletag.display(id);
         });
+    };
+    ksfDfp.mover.checkPara = function(ptag, expectedType, expectedClass) {
+        // used by the bannerMover function
+        var response = false;
+        expectedType = expectedType.toUpperCase(); // nodeName is always uppercase
+        // check that the surrounding paragraphs are OK when placing the in text ad
+        var pBefore = ptag.previousElementSibling;
+        var pBeforeContent = pBefore.innerHTML.replace(/[^A-Za-z0-9]/g, '');
+        var pBeforeClass = pBefore.classList.contains(expectedClass);
+        var pSelf = ptag;
+        var pSelfContent = pSelf.innerHTML.replace(/[^A-Za-z0-9]/g, '');
+        var pSelfClass = pSelf.classList.contains(expectedClass);
+        if ((!(/^\s*$/.test(pBeforeContent)) && !(/^\s*$/.test(pSelfContent))) && (pSelf.nodeName === expectedType && pBefore.nodeName === expectedType) && (pBeforeClass && pSelfClass)) {
+            response = true;
+        }
+        return response;
+    };
+    /*
+    Set up mover function. Find ad slot for DIGIHELMOB and move it into the middle of the text,
+        if available.
+    */
+    // this must be true. Setting it to false is the way to chicken out
+    ksfDfp.mover.letTheBoxMove = true;
+    // reduce risk of banner collisions and other placement oddities
+    ksfDfp.mover.paragraphType = 'div'; // the type of HTML element used for paragraphs
+    ksfDfp.mover.paragraphClass = 'html'; // the name of the css class of egible paragraphs
+    ksfDfp.mover.articleContainerName = 'App'; // the class of the main article container. Could make sense to have this as id. But it is a class in the documents.
+    ksfDfp.mover.articleTextContainerName = 'content'; // this is an id
+    ksfDfp.mover.minimumTextLength = 7; // text with less paragraphs are not touched
+    ksfDfp.mover.adDivToMove = "DIGIHELMOB"; // name of the div that we should move up
+    ksfDfp.mover.done = false;
+    ksfDfp.mover.report = 'OK';
+    ksfDfp.bannerMover = function() {
+        let textDivTop = window.document.getElementsByClassName(ksfDfp.mover.articleContainerName);
+        if (!(textDivTop[0] === undefined)) {
+            let textDiv = document.getElementById(ksfDfp.mover.articleTextContainerName);
+
+            // count the number of paragraphs
+            let paras = textDivTop[0].querySelectorAll(ksfDfp.mover.paragraphType + '.' + ksfDfp.mover.paragraphClass);
+            let parasNum = paras.length;
+            if (parasNum < ksfDfp.mover.minimumTextLength) {
+                ksfDfp.mover.report = 'Short text ' + parasNum;
+                // not worth moving ads in very short texts
+                ksfDfp.mover.letTheBoxMove = false;
+            }
+            let placementPositionNum = Math.floor(parasNum / 2);
+            let placementElement = paras[placementPositionNum];
+            if (placementElement && ksfDfp.mover.letTheBoxMove) {
+                // verify that the new placement is OK. This requires the new placement to be surrounded by non-empty text tags.
+                let isParaOK = ksfDfp.mover.checkPara(placementElement, ksfDfp.mover.paragraphType, ksfDfp.mover.paragraphClass); // element + expected type and class name
+                if (!isParaOK) {
+                    ksfDfp.mover.report = 'First attempt failed ' + placementPositionNum;
+                    //last ditch attempt or give up
+                    placementElement = paras[placementPositionNum - 2];
+                    isParaOK = ksfDfp.mover.checkPara(placementElement, ksfDfp.mover.paragraphType, ksfDfp.mover.paragraphClass);
+                    // if still not OK, we chicken out
+                    if (!isParaOK) {
+                        ksfDfp.mover.letTheBoxMove = false;
+                        ksfDfp.mover.report = 'Both attempts failed ' + placementPositionNum;
+                    }
+                }
+                let adDivToMoveElement = window.document.getElementById(ksfDfp.mover.adDivToMove);
+                if (adDivToMoveElement !== null) {
+                    if (ksfDfp.mover.letTheBoxMove) {
+                        textDiv.insertBefore(adDivToMoveElement, placementElement);
+                        ksfDfp.mover.done = true; // don't run this more than once
+                    }
+                } else {
+                    ksfDfp.mover.report = 'Could not find specified div to move';
+                }
+            }
+            // found the necessary text containers
+        } else {
+            ksfDfp.mover.report = 'Failed to find top container';
+        }
+
     };
 
     ksfDfp.getBannerWidth = function(banner) {
@@ -38,14 +105,18 @@ var ksfDfp = {};
     if (window.disableAds === true) {
         // if the backend main settings kill switch is activated we show no ads. The onSwitch will silently leave all banners unloaded
         ksfDfp.onSwitch = false;
-            console.log('We will not show ads on this page load!');
+        console.log('We will not show ads on this page load!');
     }
-
     if (ksfDfp.onSwitch) {
         ksfDfp.activated = false;
         ksfDfp.startUp = function() {
+            if (!ksfDfp.activated) {
                 ksfDfp.activated = true;
-                // using interactive instead of complete improves loading speed somewhat
+                // move slots that are to be repositioned in the document
+                if (!ksfDfp.mover.done) {
+                    // timeout is really ugly but the react onload in componentdidmount is not reliable. This is even recommended by some. Without it long articles will fail. With it some short articles fail. 
+                    window.setTimeout(ksfDfp.bannerMover, 200);
+                }
                 // activate display for all slots
                 var n = ksfDfp.numberOfSlots - 1;
                 var slotId = [];
@@ -65,6 +136,9 @@ var ksfDfp = {};
                     }
                     n = n - 1;
                 }
+            } else {
+                console.log('Already activated. Not running again!');
+            }
         };
         ksfDfp.account = "/21664538223/";
         ksfDfp.w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
@@ -79,24 +153,24 @@ var ksfDfp = {};
         ksfDfp.mobileOnlySlots = [
             ["MOBPARAD", [
 
-                [300, 100],
-                [300, 250],
-                [300, 300],
-                [300, 600]
-            ]],
+                    [300, 100],
+                    [300, 250],
+                    [300, 300],
+                    [300, 600]
+                ]],
             ["MOBNER", [
-                [300, 100],
-                [300, 250],
-                [300, 300],
-                [300, 600]
-            ]],
+                    [300, 100],
+                    [300, 250],
+                    [300, 300],
+                    [300, 600]
+                ]],
             ["DIGIHELMOB", [
-                [300, 100],
-                [300, 250],
-                [300, 300],
-                [300, 431],
-                [300, 600]
-            ]]
+                    [300, 100],
+                    [300, 250],
+                    [300, 300],
+                    [300, 431],
+                    [300, 600]
+                ]]
         ];
 
         // Slots that are not interstitials but need a header with a close button should be listed here. These guys need an enveloping extra div to be closed correctly.
@@ -145,29 +219,32 @@ var ksfDfp = {};
             googletag.enableServices();
 
             googletag.pubads().addEventListener("slotRenderEnded", function(event) {
-                if (event !== "undefined" && event.size !== null) {
+                if (typeof event !== 'undefined' && event.size != null) {
+
                     var contentUnitDiv;
                     var headerToShow;
                     contentUnitDiv = event.slot.getSlotElementId();
 
                     // show ad headline fitting to the ad format. Out of page slots should have a headline that allows viewers to close the ad
-                    // only show ad hedline for ads that are actually supposed to render
-                    contentUnitDiv = event.slot.getSlotElementId(); // this line is probably not needed?
+                    // only show ad headline for ads that are actually supposed to render
                     headerToShow = document.getElementById(contentUnitDiv);
                     // show ad header or a special ad header for ads that require a close button
                     if (ksfDfp.closableAdSlots.indexOf(contentUnitDiv) === -1) {
-                        headerToShow.insertAdjacentHTML("beforebegin",
+                        headerToShow.insertAdjacentHTML("afterbegin",
                             '<header class="ksfDFPadHeader ' + contentUnitDiv +
-                            '" style="width: ' + event.size[0] + 'px">annons</header>');
+                            '" style="width: ' + event.size[0] + 'px"><span>annons</span></header>');
+                        headerToShow.insertAdjacentHTML("beforeend", '<header class="ksfDFPadHeader ' + contentUnitDiv +
+                            '"><span>annons slut</span></header>');
                     } else {
                         headerToShow.insertAdjacentHTML("afterbegin",
                             '<header class="ksfDFPadHeader  sticky"  id="' +
                             contentUnitDiv +
-                            '_header" >annons<p><a href="#" title="stäng annons" onclick="return ksfDfp.closeInterstitial(\'' +
+                            '_header" ><span>annons</span><p><a href="#" title="stäng annons" onclick="return ksfDfp.closeInterstitial(\'' +
                             contentUnitDiv + '\');">x</a></p></header>');
                     }
                 }
             });
+
         });
 
         ksfDfp.closeInterstitial = function(interstitialDivName) {
@@ -179,10 +256,16 @@ var ksfDfp = {};
         ksfDfp.closeSlotAfterCallback = function(slot) {
             // this is used to close third party ad calls that has been abandoned and returned using a callback
             var divToClose = document.getElementById(slot);
-            divToClose.style.display = "none";
-            var headerToClose = document.getElementsByClassName('ksfDFPadHeader ' + slot);
-            if (headerToClose[0] !== "undefined") {
-                headerToClose[0].style.display = "none !important";
+            if (typeof divToClose !== 'undefined' && divToClose != null) {
+                divToClose.style.display = "none";
+                var headerToClose = document.getElementsByClassName('ksfDFPadHeader ' + slot);
+                if (typeof headerToClose[0] !== 'undefined' && headerToClose[0] != null) {
+                    var unclosed = headerToClose.length - 1;
+                    while (unclosed >= 0) {
+                        headerToClose[unclosed].style.display = "none";
+                        unclosed = unclosed - 1;
+                    }
+                }
             }
         };
 

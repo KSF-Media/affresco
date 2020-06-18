@@ -21,7 +21,7 @@ import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
 import KSF.User as User
 import KSF.ValidatableForm as VF
-import Persona as Persona
+import KSF.CountryDropDown (countryDropDown)
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -35,6 +35,7 @@ type State =
   , minEndDate    :: Maybe DateTime
   , streetAddress :: Maybe String
   , zipCode       :: Maybe String
+  , countryCode   :: Maybe String
   , temporaryName :: Maybe String
   }
 
@@ -42,11 +43,11 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , userUuid  :: Persona.UUID
+  , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
-  , onSuccess :: Persona.Subscription -> Effect Unit
-  , onError   :: Persona.InvalidDateInput -> Effect Unit
+  , onSuccess :: User.Subscription -> Effect Unit
+  , onError   :: User.InvalidDateInput -> Effect Unit
   }
 
 data Action
@@ -57,16 +58,19 @@ data Action
 data AddressChangeFields
   = StreetAddress
   | Zip
+  | CountryCode
   | TemporaryName
 instance validatableFieldAddressChangeFields :: VF.ValidatableField AddressChangeFields where
   validateField field value _serverErrors = case field of
     StreetAddress -> VF.validateEmptyField field "Adress krävs." value
     Zip           -> VF.validateZipCode field value
+    CountryCode   -> VF.validateEmptyField field "Land krävs." value
     TemporaryName -> VF.noValidation value
 
 type AddressChange =
   { streetAddress :: Maybe String
   , zipCode       :: Maybe String
+  , countryCode   :: Maybe String
   , temporaryName :: Maybe String
   }
 
@@ -81,6 +85,7 @@ initialState =
   , minEndDate: Nothing
   , streetAddress: Nothing
   , zipCode: Nothing
+  , countryCode: Just "FI"
   , temporaryName: Nothing
   }
 
@@ -103,7 +108,7 @@ didMount self = do
   self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName }} =
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
@@ -124,13 +129,14 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
   where
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, countryCode, temporaryName })
           , children:
               [ startDayInput
               , endDayInput
               , addressInput
               , zipInput
               , cityInput
+              , countryInput
               , temporaryNameInput
               , DOM.div
                   { children: [ submitFormButton ]
@@ -167,47 +173,55 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
 
     addressInput =
       InputField.inputField
-        { type_: "text"
+        { type_: InputField.Text
         , placeholder: "Gatuadress"
         , name: "address"
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
         , value: Nothing
-        , label: "Gatuadress"
+        , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
         }
 
     zipInput =
       InputField.inputField
-        { type_: "text"
+        { type_: InputField.Text
         , placeholder: "Postnummer"
         , name: "zipCode"
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
         , value: Nothing
-        , label: "Postnummer"
+        , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
         }
 
     cityInput =
       InputField.inputField
-        { type_: "text"
+        { type_: InputField.Text
         , placeholder: "Stad"
         , name: "city"
         -- We don't care about the city input, as on the server side, the city is inferred by the zip code
         , onChange: \_ -> pure unit
         , value: Nothing
         , validationError: Nothing
-        , label: "Stad"
+        , label: Just "Stad"
         }
+
+    countryInput =
+      countryDropDown
+        [ { countryCode: "FI", countryName: "Finland" }
+        , { countryCode: "AX", countryName: "Åland" }
+        ]
+        (\newCountryCode -> self.setState _ { countryCode = newCountryCode })
+        self.state.countryCode
 
     temporaryNameInput =
       InputField.inputField
-        { type_: "text"
+        { type_: InputField.Text
         , placeholder: "Tillfällig namnändring eller C/O"
         , name: "temporaryName"
         , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
         , value: Nothing
         , validationError: Nothing
-        , label: "Tillfällig namnändring eller C/O"
+        , label: Just "Tillfällig namnändring eller C/O"
         }
 
     submitFormButton =
@@ -226,6 +240,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
           (\_ -> liftEffect $ self.setState _
                     { streetAddress = self.state.streetAddress <|> Just ""
                     , zipCode = self.state.zipCode             <|> Just ""
+                    , countryCode = self.state.countryCode     <|> Just ""
                     })
           makeTemporaryAddressChange
           (validateTemporaryAddressChangeForm addressChangeFormValues)
@@ -233,10 +248,11 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, temporaryName
         makeTemporaryAddressChange :: AddressChange -> Aff Unit
         makeTemporaryAddressChange { streetAddress: Just streetAddress'
                                    , zipCode: Just zipCode'
+                                   , countryCode: Just countryCode'
                                    , temporaryName: temporaryName'
                                    } = do
           liftEffect $ self.props.onLoading
-          User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' temporaryName' >>=
+          User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' countryCode' temporaryName' >>=
             case _ of
               Right sub -> liftEffect $ self.props.onSuccess sub
               Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
@@ -276,8 +292,10 @@ validateTemporaryAddressChangeForm :: AddressChange -> VF.ValidatedForm AddressC
 validateTemporaryAddressChangeForm form =
   { streetAddress: _
   , zipCode: _
+  , countryCode: _
   , temporaryName: _
   }
   <$> VF.validateField StreetAddress form.streetAddress []
   <*> VF.validateField Zip form.zipCode []
+  <*> VF.validateField CountryCode form.countryCode []
   <*> VF.validateField TemporaryName form.temporaryName []
