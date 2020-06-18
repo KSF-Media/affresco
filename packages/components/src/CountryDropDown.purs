@@ -17,7 +17,7 @@ countryDropDown countries onChange value =
   DOM.div
     { className: "input-field--container"
     , children:
-        [ inputLabel "Land" "country"
+        [ inputLabel { label: "Land", nameFor: "country" }
         , DOM.select
             { children: map createOption countries
             , onChange: handler targetValue onChange

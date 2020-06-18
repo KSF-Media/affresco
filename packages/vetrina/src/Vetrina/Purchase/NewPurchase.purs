@@ -291,7 +291,7 @@ emailInput self _ =
              { type_: InputField.Email
              , label: Nothing
              , name: "emailAddress"
-             , placeholder: "E-postaddress"
+             , placeholder: "E-postadress"
              , onChange: onChange
              , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress emailValue self.state.serverErrors
              , value: emailValue

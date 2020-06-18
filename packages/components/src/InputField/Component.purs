@@ -6,7 +6,7 @@ import Data.Array (snoc)
 import Data.Foldable (foldMap)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe, fromMaybe, isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.String (toLower)
 import Effect (Effect)
 import React.Basic (JSX)
@@ -56,7 +56,9 @@ render self@{ props, state } =
         if isNothing props.label then " input-field--no-label" else ""
     , children:
         -- The final order of the children is defined in css!
-        [ foldMap (inputLabel props.name) props.label
+        [ case props.label of
+             Just label -> inputLabel { label, nameFor: props.name }
+             _          -> mempty
         , DOM.input
             { type: show props.type_
             , placeholder: props.placeholder
@@ -84,10 +86,15 @@ errorMessage e =
     , children: [ DOM.text e ]
     }
 
-inputLabel :: String -> String -> JSX
-inputLabel labelFor labelText =
+type InputLabel =
+  { label   :: String -- ^ What to show in UI
+  , nameFor :: String -- ^ Which input field this is for
+  }
+
+inputLabel :: InputLabel -> JSX
+inputLabel { label, nameFor } =
   DOM.label
     { className: "input-field--input-label"
-    , children: [ DOM.text labelText ]
-    , htmlFor: labelFor
+    , children: [ DOM.text label ]
+    , htmlFor: nameFor
     }

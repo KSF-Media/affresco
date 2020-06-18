@@ -10,8 +10,9 @@ import Data.Either (Either(..), either, hush, note)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
-import Data.Set as Set
+import Data.String.Read (read)
 import Data.Set (Set)
+import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -20,6 +21,7 @@ import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
 import KSF.JSError as Error
+import KSF.LocalStorage as LocalStorage
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (Order, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl, User)
@@ -28,6 +30,7 @@ import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import Record (merge)
+import Tracking as Tracking
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
@@ -202,6 +205,9 @@ pollOrder setState state@{ logger } (Right order) = do
           nextPurchaseStep = case userAccountStatus of
             NewAccount      -> PurchaseSetPassword
             _               -> PurchaseCompleted userAccountStatus
+      productId <- liftEffect $ LocalStorage.getItem "productId" --analytics
+      productPrice <- liftEffect $ LocalStorage.getItem "productPrice" --analytics
+      liftEffect $ Tracking.transaction order.number productId productPrice --analyics
       liftEffect $ setState _ { purchaseState = nextPurchaseStep }
       where
         chooseAccountStatus user
@@ -349,6 +355,8 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
+    liftEffect $ LocalStorage.setItem "productId" product.id -- for analytics
+    liftEffect $ LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
     pure { paymentUrl, order }
   case eitherOrder of
     Right { paymentUrl, order } ->
