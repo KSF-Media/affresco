@@ -267,9 +267,9 @@ formSubmitButton self =
     }
   where
     value = case self.state.accountStatus of
-      NewAccount        -> "Beställ"
+      NewAccount        -> "Beställ med kreditkort"
       ExistingAccount _ -> "Logga in"
-      LoggedInAccount _ -> "Beställ"
+      LoggedInAccount _ -> "Beställ med kreditkort"
     disabled =  case self.state.accountStatus of
       NewAccount        -> isFormInvalid $ newAccountFormValidations self
       ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations self
