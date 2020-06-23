@@ -217,9 +217,9 @@ links self =
   DOM.div
     { className: "vetrina--links"
     , children: case self.state.accountStatus of
-                  NewAccount        -> loginLink `cons` faqLink
-                  ExistingAccount _ -> resetPasswordLink
-                  LoggedInAccount _ -> faqLink
+                  NewAccount        -> loginLink `cons` faqLink <> subscribePagesLink
+                  ExistingAccount _ -> resetPasswordLink <> subscribePagesLink
+                  LoggedInAccount _ -> faqLink <> subscribePagesLink
     }
   where
     resetPasswordLink :: Array JSX
@@ -240,6 +240,10 @@ links self =
             , onClick: handler_ self.props.onLogin
             }
         ]
+
+    subscribePagesLink :: Array JSX
+    subscribePagesLink =
+      mkLink "" "https://prenumerera.ksfmedia.fi/" "Övriga prenumerationer och betalningssätt"
 
     mkLink :: String -> String -> String -> Array JSX
     mkLink linkDescription href linkText = Array.singleton $
