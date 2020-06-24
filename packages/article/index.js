@@ -7,11 +7,16 @@ React.createClass = createReactClass;
 var Main = require('./output/Article/index.js');
 
 function main() {
-  const myComponent = (
-    <Main.article article={{title: "yolo"}}/>
-  );
 
-  ReactDOM.render(myComponent, document.getElementById('app'));
+  fetch("https://lettera.api.ksfmedia.fi/v2/article/24f942aa-a4e7-4d18-92c6-0137b0a22309?textonly=false")
+    .then(resp => resp.json())
+    .then(json => {
+      const myComponent = (
+        <Main.article article={json}/>
+      );
+      ReactDOM.render(myComponent, document.getElementById('app'));
+    });
+
 }
 
 
