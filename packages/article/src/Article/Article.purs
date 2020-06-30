@@ -2,28 +2,30 @@ module Article where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toMaybe)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.RecordToSum as Record
+import Data.Generic.Rep.Show (genericShow)
+import Data.Either (Either(..))
+import Data.Nullable (Nullable)
 import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
+
 
 type Self = React.Self Props State
 
 type Props =
   { article :: Article }
 
-type State = { }
-
 type Article =
   { title     :: String
-  , body      :: Array BodyElement
-  , mainImage :: MainImage
+  , body      :: Array BodyElementJS
+  , mainImage :: Image
   }
 
-type BodyElement =
+type BodyElementJS =
   { html     :: Nullable String
-  , image    :: Nullable ImageInfo
+  , image    :: Nullable Image
   , box      :: Nullable BoxInfo
   , headline :: Nullable String
   , footnote :: Nullable String
@@ -31,10 +33,23 @@ type BodyElement =
   , quote    :: Nullable String
   }
 
-type ImageInfo = {}
+type State =
+  { body :: Array (Either String BodyElement) }
+
+data BodyElement
+  = Html String
+  | Image Image
+  | Box BoxInfo
+  | Headline String
+  | Footnote String
+  | Question String
+  | Quote String
+derive instance bodyElementGeneric :: Generic BodyElement _
+instance bodyElementShow :: Show BodyElement where show = genericShow
+
 type BoxInfo = {}
 
-type MainImage =
+type Image =
   { url       :: String
   , caption   :: Nullable String
   , thumb     :: Nullable String
@@ -46,12 +61,14 @@ component :: React.Component Props
 component = React.createComponent "Article"
 
 article :: Props -> JSX
-article = React.make component
- { initialState: {}, render }
+article props = React.make
+  component
+  { initialState: { body: map Record.toSum props.article.body }, render }
+  props
 
 
 render :: Self -> JSX
-render { props } =
+render { props, state } =
   DOM.div
     { className: "ksf-article"
     , children: [
@@ -66,24 +83,19 @@ render { props } =
           ]  }
       , DOM.div
         { className: "ksf-article--body"
-        , children: map bodyElement props.article.body
-
+        , children: map renderElement state.body
         }
       ]
     }
   where
-    bodyElement :: BodyElement -> JSX
-    bodyElement el
-      | Just html      <- toMaybe $ el.html = DOM.p_ [ DOM.text html ]
-      | Just imageInfo <- toMaybe $ el.image = mempty
-      | Just boxInfo   <- toMaybe $ el.box = mempty
-      | Just asd <- toMaybe $ el.headline = mempty
-      | Just asd <- toMaybe $ el.footnote = mempty
-      | Just ads <- toMaybe $ el.question = mempty
-      | Just quote <- toMaybe $ el.quote = mempty
-      | otherwise = mempty
-
-    -- DOM.p
-      --   { className: "ksf-article--body-element"
-      --   , dangerouslySetInnerHTML: { __html: el.html }
-      --   }
+    -- TODO: maybe we don't want to deal at all with the error cases
+    -- and we want to throw them away?
+    renderElement :: Either String BodyElement -> JSX
+    renderElement = case _ of
+      Left err -> mempty
+      Right el -> case el of
+        Html content -> DOM.p
+          { className: "ksf-article--body-element"
+          , dangerouslySetInnerHTML: { __html: content }
+          }
+        other -> DOM.p_ [ DOM.text $ show other ]

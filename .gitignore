@@ -7,6 +7,7 @@ build
 .cache
 package-lock.json
 .DS_Store
+.parcel-cache
 
 packages/*/index.js
 !packages/article/index.js
