@@ -113,7 +113,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              , { term: "Status:"
                , description:
                    [ DOM.text $ translateStatus props.subscription.state ]
-                   <> (map DOM.text $ foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
+                   <> (map DOM.text $ foldMap (addPauseDescription <<< showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
                }
              ]
              <> deliveryAddress
@@ -429,6 +429,11 @@ showPausedDates :: Array User.PausedSubscription -> Array String
 showPausedDates pausedSubs =
   let formatDates { startDate, endDate } = formatDateString startDate $ toMaybe endDate
   in map (((<>) "Uppehåll: ") <<< formatDates) pausedSubs
+
+addPauseDescription :: Array String -> Array String
+addPauseDescription pauses = case pauses of
+                               [] -> pauses
+                               _  -> pauses <> [ "Om du vill ändra på din tillfälliga adressändring eller ditt uppehåll, vänligen radera den gamla först och lägg sedan in den nya." ]
 
 showPendingAddressChange :: User.PendingAddressChange -> String
 showPendingAddressChange { address, startDate, endDate } =
