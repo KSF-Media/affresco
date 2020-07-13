@@ -113,7 +113,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              , { term: "Status:"
                , description:
                    [ DOM.text $ translateStatus props.subscription.state ]
-                   <> (map DOM.text $ foldMap (addPauseDescription <<< showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
+                   <> let pausedDates = foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions
+                          descriptionText = if Array.null pausedDates
+                                            then mempty
+                                            else pauseDescription
+                       in (map DOM.text pausedDates) <> [ descriptionText ]
                }
              ]
              <> deliveryAddress
@@ -382,6 +386,14 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     billingPeriodEndDate =
           map trim $ formatDate =<< toMaybe props.subscription.dates.end
 
+    -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
+    -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
+    -- This is why we tell the customer to delete the pause and create a new one.
+    pauseDescription = DOM.div
+                         { className: "mitt-konto--note"
+                         , children: [ DOM.text "Om du vill ändra på din tillfälliga adressändring eller ditt uppehåll, vänligen radera den gamla först och lägg sedan in den nya." ]
+                         }
+
     currentDeliveryAddress :: String
     currentDeliveryAddress
       | Just address <- toMaybe props.subscription.deliveryAddress
@@ -429,11 +441,6 @@ showPausedDates :: Array User.PausedSubscription -> Array String
 showPausedDates pausedSubs =
   let formatDates { startDate, endDate } = formatDateString startDate $ toMaybe endDate
   in map (((<>) "Uppehåll: ") <<< formatDates) pausedSubs
-
-addPauseDescription :: Array String -> Array String
-addPauseDescription pauses = case pauses of
-                               [] -> pauses
-                               _  -> pauses <> [ "Om du vill ändra på din tillfälliga adressändring eller ditt uppehåll, vänligen radera den gamla först och lägg sedan in den nya." ]
 
 showPendingAddressChange :: User.PendingAddressChange -> String
 showPendingAddressChange { address, startDate, endDate } =
