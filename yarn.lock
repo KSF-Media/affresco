@@ -2152,12 +2152,13 @@
     react-dom "^16.5.2"
 
 "@ksf-media/vetrina@file:packages/vetrina":
-  version "1.0.10"
+  version "1.0.11"
   dependencies:
     "@sentry/browser" "^5.13.2"
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
     create-react-class "^15.6.3"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#d01ae692f9d69d26067cfff47d8c93cd040698d6"
+    purescript "^0.13.8"
     react "^16.12.0"
     react-dom "^16.12.0"
     uuid "^3.4.0"
@@ -6883,10 +6884,10 @@ lodash.uniq@^4.5.0:
   resolved "https://registry.yarnpkg.com/lodash.uniq/-/lodash.uniq-4.5.0.tgz#d0225373aeb652adc1bc82e4945339a842754773"
   integrity sha1-0CJTc662Uq3BvILklFM5qEJ1R3M=
 
-lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.15, lodash@^4.17.4:
-  version "4.17.15"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
-  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
+lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.4:
+  version "4.17.19"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
+  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
 
 log-symbols@^2.2.0:
   version "2.2.0"
