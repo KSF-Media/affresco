@@ -225,8 +225,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidStartDate   -> startDateError
                     InvalidLength      -> lengthError
                     _                  -> unexpectedError
-              self.props.logger.error
-                $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange $ show err
+              case err of
+                InvalidUnexpected ->
+                  self.props.logger.error
+                  $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange
+                  $ show err
+                -- Other cases are not really errors we want notifications from
+                _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
 
@@ -254,7 +259,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidOverlapping -> overlappingError
                     InvalidTooRecent   -> tooRecentError
                     InvalidUnexpected  -> unexpectedError
-              self.props.logger.error $ Error.subscriptionError Error.SubscriptionPause $ show err
+              case err of
+                InvalidUnexpected ->
+                  self.props.logger.error
+                  $ Error.subscriptionError Error.SubscriptionPause
+                  $ show err
+                -- Other cases are not really errors we want notifications from
+                _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
