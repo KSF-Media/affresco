@@ -260,7 +260,10 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidTooRecent   -> tooRecentError
                     InvalidUnexpected  -> unexpectedError
               case err of
-                InvalidUnexpected -> self.props.logger.error $ Error.subscriptionError Error.SubscriptionPause $ show err
+                InvalidUnexpected ->
+                  self.props.logger.error
+                  $ Error.subscriptionError Error.SubscriptionPause
+                  $ show err
                 -- Other cases are not really errors we want notifications from
                 _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
