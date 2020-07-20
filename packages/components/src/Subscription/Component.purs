@@ -113,7 +113,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              , { term: "Status:"
                , description:
                    [ DOM.text $ translateStatus props.subscription.state ]
-                   <> (map DOM.text $ foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
+                   <> let pausedDates = foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions
+                          descriptionText = if Array.null pausedDates
+                                            then mempty
+                                            else pauseDescription
+                       in (map DOM.text pausedDates) <> [ descriptionText ]
                }
              ]
              <> deliveryAddress
@@ -221,8 +225,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidStartDate   -> startDateError
                     InvalidLength      -> lengthError
                     _                  -> unexpectedError
-              self.props.logger.error
-                $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange $ show err
+              case err of
+                InvalidUnexpected ->
+                  self.props.logger.error
+                  $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange
+                  $ show err
+                -- Other cases are not really errors we want notifications from
+                _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
 
@@ -250,7 +259,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidOverlapping -> overlappingError
                     InvalidTooRecent   -> tooRecentError
                     InvalidUnexpected  -> unexpectedError
-              self.props.logger.error $ Error.subscriptionError Error.SubscriptionPause $ show err
+              case err of
+                InvalidUnexpected ->
+                  self.props.logger.error
+                  $ Error.subscriptionError Error.SubscriptionPause
+                  $ show err
+                -- Other cases are not really errors we want notifications from
+                _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
@@ -381,6 +396,14 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     billingPeriodEndDate =
           map trim $ formatDate =<< toMaybe props.subscription.dates.end
+
+    -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
+    -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
+    -- This is why we tell the customer to delete the pause and create a new one.
+    pauseDescription = DOM.div
+                         { className: "mitt-konto--note"
+                         , children: [ DOM.text "Om du vill ändra på din tillfälliga adressändring eller ditt uppehåll, vänligen radera den gamla först och lägg sedan in den nya." ]
+                         }
 
     currentDeliveryAddress :: String
     currentDeliveryAddress
