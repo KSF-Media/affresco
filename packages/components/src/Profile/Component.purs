@@ -37,6 +37,7 @@ import React.Basic (make, JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
+import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 
 type Self = React.Self Props State
@@ -145,7 +146,7 @@ render self@{ props: { profile: user } } =
         , editingView: \_ -> profileNameEditing
         , loadingView: profileNameLoading
         , successView: \_ -> profileNameReady
-        , errorView: \e -> DOM.text e
+        , errorView: editingError self EditName
         }
       where
         profileNameReady = DOM.div
@@ -187,7 +188,7 @@ render self@{ props: { profile: user } } =
         , editingView: \_ -> profileAddressEditing
         , loadingView: profileAddressLoading
         , successView: \_ -> profileAddressReady
-        , errorView: \e -> DOM.text e
+        , errorView: editingError self EditAddress
         }
       where
         profileAddressReady =
@@ -231,6 +232,22 @@ render self@{ props: { profile: user } } =
                   }
                 ]
             }
+
+editingError :: Self -> EditField -> String -> JSX
+editingError self fieldName errMessage =
+   DOM.div
+     { className: "profile--edit-error"
+     , children:
+         [ DOM.text $ errMessage <> " "
+         , DOM.span
+             { className: "profile--edit-try-again"
+             , children: [ DOM.text "Försök igen" ]
+             , onClick: handler_ $ case fieldName of
+               EditAddress -> self.setState _ { editAddress = AsyncWrapper.Ready }
+               EditName    -> self.setState _ { editName    = AsyncWrapper.Ready }
+             }
+         ]
+     }
 
 showPendingAddressChanges :: Self -> Array DescriptionList.Definition
 showPendingAddressChanges self =
@@ -280,7 +297,8 @@ editAddress self =
         , CountryDropDown.defaultCountryDropDown
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
             self.state.address.countryCode
-        , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditAddress ] }
+        , submitButton
+        , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditAddress ] }
         ]
     , onSubmit: Events.handler preventDefault $ \_ -> submitNewAddress $ validateAddressForm self.state.address
     }
@@ -319,7 +337,7 @@ editAddress self =
           Left err -> do
             liftEffect do
               self.props.logger.error $ Error.userError $ show err
-              self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
+              self.setState _ { editAddress = AsyncWrapper.Error "Adressändringen misslyckades." }
     updateAddress _ = pure unit
 
 editName :: Self -> JSX
@@ -345,7 +363,8 @@ editName self =
             , label: Just "Efternamn"
             , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName []
             }
-        , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }
+        , submitButton
+        , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditName ] }
         ]
     , onSubmit: Events.handler preventDefault $ \_ -> submitNewName $ validateNameForm self.state.name
     }
