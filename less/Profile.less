@@ -4,14 +4,14 @@
 
 .profile--edit-address {
     display: grid;
-    grid-template-rows: repeat(4, 1fr);
+    grid-template-rows: repeat(5, 1fr);
     grid-template-columns: 1fr .5fr;
     grid-auto-flow: column;
 }
 
 .profile--edit-name {
     display: grid;
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     grid-template-columns: 1fr .5fr;
     grid-auto-flow: column;
 }
@@ -40,4 +40,14 @@
 
 .tiny-spinner {
     justify-self: end;
+}
+
+.profile--edit-error {
+    color: red;
+    margin-bottom: 1em;
+}
+
+.profile--edit-try-again {
+    text-decoration: underline;
+    cursor: pointer;
 }
