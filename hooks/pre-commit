@@ -27,33 +27,30 @@ my %APPS_TO_WATCH = (
 );
 
 sub create_deploy_trigger() {
-    foreach my $dir (@APP_DIRECTORIES) {
-        my $full_app_dir = "$CWD/$dir";
-        my $app_name = basename($dir);
-        if (exists $APPS_TO_WATCH{$app_name}) {
-            my $app_build_dir = $CWD . $APPS_TO_WATCH{$app_name};
-            chdir $app_build_dir;
-            # Calculate hash of build directory and write to file if changed
-            my $build_hash_output = `find ./output -type f | xargs cat | sha256sum`;
-            my ($build_hash) = split(' ', $build_hash_output);
-            my $build_hash_file = "$full_app_dir/$BUILD_HASH_FILENAME";
-            my $app_name = basename($dir);
+    foreach my $app_name (keys %APPS_TO_WATCH) {
+        my $full_app_dir = "$CWD/apps/$app_name";
+        my $app_build_dir = $CWD . $APPS_TO_WATCH{$app_name};
 
-            my $current_build_hash = get_current_build_hash($build_hash_file);
+        # Calculate hash of build directory and write to file if changed
+        my $build_hash_output = `find $app_build_dir/output -type f | xargs cat | sha256sum`;
+        my ($build_hash) = split(' ', $build_hash_output);
+        my $build_hash_file = "$full_app_dir/$BUILD_HASH_FILENAME";
 
-            if ($current_build_hash eq 0) {
-                print "Build hash for $app_name does not exist, creating one ..\n";
-                write_build_hash($build_hash, $build_hash_file);
-            }
-            elsif ($current_build_hash ne $build_hash) {
-                print "Build hash for $app_name has changed, updating $BUILD_HASH_FILENAME ..\n";
-                write_build_hash($build_hash, $build_hash_file);
-            }
-            else {
-                print "No changes in the $app_name build hash.\n";
-            }
+        my $current_build_hash = get_current_build_hash($build_hash_file);
+
+        if ($current_build_hash eq 0) {
+            print "Build hash for $app_name does not exist, creating one ..\n";
+            write_build_hash($build_hash, $build_hash_file);
+        }
+        elsif ($current_build_hash ne $build_hash) {
+            print "Build hash for $app_name has changed, updating $BUILD_HASH_FILENAME ..\n";
+            write_build_hash($build_hash, $build_hash_file);
+        }
+        else {
+            print "No changes in the $app_name build hash.\n";
         }
     }
+    git_commit_updated_hashes();
 }
 
 sub get_current_build_hash() {
@@ -76,6 +73,16 @@ sub write_build_hash() {
            . "# This is used for triggering project deployment when there are updated dependecies.\n"
            . "$build_size\n";
     close FH;
+}
+
+sub git_commit_updated_hashes() {
+    # Perl multiplies exit status codes by 256. Go figure ¯\_(ツ)_/¯
+    # See `system` in http://www.cs.cmu.edu/afs/cs/usr/rgs/mosaic/pl-exp-sys.html
+    my $git_diff_status = system("git diff --exit-code --quiet \\*$BUILD_HASH_FILENAME") / 256;
+    if ($git_diff_status == 1) {
+        system("git add \\*$BUILD_HASH_FILENAME && git commit -m 'Update build hash (automatic)' \\*$BUILD_HASH_FILENAME");
+        print "Commited updated build hashes.\n";
+    }
 }
 
 create_deploy_trigger();
