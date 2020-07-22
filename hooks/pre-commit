@@ -9,6 +9,9 @@ BEGIN {
 use strict;
 use warnings;
 
+use threads;
+use threads::shared;
+
 use File::Basename;
 use Cwd;
 
@@ -27,6 +30,8 @@ my %APPS_TO_WATCH = (
 );
 
 sub create_deploy_trigger() {
+    build_spago_projects();
+
     foreach my $app_name (keys %APPS_TO_WATCH) {
         my $full_app_dir = "$CWD/apps/$app_name";
         my $app_build_dir = $CWD . $APPS_TO_WATCH{$app_name};
@@ -51,6 +56,14 @@ sub create_deploy_trigger() {
         }
     }
     git_commit_updated_hashes();
+}
+
+sub build_spago_projects() {
+    my @spago_jobs = map {
+        my $spago_source_dir = "$CWD/$APPS_TO_WATCH{$_}";
+        threads->create(sub { print "Building $_ ...\n"; `cd $spago_source_dir && spago build &> /dev/null`; });
+    } (keys %APPS_TO_WATCH);
+    foreach my $job (@spago_jobs) { $job->join; }
 }
 
 sub get_current_build_hash() {
