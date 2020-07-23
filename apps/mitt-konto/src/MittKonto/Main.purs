@@ -112,7 +112,7 @@ render self@{ state, setState } =
 loadingIndicator :: Loading -> JSX
 loadingIndicator Loading =
   DOM.div
-      { className: "mitt-konto--loading flex items-center dcd"
+      { className: "mitt-konto--loading flex items-center"
       , children:
           [ DOM.div
               { className: "clearfix mx-auto"
