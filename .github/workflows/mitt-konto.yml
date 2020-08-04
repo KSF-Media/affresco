@@ -22,6 +22,6 @@ jobs:
     - id: upload-files
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
-        path: apps/mitt-konto/dist/*
+        path: apps/mitt-konto/dist
         destination: mitt-konto-poc-bucket
         credentials: ${{ secrets.GCS_SA }}
