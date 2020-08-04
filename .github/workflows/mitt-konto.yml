@@ -25,3 +25,10 @@ jobs:
         path: apps/mitt-konto/dist
         destination: mitt-konto-poc-bucket
         credentials: ${{ secrets.GCS_SA }}
+    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        project_id: ${{ secrets.GCP_PROJECT }}
+        service_account_key: ${{ secrets.GCS_SA }}
+        export_default_credentials: true
+    - name: Invalidate CDN cache
+      run: gcloud compute url-maps invalidate-cdn-cache mitt-konto-poc-lb --path "/*"
