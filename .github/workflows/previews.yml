@@ -87,13 +87,13 @@ jobs:
         credentials: ${{ secrets.GCS_SA }}
 
     # Post the preview links on the thread
-    - name: comment PR
+    - name: Post preview links
       uses: unsplash/comment-on-pr@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         URL_PREFIX: https://deploy-previews.ksfmedia.fi
       with:
-        msg: >
+        msg: |
           Deploy previews:
-          - Mitt Konto: $URL_PREFIX/$GITHUB_SHA/mitt-konto
+          - __Mitt Konto__: ${URL_PREFIX}/${GITHUB_SHA}/mitt-konto
         check_for_duplicate_msg: true
