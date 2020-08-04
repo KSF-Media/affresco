@@ -7,6 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      preview_url: https://deploy-previews.ksfmedia.fi/${{ github.sha }}
     steps:
     # Setup steps
     - name: Checkout repo
@@ -48,17 +50,32 @@ jobs:
         ruby deploy.rb elections
         mv apps/elections/dist build-elections
     - name: Build app-article
-      run: echo ""
+      run: |
+        ruby deploy.rb app-article
+        mv apps/app-article/dist build-app-article
     - name: Build prenumerera
-      run: echo ""
+      run: |
+        ruby deploy.rb prenumerera
+        mv apps/prenumerera/dist build-prenumerera
     - name: Build affresco-scripts
-      run: echo ""
+      run: |
+        ruby -e 'Dir.glob("scripts/**/*.js").each { |f| `uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }'
     - name: Build duellen
-      run: echo ""
+      run: |
+        ruby deploy.rb duellen
+        mv apps/duellen/dist build-duellen
     - name: Build ksf-podcast-vn
-      run: echo ""
+      env:
+        PODCAST_IDS: 694513583,705599305,630339678,542583531
+      run: |
+        yarn --cwd './apps/podcasts/' run build
+        mv apps/podcasts/dist build-podcasts-vn
     - name: Build ksf-podcast
-      run: echo ""
+      env:
+        PODCAST_IDS: 806886790
+      run: |
+        yarn --cwd './apps/podcasts/' run build
+        mv apps/podcasts/dist build-podcasts
 
     # Upload all built artifacts to the GCP bucket
     - name: Upload mitt-konto
@@ -85,15 +102,50 @@ jobs:
         path: build-elections
         destination: mitt-konto-poc-bucket
         credentials: ${{ secrets.GCS_SA }}
+    - name: Upload app-article
+      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
+      with:
+        path: build-app-article
+        destination: mitt-konto-poc-bucket
+        credentials: ${{ secrets.GCS_SA }}
+    - name: Upload prenumerera
+      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
+      with:
+        path: build-prenumerera
+        destination: mitt-konto-poc-bucket
+        credentials: ${{ secrets.GCS_SA }}
+    - name: Upload affresco-scripts
+      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
+      with:
+        path: scripts
+        destination: mitt-konto-poc-bucket
+        credentials: ${{ secrets.GCS_SA }}
+    - name: Upload duellen
+      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
+      with:
+        path: build-duellen
+        destination: mitt-konto-poc-bucket
+        credentials: ${{ secrets.GCS_SA }}
+    - name: Upload ksf-podcasts-vn
+      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
+      with:
+        path: build-podcasts-vn
+        destination: mitt-konto-poc-bucket
+        credentials: ${{ secrets.GCS_SA }}
+    - name: Upload ksf-podcasts
+      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
+      with:
+        path: build-podcasts
+        destination: mitt-konto-poc-bucket
+        credentials: ${{ secrets.GCS_SA }}
 
     # Post the preview links on the thread
     - name: Post preview links
       uses: unsplash/comment-on-pr@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        URL_PREFIX: https://deploy-previews.ksfmedia.fi
       with:
         msg: |
           Deploy previews:
-          - __Mitt Konto__: ${URL_PREFIX}/${GITHUB_SHA}/mitt-konto
+          - __Mitt Konto__: ${{ env.preview_url }}/mitt-konto
         check_for_duplicate_msg: true
