@@ -50,6 +50,8 @@ maintenance = ARGV[1]
 
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
+puts "Branch: #{ENV['HEAD']}"
+
 if ENV['HEAD'] == 'master'
   apps[app_name]["env_variables"].each do |v|
     abort("Did not find #{v} in the environment variables") if ENV[v].nil?
@@ -87,7 +89,7 @@ def deploy_maintenance_page(app_name)
 end
 
 if maintenance == '--maintenance'
-  puts 'Depolying maintenance page'
+  puts 'Deploying maintenance page'
   deploy_maintenance_page(app_name)
 else
   build_commands.each { |c| run_command(c) }
