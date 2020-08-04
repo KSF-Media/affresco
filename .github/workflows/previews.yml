@@ -48,11 +48,17 @@ jobs:
         ruby deploy.rb elections
         mv apps/elections/dist build-elections
     - name: Build app-article
+      run: echo ""
     - name: Build prenumerera
+      run: echo ""
     - name: Build affresco-scripts
+      run: echo ""
     - name: Build duellen
+      run: echo ""
     - name: Build ksf-podcast-vn
+      run: echo ""
     - name: Build ksf-podcast
+      run: echo ""
 
     # Upload all built artifacts to the GCP bucket
     - name: Upload mitt-konto
