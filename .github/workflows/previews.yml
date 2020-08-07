@@ -24,6 +24,8 @@ jobs:
     - run: yarn install
 
     # Builds
+    - name: Build affresco-scripts
+      run: ruby package-scripts.rb
     - name: Build mitt-konto
       run: |
         ruby deploy.rb mitt-konto
@@ -57,8 +59,6 @@ jobs:
       run: |
         ruby deploy.rb prenumerera
         mv apps/prenumerera/dist build-prenumerera
-    - name: Build affresco-scripts
-      run: ruby package-scripts.rb
     - name: Build duellen
       run: |
         ruby deploy.rb duellen
@@ -147,4 +147,4 @@ jobs:
         msg: |
           Deploy previews:
           - __Mitt Konto__: ${{ env.preview_url }}/mitt-konto
-        check_for_duplicate_msg: true
+        check_for_duplicate_msg: false

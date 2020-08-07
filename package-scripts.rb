@@ -1,1 +1,1 @@
-Dir.glob("scripts/**/*.js").each { |f| `uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }
+Dir.glob("scripts/**/*.js").each { |f| `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }
