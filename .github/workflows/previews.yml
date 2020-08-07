@@ -58,8 +58,7 @@ jobs:
         ruby deploy.rb prenumerera
         mv apps/prenumerera/dist build-prenumerera
     - name: Build affresco-scripts
-      run: |
-        ruby -e 'Dir.glob("scripts/**/*.js").each { |f| `uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }'
+      run: 'ruby -e ''Dir.glob("scripts/**/*.js").each { |f| `uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }'''
     - name: Build duellen
       run: |
         ruby deploy.rb duellen
