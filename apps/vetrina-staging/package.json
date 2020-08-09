@@ -11,7 +11,7 @@
   "scripts": {
     "start": "parcel index.html -p 8000",
     "build-vetrina": "yarn --cwd '../../packages/vetrina' build-npm",
-    "build": "yarn build-vetrina && yarn clean && yarn install && parcel build index.html --no-cache",
+    "build": "yarn build-vetrina && yarn clean && yarn install && parcel build index.html --no-cache --public-url ./",
     "clean": "rm -rf .cache dist node_modules"
   }
 }

@@ -72,14 +72,17 @@ end
 
 def run_command(command)
   puts "Running '#{command}'"
-  stdout, stderr, status = Open3.capture3(command)
-  if status.exitstatus != 0
-    abort("'#{command}' failed: #{stderr}")
-  end
+  Open3.popen2e(command) { |input ,out_and_err, wait_thread|
+    while line=out_and_err.gets do
+      puts(line)
+    end
+    if wait_thread.value.exitstatus != 0
+      abort("Command '#{command}' failed")
+    end
+  }
 end
 
 build_commands = [
-  "yarn run clean",
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
   "yarn --cwd './apps/#{app_name}/' run build"
 ]

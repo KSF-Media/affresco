@@ -15,5 +15,6 @@ apps/*/output
 yarn-error.log
 .yarn-cache/
 .spago/
+.parcel-cache
 .tern-port
 .psc-ide-port
