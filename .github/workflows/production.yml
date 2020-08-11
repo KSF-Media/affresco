@@ -1,6 +1,9 @@
-name: previews
+name: production
 
 on:
+  push:
+    branches: [ master ]
+  # TODO: remove
   pull_request:
     branches: [ master ]
 
@@ -8,8 +11,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      preview_url: https://deploy-previews.ksfmedia.fi/${{ github.sha }}
-      bucket_name: deploy-previews
+      PRODUCTION_FACEBOOK_APP_ID: 1742585382627694
+      PRODUCTION_GOOGLE_CLIENT_ID: 584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo
+      PRODUCTION_JANRAIN_FLOW_VERSION: 20161013180819779934
+      PRODUCTION_JANRAIN_LOGIN_CLIENT_ID: jzbqvf3p68e8hje6wrzhezk98m8qndmz
+      PRODUCTION_JANRAIN_SSO_SERVER: https://ksf-media.eu.janrainsso.com
+      PRODUCTION_JANRAIN_XD_RECEIVER_PATH: /xd_receiver.html
+      PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+      bucket_name: ksf-frontends
       dir_mittkonto: mitt-konto
       dir_vetrina: vetrina-staging
       dir_electionseu: elections-eu
@@ -37,6 +46,9 @@ jobs:
 
     # Builds
     - name: Build mitt-konto
+      run: ruby deploy.rb mitt-konto
+      env:
+        PRODUCTION_SENTRY_DSN: https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203
       run: |
         ruby deploy.rb mitt-konto
         mv apps/mitt-konto/dist build/${{ env.dir_mittkonto }}
@@ -53,7 +65,7 @@ jobs:
         ELECTION_TYPE: EU
       run: |
         ruby deploy.rb elections
-        mv apps/elections/dist build/${{ env.dir_electionseu }}
+        mv apps/elections/dist build/${{ env.dir_electionseu }
     - name: Build ksf-elections
       env:
         ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
@@ -62,19 +74,24 @@ jobs:
         ruby deploy.rb elections
         mv apps/elections/dist build/${{ env.dir_elections }}
     - name: Build app-article
+      env:
+        HIDE_LOGIN_LINKS: ! "false"
+        PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v1/
       run: |
         ruby deploy.rb app-article
         mv apps/app-article/dist build/${{ env.dir_apparticle }}
     - name: Build prenumerera
       run: |
         ruby deploy.rb prenumerera
-        mv apps/prenumerera/dist build/${{ env.dir_prenumerera }}
+        mv apps/prenumerera/dist build/${{ env.dir_prenumerera }
     - name: Build affresco-scripts
       run: ruby package-scripts.rb
     - name: Build duellen
+      env:
+        PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi/
       run: |
         ruby deploy.rb duellen
-        mv apps/duellen/dist build/${{ env.dir_duellen }}
+        mv apps/duellen/dist build/${{ env.dir_duellen }
     - name: Build ksf-podcast-vn
       env:
         PODCAST_IDS: 694513583,705599305,630339678,542583531
@@ -94,77 +111,68 @@ jobs:
       with:
         path: build/${{ env.dir_mittkonto }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload vetrina-staging
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_vetrina }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload ksf-elections-eu
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_electionseu }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload ksf-elections
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_elections }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload app-article
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_apparticle }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload prenumerera
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_prenumerera }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload affresco-scripts
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: scripts
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload duellen
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_duellen }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload ksf-podcasts-vn
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_podcastsvn }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
     - name: Upload ksf-podcasts
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
         path: build/${{ env.dir_podcasts }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
+        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
 
-    # Post the preview links on the thread
-    - name: Post preview links
-      uses: unsplash/comment-on-pr@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # If all is well we go live: invalidate the CDN cache for all the apps
+    - name: Install gcloud
+      uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
       with:
-        msg: |
-          Deploy previews:
-          - [Mitt Konto](${{ env.preview_url }}/${{ env.dir_mittkonto }})
-          - [Vetrina (staging)](${{ env.preview_url }}/${{ env.dir_vetrina }})
-          - [Elections (EU)](${{ env.preview_url }}/${{ env.dir_electionseu }})
-          - [Elections (Parliament)](${{ env.preview_url }}/${{ env.dir_elections }})
-          - [App article](${{ env.preview_url }}/${{ env.dir_apparticle }})
-          - [Prenumerera PoC](${{ env.preview_url }}/${{ env.dir_prenumerera }})
-          - [Duellen](${{ env.preview_url }}/${{ env.dir_duellen }})
-          - [Podcasts](${{ env.preview_url }}/${{ env.dir_podcasts }})
-          - [Podcasts (VN)](${{ env.preview_url }}/${{ env.dir_podcastsvn }})
-        check_for_duplicate_msg: false
+        project_id: ${{ secrets.GCP_PRODUCTION_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_PRODUCTION_KEY }}
+        export_default_credentials: true
+    - name: Invalidate CDN cache
+      run: gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
