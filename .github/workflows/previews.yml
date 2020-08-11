@@ -124,7 +124,7 @@ jobs:
       with:
         path: build/${{ env.dir_prenumerera }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}}
+        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
     - name: Upload affresco-scripts
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
@@ -142,7 +142,7 @@ jobs:
       with:
         path: build/${{ env.dir_podcastsvn }}
         destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}}
+        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
     - name: Upload ksf-podcasts
       uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
       with:
