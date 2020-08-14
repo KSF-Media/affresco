@@ -37,10 +37,10 @@ type Subscription =
   , paused                :: Nullable (Array PausedSubscription)
   , deliveryAddress       :: Nullable DeliveryAddress
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
-  , paymentMethod         :: String
+  , paymentMethod         :: SubscriptionPaymentMethod
   }
 
---data SubscriptionPaymentMethod = PaperInvoice | CreditCard | NetBank | ElectronicInvoice | DirectPayment | UnknownPaymentMethod
+newtype SubscriptionPaymentMethod = SubscriptionPaymentMethod String
 
 type PausedSubscription =
   { startDate :: JSDate
