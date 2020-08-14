@@ -17,3 +17,4 @@ yarn-error.log
 .spago/
 .tern-port
 .psc-ide-port
+.parcel-cache
