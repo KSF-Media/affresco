@@ -17,6 +17,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Now as Now
 import Effect.Aff as Aff
+--import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -123,6 +124,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              <> deliveryAddress
              <> foldMap pendingAddressChanges self.state.pendingAddressChanges
              <> foldMap billingDateTerm billingPeriodEndDate
+             <> paymentMethod
          })
       (if package.digitalOnly
        then mempty
@@ -136,6 +138,12 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               { term: "Leveransadress:"
               , description: [ DOM.text currentDeliveryAddress ]
               }
+              
+    paymentMethod = Array.singleton
+              { term: "paymentMethod:"
+              , description: [ DOM.text props.subscription.paymentMethod ]
+              }
+        
 
     pendingAddressChanges :: Array User.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
@@ -148,6 +156,12 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
       { term: "Faktureringsperioden upphör:"
       , description: [ DOM.text date ]
       }
+
+--    paymentMethod :: String -> Array DescriptionList.Definition
+--    paymentMethod = Array.singleton $
+--      { term: "Payment method:"
+--      , description: [ DOM.text  ]
+--      }
 
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
@@ -438,6 +452,17 @@ translateStatus (User.SubscriptionState englishStatus) = do
     "DeactivatedRecently"       -> "Förnyad tillsvidare"
     "Unknown"                   -> "Okänd"
     _                           -> englishStatus
+
+translatePaymentMethod :: String -> String
+translatePaymentMethod paymentMethod =
+  case paymentMethod of
+    "PaperInvoice" -> "paperinvoice"
+    "CreditCard" -> "creditcard"
+    "NetBank" -> "netbanck"
+    "ElectronicInvoice" -> "elec invoice"
+    "DirectPayment" -> "direct payment"
+    "UnknownPaymentMethod" -> "unknown"
+    _ -> "unknown"
 
 isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
 isPeriodExpired baseDate endDate =
