@@ -8,7 +8,7 @@ import Data.JSDate (JSDate)
 import Data.Nullable (Nullable)
 import KSF.Api.Package (Package, Campaign)
 import Simple.JSON (class ReadForeign, readImpl)
-
+import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
 
 type DeliveryAddress =
   { streetAddress :: Nullable String
@@ -48,6 +48,10 @@ type PausedSubscription =
   }
 
 newtype SubscriptionState = SubscriptionState String
+
+derive instance genericSubscriptionPaymentMethod :: Generic SubscriptionPaymentMethod _
+instance readSubscriptionPaymentMethod :: ReadForeign SubscriptionPaymentMethod where
+  readImpl = genericDecodeEnum defaultGenericEnumOptions
 
 derive instance genericSubscriptionState :: Generic SubscriptionState _
 instance readForeignSubscriptionState :: ReadForeign SubscriptionState where
