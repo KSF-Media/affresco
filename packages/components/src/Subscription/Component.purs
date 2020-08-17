@@ -447,15 +447,14 @@ translateStatus (User.SubscriptionState englishStatus) = do
     _                           -> englishStatus
 
 translatePaymentMethod :: SubscriptionPaymentMethod -> String
-translatePaymentMethod (SubscriptionPaymentMethod paymentMethod) = do
+translatePaymentMethod paymentMethod =
   case paymentMethod of
-    "PaperInvoice"         -> "Pappersfaktura"
-    "CreditCard"           -> "Kreditkort"
-    "NetBank"              -> "Netbank"
-    "ElectronicInvoice"    -> "Nätfaktura"
-    "DirectPayment"        -> "Direktbetalning"
-    "UnknownPaymentMethod" -> "Okänd"
-    _                      -> "Okänd"
+    PaperInvoice         -> "Pappersfaktura"
+    CreditCard           -> "Kreditkort"
+    NetBank              -> "Netbank"
+    ElectronicInvoice    -> "Nätfaktura"
+    DirectPayment        -> "Direktbetalning"
+    UnknownPaymentMethod -> "Okänd"
 
 isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
 isPeriodExpired baseDate endDate =

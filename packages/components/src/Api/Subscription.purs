@@ -40,7 +40,7 @@ type Subscription =
   , paymentMethod         :: SubscriptionPaymentMethod
   }
 
-newtype SubscriptionPaymentMethod = SubscriptionPaymentMethod String
+data SubscriptionPaymentMethod = PaperInvoice | CreditCard | NetBank | ElectronicInvoice | DirectPayment | UnknownPaymentMethod
 
 type PausedSubscription =
   { startDate :: JSDate
