@@ -169,8 +169,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             { wrapperState: self.state.wrapperProgress
             , readyView: actionsContainer $ defaultActions
             , editingView: identity
-            , successView: \msg -> actionsContainer $ append defaultActions $ [successWrapper msg]
-            , errorView: \err -> actionsContainer $ append defaultActions $ [errorWrapper err]
+            , successView: \msg -> actionsContainer $ defaultActions <> [successWrapper msg]
+            , errorView: \err -> actionsContainer $ defaultActions <> [errorWrapper err]
             , loadingView: identity
             }
 
