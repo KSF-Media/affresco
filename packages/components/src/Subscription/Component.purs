@@ -170,7 +170,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             , readyView: actionsContainer $ defaultActions
             , editingView: identity
             , successView: \msg -> actionsContainer $ append defaultActions $ [successWrapper msg]
-            , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
+            , errorView: \err -> actionsContainer $ append defaultActions $ [errorWrapper err]
             , loadingView: identity
             }
 
@@ -190,7 +190,10 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                                                    ]
                                 ]
                     }
-
+          errorWrapper err =
+            DOM.div { className: "subscription--action-item"
+                    , children: [ errorContainer [ errorMessage err, tryAgain ] ]
+                    }
           successMessage msg =
             DOM.div
               { className: "success-text"
