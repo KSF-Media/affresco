@@ -167,19 +167,33 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: actionsContainer $ [ pauseIcon
-                                            , if maybe true Array.null self.state.pausedSubscriptions
-                                              then mempty
-                                              else removeSubscriptionPauses
-                                            , temporaryAddressChangeIcon
-                                            , deliveryReclamationIcon
-                                            ]
+            , readyView: actionsContainer $ defaultActions
             , editingView: identity
-            , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
-            , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
+            , successView: \msg -> actionsContainer $ defaultActions <> [successWrapper msg]
+            , errorView: \err -> actionsContainer $ defaultActions <> [errorWrapper err]
             , loadingView: identity
             }
 
+          defaultActions =
+            [ pauseIcon
+            , if maybe true Array.null self.state.pausedSubscriptions
+              then mempty
+              else removeSubscriptionPauses
+            , temporaryAddressChangeIcon
+            , deliveryReclamationIcon
+            ]
+
+          successWrapper msg =
+            DOM.div { className: "subscription--action-item"
+                    , children: [ successContainer [ DOM.div { className: "subscription--update-success check-icon" }
+                                                   , foldMap successMessage msg
+                                                   ]
+                                ]
+                    }
+          errorWrapper err =
+            DOM.div { className: "subscription--action-item"
+                    , children: [ errorContainer [ errorMessage err, tryAgain ] ]
+                    }
           successMessage msg =
             DOM.div
               { className: "success-text"
