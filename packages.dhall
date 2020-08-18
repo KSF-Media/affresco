@@ -1,7 +1,7 @@
 let upstream =
       https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20200615/packages.dhall sha256:5d0cfad9408c84db0a3fdcea2d708f9ed8f64297e164dc57a7cf6328706df93a
     with toppokki.repo = "https://github.com/f-f/purescript-toppokki.git"
-    with toppokki.version = "d5f4daaae9186b9eb40344691ea703983d696c13"
+    with toppokki.version = "81e63299d0765e4b54cb0e26a5edc9d7b6cc5036"
 
 let additions =
       { facebook =
