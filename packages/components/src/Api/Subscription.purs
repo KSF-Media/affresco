@@ -2,13 +2,20 @@ module KSF.Api.Subscription where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Control.Alt ((<|>))
+import Data.Either (Either(..), hush)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
-import KSF.Api.Package (Package, Campaign)
-import Simple.JSON (class ReadForeign, readImpl)
+import Foreign (F, Foreign, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
+import Foreign.Index as Foreign
+import KSF.Api.Package (Package, Campaign)
+import Record as Record
+import Simple.JSON (class ReadForeign, readImpl)
+import Simple.JSON as JSON
+import Type.Prelude (SProxy(..))
 
 type DeliveryAddress =
   { streetAddress :: Nullable String
@@ -40,18 +47,32 @@ type Subscription =
   , paymentMethod         :: SubscriptionPaymentMethod
   }
 
-data SubscriptionPaymentMethod = PaperInvoice | CreditCard | NetBank | ElectronicInvoice | DirectPayment | UnknownPaymentMethod
+data SubscriptionPaymentMethod
+  = PaperInvoice
+  | CreditCard
+  | NetBank
+  | ElectronicInvoice
+  | DirectPayment
+  | UnknownPaymentMethod
 
 type PausedSubscription =
   { startDate :: JSDate
   , endDate   :: Nullable JSDate
   }
 
+-- | Parse Foreign values of a 'raw' subscription into a Subscription
+parseSubscription :: forall r. { paymentMethod :: Foreign | r } -> { paymentMethod :: SubscriptionPaymentMethod | r }
+parseSubscription sub@{ paymentMethod } =
+  let parsedPaymentMethod = case JSON.read paymentMethod of
+        Left _  -> UnknownPaymentMethod
+        Right p -> p
+  in sub { paymentMethod = parsedPaymentMethod }
+
 newtype SubscriptionState = SubscriptionState String
 
 derive instance genericSubscriptionPaymentMethod :: Generic SubscriptionPaymentMethod _
 instance readSubscriptionPaymentMethod :: ReadForeign SubscriptionPaymentMethod where
-  readImpl = genericDecodeEnum defaultGenericEnumOptions
+  readImpl p = genericDecodeEnum defaultGenericEnumOptions p <|> pure UnknownPaymentMethod
 
 derive instance genericSubscriptionState :: Generic SubscriptionState _
 instance readForeignSubscriptionState :: ReadForeign SubscriptionState where

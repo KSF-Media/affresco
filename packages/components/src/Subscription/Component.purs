@@ -5,6 +5,7 @@ import Prelude
 import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime)
+import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
@@ -12,11 +13,10 @@ import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
-import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Now as Now
-import Effect.Aff as Aff
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
@@ -143,7 +143,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               { term: "Faktureringsmetoden:"
               , description: [ DOM.text $ translatePaymentMethod props.subscription.paymentMethod ]
               }
-        
+
     pendingAddressChanges :: Array User.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
       { term: "Tillfällig adressändring:"
