@@ -23,6 +23,7 @@ import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token(..), UUID, invalidateCacheHeader)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
+import KSF.Api.Subscription as Subscription
 import OpenApiClient (Api, callApi)
 import Simple.JSON (class ReadForeign, class WriteForeign)
 import Simple.JSON as JSON
@@ -40,8 +41,10 @@ loginSso :: LoginDataSso -> Aff LoginResponse
 loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
 getUser :: Maybe InvalidateCache -> UUID -> Token -> Aff User
-getUser invalidateCache uuid token =
-  callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
+getUser invalidateCache uuid token = do
+  user <- callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
+  let parsedSubs = map Subscription.parseSubscription user.subs
+  pure $ user { subs = parsedSubs }
   where
     headers =
       { authorization
@@ -295,8 +298,6 @@ errorData =
     <<< runExcept
           <<< Foreign.readProp "data"
           <<< unsafeToForeign
-
-
 
 data Provider
   = Facebook
