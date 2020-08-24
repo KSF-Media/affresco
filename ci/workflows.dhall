@@ -61,7 +61,7 @@ let mkBuildStep
     , name = Some "Build ${app.name}"
     , env = app.env
     , run = Some ''
-      ruby deploy.rb ${app.deployDir}
+      ruby deploy.rb ${app.buildDir}
       mv apps/${app.buildDir}/dist build/${app.deployDir}
     ''
   }
