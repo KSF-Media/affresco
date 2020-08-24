@@ -1,170 +1,161 @@
-name: previews
-
-on:
-  pull_request:
-    branches: [ master ]
-
+env:
+  bucket_name: deploy-previews
+  preview_url: "https://deploy-previews.ksfmedia.fi/${{ github.sha }}"
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      preview_url: https://deploy-previews.ksfmedia.fi/${{ github.sha }}
-      bucket_name: deploy-previews
-      dir_mittkonto: mitt-konto
-      dir_vetrina: vetrina-staging
-      dir_electionseu: elections-eu
-      dir_elections: elections
-      dir_apparticle: app-article
-      dir_prenumerera: prenumerera
-      dir_duellen: duellen
-      dir_podcastsvn: podcasts-vn
-      dir_podcasts: podcasts
     steps:
-    # Setup steps
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: Setup node and yarn
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12'
-    - name: Setup ruby
-      uses: actions/setup-ruby@v1
-      with:
-        ruby-version: '2.6'
-    - run: |
-        yarn install
-        mkdir -p build
-
-    # Builds
-    - name: Build mitt-konto
-      run: |
-        ruby deploy.rb mitt-konto
-        mv apps/mitt-konto/dist build/${{ env.dir_mittkonto }}
-    - name: Build vetrina-staging
-      env:
-        NODE_ENV: development
-        SENTRY_DSN: https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842
-      run: |
-        yarn --cwd './apps/vetrina-staging/' run build
-        mv apps/vetrina-staging/dist build/${{ env.dir_vetrina }}
-    - name: Build ksf-elections-eu
-      env:
-        ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
-        ELECTION_TYPE: EU
-      run: |
-        ruby deploy.rb elections
-        mv apps/elections/dist build/${{ env.dir_electionseu }}
-    - name: Build ksf-elections
-      env:
-        ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
-        ELECTION_TYPE: PARLIAMENT
-      run: |
-        ruby deploy.rb elections
-        mv apps/elections/dist build/${{ env.dir_elections }}
-    - name: Build app-article
-      run: |
-        ruby deploy.rb app-article
-        mv apps/app-article/dist build/${{ env.dir_apparticle }}
-    - name: Build prenumerera
-      run: |
-        ruby deploy.rb prenumerera
-        mv apps/prenumerera/dist build/${{ env.dir_prenumerera }}
-    - name: Build affresco-scripts
-      run: ruby package-scripts.rb
-    - name: Build duellen
-      run: |
-        ruby deploy.rb duellen
-        mv apps/duellen/dist build/${{ env.dir_duellen }}
-    - name: Build ksf-podcast-vn
-      env:
-        PODCAST_IDS: 694513583,705599305,630339678,542583531
-      run: |
-        yarn --cwd './apps/podcasts/' run build
-        mv apps/podcasts/dist build/${{ env.dir_podcastsvn }}
-    - name: Build ksf-podcast
-      env:
-        PODCAST_IDS: 806886790
-      run: |
-        yarn --cwd './apps/podcasts/' run build
-        mv apps/podcasts/dist build/${{ env.dir_podcasts }}
-
-    # Upload all built artifacts to the GCP bucket
-    - name: Upload mitt-konto
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_mittkonto }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload vetrina-staging
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_vetrina }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload ksf-elections-eu
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_electionseu }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload ksf-elections
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_elections }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload app-article
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_apparticle }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload prenumerera
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_prenumerera }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload affresco-scripts
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: scripts
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload duellen
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_duellen }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload ksf-podcasts-vn
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_podcastsvn }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-    - name: Upload ksf-podcasts
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_podcasts }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PREVIEW_KEY }}
-
-    # Post the preview links on the thread
-    - name: Post preview links
-      uses: unsplash/comment-on-pr@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        msg: |
-          Deploy previews:
-          - [Mitt Konto](${{ env.preview_url }}/${{ env.dir_mittkonto }})
-          - [Vetrina (staging)](${{ env.preview_url }}/${{ env.dir_vetrina }})
-          - [Elections (EU)](${{ env.preview_url }}/${{ env.dir_electionseu }})
-          - [Elections (Parliament)](${{ env.preview_url }}/${{ env.dir_elections }})
-          - [App article](${{ env.preview_url }}/${{ env.dir_apparticle }})
-          - [Prenumerera PoC](${{ env.preview_url }}/${{ env.dir_prenumerera }})
-          - [Duellen](${{ env.preview_url }}/${{ env.dir_duellen }})
-          - [Podcasts](${{ env.preview_url }}/${{ env.dir_podcasts }})
-          - [Podcasts (VN)](${{ env.preview_url }}/${{ env.dir_podcastsvn }})
-        check_for_duplicate_msg: false
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup node and yarn
+        uses: "actions/setup-node@v1"
+        with:
+          node-version: '12'
+      - name: Setup ruby
+        uses: "actions/setup-ruby@v1"
+        with:
+          ruby-version: '2.6'
+      - uses: "cachix/install-nix-action@v9"
+      - run: |2
+            yarn install
+            mkdir -p build
+      - name: Check CI script has been generated from Dhall
+        run: |2
+            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty <<< "./ci/previews-ci.dhall"' > .github/workflows/previews.yml
+            git diff --exit-code
+            echo "TODO production"
+      - name: Build Scripts
+        run: |2
+            ruby deploy.rb scripts
+            mv apps/scripts/dist build/scripts
+      - name: Build Mitt Konto
+        run: |2
+            ruby deploy.rb mitt-konto
+            mv apps/mitt-konto/dist build/mitt-konto
+      - env:
+          NODE_ENV: development
+          SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
+        name: "Build Vetrina (staging)"
+        run: |2
+            ruby deploy.rb vetrina-staging
+            mv apps/vetrina-staging/dist build/vetrina-staging
+      - env:
+          ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
+          ELECTION_TYPE: EU
+        name: "Build Elections (EU)"
+        run: |2
+            ruby deploy.rb elections-eu
+            mv apps/elections/dist build/elections-eu
+      - env:
+          ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
+          ELECTION_TYPE: PARLIAMENT
+        name: "Build Elections (Parliament)"
+        run: |2
+            ruby deploy.rb elections
+            mv apps/elections/dist build/elections
+      - name: Build App article
+        run: |2
+            ruby deploy.rb app-article
+            mv apps/app-article/dist build/app-article
+      - name: Build Prenumerera PoC
+        run: |2
+            ruby deploy.rb prenunmerera
+            mv apps/prenumerera/dist build/prenunmerera
+      - name: Build Duellen
+        run: |2
+            ruby deploy.rb duellen
+            mv apps/duellen/dist build/duellen
+      - env:
+          PODCAST_IDS: "694513583,705599305,630339678,542583531"
+        name: Build Podcasts
+        run: |2
+            ruby deploy.rb podcasts
+            mv apps/podcasts/dist build/podcasts
+      - env:
+          PODCAST_IDS: '806886790'
+        name: "Build Podcasts (VN)"
+        run: |2
+            ruby deploy.rb podcasts-vn
+            mv apps/podcasts/dist build/podcasts-vn
+      - name: Upload Scripts
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/scripts
+      - name: Upload Mitt Konto
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/mitt-konto
+      - name: "Upload Vetrina (staging)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/vetrina-staging
+      - name: "Upload Elections (EU)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/elections-eu
+      - name: "Upload Elections (Parliament)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/elections
+      - name: Upload App article
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/app-article
+      - name: Upload Prenumerera PoC
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/prenunmerera
+      - name: Upload Duellen
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/duellen
+      - name: Upload Podcasts
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/podcasts
+      - name: "Upload Podcasts (VN)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          path: build/podcasts-vn
+      - env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        name: Post preview links
+        uses: "unsplash/comment-on-pr@master"
+        with:
+          msg: |
+            Deploy previews:
+            - [Scripts](${{ env.preview_url }}/scripts/index.html)
+            - [Mitt Konto](${{ env.preview_url }}/mitt-konto/index.html)
+            - [Vetrina (staging)](${{ env.preview_url }}/vetrina-staging/index.html)
+            - [Elections (EU)](${{ env.preview_url }}/elections-eu/index.html)
+            - [Elections (Parliament)](${{ env.preview_url }}/elections/index.html)
+            - [App article](${{ env.preview_url }}/app-article/index.html)
+            - [Prenumerera PoC](${{ env.preview_url }}/prenunmerera/index.html)
+            - [Duellen](${{ env.preview_url }}/duellen/index.html)
+            - [Podcasts](${{ env.preview_url }}/podcasts/index.html)
+            - [Podcasts (VN)](${{ env.preview_url }}/podcasts-vn/index.html)
+name: previews
+on:
+  pull_request:
+    branches:
+      - master

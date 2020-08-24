@@ -42,6 +42,12 @@ apps = {
   },
   "app-article" => {
     "env_variables" => env_variables["social_login"] + env_variables["persona"] + ["PRODUCTION_LETTERA_URL"]
+  },
+  "vetrina-staging" => {
+    "env_variables" => %w[]
+  },
+  "scripts" => {
+    "env_variables" => %w[]
   }
 }
 
@@ -50,9 +56,9 @@ maintenance = ARGV[1]
 
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
-puts "Branch: #{ENV['HEAD']}"
+puts "Branch: #{ENV['GITHUB_REF']}"
 
-if ENV['HEAD'] == 'master'
+if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master')
   apps[app_name]["env_variables"].each do |v|
     abort("Did not find #{v} in the environment variables") if ENV[v].nil?
   end
@@ -94,6 +100,11 @@ end
 if maintenance == '--maintenance'
   puts 'Deploying maintenance page'
   deploy_maintenance_page(app_name)
+elsif app_name == 'scripts'
+  Dir.glob("scripts/**/*.js").each { |f|
+    `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` 
+  }
+  run_command("mkdir -p ./apps/#{app_name} && cp -R scripts ./apps/#{app_name}/dist")
 else
   build_commands.each { |c| run_command(c) }
 end
