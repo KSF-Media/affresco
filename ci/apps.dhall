@@ -46,7 +46,7 @@ let apps = [
 , Actions.App::{
   , name = "Prenumerera PoC"
   , buildDir = "prenumerera"
-  , deployDir = "prenunmerera"
+  , deployDir = "prenumerera"
   }
 , Actions.App::{
   , name = "Duellen"

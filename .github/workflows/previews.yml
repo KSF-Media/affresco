@@ -60,7 +60,7 @@ jobs:
       - name: Build Prenumerera PoC
         run: |2
             ruby deploy.rb prenumerera
-            mv apps/prenumerera/dist build/prenunmerera
+            mv apps/prenumerera/dist build/prenumerera
       - name: Build Duellen
         run: |2
             ruby deploy.rb duellen
@@ -118,7 +118,7 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "${{ env.bucket_name }}/${{ github.sha }}"
-          path: build/prenunmerera
+          path: build/prenumerera
       - name: Upload Duellen
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -150,7 +150,7 @@ jobs:
             - [Elections (EU)](${{ env.preview_url }}/elections-eu/index.html)
             - [Elections (Parliament)](${{ env.preview_url }}/elections/index.html)
             - [App article](${{ env.preview_url }}/app-article/index.html)
-            - [Prenumerera PoC](${{ env.preview_url }}/prenunmerera/index.html)
+            - [Prenumerera PoC](${{ env.preview_url }}/prenumerera/index.html)
             - [Duellen](${{ env.preview_url }}/duellen/index.html)
             - [Podcasts](${{ env.preview_url }}/podcasts/index.html)
             - [Podcasts (VN)](${{ env.preview_url }}/podcasts-vn/index.html)
