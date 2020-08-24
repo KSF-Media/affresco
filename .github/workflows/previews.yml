@@ -44,7 +44,7 @@ jobs:
           ELECTION_TYPE: EU
         name: "Build Elections (EU)"
         run: |2
-            ruby deploy.rb elections-eu
+            ruby deploy.rb elections
             mv apps/elections/dist build/elections-eu
       - env:
           ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
@@ -59,7 +59,7 @@ jobs:
             mv apps/app-article/dist build/app-article
       - name: Build Prenumerera PoC
         run: |2
-            ruby deploy.rb prenunmerera
+            ruby deploy.rb prenumerera
             mv apps/prenumerera/dist build/prenunmerera
       - name: Build Duellen
         run: |2
@@ -75,7 +75,7 @@ jobs:
           PODCAST_IDS: '806886790'
         name: "Build Podcasts (VN)"
         run: |2
-            ruby deploy.rb podcasts-vn
+            ruby deploy.rb podcasts
             mv apps/podcasts/dist build/podcasts-vn
       - name: Upload Scripts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"

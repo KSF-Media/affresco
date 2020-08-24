@@ -83,10 +83,10 @@ let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 let uploadSteps = Prelude.List.map App.Type Step.Type mkUploadStep
 
 in
-{ Step = Step
-, Prelude = Prelude
-, App = App
-, setupSteps = setupSteps
-, buildSteps = buildSteps
-, uploadSteps = uploadSteps
+{ Step
+, Prelude
+, App
+, setupSteps
+, buildSteps
+, uploadSteps
 }
