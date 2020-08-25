@@ -49,6 +49,9 @@ apps = {
   "scripts" => {
     "env_variables" => %w[]
   }
+  "podcasts" => {
+    "env_variables" => %w[]
+  }
 }
 
 app_name = ARGV.first
