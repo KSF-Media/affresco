@@ -59,7 +59,7 @@ puts "Branch: #{ENV['GITHUB_REF']}"
 puts "Workflow: #{ENV['GITHUB_WORKFLOW']}"
 
 if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master' or ENV['GITHUB_WORKFLOW'] == 'production')
-  app_vars = env_variables + app.env.keys
+  app_vars = env_variables + app['env'].keys
   app_vars.each do |v|
     abort("Did not find #{v} in the environment variables") if ENV[v].nil?
   end
