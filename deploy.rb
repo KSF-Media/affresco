@@ -1,73 +1,71 @@
 require 'open3'
+require 'json'
 
-# Common env variables groupped by their purpose
-env_variables = {
-  "social_login" => %w[
-    PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
-    PRODUCTION_JANRAIN_SSO_SERVER
-    PRODUCTION_JANRAIN_FLOW_VERSION
-    PRODUCTION_JANRAIN_XD_RECEIVER_PATH
-    PRODUCTION_GOOGLE_CLIENT_ID
-    PRODUCTION_FACEBOOK_APP_ID
-  ],
-  "persona" => %w[
-    PRODUCTION_PERSONA_URL
-  ],
-  "duellen" => %w[
-    PRODUCTION_DUELLEN_URL
-  ],
-  "sentry" => %w[
-    PRODUCTION_SENTRY_DSN
-  ]
-}
+def run_command(command)
+  puts "Running `#{command}`"
+  result = ""
+
+  # see: http://stackoverflow.com/a/1162850/83386
+  Open3.popen3(command) { |input ,out, err, wait_thread|
+    # Store stdout and print it
+    Thread.new do
+      while line=out.gets do
+        puts(line)
+        result += line + "\n"
+      end
+    end
+    # But only print stderr
+    Thread.new do
+      while line=err.gets do
+        puts(line)
+      end
+    end
+    # Then wait for da command to be done
+    wait_thread.join
+    if wait_thread.value.exitstatus != 0
+      abort("Command '#{command}' failed")
+    end
+  }
+  return result
+end
+
+# Common env variables
+env_variables = %w[
+  PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
+  PRODUCTION_JANRAIN_SSO_SERVER
+  PRODUCTION_JANRAIN_FLOW_VERSION
+  PRODUCTION_JANRAIN_XD_RECEIVER_PATH
+  PRODUCTION_GOOGLE_CLIENT_ID
+  PRODUCTION_FACEBOOK_APP_ID
+  PRODUCTION_PERSONA_URL
+  PRODUCTION_DUELLEN_URL
+  PRODUCTION_LETTERA_URL
+]
 
 # A hash of apps with their configuration
-apps = {
-  "mitt-konto" => {
-    "env_variables" =>
-    env_variables["social_login"] +
-    env_variables["persona"] +
-    env_variables["sentry"]
-  },
-  "prenumerera" => {
-    "env_variables" =>
-    env_variables["social_login"] +
-    env_variables["persona"]
-  },
-  "elections" => {
-    "env_variables" => %w[]
-  },
-  "duellen" => {
-    "env_variables" => env_variables["duellen"]
-  },
-  "app-article" => {
-    "env_variables" => env_variables["social_login"] + env_variables["persona"] + ["PRODUCTION_LETTERA_URL"]
-  },
-  "vetrina-staging" => {
-    "env_variables" => %w[]
-  },
-  "scripts" => {
-    "env_variables" => %w[]
-  },
-  "podcasts" => {
-    "env_variables" => %w[]
-  }
-}
+# We read that from the deploy info that we use to generate the CI jobs
+apps_list = JSON.parse(run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'"))
+apps = apps_list.map{ |x| [x["deployDir"], x] }.to_h
 
 app_name = ARGV.first
 maintenance = ARGV[1]
 
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
-puts "Branch: #{ENV['GITHUB_REF']}"
+app = apps[app_name]
+app_path = "./apps/#{app['deployDir']}"
 
-if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master')
-  apps[app_name]["env_variables"].each do |v|
+puts "Branch: #{ENV['GITHUB_REF']}"
+puts "Workflow: #{ENV['GITHUB_WORKFLOW']}"
+
+if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master' or ENV['GITHUB_WORKFLOW'] == 'production')
+  app_vars = env_variables + app.env.keys
+  app_vars.each do |v|
     abort("Did not find #{v} in the environment variables") if ENV[v].nil?
   end
 
-  File.open("apps/#{app_name}/.env.production", 'a') do |f|
-    apps[app_name]["env_variables"].each do |v|
+  File.open("#{app_path}/.env.production", 'a') do |f|
+    app_vars.each do |v|
       # Strip 'PRODUCTION_' from the variable name
       env_var_name = v.sub(/^PRODUCTION_/, '')
       f.puts("#{env_var_name}=#{ENV[v]}")
@@ -79,35 +77,24 @@ else
   ENV['NODE_ENV'] = 'development'
 end
 
-def run_command(command)
-  puts "Running '#{command}'"
-  Open3.popen2e(command) { |input ,out_and_err, wait_thread|
-    while line=out_and_err.gets do
-      puts(line)
-    end
-    if wait_thread.value.exitstatus != 0
-      abort("Command '#{command}' failed")
-    end
-  }
-end
 
 build_commands = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd './apps/#{app_name}/' run build"
+  "yarn --cwd '#{app_path}/' run build"
 ]
 
-def deploy_maintenance_page(app_name)
-  run_command("mkdir -p ./apps/#{app_name}/dist && cp ./static/maintenance.html ./apps/#{app_name}/dist/index.html")
+def deploy_maintenance_page(app_path)
+  run_command("mkdir -p #{app_path}/dist && cp ./static/maintenance.html #{app_path}/dist/index.html")
 end
 
 if maintenance == '--maintenance'
   puts 'Deploying maintenance page'
-  deploy_maintenance_page(app_name)
+  deploy_maintenance_page(app_path)
 elsif app_name == 'scripts'
   Dir.glob("scripts/**/*.js").each { |f|
     `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` 
   }
-  run_command("mkdir -p ./apps/#{app_name} && cp -R scripts ./apps/#{app_name}/dist")
+  run_command("mkdir -p #{app_path} && cp -R scripts #{app_path}/dist")
 else
   build_commands.each { |c| run_command(c) }
 end
