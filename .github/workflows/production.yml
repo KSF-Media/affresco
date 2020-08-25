@@ -1,178 +1,166 @@
-name: production
-
-on:
-  push:
-    branches: [ master ]
-  # TODO: remove
-  pull_request:
-    branches: [ master ]
-
+env:
+  PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi/
+  PRODUCTION_FACEBOOK_APP_ID: '1742585382627694'
+  PRODUCTION_GOOGLE_CLIENT_ID: "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
+  PRODUCTION_JANRAIN_FLOW_VERSION: '20161013180819779934'
+  PRODUCTION_JANRAIN_LOGIN_CLIENT_ID: jzbqvf3p68e8hje6wrzhezk98m8qndmz
+  PRODUCTION_JANRAIN_SSO_SERVER: https://ksf-media.eu.janrainsso.com
+  PRODUCTION_JANRAIN_XD_RECEIVER_PATH: /xd_receiver.html
+  PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v1/
+  PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      PRODUCTION_FACEBOOK_APP_ID: 1742585382627694
-      PRODUCTION_GOOGLE_CLIENT_ID: 584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo
-      PRODUCTION_JANRAIN_FLOW_VERSION: 20161013180819779934
-      PRODUCTION_JANRAIN_LOGIN_CLIENT_ID: jzbqvf3p68e8hje6wrzhezk98m8qndmz
-      PRODUCTION_JANRAIN_SSO_SERVER: https://ksf-media.eu.janrainsso.com
-      PRODUCTION_JANRAIN_XD_RECEIVER_PATH: /xd_receiver.html
-      PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
-      bucket_name: ksf-frontends
-      dir_mittkonto: mitt-konto
-      dir_vetrina: vetrina-staging
-      dir_electionseu: elections-eu
-      dir_elections: elections
-      dir_apparticle: app-article
-      dir_prenumerera: prenumerera
-      dir_duellen: duellen
-      dir_podcastsvn: podcasts-vn
-      dir_podcasts: podcasts
     steps:
-    # Setup steps
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: Setup node and yarn
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12'
-    - name: Setup ruby
-      uses: actions/setup-ruby@v1
-      with:
-        ruby-version: '2.6'
-    - run: |
-        yarn install
-        mkdir -p build
-
-    # Builds
-    - name: Build mitt-konto
-      run: ruby deploy.rb mitt-konto
-      env:
-        PRODUCTION_SENTRY_DSN: https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203
-      run: |
-        ruby deploy.rb mitt-konto
-        mv apps/mitt-konto/dist build/${{ env.dir_mittkonto }}
-    - name: Build vetrina-staging
-      env:
-        NODE_ENV: development
-        SENTRY_DSN: https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842
-      run: |
-        yarn --cwd './apps/vetrina-staging/' run build
-        mv apps/vetrina-staging/dist build/${{ env.dir_vetrina }}
-    - name: Build ksf-elections-eu
-      env:
-        ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
-        ELECTION_TYPE: EU
-      run: |
-        ruby deploy.rb elections
-        mv apps/elections/dist build/${{ env.dir_electionseu }
-    - name: Build ksf-elections
-      env:
-        ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
-        ELECTION_TYPE: PARLIAMENT
-      run: |
-        ruby deploy.rb elections
-        mv apps/elections/dist build/${{ env.dir_elections }}
-    - name: Build app-article
-      env:
-        HIDE_LOGIN_LINKS: ! "false"
-        PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v1/
-      run: |
-        ruby deploy.rb app-article
-        mv apps/app-article/dist build/${{ env.dir_apparticle }}
-    - name: Build prenumerera
-      run: |
-        ruby deploy.rb prenumerera
-        mv apps/prenumerera/dist build/${{ env.dir_prenumerera }
-    - name: Build affresco-scripts
-      run: ruby package-scripts.rb
-    - name: Build duellen
-      env:
-        PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi/
-      run: |
-        ruby deploy.rb duellen
-        mv apps/duellen/dist build/${{ env.dir_duellen }
-    - name: Build ksf-podcast-vn
-      env:
-        PODCAST_IDS: 694513583,705599305,630339678,542583531
-      run: |
-        yarn --cwd './apps/podcasts/' run build
-        mv apps/podcasts/dist build/${{ env.dir_podcastsvn }}
-    - name: Build ksf-podcast
-      env:
-        PODCAST_IDS: 806886790
-      run: |
-        yarn --cwd './apps/podcasts/' run build
-        mv apps/podcasts/dist build/${{ env.dir_podcasts }}
-
-    # Upload all built artifacts to the GCP bucket
-    - name: Upload mitt-konto
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_mittkonto }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload vetrina-staging
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_vetrina }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload ksf-elections-eu
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_electionseu }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload ksf-elections
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_elections }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload app-article
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_apparticle }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload prenumerera
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_prenumerera }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload affresco-scripts
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: scripts
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload duellen
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_duellen }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload ksf-podcasts-vn
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_podcastsvn }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-    - name: Upload ksf-podcasts
-      uses: GoogleCloudPlatform/github-actions/upload-cloud-storage@master
-      with:
-        path: build/${{ env.dir_podcasts }}
-        destination: ${{ env.bucket_name }}/${{ github.sha }}
-        credentials: ${{ secrets.GCP_PRODUCTION_KEY }}
-
-    # If all is well we go live: invalidate the CDN cache for all the apps
-    - name: Install gcloud
-      uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-      with:
-        project_id: ${{ secrets.GCP_PRODUCTION_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_PRODUCTION_KEY }}
-        export_default_credentials: true
-    - name: Invalidate CDN cache
-      run: gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup node and yarn
+        uses: "actions/setup-node@v1"
+        with:
+          node-version: '12'
+      - name: Setup ruby
+        uses: "actions/setup-ruby@v1"
+        with:
+          ruby-version: '2.6'
+      - uses: "cachix/install-nix-action@v9"
+      - run: |2
+            yarn install
+            mkdir -p build
+      - name: Check CI script has been generated from Dhall
+        run: |2
+            make
+            git diff --exit-code
+      - name: Build Scripts
+        run: |2
+            ruby deploy.rb scripts
+            mv apps/scripts/dist build/scripts
+      - env:
+          PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+        name: Build Mitt Konto
+        run: |2
+            ruby deploy.rb mitt-konto
+            mv apps/mitt-konto/dist build/mitt-konto
+      - env:
+          NODE_ENV: development
+          SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
+        name: "Build Vetrina (staging)"
+        run: |2
+            ruby deploy.rb vetrina-staging
+            mv apps/vetrina-staging/dist build/vetrina-staging
+      - env:
+          ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
+          ELECTION_TYPE: EU
+        name: "Build Elections (EU)"
+        run: |2
+            ruby deploy.rb elections
+            mv apps/elections/dist build/elections-eu
+      - env:
+          ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
+          ELECTION_TYPE: PARLIAMENT
+        name: "Build Elections (Parliament)"
+        run: |2
+            ruby deploy.rb elections
+            mv apps/elections/dist build/elections
+      - env:
+          HIDE_LOGIN_LINKS: 'false'
+        name: Build App article
+        run: |2
+            ruby deploy.rb app-article
+            mv apps/app-article/dist build/app-article
+      - name: Build Prenumerera PoC
+        run: |2
+            ruby deploy.rb prenumerera
+            mv apps/prenumerera/dist build/prenumerera
+      - name: Build Duellen
+        run: |2
+            ruby deploy.rb duellen
+            mv apps/duellen/dist build/duellen
+      - env:
+          PODCAST_IDS: "694513583,705599305,630339678,542583531"
+        name: Build Podcasts
+        run: |2
+            ruby deploy.rb podcasts
+            mv apps/podcasts/dist build/podcasts
+      - env:
+          PODCAST_IDS: '806886790'
+        name: "Build Podcasts (VN)"
+        run: |2
+            ruby deploy.rb podcasts
+            mv apps/podcasts/dist build/podcasts-vn
+      - name: Upload Scripts
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/scripts
+      - name: Upload Mitt Konto
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/mitt-konto
+      - name: "Upload Vetrina (staging)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/vetrina-staging
+      - name: "Upload Elections (EU)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/elections-eu
+      - name: "Upload Elections (Parliament)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/elections
+      - name: Upload App article
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/app-article
+      - name: Upload Prenumerera PoC
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/prenumerera
+      - name: Upload Duellen
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/duellen
+      - name: Upload Podcasts
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/podcasts
+      - name: "Upload Podcasts (VN)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/podcasts-vn
+      - name: Install gcloud
+        uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
+      - name: Invalidate CDN cache
+        run: |2
+            gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
+name: production
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master

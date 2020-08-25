@@ -10,6 +10,9 @@ let apps = [
   , name = "Mitt Konto"
   , buildDir = "mitt-konto"
   , deployDir = "mitt-konto"
+  , env = toMap {
+    , PRODUCTION_SENTRY_DSN = "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+    }
   }
 , Actions.App::{
   , name = "Vetrina (staging)"
@@ -42,6 +45,9 @@ let apps = [
   , name = "App article"
   , buildDir = "app-article"
   , deployDir = "app-article"
+  , env = toMap {
+    , HIDE_LOGIN_LINKS = "false"
+    }
   }
 , Actions.App::{
   , name = "Prenumerera PoC"

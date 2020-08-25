@@ -1,6 +1,3 @@
-env:
-  bucket_name: deploy-previews
-  preview_url: "https://deploy-previews.ksfmedia.fi/${{ github.sha }}"
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -21,14 +18,15 @@ jobs:
             mkdir -p build
       - name: Check CI script has been generated from Dhall
         run: |2
-            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty <<< "./ci/previews-ci.dhall"' > .github/workflows/previews.yml
+            make
             git diff --exit-code
-            echo "TODO production"
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
             mv apps/scripts/dist build/scripts
-      - name: Build Mitt Konto
+      - env:
+          PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+        name: Build Mitt Konto
         run: |2
             ruby deploy.rb mitt-konto
             mv apps/mitt-konto/dist build/mitt-konto
@@ -53,7 +51,9 @@ jobs:
         run: |2
             ruby deploy.rb elections
             mv apps/elections/dist build/elections
-      - name: Build App article
+      - env:
+          HIDE_LOGIN_LINKS: 'false'
+        name: Build App article
         run: |2
             ruby deploy.rb app-article
             mv apps/app-article/dist build/app-article
@@ -81,61 +81,61 @@ jobs:
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/scripts
       - name: Upload Mitt Konto
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/mitt-konto
       - name: "Upload Vetrina (staging)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/vetrina-staging
       - name: "Upload Elections (EU)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/elections
       - name: Upload App article
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/app-article
       - name: Upload Prenumerera PoC
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/prenumerera
       - name: Upload Duellen
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/duellen
       - name: Upload Podcasts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/podcasts
       - name: "Upload Podcasts (VN)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "${{ env.bucket_name }}/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}"
           path: build/podcasts-vn
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -143,17 +143,17 @@ jobs:
         uses: "unsplash/comment-on-pr@master"
         with:
           msg: |
-            Deploy previews:
-            - [Scripts](${{ env.preview_url }}/scripts/index.html)
-            - [Mitt Konto](${{ env.preview_url }}/mitt-konto/index.html)
-            - [Vetrina (staging)](${{ env.preview_url }}/vetrina-staging/index.html)
-            - [Elections (EU)](${{ env.preview_url }}/elections-eu/index.html)
-            - [Elections (Parliament)](${{ env.preview_url }}/elections/index.html)
-            - [App article](${{ env.preview_url }}/app-article/index.html)
-            - [Prenumerera PoC](${{ env.preview_url }}/prenumerera/index.html)
-            - [Duellen](${{ env.preview_url }}/duellen/index.html)
-            - [Podcasts](${{ env.preview_url }}/podcasts/index.html)
-            - [Podcasts (VN)](${{ env.preview_url }}/podcasts-vn/index.html)
+            Deploy previews are ready :sunglasses:
+            - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)
+            - [Mitt Konto](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mitt-konto/index.html)
+            - [Vetrina (staging)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-staging/index.html)
+            - [Elections (EU)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections-eu/index.html)
+            - [Elections (Parliament)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections/index.html)
+            - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
+            - [Prenumerera PoC](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/prenumerera/index.html)
+            - [Duellen](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/duellen/index.html)
+            - [Podcasts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/podcasts/index.html)
+            - [Podcasts (VN)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/podcasts-vn/index.html)
 name: previews
 on:
   pull_request:

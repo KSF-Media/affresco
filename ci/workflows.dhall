@@ -2,6 +2,8 @@ let Prelude = ./Prelude.dhall
 
 let Map = Prelude.Map.Type
 
+let Env = < Staging | Production >
+
 let App =
   { Type = {
     , buildDir : Text
@@ -53,8 +55,6 @@ let setupSteps = [
   }
 ]
 
--- nix-shell ci/dhall.nix --run 'dhall-to-yaml "./ci/previews-ci.dhall"'
-
 let mkBuildStep
   = \(app : App.Type)
   -> Step::{
@@ -67,26 +67,87 @@ let mkBuildStep
   }
 
 let mkUploadStep
-  = \(app : App.Type)
+  = \(env : Env)
+  -> \(app : App.Type)
   -> Step::{
     , name = Some "Upload ${app.name}"
     , uses = Some "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
     , `with` = toMap {
       , path = "build/${app.deployDir}"
-      , destination = "\${{ env.bucket_name }}/\${{ github.sha }}"
-      , credentials = "\${{ secrets.GCP_PREVIEW_KEY }}"
+      , destination =
+          merge
+            { Staging = "deploy-previews/\${{ github.sha }}"
+            , Production = "ksf-frontends"
+            }
+            env
+      , credentials =
+          merge
+            { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
+            , Production = "\${{ secrets.GCP_PRODUCTION_KEY }}"
+            }
+            env
     }
   }
 
-let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
+let checkCIStep
+  = Step::{
+  , name = Some "Check CI script has been generated from Dhall"
+  , run = Some ''
+      make
+      git diff --exit-code
+    ''
+  }
 
-let uploadSteps = Prelude.List.map App.Type Step.Type mkUploadStep
+let linkPreviewsStep
+  = \(apps : List App.Type)
+  -> \(previewUrl : Text)
+  -> Step::{
+  , name = Some "Post preview links"
+  , uses = Some "unsplash/comment-on-pr@master"
+  , env = toMap { GITHUB_TOKEN = "\${{ secrets.GITHUB_TOKEN }}" }
+  , `with` = toMap {
+    , msg =
+      let renderAppLink = \(app : App.Type) -> "- [${app.name}](${previewUrl}/${app.deployDir}/index.html)"
+      in ''
+      Deploy previews are ready :sunglasses:
+      ${Prelude.Text.concatMapSep "\n" App.Type renderAppLink apps}
+      ''
+    }
+  }
+
+let refreshCDNSteps = [
+  , Step::{
+    , name = Some "Install gcloud"
+    , uses = Some "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+    , `with` = toMap {
+        , project_id = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+        , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
+        , export_default_credentials = "true"
+      }
+    }
+  , Step::{
+      , name = Some "Invalidate CDN cache"
+      , run = Some ''
+        gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
+      ''
+    }
+  ]
+
+let uploadSteps
+  = \(env : Env)
+  -> Prelude.List.map App.Type Step.Type (mkUploadStep env)
+
+let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 
 in
 { Step
 , Prelude
 , App
+, Env
 , setupSteps
 , buildSteps
 , uploadSteps
+, checkCIStep
+, linkPreviewsStep
+, refreshCDNSteps
 }
