@@ -48,7 +48,7 @@ apps = {
   },
   "scripts" => {
     "env_variables" => %w[]
-  }
+  },
   "podcasts" => {
     "env_variables" => %w[]
   }
