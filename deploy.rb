@@ -58,23 +58,25 @@ app_path = "./apps/#{app['deployDir']}"
 puts "Branch: #{ENV['GITHUB_REF']}"
 puts "Workflow: #{ENV['GITHUB_WORKFLOW']}"
 
-if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master' or ENV['GITHUB_WORKFLOW'] == 'production')
-  app_vars = env_variables + app['env'].keys
-  app_vars.each do |v|
-    abort("Did not find #{v} in the environment variables") if ENV[v].nil?
-  end
-
-  File.open("#{app_path}/.env.production", 'a') do |f|
+def setup_env()
+  if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master' or ENV['GITHUB_WORKFLOW'] == 'production')
+    app_vars = env_variables + app['env'].keys
     app_vars.each do |v|
-      # Strip 'PRODUCTION_' from the variable name
-      env_var_name = v.sub(/^PRODUCTION_/, '')
-      f.puts("#{env_var_name}=#{ENV[v]}")
+      abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
-  end
 
-  ENV['NODE_ENV'] = 'production'
-else
-  ENV['NODE_ENV'] = 'development'
+    File.open("#{app_path}/.env.production", 'a') do |f|
+      app_vars.each do |v|
+        # Strip 'PRODUCTION_' from the variable name
+        env_var_name = v.sub(/^PRODUCTION_/, '')
+        f.puts("#{env_var_name}=#{ENV[v]}")
+      end
+    end
+
+    ENV['NODE_ENV'] = 'production'
+  else
+    ENV['NODE_ENV'] = 'development'
+  end
 end
 
 
@@ -91,10 +93,11 @@ if maintenance == '--maintenance'
   puts 'Deploying maintenance page'
   deploy_maintenance_page(app_path)
 elsif app_name == 'scripts'
-  Dir.glob("scripts/**/*.js").each { |f|
+  Dir.glob("scripts/**/*.js").each do |f|
     `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` 
-  }
+  end
   run_command("mkdir -p #{app_path} && cp -R scripts #{app_path}/dist")
 else
+  setup_env()
   build_commands.each { |c| run_command(c) }
 end
