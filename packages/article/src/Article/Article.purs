@@ -95,7 +95,9 @@ render { props, state } =
       Left err -> mempty
       Right el -> case el of
         Html content -> DOM.p
-          { className: "ksf-article--body-element"
-          , dangerouslySetInnerHTML: { __html: content }
+          { dangerouslySetInnerHTML: { __html: content }
           }
+        Headline str -> DOM.h3_ [ DOM.text str ]
+        Image img -> DOM.img
+          { src: img.url }
         other -> DOM.p_ [ DOM.text $ show other ]
