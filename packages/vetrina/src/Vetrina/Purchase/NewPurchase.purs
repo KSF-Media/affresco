@@ -12,6 +12,7 @@ import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
 import KSF.InputField.Component as InputField
+import KSF.Products as Products
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -160,8 +161,9 @@ notes accountStatus = case accountStatus of
 
 renderProducts :: Array Product -> JSX
 renderProducts products =
-  let descriptions = map ( _.description) products
-  in fragment $ map (DOM.p_ <<< Array.singleton <<< intercalate (DOM.br {}) <<< map DOM.text) descriptions
+  Products.product { products }
+  -- let descriptions = map ( _.description) products
+  -- in fragment $ map (DOM.p_ <<< Array.singleton <<< intercalate (DOM.br {}) <<< map DOM.text) descriptions
 
 form :: Self -> JSX
 form self = DOM.form $

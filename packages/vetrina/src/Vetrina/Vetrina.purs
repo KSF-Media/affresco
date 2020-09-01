@@ -153,7 +153,7 @@ didMount self = do
         products <- liftEffect $ case self.props.products of
           Right p -> pure p
           Left err -> do
-            self.setState _ { purchaseState = PurchaseFailed $ InitializationError }
+            self.setState _ { purchaseState = PurchaseFailed InitializationError }
             logger.error err
             throwError err
 

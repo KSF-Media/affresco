@@ -151,3 +151,29 @@
     text-align: center;
     margin-bottom: 1em;
 }
+
+.vetrina--product {
+    background: @grey-light;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 5px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 60px auto;
+    grid-template-rows: 30px 30px;
+    grid-auto-flow: row;
+}
+
+.vetrina--product-radio-button {
+    grid-column: 1;
+    grid-row-start: 1;
+    grid-row-end: 3;
+}
+
+.vetrina--product-title {
+   font-weight: 400;
+}
+
+.vetrina--product-description {
+    text-align: left;
+}
