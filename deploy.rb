@@ -29,19 +29,6 @@ def run_command(command)
   return result
 end
 
-# Common env variables
-env_variables = %w[
-  PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
-  PRODUCTION_JANRAIN_SSO_SERVER
-  PRODUCTION_JANRAIN_FLOW_VERSION
-  PRODUCTION_JANRAIN_XD_RECEIVER_PATH
-  PRODUCTION_GOOGLE_CLIENT_ID
-  PRODUCTION_FACEBOOK_APP_ID
-  PRODUCTION_PERSONA_URL
-  PRODUCTION_DUELLEN_URL
-  PRODUCTION_LETTERA_URL
-]
-
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
 apps_list = JSON.parse(run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'"))
@@ -53,19 +40,32 @@ maintenance = ARGV[1]
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
 app = apps[app_name]
-app_path = "./apps/#{app['deployDir']}"
+app["path"] = "./apps/#{app['deployDir']}"
 
 puts "Branch: #{ENV['GITHUB_REF']}"
 puts "Workflow: #{ENV['GITHUB_WORKFLOW']}"
 
-def setup_env()
+def setup_env(app)
+  # Common env variables
+  env_variables = %w[
+    PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
+    PRODUCTION_JANRAIN_SSO_SERVER
+    PRODUCTION_JANRAIN_FLOW_VERSION
+    PRODUCTION_JANRAIN_XD_RECEIVER_PATH
+    PRODUCTION_GOOGLE_CLIENT_ID
+    PRODUCTION_FACEBOOK_APP_ID
+    PRODUCTION_PERSONA_URL
+    PRODUCTION_DUELLEN_URL
+    PRODUCTION_LETTERA_URL
+  ]
+
   if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master' or ENV['GITHUB_WORKFLOW'] == 'production')
     app_vars = env_variables + app['env'].keys
     app_vars.each do |v|
       abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
 
-    File.open("#{app_path}/.env.production", 'a') do |f|
+    File.open("#{app['path']}/.env.production", 'a') do |f|
       app_vars.each do |v|
         # Strip 'PRODUCTION_' from the variable name
         env_var_name = v.sub(/^PRODUCTION_/, '')
@@ -82,7 +82,7 @@ end
 
 build_commands = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd '#{app_path}/' run build"
+  "yarn --cwd '#{app['path']}/' run build"
 ]
 
 def deploy_maintenance_page(app_path)
@@ -91,13 +91,13 @@ end
 
 if maintenance == '--maintenance'
   puts 'Deploying maintenance page'
-  deploy_maintenance_page(app_path)
+  deploy_maintenance_page(app['path'])
 elsif app_name == 'scripts'
   Dir.glob("scripts/**/*.js").each do |f|
     `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` 
   end
-  run_command("mkdir -p #{app_path} && cp -R scripts #{app_path}/dist")
+  run_command("mkdir -p #{app['path']} && cp -R scripts #{app['path']}/dist")
 else
-  setup_env()
+  setup_env(app)
   build_commands.each { |c| run_command(c) }
 end
