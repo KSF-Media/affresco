@@ -49,11 +49,13 @@ let apps = [
     , HIDE_LOGIN_LINKS = "false"
     }
   }
+-- TODO: remove
 , Actions.App::{
   , name = "Prenumerera PoC"
   , buildDir = "prenumerera"
   , deployDir = "prenumerera"
   }
+-- TODO: remove
 , Actions.App::{
   , name = "Duellen"
   , buildDir = "duellen"
