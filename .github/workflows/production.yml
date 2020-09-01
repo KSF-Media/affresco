@@ -24,7 +24,7 @@ jobs:
           ruby-version: '2.6'
       - uses: "cachix/install-nix-action@v9"
       - run: |2
-            yarn install
+            yarn install --pure-lockfile
             mkdir -p build
       - name: Check CI script has been generated from Dhall
         run: |2

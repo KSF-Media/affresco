@@ -49,7 +49,7 @@ let setupSteps = [
   , Step::{ uses = Some "cachix/install-nix-action@v9" }
   , Step::{
     , run = Some ''
-      yarn install
+      yarn install --pure-lockfile
       mkdir -p build
     ''
   }
