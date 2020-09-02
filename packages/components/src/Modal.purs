@@ -9,7 +9,7 @@ data Visibility = Visible | Hidden
 type Self = React.Self Props {}
 
 type Props =
-  { visibility :: Visibility
+  { content :: JSX
   }
 
 component :: React.Component Props
@@ -25,4 +25,5 @@ render :: Self -> JSX
 render { props } =
   DOM.div
     { className: "modal--container"
+    , children: [ props.content ]
     }
