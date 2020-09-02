@@ -6,7 +6,8 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Generic.Rep.Show (genericShow)
 import Data.Either (Either(..))
-import Data.Nullable (Nullable)
+import Data.Nullable (Nullable, toMaybe)
+import Data.Foldable (fold)
 import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -66,6 +67,21 @@ article props = React.make
   { initialState: { body: map Record.toSum props.article.body }, render }
   props
 
+renderImage :: Image -> JSX
+renderImage img =
+  DOM.div
+    { className: "ksf-article--image"
+    , children: [
+      DOM.img
+        { src: img.url
+        , title: caption }
+      , DOM.div { className: "caption", children:
+        [ DOM.text caption
+        , DOM.span { className: "byline", children: [ DOM.text byline ] } ] }
+    ] }
+      where
+        caption = fold $ toMaybe img.caption
+        byline = fold $ toMaybe img.byline
 
 render :: Self -> JSX
 render { props, state } =
@@ -76,11 +92,7 @@ render { props, state } =
         { className: "ksf-article--title"
         , children: [ DOM.text props.article.title ]
         }
-      , DOM.div
-        { className: "ksf-article--image"
-        , children: [
-          DOM.img { src: props.article.mainImage.url }
-          ]  }
+      , renderImage props.article.mainImage
       , DOM.div
         { className: "ksf-article--body"
         , children: map renderElement state.body
@@ -98,6 +110,8 @@ render { props, state } =
           { dangerouslySetInnerHTML: { __html: content }
           }
         Headline str -> DOM.h3_ [ DOM.text str ]
-        Image img -> DOM.img
-          { src: img.url }
+        Image img -> DOM.div
+          { className: "ksf-article--image"
+          , children: [ renderImage img ]
+          }
         other -> DOM.p_ [ DOM.text $ show other ]
