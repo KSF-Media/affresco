@@ -8,7 +8,9 @@ var Main = require('./output/Article/index.js');
 
 function main() {
 
-  fetch("https://lettera.api.ksfmedia.fi/v2/article/24f942aa-a4e7-4d18-92c6-0137b0a22309?textonly=false")
+  const articleUuid = location.hash.replace("#", "");
+
+  fetch(`https://lettera.api.ksfmedia.fi/v2/article/${articleUuid}?textonly=false`)
     .then(resp => resp.json())
     .then(json => {
       const myComponent = (
