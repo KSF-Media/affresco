@@ -48,7 +48,11 @@ data BodyElement
 derive instance bodyElementGeneric :: Generic BodyElement _
 instance bodyElementShow :: Show BodyElement where show = genericShow
 
-type BoxInfo = {}
+type BoxInfo =
+  { title :: Nullable String
+  , headline :: Nullable String
+  , content :: Array String
+  }
 
 type Image =
   { url       :: String
@@ -83,6 +87,23 @@ renderImage img =
         caption = fold $ toMaybe img.caption
         byline = fold $ toMaybe img.byline
 
+renderBoxInfo :: BoxInfo -> JSX
+renderBoxInfo box =
+  DOM.div
+    { className: "ksf-article--boxinfo"
+    , children:
+      [ DOM.h3_ [ DOM.text headline ]
+      , DOM.h2_ [ DOM.text title ]
+      , DOM.div
+        { className: "boxinfo--body"
+        , children: boxBody
+        }
+    ] }
+    where
+      headline = fold $ toMaybe box.headline
+      title = fold $ toMaybe box.title
+      boxBody = map (\p -> DOM.p_ [ DOM.text p ]) box.content
+
 render :: Self -> JSX
 render { props, state } =
   DOM.div
@@ -110,8 +131,6 @@ render { props, state } =
           { dangerouslySetInnerHTML: { __html: content }
           }
         Headline str -> DOM.h3_ [ DOM.text str ]
-        Image img -> DOM.div
-          { className: "ksf-article--image"
-          , children: [ renderImage img ]
-          }
+        Image img -> renderImage img
+        Box box -> renderBoxInfo box
         other -> DOM.p_ [ DOM.text $ show other ]
