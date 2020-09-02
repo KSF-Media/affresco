@@ -11,6 +11,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV)
 import Effect (Effect)
+import Effect.Class.Console as Console
 import KSF.InputField.Component as InputField
 import KSF.Products as Products
 import KSF.User (PaymentMethod, User)
@@ -136,8 +137,8 @@ render self =
        { className: "vetrina--description-text"
        , children: [ description self.state.accountStatus ]
        }
-  <> renderProducts self.props.products
-  <> notes self.state.accountStatus
+-- <> renderProducts self.props.products
+--  <> notes self.state.accountStatus
   <> form self
   <> links self
 
@@ -159,11 +160,13 @@ notes accountStatus = case accountStatus of
     LoggedInAccount _ -> DOM.p_ [ DOM.text "Klicka på \"Beställ\" här nedan för att läsa artikeln." ]
     _                 -> mempty
 
-renderProducts :: Array Product -> JSX
-renderProducts products =
-  Products.product { products }
-  -- let descriptions = map ( _.description) products
-  -- in fragment $ map (DOM.p_ <<< Array.singleton <<< intercalate (DOM.br {}) <<< map DOM.text) descriptions
+renderProducts :: Self -> JSX
+renderProducts self =
+  Products.product
+    { products: self.props.products
+    , onProductChange: \p -> self.setState _ { productSelection = Just p }
+    , selectedProduct: self.state.productSelection
+    }
 
 form :: Self -> JSX
 form self = DOM.form $
@@ -172,7 +175,11 @@ form self = DOM.form $
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
-  , children: self.state.errorMessage `cons` (emailInput self self.state.accountStatus `cons` children)
+  , children:
+      [ self.state.errorMessage
+      , renderProducts self
+      , emailInput self self.state.accountStatus
+      ] <> children
   }
   where
     onSubmit = handler preventDefault $ case self.state.accountStatus of
@@ -288,12 +295,20 @@ formatErrorMessage message = InputField.errorMessage message
 
 emailInput :: Self -> AccountStatus -> JSX
 emailInput _ (LoggedInAccount _) = mempty
-emailInput self _ =
+emailInput self accountStatus =
   let emailValue = self.state.existingAccountForm.emailAddress <|> self.state.newAccountForm.emailAddress
   in DOM.div
-     { className: "vetrina--input-wrapper"
+     { className: "vetrina--input-wrapper vetrina--with-label"
      , children:
-         [ InputField.inputField
+         [ case accountStatus of
+              NewAccount ->
+                DOM.label
+                  { className: "vetrina--email-address-label"
+                  , htmlFor: "emailAddress"
+                  , children: [ DOM.text "Börja med att fylla i din e-post." ]
+                  }
+              _ -> mempty
+         , InputField.inputField
              { type_: InputField.Email
              , label: Nothing
              , name: "emailAddress"

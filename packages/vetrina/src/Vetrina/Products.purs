@@ -4,15 +4,20 @@ import Prelude
 
 import Data.Array (intercalate)
 import Data.Array as Array
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
 import React.Basic (JSX, fragment, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
 import Vetrina.Types (Product)
 
 type Self = React.Self Props State
 type State = {}
 type Props =
-  { products :: Array Product
+  { products        :: Array Product
+  , onProductChange :: Product -> Effect Unit
+  , selectedProduct :: Maybe Product
   }
 
 component :: React.Component Props
@@ -30,18 +35,32 @@ render self = DOM.div_ $ map renderProduct self.props.products
     renderProduct p =
       DOM.div
         { className: "vetrina--product"
-        , children: [ DOM.div
+        , onClick: handler_ (self.props.onProductChange p)
+        , children: [ DOM.input
                         { className: "vetrina--product-radio-button"
-                        , children: [ DOM.text "RADIO!" ]
+                        , type: "radio"
+                        , name: "product"
+                        , onChange: handler_ (self.props.onProductChange p)
+                        , checked: case self.props.selectedProduct of
+                          Just selectedProduct
+                            | selectedProduct == p -> true
+                            | otherwise -> false
+                          Nothing -> false
                         }
-                    , DOM.div
-                        { className: "vetrina--product-title"
-                        , children: [ DOM.text p.id ]
+                    , DOM.label
+                        { htmlFor: "product"
+                        , children:
+                            [ DOM.div
+                                { className: "vetrina--product-title"
+                                , children: [ DOM.text p.id ]
+                                }
+                            , DOM.div
+                              { className: "vetrina--product-description"
+                              , children: [ showProductDescription p.description ]
+                              }
+                            ]
                         }
-                    , DOM.div
-                        { className: "vetrina--product-description"
-                        , children: [ showProductDescription p.description ]
-                        }
+                    
                     ]
         }
 
