@@ -102,7 +102,7 @@ renderBoxInfo box =
     where
       headline = fold $ toMaybe box.headline
       title = fold $ toMaybe box.title
-      boxBody = map (\p -> DOM.p_ [ DOM.text p ]) box.content
+      boxBody = map (\p -> DOM.p { dangerouslySetInnerHTML: { __html: p } }) box.content
 
 render :: Self -> JSX
 render { props, state } =
