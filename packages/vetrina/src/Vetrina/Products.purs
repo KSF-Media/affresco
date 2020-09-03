@@ -33,34 +33,29 @@ render :: Self -> JSX
 render self = DOM.div_ $ map renderProduct self.props.products
   where
     renderProduct p =
-      DOM.div
+      DOM.label
         { className: "vetrina--product"
         , onClick: handler_ (self.props.onProductChange p)
         , children: [ DOM.input
-                        { className: "vetrina--product-radio-button"
-                        , type: "radio"
-                        , name: "product"
+                        { type: "radio"
+                        , name: "vetrina-product-selection"
                         , onChange: handler_ (self.props.onProductChange p)
-                        , checked: case self.props.selectedProduct of
-                          Just selectedProduct
-                            | selectedProduct == p -> true
-                            | otherwise -> false
-                          Nothing -> false
                         }
-                    , DOM.label
-                        { htmlFor: "product"
+                    , DOM.div
+                        { className: "vetrina--product-radio-button"
                         , children:
-                            [ DOM.div
-                                { className: "vetrina--product-title"
-                                , children: [ DOM.text p.id ]
-                                }
-                            , DOM.div
-                              { className: "vetrina--product-description"
-                              , children: [ showProductDescription p.description ]
-                              }
-                            ]
+                            [ DOM.div { className: "vetrina--product-radio-button_checked" } ]
                         }
-                    
+                    , DOM.div_
+                        [ DOM.div
+                            { className: "vetrina--product-title"
+                            , children: [ DOM.text p.id ]
+                            }
+                        , DOM.div
+                            { className: "vetrina--product-description"
+                            , children: [ showProductDescription p.description ]
+                            }
+                        ]
                     ]
         }
 

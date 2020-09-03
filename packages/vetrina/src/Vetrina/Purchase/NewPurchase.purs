@@ -137,8 +137,7 @@ render self =
        { className: "vetrina--description-text"
        , children: [ description self.state.accountStatus ]
        }
--- <> renderProducts self.props.products
---  <> notes self.state.accountStatus
+  <> notes self.state.accountStatus
   <> form self
   <> links self
 
@@ -156,7 +155,6 @@ description accountStatus = case accountStatus of
 
 notes :: AccountStatus -> JSX
 notes accountStatus = case accountStatus of
-    NewAccount        -> DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
     LoggedInAccount _ -> DOM.p_ [ DOM.text "Klicka på \"Beställ\" här nedan för att läsa artikeln." ]
     _                 -> mempty
 
