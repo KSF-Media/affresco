@@ -407,7 +407,8 @@ existingAccountFormValidations self =
   <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
 
 loggedInAccountFormValidations :: Self -> Form.ValidatedForm FormInputField { | PurchaseParameters }
-loggedInAccountFormValidations self = pure
-  { productSelection: self.state.productSelection
+loggedInAccountFormValidations self =
+  { productSelection: _
   , paymentMethod: self.state.paymentMethod
   }
+  <$> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
