@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Array (intercalate)
 import Data.Array as Array
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -40,6 +40,7 @@ render self = DOM.div_ $ map renderProduct self.props.products
                         { type: "radio"
                         , name: "vetrina-product-selection"
                         , onChange: handler_ (self.props.onProductChange p)
+                        , checked: Just p == self.props.selectedProduct
                         }
                     , DOM.div
                         { className: "vetrina--product-radio-button"

@@ -12,6 +12,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
+import Effect.Class.Console as Console
 import KSF.InputField.Component as InputField
 import KSF.Products as Products
 import KSF.User (PaymentMethod, User)
@@ -122,7 +123,12 @@ didMount self = do
           _                     -> Nothing
   self.setState _ { accountStatus = self.props.accountStatus
                   , paymentMethod = Just self.props.paymentMethod
-                  , productSelection = Nothing
+                  , productSelection =
+                      -- If we only have one product to select from,
+                      -- let's pre-select it
+                      case self.props.products of
+                        [ singleProduct ] -> Just singleProduct
+                        _                 -> Nothing
                   , existingAccountForm { emailAddress = maybeExistingUserEmail }
                   }
 
