@@ -25,7 +25,7 @@
   "scripts": {
     "start": "parcel ./src/index.html --https",
     "prebuild": "yarn install",
-    "build": "parcel build ./src/index.html --public-url",
+    "build": "parcel build ./src/index.html --public-url ./",
     "postbuild": "netlify-lambda build functions",
     "lambda-serve": "netlify-lambda serve functions",
     "lambda-build": "netlify-lambda build functions"
