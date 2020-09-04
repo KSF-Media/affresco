@@ -3,22 +3,22 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, cons, intercalate)
+import Data.Array (all, cons)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
+import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
-import Data.Validation.Semigroup (toEither, unV)
+import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
-import Effect.Class.Console as Console
 import KSF.InputField.Component as InputField
 import KSF.Products as Products
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
-import React.Basic (JSX, fragment, make)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -51,7 +51,6 @@ type Props =
   , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
   , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
   , paymentMethod                 :: PaymentMethod
-  , productSelection              :: Maybe Product
   , onLogin                       :: Effect Unit
   }
 
@@ -66,7 +65,12 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInput
   validateField field value serverErrors = case field of
     EmailAddress     -> Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
     Password         -> Form.validateEmptyField Password "Lösenord krävs." value
-    ProductSelection -> Form.noValidation value
+    ProductSelection ->
+      -- As `validateField` works currently only with `Maybe Strings`, we need to manually
+      -- check the value here (for now). The `value` passed here is maybe the productSelection.id
+      if isNothing value
+      then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "yolo"))
+      else pure $ Just mempty
     PaymentMethod    -> Form.noValidation value
 
 type PurchaseParameters =
@@ -118,7 +122,7 @@ didMount self = do
           _                     -> Nothing
   self.setState _ { accountStatus = self.props.accountStatus
                   , paymentMethod = Just self.props.paymentMethod
-                  , productSelection = self.props.productSelection
+                  , productSelection = Nothing
                   , existingAccountForm { emailAddress = maybeExistingUserEmail }
                   }
 
@@ -382,23 +386,25 @@ acceptTermsCheckbox =
 newAccountFormValidations :: Self -> Form.ValidatedForm FormInputField NewAccountForm
 newAccountFormValidations self =
   { emailAddress: _
-  -- TODO: Validate this and show error message. We are checking this on server side and with
-  -- default browser validation. However, a custom JS validation is missing.
+  , productSelection: _
+    -- TODO: Validate this and show error message. We are checking this on server side and with
+    -- default browser validation. However, a custom JS validation is missing.
   , acceptLegalTerms: self.state.newAccountForm.acceptLegalTerms
-  , productSelection: self.state.productSelection
   , paymentMethod: self.state.paymentMethod
   }
   <$> Form.validateField EmailAddress self.state.newAccountForm.emailAddress []
+  <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
 
 existingAccountFormValidations :: Self -> Form.ValidatedForm FormInputField ExistingAccountForm
 existingAccountFormValidations self =
   { emailAddress: _
   , password: _
-  , productSelection: self.state.productSelection
+  , productSelection: _
   , paymentMethod: self.state.paymentMethod
   }
   <$> Form.validateField EmailAddress self.state.existingAccountForm.emailAddress []
   <*> Form.validateField Password self.state.existingAccountForm.password []
+  <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
 
 loggedInAccountFormValidations :: Self -> Form.ValidatedForm FormInputField { | PurchaseParameters }
 loggedInAccountFormValidations self = pure

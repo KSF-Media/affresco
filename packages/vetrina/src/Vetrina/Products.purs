@@ -4,9 +4,9 @@ import Prelude
 
 import Data.Array (intercalate)
 import Data.Array as Array
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import Effect (Effect)
-import React.Basic (JSX, fragment, make)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
