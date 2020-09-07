@@ -15,12 +15,14 @@ type Product =
   { id          :: String
   , description :: Array String
   , priceCents  :: Int
+  , campaignNo  :: Maybe Int
   }
 
 type JSProduct =
   { id          :: Nullable String
   , description :: Nullable (Array String)
   , priceCents  :: Nullable Int
+  , campaignNo  :: Nullable Int
   }
 
 fromJSProduct :: JSProduct -> Maybe Product
@@ -28,4 +30,5 @@ fromJSProduct jsProduct = do
   id          <- toMaybe jsProduct.id
   description <- toMaybe jsProduct.description
   priceCents  <- toMaybe jsProduct.priceCents
-  pure { id, description, priceCents }
+  let campaignNo = toMaybe jsProduct.campaignNo
+  pure { id, description, priceCents, campaignNo }

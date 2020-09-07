@@ -107,6 +107,7 @@ type NewOrder =
   { packageId      :: String
   , period         :: Int
   , payAmountCents :: Int
+  , campaignNo     :: Maybe Int
   }
 
 data PaymentMethod = CreditCard
