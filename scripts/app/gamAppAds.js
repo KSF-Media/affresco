@@ -64,6 +64,7 @@ var ksfDfp = {};
         // this var is available in KSF sites
         ksfDfp.site = "app"; // there is only one site in the app
         googletag.pubads().setTargeting('newspaper', ksfDfp.site);
+        googletag.pubads().setTargeting('consent', 1);
 
         ksfDfp.allPageSlots = [];
         // the order of sizes should be the same as in dfp:s ad unit definition

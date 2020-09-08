@@ -377,7 +377,7 @@ componentWillUnmount() {
     It will not place slots in articles with less than 4 paragraphs. If no good paragraphs are found, the slots are placed after the text. It will allow <b>, <a href> and <i> within paragraphs. Other tags will disqualify that paragraph. Note that this function will call the main ads script on completion. This should prevent timing issues, no ads are loaded till all paragraphs are rolled out and inspected.
     The script depends on the article text residing in an element with the id 'content'. */
     positionAdsWithinArticle() {
-        let textParagrapNum = 0; // incremental number of text paragraphs
+        let textParagraphNum = 0; // incremental number of text paragraphs
         let textParagraphsOK = []; // storage for list of good paragraphs. We will use this array to find good spots for our slots.
         let textParagraphCount = 0; // count of paragraph array groups
         let slotOne = '<div id="DIGIHELMOB"></div>';
@@ -403,10 +403,10 @@ componentWillUnmount() {
                                 }
                             }
                         }
-                                        textParagrapNum++;
-                                        if (OK && textParagrapNum > 3) {
+                                        textParagraphNum++;
+                                        if (OK && textParagraphNum > 3) {
                                             // We are far enough from the beginning and the previous para was text, as is this and text is long enough. Good! We approve the paragraph for ads 
-                                            textParagraphsOK[textParagraphCount].push(textParagrapNum);
+                                            textParagraphsOK[textParagraphCount].push(textParagraphNum);
                                         } else {
                                             textParagraphCount++;
                                             textParagraphsOK.push([]);
