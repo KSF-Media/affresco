@@ -90,7 +90,7 @@ renderImage img =
 renderBoxInfo :: BoxInfo -> JSX
 renderBoxInfo box =
   DOM.div
-    { className: "ksf-article--boxinfo"
+    { className: "ksf-article--boxinfo genericBox genericBox-border-hbl"
     , children:
       [ DOM.h3_ [ DOM.text headline ]
       , DOM.h2_ [ DOM.text title ]
@@ -110,7 +110,7 @@ render { props, state } =
     { className: "ksf-article"
     , children: [
       DOM.h1
-        { className: "ksf-article--title"
+        { className: "ksf-article--title title"
         , children: [ DOM.text props.article.title ]
         }
       , renderImage props.article.mainImage
@@ -127,10 +127,14 @@ render { props, state } =
     renderElement = case _ of
       Left err -> mempty
       Right el -> case el of
-        Html content -> DOM.p
+        Html content -> DOM.div
           { dangerouslySetInnerHTML: { __html: content }
+          , className: "html"
           }
-        Headline str -> DOM.h3_ [ DOM.text str ]
+        Headline str -> DOM.h4
+          { className: "headline"
+          , children: [ DOM.text str ]
+          }
         Image img -> renderImage img
         Box box -> renderBoxInfo box
         other -> DOM.p_ [ DOM.text $ show other ]

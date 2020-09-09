@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import '../../apps/app-article/src/index.css'
+
 // yup, welcome to react 16
 import createReactClass from 'create-react-class';
 React.createClass = createReactClass;
