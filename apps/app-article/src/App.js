@@ -575,7 +575,7 @@ componentWillUnmount() {
                 {/*<div id="MOBMITT"></div>*/}
 
                 <div id="DIGIHELMOB"></div>
-                <Footer/>
+                <Footer brandValueName={getBrandValueParam()}/>
             </div>
         );
     }
