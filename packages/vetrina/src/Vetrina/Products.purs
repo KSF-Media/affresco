@@ -1,10 +1,10 @@
-module KSF.Products where
+module Vetrina.Products where
 
 import Prelude
 
 import Data.Array (intercalate)
 import Data.Array as Array
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe, maybe)
 import Effect (Effect)
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -35,12 +35,12 @@ render self = DOM.div_ $ map renderProduct self.props.products
     renderProduct p =
       DOM.label
         { className: "vetrina--product"
-        , onClick: handler_ (self.props.onProductChange p)
-        , children: [ DOM.input
+        , children: [ DOM.input $
                         { type: "radio"
                         , name: "vetrina-product-selection"
                         , onChange: handler_ (self.props.onProductChange p)
-                        , checked: Just p == self.props.selectedProduct
+                        , checked: maybe false (eq p.id <<< _.id) self.props.selectedProduct
+                        , value: p.id
                         }
                     , DOM.div
                         { className: "vetrina--product-radio-button"

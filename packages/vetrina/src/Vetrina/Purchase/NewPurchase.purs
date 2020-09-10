@@ -12,9 +12,8 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
-import Effect.Class.Console as Console
 import KSF.InputField.Component as InputField
-import KSF.Products as Products
+import Vetrina.Products as Products
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
