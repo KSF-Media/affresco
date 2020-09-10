@@ -30,7 +30,11 @@ product = make component
   }
 
 render :: Self -> JSX
-render self = DOM.div_ $ map renderProduct self.props.products
+render self =
+  DOM.div
+    { className: "products--container"
+    , children:  map renderProduct self.props.products
+    }
   where
     renderProduct p =
       DOM.label
