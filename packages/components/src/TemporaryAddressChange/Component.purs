@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import Data.Validation.Semigroup (unV)
@@ -19,6 +19,7 @@ import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
+import KSF.InputSelect.Component as InputSelect
 import KSF.User as User
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
@@ -29,14 +30,15 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
 
 type State =
-  { startDate     :: Maybe DateTime
-  , minStartDate  :: Maybe DateTime
-  , endDate       :: Maybe DateTime
-  , minEndDate    :: Maybe DateTime
-  , streetAddress :: Maybe String
-  , zipCode       :: Maybe String
-  , countryCode   :: Maybe String
-  , temporaryName :: Maybe String
+  { startDate      :: Maybe DateTime
+  , minStartDate   :: Maybe DateTime
+  , endDate        :: Maybe DateTime
+  , minEndDate     :: Maybe DateTime
+  , streetAddress  :: Maybe String
+  , zipCode        :: Maybe String
+  , countryCode    :: Maybe String
+  , temporaryName  :: Maybe String
+  , perpetualCheck :: Maybe Boolean
   }
 
 type Self = React.Self Props State
@@ -87,6 +89,7 @@ initialState =
   , zipCode: Nothing
   , countryCode: Just "FI"
   , temporaryName: Nothing
+  , perpetualCheck: Nothing
   }
 
 component :: React.Component Props
@@ -108,7 +111,7 @@ didMount self = do
   self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, perpetualCheck }} =
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
@@ -131,7 +134,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, countryCode, temporaryName })
           , children:
-              [ startDayInput
+              [ DOM.div { children: [ startDayInput, perpetualCheckbox ] }
               , endDayInput
               , addressInput
               , zipInput
@@ -160,6 +163,17 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , label: "Börjar från"
         }
 
+    perpetualCheckbox =
+      InputSelect.inputSelect
+        { type_: InputSelect.Checkbox
+        , name: "herp"
+        , value: Nothing
+        , checked: Nothing
+        , onChange: \checked -> self.setState _ { perpetualCheck = checked }
+        , label: Just "Tillsvidare"
+        , required: Nothing
+        }
+
     endDayInput =
       dateInput
         self
@@ -167,7 +181,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: Nothing
-        , disabled: isNothing self.state.startDate
+        , disabled: isNothing self.state.startDate || fromMaybe false self.state.perpetualCheck
         , label: "Avslutas"
         }
 
@@ -233,7 +247,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           }
 
     submitForm :: Maybe DateTime -> Maybe DateTime -> AddressChange -> Effect Unit
-    submitForm (Just startDate') (Just endDate') addressChangeFormValues = do
+    submitForm (Just startDate') endDate' addressChangeFormValues = do
       Aff.launchAff_ do
         unV
           -- Shows validation errors if submit button is pushed with uninitialized values
