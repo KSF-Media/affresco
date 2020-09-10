@@ -69,7 +69,7 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInput
       -- As `validateField` works currently only with `Maybe Strings`, we need to manually
       -- check the value here (for now). The `value` passed here is maybe the productSelection.id
       if isNothing value
-      then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "yolo"))
+      then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "")) -- TODO: Do we need an error message here?
       else pure $ Just mempty
     PaymentMethod    -> Form.noValidation value
 
