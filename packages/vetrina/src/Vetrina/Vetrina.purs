@@ -157,9 +157,6 @@ didMount self = do
             throwError err
 
         liftEffect $ self.setState _ { products = products }
-        -- If there is only one product given, automatically select that for the customer
-        when (length products == 1) $
-          liftEffect $ self.setState _ { productSelection = head products }
 
 tryMagicLogin :: Self -> Aff Unit
 tryMagicLogin self =
@@ -245,6 +242,7 @@ render self = vetrinaContainer self $
         , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
         , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
         , paymentMethod: self.state.paymentMethod
+        , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
         }
     CapturePayment url -> netsTerminalIframe url
@@ -263,6 +261,7 @@ render self = vetrinaContainer self $
             , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
             , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
             , paymentMethod: self.state.paymentMethod
+            , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
             }
         ServerError ->
@@ -375,6 +374,9 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
       let errState = { user: hush eitherUser } `merge` case err of
             emailInUse@(EmailInUse email) -> self.state { accountStatus = ExistingAccount email
                                                         , purchaseState = NewPurchase
+                                                        -- Let's keep the selected product even when
+                                                        -- asking for the password
+                                                        , productSelection = validForm.productSelection
                                                         }
             SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
             AuthenticationError           -> self.state { purchaseState = PurchaseFailed AuthenticationError }

@@ -123,7 +123,9 @@ didMount self = do
   self.setState _ { accountStatus = self.props.accountStatus
                   , paymentMethod = Just self.props.paymentMethod
                   , productSelection =
-                      -- If we only have one product to select from,
+                      -- If there's already a selected product, pick that
+                      self.props.productSelection <|>
+                      -- Or, if not and we only have one product to select from,
                       -- let's pre-select it
                       case self.props.products of
                         [ singleProduct ] -> Just singleProduct
