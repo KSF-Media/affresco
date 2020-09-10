@@ -5,6 +5,7 @@ import Prelude
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
 import KSF.User as User
+import React.Basic (JSX)
 
 data AccountStatus
   = NewAccount
@@ -13,14 +14,14 @@ data AccountStatus
 
 type Product =
   { id          :: String
-  , description :: Array String
+  , description :: JSX
   , priceCents  :: Int
   , campaignNo  :: Maybe Int
   }
 
 type JSProduct =
   { id          :: Nullable String
-  , description :: Nullable (Array String)
+  , description :: Nullable JSX
   , priceCents  :: Nullable Int
   , campaignNo  :: Nullable Int
   }

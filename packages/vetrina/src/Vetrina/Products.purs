@@ -2,8 +2,6 @@ module Vetrina.Products where
 
 import Prelude
 
-import Data.Array (intercalate)
-import Data.Array as Array
 import Data.Maybe (Maybe, maybe)
 import Effect (Effect)
 import React.Basic (JSX, make)
@@ -58,11 +56,8 @@ render self =
                             }
                         , DOM.div
                             { className: "vetrina--product-description"
-                            , children: [ showProductDescription p.description ]
+                            , children: [ p.description ]
                             }
                         ]
                     ]
         }
-
-    showProductDescription :: Array String -> JSX
-    showProductDescription = DOM.div_ <<< Array.singleton <<< intercalate (DOM.br {}) <<< map DOM.text
