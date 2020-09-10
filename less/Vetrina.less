@@ -71,7 +71,7 @@
 	&:hover { background-color: grey }
 	cursor: auto;
     }
-    &:hover { background-color: #00b9c4 }
+    &:hover { background-color: @brand-neutral }
     &:only-child {
 	margin: 0;
     }
@@ -80,7 +80,7 @@
     font-size: 16px;
     line-height: 16px;
     letter-spacing: 0.015em;
-    background: #00a1ab;
+    background: @brand-neutral;
     color: @white;
     width: 100%;
     border: none;
@@ -101,19 +101,19 @@
 }
 
 .vetrina--link {
-  color: #00a1ab;
+  color: @brand-neutral;
   outline: 0;
   text-decoration: none;
 }
 
 .vetrina--login-callback {
-  color: #00a1ab;
+  color: @brand-neutral;
   cursor: pointer;
 }
 
 .vetrina-purchase-completed--submit-password {
     &:disabled { background: grey }
-    background: #00a1ab;
+    background: @brand-neutral;
     color: @white;
     width: 100%;
     border: none;
@@ -197,7 +197,7 @@
 }
 
 .vetrina--product input:checked ~ .vetrina--product-radio-button {
-    background-color: @hbl-orange;
+    background-color: @brand-neutral;
 }
 
 .vetrina--product-radio-button:after {
