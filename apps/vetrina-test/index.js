@@ -8,7 +8,7 @@ var Main = require('./output/VetrinaTest.Main/index.js');
 
 function main() {
   const myComponent = (
-	  <Main.app products={[hblPremium, hbl365]}/>
+	  <Main.app products={[hblPremium, hbl365]} accessEntitlements={["hbl-365", "articles-365"]}/>
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));

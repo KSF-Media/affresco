@@ -4,30 +4,31 @@ import Prelude
 
 import Data.Array (mapMaybe)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Set as Set
-import Effect (Effect)
-import Effect.Console (log)
-import Effect.Exception (Error)
 import KSF.Vetrina as Vetrina
 import React.Basic (JSX, make)
 import React.Basic as React
-import React.Basic.DOM as DOM
 import Vetrina.Types (JSProduct, Product, fromJSProduct)
 
-type JSProps = { products :: Nullable (Array JSProduct) }
-type Props = { products :: Array Product }
+type JSProps =
+  { products :: Nullable (Array JSProduct)
+  , accessEntitlements :: Nullable (Array String)
+  }
+type Props =
+  { products :: Array Product
+  , accessEntitlements :: Array String
+  }
 type State = { }
 type Self = React.Self Props State
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
-  { products: case toMaybe jsProps.products of
-       Just jsProducts -> mapMaybe fromJSProduct jsProducts
-       Nothing -> []
-                        
+  { products: maybe [] (mapMaybe fromJSProduct) $ toMaybe jsProps.products
+  , accessEntitlements: fromMaybe [] $ toMaybe jsProps.accessEntitlements
   }
+
 jsComponent :: React.ReactComponent JSProps
 jsComponent = React.toReactComponent fromJSProps component { initialState:   {}, render }
 
@@ -47,5 +48,5 @@ render self =
     , onLogin: pure unit
     , products: Right self.props.products
     , unexpectedError: mempty
-    , accessEntitlements: Set.empty
-    } 
+    , accessEntitlements: Set.fromFoldable self.props.accessEntitlements
+    }
