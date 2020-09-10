@@ -13,7 +13,6 @@ import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
 import KSF.InputField.Component as InputField
-import Vetrina.Products as Products
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -23,6 +22,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import Vetrina.Products as Products
 import Vetrina.Types (AccountStatus(..), Product)
 
 type Self = React.Self Props State
@@ -51,6 +51,7 @@ type Props =
   , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
   , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
   , paymentMethod                 :: PaymentMethod
+  , productSelection              :: Maybe Product
   , onLogin                       :: Effect Unit
   }
 
