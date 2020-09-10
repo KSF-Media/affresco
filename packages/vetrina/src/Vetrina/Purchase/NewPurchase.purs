@@ -184,12 +184,19 @@ form self = DOM.form $
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
   , children:
-      [ self.state.errorMessage
-      , renderProducts self
+      [ -- Don't show the product selection if we are asking the user to login
+        if not isExistingAccount self.state.accountStatus
+           || isNothing self.state.productSelection
+        then renderProducts self
+        else mempty
+      , self.state.errorMessage
       , emailInput self self.state.accountStatus
       ] <> children
   }
   where
+    isExistingAccount (ExistingAccount _) = true
+    isExistingAccount _ = false
+
     onSubmit = handler preventDefault $ case self.state.accountStatus of
       NewAccount ->
         (\_ -> unV
