@@ -618,7 +618,7 @@ if (window.ksfDfp) {
                 </div>
                 {/*<div id="MOBMITT"></div>*/}
 
-                <Footer/>
+                <Footer brandValueName={getBrandValueParam()}/>
             </div>
         );
     }
