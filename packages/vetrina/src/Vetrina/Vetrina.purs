@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
-import Data.Array (head, length, mapMaybe, null)
+import Data.Array (mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
 import Data.JSDate as JSDate
