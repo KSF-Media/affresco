@@ -149,7 +149,6 @@ render self =
        { className: "vetrina--description-text"
        , children: [ description self.state.accountStatus ]
        }
-  <> notes self.state.accountStatus
   <> form self
   <> links self
 
@@ -165,13 +164,12 @@ description accountStatus = case accountStatus of
   ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
   LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
 
-notes :: AccountStatus -> JSX
-notes accountStatus = case accountStatus of
-    LoggedInAccount _ -> DOM.p_ [ DOM.text "Klicka på \"Beställ\" här nedan för att läsa artikeln." ]
-    _                 -> mempty
-
 renderProducts :: Self -> JSX
 renderProducts self =
+  DOM.div
+    { className: "vetrina--product-selection-text"
+    , children: [ DOM.text "För att läsa artikeln måste du först välja en prenumeration:" ]
+    } <>
   Products.product
     { products: self.props.products
     , onProductChange: \p -> self.setState _ { productSelection = Just p }
@@ -315,7 +313,7 @@ emailInput self accountStatus =
                 DOM.label
                   { className: "vetrina--email-address-label"
                   , htmlFor: "emailAddress"
-                  , children: [ DOM.text "Börja med att fylla i din e-post." ]
+                  , children: [ DOM.text "Fyll sen i din e-post:" ]
                   }
               _ -> mempty
          , InputField.inputField
