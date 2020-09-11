@@ -20,7 +20,7 @@ type Props =
   , name            :: String
   , value           :: Maybe String
   , checked         :: Boolean
-  , onChange        :: Maybe Boolean -> Effect Unit
+  , onChange        :: Boolean -> Effect Unit
   , label           :: Maybe String
   , required        :: Boolean
   }
@@ -59,7 +59,7 @@ render self@{ props, state } =
             , value: fromMaybe "" props.value
             , onChange: handler targetChecked \maybeNewVal -> do
                 self.setState _ { checked = fromMaybe false maybeNewVal }
-                props.onChange maybeNewVal
+                props.onChange $ fromMaybe false maybeNewVal
             }
         ]
     }

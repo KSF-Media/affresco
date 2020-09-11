@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
-import Data.Maybe (Maybe(..), isNothing, fromMaybe)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import Data.Validation.Semigroup (unV)
@@ -38,7 +38,7 @@ type State =
   , zipCode        :: Maybe String
   , countryCode    :: Maybe String
   , temporaryName  :: Maybe String
-  , isIndefinite   :: Maybe Boolean
+  , isIndefinite   :: Boolean
   }
 
 type Self = React.Self Props State
@@ -89,7 +89,7 @@ initialState =
   , zipCode: Nothing
   , countryCode: Just "FI"
   , temporaryName: Nothing
-  , isIndefinite: Just false
+  , isIndefinite: false
   }
 
 component :: React.Component Props
@@ -181,7 +181,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: Nothing
-        , disabled: isNothing self.state.startDate || fromMaybe false self.state.isIndefinite
+        , disabled: isNothing self.state.startDate || self.state.isIndefinite
         , label: "Avslutas"
         }
 
