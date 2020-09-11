@@ -142,6 +142,25 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
   where
     authorization = oauthToken token
 
+deleteTemporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Token
+  -> Aff Subscription
+deleteTemporaryAddressChange uuid subsno startDate endDate token = do
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO  }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
 createDeliveryReclamation
   :: UUID
   -> Int

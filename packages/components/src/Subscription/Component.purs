@@ -6,7 +6,7 @@ import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Foldable (foldMap, for_)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable, intercalate)
@@ -187,6 +187,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               then mempty
               else removeSubscriptionPauses
             , temporaryAddressChangeIcon
+            , if maybe true Array.null self.state.pendingAddressChanges
+              then mempty
+              else removeTempAddressChanges
             , deliveryReclamationIcon
             ]
 
@@ -382,7 +385,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                 , children:
                     [ DOM.u_ [ DOM.text "Gör tillfällig adressändring" ] ]
                 , onClick: showTemporaryAddressChange
-                }
+                }r
             ]
         }
         where
@@ -391,6 +394,34 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               { updateAction = Just TemporaryAddressChange
               , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
               }
+
+    removeTempAddressChanges =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--pause-icon circle" }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Ta bort alla tillfälliga addressförändringar" ] ]
+              }
+          ]
+        , onClick: handler_ $ do
+           self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+           Aff.launchAff_ $ do
+             tempAddressChanges <- self.state.pendingAddressChanges
+             for_ tempAddressChanges $ \tempAddressChange -> do
+               startDate <- toDateTime tempAddressChange.startDate
+               endDate   <- toDateTime tempAddressChange.endDate
+               tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate endDate
+               case tempAddressChangesDeleted of
+                 Right newSubscription -> liftEffect $ self.setState _
+                   { wrapperProgress = AsyncWrapper.Success $ Just "Tillfälliga addressförändringar har tagits bort",
+                     pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
+                 Left _ -> liftEffect $ self.setState _
+                   { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+        }
 
     deliveryReclamationIcon =
       DOM.div

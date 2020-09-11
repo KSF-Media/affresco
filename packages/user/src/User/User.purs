@@ -16,6 +16,7 @@ module KSF.User
   , pauseSubscription
   , unpauseSubscription
   , temporaryAddressChange
+  , deleteTemporaryAddressChange
   , createDeliveryReclamation
   , createOrder
   , payOrder
@@ -440,6 +441,13 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
       | otherwise -> do
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
+
+deleteTemporaryAddressChange :: Api.UUID -> Int -> DateTime -> DateTime -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+deleteTemporaryAddressChange userUuid subsno startDate endDate = do
+  tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate <<< _.token =<< requireToken
+  case tempAddressChangeDeletedSub of
+    Right sub -> pure $ Right sub
+    Left err  -> pure $ Left Persona.InvalidUnexpected
 
 createDeliveryReclamation
   :: Api.UUID
