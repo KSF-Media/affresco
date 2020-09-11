@@ -385,7 +385,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                 , children:
                     [ DOM.u_ [ DOM.text "Gör tillfällig adressändring" ] ]
                 , onClick: showTemporaryAddressChange
-                }r
+                }
             ]
         }
         where
