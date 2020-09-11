@@ -16,7 +16,10 @@ function main() {
     .then(resp => resp.json())
     .then(json => {
       const myComponent = (
-        <Main.article article={json}/>
+        <Main.article 
+          article={json}
+          brand="hbl"
+        />
       );
       ReactDOM.render(myComponent, document.getElementById('app'));
     });

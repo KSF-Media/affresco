@@ -2,12 +2,13 @@ module Article where
 
 import Prelude
 
+import Data.Either (Either(..))
+import Data.Foldable (fold)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Generic.Rep.Show (genericShow)
-import Data.Either (Either(..))
 import Data.Nullable (Nullable, toMaybe)
-import Data.Foldable (fold)
+import Data.Array (head)
 import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -16,12 +17,15 @@ import React.Basic.DOM as DOM
 type Self = React.Self Props State
 
 type Props =
-  { article :: Article }
+  { article :: Article
+  , brand :: String
+  }
 
 type Article =
   { title     :: String
   , body      :: Array BodyElementJS
   , mainImage :: Image
+  , tags      :: Array String
   }
 
 type BodyElementJS =
@@ -87,10 +91,10 @@ renderImage img =
         caption = fold $ toMaybe img.caption
         byline = fold $ toMaybe img.byline
 
-renderBoxInfo :: BoxInfo -> JSX
-renderBoxInfo box =
+renderBoxInfo :: BoxInfo -> String -> JSX
+renderBoxInfo box brand =
   DOM.div
-    { className: "ksf-article--boxinfo genericBox genericBox-border-hbl"
+    { className: "ksf-article--boxinfo genericBox genericBox-border-" <> brand
     , children:
       [ DOM.h3_ [ DOM.text headline ]
       , DOM.h2_ [ DOM.text title ]
@@ -109,7 +113,12 @@ render { props, state } =
   DOM.div
     { className: "ksf-article"
     , children: [
-      DOM.h1
+      DOM.div
+        { className: "articleTag brandColor-" <> props.brand
+        -- , children: [ DOM.text $ show props.article.tags ]
+        , children: [ DOM.text $ fromMaybe "" (head props.article.tags) ]
+        }
+      , DOM.h1
         { className: "ksf-article--title title"
         , children: [ DOM.text props.article.title ]
         }
@@ -136,5 +145,5 @@ render { props, state } =
           , children: [ DOM.text str ]
           }
         Image img -> renderImage img
-        Box box -> renderBoxInfo box
+        Box box -> renderBoxInfo box props.brand
         other -> DOM.p_ [ DOM.text $ show other ]
