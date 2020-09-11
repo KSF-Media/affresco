@@ -8,6 +8,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Generic.Rep.Show (genericShow)
 import Data.Nullable (Nullable, toMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Array (head)
 import React.Basic (JSX)
 import React.Basic as React
