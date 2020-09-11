@@ -116,7 +116,6 @@ render { props, state } =
     , children: [
       DOM.div
         { className: "articleTag brandColor-" <> props.brand
-        -- , children: [ DOM.text $ show props.article.tags ]
         , children: [ DOM.text $ fromMaybe "" (head props.article.tags) ]
         }
       , DOM.h1
