@@ -19,7 +19,7 @@ import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField.Component as InputField
-import KSF.InputSelect.Component as InputSelect
+import KSF.InputSelect as InputSelect
 import KSF.User as User
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
@@ -38,7 +38,7 @@ type State =
   , zipCode        :: Maybe String
   , countryCode    :: Maybe String
   , temporaryName  :: Maybe String
-  , perpetualCheck :: Maybe Boolean
+  , isIndefinite   :: Maybe Boolean
   }
 
 type Self = React.Self Props State
@@ -89,7 +89,7 @@ initialState =
   , zipCode: Nothing
   , countryCode: Just "FI"
   , temporaryName: Nothing
-  , perpetualCheck: Nothing
+  , isIndefinite: Just false
   }
 
 component :: React.Component Props
@@ -111,7 +111,7 @@ didMount self = do
   self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, perpetualCheck }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, isIndefinite }} =
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
@@ -134,7 +134,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, countryCode, temporaryName })
           , children:
-              [ DOM.div { children: [ startDayInput, perpetualCheckbox ] }
+              [ DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
               , endDayInput
               , addressInput
               , zipInput
@@ -163,15 +163,15 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , label: "Börjar från"
         }
 
-    perpetualCheckbox =
+    isIndefiniteCheckbox =
       InputSelect.inputSelect
         { type_: InputSelect.Checkbox
         , name: "herp"
         , value: Nothing
-        , checked: Nothing
-        , onChange: \checked -> self.setState _ { perpetualCheck = checked }
+        , checked: false
+        , onChange: \checked -> self.setState _ { isIndefinite = checked }
         , label: Just "Tillsvidare"
-        , required: Nothing
+        , required: false
         }
 
     endDayInput =
@@ -181,7 +181,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: Nothing
-        , disabled: isNothing self.state.startDate || fromMaybe false self.state.perpetualCheck
+        , disabled: isNothing self.state.startDate || fromMaybe false self.state.isIndefinite
         , label: "Avslutas"
         }
 

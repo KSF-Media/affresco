@@ -1,12 +1,10 @@
-module KSF.InputSelect.Component where
+module KSF.InputSelect where
 
 import Prelude
 
-import Data.Array (snoc)
-import Data.Foldable (foldMap)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (toLower)
 import Effect (Effect)
 import React.Basic (JSX)
@@ -21,16 +19,16 @@ type Props =
   { type_           :: InputType
   , name            :: String
   , value           :: Maybe String
-  , checked         :: Maybe Boolean
+  , checked         :: Boolean
   , onChange        :: Maybe Boolean -> Effect Unit
   , label           :: Maybe String
-  , required        :: Maybe Boolean
+  , required        :: Boolean
   }
 
 type State =
   { checked :: Boolean }
 
-data InputType = Radio | Checkbox
+data InputType = Checkbox
 
 derive instance genericInputType :: Generic InputType _
 instance showInputType :: Show InputType where
@@ -41,23 +39,19 @@ component = React.createComponent "InputSelect"
 
 inputSelect :: Props -> JSX
 inputSelect = React.make component
-  { render, didMount, initialState }
+  { render, initialState }
   where
-    didMount { props, setState } = when (isJust props.checked) $
-      setState \s -> s { checked = fromMaybe false props.checked }
-
     initialState :: State
     initialState = { checked: false }
 
 render :: Self -> JSX
 render self@{ props, state } =
   DOM.div
-    { className: classNameFromInputType props.type_ <>
-        if isNothing props.label then " input-field--no-label" else ""
+    { className: "input-select--checkbox"
     , children:
         -- The final order of the children is defined in css!
         [ case props.label of
-             Just label -> inputLabel { label, nameFor: props.name }
+             Just label -> inputLabel { label, nameFor: props.name } props.required
              _          -> mempty
         , DOM.input
             { type: show props.type_
@@ -66,23 +60,8 @@ render self@{ props, state } =
             , onChange: handler targetChecked \maybeNewVal -> do
                 self.setState _ { checked = fromMaybe false maybeNewVal }
                 props.onChange maybeNewVal
-            , className:
-                if isJust props.required
-                then "input-field--invalid-field"
-                else mempty
             }
         ]
-    }
-
-classNameFromInputType :: InputType -> String
-classNameFromInputType inputType = case inputType of
-                                     Checkbox -> "input-select--checkbox-container"
-                                     _        -> "input-field--container"
-errorMessage :: String -> JSX
-errorMessage e =
-  DOM.span
-    { className: "input-field--invalid-text"
-    , children: [ DOM.text e ]
     }
 
 type InputLabel =
@@ -90,10 +69,12 @@ type InputLabel =
   , nameFor :: String -- ^ Which input field this is for
   }
 
-inputLabel :: InputLabel -> JSX
-inputLabel { label, nameFor } =
+inputLabel :: InputLabel -> Boolean -> JSX
+inputLabel { label, nameFor} required =
   DOM.label
     { className: "input-field--input-label"
-    , children: [ DOM.text label ]
+    , children: if required
+                   then [ DOM.text $ label <> " *" ]
+                   else [ DOM.text label ]
     , htmlFor: nameFor
     }
