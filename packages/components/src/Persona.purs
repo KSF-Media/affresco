@@ -132,9 +132,8 @@ temporaryAddressChange
   -> Aff Subscription
 temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode countryCode temporaryName token = do
   let startDateISO = formatDate startDate
-      endDateISO   = case endDate of
-                          Just endD -> Just (formatDate endD)
-                          Nothing   -> Nothing
+      endDateISO   = formatDate <$> endDate
+
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
