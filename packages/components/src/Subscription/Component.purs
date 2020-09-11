@@ -409,20 +409,25 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           ]
         , onClick: handler_ $ do
            self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-           Aff.launchAff_ $ do
-             tempAddressChanges <- self.state.pendingAddressChanges
-             for_ tempAddressChanges $ \tempAddressChange -> do
-               startDate <- toDateTime tempAddressChange.startDate
-               endDate   <- toDateTime tempAddressChange.endDate
-               tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate endDate
-               case tempAddressChangesDeleted of
-                 Right newSubscription -> liftEffect $ self.setState _
-                   { wrapperProgress = AsyncWrapper.Success $ Just "Tillfälliga addressförändringar har tagits bort",
-                     pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
-                 Left _ -> liftEffect $ self.setState _
-                   { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-        }
-
+           case self.state.pendingAddressChanges of
+             Nothing -> liftEffect $ self.setState _
+                   { wrapperProgress = AsyncWrapper.Error "Något har gått fel" }
+             Just tempAddressChanges ->
+               Aff.launchAff_ $ do
+               for_ tempAddressChanges $ \tempAddressChange -> do
+                 let startDate = toDateTime tempAddressChange.startDate
+                 let endDate   = toDateTime tempAddressChange.endDate
+                 case startDate, endDate of
+                   (Just startDate'), (Just endDate') -> do
+                      tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
+                      case tempAddressChangesDeleted of
+                        Right newSubscription -> liftEffect $ self.setState _
+                          { wrapperProgress = AsyncWrapper.Success $ Just "Tillfälliga addressförändringar har tagits bort",
+                        pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
+                        Left _ -> liftEffect $ self.setState _
+                          { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                   _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+}
     deliveryReclamationIcon =
       DOM.div
         { className: "subscription--action-item"
