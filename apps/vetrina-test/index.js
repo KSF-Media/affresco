@@ -14,7 +14,6 @@ function main() {
   ReactDOM.render(myComponent, document.getElementById('app'));
 }
 
-
 var hblPremium = {
   id: "HBL WEBB",
   description:
@@ -23,15 +22,18 @@ var hblPremium = {
       Du kan avsluta när du vill.
     </div>,
   priceCents: 690,
+  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi."
 }
 
 var hbl365 = {
   id: "HBL 365",
   description:
     <div>
-	För 14,90€/månad för tillgång till alla e-tidningar i e-tidningsappen HBL 365, alla artiklar på HBL.fi och våra andra sajter, och alla artiklar i nyhetsappen HBL Nyheter och våra andra nyhetsappar. <b>Första månaden för 1 €!</b>
+      För 14,90€/månad för tillgång till alla e-tidningar i e-tidningsappen HBL 365, alla artiklar på HBL.fi och våra andra sajter, och alla artiklar i nyhetsappen HBL Nyheter och våra andra nyhetsappar.<br />
+      <b>Första månaden för 1 €!</b>
     </div>,
   priceCents: 1490,
+  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi."
 }
 
 if (module.hot) {

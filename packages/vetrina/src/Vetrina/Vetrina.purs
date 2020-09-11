@@ -294,6 +294,7 @@ render self = vetrinaContainer self $
         { onClose: self.props.onClose
         , user: self.state.user
         , accountStatus
+        , purchasedProduct: self.state.productSelection
         }
   where
     onRetry = self.setState _ { purchaseState = NewPurchase }
