@@ -18,7 +18,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
