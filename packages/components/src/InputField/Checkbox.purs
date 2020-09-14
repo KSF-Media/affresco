@@ -1,10 +1,10 @@
-module KSF.InputSelect where
+module KSF.InputField.Checkbox where
 
 import Prelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String (toLower)
 import Effect (Effect)
 import React.Basic (JSX)
@@ -35,10 +35,10 @@ instance showInputType :: Show InputType where
   show = toLower <<< genericShow
 
 component :: React.Component Props
-component = React.createComponent "InputSelect"
+component = React.createComponent "InputCheckbox"
 
-inputSelect :: Props -> JSX
-inputSelect = React.make component
+inputCheckbox :: Props -> JSX
+inputCheckbox = React.make component
   { render, initialState }
   where
     initialState :: State
@@ -47,7 +47,8 @@ inputSelect = React.make component
 render :: Self -> JSX
 render self@{ props, state } =
   DOM.div
-    { className: "input-select--checkbox"
+    { className: "input-chekcbox--checkbox-container" <>
+        if isNothing props.label then " input-field--no-label" else ""
     , children:
         -- The final order of the children is defined in css!
         [ case props.label of

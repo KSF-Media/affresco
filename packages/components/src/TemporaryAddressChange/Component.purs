@@ -18,8 +18,8 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.InputField.Component as InputField
-import KSF.InputSelect as InputSelect
+import KSF.InputField as InputField
+import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
@@ -164,9 +164,9 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         }
 
     isIndefiniteCheckbox =
-      InputSelect.inputSelect
-        { type_: InputSelect.Checkbox
-        , name: "herp"
+      InputCheckbox.inputCheckbox
+        { type_: InputCheckbox.Checkbox
+        , name: "indefinite"
         , value: Nothing
         , checked: false
         , onChange: \checked -> self.setState _ { isIndefinite = checked }
