@@ -96,6 +96,7 @@ component = React.createComponent "TemporaryAddressChange"
 calcMinEndDate :: Maybe DateTime -> Maybe DateTime
 calcMinEndDate Nothing = Nothing
 calcMinEndDate (Just startDate) = do
+  -- 6 days added to the starting date = 7 (one week)
   let week = Time.Duration.Days 6.0
   adjust week startDate
 
