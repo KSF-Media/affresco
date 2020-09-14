@@ -2,16 +2,14 @@ module Bottega where
 
 import Prelude
 
-import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Effect.Aff (Aff)
-import Foreign (Foreign, unsafeToForeign)
+import Foreign (unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
 import KSF.Api.Package (Package)
-import Simple.JSON (class ReadForeign, read, readImpl)
 
 import OpenApiClient (Api, callApi)
 
@@ -107,6 +105,7 @@ type NewOrder =
   { packageId      :: String
   , period         :: Int
   , payAmountCents :: Int
+  , campaignNo     :: Maybe Int
   }
 
 data PaymentMethod = CreditCard
