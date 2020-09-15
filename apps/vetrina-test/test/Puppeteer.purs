@@ -7,11 +7,7 @@ import Prelude
 
 import Effect.Aff (Aff)
 import Foreign (unsafeFromForeign)
-import Toppokki
-  ( class HasFrame, Browser, ElementHandle, Page, URL(..), Selector(..)
-  , goto, newPage, waitForNavigation, networkIdle2, close, click, contentFrame
-  , select
-  )
+import Toppokki (class HasFrame, Browser, ElementHandle, Page, URL(..), Selector(..), goto, newPage, waitForNavigation, networkIdle2, close, click, contentFrame, select)
 import Toppokki as Chrome
 
 -- | We need to pass this flag, otherwise iframes don't work properly.
