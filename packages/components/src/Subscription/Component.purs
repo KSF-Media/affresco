@@ -400,11 +400,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         { className: "subscription--action-item"
         , children:
           [ DOM.div
-              { className: "subscription--pause-icon circle" }
+              { className: "subscription--delete-temporary-address-change-icon circle" }
           , DOM.span
               { className: "subscription--update-action-text"
               , children:
-                  [ DOM.u_ [ DOM.text "Ta bort alla tillfälliga addressförändringar" ] ]
+                  [ DOM.u_ [ DOM.text "Avbryt tillfälliga adressändringar" ] ]
               }
           ]
         , onClick: handler_ $ do
