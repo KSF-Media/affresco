@@ -80,7 +80,7 @@
     font-size: 16px;
     line-height: 16px;
     letter-spacing: 0.015em;
-    background: #00a1ab;
+    background: @brand-neutral;
     color: @white;
     width: 100%;
     border: none;
@@ -101,19 +101,19 @@
 }
 
 .vetrina--link {
-  color: #00a1ab;
+  color: @brand-neutral;
   outline: 0;
   text-decoration: none;
 }
 
 .vetrina--login-callback {
-  color: #00a1ab;
+  color: @brand-neutral;
   cursor: pointer;
 }
 
 .vetrina-purchase-completed--submit-password {
     &:disabled { background: grey }
-    background: #00a1ab;
+    background: @brand-neutral;
     color: @white;
     width: 100%;
     border: none;
@@ -149,5 +149,87 @@
 
 .vetrina--temporary-user-email {
     text-align: center;
+    margin-bottom: 1em;
+}
+
+.vetrina--product {
+    background: @grey-light;
+    border-style: solid;
+    border-color: @grey-almostlight;
+    border-width: 1px;
+    border-radius: 5px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 60px auto;
+    grid-template-rows: auto;
+    grid-auto-flow: row;
+    position: relative;
+    margin-bottom: 1em;
+    input[type="radio"] {
+	outline: 0;
+	display: none;
+    }
+}
+
+.vetrina--product-radio-button {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    background-color: #eee;
+    margin-top: .5em;
+    margin-left: .5em;
+}
+
+.vetrina--product-radio-button_checked {
+    margin: 7px;
+    top: 17px;
+    left: 17px;
+    height: 15px;
+    width: 15px;
+    background-color: white;
+    border-radius: 50%;
+    display: none;
+    box-shadow: 2px 2px 2px 0px rgba(0, 0, 0, 0.18);
+}
+
+.vetrina--product:hover input ~ .vetrina--product-radio-button {
+    background-color: #ccc;
+}
+
+.vetrina--product input:checked ~ .vetrina--product-radio-button {
+    background-color: @brand-neutral;
+}
+
+.vetrina--product-radio-button:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.vetrina--product input:checked ~ .vetrina--product-radio-button > .vetrina--product-radio-button_checked {
+    display: block;
+}
+
+.vetrina--product-title {
+    font-weight: bold;
+    margin-bottom: .5em;
+}
+
+.vetrina--product-description {
+    text-align: left;
+    padding-right: .5em;
+}
+
+.vetrina--email-address-label {
+    text-align: center;
+    margin: 1em;
+}
+
+.vetrina--with-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.vetrina--product-selection-text {
     margin-bottom: 1em;
 }

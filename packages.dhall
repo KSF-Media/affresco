@@ -39,6 +39,8 @@ let additions =
           ./packages/components/spago.dhall as Location
       , affresco-user =
           ./packages/user/spago.dhall as Location
+      , affresco-vetrina =
+          ./packages/vetrina/spago.dhall as Location
       }
 
 in  upstream // overrides // additions
