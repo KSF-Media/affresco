@@ -1,12 +1,14 @@
 {
   "name": "@affresco/vetrina-test",
   "version": "1.0.0",
-  "description": "A test app for the glorious Vetrina",
+  "description": "A test app for the glorious Vetrina, for dev and end-to-end tests",
   "license": "MIT",
+  "main": "index.js",
   "dependencies": {
     "basscss": "^8.0.4",
     "create-react-class": "^15.6.3",
     "less": "^3.8.1",
+    "puppeteer": "^5.2.1",
     "react": ">=15.5",
     "react-date-picker": "^7.5.0",
     "react-dom": ">=15.5"
