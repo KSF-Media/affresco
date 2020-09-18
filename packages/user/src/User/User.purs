@@ -424,7 +424,7 @@ temporaryAddressChange
   :: Api.UUID
   -> Int
   -> DateTime
-  -> DateTime
+  -> Maybe DateTime
   -> String
   -> String
   -> String

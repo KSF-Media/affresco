@@ -2147,7 +2147,7 @@
   dependencies:
     basscss "^8.1.0"
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
-    persona "https://github.com/KSF-Media/persona-javascript-client.git#c690a940b513b29779d3342b1fe2c5169ec1c852"
+    persona "https://github.com/KSF-Media/persona-javascript-client.git#27691dd62a5b6a4b5218397ddcd15f7e1af83c92"
     react "^16.5.2"
     react-dom "^16.5.2"
 
@@ -8030,15 +8030,15 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#27691dd62a5b6a4b5218397ddcd15f7e1af83c92":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#27691dd62a5b6a4b5218397ddcd15f7e1af83c92"
   dependencies:
     superagent "3.7.0"
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#c690a940b513b29779d3342b1fe2c5169ec1c852":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#c690a940b513b29779d3342b1fe2c5169ec1c852"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
   dependencies:
     superagent "3.7.0"
 
