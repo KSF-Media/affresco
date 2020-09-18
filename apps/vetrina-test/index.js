@@ -22,7 +22,8 @@ var hblPremium = {
       Du kan avsluta när du vill.
     </div>,
   priceCents: 690,
-  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi."
+  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
+  name: "HBL PREMIUM"
 }
 
 var hbl365 = {
@@ -33,7 +34,8 @@ var hbl365 = {
       <b>Första månaden för 1 €!</b>
     </div>,
   priceCents: 1490,
-  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi."
+  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
+  name: "HBL 365"
 }
 
 if (module.hot) {

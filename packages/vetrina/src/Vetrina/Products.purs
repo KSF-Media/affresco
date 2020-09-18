@@ -52,7 +52,7 @@ render self =
                     , DOM.div_
                         [ DOM.div
                             { className: "vetrina--product-title"
-                            , children: [ DOM.text p.id ]
+                            , children: [ DOM.text p.name ]
                             }
                         , DOM.div
                             { className: "vetrina--product-description"

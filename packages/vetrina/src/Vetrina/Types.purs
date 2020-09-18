@@ -14,6 +14,7 @@ data AccountStatus
 
 type Product =
   { id                           :: String
+  , name                         :: String
   , description                  :: JSX
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
@@ -22,6 +23,7 @@ type Product =
 
 type JSProduct =
   { id                           :: Nullable String
+  , name                         :: Nullable String
   , description                  :: Nullable JSX
   , descriptionPurchaseCompleted :: Nullable JSX
   , priceCents                   :: Nullable Int
@@ -31,8 +33,9 @@ type JSProduct =
 fromJSProduct :: JSProduct -> Maybe Product
 fromJSProduct jsProduct = do
   id          <- toMaybe jsProduct.id
+  name        <- toMaybe jsProduct.name
   description <- toMaybe jsProduct.description
   priceCents  <- toMaybe jsProduct.priceCents
   let campaignNo = toMaybe jsProduct.campaignNo
       descriptionPurchaseCompleted = fromMaybe mempty $ toMaybe jsProduct.descriptionPurchaseCompleted
-  pure { id, description, priceCents, campaignNo, descriptionPurchaseCompleted }
+  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted }
