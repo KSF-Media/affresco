@@ -78,6 +78,7 @@ type State =
   , purchaseState    :: PurchaseState
   , poller           :: Aff.Fiber Unit
   , isLoading        :: Maybe Spinner.Loading
+  , loadingMessage   :: Maybe String
   , accountStatus    :: AccountStatus
   , logger           :: Sentry.Logger
   , products         :: Array Product
@@ -127,6 +128,7 @@ initialState =
   , purchaseState: NewPurchase
   , poller: pure unit
   , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
+  , loadingMessage: Nothing
   , accountStatus: NewAccount
   , logger: Sentry.emptyLogger
   , products: []
@@ -231,7 +233,7 @@ pollOrder setState { logger } (Left err) = liftEffect do
 render :: Self -> JSX
 render self = vetrinaContainer self $
   if isJust self.state.isLoading
-  then Spinner.loadingSpinner
+  then maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
   else case self.state.purchaseState of
     NewPurchase ->
       Purchase.NewPurchase.newPurchase
@@ -336,7 +338,8 @@ mkPurchase
   -> { productSelection :: Maybe Product, paymentMethod :: Maybe PaymentMethod | r }
   -> Aff (Either OrderFailure User.User)
   -> Effect Unit
-mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
+mkPurchase self@{ state: { logger } } validForm affUser =
+  Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
   eitherUser <- affUser
   eitherOrder <- runExceptT do
     user          <- except eitherUser
@@ -384,6 +387,14 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
       liftEffect $ self.setState \_ -> errState
+  where
+    loadingWithMessage spinner = self.setState _
+        { isLoading = spinner
+        , loadingMessage =
+            if isJust spinner
+            then Just "Tack, vi skickar dig nu vidare till betalningsleverantören Nets."
+            else Nothing
+        }
 
 userHasPackage :: PackageId -> Array Package -> Boolean
 userHasPackage packageId = Array.any (\p -> packageId == p.id)
