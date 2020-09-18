@@ -169,7 +169,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         { type_: InputCheckbox.Checkbox
         , name: "indefinite"
         , value: Nothing
-        , checked: false
+        , checked: self.state.isIndefinite
         , onChange: \checked -> self.setState _ { isIndefinite = checked }
         , label: Just "Tillsvidare"
         , required: false
