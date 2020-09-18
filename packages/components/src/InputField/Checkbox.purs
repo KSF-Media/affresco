@@ -19,14 +19,13 @@ type Props =
   { type_           :: InputType
   , name            :: String
   , value           :: Maybe String
-  , checked         :: Boolean
   , onChange        :: Boolean -> Effect Unit
   , label           :: Maybe String
   , required        :: Boolean
   }
 
 type State =
-  { checked :: Boolean }
+  { }
 
 data InputType = Checkbox
 
@@ -42,7 +41,7 @@ inputCheckbox = React.make component
   { render, initialState }
   where
     initialState :: State
-    initialState = { checked: false }
+    initialState = { }
 
 render :: Self -> JSX
 render self@{ props, state } =
@@ -59,7 +58,6 @@ render self@{ props, state } =
             , name: props.name
             , value: fromMaybe "" props.value
             , onChange: handler targetChecked \maybeNewVal -> do
-                self.setState _ { checked = fromMaybe false maybeNewVal }
                 props.onChange $ fromMaybe false maybeNewVal
             }
         ]
