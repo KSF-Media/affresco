@@ -1,4 +1,4 @@
-module KSF.InputField.Component where
+module KSF.InputField where
 
 import Prelude
 

@@ -1,0 +1,18 @@
+.input-checkbox--checkbox-container {
+    display: grid;
+    grid-template-columns:
+        [label] auto
+        [checkbox] 2em;
+    input[type=checkbox] {
+        grid-column: checkbox;
+        grid-row: 1;
+    }
+    label {
+        grid-column: label;
+        grid-row: 1;
+    }
+    grid-column-gap: 0px;
+    grid-row-gap: auto;
+    align-items: baseline;
+    justify-content: left;
+}

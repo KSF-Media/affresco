@@ -2,26 +2,26 @@ module Bottega where
 
 import Prelude
 
-import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Nullable (Nullable, toMaybe)
+import Data.Maybe (Maybe, maybe)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect.Aff (Aff)
-import Foreign (Foreign, unsafeToForeign)
+import Foreign (unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
 import KSF.Api.Package (Package)
-import Simple.JSON (class ReadForeign, read, readImpl)
-
 import OpenApiClient (Api, callApi)
 
 foreign import ordersApi :: Api
 foreign import packagesApi :: Api
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
-createOrder { userId, authToken } newOrder =
-  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder ] { authorization, authUser }
+createOrder { userId, authToken } newOrder@{ campaignNo } =
+  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo } ] { authorization, authUser }
   where
+    -- NOTE/REMINDER: We don't want send Maybes to the server,
+    -- as they will be sent as objects
+    nullableCampaignNo = toNullable campaignNo
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
@@ -107,6 +107,7 @@ type NewOrder =
   { packageId      :: String
   , period         :: Int
   , payAmountCents :: Int
+  , campaignNo     :: Maybe Int
   }
 
 data PaymentMethod = CreditCard

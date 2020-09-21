@@ -24,7 +24,7 @@ import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import KSF.Button.Component as Button
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.Registration.Component as Registration
 import KSF.User (User, UserError(..))
 import KSF.User as User

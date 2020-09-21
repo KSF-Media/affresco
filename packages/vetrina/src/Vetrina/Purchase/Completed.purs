@@ -2,18 +2,20 @@ module Vetrina.Purchase.Completed where
 
 import Prelude
 
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe, fromMaybe)
 import Effect (Effect)
 import KSF.User as User
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
-import Vetrina.Types (AccountStatus(..))
+import Vetrina.Types (AccountStatus(..), Product)
 
 type Props =
-  { onClose       :: Effect Unit
-  , user          :: Maybe User.User
-  , accountStatus :: AccountStatus
+  { onClose          :: Effect Unit
+  , user             :: Maybe User.User
+  , accountStatus    :: AccountStatus
+  , purchasedProduct :: Maybe Product
   }
 
 completed :: Props -> JSX
@@ -24,7 +26,7 @@ completed props =
           ]
   <> DOM.p
        { className: "vetrina--description-text"
-       , children: [ DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi." ] -- TODO: Should this come from props?
+       , children: [ foldMap _.descriptionPurchaseCompleted props.purchasedProduct ]
        }
   <> DOM.p
        { className: "vetrina--description-text"
