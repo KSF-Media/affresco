@@ -5,10 +5,12 @@ module Puppeteer
 
 import Prelude
 
-import Effect.Aff (Aff)
 import Foreign (unsafeFromForeign)
 import Toppokki (class HasFrame, Browser, ElementHandle, Page, URL(..), Selector(..), goto, newPage, waitForNavigation, networkIdle2, close, click, contentFrame, select)
 import Toppokki as Chrome
+import Test.Unit.Assert as Assert
+import Effect.Aff as Aff
+import Effect.Aff (Aff, Milliseconds(..))
 
 -- | We need to pass this flag, otherwise iframes don't work properly.
 -- | See: https://github.com/puppeteer/puppeteer/issues/5123
@@ -27,4 +29,12 @@ type_ selector text page = Chrome.keyboardType selector text { delay: 10.0 } pag
 getContent :: Selector -> Page -> Aff String
 getContent selector page = do
   theTitleF <- Chrome.unsafePageEval selector "e => e.textContent" page
-  unsafeFromForeign theTitleF
+  pure (unsafeFromForeign theTitleF)
+
+assertContent :: Selector -> String -> Page -> Aff Unit
+assertContent selector expected page = do
+  -- here we wait because most likely we're trying to do this on a new page load
+  Aff.delay (Milliseconds 300.0)
+  waitFor_ selector page
+  content <- getContent selector page
+  Assert.equal content expected
