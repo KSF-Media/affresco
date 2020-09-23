@@ -418,11 +418,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                    tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
                    case tempAddressChangesDeleted of
                      Right newSubscription -> liftEffect $ self.setState _
-                       { wrapperProgress = AsyncWrapper.Success $ Just "Tillfälliga addressförändringar har tagits bort",
+                       { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
                          pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
                      Left _ -> liftEffect $ self.setState _
                          { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                 _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                 _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
         }
 
     deliveryReclamationIcon =
