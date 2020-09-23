@@ -19,6 +19,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
+import KSF.CreditCardChange as CreditCardChange
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
 import KSF.JSError as Error
@@ -33,6 +34,8 @@ import KSF.User.Login (login) as Login
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler, handler_)
+import Tracking as Tracking
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String
@@ -186,8 +189,8 @@ userView { setState, state: { logger } } user = React.fragment
       componentBlock
         "Mina uppgifter:"
         [ profileComponentBlock
+        , editAccountBlock
         , break
-        , editAccount
         , needHelp
         , disappearingBreak
         ]
@@ -196,6 +199,13 @@ userView { setState, state: { logger } } user = React.fragment
           { profile: user
           , onUpdate: setState <<< setLoggedInUser <<< Just
           , logger
+          }
+        editAccountBlock = DOM.div
+          { className: "mitt-konto--edit-account"
+          , children: 
+              [ componentHeader "Mina inställningar:"
+              , componentBlockContent $ DOM.div_ accountEditActions
+              ]   
           }
 
     subscriptionsView =
@@ -246,15 +256,6 @@ userView { setState, state: { logger } } user = React.fragment
             ]
         ]
 
-    editAccount :: JSX
-    editAccount =
-      DOM.div
-        { className: "mitt-konto--edit-account"
-        , children:
-            componentHeader "Mina inställningar:"
-            : accountEditLinks
-        }
-
     needHelp :: JSX
     needHelp =
       DOM.div
@@ -299,12 +300,27 @@ userView { setState, state: { logger } } user = React.fragment
          , children: [ child ]
          }
 
-    accountEditLinks :: Array JSX
-    accountEditLinks =
+    accountEditActions :: Array JSX
+    accountEditActions =
       [ formatIconLink
           { href: "https://www.hbl.fi/losenord"
           , description: "Byt lösenord"
           , className: passwordChangeClass
+          }
+      , DOM.div
+          { className: "subscription--action-item"
+          , children:
+              [ DOM.div
+                  { className: "subscription--temporary-address-change-icon circle"
+                  , onClick: handler_ (pure unit)
+                  }
+              , DOM.span
+                  { className: "subscription--update-action-text"
+                  , children:
+                      [ DOM.u_ [ DOM.text "Gör tillfällig adressändring" ] ]
+                  , onClick: handler_ (pure unit)
+                  }
+              ]
           }
       ]
       where
