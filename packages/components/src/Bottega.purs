@@ -64,7 +64,7 @@ data OrderStatusState
   = OrderCreated
   | OrderStarted
   | OrderCompleted
-  | OrderFailed OrderStatusFailReason
+  | OrderFailed FailReason
   | OrderCanceled
   | UnknownState
 
@@ -79,7 +79,7 @@ parseStatus state maybeFailReason =
       _           -> UnknownState
 
 
-data OrderStatusFailReason
+data FailReason
   = NetsInternalError
   | NetsIssuerError
   | NetsCanceled
@@ -88,11 +88,11 @@ data OrderStatusFailReason
   | OrderNotFound
   | UnknownReason
 
-derive instance genericOrderStatusFailReason :: Generic OrderStatusFailReason _
-instance showOrderStatusFailReason :: Show OrderStatusFailReason where
+derive instance genericFailReason :: Generic FailReason _
+instance showFailReason :: Show FailReason where
   show = genericShow
 
-parseFailReason :: String -> OrderStatusFailReason
+parseFailReason :: String -> FailReason
 parseFailReason reason =
   case reason of
     "NetsInternalError"       -> NetsInternalError
@@ -109,6 +109,13 @@ type NewOrder =
   , payAmountCents :: Int
   , campaignNo     :: Maybe Int
   }
+
+data CreditCardRegisterStatus
+  = CreditCardRegisterCreated
+  | CreditCardRegisterStarted
+  | CreditCardRegisterCompleted
+  | CreditCardRegisterFailed FailReason
+  | CreditCardRegisterCanceled
 
 data PaymentMethod = CreditCard
 

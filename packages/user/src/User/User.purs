@@ -30,7 +30,7 @@ where
 
 import Prelude
 
-import Bottega (NewOrder, Order, OrderNumber, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
+import Bottega (NewOrder, Order, OrderNumber, FailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 import Bottega as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
