@@ -2,6 +2,8 @@ module Bottega where
 
 import Prelude
 
+import Bottega.Models
+import Bottega.Models.PaymentMethod as PaymentMethod
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe, maybe)
@@ -37,7 +39,7 @@ readOrder orderObj = do
   let state = parseStatus orderObj.status.state (toMaybe orderObj.status.failReason)
   pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
 
-payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
+payOrder :: UserAuth -> OrderNumber -> PaymentMethod.PaymentMethod -> Aff PaymentTerminalUrl
 payOrder { userId, authToken } orderNumber paymentMethod =
   callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
   where
@@ -46,81 +48,3 @@ payOrder { userId, authToken } orderNumber paymentMethod =
 
 getPackages :: Aff (Array Package)
 getPackages = callApi packagesApi "packageGet" [] {}
-
-newtype OrderNumber = OrderNumber String
-
-type Order =
-  { number     :: OrderNumber
-  , user       :: UUID
-  , status     :: OrderStatus
-  }
-
-type OrderStatus =
-  { state      :: OrderStatusState
-  , time       :: String
-  }
-
-data OrderStatusState
-  = OrderCreated
-  | OrderStarted
-  | OrderCompleted
-  | OrderFailed FailReason
-  | OrderCanceled
-  | UnknownState
-
-parseStatus :: String -> Maybe String -> OrderStatusState
-parseStatus state maybeFailReason =
-    case state of
-      "created"   -> OrderCreated
-      "started"   -> OrderStarted
-      "completed" -> OrderCompleted
-      "failed"    -> OrderFailed $ maybe UnknownReason parseFailReason maybeFailReason
-      "canceled"  -> OrderCanceled
-      _           -> UnknownState
-
-
-data FailReason
-  = NetsInternalError
-  | NetsIssuerError
-  | NetsCanceled
-  | SubscriptionExistsError
-  | SubscriptionError
-  | OrderNotFound
-  | UnknownReason
-
-derive instance genericFailReason :: Generic FailReason _
-instance showFailReason :: Show FailReason where
-  show = genericShow
-
-parseFailReason :: String -> FailReason
-parseFailReason reason =
-  case reason of
-    "NetsInternalError"       -> NetsInternalError
-    "NetsIssuerError"         -> NetsIssuerError
-    "NetsCanceled"            -> NetsCanceled
-    "SubscriptionExistsError" -> SubscriptionExistsError
-    "SubscriptionError"       -> SubscriptionError
-    "OrderNotFound"           -> OrderNotFound
-    _                         -> UnknownReason
-
-type NewOrder =
-  { packageId      :: String
-  , period         :: Int
-  , payAmountCents :: Int
-  , campaignNo     :: Maybe Int
-  }
-
-data CreditCardRegisterStatus
-  = CreditCardRegisterCreated
-  | CreditCardRegisterStarted
-  | CreditCardRegisterCompleted
-  | CreditCardRegisterFailed FailReason
-  | CreditCardRegisterCanceled
-
-data PaymentMethod = CreditCard
-
-derive instance genericPaymentMethod :: Generic PaymentMethod _
-instance showPaymentMethod :: Show PaymentMethod where
-  show = genericShow
-
-type PaymentTerminalUrl = { paymentTerminalUrl :: String }
