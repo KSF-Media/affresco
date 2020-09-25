@@ -21,14 +21,14 @@ type CreditCard =
 
 newtype CreditCardRegisterNumber = CreditCardRegisterNumber String 
 
-data CreditCardRegister = CreditCardRegister
+type CreditCardRegister =
   { number      :: CreditCardRegisterNumber
   , user        :: UUID
   , terminalUrl :: Maybe PaymentTerminalUrl
   , status      :: CreditCardRegisterStatus
   }
 
-data CreditCardRegisterStatus = CreditCardRegisterStatus
+type CreditCardRegisterStatus =
   { state      :: CreditCardRegisterState
   , time       :: String
   }
