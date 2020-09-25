@@ -14,29 +14,44 @@ import Effect.Now as Now
 import Persona as Persona
 import Puppeteer as Chrome
 
-
+-- | Run all tests here
 main :: Effect Unit
 main = launchAff_ do
-  let mkEmail :: String -> Maybe String -> String
-      mkEmail dateTimeStr extra = "fabrizio.ferrai+" <> dateTimeStr <> maybe "" ("-" <> _) extra <> "@ksfmedia.fi"
+  -- First of all we just try to subscribe as a fresh customer, so everything from scratch
+  withBrowser (runTest "subscribe new customer" subscribeNewCustomer)
 
-  let runTest test browser = do
-        page <- Chrome.newPage browser
-        dateTimeStr <- liftEffect $ formatDate <$> Now.nowDateTime
-        let password = "test123"
-        Chrome.goto (Chrome.URL "https://vetrina-staging.netlify.app") page
-        test page (mkEmail dateTimeStr) password
+  -- Then we open another browser (otherwise we'd be logged in with the first customer)
+  withBrowser \browser -> do
+    -- ..and we buy the package with an existing customer (that we create on the
+    -- fly just with the Persona API)
+    runTest "subscribe with existing (non-entitled) customer" buyWithExistingCustomer browser
+    -- ..and after that we just try to visit again, and verify that Vetrina
+    -- figures out that we already have a subscription. Good.
+    runTest "visit with entitled user" navigateLoggedIn browser
 
-  let withBrowser action = do
-        browser <- Chrome.launch
-        action browser
-        Chrome.close browser
+  -- Then we try to login from scratch with the customer of the previous step,
+  -- and verify that Vetrina figures out that we already have (1) and account
+  -- and (2) a subscription
+  -- FIXME: Vetrina does not do this for now
+  withBrowser (runTest "visit with entitled user (from scratch)" loginWithEntitledCustomer)
 
-  -- run all tests here
-  -- runTest subscribeNewCustomer
-  withBrowser (runTest buyWithExistingCustomer)
-  withBrowser (runTest loginWithEntitledCustomer)
+  where
+    mkEmail :: String -> Maybe String -> String
+    mkEmail dateTimeStr extra = "fabrizio.ferrai+" <> dateTimeStr <> maybe "" ("-" <> _) extra <> "@ksfmedia.fi"
 
+    runTest name test browser = do
+      log $ ">>> Running test: " <> show name
+      page <- Chrome.newPage browser
+      dateTimeStr <- liftEffect $ formatDate <$> Now.nowDateTime
+      let password = "test123"
+      Chrome.goto (Chrome.URL "https://vetrina-staging.netlify.app") page
+      test page (mkEmail dateTimeStr) password
+      log $ ">>> Test successful."
+
+    withBrowser action = do
+      browser <- Chrome.launch
+      action browser
+      Chrome.close browser
 
 
 subscribeNewCustomer :: Test
@@ -96,6 +111,21 @@ buyWithExistingCustomer page mkEmail password = do
   let titleSelector = Chrome.Selector "#root > div > div > h1"
   log "Check that we land on the right page at the end"
   Chrome.assertContent titleSelector "Tack för din beställning!" page
+
+navigateLoggedIn :: Test
+navigateLoggedIn page mkEmail password = do
+  let email = mkEmail (Just "new")
+  log "This same customer should be already be logged in, so we should we welcomed back here, let's move on"
+  let submit = Chrome.Selector "#root > div > div > form > input"
+  Chrome.waitFor_ submit page
+  Chrome.click submit page
+
+  log "Vetrina should have checked that we are entitled"
+  let titleSelector = Chrome.Selector "#root > div > div > h1"
+  Chrome.assertContent titleSelector "Du har redan en prenumeration" page
+
+  log "We then click on 'whatever go ahead' and we should be done"
+  Chrome.click (Chrome.Selector "#root > div > div > button") page
 
 loginWithEntitledCustomer :: Test
 loginWithEntitledCustomer page mkEmail password = do
