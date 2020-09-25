@@ -3,7 +3,6 @@ module Bottega where
 import Prelude
 
 import Bottega.Models
-import Bottega.Models.PaymentMethod as PaymentMethod
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe, maybe)
@@ -36,10 +35,10 @@ getOrder { userId, authToken } orderNumber = do
 
 readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: String, time :: String, failReason :: Nullable String } } -> Aff Order
 readOrder orderObj = do
-  let state = parseStatus orderObj.status.state (toMaybe orderObj.status.failReason)
+  let state = parseOrderState orderObj.status.state (toMaybe orderObj.status.failReason)
   pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
 
-payOrder :: UserAuth -> OrderNumber -> PaymentMethod.PaymentMethod -> Aff PaymentTerminalUrl
+payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
 payOrder { userId, authToken } orderNumber paymentMethod =
   callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
   where
