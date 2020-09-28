@@ -391,7 +391,9 @@ componentWillUnmount() {
                     if (node.className === 'html') {
                         var OK = true;
                         let approvedTags = ['B', 'A', 'I'];
-                        let t = node.getElementsByTagName("*");
+                        let tt = node.getElementsByTagName("*");
+                        // try to support iPads from 2013. They cannot iterate browser objects only js arrays.
+                        var t = Array.prototype.slice.call(tt);
                         // check for non-text content
                         if (t.length > 0) {
                             for (let item of t) {
