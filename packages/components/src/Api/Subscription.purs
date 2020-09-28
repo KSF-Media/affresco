@@ -1,21 +1,17 @@
 module KSF.Api.Subscription where
 
-import Prelude
+import Prelude (class Eq, class Ord, comparing, map, pure)
 
 import Control.Alt ((<|>))
-import Data.Either (Either(..), hush)
+import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate)
-import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
-import Foreign (F, Foreign, unsafeToForeign)
+import Foreign (Foreign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
-import Foreign.Index as Foreign
 import KSF.Api.Package (Package, Campaign)
-import Record as Record
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
-import Type.Prelude (SProxy(..))
 
 type DeliveryAddress =
   { streetAddress :: Nullable String

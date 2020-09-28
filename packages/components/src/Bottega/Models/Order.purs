@@ -1,12 +1,9 @@
 module Bottega.Models.Order where
 
-import Prelude
+import Prelude (($))
 
-import Bottega.Models.FailReason
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Bottega.Models.FailReason (FailReason(..), parseFailReason)
 import Data.Maybe (Maybe, maybe)
-import Foreign (unsafeToForeign)
 import KSF.Api (UUID)
 
 newtype OrderNumber = OrderNumber String
