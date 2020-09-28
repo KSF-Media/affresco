@@ -19,7 +19,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
-import KSF.CreditCardChange as CreditCardChange
+import KSF.CreditCard.Update as CreditCardUpdate
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
 import KSF.JSError as Error

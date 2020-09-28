@@ -1,9 +1,11 @@
-module KSF.CreditCardChange where
+module KSF.CreditCard.Update where
 
 import Prelude
 
 import Data.DateTime (DateTime)
 import Data.Maybe (Maybe(..))
+import KSF.Bottega.Models (CreditCard)
+import KSF.CreditCard.Menu (menu) as Menu
 import KSF.Modal as Modal
 import KSF.Spinner as Spinner
 import KSF.User (PaymentTerminalUrl(..))
@@ -16,8 +18,8 @@ import React.Basic.Events (handler)
 type Self = React.Self Props State
 
 type State = 
-  { changeState :: ChangeState
-  , creditCard  :: Maybe CreditCard
+  { updateState :: ChangeState
+  , creditCards :: Array CreditCard
   }
 
 type Props =
@@ -25,7 +27,8 @@ type Props =
   }
 
 data ChangeState
-  = CreateCreditCard
+  = ChooseCreditCard
+  | CreateCreditCard
   | RegisterCreditCard
   | ProcessCard
   | Failed
@@ -38,12 +41,12 @@ type CreditCard =
   , expiryDate  :: DateTime
   }
 
-creditCardChange :: Props -> JSX
-creditCardChange = make component { initialState, render}
+update :: Props -> JSX
+update = make component { initialState, render }
 
 initialState :: State
 initialState =
-  { changeState: CreateCreditCard
+  { updateState: CreateCreditCard
   , creditCard: Nothing
   }
 
@@ -52,6 +55,12 @@ component = React.createComponent "CreditCardChange"
 
 render :: Self -> JSX
 render self = case self.state.changeState of
+  ChooseCreditCard   ->  Modal.modal 
+                          { content: Menu.menu 
+                                       { creditCards: []
+                                       , chosenCard: Nothing
+                                       }
+                          }
   CreateCreditCard   -> Spinner.loadingSpinner
   RegisterCreditCard -> Modal.modal 
                           { content: netsTerminalIframe { paymentTerminalUrl: "https://en.wikipedia.org/wiki/Main_Page" }
