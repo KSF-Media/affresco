@@ -30,8 +30,7 @@ where
 
 import Prelude
 
-import Bottega.Models (NewOrder, Order, OrderNumber, FailReason(..), PaymentTerminalUrl) as BottegaReExport
-import Bottega.Models.PaymentMethod (PaymentMethod(..)) as BottegaReExport
+import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 
 import Bottega (createOrder, getOrder, getPackages, payOrder) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl) as Bottega
