@@ -30,8 +30,11 @@ where
 
 import Prelude
 
-import Bottega (NewOrder, Order, OrderNumber, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
-import Bottega as Bottega
+import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
+
+import Bottega (createOrder, getOrder, getPackages, payOrder) as Bottega
+import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl) as Bottega
+import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
