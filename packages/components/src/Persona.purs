@@ -58,14 +58,14 @@ getUserEntitlements uuid token =
   callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign uuid ] { authorization: oauthToken token }
 
 updateUser :: UUID -> UserUpdate -> Token -> Aff User
-updateUser uuid update token =
-  let
-    authorization = oauthToken token
-    body = case update of
-      UpdateName names      -> unsafeToForeign names
-      UpdateAddress address -> unsafeToForeign { address }
-  in
-   callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
+updateUser uuid update token = do
+  let authorization = oauthToken token
+      body = case update of
+        UpdateName names      -> unsafeToForeign names
+        UpdateAddress address -> unsafeToForeign { address }
+  user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
+  let parsedSubs = map Subscription.parseSubscription user.subs
+  pure $ user { subs = parsedSubs }
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
