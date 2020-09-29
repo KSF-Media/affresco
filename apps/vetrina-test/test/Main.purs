@@ -5,7 +5,6 @@ import Prelude
 import Data.DateTime (DateTime)
 import Data.Formatter.DateTime as Format
 import Data.List as List
-import Data.Maybe (Maybe(..), maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
@@ -17,35 +16,38 @@ import Puppeteer as Chrome
 -- | Run all tests here
 main :: Effect Unit
 main = launchAff_ do
+  -- Setup
+  dateTimeStr <- liftEffect $ formatDate <$> Now.nowDateTime
+  let customer1 = mkEmail dateTimeStr
+  let customer2 = mkEmail (dateTimeStr <> "-2")
+
   -- First of all we just try to subscribe as a fresh customer, so everything from scratch
-  withBrowser (runTest "subscribe new customer" subscribeNewCustomer)
+  withBrowser (runTest "subscribe new customer" subscribeNewCustomer customer1)
 
   -- Then we open another browser (otherwise we'd be logged in with the first customer)
   withBrowser \browser -> do
     -- ..and we buy the package with an existing customer (that we create on the
     -- fly just with the Persona API)
-    runTest "subscribe with existing (non-entitled) customer" buyWithExistingCustomer browser
+    runTest "subscribe with existing (non-entitled) customer" buyWithExistingCustomer customer2 browser
     -- ..and after that we just try to visit again, and verify that Vetrina
     -- figures out that we already have a subscription. Good.
-    runTest "visit with entitled user" navigateLoggedIn browser
+    runTest "visit with entitled user" navigateLoggedIn customer2 browser
 
   -- Then we try to login from scratch with the customer of the previous step,
   -- and verify that Vetrina figures out that we already have (1) and account
   -- and (2) a subscription
-  -- FIXME: Vetrina does not do this for now
-  withBrowser (runTest "visit with entitled user (from scratch)" loginWithEntitledCustomer)
+  withBrowser (runTest "visit with entitled user (from scratch)" loginWithEntitledCustomer customer2)
 
   where
-    mkEmail :: String -> Maybe String -> String
-    mkEmail dateTimeStr extra = "fabrizio.ferrai+" <> dateTimeStr <> maybe "" ("-" <> _) extra <> "@ksfmedia.fi"
+    mkEmail :: String -> String
+    mkEmail dateTimeStr = "fabrizio.ferrai+" <> dateTimeStr <> "@ksfmedia.fi"
 
-    runTest name test browser = do
+    runTest name test email browser = do
       log $ ">>> Running test: " <> show name
       page <- Chrome.newPage browser
-      dateTimeStr <- liftEffect $ formatDate <$> Now.nowDateTime
       let password = "test123"
       Chrome.goto (Chrome.URL "https://vetrina-staging.netlify.app") page
-      test page (mkEmail dateTimeStr) password
+      test page email password
       log $ ">>> Test successful."
 
     withBrowser action = do
@@ -55,8 +57,7 @@ main = launchAff_ do
 
 
 subscribeNewCustomer :: Test
-subscribeNewCustomer page mkEmail password = do
-  let email = mkEmail Nothing
+subscribeNewCustomer page email password = do
   log $ "Fill in a fresh email, so we create a new account: " <> email
   fillEmail email page
   payWithNets page
@@ -74,8 +75,7 @@ subscribeNewCustomer page mkEmail password = do
   Chrome.assertContent titleSelector "Ditt KSF Media-konto är klart!" page
 
 buyWithExistingCustomer :: Test
-buyWithExistingCustomer page mkEmail password = do
-  let email = mkEmail (Just "new")
+buyWithExistingCustomer page email password = do
   log $ "We have to create a new account first, we can just call to Persona, email: " <> email
   logShow =<< Persona.register
     { firstName: "Testi"
@@ -96,16 +96,7 @@ buyWithExistingCustomer page mkEmail password = do
     }
   log "Then we can fill in the email we just registered"
   fillEmail email page
-
-  log "We then get presented with the screen that tells us that we already have an account"
-  Chrome.assertContent (Chrome.Selector "#root > div > div > h1") "Du har redan ett KSF Media-konto" page
-
-  log "Well, then we fill the password in and we login"
-  let passwordSelector = Chrome.Selector "#root > div > div > form > div:nth-child(2) > div > input[type=password]"
-  Chrome.waitFor_ passwordSelector page
-  Chrome.type_ passwordSelector password page
-  Chrome.click (Chrome.Selector "#root > div > div > form > input") page
-
+  loginExistingUser password page
   payWithNets page
 
   let titleSelector = Chrome.Selector "#root > div > div > h1"
@@ -113,34 +104,23 @@ buyWithExistingCustomer page mkEmail password = do
   Chrome.assertContent titleSelector "Tack för din beställning!" page
 
 navigateLoggedIn :: Test
-navigateLoggedIn page mkEmail password = do
-  let email = mkEmail (Just "new")
+navigateLoggedIn page email password = do
   log "This same customer should be already be logged in, so we should we welcomed back here, let's move on"
   let submit = Chrome.Selector "#root > div > div > form > input"
   Chrome.waitFor_ submit page
   Chrome.click submit page
+  assertUserHasSubscription page
 
-  log "Vetrina should have checked that we are entitled"
-  let titleSelector = Chrome.Selector "#root > div > div > h1"
-  Chrome.assertContent titleSelector "Du har redan en prenumeration" page
-
-  log "We then click on 'whatever go ahead' and we should be done"
-  Chrome.click (Chrome.Selector "#root > div > div > button") page
 
 loginWithEntitledCustomer :: Test
-loginWithEntitledCustomer page mkEmail password = do
-  let email = mkEmail (Just "new")
+loginWithEntitledCustomer page email password = do
   log "This same customer should already have an entitlement, so we just login now"
   fillEmail email page
-
-  -- TODO: there's a bug here! A customer can buy twice
-  Chrome.waitForNavigation { waitUntil: Chrome.networkIdle2 } page
-
+  loginExistingUser password page
+  assertUserHasSubscription page
 
 
-
-
-type Test = Chrome.Page -> (Maybe String -> String) -> String -> Aff Unit
+type Test = Chrome.Page -> String -> String -> Aff Unit
 
 formatDate :: DateTime -> String
 formatDate = Format.format $ List.fromFoldable
@@ -163,6 +143,17 @@ fillEmail email page = do
   log "Submitting the form"
   Chrome.click (Chrome.Selector ".vetrina--button") page
 
+loginExistingUser :: String -> Chrome.Page -> Aff Unit
+loginExistingUser password page = do
+  log "We then get presented with the screen that tells us that we already have an account"
+  Chrome.assertContent (Chrome.Selector "#root > div > div > h1") "Du har redan ett KSF Media-konto" page
+
+  log "Well, then we fill the password in and we login"
+  let passwordSelector = Chrome.Selector "#root > div > div > form > div:nth-child(2) > div > input[type=password]"
+  Chrome.waitFor_ passwordSelector page
+  Chrome.type_ passwordSelector password page
+  Chrome.click (Chrome.Selector "#root > div > div > form > input") page
+
 payWithNets :: forall page. Chrome.HasFrame page => page -> Aff Unit
 payWithNets page = do
   log "Getting the nets iframe, so we can pay the order"
@@ -182,3 +173,12 @@ payWithNets page = do
   Chrome.select (Chrome.Selector "#year") "50" iframe
   Chrome.type_ (Chrome.Selector "#securityCode") "666" iframe
   Chrome.click (Chrome.Selector "#okButton") iframe
+
+assertUserHasSubscription :: Chrome.Page -> Aff Unit
+assertUserHasSubscription page = do
+  log "Vetrina should have checked that we are entitled"
+  let titleSelector = Chrome.Selector "#root > div > div > h1"
+  Chrome.assertContent titleSelector "Du har redan en prenumeration" page
+
+  log "We then click on 'whatever go ahead' and we should be done"
+  Chrome.click (Chrome.Selector "#root > div > div > button") page
