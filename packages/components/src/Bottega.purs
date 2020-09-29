@@ -2,24 +2,25 @@ module Bottega where
 
 import Prelude
 
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe, maybe)
-import Data.Nullable (Nullable, toMaybe)
+import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
 import KSF.Api.Package (Package)
-
 import OpenApiClient (Api, callApi)
 
 foreign import ordersApi :: Api
 foreign import packagesApi :: Api
+foreign import paymentMethodsApi :: Api
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
-createOrder { userId, authToken } newOrder =
-  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder ] { authorization, authUser }
+createOrder { userId, authToken } newOrder@{ campaignNo } =
+  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo } ] { authorization, authUser }
   where
+    -- NOTE/REMINDER: We don't want send Maybes to the server,
+    -- as they will be sent as objects
+    nullableCampaignNo = toNullable campaignNo
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
@@ -32,7 +33,7 @@ getOrder { userId, authToken } orderNumber = do
 
 readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: String, time :: String, failReason :: Nullable String } } -> Aff Order
 readOrder orderObj = do
-  let state = parseStatus orderObj.status.state (toMaybe orderObj.status.failReason)
+  let state = parseOrderState orderObj.status.state (toMaybe orderObj.status.failReason)
   pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
@@ -45,73 +46,53 @@ payOrder { userId, authToken } orderNumber paymentMethod =
 getPackages :: Aff (Array Package)
 getPackages = callApi packagesApi "packageGet" [] {}
 
-newtype OrderNumber = OrderNumber String
+readCreditCard :: { id :: CreditCardId, user :: UUID, paymentMethodId :: Nullable PaymentMethodId, panHash :: Nullable String, maskedPan :: Nullable String, expiryDate :: Nullable String } -> Aff CreditCard
+readCreditCard creditCardObj = pure $ 
+  { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: toMaybe creditCardObj.paymentMethodId, panHash: toMaybe creditCardObj.panHash, maskedPan: toMaybe creditCardObj.maskedPan, expiryDate: toMaybe creditCardObj.expiryDate }
 
-type Order =
-  { number     :: OrderNumber
-  , user       :: UUID
-  , status     :: OrderStatus
-  }
+readCreditCardRegister :: { number :: CreditCardRegisterNumber, user :: UUID, terminalUrl :: Nullable PaymentTerminalUrl, status :: { state :: String, time :: String, failReason :: Nullable String }  } -> Aff CreditCardRegister
+readCreditCardRegister creditCardRegisterObj = do
+  let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
+  pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, terminalUrl: toMaybe creditCardRegisterObj.terminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
 
-type OrderStatus =
-  { state      :: OrderStatusState
-  , time       :: String
-  }
+createCreditCard :: UserAuth -> Aff CreditCard
+createCreditCard { userId, authToken } = 
+  readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardPost" [] {authorization, authUser} 
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
 
-data OrderStatusState
-  = OrderCreated
-  | OrderStarted
-  | OrderCompleted
-  | OrderFailed OrderStatusFailReason
-  | OrderCanceled
-  | UnknownState
+getCreditCard :: UserAuth -> CreditCardId -> Aff CreditCard
+getCreditCard { userId, authToken } creditCardId = do
+  readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardIdGet" [ unsafeToForeign creditCardId ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
 
-parseStatus :: String -> Maybe String -> OrderStatusState
-parseStatus state maybeFailReason =
-    case state of
-      "created"   -> OrderCreated
-      "started"   -> OrderStarted
-      "completed" -> OrderCompleted
-      "failed"    -> OrderFailed $ maybe UnknownReason parseFailReason maybeFailReason
-      "canceled"  -> OrderCanceled
-      _           -> UnknownState
+deleteCreditCard :: UserAuth -> CreditCardId -> Aff Unit
+deleteCreditCard { userId, authToken } creditCardId = do
+  callApi paymentMethodsApi "paymentMethodCreditCardIdDelete" [ unsafeToForeign creditCardId ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
 
+registerCreditCard :: UserAuth -> CreditCardId -> Aff CreditCardRegister
+registerCreditCard { userId, authToken } creditCardId =
+  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterPost" [ unsafeToForeign creditCardId ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
 
-data OrderStatusFailReason
-  = NetsInternalError
-  | NetsIssuerError
-  | NetsCanceled
-  | SubscriptionExistsError
-  | SubscriptionError
-  | OrderNotFound
-  | UnknownReason
+getCreditCardRegister :: UserAuth -> CreditCardId -> CreditCardRegisterNumber -> Aff CreditCardRegister
+getCreditCardRegister { userId, authToken } creditCardId creditCardRegisterNumber = do
+  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterNumberGet" [ unsafeToForeign creditCardId, unsafeToForeign creditCardRegisterNumber ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
 
-derive instance genericOrderStatusFailReason :: Generic OrderStatusFailReason _
-instance showOrderStatusFailReason :: Show OrderStatusFailReason where
-  show = genericShow
-
-parseFailReason :: String -> OrderStatusFailReason
-parseFailReason reason =
-  case reason of
-    "NetsInternalError"       -> NetsInternalError
-    "NetsIssuerError"         -> NetsIssuerError
-    "NetsCanceled"            -> NetsCanceled
-    "SubscriptionExistsError" -> SubscriptionExistsError
-    "SubscriptionError"       -> SubscriptionError
-    "OrderNotFound"           -> OrderNotFound
-    _                         -> UnknownReason
-
-type NewOrder =
-  { packageId      :: String
-  , period         :: Int
-  , payAmountCents :: Int
-  , campaignNo     :: Maybe Int
-  }
-
-data PaymentMethod = CreditCard
-
-derive instance genericPaymentMethod :: Generic PaymentMethod _
-instance showPaymentMethod :: Show PaymentMethod where
-  show = genericShow
-
-type PaymentTerminalUrl = { paymentTerminalUrl :: String }
+updateCreditCardSubscriptions :: UserAuth -> CreditCardId -> CreditCardId -> Aff Unit
+updateCreditCardSubscriptions { userId, authToken } oldCreditCardId newCreditCardId = 
+  callApi paymentMethodsApi "paymentMethodCreditCardIdSubscriptionPut" [ unsafeToForeign oldCreditCardId, unsafeToForeign newCreditCardId ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId

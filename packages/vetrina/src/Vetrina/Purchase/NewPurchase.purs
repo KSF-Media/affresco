@@ -3,7 +3,7 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, cons)
+import Data.Array (all, cons, head)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
@@ -12,7 +12,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -125,12 +125,8 @@ didMount self = do
                   , paymentMethod = Just self.props.paymentMethod
                   , productSelection =
                       -- If there's already a selected product, pick that
-                      self.props.productSelection <|>
-                      -- Or, if not and we only have one product to select from,
-                      -- let's pre-select it
-                      case self.props.products of
-                        [ singleProduct ] -> Just singleProduct
-                        _                 -> Nothing
+                      -- or take the first item on the products list
+                      self.props.productSelection <|> head self.props.products
                   , existingAccountForm { emailAddress = maybeExistingUserEmail }
                   }
 

@@ -18,7 +18,8 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
+import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
@@ -29,14 +30,15 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
 
 type State =
-  { startDate     :: Maybe DateTime
-  , minStartDate  :: Maybe DateTime
-  , endDate       :: Maybe DateTime
-  , minEndDate    :: Maybe DateTime
-  , streetAddress :: Maybe String
-  , zipCode       :: Maybe String
-  , countryCode   :: Maybe String
-  , temporaryName :: Maybe String
+  { startDate      :: Maybe DateTime
+  , minStartDate   :: Maybe DateTime
+  , endDate        :: Maybe DateTime
+  , minEndDate     :: Maybe DateTime
+  , streetAddress  :: Maybe String
+  , zipCode        :: Maybe String
+  , countryCode    :: Maybe String
+  , temporaryName  :: Maybe String
+  , isIndefinite   :: Boolean
   }
 
 type Self = React.Self Props State
@@ -87,6 +89,7 @@ initialState =
   , zipCode: Nothing
   , countryCode: Just "FI"
   , temporaryName: Nothing
+  , isIndefinite: false
   }
 
 component :: React.Component Props
@@ -109,7 +112,7 @@ didMount self = do
   self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, isIndefinite }} =
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
@@ -132,7 +135,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, countryCode, temporaryName })
           , children:
-              [ startDayInput
+              [ DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
               , endDayInput
               , addressInput
               , zipInput
@@ -161,6 +164,16 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , label: "Börjar från"
         }
 
+    isIndefiniteCheckbox =
+      InputCheckbox.inputCheckbox
+        { type_: InputCheckbox.Checkbox
+        , name: "indefinite"
+        , value: Nothing
+        , onChange: \checked -> self.setState _ { isIndefinite = checked }
+        , label: Just "Tillsvidare"
+        , required: false
+        }
+
     endDayInput =
       dateInput
         self
@@ -168,7 +181,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: Nothing
-        , disabled: isNothing self.state.startDate
+        , disabled: isNothing self.state.startDate || self.state.isIndefinite
         , label: "Avslutas"
         }
 
@@ -234,7 +247,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           }
 
     submitForm :: Maybe DateTime -> Maybe DateTime -> AddressChange -> Effect Unit
-    submitForm (Just startDate') (Just endDate') addressChangeFormValues = do
+    submitForm (Just startDate') endDate' addressChangeFormValues = do
       Aff.launchAff_ do
         unV
           -- Shows validation errors if submit button is pushed with uninitialized values

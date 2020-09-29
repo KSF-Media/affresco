@@ -27,7 +27,7 @@ import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.User (User)

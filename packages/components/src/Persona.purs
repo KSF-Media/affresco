@@ -123,7 +123,7 @@ temporaryAddressChange
   :: UUID
   -> Int
   -> DateTime
-  -> DateTime
+  -> Maybe DateTime
   -> String
   -> String
   -> String
@@ -132,11 +132,31 @@ temporaryAddressChange
   -> Aff Subscription
 temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode countryCode temporaryName token = do
   let startDateISO = formatDate startDate
-      endDateISO   = formatDate endDate
+      endDateISO   = formatDate <$> endDate
+
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
+deleteTemporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Token
+  -> Aff Subscription
+deleteTemporaryAddressChange uuid subsno startDate endDate token = do
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO  }
     ]
     { authorization }
   where

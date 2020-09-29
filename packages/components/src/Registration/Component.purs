@@ -17,7 +17,7 @@ import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Foreign.Object as Object
 import KSF.CountryDropDown (defaultCountryDropDown)
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateZipCode)
 import Persona as Persona

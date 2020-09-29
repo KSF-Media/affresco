@@ -23,7 +23,7 @@ import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
-import KSF.User (Order, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl, User)
+import KSF.User (Order, FailReason(..), OrderState(..), PaymentMethod(..), PaymentTerminalUrl, User)
 import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -78,6 +78,7 @@ type State =
   , purchaseState    :: PurchaseState
   , poller           :: Aff.Fiber Unit
   , isLoading        :: Maybe Spinner.Loading
+  , loadingMessage   :: Maybe String
   , accountStatus    :: AccountStatus
   , logger           :: Sentry.Logger
   , products         :: Array Product
@@ -127,6 +128,7 @@ initialState =
   , purchaseState: NewPurchase
   , poller: pure unit
   , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
+  , loadingMessage: Nothing
   , accountStatus: NewAccount
   , logger: Sentry.emptyLogger
   , products: []
@@ -217,11 +219,11 @@ pollOrder setState state@{ logger } (Right order) = do
         _ -> do
           logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
           setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
-    OrderCanceled  -> liftEffect do
+    OrderCanceled     -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
       setState _ { purchaseState = NewPurchase }
-    OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
-    UnknownState   -> liftEffect do
+    OrderCreated      -> pollOrder setState state =<< User.getOrder order.number
+    OrderUnknownState -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
       setState _ { purchaseState = PurchaseFailed ServerError }
 pollOrder setState { logger } (Left err) = liftEffect do
@@ -231,7 +233,7 @@ pollOrder setState { logger } (Left err) = liftEffect do
 render :: Self -> JSX
 render self = vetrinaContainer self $
   if isJust self.state.isLoading
-  then Spinner.loadingSpinner
+  then maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
   else case self.state.purchaseState of
     NewPurchase ->
       Purchase.NewPurchase.newPurchase
@@ -336,7 +338,8 @@ mkPurchase
   -> { productSelection :: Maybe Product, paymentMethod :: Maybe PaymentMethod | r }
   -> Aff (Either OrderFailure User.User)
   -> Effect Unit
-mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
+mkPurchase self@{ state: { logger } } validForm affUser =
+  Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
   eitherUser <- affUser
   eitherOrder <- runExceptT do
     user          <- except eitherUser
@@ -384,6 +387,14 @@ mkPurchase self@{ state: { logger } } validForm affUser = Aff.launchAff_ $ Spinn
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
       liftEffect $ self.setState \_ -> errState
+  where
+    loadingWithMessage spinner = self.setState _
+        { isLoading = spinner
+        , loadingMessage =
+            if isJust spinner
+            then Just "Tack, vi skickar dig nu vidare till betalningsleverantören Nets."
+            else Nothing
+        }
 
 userHasPackage :: PackageId -> Array Package -> Boolean
 userHasPackage packageId = Array.any (\p -> packageId == p.id)
