@@ -40,7 +40,7 @@ main = launchAff_ do
 
   where
     mkEmail :: String -> String
-    mkEmail dateTimeStr = "fabrizio.ferrai+" <> dateTimeStr <> "@ksfmedia.fi"
+    mkEmail dateTimeStr = "zztelefon+test." <> dateTimeStr <> "@ksfmedia.fi"
 
     runTest name test email browser = do
       log $ ">>> Running test: " <> show name
