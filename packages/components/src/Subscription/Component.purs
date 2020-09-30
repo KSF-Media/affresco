@@ -5,18 +5,19 @@ import Prelude
 import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime)
-import Data.Foldable (foldMap)
+import Data.Either (Either(..))
+import Data.Foldable (foldMap, for_)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
-import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Now as Now
-import Effect.Aff as Aff
+import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -123,6 +124,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              <> deliveryAddress
              <> foldMap pendingAddressChanges self.state.pendingAddressChanges
              <> foldMap billingDateTerm billingPeriodEndDate
+             <> paymentMethod
          })
       (if package.digitalOnly
        then mempty
@@ -135,6 +137,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
        else Array.singleton
               { term: "Leveransadress:"
               , description: [ DOM.text currentDeliveryAddress ]
+              }
+
+    paymentMethod = Array.singleton
+              { term: "Faktureringsmetoden:"
+              , description: [ DOM.text $ translatePaymentMethod props.subscription.paymentMethod ]
               }
 
     pendingAddressChanges :: Array User.PendingAddressChange -> Array DescriptionList.Definition
@@ -167,19 +174,36 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: actionsContainer $ [ pauseIcon
-                                            , if maybe true Array.null self.state.pausedSubscriptions
-                                              then mempty
-                                              else removeSubscriptionPauses
-                                            , temporaryAddressChangeIcon
-                                            , deliveryReclamationIcon
-                                            ]
+            , readyView: actionsContainer $ defaultActions
             , editingView: identity
-            , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
-            , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
+            , successView: \msg -> actionsContainer $ defaultActions <> [successWrapper msg]
+            , errorView: \err -> actionsContainer $ defaultActions <> [errorWrapper err]
             , loadingView: identity
             }
 
+          defaultActions =
+            [ pauseIcon
+            , if maybe true Array.null self.state.pausedSubscriptions
+              then mempty
+              else removeSubscriptionPauses
+            , temporaryAddressChangeIcon
+            , case self.state.pendingAddressChanges of
+                   Just a -> removeTempAddressChanges a
+                   Nothing -> mempty
+            , deliveryReclamationIcon
+            ]
+
+          successWrapper msg =
+            DOM.div { className: "subscription--action-item"
+                    , children: [ successContainer [ DOM.div { className: "subscription--update-success check-icon" }
+                                                   , foldMap successMessage msg
+                                                   ]
+                                ]
+                    }
+          errorWrapper err =
+            DOM.div { className: "subscription--action-item"
+                    , children: [ errorContainer [ errorMessage err, tryAgain ] ]
+                    }
           successMessage msg =
             DOM.div
               { className: "success-text"
@@ -371,6 +395,36 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
               }
 
+    removeTempAddressChanges tempAddressChanges =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--delete-temporary-address-change-icon circle" }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Avbryt tillfälliga adressändringar" ] ]
+              }
+          ]
+        , onClick: handler_ $ do
+           self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+           Aff.launchAff_ $ do
+             for_ tempAddressChanges $ \tempAddressChange -> do
+               let startDate = toDateTime tempAddressChange.startDate
+               let endDate   = toDateTime tempAddressChange.endDate
+               case startDate, endDate of
+                 (Just startDate'), (Just endDate') -> do
+                   tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
+                   case tempAddressChangesDeleted of
+                     Right newSubscription -> liftEffect $ self.setState _
+                       { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
+                         pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
+                     Left _ -> liftEffect $ self.setState _
+                         { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                 _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
+        }
+
     deliveryReclamationIcon =
       DOM.div
         { className: "subscription--action-item"
@@ -438,6 +492,16 @@ translateStatus (User.SubscriptionState englishStatus) = do
     "DeactivatedRecently"       -> "Förnyad tillsvidare"
     "Unknown"                   -> "Okänd"
     _                           -> englishStatus
+
+translatePaymentMethod :: SubscriptionPaymentMethod -> String
+translatePaymentMethod paymentMethod =
+  case paymentMethod of
+    PaperInvoice         -> "Pappersfaktura"
+    CreditCard           -> "Kreditkort"
+    NetBank              -> "Netbank"
+    ElectronicInvoice    -> "Nätfaktura"
+    DirectPayment        -> "Direktbetalning"
+    UnknownPaymentMethod -> "Okänd"
 
 isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
 isPeriodExpired baseDate endDate =

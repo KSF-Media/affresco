@@ -16,6 +16,7 @@ module KSF.User
   , pauseSubscription
   , unpauseSubscription
   , temporaryAddressChange
+  , deleteTemporaryAddressChange
   , createDeliveryReclamation
   , createOrder
   , payOrder
@@ -29,8 +30,11 @@ where
 
 import Prelude
 
-import Bottega (NewOrder, Order, OrderNumber, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
-import Bottega as Bottega
+import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
+
+import Bottega (createOrder, getOrder, getPackages, payOrder) as Bottega
+import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl) as Bottega
+import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
@@ -424,7 +428,7 @@ temporaryAddressChange
   :: Api.UUID
   -> Int
   -> DateTime
-  -> DateTime
+  -> Maybe DateTime
   -> String
   -> String
   -> String
@@ -440,6 +444,13 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
       | otherwise -> do
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
+
+deleteTemporaryAddressChange :: Api.UUID -> Int -> DateTime -> DateTime -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+deleteTemporaryAddressChange userUuid subsno startDate endDate = do
+  tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate <<< _.token =<< requireToken
+  case tempAddressChangeDeletedSub of
+    Right sub -> pure $ Right sub
+    Left err  -> pure $ Left Persona.InvalidUnexpected
 
 createDeliveryReclamation
   :: Api.UUID

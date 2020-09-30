@@ -23,6 +23,7 @@ import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token(..), UUID, invalidateCacheHeader)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
+import KSF.Api.Subscription as Subscription
 import OpenApiClient (Api, callApi)
 import Simple.JSON (class ReadForeign, class WriteForeign)
 import Simple.JSON as JSON
@@ -40,8 +41,10 @@ loginSso :: LoginDataSso -> Aff LoginResponse
 loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
 getUser :: Maybe InvalidateCache -> UUID -> Token -> Aff User
-getUser invalidateCache uuid token =
-  callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
+getUser invalidateCache uuid token = do
+  user <- callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
+  let parsedSubs = map Subscription.parseSubscription user.subs
+  pure $ user { subs = parsedSubs }
   where
     headers =
       { authorization
@@ -55,14 +58,14 @@ getUserEntitlements uuid token =
   callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign uuid ] { authorization: oauthToken token }
 
 updateUser :: UUID -> UserUpdate -> Token -> Aff User
-updateUser uuid update token =
-  let
-    authorization = oauthToken token
-    body = case update of
-      UpdateName names      -> unsafeToForeign names
-      UpdateAddress address -> unsafeToForeign { address }
-  in
-   callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
+updateUser uuid update token = do
+  let authorization = oauthToken token
+      body = case update of
+        UpdateName names      -> unsafeToForeign names
+        UpdateAddress address -> unsafeToForeign { address }
+  user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
+  let parsedSubs = map Subscription.parseSubscription user.subs
+  pure $ user { subs = parsedSubs }
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
@@ -120,7 +123,7 @@ temporaryAddressChange
   :: UUID
   -> Int
   -> DateTime
-  -> DateTime
+  -> Maybe DateTime
   -> String
   -> String
   -> String
@@ -129,11 +132,31 @@ temporaryAddressChange
   -> Aff Subscription
 temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode countryCode temporaryName token = do
   let startDateISO = formatDate startDate
-      endDateISO   = formatDate endDate
+      endDateISO   = formatDate <$> endDate
+
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
+deleteTemporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Token
+  -> Aff Subscription
+deleteTemporaryAddressChange uuid subsno startDate endDate token = do
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO  }
     ]
     { authorization }
   where
@@ -295,8 +318,6 @@ errorData =
     <<< runExcept
           <<< Foreign.readProp "data"
           <<< unsafeToForeign
-
-
 
 data Provider
   = Facebook
