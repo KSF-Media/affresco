@@ -189,8 +189,8 @@ userView { setState, state: { logger } } user = React.fragment
       componentBlock
         "Mina uppgifter:"
         [ profileComponentBlock
-        , editAccountBlock
         , break
+        , editAccount
         , needHelp
         , disappearingBreak
         ]
@@ -199,13 +199,6 @@ userView { setState, state: { logger } } user = React.fragment
           { profile: user
           , onUpdate: setState <<< setLoggedInUser <<< Just
           , logger
-          }
-        editAccountBlock = DOM.div
-          { className: "mitt-konto--edit-account"
-          , children: 
-              [ componentHeader "Mina inställningar:"
-              , componentBlockContent $ DOM.div_ accountEditActions
-              ]   
           }
 
     subscriptionsView =
@@ -256,6 +249,15 @@ userView { setState, state: { logger } } user = React.fragment
             ]
         ]
 
+    editAccount :: JSX
+    editAccount =
+      DOM.div
+        { className: "mitt-konto--edit-account"
+        , children:
+            componentHeader "Mina inställningar:"
+            : accountEditLinks
+        }
+
     needHelp :: JSX
     needHelp =
       DOM.div
@@ -300,27 +302,12 @@ userView { setState, state: { logger } } user = React.fragment
          , children: [ child ]
          }
 
-    accountEditActions :: Array JSX
-    accountEditActions =
+    accountEditLinks :: Array JSX
+    accountEditLinks =
       [ formatIconLink
           { href: "https://www.hbl.fi/losenord"
           , description: "Byt lösenord"
           , className: passwordChangeClass
-          }
-      , DOM.div
-          { className: "subscription--action-item"
-          , children:
-              [ DOM.div
-                  { className: "subscription--temporary-address-change-icon circle"
-                  , onClick: handler_ (pure unit)
-                  }
-              , DOM.span
-                  { className: "subscription--update-action-text"
-                  , children:
-                      [ DOM.u_ [ DOM.text "Gör tillfällig adressändring" ] ]
-                  , onClick: handler_ (pure unit)
-                  }
-              ]
           }
       ]
       where
