@@ -15,7 +15,6 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.Helpers as Helpers
 import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -189,9 +188,9 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
       case _ of
         Right sub -> liftEffect do
           props.onSuccess sub
-          Tracking.pauseSubscription props.cusno subsno (Helpers.formatDate start) (Helpers.formatDate end) "success"
+          Tracking.pauseSubscription props.cusno (show subsno) start end "success"
         Left invalidDateInput -> liftEffect do
           props.onError invalidDateInput
-          Tracking.pauseSubscription props.cusno subsno (Helpers.formatDate start) (Helpers.formatDate end) "error: invalid date input"
+          Tracking.pauseSubscription props.cusno (show subsno) start end "error: invalid date input"
   
 submitForm _ _ = Console.error "Pause subscription dates were not defined."

@@ -22,7 +22,6 @@ import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
-import KSF.Helpers as Helpers
 import KSF.JSError as Error
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.Sentry as Sentry
@@ -371,13 +370,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                  Left err -> liftEffect do
                    self.setState _
                      { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
+                   Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "error"
                  Right newSubscription -> liftEffect do
                    self.setState _
                      { pausedSubscriptions = toMaybe newSubscription.paused
                      , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
                      }
-                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
+                   Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "success"
         }
 
     temporaryAddressChangeIcon =
@@ -429,11 +428,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                        self.setState _
                          { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
                            pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
-                       Tracking.deleteTempAddressChange (show props.subscription.cusno) props.subscription.subsno (Helpers.formatDate startDate') (Helpers.formatDate endDate') "success"
+                       Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
                      Left _ -> liftEffect do
                        self.setState _
                          { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                       Tracking.deleteTempAddressChange (show props.subscription.cusno) props.subscription.subsno (Helpers.formatDate startDate') (Helpers.formatDate endDate') "success"
+                       Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
                  _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
         }
 

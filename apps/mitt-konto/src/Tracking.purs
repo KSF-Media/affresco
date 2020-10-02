@@ -1,43 +1,52 @@
 module Tracking where
 
+import Data.DateTime (DateTime)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Foreign (Foreign)
 import Prelude (Unit)
 import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, runEffectFn2, runEffectFn3, runEffectFn5)
+import KSF.Helpers as Helpers
 
 foreign import login_ :: EffectFn3 Cusno LoginMethod Result Unit
 foreign import reclamation_ :: EffectFn5 Cusno Subsno DateString Claim Result Unit
-foreign import tempAddressChange_ :: EffectFn5 Cusno Subsno StartDate EndDate Result Unit
-foreign import pauseSubscription_ :: EffectFn5 Cusno Subsno StartDate EndDate Result Unit
+foreign import tempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
+foreign import pauseSubscription_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
-foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDate EndDate Result Unit
+foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import changeName_ :: EffectFn2 Cusno Result Unit
 foreign import changeAddress_ :: EffectFn2 Cusno Result Unit
 
 type Cusno = String
-type Subsno = Int
+type Subsno = String
 type DateString = String
 type Claim = String
-type StartDate = String
-type EndDate = String
+type StartDate = DateTime
+type StartDateString = String
+type EndDate = DateTime
+type EndDateString = String
 type Result = String
 type LoginMethod = String
-  
--- Int = subsno, String = date
-reclamation :: Cusno -> Subsno -> DateString -> Claim -> Result -> Effect Unit
-reclamation = runEffectFn5 reclamation_
 
-tempAddressChange :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
-tempAddressChange = runEffectFn5 tempAddressChange_
+reclamation :: Cusno -> Subsno -> DateTime -> Claim -> Result -> Effect Unit
+reclamation cusno subsno date claim result =
+  runEffectFn5 reclamation_ cusno subsno (Helpers.formatDate date) claim result
+
+tempAddressChange :: Cusno -> Subsno -> StartDate -> Maybe EndDate -> Result -> Effect Unit
+tempAddressChange cusno subsno startDate endDate result = case endDate of
+  Just endDate' -> runEffectFn5 tempAddressChange_ cusno subsno (Helpers.formatDate startDate) (Helpers.formatDate endDate') result
+  Nothing       -> runEffectFn5 tempAddressChange_ cusno subsno (Helpers.formatDate startDate) "indefinite" result
 
 pauseSubscription :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
-pauseSubscription = runEffectFn5 pauseSubscription_
+pauseSubscription cusno subsno startDate endDate result =
+  runEffectFn5 pauseSubscription_ cusno subsno (Helpers.formatDate startDate) (Helpers.formatDate endDate) result
 
 unpauseSubscription :: Cusno -> Subsno -> Result -> Effect Unit
 unpauseSubscription = runEffectFn3 unpauseSubscription_
 
 deleteTempAddressChange :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
-deleteTempAddressChange = runEffectFn5 deleteTempAddressChange_
+deleteTempAddressChange cusno subsno startDate endDate result =
+  runEffectFn5 deleteTempAddressChange_ cusno subsno (Helpers.formatDate startDate) (Helpers.formatDate endDate) result
 
 changeName :: Cusno -> Result -> Effect Unit
 changeName = runEffectFn2 changeName_
@@ -45,9 +54,11 @@ changeName = runEffectFn2 changeName_
 changeAddress :: Cusno -> Result -> Effect Unit
 changeAddress = runEffectFn2 changeAddress_
 
-login :: Cusno -> LoginMethod -> Result -> Effect Unit
-login = runEffectFn3 login_
+login :: Maybe Cusno -> LoginMethod -> Result -> Effect Unit
+login (Just cusno) method result = runEffectFn3 login_ cusno method result
+login Nothing method result      = runEffectFn3 login_ "" method result
 
 -- More about the data layer:
 -- https://developers.google.com/tag-manager/devguide
 type DataLayer = Array Foreign
+

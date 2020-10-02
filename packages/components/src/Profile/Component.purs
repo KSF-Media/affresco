@@ -335,12 +335,12 @@ editAddress self =
           Right u -> liftEffect do
             self.props.onUpdate u
             self.setState _ { editAddress = Success Nothing }
-            Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating name"
+            Tracking.changeAddress self.props.profile.cusno "success"
           Left err -> do
             liftEffect do
               self.props.logger.error $ Error.userError $ show err
               self.setState _ { editAddress = AsyncWrapper.Error "Adressändringen misslyckades." }
-              Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating name"
+              Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating address"
     updateAddress _ = pure unit
 
 editName :: Self -> JSX
@@ -397,7 +397,7 @@ editName self =
               Tracking.changeName self.props.profile.cusno "success"
               self.props.onUpdate u
               self.setState _ { editName = Success Nothing }
-              Tracking.changeName self.props.profile.cusno "error: unexpected error when updating name"
+              Tracking.changeName self.props.profile.cusno "success"
             Left err -> do
               liftEffect do
                 self.props.logger.error $ Error.userError $ show err
