@@ -203,12 +203,10 @@ pollOrder setState state@{ logger } (Right order) = do
           nextPurchaseStep = case userAccountStatus of
             NewAccount      -> PurchaseSetPassword
             _               -> PurchaseCompleted userAccountStatus
-      productId <- liftEffect $ LocalStorage.getItem "productId" --analytics
-      productPrice <- liftEffect $ LocalStorage.getItem "productPrice" --analytics
-      liftEffect $ Tracking.transaction order.number productId productPrice --analyics
       liftEffect $ setState _ { purchaseState = nextPurchaseStep }
-      tracker <- liftEffect $ Tracking.newTracker
-      liftEffect $ Tracking.transaction tracker
+      productId    <- LocalStorage.getItem "productId" --analytics
+      productPrice <- LocalStorage.getItem "productPrice" --analytics
+      liftEffect $ Tracking.transaction order.number productId productPrice --analyics
       where
         chooseAccountStatus user
           | user.hasCompletedRegistration = ExistingAccount user.email
