@@ -232,6 +232,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
         { subsno: props.subscription.subsno
+        , pastAddresses: [{ streetAddress: Just "Mannerheimvägen 18"
+                          , zipCode: Just "00100"
+                          , countryCode: Just "FI"
+                          , temporaryName: Nothing
+                          }]
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }

@@ -3,6 +3,7 @@ module KSF.TemporaryAddressChange.Component where
 import Prelude
 
 import Control.Alt ((<|>))
+import Data.Array (length)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
@@ -17,12 +18,14 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.AddressChange (AddressChange) -- TODO
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
+import KSF.PastTemporaryAddressDropDown (pastTemporaryAddressDropDown)
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -44,12 +47,13 @@ type State =
 type Self = React.Self Props State
 
 type Props =
-  { subsno    :: Int
-  , userUuid  :: User.UUID
-  , onCancel  :: Effect Unit
-  , onLoading :: Effect Unit
-  , onSuccess :: User.Subscription -> Effect Unit
-  , onError   :: User.InvalidDateInput -> Effect Unit
+  { subsno        :: Int
+  , pastAddresses :: Array AddressChange
+  , userUuid      :: User.UUID
+  , onCancel      :: Effect Unit
+  , onLoading     :: Effect Unit
+  , onSuccess     :: User.Subscription -> Effect Unit
+  , onError       :: User.InvalidDateInput -> Effect Unit
   }
 
 data Action
@@ -68,13 +72,6 @@ instance validatableFieldAddressChangeFields :: VF.ValidatableField AddressChang
     Zip           -> VF.validateZipCode field value
     CountryCode   -> VF.validateEmptyField field "Land krävs." value
     TemporaryName -> VF.noValidation value
-
-type AddressChange =
-  { streetAddress :: Maybe String
-  , zipCode       :: Maybe String
-  , countryCode   :: Maybe String
-  , temporaryName :: Maybe String
-  }
 
 temporaryAddressChange :: Props -> JSX
 temporaryAddressChange = make component { initialState, render, didMount }
@@ -116,7 +113,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
   DOM.div
     { className: "clearfix temporary-address-change--container"
     , children:
-        [ Grid.row_
+        [ Grid.row_ $
            [ DOM.div
                { className: "col col-11"
                , children: [ DOM.h3_ [ DOM.text "Gör tillfällig adressändring" ] ]
@@ -126,11 +123,24 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
                , children: [ DOM.div { className: "close-icon" } ]
                , onClick: handler_ self.props.onCancel
                }
-           , addressChangeForm
-           ]
+           ] <>
+           (if length self.props.pastAddresses == 0 then identity else ([pastTempSelection] <> _))
+             [ addressChangeForm
+             ]
         ]
     }
   where
+    pastTempSelection =
+      pastTemporaryAddressDropDown
+        self.props.pastAddresses
+        (\newTemp -> case newTemp of
+            Just tmp -> self.setState _ { streetAddress = tmp.streetAddress
+                                        , zipCode = tmp.zipCode
+                                        , countryCode = tmp.countryCode
+                                        , temporaryName = tmp.temporaryName
+                                        }
+            Nothing -> mempty
+        )
     addressChangeForm =
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, countryCode, temporaryName })
