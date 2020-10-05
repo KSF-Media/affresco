@@ -2,9 +2,9 @@ module KSF.CreditCard.Menu where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.DateTime (DateTime)
 import Data.Maybe (Maybe(..))
-import KSF.Bottega.Models (CreditCard)
 import KSF.CreditCard.Menu.Item (item)
 import KSF.Modal as Modal
 import KSF.Spinner as Spinner
@@ -33,12 +33,15 @@ menu = make component
   , didMount 
   }
 
+component :: React.Component Props
+component = React.createComponent "menu"
+
 initialState :: State
 initialState = { chosenCard: Nothing }
 
 didMount :: Self -> Effect Unit
 didMount self@{ props: { chosenCard: Just card } } =
-  pure self.setState _ { chosenCard: Just card }
+  self.setState _ { chosenCard: Just card }
 didMount _ = pure unit
 
 render :: Self -> JSX

@@ -2,9 +2,9 @@ module KSF.CreditCard.Update where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.DateTime (DateTime)
 import Data.Maybe (Maybe(..))
-import KSF.Bottega.Models (CreditCard)
 import KSF.CreditCard.Menu (menu) as Menu
 import KSF.Modal as Modal
 import KSF.Spinner as Spinner
@@ -51,7 +51,7 @@ initialState =
   }
 
 component :: React.Component Props
-component = React.createComponent "CreditCardChange"
+component = React.createComponent "update"
 
 render :: Self -> JSX
 render self = case self.state.changeState of

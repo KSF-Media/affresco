@@ -2,9 +2,9 @@ module KSF.CreditCard.Menu.Item where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.DateTime (DateTime)
 import Data.Maybe (Maybe(..))
-import KSF.Bottega.Models (CreditCard)
 import KSF.Modal as Modal
 import KSF.Spinner as Spinner
 import KSF.User (PaymentTerminalUrl(..))
@@ -24,8 +24,11 @@ type Props =
   { creditCard :: CreditCard
   }
 
-menu :: Props -> JSX
-menu = make component { initialState, render}
+item :: Props -> JSX
+item = make component { initialState, render }
+
+component :: React.Component Props
+component = React.createComponent "item"
 
 initialState :: State
 initialState = { selected: false }
@@ -33,8 +36,8 @@ initialState = { selected: false }
 render :: Self -> JSX
 render self = DOM.div
                 { className: wrapperClass
-                , children: [ number
-                            , expiryDate
+                , children: [ number "1"
+                            , expiryDate "05/2020"
                             ]
                 }
   where
@@ -54,5 +57,5 @@ render self = DOM.div
     expiryDate :: String -> JSX
     expiryDate d = DOM.div 
                      { className: "credit-card-menu-item--expiry-date"
-                     , children: [ DOM.text n ]
+                     , children: [ DOM.text d ]
                      }
