@@ -190,6 +190,7 @@ userView { setState, state: { logger } } user = React.fragment
         "Mina uppgifter:"
         [ profileComponentBlock
         , break
+        , editAccountBlock
         , editAccount
         , needHelp
         , disappearingBreak
@@ -199,6 +200,13 @@ userView { setState, state: { logger } } user = React.fragment
           { profile: user
           , onUpdate: setState <<< setLoggedInUser <<< Just
           , logger
+          }
+        editAccountBlock = DOM.div
+          { className: "mitt-konto--edit-account"
+          , children:
+              [ componentHeader "Mina inställningar:"
+              , componentBlockContent $ DOM.div_ accountEditActions
+              ]
           }
 
     subscriptionsView =
@@ -302,8 +310,8 @@ userView { setState, state: { logger } } user = React.fragment
          , children: [ child ]
          }
 
-    accountEditLinks :: Array JSX
-    accountEditLinks =
+    accountEditActions :: Array JSX
+    accountEditActions =
       [ formatIconLink
           { href: "https://www.hbl.fi/losenord"
           , description: "Byt lösenord"
