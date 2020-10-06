@@ -5,7 +5,8 @@ import Prelude
 import Bottega.Models (CreditCard)
 import Data.DateTime (DateTime)
 import Data.Maybe (Maybe(..))
-import KSF.CreditCard.Menu.Item (item)
+import Effect (Effect)
+import KSF.CreditCard.Menu.Item (item) as CreditCard
 import KSF.Modal as Modal
 import KSF.Spinner as Spinner
 import KSF.User (PaymentTerminalUrl(..))
@@ -20,6 +21,9 @@ type Self = React.Self Props State
 type State = 
   { chosenCard :: Maybe CreditCard
   }
+
+setChosenCard :: Maybe CreditCard -> State -> State
+setChosenCard chosenCard = _ { chosenCard = chosenCard }
 
 type Props = 
   { creditCards :: Array CreditCard
@@ -40,8 +44,8 @@ initialState :: State
 initialState = { chosenCard: Nothing }
 
 didMount :: Self -> Effect Unit
-didMount self@{ props: { chosenCard: Just card } } =
-  self.setState _ { chosenCard: Just card }
+didMount self@{ props: { chosenCard: Just card }, setState, state } =
+  setState $ setChosenCard $ Just card
 didMount _ = pure unit
 
 render :: Self -> JSX
@@ -51,7 +55,10 @@ render self = DOM.div
                 }
   where
     creditCardsList :: JSX
-    creditCardSList = DOM.div
+    creditCardsList = DOM.div
                         { className: "credit-card-menu--list"
-                        , children: map creditCardItem self.props.creditCards
+                        , children: map creditCardMenuItem self.props.creditCards
                         }
+      where
+        creditCardMenuItem :: CreditCard -> JSX
+        creditCardMenuItem creditCard = CreditCard.item { creditCard: creditCard }
