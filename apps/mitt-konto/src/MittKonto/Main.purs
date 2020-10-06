@@ -191,7 +191,6 @@ userView { setState, state: { logger } } user = React.fragment
         [ profileComponentBlock
         , break
         , editAccountBlock
-        , editAccount
         , needHelp
         , disappearingBreak
         ]
@@ -256,15 +255,6 @@ userView { setState, state: { logger } } user = React.fragment
             , DOM.text " och vi kopplar den till ditt konto."
             ]
         ]
-
-    editAccount :: JSX
-    editAccount =
-      DOM.div
-        { className: "mitt-konto--edit-account"
-        , children:
-            componentHeader "Mina inställningar:"
-            : accountEditLinks
-        }
 
     needHelp :: JSX
     needHelp =
