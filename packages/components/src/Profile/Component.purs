@@ -394,7 +394,6 @@ editName self =
           newUser <- User.updateUser self.props.profile.uuid $ User.UpdateName { firstName: fname, lastName: lname }
           case newUser of
             Right u -> liftEffect do
-              Tracking.changeName self.props.profile.cusno "success"
               self.props.onUpdate u
               self.setState _ { editName = Success Nothing }
               Tracking.changeName self.props.profile.cusno "success"
