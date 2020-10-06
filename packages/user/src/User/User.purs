@@ -18,6 +18,7 @@ module KSF.User
   , temporaryAddressChange
   , deleteTemporaryAddressChange
   , createDeliveryReclamation
+  , getPayments
   , createOrder
   , payOrder
   , getOrder
@@ -68,7 +69,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -465,6 +466,20 @@ createDeliveryReclamation uuid subsno date claim = do
     Left err -> do
       Console.error "Unexpected error when creating delivery reclamation."
       pure $ Left Persona.InvalidUnexpected
+
+getPayments :: Api.UUID -> Aff (Either String (Array Persona.SubscriptionPayments))
+getPayments uuid = do
+  Console.log("get payments")
+--  payments <- try $ Persona.getPayments uuid <<< _.token =<< requireToken
+  let payments = Left "asdf"
+  Console.log("got payments")
+  case payments of
+    Right pay -> pure $ Right pay
+    Left err -> do
+      Console.error "Unexpected error when getting user payment history "
+--      Console.error $ show $ Persona.errorData err
+--      Console.error $ "Unexpected error when getting user payment history "
+      pure $ Left "unexpected"
 
 createOrder :: Bottega.NewOrder -> Aff (Either String Bottega.Order)
 createOrder newOrder = callBottega \tokens -> Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder

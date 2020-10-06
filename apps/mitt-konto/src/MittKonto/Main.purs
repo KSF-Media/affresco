@@ -6,7 +6,8 @@ import Data.Array (snoc, sortBy, (:))
 import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Nullable (toNullable)
 import Data.Set as Set
 import Data.String (toUpper)
 import Effect (Effect)
@@ -24,15 +25,20 @@ import KSF.Footer.Component as Footer
 import KSF.JSError as Error
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
+import KSF.PaymentAccordion.Component as PaymentAccordion
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.Subscription.Component (subscription) as Subscription
-import KSF.User (User, UserError(..))
-import KSF.User (logout) as User
+import KSF.User (User, UserError(..), SubscriptionPayments)
+import KSF.User (logout, getPayments) as User
 import KSF.User.Login (login) as Login
-import React.Basic (JSX, make)
+import React.Basic (JSX, element, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Router as Router
+import Web.HTML (window)
+import Web.HTML.Window (location)
+import Web.HTML.Location (pathname)
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String
@@ -47,6 +53,7 @@ type State =
   , showWelcome :: Boolean
   , alert :: Maybe Alert
   , logger :: Sentry.Logger
+  , payments :: Maybe (Array SubscriptionPayments)
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -57,6 +64,9 @@ setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
 
 setAlert :: Maybe Alert -> State -> State
 setAlert alert = _ { alert = alert }
+
+setPayments :: Maybe (Array SubscriptionPayments) -> State -> State
+setPayments payments = _ { payments = payments }
 
 data Loading = Loading
 
@@ -74,6 +84,7 @@ app = make component
       , showWelcome: true
       , alert: Nothing
       , logger: Sentry.emptyLogger
+      , payments: Nothing
       }
   , didMount
   , render
@@ -93,18 +104,37 @@ render self@{ state, setState } =
         [ foldMap alertView state.alert ]
     , classy DOM.div "mt4 mb4 clearfix"
         [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ mittKonto ]
+            [ element Router.switch { children: [ paymentList, mittKonto ] } ]
         ]
     , footerView
     ]
  where
    mittKonto =
-     classy DOM.div "mitt-konto--container clearfix"
-       [ foldMap loadingIndicator state.loading
-       , case state.loggedInUser of
-           Just user -> userView self user
-           Nothing   -> loginView self
-       ]
+     element
+       Router.route
+         { exact: true
+         , path: toNullable $ Just "/"
+         , render:
+             \_ -> classy DOM.div "mitt-konto--container clearfix"
+               [ foldMap loadingIndicator state.loading
+               , case state.loggedInUser of
+                   Just user -> userView self user
+                   Nothing   -> loginView self
+               ]
+         }
+   paymentList =
+     element
+       Router.route
+         { exact: true
+         , path: toNullable $ Just "/fakturor"
+         , render:
+             \_ -> classy DOM.div "mitt-konto--container clearfix"
+               [ foldMap loadingIndicator state.loading
+               , case state.loggedInUser of
+                   Just user -> paymentView self $ fromMaybe [] state.payments
+                   Nothing   -> loginView self
+               ]
+         }
 
 loadingIndicator :: Loading -> JSX
 loadingIndicator Loading =
@@ -306,6 +336,11 @@ userView { setState, state: { logger } } user = React.fragment
           , description: "Byt lösenord"
           , className: passwordChangeClass
           }
+      , formatIconLink
+          { href: "/fakturor"
+          , description: "Fakturor"
+          , className: "mitt-konto--payment-history"
+          }
       ]
       where
         passwordChangeClass = "mitt-konto--password-change"
@@ -330,6 +365,10 @@ userView { setState, state: { logger } } user = React.fragment
         , children: [ children ]
         , target: "_blank"
         }
+
+-- | Specialized view with user's payment list
+paymentView :: Self -> Array SubscriptionPayments -> JSX
+paymentView _ payments = PaymentAccordion.payments { payments: payments }
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Self -> JSX
@@ -362,6 +401,18 @@ loginView self@{ state: state@{ logger }, setState } = React.fragment
               Right user -> do
                 setState $ setLoggedInUser $ Just user
                 logger.setUser $ Just user
+                path <- pathname =<< location =<< window
+                case path of
+                  "/fakturor" -> Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
+                    p <- User.getPayments user.uuid
+                    liftEffect $ setState $ case p of
+                      Right payments -> setPayments $ Just payments
+                      Left _ -> setAlert $ Just
+                                  { level: Alert.warning
+                                  , title: "Något gick fel"
+                                  , message: "Fakturor"
+                                  }
+                  _ -> pure unit
           , launchAff_:
               Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
                 <<< withSpinner (setState <<< setLoading)

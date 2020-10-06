@@ -4,17 +4,20 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Except (runExcept)
+import Data.Array (catMaybes)
+import Data.Date (Date)
 import Data.DateTime (DateTime)
 import Data.Either (hush)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.JSDate (JSDate)
+import Data.JSDate (JSDate, toDate)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
-import Data.String.Read (class Read)
+import Data.String.Read (class Read, read)
+import Data.Traversable (sequence)
 import Effect.Aff (Aff)
 import Effect.Exception (Error)
 import Foreign (unsafeToForeign)
@@ -27,6 +30,11 @@ import KSF.Api.Subscription as Subscription
 import OpenApiClient (Api, callApi)
 import Simple.JSON (class ReadForeign, class WriteForeign)
 import Simple.JSON as JSON
+
+-- debug
+import Data.Date (canonicalDate)
+import Data.Enum (toEnum)
+import Effect.Class.Console as Console
 
 foreign import loginApi :: Api
 foreign import usersApi :: Api
@@ -434,3 +442,171 @@ instance writeForeignDeliveryReclamationStatus :: WriteForeign DeliveryReclamati
   writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
 instance showDeliveryReclamationStatus :: Show DeliveryReclamationStatus where
   show = genericShow
+
+data PaymentState
+  = PaymentOpen
+  | PartiallyPaid
+  | Paid
+  | Reminded
+  | Foreclosure
+  | Reimbursed
+  | CreditLoss
+
+instance readPaymentState :: Read PaymentState where
+  read s =
+    case s of
+      "PaymentOpen"   -> pure PaymentOpen
+      "PartiallyPaid" -> pure PartiallyPaid
+      "Paid"          -> pure Paid
+      "Reminded"      -> pure Reminded
+      "Foreclosure"   -> pure Foreclosure
+      "Reimbursed"    -> pure Reimbursed
+      "CreditLoss"    -> pure CreditLoss
+      _               -> Nothing
+
+data PaymentType
+  = NormalState
+  | DirectDebit
+  | Reminder1
+  | Reminder2
+  | Nonpayment
+  | Reimbursement
+
+instance readPaymentType :: Read PaymentType where
+  read t =
+    case t of
+      "NormalState"   -> pure NormalState
+      "DirectDebit"   -> pure DirectDebit
+      "Reminder1"     -> pure Reminder1
+      "Reminder2"     -> pure Reminder2
+      "Nonpayment"    -> pure Nonpayment
+      "Reimbursement" -> pure Reimbursement
+      _               -> Nothing
+
+type SubscriptionPayments =
+  { name :: String
+  , startDate :: Date
+  , lastDate :: Date
+  , payments :: Array Payment
+  }
+
+type Payment =
+  { date :: Date
+  , dueDate :: Date
+  , expenses :: Number
+  , interest :: Number
+  , vat :: Number
+  , amount :: Number
+  , openAmount :: Number
+  , type :: PaymentType
+  , state :: PaymentState
+  , discount :: Number
+  }
+
+type SubscriptionPayments' =
+  { name :: String
+  , startDate :: JSDate
+  , lastDate :: JSDate
+  , payments :: Array Payment'
+  }
+
+type Payment' =
+  { date :: JSDate
+  , dueDate :: JSDate
+  , expenses :: Number
+  , interest :: Number
+  , vat :: Number
+  , amount :: Number
+  , openAmount :: Number
+  , type :: String
+  , state :: String
+  , discount :: Number
+  }
+
+getPayments :: UUID -> Token -> Aff (Array SubscriptionPayments)
+getPayments uuid token = do
+  Console.log("uuid "<>show uuid<>" token "<>show token)
+--  callApi usersApi "usersUuidPaymentsGet" [ unsafeToForeign uuid ] { authorization: oauthToken token }
+  catMaybes <<< map nativeSubscriptionPayments
+    <$> callApi usersApi "usersUuidPaymentsGet" [ unsafeToForeign uuid ] { authorization: oauthToken token }
+  where
+    nativeSubscriptionPayments :: SubscriptionPayments' -> Maybe SubscriptionPayments
+    nativeSubscriptionPayments x = do
+      ps <- sequence $ map nativePayment x.payments
+      sd <- toDate x.startDate
+      ld <- toDate x.lastDate
+      pure $ { name: x.name
+             , startDate: sd
+             , lastDate : ld
+             , payments: ps
+             }
+    nativePayment :: Payment' -> Maybe Payment
+    nativePayment x = do
+      d <- toDate x.date
+      dd <- toDate x.dueDate
+      t <- read x.type
+      s <- read x.state
+      pure $ { date: d
+             , dueDate: dd
+             , expenses: x.expenses
+             , interest: x.interest
+             , vat: x.vat
+             , amount: x.amount
+             , openAmount: x.openAmount
+             , type: t
+             , state: s
+             , discount: x.discount
+             }
+
+examplePayments :: Array SubscriptionPayments
+examplePayments = fromMaybe [] $ do
+  d <- canonicalDate
+         <$> toEnum 2000
+         <*> toEnum 1
+         <*> toEnum 1
+  pure $ [ { name: "foo"
+           , startDate: d
+           , lastDate: d
+           , payments:
+               [ { date: d
+                 , dueDate: d
+                 , expenses: 10.0
+                 , interest: 10.0
+                 , vat: 10.0
+                 , amount: 100.0
+                 , openAmount: 0.0
+                 , type: NormalState
+                 , state: Paid
+                 , discount: 0.0
+                 }
+               ]
+           }
+         , { name: "bar"
+           , startDate: d
+           , lastDate: d
+           , payments:
+               [ { date: d
+                 , dueDate: d
+                 , expenses: 10.0
+                 , interest: 10.0
+                 , vat: 10.0
+                 , amount: 100.0
+                 , openAmount: 0.0
+                 , type: NormalState
+                 , state: Paid
+                 , discount: 0.0
+                 }
+               , { date: d
+                 , dueDate: d
+                 , expenses: 10.0
+                 , interest: 10.0
+                 , vat: 10.0
+                 , amount: 100.0
+                 , openAmount: 0.0
+                 , type: NormalState
+                 , state: Paid
+                 , discount: 0.0
+                 }
+               ]
+           }
+         ]

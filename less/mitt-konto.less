@@ -234,3 +234,42 @@ h2.mitt-konto---heading {
    font-size: 0.85em;
    color: gray;
 }
+
+.mitt-konto--payment-header {
+    display: flex;
+    font-size: larger;
+    background: lightgray;
+    padding: 0.5ex;
+    border-radius: 5px;
+}
+
+.mitt-konto--payment-header span {
+    flex: 1;
+}
+
+.mitt-konto--payment-header div {
+    flex: 0 0 2em;
+}
+
+.mitt-konto--payment-header.focus div::before {
+    content: "▼";
+    color: black;
+}
+
+.mitt-konto--payment-header.nofocus div::before {
+    content: "▲";
+    color: black;
+}
+
+.mitt-konto--payment-header.nofocus {
+    cursor: pointer;
+    background: darkgray;
+}
+
+.mitt-konto--payment-subscription .euro {
+    text-align: right;
+}
+
+.mitt-konto--payment-details {
+    width: 100%;
+}
