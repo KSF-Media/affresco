@@ -34,27 +34,20 @@ data ChangeState
   | Failed
   | Completed
 
-type CreditCard =
-  { id          :: Int
-  , panHash     :: String
-  , maskedPan   :: String
-  , expiryDate  :: DateTime
-  }
-
 update :: Props -> JSX
 update = make component { initialState, render }
 
 initialState :: State
 initialState =
   { updateState: CreateCreditCard
-  , creditCard: Nothing
+  , creditCards: []
   }
 
 component :: React.Component Props
 component = React.createComponent "update"
 
 render :: Self -> JSX
-render self = case self.state.changeState of
+render self = case self.state.updateState of
   ChooseCreditCard   ->  Modal.modal 
                           { content: Menu.menu 
                                        { creditCards: []
