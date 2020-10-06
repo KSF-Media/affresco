@@ -1,7 +1,7 @@
 module Tracking where
 
 import Data.DateTime (DateTime)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Effect (Effect)
 import Foreign (Foreign)
 import Prelude (Unit)
@@ -33,9 +33,9 @@ reclamation cusno subsno date claim result =
   runEffectFn5 reclamation_ cusno subsno (Helpers.formatDate date) claim result
 
 tempAddressChange :: Cusno -> Subsno -> StartDate -> Maybe EndDate -> Result -> Effect Unit
-tempAddressChange cusno subsno startDate endDate result = case endDate of
-  Just endDate' -> runEffectFn5 tempAddressChange_ cusno subsno (Helpers.formatDate startDate) (Helpers.formatDate endDate') result
-  Nothing       -> runEffectFn5 tempAddressChange_ cusno subsno (Helpers.formatDate startDate) "indefinite" result
+tempAddressChange cusno subsno startDate endDate result =
+  let endDateString = maybe "indefinite" Helpers.formatDate endDate
+  in runEffectFn5 tempAddressChange_ cusno subsno (Helpers.formatDate startDate) endDateString result
 
 pauseSubscription :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
 pauseSubscription cusno subsno startDate endDate result =
@@ -61,4 +61,3 @@ login Nothing method result      = runEffectFn3 login_ "" method result
 -- More about the data layer:
 -- https://developers.google.com/tag-manager/devguide
 type DataLayer = Array Foreign
-
