@@ -177,7 +177,6 @@ didMount self@{ props, state } = do
         self.setState _ { errors { login = Just SomethingWentWrong } }
       Right user' -> do
         Tracking.login (Just user'.cusno) "magic login" "success"
-        pure unit
     props.onUserFetch user
 
 render :: Self -> JSX
