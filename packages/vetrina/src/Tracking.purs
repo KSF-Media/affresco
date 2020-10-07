@@ -6,7 +6,6 @@ import Effect (Effect)
 import KSF.User (OrderNumber)
 import Prelude (Unit, pure, unit)
 
-foreign import data Tracker :: Type
 foreign import transaction_ :: Fn3 OrderNumber String String (Effect Unit)
 
 transaction :: OrderNumber -> Maybe String -> Maybe String -> Effect Unit
