@@ -23,7 +23,7 @@ import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
-import KSF.User (Order, OrderStatusFailReason(..), OrderStatusState(..), PaymentMethod(..), PaymentTerminalUrl, User)
+import KSF.User (Order, FailReason(..), OrderState(..), PaymentMethod(..), PaymentTerminalUrl, User)
 import KSF.User as User
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -219,11 +219,11 @@ pollOrder setState state@{ logger } (Right order) = do
         _ -> do
           logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
           setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
-    OrderCanceled  -> liftEffect do
+    OrderCanceled     -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
       setState _ { purchaseState = NewPurchase }
-    OrderCreated   -> pollOrder setState state =<< User.getOrder order.number
-    UnknownState   -> liftEffect do
+    OrderCreated      -> pollOrder setState state =<< User.getOrder order.number
+    OrderUnknownState -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
       setState _ { purchaseState = PurchaseFailed ServerError }
 pollOrder setState { logger } (Left err) = liftEffect do
