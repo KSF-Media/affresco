@@ -25,7 +25,7 @@ exports.unpauseSubscription_ = function(cusno, subsno, result) {
 }
 
 exports.changeName_ = function(cusno, result) {
-    dataLayer.push({'event': 'changeName', 'cusno': cunso, 'result': result})
+    dataLayer.push({'event': 'changeName', 'cusno': cusno, 'result': result})
 }
 
 exports.changeAddress_ = function(cusno, result) {
