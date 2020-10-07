@@ -234,8 +234,8 @@ userView { setState, state: { logger } } user = React.fragment
       DOM.div
         { className: "mt2"
         , children:
-            [ formatIconLink
-                { href: "https://ksfmedia1.typeform.com/to/zbh3kU"
+            [ formatIconAction
+                { element: accountEditAnchor "https://ksfmedia1.typeform.com/to/zbh3kU"
                 , description: "Avsluta din prenumeration"
                 , className: "mitt-konto--cancel-subscription"
                 }
@@ -303,25 +303,29 @@ userView { setState, state: { logger } } user = React.fragment
          }
 
     accountEditActions :: Array JSX
-    accountEditActions =
-      [ formatIconLink
-          { href: "https://www.hbl.fi/losenord"
-          , description: "Byt lösenord"
-          , className: passwordChangeClass
-          }
+    accountEditActions = map formatIconAction
+      [ { element: accountEditAnchor "https://www.hbl.fi/losenord"
+        , description: "Byt lösenord"
+        , className: passwordChangeClass
+        }
+      , { element: accountEditDiv
+        , description: "Update credit card"
+        , className: creditCardUpdateClass
+        }
       ]
       where
         passwordChangeClass = "mitt-konto--password-change"
-
-    formatIconLink :: { href :: String, description :: String, className :: String } -> JSX
-    formatIconLink { href, description, className } =
+        creditCardUpdateClass = "mitt-konto--credit-card-update"
+    
+    formatIconAction :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
+    formatIconAction { element, description, className } =
       classy DOM.div "clearfix mitt-konto--account-edit-container"
         [ classy DOM.div "col-12 mt1"
-            [ accountEditAnchor href
+            [ element
               $ classy DOM.div "mitt-konto--icon-container col circle"
                   [ classy DOM.div className [] ]
             , classy DOM.div "col col-8 pl1 pt2"
-                [ accountEditAnchor href $ DOM.text description ]
+                [ element $ DOM.text description ]
             ]
         ]
 
@@ -333,6 +337,14 @@ userView { setState, state: { logger } } user = React.fragment
         , children: [ children ]
         , target: "_blank"
         }
+    
+    accountEditDiv :: JSX -> JSX
+    accountEditDiv children = 
+      DOM.div
+        { className: ""
+        , children: [ children ]
+        }
+
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Self -> JSX
