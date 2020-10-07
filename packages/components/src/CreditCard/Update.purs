@@ -48,16 +48,11 @@ component = React.createComponent "update"
 
 render :: Self -> JSX
 render self = case self.state.updateState of
-  ChooseCreditCard   ->  Modal.modal 
-                          { content: Menu.menu 
-                                       { creditCards: []
-                                       , chosenCard: Nothing
-                                       }
-                          }
-  CreateCreditCard   -> Spinner.loadingSpinner
-  RegisterCreditCard -> Modal.modal 
-                          { content: netsTerminalIframe { paymentTerminalUrl: "https://en.wikipedia.org/wiki/Main_Page" }
-                          }
+  ChooseCreditCard   ->   Menu.menu 
+                            { creditCards: []
+                            , chosenCard: Nothing
+                            }
+  RegisterCreditCard -> netsTerminalIframe { paymentTerminalUrl: "https://en.wikipedia.org/wiki/Main_Page" }
   _                  -> DOM.text "WIP"
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
