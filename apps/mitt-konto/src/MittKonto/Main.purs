@@ -16,6 +16,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
+import KSF.AccountEdit as AccountEdit
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
@@ -34,7 +35,7 @@ import KSF.User.Login (login) as Login
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (EventHandler, handler, handler_)
 import Tracking as Tracking
 
 foreign import images :: { subscribe :: String }
@@ -204,7 +205,11 @@ userView { setState, state: { logger } } user = React.fragment
           { className: "mitt-konto--edit-account"
           , children:
               [ componentHeader "Mina inställningar:"
-              , componentBlockContent $ DOM.div_ accountEditActions
+              , componentBlockContent $ AccountEdit.accountEdit 
+                  { formatIconAction: formatIconAction
+                  , accountEditAnchor: accountEditAnchor
+                  , accountEditDiv: accountEditDiv
+                  }
               ]
           }
 
@@ -299,21 +304,6 @@ userView { setState, state: { logger } } user = React.fragment
          { className: "mitt-konto--component-block-content"
          , children: [ child ]
          }
-
-    accountEditActions :: Array JSX
-    accountEditActions = map formatIconAction
-      [ { element: accountEditAnchor "https://www.hbl.fi/losenord"
-        , description: "Byt lösenord"
-        , className: passwordChangeClass
-        }
-      , { element: accountEditDiv
-        , description: "Update credit card"
-        , className: creditCardUpdateClass
-        }
-      ]
-      where
-        passwordChangeClass = "mitt-konto--password-change"
-        creditCardUpdateClass = "mitt-konto--credit-card-update"
     
     formatIconAction :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
     formatIconAction { element, description, className } =
@@ -336,13 +326,13 @@ userView { setState, state: { logger } } user = React.fragment
         , target: "_blank"
         }
     
-    accountEditDiv :: JSX -> JSX
-    accountEditDiv children = 
+    accountEditDiv :: EventHandler -> JSX -> JSX
+    accountEditDiv onClick children = 
       DOM.div
         { className: ""
         , children: [ children ]
-        }
-
+        , onClick: onClick
+        } 
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Self -> JSX
