@@ -1,9 +1,5 @@
 window.dataLayer = window.dataLayer || [];
 
-function Tracker() {
-    this.dataLayer = window.dataLayer;
-}
-
 exports.transaction_ = function (orderNumber, productId, productPriceInCents) {
     return function () {
         var tracker = new Tracker();
@@ -39,7 +35,7 @@ exports.transaction_ = function (orderNumber, productId, productPriceInCents) {
                         'name': productId,
                         'id': productId, // TODO: we should get this id as "campaign code" from kayak subscription->campaign
                         'price': productPrice,
-                        'brand': "HBL",
+                        'brand': brand,
                         'category': 'Magazines & Newspapers',
                         'variant': '',
                         'quantity': 1
