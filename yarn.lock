@@ -3809,15 +3809,15 @@ bootstrap@^4.3.1:
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.3.1.tgz#280ca8f610504d99d7b6b4bfc4b68cec601704ac"
   integrity sha512-rXqOmH1VilAt2DyPzluTi2blhk17bO7ef+zLLPlWvG494pDxcM234pJ8wTc/6R40UWizAIIMgxjvxZg5kmsbag==
 
-"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48":
+"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456":
   version "1.0.0"
-  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48"
+  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456"
   dependencies:
     superagent "3.7.0"
 
-"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#de2437413f81f1ae4e8b72c7b94c7c0296244ac1":
+"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48":
   version "1.0.0"
-  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#de2437413f81f1ae4e8b72c7b94c7c0296244ac1"
+  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48"
   dependencies:
     superagent "3.7.0"
 
