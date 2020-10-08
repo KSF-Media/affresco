@@ -15,15 +15,12 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
 
-type Self = React.Self Props State
+type Self = React.Self {} State
 
 type State = 
-  { updateState :: ChangeState
+  { isLoading   :: Boolean
+  , updateState :: ChangeState
   , creditCards :: Array CreditCard
-  }
-
-type Props =
-  { creditCardId :: Int
   }
 
 data ChangeState
@@ -34,26 +31,31 @@ data ChangeState
   | Failed
   | Completed
 
-update :: Props -> JSX
+update :: {} -> JSX
 update = make component { initialState, render }
 
 initialState :: State
 initialState =
-  { updateState: CreateCreditCard
+  { isLoading: true
+  , updateState: ChooseCreditCard
   , creditCards: []
   }
 
-component :: React.Component Props
+component :: React.Component {}
 component = React.createComponent "update"
 
 render :: Self -> JSX
-render self = case self.state.updateState of
-  ChooseCreditCard   ->   Menu.menu 
-                            { creditCards: []
-                            , chosenCard: Nothing
-                            }
-  RegisterCreditCard -> netsTerminalIframe { paymentTerminalUrl: "https://en.wikipedia.org/wiki/Main_Page" }
-  _                  -> DOM.text "WIP"
+render self = 
+  if self.state.isLoading
+  then Spinner.loadingSpinner
+  else
+    case self.state.updateState of
+      ChooseCreditCard   ->   Menu.menu 
+                                { creditCards: []
+                                , chosenCard: Nothing
+                                }
+      RegisterCreditCard -> netsTerminalIframe { paymentTerminalUrl: "https://en.wikipedia.org/wiki/Main_Page" }
+      _                  -> DOM.text "WIP"
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
