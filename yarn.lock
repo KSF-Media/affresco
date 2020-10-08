@@ -2146,7 +2146,7 @@
   version "0.2.5"
   dependencies:
     basscss "^8.1.0"
-    bottega "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
+    bottega "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#9b0cb68c0b653d5b4102c13aa0dce43bb26e45c6"
     react "^16.5.2"
     react-dom "^16.5.2"
@@ -2163,7 +2163,7 @@
     react-dom "^16.12.0"
     uuid "^3.4.0"
     uuid-validate "^0.0.3"
-
+    
 "@material-ui/core@^3.9.3":
   version "3.9.3"
   resolved "https://registry.yarnpkg.com/@material-ui/core/-/core-3.9.3.tgz#d378c1f4beb18df9a534ca7258c2c33fb8e0e51f"
