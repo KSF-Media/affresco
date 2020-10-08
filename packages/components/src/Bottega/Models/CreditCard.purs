@@ -13,10 +13,9 @@ newtype CreditCardId = CreditCardId Int
 type CreditCard =
   { id              :: CreditCardId
   , user            :: UUID
-  , paymentMethodId :: Maybe PaymentMethodId
-  , panHash         :: Maybe String
-  , maskedPan       :: Maybe String
-  , expiryDate      :: Maybe String
+  , paymentMethodId :: PaymentMethodId
+  , maskedPan       :: String
+  , expiryDate      :: String
   }
 
 newtype CreditCardRegisterNumber = CreditCardRegisterNumber String 
