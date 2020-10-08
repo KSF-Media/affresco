@@ -70,7 +70,7 @@ deleteCreditCard { userId, authToken } creditCardId = do
     authUser = unsafeToForeign userId
 
 registerCreditCard :: UserAuth -> Aff CreditCardRegister
-registerCreditCard { userId, authToken } creditCardId =
+registerCreditCard { userId, authToken } =
   readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardRegisterPost" [ ] { authorization, authUser }
   where
     authorization = oauthToken authToken
