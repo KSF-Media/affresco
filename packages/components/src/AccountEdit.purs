@@ -26,6 +26,7 @@ import Effect.Now as Now
 import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
+import KSF.CreditCard.Update as CreditCard
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.InputField as InputField
 import KSF.JSError as Error
@@ -70,7 +71,16 @@ accountEdit = make component
 
 render :: Self -> JSX
 render self =
-  DOM.div_ accountEditActions
+  DOM.div_
+    [ AsyncWrapper.asyncWrapper
+        { wrapperState: self.state.wrapperProgress
+        , readyView: DOM.div_ accountEditActions
+        , editingView: identity
+        , successView: \_ -> DOM.div_ [ DOM.text "Success!" ]
+        , errorView: \_ -> DOM.div_ [ DOM.text "Error!" ]
+        , loadingView: identity
+        } 
+    ]
   where
     accountEditActions :: Array JSX
     accountEditActions = map self.props.formatIconAction
@@ -87,4 +97,10 @@ render self =
         passwordChangeClass = "mitt-konto--password-change"
         creditCardUpdateClass = "mitt-konto--credit-card-update"
 
-        showCreditCardUpdate = handler_ $ pure unit
+        creditCardUpdateComponent = CreditCard.update {}
+
+        showCreditCardUpdate = handler_ $
+          self.setState _
+            { editAction = Just UpdateCreditCard
+            , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
+            }
