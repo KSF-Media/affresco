@@ -55,13 +55,6 @@ readCreditCardRegister creditCardRegisterObj = do
   let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
   pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, terminalUrl: toMaybe creditCardRegisterObj.terminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
 
-createCreditCard :: UserAuth -> Aff CreditCard
-createCreditCard { userId, authToken } = 
-  readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardPost" [] {authorization, authUser} 
-  where
-    authorization = oauthToken authToken
-    authUser = unsafeToForeign userId
-
 getCreditCard :: UserAuth -> CreditCardId -> Aff CreditCard
 getCreditCard { userId, authToken } creditCardId = do
   readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardIdGet" [ unsafeToForeign creditCardId ] { authorization, authUser }
