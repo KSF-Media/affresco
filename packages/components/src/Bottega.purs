@@ -4,6 +4,7 @@ import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
 import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
@@ -54,6 +55,13 @@ readCreditCardRegister :: { number :: CreditCardRegisterNumber, user :: UUID, te
 readCreditCardRegister creditCardRegisterObj = do
   let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
   pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, terminalUrl: toMaybe creditCardRegisterObj.terminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
+
+getCreditCards :: UserAuth -> Aff (Array CreditCard)
+getCreditCards { userId, authToken } = do
+  traverse readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardGet" [ ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
 
 getCreditCard :: UserAuth -> CreditCardId -> Aff CreditCard
 getCreditCard { userId, authToken } creditCardId = do
