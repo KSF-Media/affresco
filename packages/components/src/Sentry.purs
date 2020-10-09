@@ -62,7 +62,7 @@ mkLogger sentryDsn maybeUser appNameTag = do
     }
 
 setUser :: Sentry -> Maybe User.User -> Effect Unit
-setUser sentry user = runEffectFn2 setUser_ sentry $ toNullable (_.cusno <$> user)
+setUser sentry user = runEffectFn2 setUser_ sentry $ toNullable (show <<< _.cusno <$> user)
 
 log :: Sentry -> String -> String -> LogLevel -> Effect Unit
 log sentry appNameTag msg level = runEffectFn4 captureMessage_ sentry appNameTag msg $ show level

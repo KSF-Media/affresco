@@ -135,7 +135,7 @@ render self@{ props: { profile: user } } =
         { definitions:
           showPendingAddressChanges self <>
             [ { term: "E-postadress:", description: [ DOM.text user.email ] }
-            , { term: "Kundnummer:", description: [ DOM.text user.cusno ] }
+            , { term: "Kundnummer:", description: [ DOM.text $ show user.cusno ] }
             ]
         }
     ]

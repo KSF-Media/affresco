@@ -1,6 +1,6 @@
 module KSF.Api.Subscription where
 
-import Prelude (class Eq, class Ord, comparing, map, pure)
+import Prelude
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
@@ -26,10 +26,13 @@ type PendingAddressChange =
   , endDate   :: JSDate
   }
 
+newtype Cusno = Cusno Int
+derive newtype instance showCusno :: Show Cusno
+
 type Subscription =
   { subsno                :: Int
   , extno                 :: Int
-  , cusno                 :: Int
+  , cusno                 :: Cusno
   , paycusno              :: Int
   , kind                  :: String
   , state                 :: SubscriptionState

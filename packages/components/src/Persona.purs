@@ -22,7 +22,7 @@ import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnu
 import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token(..), UUID, invalidateCacheHeader)
-import KSF.Api.Subscription (Subscription, PendingAddressChange)
+import KSF.Api.Subscription (Cusno, PendingAddressChange, Subscription)
 import KSF.Api.Subscription as Subscription
 import OpenApiClient (Api, callApi)
 import Simple.JSON (class ReadForeign, class WriteForeign)
@@ -343,7 +343,7 @@ type User =
   , firstName :: Nullable String
   , lastName :: Nullable String
   , address :: Nullable Address
-  , cusno :: String
+  , cusno :: Cusno
   , subs :: Array Subscription
   , consent :: Array GdprConsent
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)

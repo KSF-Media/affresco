@@ -17,12 +17,13 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Subscription (Cusno)
+import KSF.CountryDropDown (countryDropDown)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
 import KSF.ValidatableForm as VF
-import KSF.CountryDropDown (countryDropDown)
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -46,7 +47,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , cusno     :: String
+  , cusno     :: Cusno
   , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
@@ -271,7 +272,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' countryCode' temporaryName' >>=
             case _ of
               Right sub -> liftEffect do
-                self.props.onSuccess sub          
+                self.props.onSuccess sub
                 Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "success"
               Left invalidDateInput -> liftEffect do
                 self.props.onError invalidDateInput
@@ -319,4 +320,3 @@ validateTemporaryAddressChangeForm form =
   <*> VF.validateField Zip form.zipCode []
   <*> VF.validateField CountryCode form.countryCode []
   <*> VF.validateField TemporaryName form.temporaryName []
-

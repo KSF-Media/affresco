@@ -1,5 +1,7 @@
 module KSF.DeliveryReclamation where
 
+import Prelude
+
 import Data.Array (snoc)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
@@ -15,10 +17,10 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Subscription (Cusno)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.User as User
-import Prelude (Unit, bind, discard, show, ($), (<$>), (>>=), (=<<))
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -38,7 +40,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , cusno     :: String
+  , cusno     :: Cusno
   , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
@@ -135,7 +137,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           }
 
     submitForm :: Maybe DateTime -> Maybe User.DeliveryReclamationClaim -> Effect Unit
-    submitForm (Just date') (Just claim') = do      
+    submitForm (Just date') (Just claim') = do
       Aff.launchAff_ do
         createDeliveryReclamation date' claim'
       where
@@ -178,6 +180,3 @@ dateInput self value label =
         ]
     ]
     $ Just { extraClasses: [ "mb2" ] }
-
-
-
