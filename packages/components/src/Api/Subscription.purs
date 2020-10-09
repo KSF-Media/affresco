@@ -33,7 +33,7 @@ type Subscription =
   { subsno                :: Int
   , extno                 :: Int
   , cusno                 :: Cusno
-  , paycusno              :: Int
+  , paycusno              :: Cusno
   , kind                  :: String
   , state                 :: SubscriptionState
   , pricegroup            :: String
