@@ -4,6 +4,7 @@ import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
 import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
@@ -46,18 +47,18 @@ payOrder { userId, authToken } orderNumber paymentMethod =
 getPackages :: Aff (Array Package)
 getPackages = callApi packagesApi "packageGet" [] {}
 
-readCreditCard :: { id :: CreditCardId, user :: UUID, paymentMethodId :: Nullable PaymentMethodId, panHash :: Nullable String, maskedPan :: Nullable String, expiryDate :: Nullable String } -> Aff CreditCard
+readCreditCard :: { id :: CreditCardId, user :: UUID, paymentMethodId :: PaymentMethodId, maskedPan :: String, expiryDate :: String } -> Aff CreditCard
 readCreditCard creditCardObj = pure $ 
-  { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: toMaybe creditCardObj.paymentMethodId, panHash: toMaybe creditCardObj.panHash, maskedPan: toMaybe creditCardObj.maskedPan, expiryDate: toMaybe creditCardObj.expiryDate }
+  { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: creditCardObj.paymentMethodId, maskedPan: creditCardObj.maskedPan, expiryDate: creditCardObj.expiryDate }
 
 readCreditCardRegister :: { number :: CreditCardRegisterNumber, user :: UUID, terminalUrl :: Nullable PaymentTerminalUrl, status :: { state :: String, time :: String, failReason :: Nullable String }  } -> Aff CreditCardRegister
 readCreditCardRegister creditCardRegisterObj = do
   let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
   pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, terminalUrl: toMaybe creditCardRegisterObj.terminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
 
-createCreditCard :: UserAuth -> Aff CreditCard
-createCreditCard { userId, authToken } = 
-  readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardPost" [] {authorization, authUser} 
+getCreditCards :: UserAuth -> Aff (Array CreditCard)
+getCreditCards { userId, authToken } = do
+  traverse readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardGet" [ ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
@@ -76,9 +77,9 @@ deleteCreditCard { userId, authToken } creditCardId = do
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-registerCreditCard :: UserAuth -> CreditCardId -> Aff CreditCardRegister
-registerCreditCard { userId, authToken } creditCardId =
-  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterPost" [ unsafeToForeign creditCardId ] { authorization, authUser }
+registerCreditCard :: UserAuth -> Aff CreditCardRegister
+registerCreditCard { userId, authToken } =
+  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardRegisterPost" [ ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId

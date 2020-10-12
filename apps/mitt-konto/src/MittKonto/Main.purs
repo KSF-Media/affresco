@@ -82,11 +82,9 @@ app = make component
   , didMount
   , render
   }
-
+  
 didMount :: Self -> Effect Unit
 didMount self = do
-  tracker <- Tracking.newTracker
-  Tracking.pushPageLoad tracker
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   self.setState _ { logger = logger }
@@ -277,7 +275,7 @@ userView { setState, state: { logger } } user = React.fragment
               [ DOM.dt_ [ DOM.text "Frågor och svar" ]
               , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/fragor-och-svar/" ]
               , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/fragor-och-svar/" ]
-              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/ingen-tidning/" ]
+              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/fragor-och-svar/" ]
               ]
           ,  DOM.dl_
               [ DOM.dt_ [ DOM.text "Ingen tidning?" ]
