@@ -73,7 +73,6 @@ paperImages =
     , children:
         [ imageLink "https://www.hbl.fi/" papers.hbl
         , imageLink "https://www.vastranyland.fi/" papers.vn
-        , imageLink "http://hangotidningen.fi/" papers.hthl
         , imageLink "https://www.ostnyland.fi/" papers.on
         ]
     }
