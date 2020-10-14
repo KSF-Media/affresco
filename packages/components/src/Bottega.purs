@@ -51,10 +51,10 @@ readCreditCard :: { id :: CreditCardId, user :: UUID, paymentMethodId :: Payment
 readCreditCard creditCardObj = pure $ 
   { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: creditCardObj.paymentMethodId, maskedPan: creditCardObj.maskedPan, expiryDate: creditCardObj.expiryDate }
 
-readCreditCardRegister :: { number :: CreditCardRegisterNumber, user :: UUID, creditCardId :: CreditCardId, terminalUrl :: Nullable PaymentTerminalUrl, status :: { state :: String, time :: String, failReason :: Nullable String }  } -> Aff CreditCardRegister
+readCreditCardRegister :: { number :: CreditCardRegisterNumber, user :: UUID, creditCardId :: CreditCardId, paymentTerminalUrl :: Nullable PaymentTerminalUrl, status :: { state :: String, time :: String, failReason :: Nullable String }  } -> Aff CreditCardRegister
 readCreditCardRegister creditCardRegisterObj = do
   let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
-  pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, creditCardId: creditCardRegisterObj.creditCardId, terminalUrl: toMaybe creditCardRegisterObj.terminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
+  pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, creditCardId: creditCardRegisterObj.creditCardId, terminalUrl: toMaybe creditCardRegisterObj.paymentTerminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
 
 getCreditCards :: UserAuth -> Aff (Array CreditCard)
 getCreditCards { userId, authToken } = do
