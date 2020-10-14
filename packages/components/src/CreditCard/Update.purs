@@ -52,14 +52,14 @@ data UpdateFailure
   | UnexpectedError String
 
 update :: {} -> JSX
-update = make component { initialState, render }
+update = make component { initialState, render, didMount }
 
 initialState :: State
 initialState =
   { isLoading: true
   , poller: pure unit
   , loadingMessage: Nothing
-  , updateState: ChooseCreditCard
+  , updateState: NewCreditCardUpdate
   , creditCards: []
   , chosenCreditCard: Nothing
   }
@@ -102,6 +102,7 @@ render self =
                                   , chosenCard: Nothing
                                   }
       RegisterCreditCard url -> netsTerminalIframe url
+      Failed _               -> DOM.text "FAILED"
       _                      -> DOM.text "WIP"
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
@@ -118,7 +119,7 @@ netsTerminalIframe { paymentTerminalUrl } =
 
 registerCreditCard :: Self -> Effect Unit
 registerCreditCard self = do
-  Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
+  Aff.launchAff_ $ do
     creditCardRegister <- startRegister
     case creditCardRegister of
       Right register@{ terminalUrl: Just url } -> liftEffect $ do 
