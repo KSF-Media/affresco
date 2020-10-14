@@ -2,7 +2,7 @@ module KSF.CreditCard.Update where
 
 import Prelude
 
-import Bottega.Models (CreditCard)
+import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterState (..), FailReason(..))
 import Control.Monad.Except (throwError)
 import Data.Array (length)
 import Data.DateTime (DateTime)
@@ -12,11 +12,13 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Exception (Error, error, message)
 import KSF.CreditCard.Menu (menu) as Menu
+import KSF.JSError as Error
 import KSF.Modal as Modal
 import KSF.Spinner as Spinner
 import KSF.User (PaymentTerminalUrl(..))
-import KSF.User (getCreditCards, registerCreditCard) as User
+import KSF.User (getCreditCards, registerCreditCard, getCreditCardRegister) as User
 import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
@@ -29,9 +31,12 @@ type State =
   { isLoading        :: Boolean
   , loadingMessage   :: Maybe String
   , updateState      :: UpdateState
+  , poller           :: Aff.Fiber Unit
   , creditCards      :: Array CreditCard
   , chosenCreditCard :: Maybe CreditCard
   }
+
+type SetState = (State -> State) -> Effect Unit
 
 data UpdateState
   = ChooseCreditCard
@@ -52,6 +57,7 @@ update = make component { initialState, render }
 initialState :: State
 initialState =
   { isLoading: true
+  , poller: pure unit
   , loadingMessage: Nothing
   , updateState: ChooseCreditCard
   , creditCards: []
@@ -113,14 +119,16 @@ netsTerminalIframe { paymentTerminalUrl } =
 registerCreditCard :: Self -> Effect Unit
 registerCreditCard self = do
   Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
-    paymentTerminalUrl <- register
-    case paymentTerminalUrl of
-      Right url -> liftEffect $ self.setState _ { updateState = RegisterCreditCard url
-                                                }
+    creditCardRegister <- startRegister
+    case creditCardRegister of
+      Right register@{ terminalUrl: Just url } -> liftEffect $ do 
+        self.setState _ { updateState = RegisterCreditCard url }
+        startRegisterPoller self.setState self.state register
       Left err ->
         case err of
           UnexpectedError e -> pure unit
           _ -> pure unit
+      _ -> pure unit
   where
     loadingWithMessage spinner = self.setState _
         { isLoading = true
@@ -130,10 +138,39 @@ registerCreditCard self = do
             else Nothing
         }
 
-    register :: Aff (Either UpdateFailure PaymentTerminalUrl)
-    register =
+    startRegister :: Aff (Either UpdateFailure CreditCardRegister)
+    startRegister =
       User.registerCreditCard >>= \eitherRegister ->
         pure $ case eitherRegister of
-          Right register@{ terminalUrl: Just url } -> Right url
+          Right register@{ terminalUrl: Just url } -> Right register
           Right _                                  -> Left $ UnexpectedError "No url"
           Left  err                                -> Left $ UnexpectedError err
+
+killRegisterPoller :: State -> Aff Unit
+killRegisterPoller state = Aff.killFiber (error "Canceled poller") state.poller
+
+startRegisterPoller :: SetState -> State -> CreditCardRegister -> Effect Unit
+startRegisterPoller setState state creditCardRegister = do
+  newPoller <- Aff.launchAff do
+        killRegisterPoller state
+        newPoller <- Aff.forkAff $ pollRegister setState (Right creditCardRegister)
+        Aff.joinFiber newPoller
+  setState _ { poller = newPoller }
+
+pollRegister :: SetState -> Either String CreditCardRegister -> Aff Unit
+pollRegister setState (Right register) = do
+  Aff.delay $ Aff.Milliseconds 1000.0
+  case register.status.state of
+    CreditCardRegisterStarted -> do
+      liftEffect $ setState _ { updateState = ProcessCreditCard }
+      pollRegister setState =<< User.getCreditCardRegister register.creditCardId register.number
+    CreditCardRegisterCompleted -> do
+      liftEffect $ setState _ { updateState = Completed }
+    CreditCardRegisterFailed reason -> liftEffect $ setState _ { updateState = Failed $ UnexpectedError "" }
+    CreditCardRegisterCanceled -> liftEffect do
+      setState _ { updateState = NewCreditCardUpdate }
+    CreditCardRegisterCreated -> pollRegister setState =<< User.getCreditCardRegister register.creditCardId register.number
+    CreditCardRegisterUnknownState -> liftEffect do
+      setState _ { updateState = Failed ServerError }
+pollRegister setState (Left err) = liftEffect do
+  setState _ { updateState = Failed ServerError }
