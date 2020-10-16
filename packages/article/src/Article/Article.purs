@@ -14,6 +14,7 @@ import React.Basic (JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
 
+import Box (box)
 
 type Self = React.Self Props State
 
@@ -92,23 +93,6 @@ renderImage img =
         caption = fold $ toMaybe img.caption
         byline = fold $ toMaybe img.byline
 
-renderBoxInfo :: BoxInfo -> String -> JSX
-renderBoxInfo box brand =
-  DOM.div
-    { className: "ksf-article--boxinfo genericBox genericBox-border-" <> brand
-    , children:
-      [ DOM.h3_ [ DOM.text headline ]
-      , DOM.h2_ [ DOM.text title ]
-      , DOM.div
-        { className: "boxinfo--body"
-        , children: boxBody
-        }
-    ] }
-    where
-      headline = fold $ toMaybe box.headline
-      title = fold $ toMaybe box.title
-      boxBody = map (\p -> DOM.p { dangerouslySetInnerHTML: { __html: p } }) box.content
-
 render :: Self -> JSX
 render { props, state } =
   DOM.div
@@ -145,5 +129,10 @@ render { props, state } =
           , children: [ DOM.text str ]
           }
         Image img -> renderImage img
-        Box box -> renderBoxInfo box props.brand
+        Box boxData -> box
+          { headline: boxData.headline
+          , title: boxData.title
+          , content: boxData.content
+          , brand: props.brand
+          }
         other -> DOM.p_ [ DOM.text $ show other ]
