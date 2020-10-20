@@ -4,7 +4,7 @@ import Prelude
 
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterState (..), FailReason(..))
 import Control.Monad.Except (throwError)
-import Data.Array (length)
+import Data.Array (length, head) as Array
 import Data.DateTime (DateTime)
 import Data.Either (Either(..), either, hush, note)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
@@ -78,17 +78,18 @@ didMount self = do
       )
       do
         creditCards <- User.getCreditCards
-        liftEffect $ case creditCards of
-          Left err    -> self.setState _ { updateState = Failed ServerError }
-          Right cards -> case cards of
-            []       -> self.setState _ { updateState = Failed NoExistingCreditCards }
-            [ card ] -> do
-              self.setState _ { updateState = NewCreditCardUpdate
-                              , chosenCreditCard = Just card 
-                              }
-              registerCreditCard self
-            cards'   -> self.setState _ { updateState = Failed $ UnexpectedError "" }
-          
+        case creditCards of
+          Left err    -> liftEffect $ self.setState _ { updateState = Failed ServerError }
+          Right cards -> case Array.head cards of
+            Nothing   -> liftEffect $ self.setState _ { updateState = Failed NoExistingCreditCards }
+            Just card -> do
+              let newState = self.state
+                    { updateState = NewCreditCardUpdate
+                    , chosenCreditCard = Just card 
+                    }
+              liftEffect $ self.setState \_ -> newState
+              registerCreditCard self.setState newState
+
 
 render :: Self -> JSX
 render self = 
@@ -118,22 +119,21 @@ netsTerminalIframe { paymentTerminalUrl } =
       ]
     }
 
-registerCreditCard :: Self -> Effect Unit
-registerCreditCard self = do
-  Aff.launchAff_ $ do
-    creditCardRegister <- startRegister
-    case creditCardRegister of
-      Right register@{ terminalUrl: Just url } -> liftEffect $ do 
-        let newState = self.state { updateState = RegisterCreditCard url }
-        self.setState \_ -> newState
-        startRegisterPoller self.setState newState register
-      Left err ->
-        case err of
-          UnexpectedError e -> pure unit
-          _ -> pure unit
-      _ -> pure unit
+registerCreditCard :: SetState -> State -> Aff Unit
+registerCreditCard setState state = do
+  creditCardRegister <- startRegister
+  case creditCardRegister of
+    Right register@{ terminalUrl: Just url } -> do
+      let newState = state { updateState = RegisterCreditCard url }
+      liftEffect $ setState \_ -> newState
+      void $ Aff.forkAff $ startRegisterPoller setState newState register
+    Left err ->
+      case err of
+        UnexpectedError e -> pure unit
+        _ -> pure unit
+    _ -> pure unit
   where
-    loadingWithMessage spinner = self.setState _
+    loadingWithMessage spinner = setState _
         { isLoading = true
         , loadingMessage =
             if isJust spinner
@@ -152,13 +152,13 @@ registerCreditCard self = do
 killRegisterPoller :: State -> Aff Unit
 killRegisterPoller state = Aff.killFiber (error "Canceled poller") state.poller
 
-startRegisterPoller :: SetState -> State -> CreditCardRegister -> Effect Unit
+startRegisterPoller :: SetState -> State -> CreditCardRegister -> Aff Unit
 startRegisterPoller setState state creditCardRegister = do
-  newPoller <- Aff.launchAff do
-        killRegisterPoller state
-        newPoller <- Aff.forkAff $ pollRegister setState state (Right creditCardRegister)
-        Aff.joinFiber newPoller
-  setState _ { poller = newPoller }
+  newPoller <- Aff.forkAff do
+    killRegisterPoller state
+    newPoller <- Aff.forkAff $ pollRegister setState state (Right creditCardRegister)
+    Aff.joinFiber newPoller
+  liftEffect $ setState _ { poller = newPoller }
 
 pollRegister :: SetState -> State -> Either String CreditCardRegister -> Aff Unit
 pollRegister setState state (Right register) = do
