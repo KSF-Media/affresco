@@ -234,6 +234,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
       TemporaryAddressChange.temporaryAddressChange
         { subsno: props.subscription.subsno
         , cusno: props.user.cusno
+        , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
@@ -260,6 +261,14 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                 _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
+
+    readPastTemporaryAddress tmp =
+      { streetAddress: Just tmp.street
+      , zipCode: Just tmp.zipcode
+      , cityName: toMaybe tmp.cityName
+      , countryCode: Just tmp.countryCode
+      , temporaryName: toMaybe tmp.temporaryName
+      }
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
