@@ -16,7 +16,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
-import KSF.AccountEdit as AccountEdit
+import MittKonto.AccountEdit as AccountEdit
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription

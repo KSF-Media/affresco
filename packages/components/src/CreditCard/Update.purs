@@ -25,12 +25,17 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
 
-type Self = React.Self {} State
+type Props = 
+  { onCancel  :: Effect Unit
+  , onLoading :: Effect Unit
+  , onSuccess :: Effect Unit
+  , onError   :: Effect Unit
+  }
+
+type Self = React.Self Props State
 
 type State = 
-  { isLoading        :: Boolean
-  , loadingMessage   :: Maybe String
-  , updateState      :: UpdateState
+  { updateState      :: UpdateState
   , poller           :: Aff.Fiber Unit
   , creditCards      :: Array CreditCard
   , chosenCreditCard :: Maybe CreditCard
@@ -40,107 +45,77 @@ type SetState = (State -> State) -> Effect Unit
 
 data UpdateState
   = ChooseCreditCard
-  | NewCreditCardUpdate
   | RegisterCreditCard PaymentTerminalUrl
-  | ProcessCreditCard
-  | Failed UpdateFailure
-  | Completed
 
 data UpdateFailure
   = ServerError
   | NoExistingCreditCards
   | UnexpectedError String
 
-update :: {} -> JSX
+update :: Props -> JSX
 update = make component { initialState, render, didMount }
 
 initialState :: State
 initialState =
-  { isLoading: true
-  , poller: pure unit
-  , loadingMessage: Nothing
-  , updateState: NewCreditCardUpdate
+  { poller: pure unit
+  , updateState: ChooseCreditCard
   , creditCards: []
   , chosenCreditCard: Nothing
   }
 
-component :: React.Component {}
+component :: React.Component Props
 component = React.createComponent "update"
 
 didMount :: Self -> Effect Unit
 didMount self = do
   -- Before rendering the form, we need to fetch the user's credit cards
   Aff.launchAff_ do
-    Aff.finally
-      -- When credit cards have been fetched, hide loading spinner
-      (liftEffect $ do 
-        self.setState \s -> s { isLoading = false }
-      )
-      do
-        creditCards <- User.getCreditCards
-        case creditCards of
-          Left err    -> liftEffect $ self.setState _ { updateState = Failed ServerError }
-          Right cards -> case Array.head cards of
-            Nothing   -> liftEffect $ self.setState _ { updateState = Failed NoExistingCreditCards }
-            Just card -> do
-              let newState = self.state
-                    { updateState = NewCreditCardUpdate
-                    , chosenCreditCard = Just card 
-                    }
-              liftEffect $ self.setState \_ -> newState
-              registerCreditCard self.setState newState
+    creditCards <- User.getCreditCards
+    case creditCards of
+      Left err    -> liftEffect self.props.onError
+      Right cards -> case Array.head cards of
+        Nothing   -> liftEffect self.props.onError
+        Just card -> do
+          let newState = self.state { chosenCreditCard = Just card }
+          liftEffect $ self.setState \_ -> newState
+          registerCreditCard self.setState self.props newState
 
 
 render :: Self -> JSX
 render self = 
-  if self.state.isLoading
-  then Spinner.loadingSpinner
-  else
-    case self.state.updateState of
-      NewCreditCardUpdate    -> Spinner.loadingSpinner
-      ChooseCreditCard       -> Menu.menu 
-                                  { creditCards: self.state.creditCards
-                                  , chosenCard: Nothing
-                                  }
-      RegisterCreditCard url -> netsTerminalIframe url
-      Failed _               -> DOM.text "FAILED"
-      Completed              -> DOM.text "SUCCESS"
-      _                      -> DOM.text "WIP"
-
-netsTerminalIframe :: PaymentTerminalUrl -> JSX
-netsTerminalIframe { paymentTerminalUrl } =
-  DOM.div
-    { className: "credit-card-change--register-wrapper"
-    , children:
-      [ DOM.iframe
-        { src: paymentTerminalUrl
-        , className: "credit-card-change--register-terminal"
+  case self.state.updateState of
+    ChooseCreditCard       -> Menu.menu 
+                                { creditCards: self.state.creditCards
+                                , chosenCard: Nothing
+                                }
+    RegisterCreditCard url -> netsTerminalIframe url
+  where
+    netsTerminalIframe :: PaymentTerminalUrl -> JSX
+    netsTerminalIframe { paymentTerminalUrl } =
+      DOM.div
+        { className: "credit-card-update--register-wrapper"
+        , children:
+          [ DOM.iframe
+            { src: paymentTerminalUrl
+            , className: "credit-card-update--register-terminal"
+            }
+          ]
         }
-      ]
-    }
 
-registerCreditCard :: SetState -> State -> Aff Unit
-registerCreditCard setState state = do
+registerCreditCard :: SetState -> Props -> State -> Aff Unit
+registerCreditCard setState props state = do
   creditCardRegister <- startRegister
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
       let newState = state { updateState = RegisterCreditCard url }
       liftEffect $ setState \_ -> newState
-      void $ Aff.forkAff $ startRegisterPoller setState newState register
+      void $ Aff.forkAff $ startRegisterPoller setState props newState register
     Left err ->
       case err of
         UnexpectedError e -> pure unit
         _ -> pure unit
     _ -> pure unit
   where
-    loadingWithMessage spinner = setState _
-        { isLoading = true
-        , loadingMessage =
-            if isJust spinner
-            then Just "Tack, vi skickar dig nu vidare till betalningsleverantören Nets."
-            else Nothing
-        }
-
     startRegister :: Aff (Either UpdateFailure CreditCardRegister)
     startRegister =
       User.registerCreditCard >>= \eitherRegister ->
@@ -152,34 +127,30 @@ registerCreditCard setState state = do
 killRegisterPoller :: State -> Aff Unit
 killRegisterPoller state = Aff.killFiber (error "Canceled poller") state.poller
 
-startRegisterPoller :: SetState -> State -> CreditCardRegister -> Aff Unit
-startRegisterPoller setState state creditCardRegister = do
+startRegisterPoller :: SetState -> Props -> State -> CreditCardRegister -> Aff Unit
+startRegisterPoller setState props state creditCardRegister = do
   newPoller <- Aff.forkAff do
     killRegisterPoller state
-    newPoller <- Aff.forkAff $ pollRegister setState state (Right creditCardRegister)
+    newPoller <- Aff.forkAff $ pollRegister props state (Right creditCardRegister)
     Aff.joinFiber newPoller
   liftEffect $ setState _ { poller = newPoller }
 
-pollRegister :: SetState -> State -> Either String CreditCardRegister -> Aff Unit
-pollRegister setState state (Right register) = do
+pollRegister :: Props -> State -> Either String CreditCardRegister -> Aff Unit
+pollRegister props state (Right register) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case register.status.state of
-    CreditCardRegisterStarted -> do
-      liftEffect $ setState _ { updateState = ProcessCreditCard }
-      pollRegister setState state =<< User.getCreditCardRegister register.creditCardId register.number
+    CreditCardRegisterStarted ->
+      pollRegister props state =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterCompleted -> do
       case state.chosenCreditCard of
         Just card -> do
           result <- User.updateCreditCardSubscriptions card.id register.creditCardId
-          liftEffect $ setState $ case result of
-            Left err -> _ { updateState = Failed $ UnexpectedError "" }
-            Right _  -> _ { updateState = Completed }
-        Nothing -> liftEffect $ setState _ { updateState = Failed $ UnexpectedError "" }
-    CreditCardRegisterFailed reason -> liftEffect $ setState _ { updateState = Failed $ UnexpectedError "" }
-    CreditCardRegisterCanceled -> liftEffect do
-      setState _ { updateState = NewCreditCardUpdate }
-    CreditCardRegisterCreated -> pollRegister setState state =<< User.getCreditCardRegister register.creditCardId register.number
-    CreditCardRegisterUnknownState -> liftEffect do
-      setState _ { updateState = Failed ServerError }
-pollRegister setState state (Left err) = liftEffect do
-  setState _ { updateState = Failed ServerError }
+          liftEffect $ case result of
+            Left err -> props.onError
+            Right _  -> props.onSuccess
+        Nothing -> liftEffect props.onError
+    CreditCardRegisterFailed reason -> liftEffect props.onError
+    CreditCardRegisterCanceled -> liftEffect props.onError
+    CreditCardRegisterCreated -> pollRegister props state =<< User.getCreditCardRegister register.creditCardId register.number
+    CreditCardRegisterUnknownState -> liftEffect props.onError
+pollRegister props state (Left err) = liftEffect props.onError

@@ -1,4 +1,4 @@
-module KSF.AccountEdit where
+module MittKonto.AccountEdit where
 
 import Prelude
 
@@ -28,12 +28,14 @@ import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.CreditCard.Update as CreditCard
 import KSF.DescriptionList.Component as DescriptionList
+import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
+import MittKonto.ActionsWrapper as ActionsWrapper
 import React.Basic (make, JSX)
 import React.Basic as React
 import React.Basic.DOM as DOM
@@ -71,16 +73,12 @@ accountEdit = make component
 
 render :: Self -> JSX
 render self =
-  DOM.div_
-    [ AsyncWrapper.asyncWrapper
-        { wrapperState: self.state.wrapperProgress
-        , readyView: DOM.div_ accountEditActions
-        , editingView: identity
-        , successView: \_ -> DOM.div_ [ DOM.text "Success!" ]
-        , errorView: \_ -> DOM.div_ [ DOM.text "Error!" ]
-        , loadingView: identity
-        } 
-    ]
+  ActionsWrapper.actionsWrapper
+    { actions: accountEditActions
+    , wrapperState: self.state.wrapperProgress
+    , onTryAgain: self.setState _ { wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent }
+    , containerClass: "account-edit--actions-container"
+    }
   where
     accountEditActions :: Array JSX
     accountEditActions = map self.props.formatIconAction
@@ -96,11 +94,16 @@ render self =
       where
         passwordChangeClass = "mitt-konto--password-change"
         creditCardUpdateClass = "mitt-konto--credit-card-update"
-
-        creditCardUpdateComponent = CreditCard.update {}
-
+        
         showCreditCardUpdate = handler_ $
           self.setState _
             { editAction = Just UpdateCreditCard
             , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
             }
+
+    creditCardUpdateComponent = CreditCard.update 
+      { onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+      , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+      , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Success!" }
+      , onError: self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+      }
