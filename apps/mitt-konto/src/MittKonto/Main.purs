@@ -28,10 +28,10 @@ import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
-import KSF.Subscription.Component (subscription) as Subscription
 import KSF.User (User, UserError(..))
 import KSF.User (logout) as User
 import KSF.User.Login (login) as Login
+import MittKonto.Subscription (subscription) as Subscription
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
