@@ -116,20 +116,20 @@ didMount self = do
 render :: Self -> JSX
 render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, isIndefinite }} =
   DOM.div
-    { className: "clearfix temporary-address-change--container"
+    { className: "temporary-address-change--container"
     , children:
-        [ Grid.row_
-           [ DOM.div
-               { className: "col col-11"
-               , children: [ DOM.h3_ [ DOM.text "Gör tillfällig adressändring" ] ]
-               }
-           , DOM.div
-               { className: "col-1 flex temporary-address-change--close-icon"
-               , children: [ DOM.div { className: "close-icon" } ]
-               , onClick: handler_ self.props.onCancel
-               }
-           , addressChangeForm
-           ]
+        [ DOM.div
+            { className: "temporary-address-change--header"
+            , children:
+                [ DOM.div_ [ DOM.h3_ [ DOM.text "Gör tillfällig adressändring" ] ]
+                , DOM.div
+                    { className: "temporary-address-change--close-icon"
+                    , children: [ DOM.div { className: "close-icon" } ]
+                    , onClick: handler_ self.props.onCancel
+                    }
+                ]
+            }
+        , addressChangeForm
         ]
     }
   where
@@ -271,7 +271,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' countryCode' temporaryName' >>=
             case _ of
               Right sub -> liftEffect do
-                self.props.onSuccess sub          
+                self.props.onSuccess sub
                 Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "success"
               Left invalidDateInput -> liftEffect do
                 self.props.onError invalidDateInput
@@ -319,4 +319,3 @@ validateTemporaryAddressChangeForm form =
   <*> VF.validateField Zip form.zipCode []
   <*> VF.validateField CountryCode form.countryCode []
   <*> VF.validateField TemporaryName form.temporaryName []
-
