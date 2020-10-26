@@ -19,13 +19,10 @@ import Effect.Class (liftEffect)
 import Effect.Now as Now
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
-import MittKonto.Subscription.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
 import KSF.JSError as Error
-import MittKonto.Subscription.Pause as PauseSubscription
 import KSF.Sentry as Sentry
-import MittKonto.Subscription.TemporaryAddressChange as TemporaryAddressChange
 import KSF.User (User, InvalidDateInput(..))
 import KSF.User as User
 import React.Basic (JSX, make)
