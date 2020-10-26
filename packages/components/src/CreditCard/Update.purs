@@ -80,34 +80,26 @@ render self =
   DOM.div
     { className: "clearfix credit-card-update--container"
     , children:
-        [ Grid.row_
-            [ DOM.div
-                { className: "col col-11"
-                , children: [ DOM.h3_ [ DOM.text "Update credit card" ] ]
-                }
-            , DOM.div
-                { className: "col-1 flex credit-card-update--close-icon"
-                , children: [ DOM.div { className: "close-icon" } ]
-                , onClick: handler_ self.props.onCancel
-                }
-            ]
-            , case self.state.updateState of
-                ChooseCreditCard       -> Menu.menu 
-                                            { creditCards: self.props.creditCards
-                                            , chosenCard: Nothing
-                                            }
-                RegisterCreditCard url -> netsTerminalIframe url
+        [ DOM.h3_ [ DOM.text "Update credit card" ]
+        , case self.state.updateState of
+            ChooseCreditCard       -> Menu.menu 
+                                        { creditCards: self.props.creditCards
+                                        , chosenCard: Nothing
+                                        }
+            RegisterCreditCard url -> netsTerminalIframe url
         ]
     }         
   where
     netsTerminalIframe :: PaymentTerminalUrl -> JSX
     netsTerminalIframe { paymentTerminalUrl } =
-      DOM.div_
-        [  DOM.iframe
-            { src: paymentTerminalUrl
-            , className: "credit-card-update--register-terminal"
-            }
-        ]
+      DOM.div 
+        { className: "credit-card-update--register-wrapper"
+        , children : [ DOM.iframe
+                         { src: paymentTerminalUrl
+                         , className: "credit-card-update--register-terminal"
+                         }
+                     ]
+        }
 
 
 registerCreditCard :: SetState -> Props -> State -> Aff Unit
@@ -158,7 +150,7 @@ pollRegister props state (Right register) = do
             Right _  -> props.onSuccess
         Nothing -> liftEffect props.onError
     CreditCardRegisterFailed reason -> liftEffect props.onError
-    CreditCardRegisterCanceled -> liftEffect props.onError
+    CreditCardRegisterCanceled -> liftEffect props.onCancel
     CreditCardRegisterCreated -> pollRegister props state =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect props.onError
 pollRegister props state (Left err) = liftEffect props.onError

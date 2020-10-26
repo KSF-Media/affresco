@@ -54,8 +54,14 @@ render self =
     { wrapperState: self.props.wrapperState
     , readyView: actionsContainer $ self.props.actions
     , editingView: identity
-    , successView: \msg -> actionsContainer $ self.props.actions <> [successWrapper msg]
-    , errorView: \err -> actionsContainer $ self.props.actions <> [errorWrapper err]
+    , successView: \msg -> DOM.div_ 
+                             [ actionsContainer self.props.actions
+                             , successWrapper msg 
+                             ]
+    , errorView: \err -> DOM.div_ 
+                           [ actionsContainer self.props.actions
+                           , errorWrapper err
+                           ]
     , loadingView: identity
     }
   where
