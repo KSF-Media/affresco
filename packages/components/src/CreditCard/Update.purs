@@ -14,8 +14,8 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.CreditCard.Menu (menu) as Menu
+import KSF.Grid as Grid
 import KSF.JSError as Error
-import KSF.Modal as Modal
 import KSF.Spinner as Spinner
 import KSF.User (PaymentTerminalUrl(..))
 import KSF.User (getCreditCards, registerCreditCard, getCreditCardRegister, updateCreditCardSubscriptions) as User
@@ -23,13 +23,14 @@ import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
-import React.Basic.Events (handler)
+import React.Basic.Events (handler, handler_)
 
 type Props = 
-  { onCancel  :: Effect Unit
-  , onLoading :: Effect Unit
-  , onSuccess :: Effect Unit
-  , onError   :: Effect Unit
+  { creditCards :: Array CreditCard
+  , onCancel    :: Effect Unit
+  , onLoading   :: Effect Unit
+  , onSuccess   :: Effect Unit
+  , onError     :: Effect Unit
   }
 
 type Self = React.Self Props State
@@ -37,7 +38,6 @@ type Self = React.Self Props State
 type State = 
   { updateState      :: UpdateState
   , poller           :: Aff.Fiber Unit
-  , creditCards      :: Array CreditCard
   , chosenCreditCard :: Maybe CreditCard
   }
 
@@ -59,7 +59,6 @@ initialState :: State
 initialState =
   { poller: pure unit
   , updateState: ChooseCreditCard
-  , creditCards: []
   , chosenCreditCard: Nothing
   }
 
@@ -67,28 +66,39 @@ component :: React.Component Props
 component = React.createComponent "update"
 
 didMount :: Self -> Effect Unit
-didMount self = do
-  -- Before rendering the form, we need to fetch the user's credit cards
+didMount self@{ state, setState, props: { creditCards, onError } } =
   Aff.launchAff_ do
-    creditCards <- User.getCreditCards
-    case creditCards of
-      Left err    -> liftEffect self.props.onError
-      Right cards -> case Array.head cards of
-        Nothing   -> liftEffect self.props.onError
-        Just card -> do
-          let newState = self.state { chosenCreditCard = Just card }
-          liftEffect $ self.setState \_ -> newState
-          registerCreditCard self.setState self.props newState
-
+    case Array.head creditCards of
+      Nothing   -> liftEffect onError
+      Just card -> do
+        let newState = state { chosenCreditCard = Just card }
+        liftEffect $ setState \_ -> newState
+        registerCreditCard setState self.props newState
 
 render :: Self -> JSX
 render self = 
-  case self.state.updateState of
-    ChooseCreditCard       -> Menu.menu 
-                                { creditCards: self.state.creditCards
-                                , chosenCard: Nothing
-                                }
-    RegisterCreditCard url -> netsTerminalIframe url
+  DOM.div
+    { className: "clearfix delivery-reclamation--container"
+    , children:
+        [ Grid.row_
+            [ DOM.div
+                { className: "col col-11"
+                , children: [ DOM.h3_ [ DOM.text "Reklamation" ] ]
+                }
+            , DOM.div
+                { className: "col-1 flex delivery-reclamation--close-icon"
+                , children: [ DOM.div { className: "close-icon" } ]
+                , onClick: handler_ self.props.onCancel
+                }
+            ]
+            , case self.state.updateState of
+                ChooseCreditCard       -> Menu.menu 
+                                            { creditCards: self.props.creditCards
+                                            , chosenCard: Nothing
+                                            }
+                RegisterCreditCard url -> netsTerminalIframe url
+        ]
+    }         
   where
     netsTerminalIframe :: PaymentTerminalUrl -> JSX
     netsTerminalIframe { paymentTerminalUrl } =

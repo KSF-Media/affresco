@@ -2,6 +2,7 @@ module MittKonto.AccountEdit where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (any, catMaybes, filter, intercalate, mapMaybe, null, (:))
@@ -54,6 +55,7 @@ type Props =
 type State =
   { wrapperProgress :: AsyncWrapper.Progress JSX
   , editAction      :: Maybe AccountEditAction
+  , creditCards     :: Array CreditCard
   }
 
 data AccountEditAction
@@ -67,9 +69,21 @@ accountEdit = make component
   { initialState:
       { wrapperProgress: AsyncWrapper.Ready
       , editAction: Nothing
+      , creditCards: []
       }
   , render
+  , didMount
   }
+
+didMount :: Self -> Effect Unit
+didMount self =
+  Aff.launchAff_ do
+    creditCards <- User.getCreditCards
+    case creditCards of
+      Left err    -> pure unit
+      Right cards -> case Array.head cards of
+        Nothing   -> pure unit
+        Just card -> liftEffect $ self.setState _ { creditCards = cards }
 
 render :: Self -> JSX
 render self =
@@ -86,10 +100,13 @@ render self =
         , description: "Byt lösenord"
         , className: passwordChangeClass
         }
-      , { element: self.props.accountEditDiv showCreditCardUpdate
-        , description: "Update credit card"
-        , className: creditCardUpdateClass
-        }
+      , case self.state.creditCards of 
+        [] -> mempty
+        _ -> 
+          { element: self.props.accountEditDiv showCreditCardUpdate
+          , description: "Update credit card"
+          , className: creditCardUpdateClass
+          }
       ]
       where
         passwordChangeClass = "mitt-konto--password-change"
@@ -102,7 +119,8 @@ render self =
             }
 
     creditCardUpdateComponent = CreditCard.update 
-      { onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+      { creditCards: self.state.creditCards
+      , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
       , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
       , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Success!" }
       , onError: self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
