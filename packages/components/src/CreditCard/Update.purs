@@ -78,15 +78,15 @@ didMount self@{ state, setState, props: { creditCards, onError } } =
 render :: Self -> JSX
 render self = 
   DOM.div
-    { className: "clearfix delivery-reclamation--container"
+    { className: "clearfix credit-card-update--container"
     , children:
         [ Grid.row_
             [ DOM.div
                 { className: "col col-11"
-                , children: [ DOM.h3_ [ DOM.text "Reklamation" ] ]
+                , children: [ DOM.h3_ [ DOM.text "Update credit card" ] ]
                 }
             , DOM.div
-                { className: "col-1 flex delivery-reclamation--close-icon"
+                { className: "col-1 flex credit-card-update--close-icon"
                 , children: [ DOM.div { className: "close-icon" } ]
                 , onClick: handler_ self.props.onCancel
                 }
@@ -102,15 +102,13 @@ render self =
   where
     netsTerminalIframe :: PaymentTerminalUrl -> JSX
     netsTerminalIframe { paymentTerminalUrl } =
-      DOM.div
-        { className: "credit-card-update--register-wrapper"
-        , children:
-          [ DOM.iframe
+      DOM.div_
+        [  DOM.iframe
             { src: paymentTerminalUrl
             , className: "credit-card-update--register-terminal"
             }
-          ]
-        }
+        ]
+
 
 registerCreditCard :: SetState -> Props -> State -> Aff Unit
 registerCreditCard setState props state = do
