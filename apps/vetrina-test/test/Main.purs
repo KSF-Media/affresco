@@ -46,7 +46,7 @@ main = launchAff_ do
       log $ ">>> Running test: " <> show name
       page <- Chrome.newPage browser
       let password = "test123"
-      Chrome.goto (Chrome.URL "https://vetrina-staging.netlify.app") page
+      Chrome.goto (Chrome.URL "http://localhost:8000") page
       test page email password
       log $ ">>> Test successful."
 

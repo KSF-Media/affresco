@@ -4,11 +4,11 @@ import ReactDOM from 'react-dom';
 // yup, welcome to react 16
 import createReactClass from 'create-react-class';
 React.createClass = createReactClass;
-var Main = require('./output/VetrinaTest.Main/index.js');
+ var Main = require('./output/VetrinaTest.Main/index.js');
 
 function main() {
   const myComponent = (
-	  <Main.app products={[hblPremium, hbl365]} accessEntitlements={["hbl-365", "articles-365"]}/>
+	  <Main.jsComponent products={[hblPremium, hbl365]} accessEntitlements={["hbl-365", "articles-365"]}/>
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));
@@ -35,7 +35,8 @@ var hbl365 = {
     </div>,
   priceCents: 1490,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
-  name: "HBL 365"
+    name: "HBL 365",
+    campaignNo: 3842
 }
 
 if (module.hot) {
