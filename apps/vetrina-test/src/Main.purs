@@ -8,7 +8,7 @@ import Data.Maybe (fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Set as Set
 import KSF.Vetrina as Vetrina
-import React.Basic (JSX, make)
+import React.Basic (JSX)
 import React.Basic as React
 import Vetrina.Types (JSProduct, Product, fromJSProduct)
 
@@ -34,12 +34,6 @@ jsComponent = React.toReactComponent fromJSProps component { initialState:   {},
 
 component :: React.Component Props
 component = React.createComponent "VetrinaTest"
-
-app :: Props -> JSX
-app = make component
-  { initialState: {}
-  , render
-  }
 
 render :: Self -> JSX
 render self =
