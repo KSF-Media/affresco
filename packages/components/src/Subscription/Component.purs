@@ -32,7 +32,7 @@ import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
-import Tracking as Tracking
+import KSF.Tracking as Tracking
 
 type Self = React.Self Props State
 

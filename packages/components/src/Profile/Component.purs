@@ -39,7 +39,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import Tracking as Tracking
+import KSF.Tracking as Tracking
 
 type Self = React.Self Props State
 

@@ -21,7 +21,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import Tracking as Tracking
+import KSF.Tracking as Tracking
 
 type Self = React.Self Props State
 
@@ -192,5 +192,5 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
         Left invalidDateInput -> liftEffect do
           props.onError invalidDateInput
           Tracking.pauseSubscription props.cusno (show subsno) start end "error: invalid date input"
-  
+
 submitForm _ _ = Console.error "Pause subscription dates were not defined."
