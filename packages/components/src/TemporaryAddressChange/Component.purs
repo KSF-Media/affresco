@@ -31,7 +31,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import Tracking as Tracking
+import KSF.Tracking as Tracking
 
 type State =
   { startDate      :: Maybe DateTime
