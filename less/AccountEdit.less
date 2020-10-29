@@ -12,3 +12,21 @@
         margin-top: 1.5em;
     }
 }
+
+.account-edit--password-change {
+    .format-account-edit-block('sec-shield.svg');
+}
+
+.account-edit--credit-card-update {
+    .format-account-edit-block('fin-card-front-back.svg');
+}
+
+.format-account-edit-block(@icon-name) {
+    display: block;
+    width: @width-of-account-edit-icon;
+    height: @height-of-account-edit-icon;
+    background-position: center;
+    background-repeat: no-repeat, repeat;
+    background-image: url('../images/@{icon-name}');
+    background-size: 30px;
+}

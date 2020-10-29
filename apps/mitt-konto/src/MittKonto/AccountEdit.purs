@@ -109,8 +109,8 @@ render self =
           }
       ]
       where
-        passwordChangeClass = "mitt-konto--password-change"
-        creditCardUpdateClass = "mitt-konto--credit-card-update"
+        passwordChangeClass = "account-edit--password-change"
+        creditCardUpdateClass = "account-edit--credit-card-update"
         
         showCreditCardUpdate = handler_ $
           self.setState _

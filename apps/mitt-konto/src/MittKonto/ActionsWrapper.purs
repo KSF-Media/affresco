@@ -66,14 +66,14 @@ render self =
     }
   where
     successWrapper msg =
-      DOM.div { className: "subscription--action-item"
-              , children: [ successContainer [ DOM.div { className: "subscription--update-success check-icon" }
+      DOM.div { className: "actions-wrapper--action-item"
+              , children: [ successContainer [ DOM.div { className: "actions-wrapper--success check-icon" }
                                              , foldMap successMessage msg
                                              ]
                           ]
               }
     errorWrapper err =
-      DOM.div { className: "subscription--action-item"
+      DOM.div { className: "actions-wrapper--action-item"
               , children: [ errorContainer [ errorMessage err, tryAgain ] ]
               }
     
@@ -91,7 +91,7 @@ render self =
     
     tryAgain =
       DOM.span
-        { className: "subscription--try-update-again"
+        { className: "actions-wrapper--try-again"
         , children: [ DOM.text "Försök igen" ]
         , onClick: handler_ self.props.onTryAgain
         }
@@ -100,9 +100,9 @@ render self =
       DOM.div { className: self.props.containerClass, children }
     
     successContainer children =
-      DOM.div { className: "subscription--success-container flex", children }
+      DOM.div { className: "actions-wrapper--success-container flex", children }
     
     errorContainer children =
-      DOM.div { className: "subscription--error-container flex", children }
+      DOM.div { className: "actions-wrapper--error-container flex", children }
     
     loadingSpinner = [ DOM.div { className: "tiny-spinner" } ]
