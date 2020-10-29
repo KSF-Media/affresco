@@ -347,6 +347,7 @@ type User =
   , subs :: Array Subscription
   , consent :: Array GdprConsent
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
+  , pastTemporaryAddresses :: Array TemporaryAddressChange
   , hasCompletedRegistration :: Boolean
   }
 
@@ -373,6 +374,14 @@ type Address =
   , houseNo       :: Nullable String
   , staircase     :: Nullable String
   , apartment     :: Nullable String
+  }
+
+type TemporaryAddressChange =
+  { street        :: String
+  , zipcode       :: String
+  , cityName      :: Nullable String
+  , countryCode   :: String
+  , temporaryName :: Nullable String
   }
 
 type GdprConsent =
