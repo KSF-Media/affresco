@@ -14,6 +14,7 @@ You can edit this file as you like.
     , "formatters"
     , "datetime"
     , "react-basic"
+    , "react-basic-router"
     , "psci-support"
     , "prelude"
     , "js-date"
