@@ -15,7 +15,7 @@ import Effect.Aff (Aff, Milliseconds(..))
 -- | We need to pass this flag, otherwise iframes don't work properly.
 -- | See: https://github.com/puppeteer/puppeteer/issues/5123
 launch :: Aff Browser
-launch = Chrome.launch { headless: true, args: ["--disable-features=site-per-process"] }
+launch = Chrome.launch { headless: false, args: ["--disable-features=site-per-process"] }
 
 waitFor_ :: forall page. HasFrame page => Selector -> page -> Aff Unit
 waitFor_ selector frame = void $ waitFor selector frame

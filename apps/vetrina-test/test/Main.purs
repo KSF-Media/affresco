@@ -20,6 +20,7 @@ main = launchAff_ do
   dateTimeStr <- liftEffect $ formatDate <$> Now.nowDateTime
   let customer1 = mkEmail dateTimeStr
   let customer2 = mkEmail (dateTimeStr <> "-2")
+  let customer3 = mkEmail (dateTimeStr <> "-3")
 
   -- First of all we just try to subscribe as a fresh customer, so everything from scratch
   withBrowser (runTest "subscribe new customer" subscribeNewCustomer customer1)
@@ -37,6 +38,9 @@ main = launchAff_ do
   -- and verify that Vetrina figures out that we already have (1) and account
   -- and (2) a subscription
   withBrowser (runTest "visit with entitled user (from scratch)" loginWithEntitledCustomer customer2)
+
+  -- Try buying HBL365 with a new customer
+  withBrowser (runTest "subscribe new customer to HBL365" subscribe365NewCustomer customer3)
 
   where
     mkEmail :: String -> String
@@ -63,16 +67,24 @@ subscribeNewCustomer page email password = do
   payWithNets page
 
   log "Payment should have succeeded, so we can now set the password of the account"
-  let passSelector1 = Chrome.Selector "#root > div > div > div > form > div > div:nth-child(1) > input[type=password]"
-  let passSelector2 = Chrome.Selector "#root > div > div > div > form > div > div:nth-child(2) > input[type=password]"
+  let passSelector1 = Chrome.Selector "#setPassword > div:nth-child(1) > input[type=password]"
+  let passSelector2 = Chrome.Selector "#setPassword > div:nth-child(2) > input[type=password]"
   Chrome.waitFor_ passSelector1 page
   Chrome.type_ passSelector1 password page
   Chrome.type_ passSelector2 password page
-  Chrome.click (Chrome.Selector "#root > div > div > div > form > input") page
+  Chrome.click (Chrome.Selector "#app > div > div > form > input") page
 
-  let titleSelector = Chrome.Selector "#root > div > div > h1"
+  let titleSelector = Chrome.Selector "#app > div > h1"
   log "Check that we land on the right page at the end"
   Chrome.assertContent titleSelector "Ditt KSF Media-konto är klart!" page
+
+subscribe365NewCustomer :: Test
+subscribe365NewCustomer page email password = do
+  log "Selecting HBL 365"
+  let selector365 = Chrome.Selector "#HBL\\ 365"
+  Chrome.waitFor_ selector365 page
+  Chrome.click selector365 page
+  subscribeNewCustomer page email password
 
 buyWithExistingCustomer :: Test
 buyWithExistingCustomer page email password = do
@@ -99,14 +111,14 @@ buyWithExistingCustomer page email password = do
   loginExistingUser password page
   payWithNets page
 
-  let titleSelector = Chrome.Selector "#root > div > div > h1"
+  let titleSelector = Chrome.Selector "#app > div > h1"
   log "Check that we land on the right page at the end"
   Chrome.assertContent titleSelector "Tack för din beställning!" page
 
 navigateLoggedIn :: Test
 navigateLoggedIn page email password = do
   log "This same customer should be already be logged in, so we should we welcomed back here, let's move on"
-  let submit = Chrome.Selector "#root > div > div > form > input"
+  let submit = Chrome.Selector "#app > div > form > input"
   Chrome.waitFor_ submit page
   Chrome.click submit page
   assertUserHasSubscription page
@@ -146,13 +158,13 @@ fillEmail email page = do
 loginExistingUser :: String -> Chrome.Page -> Aff Unit
 loginExistingUser password page = do
   log "We then get presented with the screen that tells us that we already have an account"
-  Chrome.assertContent (Chrome.Selector "#root > div > div > h1") "Du har redan ett KSF Media-konto" page
+  Chrome.assertContent (Chrome.Selector "#app > div > h1") "Du har redan ett KSF Media-konto" page
 
   log "Well, then we fill the password in and we login"
-  let passwordSelector = Chrome.Selector "#root > div > div > form > div:nth-child(2) > div > input[type=password]"
+  let passwordSelector = Chrome.Selector "#app > div > form > div:nth-child(2) > div > input[type=password]"
   Chrome.waitFor_ passwordSelector page
   Chrome.type_ passwordSelector password page
-  Chrome.click (Chrome.Selector "#root > div > div > form > input") page
+  Chrome.click (Chrome.Selector "#app > div > form > input") page
 
 payWithNets :: forall page. Chrome.HasFrame page => page -> Aff Unit
 payWithNets page = do
@@ -177,8 +189,8 @@ payWithNets page = do
 assertUserHasSubscription :: Chrome.Page -> Aff Unit
 assertUserHasSubscription page = do
   log "Vetrina should have checked that we are entitled"
-  let titleSelector = Chrome.Selector "#root > div > div > h1"
+  let titleSelector = Chrome.Selector "#app > div > h1"
   Chrome.assertContent titleSelector "Du har redan en prenumeration" page
 
   log "We then click on 'whatever go ahead' and we should be done"
-  Chrome.click (Chrome.Selector "#root > div > div > button") page
+  Chrome.click (Chrome.Selector "#app > div > button") page
