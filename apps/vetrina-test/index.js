@@ -35,8 +35,8 @@ var hbl365 = {
     </div>,
   priceCents: 1490,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
-    name: "HBL 365",
-    campaignNo: 3842
+  name: "HBL 365",
+  campaignNo: 3842
 }
 
 if (module.hot) {

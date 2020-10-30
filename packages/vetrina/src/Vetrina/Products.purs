@@ -46,6 +46,7 @@ render self =
                         }
                     , DOM.div
                         { className: "vetrina--product-radio-button"
+                        , id: p.id
                         , children:
                             [ DOM.div { className: "vetrina--product-radio-button_checked" } ]
                         }
