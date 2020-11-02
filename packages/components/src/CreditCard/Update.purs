@@ -30,7 +30,7 @@ type Props =
   , onCancel    :: Effect Unit
   , onLoading   :: Effect Unit
   , onSuccess   :: Effect Unit
-  , onError     :: Effect Unit
+  , onError     :: UpdateFailure -> Effect Unit
   }
 
 type Self = React.Self Props State
@@ -49,7 +49,7 @@ data UpdateState
 
 data UpdateFailure
   = ServerError
-  | NoExistingCreditCards
+  | InitializationError
   | UnexpectedError String
 
 update :: Props -> JSX
@@ -69,7 +69,7 @@ didMount :: Self -> Effect Unit
 didMount self@{ state, setState, props: { creditCards, onError } } =
   Aff.launchAff_ do
     case Array.head creditCards of
-      Nothing   -> liftEffect onError
+      Nothing   -> liftEffect $ onError InitializationError
       Just card -> do
         let newState = state { chosenCreditCard = Just card }
         liftEffect $ setState \_ -> newState
@@ -146,11 +146,12 @@ pollRegister props state (Right register) = do
         Just card -> do
           result <- User.updateCreditCardSubscriptions card.id register.creditCardId
           liftEffect $ case result of
-            Left err -> props.onError
+            Left err -> props.onError ServerError
             Right _  -> props.onSuccess
-        Nothing -> liftEffect props.onError
-    CreditCardRegisterFailed reason -> liftEffect props.onError
+        Nothing -> liftEffect $ props.onError $ UnexpectedError "No selected card"
+    CreditCardRegisterFailed reason -> liftEffect do
+      props.onError ServerError
     CreditCardRegisterCanceled -> liftEffect props.onCancel
     CreditCardRegisterCreated -> pollRegister props state =<< User.getCreditCardRegister register.creditCardId register.number
-    CreditCardRegisterUnknownState -> liftEffect props.onError
-pollRegister props state (Left err) = liftEffect props.onError
+    CreditCardRegisterUnknownState -> liftEffect $ props.onError $ UnexpectedError "Unknown error"
+pollRegister props state (Left err) = liftEffect $ props.onError ServerError

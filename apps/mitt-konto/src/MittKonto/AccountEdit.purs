@@ -123,5 +123,5 @@ render self =
       , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
       , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
       , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Success!" }
-      , onError: self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+      , onError: \err -> self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
       }
