@@ -100,6 +100,7 @@ setPasswordForm self@{ state: { passwordForm } } =
     , children:
         [ DOM.div
             { className: "vetrina--input-wrapper"
+            , id: "setPassword"
             , children:
                 [ InputField.inputField
                    { placeholder: "Önskat lösenord (minst 6 tecken)"
