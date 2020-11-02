@@ -539,7 +539,7 @@ if (window.ksfDfp) {
         const {isImageModalOpen} = this.state;
 
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Laddar..."}/>;
+            return <ErrorPage message={"Hoppsan! Något fick fel med den här artikeln."}/>;
         }
         
         if(this.state.forceLoginView){
