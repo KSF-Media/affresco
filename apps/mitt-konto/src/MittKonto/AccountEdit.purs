@@ -105,7 +105,7 @@ render self =
         [] -> mempty
         _ -> 
           { element: self.props.accountEditDiv showCreditCardUpdate
-          , description: "Update credit card"
+          , description: "Uppdatera ditt kredit- eller bankkort"
           , className: creditCardUpdateClass
           }
       ]
@@ -124,6 +124,6 @@ render self =
       , logger: self.props.logger
       , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
       , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-      , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Success!" }
-      , onError: \err -> self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+      , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
+      , onError: self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
       }

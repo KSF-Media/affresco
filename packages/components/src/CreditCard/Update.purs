@@ -32,7 +32,7 @@ type Props =
   , onCancel    :: Effect Unit
   , onLoading   :: Effect Unit
   , onSuccess   :: Effect Unit
-  , onError     :: UpdateFailure -> Effect Unit
+  , onError     :: Effect Unit
   }
 
 type Self = React.Self Props State
@@ -48,11 +48,6 @@ type SetState = (State -> State) -> Effect Unit
 data UpdateState
   = ChooseCreditCard
   | RegisterCreditCard PaymentTerminalUrl
-
-data UpdateFailure
-  = ServerError
-  | InitializationError
-  | UnexpectedError String
 
 update :: Props -> JSX
 update = make component { initialState, render, didMount }
@@ -73,7 +68,7 @@ didMount self@{ state, setState, props: { creditCards, onError, logger } } =
     case Array.head creditCards of
       Nothing   -> liftEffect $ do 
         logger.log "No credit cards found" Sentry.Error
-        onError InitializationError
+        onError
       Just card -> do
         let newState = state { chosenCreditCard = Just card }
         liftEffect $ setState \_ -> newState
@@ -105,28 +100,22 @@ render self =
                      ]
         }
 
-
 registerCreditCard :: SetState -> Props -> State -> Aff Unit
-registerCreditCard setState props state = do
-  creditCardRegister <- startRegister
+registerCreditCard setState props@{ logger, onError } state = do
+  creditCardRegister <- User.registerCreditCard
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
       let newState = state { updateState = RegisterCreditCard url }
       liftEffect $ setState \_ -> newState
       void $ Aff.forkAff $ startRegisterPoller setState props newState register
+    Right register@{ terminalUrl: Nothing } -> 
+      liftEffect $ do 
+        logger.log "No terminal url received" Sentry.Error
+        onError
     Left err ->
-      case err of
-        UnexpectedError e -> pure unit
-        _ -> pure unit
-    _ -> pure unit
-  where
-    startRegister :: Aff (Either UpdateFailure CreditCardRegister)
-    startRegister =
-      User.registerCreditCard >>= \eitherRegister ->
-        pure $ case eitherRegister of
-          Right register@{ terminalUrl: Just url } -> Right register
-          Right _                                  -> Left $ UnexpectedError "No url"
-          Left  err                                -> Left $ UnexpectedError err
+      liftEffect $ do
+        logger.log ("Got the following error when registering credit card: " <> err) Sentry.Error
+        onError
 
 killRegisterPoller :: State -> Aff Unit
 killRegisterPoller state = Aff.killFiber (error "Canceled poller") state.poller
@@ -152,19 +141,19 @@ pollRegister props@{ logger, onError, onSuccess, onCancel } state (Right registe
           liftEffect $ case result of
             Left err -> do 
               logger.log ("Server encountered the following error while trying to update credit card's subscriptions: " <> err) Sentry.Error
-              onError ServerError
+              onError
             Right _  -> onSuccess
         Nothing -> liftEffect $ do 
           let msg = "No credit card selected"
           logger.log msg Sentry.Error
-          onError $ UnexpectedError msg
+          onError
     CreditCardRegisterFailed reason -> liftEffect do
-      onError ServerError
+      onError
     CreditCardRegisterCanceled -> liftEffect onCancel
     CreditCardRegisterCreated -> pollRegister props state =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
-      liftEffect $ onError $ UnexpectedError "Unknown error"
+      onError
 pollRegister props state (Left err) = liftEffect $ do 
   props.logger.log ("Could not fetch register status: " <> err) Sentry.Error
-  props.onError ServerError
+  props.onError
