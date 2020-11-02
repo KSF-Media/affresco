@@ -16,6 +16,7 @@ import Effect.Exception (Error, error, message)
 import KSF.CreditCard.Menu (menu) as Menu
 import KSF.Grid as Grid
 import KSF.JSError as Error
+import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (PaymentTerminalUrl(..))
 import KSF.User (getCreditCards, registerCreditCard, getCreditCardRegister, updateCreditCardSubscriptions) as User
@@ -27,6 +28,7 @@ import React.Basic.Events (handler, handler_)
 
 type Props = 
   { creditCards :: Array CreditCard
+  , logger      :: Sentry.Logger
   , onCancel    :: Effect Unit
   , onLoading   :: Effect Unit
   , onSuccess   :: Effect Unit
@@ -66,10 +68,12 @@ component :: React.Component Props
 component = React.createComponent "update"
 
 didMount :: Self -> Effect Unit
-didMount self@{ state, setState, props: { creditCards, onError } } =
+didMount self@{ state, setState, props: { creditCards, onError, logger } } =
   Aff.launchAff_ do
     case Array.head creditCards of
-      Nothing   -> liftEffect $ onError InitializationError
+      Nothing   -> liftEffect $ do 
+        logger.log "No credit cards found" Sentry.Error
+        onError InitializationError
       Just card -> do
         let newState = state { chosenCreditCard = Just card }
         liftEffect $ setState \_ -> newState
@@ -136,7 +140,7 @@ startRegisterPoller setState props state creditCardRegister = do
   liftEffect $ setState _ { poller = newPoller }
 
 pollRegister :: Props -> State -> Either String CreditCardRegister -> Aff Unit
-pollRegister props state (Right register) = do
+pollRegister props@{ logger, onError, onSuccess, onCancel } state (Right register) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case register.status.state of
     CreditCardRegisterStarted ->
@@ -146,12 +150,21 @@ pollRegister props state (Right register) = do
         Just card -> do
           result <- User.updateCreditCardSubscriptions card.id register.creditCardId
           liftEffect $ case result of
-            Left err -> props.onError ServerError
-            Right _  -> props.onSuccess
-        Nothing -> liftEffect $ props.onError $ UnexpectedError "No selected card"
+            Left err -> do 
+              logger.log ("Server encountered the following error while trying to update credit card's subscriptions: " <> err) Sentry.Error
+              onError ServerError
+            Right _  -> onSuccess
+        Nothing -> liftEffect $ do 
+          let msg = "No credit card selected"
+          logger.log msg Sentry.Error
+          onError $ UnexpectedError msg
     CreditCardRegisterFailed reason -> liftEffect do
-      props.onError ServerError
-    CreditCardRegisterCanceled -> liftEffect props.onCancel
+      onError ServerError
+    CreditCardRegisterCanceled -> liftEffect onCancel
     CreditCardRegisterCreated -> pollRegister props state =<< User.getCreditCardRegister register.creditCardId register.number
-    CreditCardRegisterUnknownState -> liftEffect $ props.onError $ UnexpectedError "Unknown error"
-pollRegister props state (Left err) = liftEffect $ props.onError ServerError
+    CreditCardRegisterUnknownState -> liftEffect $ do
+      logger.log "Server is in an unknown state" Sentry.Info
+      liftEffect $ onError $ UnexpectedError "Unknown error"
+pollRegister props state (Left err) = liftEffect $ do 
+  props.logger.log ("Could not fetch register status: " <> err) Sentry.Error
+  props.onError ServerError

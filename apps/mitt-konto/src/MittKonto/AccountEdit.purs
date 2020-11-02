@@ -50,6 +50,7 @@ type Props =
   { formatIconAction  :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
   , accountEditAnchor :: String -> JSX -> JSX
   , accountEditDiv    :: EventHandler -> JSX -> JSX
+  , logger            :: Sentry.Logger
   }
 
 type State =
@@ -80,7 +81,7 @@ didMount self =
   Aff.launchAff_ do
     creditCards <- User.getCreditCards
     case creditCards of
-      Left err    -> pure unit
+      Left err    -> liftEffect $ self.props.logger.log ("Error while fetching credit cards: " <> err) Sentry.Error
       Right cards -> case Array.head cards of
         Nothing   -> pure unit
         Just card -> liftEffect $ self.setState _ { creditCards = cards }
@@ -120,6 +121,7 @@ render self =
 
     creditCardUpdateComponent = CreditCard.update 
       { creditCards: self.state.creditCards
+      , logger: self.props.logger
       , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
       , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
       , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Success!" }

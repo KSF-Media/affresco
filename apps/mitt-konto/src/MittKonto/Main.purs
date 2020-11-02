@@ -209,6 +209,7 @@ userView { setState, state: { logger } } user = React.fragment
                   { formatIconAction: formatIconAction
                   , accountEditAnchor: accountEditAnchor
                   , accountEditDiv: accountEditDiv
+                  , logger: logger
                   }
               ]
           }
