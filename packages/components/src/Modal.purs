@@ -1,6 +1,6 @@
 module KSF.Modal where
 
-import React.Basic (JSX, createComponent, make)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 

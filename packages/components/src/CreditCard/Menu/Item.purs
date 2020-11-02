@@ -1,18 +1,9 @@
 module KSF.CreditCard.Menu.Item where
 
-import Prelude
-
 import Bottega.Models (CreditCard)
-import Data.DateTime (DateTime)
-import Data.Maybe (Maybe(..))
-import KSF.Modal as Modal
-import KSF.Spinner as Spinner
-import KSF.User (PaymentTerminalUrl(..))
 import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (targetValue)
-import React.Basic.Events (handler)
 
 type Self = React.Self Props State
 

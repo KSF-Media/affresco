@@ -2,29 +2,22 @@ module KSF.CreditCard.Update where
 
 import Prelude
 
-import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterState (..), FailReason(..))
-import Control.Monad.Except (throwError)
-import Data.Array (length, head) as Array
-import Data.DateTime (DateTime)
-import Data.Either (Either(..), either, hush, note)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterState(..))
+import Data.Array (head) as Array
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Exception (Error, error, message)
+import Effect.Exception (error)
 import KSF.CreditCard.Menu (menu) as Menu
-import KSF.Grid as Grid
-import KSF.JSError as Error
 import KSF.Sentry as Sentry
-import KSF.Spinner as Spinner
-import KSF.User (PaymentTerminalUrl(..))
-import KSF.User (getCreditCards, registerCreditCard, getCreditCardRegister, updateCreditCardSubscriptions) as User
+import KSF.User (PaymentTerminalUrl)
+import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
 import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (targetValue)
-import React.Basic.Events (handler, handler_)
 
 type Props = 
   { creditCards :: Array CreditCard

@@ -20,7 +20,6 @@ import MittKonto.AccountEdit as AccountEdit
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
-import KSF.CreditCard.Update as CreditCardUpdate
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
 import KSF.JSError as Error
@@ -35,8 +34,7 @@ import KSF.User.Login (login) as Login
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler, handler, handler_)
-import Tracking as Tracking
+import React.Basic.Events (EventHandler)
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String

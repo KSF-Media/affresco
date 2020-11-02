@@ -3,46 +3,20 @@ module MittKonto.AccountEdit where
 import Prelude
 
 import Bottega.Models (CreditCard)
-import Control.Alt ((<|>))
-import Control.Monad.Error.Class (throwError)
-import Data.Array (any, catMaybes, filter, intercalate, mapMaybe, null, (:))
 import Data.Array as Array
-import Data.DateTime (DateTime)
 import Data.Either (Either(..))
-import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime)
-import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
-import Data.Nullable (toMaybe)
-import Data.Nullable as Nullable
-import Data.Set (Set)
-import Data.Set as Set
-import Data.Validation.Semigroup (isValid, unV)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
-import Effect.Exception (error)
-import Effect.Now as Now
-import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
-import KSF.CountryDropDown as CountryDropDown
 import KSF.CreditCard.Update as CreditCard
-import KSF.DescriptionList.Component as DescriptionList
-import KSF.Grid as Grid
-import KSF.InputField as InputField
-import KSF.JSError as Error
 import KSF.Sentry as Sentry
-import KSF.User (User)
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
 import MittKonto.ActionsWrapper as ActionsWrapper
 import React.Basic (make, JSX)
 import React.Basic as React
-import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (EventHandler, handler_)
-import React.Basic.Events as Events
 
 type Self = React.Self Props State
 
