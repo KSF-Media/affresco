@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import shareIcon from "../assets/images/share.png";
 import SvgIcon from "../svgIcon";
 import soundIcon from "../assets/images/sound.png";
+import { isDarkModeOn } from '../helper';
 
 
 class Additional extends Component {
@@ -20,7 +21,7 @@ class Additional extends Component {
         return(
             <div className={"row"}>
                 <div className="col-12">
-                    <p className={"preamble mt-3"}>{this.props.preamble}</p>
+                    <p className={`preamble mt-3 ${isDarkModeOn() ? 'darkMode': ''}`}>{this.props.preamble}</p>
                 </div>
             </div>
         )

@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import {getBrandValueParam} from "../helper";
+import {getBrandValueParam, getMode, isDarkModeOn} from "../helper";
 
 
 const isArray = (value) => {
@@ -36,11 +36,11 @@ const MobileList = (props) => {
                     <div className={"articleItem mobileListItems"}>
                         <div className={"row"}>
                             <div className={"col-8"} onClick={() => {
-                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam();
+                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode();
                             }}>
                                 <div>
-                                    <a className={"relatedArticlesItem"}
-                                       href={"?uuid=" + item.uuid + "&paper=" + getBrandValueParam()}>
+                                    <a className={`relatedArticlesItem ${isDarkModeOn() ? 'darkMode': ''}`}
+                                       href={"?uuid=" + item.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode()}>
                                         {
                                             item.title.length > 80 ?
                                                 item.title.substring(0, 80) + "..."
@@ -55,7 +55,7 @@ const MobileList = (props) => {
                                 </div>
                             </div>
                             <div className={"col-4 articleImage"} onClick={() => {
-                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam();
+                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode();
                             }}>
                                 {
                                     item.listImage === null ?
