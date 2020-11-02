@@ -1,4 +1,4 @@
-module Tracking where
+module KSF.Tracking where
 
 import Data.DateTime (DateTime)
 import Data.Maybe (Maybe(..), maybe)
