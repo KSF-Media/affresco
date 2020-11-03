@@ -15,6 +15,41 @@ foreign import ordersApi :: Api
 foreign import packagesApi :: Api
 foreign import paymentMethodsApi :: Api
 
+type ApiOrder =
+  { number :: OrderNumber
+  , user :: UUID
+  , status :: ApiOrderStatus
+  }
+
+type ApiOrderStatus =
+  { state :: String
+  , time :: String
+  , failReason :: Nullable String 
+  }
+
+type ApiCreditCard =
+  { id :: CreditCardId
+  , user :: UUID
+  , paymentMethodId :: PaymentMethodId
+  , maskedPan :: String
+  , expiryDate :: String 
+  }
+
+type ApiCreditCardRegister =
+   { number :: CreditCardRegisterNumber
+   , user :: UUID
+   , creditCardId :: CreditCardId
+   , paymentTerminalUrl :: Nullable PaymentTerminalUrl
+   , status :: ApiCreditCardRegisterStatus 
+   }
+
+type ApiCreditCardRegisterStatus =
+  { state :: String
+  , time :: String
+  , failReason :: Nullable String 
+  }
+
+
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder@{ campaignNo } =
   readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo } ] { authorization, authUser }
@@ -32,7 +67,7 @@ getOrder { userId, authToken } orderNumber = do
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-readOrder :: { number :: OrderNumber, user :: UUID, status :: { state :: String, time :: String, failReason :: Nullable String } } -> Aff Order
+readOrder :: ApiOrder -> Aff Order
 readOrder orderObj = do
   let state = parseOrderState orderObj.status.state (toMaybe orderObj.status.failReason)
   pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
@@ -47,11 +82,11 @@ payOrder { userId, authToken } orderNumber paymentMethod =
 getPackages :: Aff (Array Package)
 getPackages = callApi packagesApi "packageGet" [] {}
 
-readCreditCard :: { id :: CreditCardId, user :: UUID, paymentMethodId :: PaymentMethodId, maskedPan :: String, expiryDate :: String } -> Aff CreditCard
+readCreditCard :: ApiCreditCard -> Aff CreditCard
 readCreditCard creditCardObj = pure $ 
   { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: creditCardObj.paymentMethodId, maskedPan: creditCardObj.maskedPan, expiryDate: creditCardObj.expiryDate }
 
-readCreditCardRegister :: { number :: CreditCardRegisterNumber, user :: UUID, creditCardId :: CreditCardId, paymentTerminalUrl :: Nullable PaymentTerminalUrl, status :: { state :: String, time :: String, failReason :: Nullable String }  } -> Aff CreditCardRegister
+readCreditCardRegister :: ApiCreditCardRegister -> Aff CreditCardRegister
 readCreditCardRegister creditCardRegisterObj = do
   let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
   pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, creditCardId: creditCardRegisterObj.creditCardId, terminalUrl: toMaybe creditCardRegisterObj.paymentTerminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
