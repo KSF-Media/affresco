@@ -61,3 +61,8 @@ Depending on the production environment we're in (dev, prod), the configuration 
 - `BOTTEGA_URL`
 
 [dotenv](https://github.com/motdotla/dotenv) is used for setting the variables in place.
+
+### Publishing
+
+Run `npm publish` - this will run [the end-to-end tests](../../apps/vetrina-test/README.md),
+which you should fix before publishing.

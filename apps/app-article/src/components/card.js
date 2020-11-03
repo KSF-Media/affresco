@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import PremiumBadge from "./badge";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import {getBrandValueParam} from "../helper";
+import {getBrandValueParam, getMode, isDarkModeOn} from "../helper";
 
 
 const getTag = (tags) => {
@@ -26,7 +26,7 @@ const formatTime = (date) => {
 
 const Card = (props) => {
     return(
-        <div className={"card"} onClick={() => { window.location.href = "?uuid=" + props.article.uuid + "&paper=" + getBrandValueParam(); }}>
+        <div className={"card"} onClick={() => { window.location.href = "?uuid=" + props.article.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode(); }}>
             <div className={"article-main-image"} >
                 {
                     props.article.premium ?
@@ -44,8 +44,8 @@ const Card = (props) => {
             <div className={"card-body"}>
                 <h5 className={"card-title"}>
                     <strong>
-                        <a className={"relatedArticlesItem"}
-                           href={"?uuid=" + props.article.uuid}>
+                        <a className={`relatedArticlesItem ${isDarkModeOn() ? 'darkMode': ''}`}
+                           href={"?uuid=" + props.article.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode()}>
                             {
                                 props.article.title.length > 50 ?
                                     props.article.title.substring(0, 50) + "..."

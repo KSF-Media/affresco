@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import {isUserLoggedIn, getUrlParam, getBrandValueParam} from "./helper";
+import {isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -88,10 +88,10 @@ class App extends Component {
             this.getMostReadArticles();
         }
     }
-    componentDidUpdate(){
-        } 
-componentWillUnmount() {
-}  
+    componentDidUpdate() {
+    }
+    componentWillUnmount() {
+    }  
     onLogout() {
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
@@ -539,7 +539,7 @@ if (window.ksfDfp) {
         const {isImageModalOpen} = this.state;
 
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Laddar..."}/>;
+            return <ErrorPage message={"Hoppsan! Något fick fel med den här artikeln."}/>;
         }
         
         if(this.state.forceLoginView){
@@ -560,7 +560,7 @@ if (window.ksfDfp) {
                     />
                 )}
 
-                <div className={"container-fluid article"}>
+                <div className={`container-fluid article ${isDarkModeOn() ? 'darkMode': ''} `}>
                     <React.Fragment>
                         <Tag tags={this.state.tags}/>
                         {
@@ -640,7 +640,7 @@ const Title = (props) => {
     return (
         <div className={"row"}>
             <div className={"col-12 mt-2 mb-3"} style={{wordWrap: 'break-word'}}>
-                <h2 className={"title"}>{props.title}</h2>
+                <h2 className={`title ${isDarkModeOn() ? 'darkMode': ''}`}>{props.title}</h2>
             </div>
         </div>
     )

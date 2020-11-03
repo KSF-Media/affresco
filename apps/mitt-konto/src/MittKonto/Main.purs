@@ -7,6 +7,7 @@ import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
+import Data.Nullable (toNullable)
 import Data.Set as Set
 import Data.String (toUpper)
 import Effect (Effect)
@@ -25,16 +26,18 @@ import KSF.Footer.Component as Footer
 import KSF.JSError as Error
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
+import KSF.PaymentAccordion as PaymentAccordion
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.Subscription.Component (subscription) as Subscription
-import KSF.User (User, UserError(..))
-import KSF.User (logout) as User
+import KSF.User (User, UserError(..), SubscriptionPayments)
+import KSF.User (logout, getPayments) as User
 import KSF.User.Login (login) as Login
-import React.Basic (JSX, make)
+import React.Basic (JSX, element, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
+import React.Basic.Router as Router
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String
@@ -49,6 +52,7 @@ type State =
   , showWelcome :: Boolean
   , alert :: Maybe Alert
   , logger :: Sentry.Logger
+  , payments :: Maybe (Array SubscriptionPayments)
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -59,6 +63,9 @@ setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
 
 setAlert :: Maybe Alert -> State -> State
 setAlert alert = _ { alert = alert }
+
+setPayments :: Maybe (Array SubscriptionPayments) -> State -> State
+setPayments payments = _ { payments = payments }
 
 data Loading = Loading
 
@@ -76,6 +83,7 @@ app = make component
       , showWelcome: true
       , alert: Nothing
       , logger: Sentry.emptyLogger
+      , payments: Nothing
       }
   , didMount
   , render
@@ -95,18 +103,37 @@ render self@{ state, setState } =
         [ foldMap alertView state.alert ]
     , classy DOM.div "mt4 mb4 clearfix"
         [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ mittKonto ]
+            [ element Router.switch { children: [ paymentList, mittKonto ] } ]
         ]
     , footerView
     ]
  where
    mittKonto =
-     classy DOM.div "mitt-konto--container clearfix"
-       [ foldMap loadingIndicator state.loading
-       , case state.loggedInUser of
-           Just user -> userView self user
-           Nothing   -> loginView self
-       ]
+     element
+       Router.route
+         { exact: true
+         , path: toNullable $ Just "/"
+         , render:
+             \_ -> classy DOM.div "mitt-konto--container clearfix"
+               [ foldMap loadingIndicator state.loading
+               , case state.loggedInUser of
+                   Just user -> userView self user
+                   Nothing   -> loginView self
+               ]
+         }
+   paymentList =
+     element
+       Router.route
+         { exact: true
+         , path: toNullable $ Just "/fakturor"
+         , render:
+             \_ -> classy DOM.div "mitt-konto--container clearfix"
+               [ foldMap loadingIndicator state.loading
+               , case state.loggedInUser of
+                   Just user -> paymentView self user
+                   Nothing   -> loginView self
+               ]
+         }
 
 loadingIndicator :: Loading -> JSX
 loadingIndicator Loading =
@@ -237,7 +264,7 @@ userView { setState, state: { logger } } user = React.fragment
         { className: "mt2"
         , children:
             [ formatIconAction
-                { element: accountEditAnchor "https://ksfmedia1.typeform.com/to/zbh3kU"
+                { element: accountEditAnchor "https://ksfmedia1.typeform.com/to/zbh3kU" true
                 , description: "Avsluta din prenumeration"
                 , className: "mitt-konto--cancel-subscription"
                 }
@@ -316,13 +343,13 @@ userView { setState, state: { logger } } user = React.fragment
             ]
         ]
 
-    accountEditAnchor :: String -> JSX -> JSX
-    accountEditAnchor href children =
+    accountEditAnchor :: String -> Boolean -> JSX -> JSX
+    accountEditAnchor href targetBlank children =
       DOM.a
         { href
         , className: ""
         , children: [ children ]
-        , target: "_blank"
+        , target: if targetBlank then "_blank" else ""
         }
     
     accountEditDiv :: EventHandler -> JSX -> JSX
@@ -332,6 +359,22 @@ userView { setState, state: { logger } } user = React.fragment
         , children: [ children ]
         , onClick: onClick
         } 
+
+-- | Specialized view with user's payment list
+paymentView :: Self -> User -> JSX
+paymentView self user = PaymentAccordion.payments { paymentsLoad: paymentsLoad }
+  where
+    paymentsLoad = withSpinner (self.setState <<< setLoading) do
+      p <- User.getPayments user.uuid
+      case p of
+        Right payments -> pure payments
+        Left _         -> do
+          liftEffect $ self.setState $ setAlert $ Just
+            { level: Alert.warning
+            , title: "Laddningen misslyckades."
+            , message: "Något gick fel, ta kontakt med kundservice."
+            }
+          pure []
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Self -> JSX

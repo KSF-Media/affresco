@@ -24,7 +24,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import Tracking as Tracking
+import KSF.Tracking as Tracking
 
 
 type State =
@@ -135,7 +135,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           }
 
     submitForm :: Maybe DateTime -> Maybe User.DeliveryReclamationClaim -> Effect Unit
-    submitForm (Just date') (Just claim') = do      
+    submitForm (Just date') (Just claim') = do
       Aff.launchAff_ do
         createDeliveryReclamation date' claim'
       where
@@ -178,6 +178,3 @@ dateInput self value label =
         ]
     ]
     $ Just { extraClasses: [ "mb2" ] }
-
-
-

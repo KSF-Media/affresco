@@ -22,7 +22,7 @@ type Self = React.Self Props State
 
 type Props =
   { formatIconAction  :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
-  , accountEditAnchor :: String -> JSX -> JSX
+  , accountEditAnchor :: String -> Boolean-> JSX -> JSX
   , accountEditDiv    :: EventHandler -> JSX -> JSX
   , logger            :: Sentry.Logger
   }
@@ -71,9 +71,13 @@ render self =
   where
     accountEditActions :: Array JSX
     accountEditActions = map self.props.formatIconAction
-      [ { element: self.props.accountEditAnchor "https://www.hbl.fi/losenord"
+      [ { element: self.props.accountEditAnchor "https://www.hbl.fi/losenord" true
         , description: "Byt lösenord"
         , className: passwordChangeClass
+        }
+      , { element: self.props.accountEditAnchor "/fakturor" false
+        , description: "Fakturor"
+        , className: "mitt-konto--payment-history"
         }
       , case self.state.creditCards of 
         [] -> mempty
@@ -85,6 +89,7 @@ render self =
       ]
       where
         passwordChangeClass = "account-edit--password-change"
+        paymentHistoryClass = "mitt-konto--payment-history"
         creditCardUpdateClass = "account-edit--credit-card-update"
         
         showCreditCardUpdate = handler_ $
