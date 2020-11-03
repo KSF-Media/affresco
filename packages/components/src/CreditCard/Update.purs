@@ -72,7 +72,7 @@ render self =
   DOM.div
     { className: "clearfix credit-card-update--container"
     , children:
-        [ DOM.h3_ [ DOM.text "Update credit card" ]
+        [ DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
         , case self.state.updateState of
             ChooseCreditCard       -> Menu.menu 
                                         { creditCards: self.props.creditCards
