@@ -11,7 +11,6 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
-import KSF.CreditCard.Menu (menu) as Menu
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
@@ -74,11 +73,8 @@ render self =
     , children:
         [ DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
         , case self.state.updateState of
-            ChooseCreditCard       -> Menu.menu 
-                                        { creditCards: self.props.creditCards
-                                        , chosenCard: Nothing
-                                        }
             RegisterCreditCard url -> netsTerminalIframe url
+            _ -> mempty
         ]
     }         
   where
