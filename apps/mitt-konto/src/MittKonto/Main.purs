@@ -17,6 +17,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
+import MittKonto.AccountEdit as AccountEdit
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
@@ -35,6 +36,7 @@ import KSF.User.Login (login) as Login
 import React.Basic (JSX, element, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events (EventHandler)
 import React.Basic.Router as Router
 
 foreign import images :: { subscribe :: String }
@@ -214,7 +216,7 @@ userView { setState, state: { logger } } user = React.fragment
         "Mina uppgifter:"
         [ profileComponentBlock
         , break
-        , editAccount
+        , editAccountBlock
         , needHelp
         , disappearingBreak
         ]
@@ -223,6 +225,18 @@ userView { setState, state: { logger } } user = React.fragment
           { profile: user
           , onUpdate: setState <<< setLoggedInUser <<< Just
           , logger
+          }
+        editAccountBlock = DOM.div
+          { className: "mitt-konto--edit-account"
+          , children:
+              [ componentHeader "Mina inställningar:"
+              , componentBlockContent $ AccountEdit.accountEdit 
+                  { formatIconAction: formatIconAction
+                  , accountEditAnchor: accountEditAnchor
+                  , accountEditDiv: accountEditDiv
+                  , logger: logger
+                  }
+              ]
           }
 
     subscriptionsView =
@@ -249,11 +263,10 @@ userView { setState, state: { logger } } user = React.fragment
       DOM.div
         { className: "mt2"
         , children:
-            [ formatIconLink
-                { href: "https://ksfmedia1.typeform.com/to/zbh3kU"
+            [ formatIconAction
+                { element: accountEditAnchor "https://ksfmedia1.typeform.com/to/zbh3kU" true
                 , description: "Avsluta din prenumeration"
                 , className: "mitt-konto--cancel-subscription"
-                , targetBlank: true
                 }
             ]
         }
@@ -273,15 +286,6 @@ userView { setState, state: { logger } } user = React.fragment
             , DOM.text " och vi kopplar den till ditt konto."
             ]
         ]
-
-    editAccount :: JSX
-    editAccount =
-      DOM.div
-        { className: "mitt-konto--edit-account"
-        , children:
-            componentHeader "Mina inställningar:"
-            : accountEditLinks
-        }
 
     needHelp :: JSX
     needHelp =
@@ -326,34 +330,16 @@ userView { setState, state: { logger } } user = React.fragment
          { className: "mitt-konto--component-block-content"
          , children: [ child ]
          }
-
-    accountEditLinks :: Array JSX
-    accountEditLinks =
-      [ formatIconLink
-          { href: "https://www.hbl.fi/losenord"
-          , description: "Byt lösenord"
-          , className: passwordChangeClass
-          , targetBlank: true
-          }
-      , formatIconLink
-          { href: "/fakturor"
-          , description: "Fakturor"
-          , className: "mitt-konto--payment-history"
-          , targetBlank: false
-          }
-      ]
-      where
-        passwordChangeClass = "mitt-konto--password-change"
-
-    formatIconLink :: { href :: String, description :: String, className :: String, targetBlank :: Boolean } -> JSX
-    formatIconLink { href, description, className, targetBlank } =
+    
+    formatIconAction :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
+    formatIconAction { element, description, className } =
       classy DOM.div "clearfix mitt-konto--account-edit-container"
         [ classy DOM.div "col-12 mt1"
-            [ accountEditAnchor href targetBlank
+            [ element
               $ classy DOM.div "mitt-konto--icon-container col circle"
                   [ classy DOM.div className [] ]
             , classy DOM.div "col col-8 pl1 pt2"
-                [ accountEditAnchor href targetBlank $ DOM.text description ]
+                [ element $ DOM.text description ]
             ]
         ]
 
@@ -365,6 +351,14 @@ userView { setState, state: { logger } } user = React.fragment
         , children: [ children ]
         , target: if targetBlank then "_blank" else ""
         }
+    
+    accountEditDiv :: EventHandler -> JSX -> JSX
+    accountEditDiv onClick children = 
+      DOM.div
+        { className: ""
+        , children: [ children ]
+        , onClick: onClick
+        } 
 
 -- | Specialized view with user's payment list
 paymentView :: Self -> User -> JSX

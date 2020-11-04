@@ -106,7 +106,7 @@ h2.mitt-konto---heading {
 .mitt-konto--icon-container {
     width: @width-of-account-edit-icon;
     height: @height-of-account-edit-icon;
-    background: white;
+    background: @grey-almostlight;
 }
 
 .format-edit-subscription-block(@icon-name) {
@@ -145,9 +145,10 @@ h2.mitt-konto---heading {
 }
 
 .mitt-konto--account-edit-container {
-    a {
+    a, div {
         color: @grey-dark;
         text-decoration: underline;
+        cursor: pointer;
     }
     @media @to-xsmall {
         margin-left: 1em;
