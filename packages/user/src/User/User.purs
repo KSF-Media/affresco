@@ -22,12 +22,6 @@ module KSF.User
   , createOrder
   , payOrder
   , getOrder
-  , getCreditCards
-  , getCreditCard
-  , deleteCreditCard
-  , registerCreditCard
-  , getCreditCardRegister
-  , updateCreditCardSubscriptions
   , getPackages
   , getUserEntitlementsLoadToken
   , module Api
@@ -39,8 +33,8 @@ import Prelude
 
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 
-import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, getCreditCardRegister, updateCreditCardSubscriptions) as Bottega
-import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
+import Bottega (createOrder, getOrder, getPackages, payOrder) as Bottega
+import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
@@ -490,25 +484,6 @@ payOrder orderNum paymentMethod = callBottega $ \tokens ->  Bottega.payOrder { u
 
 getOrder :: Bottega.OrderNumber -> Aff (Either String Bottega.Order)
 getOrder orderNum = callBottega $ \tokens -> Bottega.getOrder { userId: tokens.uuid, authToken: tokens.token } orderNum
-
-getCreditCards :: Aff (Either String (Array Bottega.CreditCard))
-getCreditCards = callBottega $ \tokens -> Bottega.getCreditCards { userId: tokens.uuid, authToken: tokens.token }
-
-getCreditCard :: Bottega.CreditCardId -> Aff (Either String Bottega.CreditCard)
-getCreditCard creditCardId = callBottega $ \tokens -> Bottega.getCreditCard { userId: tokens.uuid, authToken: tokens.token } creditCardId
-
-deleteCreditCard :: Bottega.CreditCardId -> Aff (Either String Unit)
-deleteCreditCard creditCardId = callBottega $ \tokens -> Bottega.deleteCreditCard { userId: tokens.uuid, authToken: tokens.token } creditCardId
-
-registerCreditCard :: Aff (Either String Bottega.CreditCardRegister)
-registerCreditCard = callBottega $ \tokens -> Bottega.registerCreditCard { userId: tokens.uuid, authToken: tokens.token }
-
-getCreditCardRegister :: Bottega.CreditCardId -> Bottega.CreditCardRegisterNumber ->  Aff (Either String Bottega.CreditCardRegister)
-getCreditCardRegister creditCardId creditCardRegisterNumber = callBottega $ \tokens -> Bottega.getCreditCardRegister { userId: tokens.uuid, authToken: tokens.token } creditCardId creditCardRegisterNumber
-
-updateCreditCardSubscriptions :: Bottega.CreditCardId -> Bottega.CreditCardId -> Aff (Either String Unit)
-updateCreditCardSubscriptions oldCreditCardId newCreditCardId = callBottega $ \tokens -> Bottega.updateCreditCardSubscriptions { userId: tokens.uuid, authToken: tokens.token } oldCreditCardId newCreditCardId 
-
 
 callBottega :: forall a. (Persona.LoginResponse -> Aff a) -> Aff (Either String a)
 callBottega f = do

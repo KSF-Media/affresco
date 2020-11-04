@@ -17,7 +17,7 @@ import KSF.InputField (inputLabel)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
-import React.Basic.Events (handler)
+import React.Basic.Events (handler, unsafeEventFn)
 
 
 pastTemporaryAddressDropDown :: forall f. Foldable f => f AddressChange -> (Maybe AddressChange -> Effect Unit) -> JSX
