@@ -77,7 +77,7 @@ render self =
         }
       , { element: self.props.accountEditAnchor "/fakturor" false
         , description: "Fakturor"
-        , className: "mitt-konto--payment-history"
+        , className: paymentHistoryClass
         }
       , case self.state.creditCards of 
         [] -> mempty
@@ -89,7 +89,7 @@ render self =
       ]
       where
         passwordChangeClass = "account-edit--password-change"
-        paymentHistoryClass = "mitt-konto--payment-history"
+        paymentHistoryClass = "account-edit--payment-history"
         creditCardUpdateClass = "account-edit--credit-card-update"
         
         showCreditCardUpdate = handler_ $
