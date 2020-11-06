@@ -8,7 +8,15 @@ import ReactDOM from 'react-dom';
 import { Vetrina } from '@ksf-media/vetrina';
 var renderVetrina = function() {
   ReactDOM.render(
-    <Vetrina products={[{id: "HBL", description: "HBL is amazing!", priceCents: 990 }]} />
+    <Vetrina products={[
+      {
+        id: "HBL",
+        description: <div>HBL is amazing!</div>,
+        descriptionPurchaseCompleted: <div>You can now read premium content of HBL.fi</div>,
+        priceCents: 990,
+        campaignNo: 1234
+      }
+    ]}/>
     , document.getElementById('vetrina'));
 };
 ```
@@ -23,7 +31,7 @@ The props/callbacks for `Vetrina` are
     - `() => { openLoginModal() }`
 - products
     - an array of `Products` we want to be subscribeable, see type of `Product` below
-    - `products={[id: "HBL", description: "HBL is amazing!", priceCents: 990 }]}`
+    - `products={[id: "HBL", description: <div>HBL is amazing!</div>, priceCents: 990 }]}`
 - unexpectedError
     - a view to be rendered when an unexpected error occurs (for example, if vetrina fails to initialize entirely)
     - `<div>Error!</div>`
@@ -32,19 +40,17 @@ The props/callbacks for `Vetrina` are
     - if at least one of the entitlements given matches with the user entitlements, vetrina will not proceed with the purchase
     - `[ "hbl-web", "hbl-epaper" ]`
 
-NOTE: Currently, the `products` array only supports one element.
-
 ### Product
 
 ```purescript
 type Product =
-  { id          :: String -- The package id of the product
-  , description :: Array String -- Description is an array of strings to show. Every string of this array starts in a new line
-  , priceCents  :: Int -- The product price in cents
+  { id                           :: String -- The package id of the product
+  , description                  :: JSX -- Description is JSX and it's shown when selecting a product
+  , descriptionPurchaseCompleted :: JSX -- A description/guide to show when the purchase is completed
+  , priceCents                   :: Int -- The product price in cents
+  , campaignNo                   :: Maybe Int -- The campaign used for this product (optional)
   }
 ```
-
-The `Product` must have each attribute defined.
 
 ### Getting it up and running
 
@@ -55,3 +61,8 @@ Depending on the production environment we're in (dev, prod), the configuration 
 - `BOTTEGA_URL`
 
 [dotenv](https://github.com/motdotla/dotenv) is used for setting the variables in place.
+
+### Publishing
+
+Run `npm publish` - this will run [the end-to-end tests](../../apps/vetrina-test/README.md),
+which you should fix before publishing.

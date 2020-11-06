@@ -3,24 +3,26 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, cons, intercalate)
+import Data.Array (all, cons, head)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
+import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
-import Data.Validation.Semigroup (toEither, unV)
+import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
-import React.Basic (JSX, fragment, make)
+import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import Vetrina.Products as Products
 import Vetrina.Types (AccountStatus(..), Product)
 
 type Self = React.Self Props State
@@ -64,7 +66,12 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInput
   validateField field value serverErrors = case field of
     EmailAddress     -> Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
     Password         -> Form.validateEmptyField Password "Lösenord krävs." value
-    ProductSelection -> Form.noValidation value
+    ProductSelection ->
+      -- As `validateField` works currently only with `Maybe Strings`, we need to manually
+      -- check the value here (for now). The `value` passed here is maybe the productSelection.id
+      if isNothing value
+      then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "")) -- TODO: Do we need an error message here?
+      else pure $ Just mempty
     PaymentMethod    -> Form.noValidation value
 
 type PurchaseParameters =
@@ -116,7 +123,10 @@ didMount self = do
           _                     -> Nothing
   self.setState _ { accountStatus = self.props.accountStatus
                   , paymentMethod = Just self.props.paymentMethod
-                  , productSelection = self.props.productSelection
+                  , productSelection =
+                      -- If there's already a selected product, pick that
+                      -- or take the first item on the products list
+                      self.props.productSelection <|> head self.props.products
                   , existingAccountForm { emailAddress = maybeExistingUserEmail }
                   }
 
@@ -135,8 +145,6 @@ render self =
        { className: "vetrina--description-text"
        , children: [ description self.state.accountStatus ]
        }
-  <> renderProducts self.props.products
-  <> notes self.state.accountStatus
   <> form self
   <> links self
 
@@ -152,16 +160,17 @@ description accountStatus = case accountStatus of
   ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
   LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
 
-notes :: AccountStatus -> JSX
-notes accountStatus = case accountStatus of
-    NewAccount        -> DOM.p_ [ DOM.text "Börja med att fylla i din e-post." ]
-    LoggedInAccount _ -> DOM.p_ [ DOM.text "Klicka på \"Beställ\" här nedan för att läsa artikeln." ]
-    _                 -> mempty
-
-renderProducts :: Array Product -> JSX
-renderProducts products =
-  let descriptions = map ( _.description) products
-  in fragment $ map (DOM.p_ <<< Array.singleton <<< intercalate (DOM.br {}) <<< map DOM.text) descriptions
+renderProducts :: Self -> JSX
+renderProducts self =
+  DOM.div
+    { className: "vetrina--product-selection-text"
+    , children: [ DOM.text "För att läsa artikeln måste du först välja en prenumeration:" ]
+    } <>
+  Products.product
+    { products: self.props.products
+    , onProductChange: \p -> self.setState _ { productSelection = Just p }
+    , selectedProduct: self.state.productSelection
+    }
 
 form :: Self -> JSX
 form self = DOM.form $
@@ -170,9 +179,20 @@ form self = DOM.form $
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
-  , children: self.state.errorMessage `cons` (emailInput self self.state.accountStatus `cons` children)
+  , children:
+      [ -- Don't show the product selection if we are asking the user to login
+        if not isExistingAccount self.state.accountStatus
+           || isNothing self.state.productSelection
+        then renderProducts self
+        else mempty
+      , self.state.errorMessage
+      , emailInput self self.state.accountStatus
+      ] <> children
   }
   where
+    isExistingAccount (ExistingAccount _) = true
+    isExistingAccount _ = false
+
     onSubmit = handler preventDefault $ case self.state.accountStatus of
       NewAccount ->
         (\_ -> unV
@@ -286,12 +306,20 @@ formatErrorMessage message = InputField.errorMessage message
 
 emailInput :: Self -> AccountStatus -> JSX
 emailInput _ (LoggedInAccount _) = mempty
-emailInput self _ =
+emailInput self accountStatus =
   let emailValue = self.state.existingAccountForm.emailAddress <|> self.state.newAccountForm.emailAddress
   in DOM.div
-     { className: "vetrina--input-wrapper"
+     { className: "vetrina--input-wrapper vetrina--with-label"
      , children:
-         [ InputField.inputField
+         [ case accountStatus of
+              NewAccount ->
+                DOM.label
+                  { className: "vetrina--email-address-label"
+                  , htmlFor: "emailAddress"
+                  , children: [ DOM.text "Fyll sen i din e-post:" ]
+                  }
+              _ -> mempty
+         , InputField.inputField
              { type_: InputField.Email
              , label: Nothing
              , name: "emailAddress"
@@ -367,26 +395,29 @@ acceptTermsCheckbox =
 newAccountFormValidations :: Self -> Form.ValidatedForm FormInputField NewAccountForm
 newAccountFormValidations self =
   { emailAddress: _
-  -- TODO: Validate this and show error message. We are checking this on server side and with
-  -- default browser validation. However, a custom JS validation is missing.
+  , productSelection: _
+    -- TODO: Validate this and show error message. We are checking this on server side and with
+    -- default browser validation. However, a custom JS validation is missing.
   , acceptLegalTerms: self.state.newAccountForm.acceptLegalTerms
-  , productSelection: self.state.productSelection
   , paymentMethod: self.state.paymentMethod
   }
   <$> Form.validateField EmailAddress self.state.newAccountForm.emailAddress []
+  <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
 
 existingAccountFormValidations :: Self -> Form.ValidatedForm FormInputField ExistingAccountForm
 existingAccountFormValidations self =
   { emailAddress: _
   , password: _
-  , productSelection: self.state.productSelection
+  , productSelection: _
   , paymentMethod: self.state.paymentMethod
   }
   <$> Form.validateField EmailAddress self.state.existingAccountForm.emailAddress []
   <*> Form.validateField Password self.state.existingAccountForm.password []
+  <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
 
 loggedInAccountFormValidations :: Self -> Form.ValidatedForm FormInputField { | PurchaseParameters }
-loggedInAccountFormValidations self = pure
-  { productSelection: self.state.productSelection
+loggedInAccountFormValidations self =
+  { productSelection: _
   , paymentMethod: self.state.paymentMethod
   }
+  <$> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)

@@ -5,14 +5,18 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "react": "^16.5.2",
-    "react-dom": "^16.5.2",
     "basscss": "^8.1.0",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#c690a940b513b29779d3342b1fe2c5169ec1c852",
-    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#ec953dd630f369a07dd05630d505d4ce7dcceba3"
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#6ce506e5446d2517e4c7303b329c7cc85a5ae5e7",
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2"
   },
   "scripts": {
     "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less ../../less/ksf-utils.less ../../less/InputField.less"
   },
-  "files": ["build", "build.js", "index.js"]
+  "files": [
+    "build",
+    "build.js",
+    "index.js"
+  ]
 }

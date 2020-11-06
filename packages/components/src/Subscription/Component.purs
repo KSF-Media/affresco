@@ -6,7 +6,7 @@ import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Foldable (foldMap, for_)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable, intercalate)
@@ -32,6 +32,7 @@ import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
+import KSF.Tracking as Tracking
 
 type Self = React.Self Props State
 
@@ -187,6 +188,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               then mempty
               else removeSubscriptionPauses
             , temporaryAddressChangeIcon
+            , case self.state.pendingAddressChanges of
+                   Just a -> removeTempAddressChanges a
+                   Nothing -> mempty
             , deliveryReclamationIcon
             ]
 
@@ -229,6 +233,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
         { subsno: props.subscription.subsno
+        , cusno: props.user.cusno
+        , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
@@ -256,9 +262,18 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
 
+    readPastTemporaryAddress tmp =
+      { streetAddress: Just tmp.street
+      , zipCode: Just tmp.zipcode
+      , cityName: toMaybe tmp.cityName
+      , countryCode: Just tmp.countryCode
+      , temporaryName: toMaybe tmp.temporaryName
+      }
+
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
+          , cusno: props.user.cusno
           , userUuid: props.user.uuid
           , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
           , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
@@ -293,6 +308,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     deliveryReclamationComponent =
       DeliveryReclamation.deliveryReclamation
         { subsno:   props.subscription.subsno
+        , cusno:    props.user.cusno
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
@@ -360,13 +376,16 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              unpausedSubscription <- Aff.try $ do
                User.unpauseSubscription props.user.uuid props.subscription.subsno
              case unpausedSubscription of
-                 Left err -> do
-                   liftEffect $ self.setState _
+                 Left err -> liftEffect do
+                   self.setState _
                      { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                 Right newSubscription -> liftEffect $ self.setState _
-                   { pausedSubscriptions = toMaybe newSubscription.paused
-                   , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
-                   }
+                   Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "error"
+                 Right newSubscription -> liftEffect do
+                   self.setState _
+                     { pausedSubscriptions = toMaybe newSubscription.paused
+                     , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
+                     }
+                   Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "success"
         }
 
     temporaryAddressChangeIcon =
@@ -391,6 +410,40 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               { updateAction = Just TemporaryAddressChange
               , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
               }
+
+    removeTempAddressChanges tempAddressChanges =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--delete-temporary-address-change-icon circle" }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Avbryt tillfälliga adressändringar" ] ]
+              }
+          ]
+        , onClick: handler_ $ do
+           self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+           Aff.launchAff_ $ do
+             for_ tempAddressChanges $ \tempAddressChange -> do
+               let startDate = toDateTime tempAddressChange.startDate
+               let endDate   = toDateTime tempAddressChange.endDate
+               case startDate, endDate of
+                 (Just startDate'), (Just endDate') -> do
+                   tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
+                   case tempAddressChangesDeleted of
+                     Right newSubscription -> liftEffect do
+                       self.setState _
+                         { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
+                           pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
+                       Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
+                     Left _ -> liftEffect do
+                       self.setState _
+                         { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                       Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
+                 _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
+        }
 
     deliveryReclamationIcon =
       DOM.div

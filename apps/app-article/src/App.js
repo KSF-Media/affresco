@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import {isUserLoggedIn, getUrlParam, getBrandValueParam} from "./helper";
+import {isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn} from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -64,9 +64,6 @@ class App extends Component {
         };
     }
     componentDidMount() {
-        if (window.ksfDfp) {
-            window.addEventListener('load', window.ksfDfp.startUp);
-        }
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
         }
@@ -91,11 +88,10 @@ class App extends Component {
             this.getMostReadArticles();
         }
     }
-    componentDidUpdate(){
-        } 
-componentWillUnmount() {
-   window.removeEventListener('load', window.ksfDfp.startUp);
-}  
+    componentDidUpdate() {
+    }
+    componentWillUnmount() {
+    }  
     onLogout() {
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
@@ -377,36 +373,86 @@ componentWillUnmount() {
         window.dataLayer.push(push_data);
     }
 
+    /* The purpose of this function is to place ad slots in page text. It will try to space them out avoiding images, news graphics, iframes etc. 
+    It will not place slots in articles with less than 4 paragraphs. If no good paragraphs are found, the slots are placed after the text. It will allow <b>, <a href> and <i> within paragraphs. Other tags will disqualify that paragraph. Note that this function will call the main ads script on completion. This should prevent timing issues, no ads are loaded till all paragraphs are rolled out and inspected.
+    The script depends on the article text residing in an element with the id 'content'. */
     positionAdsWithinArticle() {
-        let countImages = 0;
-        let countOtherElements = 0;
-        let elementsInOrder = [];
+        let textParagraphNum = 0; // incremental number of text paragraphs
+        let textParagraphsOK = []; // storage for list of good paragraphs. We will use this array to find good spots for our slots.
+        let textParagraphCount = 0; // count of paragraph array groups
+        let slotOne = '<div id="DIGIHELMOB"></div>';
+        let slotTwo = '<div id="MOBMITT"></div>';
+        textParagraphsOK.push([]);
 
-        if (document.getElementById('content') != null) {
-            document.getElementById('content').childNodes.forEach(node => {
-                if (node.className === 'image') {
-                    countImages++;
-                    elementsInOrder.push('image');
-                } else {
-                    countOtherElements++;
-                    elementsInOrder.push('other');
-                }
-            });
+        var contentDiv = document.getElementById('content');
+        if (contentDiv != null) {
+            contentDiv.childNodes.forEach(node => {
 
-            if (countImages === 0) {
-                let middle = Math.ceil(elementsInOrder.length / 2);
-                let ad = document.createElement('div');
-                ad.setAttribute("id", "MOBMITT");
-                document.getElementById('content').childNodes[middle].appendChild(ad);
-            } else {
-                let ad = document.createElement('div');
-                ad.setAttribute("id", "MOBMITT");
-                if (document.getElementById('content').hasChildNodes()) {
-                    document.getElementById('content').childNodes[elementsInOrder.length - 1].appendChild(ad);
-                }
-            }
-        }
+                    if (node.className === 'html') {
+                        var OK = true;
+                        let approvedTags = ['B', 'A', 'I'];
+                        let tt = node.getElementsByTagName("*");
+                        // try to support iPads from 2013. They cannot iterate browser objects only js arrays.
+                        var t = Array.prototype.slice.call(tt);
+                        // check for non-text content
+                        if (t.length > 0) {
+                            for (let item of t) {
+                                let upperCased = item.nodeName;
+                                upperCased = upperCased.toUpperCase();
+
+                                if (approvedTags.indexOf(upperCased) > -1) {} else {
+                                    OK = false;
+                                }
+                            }
+                        }
+                                        textParagraphNum++;
+                                        if (OK && textParagraphNum > 3) {
+                                            // We are far enough from the beginning and the previous para was text, as is this and text is long enough. Good! We approve the paragraph for ads 
+                                            textParagraphsOK[textParagraphCount].push(textParagraphNum);
+                                        } else {
+                                            textParagraphCount++;
+                                            textParagraphsOK.push([]);
+                                        }
+                                        } else {
+                                            textParagraphCount++;
+                                            textParagraphsOK.push([]);
+                                        }
+                                        });
+
+                                        }
+textParagraphsOK = textParagraphsOK.filter(set => set.length > 0);
+var digiHelPick = 0;
+var digiHelGood = false;
+var mobMittPick = 0;
+var mobMittGood = false;
+var AllParas = contentDiv.getElementsByClassName('html');
+if (AllParas && textParagraphsOK.length > 0) {
+    digiHelPick = textParagraphsOK[0][0];
+    if (digiHelPick > 3) {
+        digiHelGood = true;
+        AllParas[digiHelPick - 1].insertAdjacentHTML('beforebegin', slotOne);
     }
+    let mMittSet = Math.ceil(textParagraphsOK.length / 2);
+    if (mMittSet > 1 || textParagraphsOK[mMittSet - 1].length > 5) {
+        mobMittPick = textParagraphsOK[mMittSet - 1][Math.floor(textParagraphsOK[mMittSet - 1].length / 2)];
+        mobMittGood = true;
+        AllParas[mobMittPick - 1].insertAdjacentHTML('beforebegin', slotTwo);
+    }
+    // Place slots after text in case we could not place them in text.
+    if (!digiHelGood) {
+        let endPlace = AllParas.length - 1;
+        AllParas[endPlace].insertAdjacentHTML('afterend', slotOne);
+    }
+    if (!mobMittGood) {
+        let endPlace = AllParas.length - 1;
+        AllParas[endPlace].insertAdjacentHTML('afterend', slotTwo);
+    }
+}
+
+if (window.ksfDfp) {
+    window.ksfDfp.startUp();
+}
+}
 
     onRegisterOpen() {
         // alert("register opn .");
@@ -514,7 +560,7 @@ componentWillUnmount() {
                     />
                 )}
 
-                <div className={"container-fluid article"}>
+                <div className={`container-fluid article ${isDarkModeOn() ? 'darkMode': ''} `}>
                     <React.Fragment>
                         <Tag tags={this.state.tags}/>
                         {
@@ -574,8 +620,7 @@ componentWillUnmount() {
                 </div>
                 {/*<div id="MOBMITT"></div>*/}
 
-                <div id="DIGIHELMOB"></div>
-                <Footer/>
+                <Footer brandValueName={getBrandValueParam()}/>
             </div>
         );
     }
@@ -595,7 +640,7 @@ const Title = (props) => {
     return (
         <div className={"row"}>
             <div className={"col-12 mt-2 mb-3"} style={{wordWrap: 'break-word'}}>
-                <h2 className={"title"}>{props.title}</h2>
+                <h2 className={`title ${isDarkModeOn() ? 'darkMode': ''}`}>{props.title}</h2>
             </div>
         </div>
     )

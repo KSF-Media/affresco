@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api (Password(..))
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User as User
@@ -100,6 +100,7 @@ setPasswordForm self@{ state: { passwordForm } } =
     , children:
         [ DOM.div
             { className: "vetrina--input-wrapper"
+            , id: "setPassword"
             , children:
                 [ InputField.inputField
                    { placeholder: "Önskat lösenord (minst 6 tecken)"

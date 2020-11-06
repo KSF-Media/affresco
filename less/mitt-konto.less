@@ -106,7 +106,7 @@ h2.mitt-konto---heading {
 .mitt-konto--icon-container {
     width: @width-of-account-edit-icon;
     height: @height-of-account-edit-icon;
-    background: white;
+    background: @grey-almostlight;
 }
 
 .format-edit-subscription-block(@icon-name) {
@@ -131,6 +131,10 @@ h2.mitt-konto---heading {
     .format-edit-subscription-block('sec-shield.svg');
 }
 
+.mitt-konto--payment-history {
+    .format-edit-subscription-block('payment-history.svg');
+}
+
 .mitt-konto--feedback {
     .format-edit-subscription-block('cha-rect-text.svg');
     padding-top: 3px;
@@ -141,9 +145,10 @@ h2.mitt-konto---heading {
 }
 
 .mitt-konto--account-edit-container {
-    a {
+    a, div {
         color: @grey-dark;
         text-decoration: underline;
+        cursor: pointer;
     }
     @media @to-xsmall {
         margin-left: 1em;

@@ -4,17 +4,20 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Except (runExcept)
+import Data.Array (catMaybes)
+import Data.Date (Date)
 import Data.DateTime (DateTime)
 import Data.Either (hush)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.JSDate (JSDate)
+import Data.JSDate (JSDate, toDate)
 import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
-import Data.String.Read (class Read)
+import Data.String.Read (class Read, read)
+import Data.Traversable (sequence)
 import Effect.Aff (Aff)
 import Effect.Exception (Error)
 import Foreign (unsafeToForeign)
@@ -58,14 +61,14 @@ getUserEntitlements uuid token =
   callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign uuid ] { authorization: oauthToken token }
 
 updateUser :: UUID -> UserUpdate -> Token -> Aff User
-updateUser uuid update token =
-  let
-    authorization = oauthToken token
-    body = case update of
-      UpdateName names      -> unsafeToForeign names
-      UpdateAddress address -> unsafeToForeign { address }
-  in
-   callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
+updateUser uuid update token = do
+  let authorization = oauthToken token
+      body = case update of
+        UpdateName names      -> unsafeToForeign names
+        UpdateAddress address -> unsafeToForeign { address }
+  user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
+  let parsedSubs = map Subscription.parseSubscription user.subs
+  pure $ user { subs = parsedSubs }
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
@@ -123,7 +126,7 @@ temporaryAddressChange
   :: UUID
   -> Int
   -> DateTime
-  -> DateTime
+  -> Maybe DateTime
   -> String
   -> String
   -> String
@@ -132,11 +135,31 @@ temporaryAddressChange
   -> Aff Subscription
 temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode countryCode temporaryName token = do
   let startDateISO = formatDate startDate
-      endDateISO   = formatDate endDate
+      endDateISO   = formatDate <$> endDate
+
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
+deleteTemporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Token
+  -> Aff Subscription
+deleteTemporaryAddressChange uuid subsno startDate endDate token = do
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO  }
     ]
     { authorization }
   where
@@ -327,6 +350,7 @@ type User =
   , subs :: Array Subscription
   , consent :: Array GdprConsent
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
+  , pastTemporaryAddresses :: Array TemporaryAddressChange
   , hasCompletedRegistration :: Boolean
   }
 
@@ -353,6 +377,14 @@ type Address =
   , houseNo       :: Nullable String
   , staircase     :: Nullable String
   , apartment     :: Nullable String
+  }
+
+type TemporaryAddressChange =
+  { street        :: String
+  , zipcode       :: String
+  , cityName      :: Nullable String
+  , countryCode   :: String
+  , temporaryName :: Nullable String
   }
 
 type GdprConsent =
@@ -414,3 +446,116 @@ instance writeForeignDeliveryReclamationStatus :: WriteForeign DeliveryReclamati
   writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
 instance showDeliveryReclamationStatus :: Show DeliveryReclamationStatus where
   show = genericShow
+
+data PaymentState
+  = PaymentOpen
+  | PartiallyPaid
+  | Paid
+  | Reminded
+  | Foreclosure
+  | Reimbursed
+  | CreditLoss
+
+instance readPaymentState :: Read PaymentState where
+  read s =
+    case s of
+      "PaymentOpen"   -> pure PaymentOpen
+      "PartiallyPaid" -> pure PartiallyPaid
+      "Paid"          -> pure Paid
+      "Reminded"      -> pure Reminded
+      "Foreclosure"   -> pure Foreclosure
+      "Reimbursed"    -> pure Reimbursed
+      "CreditLoss"    -> pure CreditLoss
+      _               -> Nothing
+
+data PaymentType
+  = NormalState
+  | DirectDebit
+  | Reminder1
+  | Reminder2
+  | Nonpayment
+  | Reimbursement
+
+instance readPaymentType :: Read PaymentType where
+  read t =
+    case t of
+      "NormalState"   -> pure NormalState
+      "DirectDebit"   -> pure DirectDebit
+      "Reminder1"     -> pure Reminder1
+      "Reminder2"     -> pure Reminder2
+      "Nonpayment"    -> pure Nonpayment
+      "Reimbursement" -> pure Reimbursement
+      _               -> Nothing
+
+type SubscriptionPayments =
+  { name :: String
+  , startDate :: Date
+  , lastDate :: Date
+  , payments :: Array Payment
+  }
+
+type Payment =
+  { date :: Date
+  , dueDate :: Date
+  , expenses :: Number
+  , interest :: Number
+  , vat :: Number
+  , amount :: Number
+  , openAmount :: Number
+  , type :: PaymentType
+  , state :: PaymentState
+  , discount :: Number
+  }
+
+type ApiSubscriptionPayments =
+  { name :: String
+  , startDate :: JSDate
+  , lastDate :: JSDate
+  , payments :: Array ApiPayment
+  }
+
+type ApiPayment =
+  { date :: JSDate
+  , dueDate :: JSDate
+  , expenses :: Number
+  , interest :: Number
+  , vat :: Number
+  , amount :: Number
+  , openAmount :: Number
+  , type :: String
+  , state :: String
+  , discount :: Number
+  }
+
+getPayments :: UUID -> Token -> Aff (Array SubscriptionPayments)
+getPayments uuid token =
+  catMaybes <<< map nativeSubscriptionPayments
+    <$> callApi usersApi "usersUuidPaymentsGet" [ unsafeToForeign uuid ] { authorization: oauthToken token }
+  where
+    nativeSubscriptionPayments :: ApiSubscriptionPayments -> Maybe SubscriptionPayments
+    nativeSubscriptionPayments x = do
+      ps <- sequence $ map nativePayment x.payments
+      sd <- toDate x.startDate
+      ld <- toDate x.lastDate
+      pure $ { name: x.name
+             , startDate: sd
+             , lastDate : ld
+             , payments: ps
+             }
+    nativePayment :: ApiPayment -> Maybe Payment
+    nativePayment x = do
+      d <- toDate x.date
+      dd <- toDate x.dueDate
+      t <- read x.type
+      s <- read x.state
+      pure $ { date: d
+             , dueDate: dd
+             , expenses: x.expenses
+             , interest: x.interest
+             , vat: x.vat
+             , amount: x.amount
+             , openAmount: x.openAmount
+             , type: t
+             , state: s
+             , discount: x.discount
+             }

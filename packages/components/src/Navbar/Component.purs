@@ -49,7 +49,6 @@ fromJSProps jsProps =
         "HBL"  -> HBL
         "ON"   -> ON
         "VN"   -> VN
-        "HTHL" -> HTHL
         _      -> KSF
 
 type State =
@@ -154,7 +153,7 @@ hamburgerButton self =
   where
     hamburgerStripe = DOM.div { className: "nav--hamburger-stripe" }
 
-data Paper = HBL | ON | VN | HTHL | KSF
+data Paper = HBL | ON | VN | KSF
 derive instance eqPaper :: Eq Paper
 
 paperLogoUrl :: Paper -> String
@@ -163,7 +162,6 @@ paperLogoUrl paper =
     HBL  -> papers.hbl
     ON   -> papers.on
     VN   -> papers.vn
-    HTHL -> papers.hthl
     KSF  -> papers.ksf
 
 paperEmail :: Paper -> String
@@ -172,5 +170,4 @@ paperEmail paper =
     HBL  -> "pren@hbl.fi"
     ON   -> "pren@ostnyland.fi"
     VN   -> "pren@vastranyland.fi"
-    HTHL -> "hangonlehti@hangotidningen.fi"
     KSF  -> paperEmail HBL

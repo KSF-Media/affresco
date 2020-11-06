@@ -27,7 +27,7 @@ import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.User (User)
@@ -39,6 +39,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
+import KSF.Tracking as Tracking
 
 type Self = React.Self Props State
 
@@ -334,10 +335,12 @@ editAddress self =
           Right u -> liftEffect do
             self.props.onUpdate u
             self.setState _ { editAddress = Success Nothing }
+            Tracking.changeAddress self.props.profile.cusno "success"
           Left err -> do
             liftEffect do
               self.props.logger.error $ Error.userError $ show err
               self.setState _ { editAddress = AsyncWrapper.Error "Adressändringen misslyckades." }
+              Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating address"
     updateAddress _ = pure unit
 
 editName :: Self -> JSX
@@ -393,10 +396,12 @@ editName self =
             Right u -> liftEffect do
               self.props.onUpdate u
               self.setState _ { editName = Success Nothing }
+              Tracking.changeName self.props.profile.cusno "success"
             Left err -> do
               liftEffect do
                 self.props.logger.error $ Error.userError $ show err
                 self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
+                Tracking.changeName self.props.profile.cusno "error: unexpected error when updating name"
               throwError $ error "Unexpected error when updating name."
       updateName _ = pure unit
 

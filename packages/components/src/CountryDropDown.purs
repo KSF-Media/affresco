@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe, fromMaybe)
 import Effect (Effect)
-import KSF.InputField.Component (inputLabel)
+import KSF.InputField (inputLabel)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)

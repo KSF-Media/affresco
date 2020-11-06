@@ -1,14 +1,12 @@
 module KSF.DeliveryReclamation where
 
-import Prelude (Unit, bind, discard, ($), (<$>), (>>=), (=<<))
-
 import Data.Array (snoc)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
+import Data.Foldable (foldMap)
 import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
-import Data.Foldable (foldMap)
 import Data.String.Read (read)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -18,13 +16,16 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.User as User
+import Prelude (Unit, bind, discard, show, ($), (<$>), (>>=), (=<<))
 import React.Basic (JSX, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import KSF.Tracking as Tracking
+
 
 type State =
   { publicationDate    :: Maybe DateTime
@@ -37,6 +38,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
+  , cusno     :: String
   , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
@@ -142,8 +144,12 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           liftEffect $ self.props.onLoading
           User.createDeliveryReclamation self.props.userUuid self.props.subsno date'' claim'' >>=
             case _ of
-              Right recl -> liftEffect $ self.props.onSuccess recl
-              Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
+              Right recl -> liftEffect do
+                self.props.onSuccess recl
+                Tracking.reclamation self.props.cusno (show self.props.subsno) date'' (show claim'') "success"
+              Left invalidDateInput -> liftEffect do
+                self.props.onError invalidDateInput
+                Tracking.reclamation self.props.cusno (show self.props.subsno) date'' (show claim'') "error: invalidDateInput"
     submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
     submitForm _ _ = Console.error "The entered information is incomplete."
 

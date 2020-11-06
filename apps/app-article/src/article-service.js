@@ -17,7 +17,9 @@ const articleApi = {
             .then(response => response.json())
     },
     getMostReadArticles() {
-        return fetch(config.apiUrl + "mostread?start=0&limit=10&paper=" + getBrandValueParam(), {
+        const brand = getBrandValueParam();
+        //We only want exclusively subscriber data for hbl, others can have all data
+        return fetch(`${config.apiUrl}mostread?start=0&limit=10&paper=${brand}&onlySubscribers=${brand==='hbl'}`, {
             method: 'GET',
         })
             .then(response => response.json())
