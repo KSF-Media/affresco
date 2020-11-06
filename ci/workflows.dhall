@@ -6,9 +6,13 @@ let Env = < Staging | Production >
 
 let App =
   { Type = {
+    -- The directory name in the `apps` folder of this repo
     , buildDir : Text
+    -- The directory of the bucket where the app will be deployed
     , deployDir : Text
+    -- The "friendly" name of the app (e.g. can contain spaces)
     , name : Text
+    -- Environment variables to be supplied in production (in addition to the global ones)
     , env : Map Text Text
     }
   , default = { env = [] : Map Text Text }

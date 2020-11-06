@@ -33,10 +33,10 @@ jobs:
       - env:
           NODE_ENV: development
           SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
-        name: "Build Vetrina (staging)"
+        name: "Build Vetrina (for testing only)"
         run: |2
-            ruby deploy.rb vetrina-staging
-            mv apps/vetrina-staging/dist build/vetrina-staging
+            ruby deploy.rb vetrina-test
+            mv apps/vetrina-test/dist build/vetrina-test
       - env:
           ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
           ELECTION_TYPE: EU
@@ -89,12 +89,12 @@ jobs:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/mitt-konto
-      - name: "Upload Vetrina (staging)"
+      - name: "Upload Vetrina (for testing only)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
-          path: build/vetrina-staging
+          path: build/vetrina-test
       - name: "Upload Elections (EU)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -146,7 +146,7 @@ jobs:
             Deploy previews are ready :sunglasses:
             - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)
             - [Mitt Konto](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mitt-konto/index.html)
-            - [Vetrina (staging)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-staging/index.html)
+            - [Vetrina (for testing only)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-test/index.html)
             - [Elections (EU)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections-eu/index.html)
             - [Elections (Parliament)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections/index.html)
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)

@@ -1,4 +1,5 @@
 env:
+  PRODUCTION_BOTTEGA_URL: https://bottega.api.ksfmedia.fi/v1/
   PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi/
   PRODUCTION_FACEBOOK_APP_ID: '1742585382627694'
   PRODUCTION_GOOGLE_CLIENT_ID: "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
@@ -7,7 +8,7 @@ env:
   PRODUCTION_JANRAIN_SSO_SERVER: https://ksf-media.eu.janrainsso.com
   PRODUCTION_JANRAIN_XD_RECEIVER_PATH: /xd_receiver.html
   PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v1/
-  PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+  PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1/
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -43,10 +44,10 @@ jobs:
       - env:
           NODE_ENV: development
           SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
-        name: "Build Vetrina (staging)"
+        name: "Build Vetrina (for testing only)"
         run: |2
-            ruby deploy.rb vetrina-staging
-            mv apps/vetrina-staging/dist build/vetrina-staging
+            ruby deploy.rb vetrina-test
+            mv apps/vetrina-test/dist build/vetrina-test
       - env:
           ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
           ELECTION_TYPE: EU
@@ -99,12 +100,12 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/mitt-konto
-      - name: "Upload Vetrina (staging)"
+      - name: "Upload Vetrina (for testing only)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
-          path: build/vetrina-staging
+          path: build/vetrina-test
       - name: "Upload Elections (EU)"
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:

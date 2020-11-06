@@ -15,9 +15,9 @@ let apps = [
     }
   }
 , Actions.App::{
-  , name = "Vetrina (staging)"
-  , buildDir = "vetrina-staging"
-  , deployDir = "vetrina-staging"
+  , name = "Vetrina (for testing only)"
+  , buildDir = "vetrina-test"
+  , deployDir = "vetrina-test"
   , env = toMap {
     , NODE_ENV = "development"
     , SENTRY_DSN = "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
