@@ -1,36 +1,44 @@
-@import (reference) '../less/ksf-variables';
+@import (reference) 'ksf-variables';
+@import (reference) 'IconAction';
 
 .account-edit--actions-container {
     margin-top: 0;
     @media @to-xlarge {
-        margin-top: 1.5em;
+	margin-top: 1.5em;
     }
     @media @to-medium {
-        margin-top: 0;
+	margin-top: 0;
     }
     @media @to-xsmall {
-        margin-top: 1.5em;
+	margin-top: 1.5em;
     }
 }
 
 .account-edit--password-change {
-    .format-account-edit-block('sec-shield.svg');
+    .icon-action--format-icon('sec-shield.svg');
 }
 
 .account-edit--payment-history {
-    .format-account-edit-block('payment-history.svg');
+    .icon-action--format-icon('payment-history.svg');
 }
 
 .account-edit--credit-card-update {
-    .format-account-edit-block('fin-card-front-back.svg');
+    .icon-action--format-icon('fin-card-front-back.svg');
 }
 
-.format-account-edit-block(@icon-name) {
-    display: block;
-    width: @width-of-account-edit-icon;
-    height: @height-of-account-edit-icon;
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/@{icon-name}');
-    background-size: 30px;
-}
+// .format-account-edit-block(@icon-name) {
+//     display: block;
+//     width: @width-of-account-edit-icon;
+//     height: @height-of-account-edit-icon;
+//     background-position: center;
+//     background-repeat: no-repeat, repeat;
+//     background-image: url('../images/@{icon-name}');
+//     background-size: 30px;
+//     border-radius: 50%;
+// }
+
+// .account-edit--container {
+//     color: @grey-dark;
+//     text-decoration: underline;
+//     cursor: pointer;
+// }

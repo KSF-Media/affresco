@@ -88,7 +88,7 @@ app = make component
   , didMount
   , render
   }
-  
+
 didMount :: Self -> Effect Unit
 didMount self = do
   sentryDsn <- sentryDsn_
@@ -230,7 +230,7 @@ userView { setState, state: { logger } } user = React.fragment
           { className: "mitt-konto--edit-account"
           , children:
               [ componentHeader "Mina inställningar:"
-              , componentBlockContent $ AccountEdit.accountEdit 
+              , componentBlockContent $ AccountEdit.accountEdit
                   { formatIconAction: formatIconAction
                   , accountEditAnchor: accountEditAnchor
                   , accountEditDiv: accountEditDiv
@@ -330,7 +330,7 @@ userView { setState, state: { logger } } user = React.fragment
          { className: "mitt-konto--component-block-content"
          , children: [ child ]
          }
-    
+
     formatIconAction :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
     formatIconAction { element, description, className } =
       classy DOM.div "clearfix mitt-konto--account-edit-container"
@@ -351,14 +351,14 @@ userView { setState, state: { logger } } user = React.fragment
         , children: [ children ]
         , target: if targetBlank then "_blank" else ""
         }
-    
+
     accountEditDiv :: EventHandler -> JSX -> JSX
-    accountEditDiv onClick children = 
+    accountEditDiv onClick children =
       DOM.div
         { className: ""
         , children: [ children ]
         , onClick: onClick
-        } 
+        }
 
 -- | Specialized view with user's payment list
 paymentView :: Self -> User -> JSX
