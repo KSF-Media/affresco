@@ -15,9 +15,6 @@ type State =
   { chosenCard :: Maybe CreditCard
   }
 
-setChosenCard :: Maybe CreditCard -> State -> State
-setChosenCard chosenCard = _ { chosenCard = chosenCard }
-
 type Props = 
   { creditCards :: Array CreditCard
   }
@@ -37,7 +34,7 @@ initialState = { chosenCard: Nothing }
 render :: Self -> JSX
 render self = DOM.div
                 { className: "credit-card-menu--wrapper"
-                , children: []
+                , children: [ creditCardsList ]
                 }
   where
     creditCardsList :: JSX
@@ -47,4 +44,7 @@ render self = DOM.div
                         }
       where
         creditCardMenuItem :: CreditCard -> JSX
-        creditCardMenuItem creditCard = CreditCard.item { creditCard: creditCard }
+        creditCardMenuItem creditCard = CreditCard.item 
+          { creditCard: creditCard
+          , onClick: self.setState _ { chosenCard  = Just creditCard }
+          }

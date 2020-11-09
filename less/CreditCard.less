@@ -24,23 +24,61 @@
     }
 }
 
-.credit-card-menu---item {
-    .vetrina--product {
-        background: @grey-light;
-        border-style: solid;
-        border-color: @grey-almostlight;
-        border-width: 1px;
-        border-radius: 5px;
-        padding: 10px;
-        display: grid;
-        grid-template-columns: 60px auto;
-        grid-template-rows: auto;
-        grid-auto-flow: row;
-        position: relative;
-        margin-bottom: 1em;
-        input[type="radio"] {
+.credit-card-menu-item {
+    cursor: pointer;
+    background: @grey-light;
+    border-style: solid;
+    border-color: @grey-almostlight;
+    border-width: 1px;
+    border-radius: 5px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 60px auto;
+    grid-template-rows: auto;
+    grid-auto-flow: row;
+    position: relative;
+    margin-bottom: 1em;
+    input[type="radio"] {
         outline: 0;
         display: none;
-        }
     }
+}
+
+.credit-card-menu-item--radio-button {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    background-color: #eee;
+    margin-top: .5em;
+    margin-left: .5em;
+}
+
+.credit-card-menu-item--radio-button_checked {
+    margin: 7px;
+    top: 17px;
+    left: 17px;
+    height: 15px;
+    width: 15px;
+    background-color: white;
+    border-radius: 50%;
+    display: none;
+    box-shadow: 2px 2px 2px 0px rgba(0, 0, 0, 0.18);
+}
+
+.credit-card-menu-item:hover input ~ .credit-card-menu-item--radio-button {
+    background-color: #ccc;
+}
+
+.credit-card-menu-item input:checked ~ .credit-card-menu-item--radio-button {
+    background-color: @brand-neutral;
+}
+
+.credit-card-menu-item--radio-button:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.credit-card-menu-item input:checked ~ .credit-card-menu-item--radio-button > .credit-card-menu-item--radio-button_checked {
+    display: block;
 }

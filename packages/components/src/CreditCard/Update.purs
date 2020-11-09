@@ -3,7 +3,6 @@ module KSF.CreditCard.Update where
 import Prelude
 
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterState(..))
-import Data.Array (head) as Array
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -11,6 +10,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
+import KSF.CreditCard.Menu (menu) as Menu
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
@@ -57,14 +57,15 @@ component = React.createComponent "update"
 didMount :: Self -> Effect Unit
 didMount self@{ state, setState, props: { creditCards, onError, logger } } =
   Aff.launchAff_ do
-    case Array.head creditCards of
-      Nothing   -> liftEffect $ do 
+    case creditCards of
+      []       -> liftEffect $ do 
         logger.log "No credit cards found" Sentry.Error
         onError
-      Just card -> do
+      [ card ] -> do
         let newState = state { chosenCreditCard = Just card }
         liftEffect $ setState \_ -> newState
         registerCreditCard setState self.props newState
+      _        -> pure unit
 
 render :: Self -> JSX
 render self = 
@@ -73,8 +74,10 @@ render self =
     , children:
         [ DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
         , case self.state.updateState of
+            ChooseCreditCard -> Menu.menu 
+              { creditCards: self.props.creditCards
+              }
             RegisterCreditCard url -> netsTerminalIframe url
-            _ -> mempty
         ]
     }         
   where

@@ -1,20 +1,23 @@
 module KSF.CreditCard.Menu.Item where
 
-import Prelude (($))
+import Prelude (Unit, ($), show)
 
-import Bottega.Models (CreditCard)
+import Bottega.Models (CreditCard, CreditCardId(..))
+import Effect (Effect)
 import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
 
 type Self = React.Self Props State
 
-type State = 
-  { selected :: Boolean
-  }
+type State = {
+  selected :: Boolean
+}
 
 type Props = 
   { creditCard :: CreditCard
+  , onClick :: Effect Unit
   }
 
 item :: Props -> JSX
@@ -27,18 +30,19 @@ initialState :: State
 initialState = { selected: false }
 
 render :: Self -> JSX
-render self@{ state, props: { creditCard } } = DOM.label
-                { className: itemClass
-                , children: [ DOM.input $
+render self@{ setState, state: { selected }, props: { creditCard, onClick } } = DOM.label
+                { className: "credit-card-menu-item"
+                , children: [ DOM.input
                                 { type: "radio"
                                 , name: "credit-card-menu-item--selection"
-                                , value: creditCard.id
+                                , onClick: handler_ $ onClick
+                                , value: creditCardId creditCard.id
                                 }
                             , DOM.div
                                 { className: "credit-card-menu-item--radio-button"
-                                , id: creditCard.id
+                                , id: creditCardId creditCard.id
                                 , children:
-                                    [ DOM.div { className: "vetrina--product-radio-button_checked" } ]
+                                    [ DOM.div { className: "credit-card-menu-item--radio-button_checked" } ]
                                 }
                             , DOM.div_
                                 [ number creditCard.maskedPan
@@ -47,12 +51,12 @@ render self@{ state, props: { creditCard } } = DOM.label
                             ]
                 }
   where
-    itemClass :: String
-    itemClass = if state.selected 
-                   then 
-                     "credit-card-menu-item"
-                   else
-                     "credit-card-menu-item selected"
+
+    setSelected :: Effect Unit
+    setSelected = setState _ { selected = true }
+    
+    creditCardId :: CreditCardId -> String
+    creditCardId (CreditCardId id) = show id
 
     number :: String -> JSX
     number n = DOM.div 
