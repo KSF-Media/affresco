@@ -23,6 +23,7 @@ import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
+import KSF.IconAction as IconAction
 import KSF.JSError as Error
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar
@@ -36,7 +37,6 @@ import KSF.User.Login (login) as Login
 import React.Basic (JSX, element, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler)
 import React.Basic.Router as Router
 
 foreign import images :: { subscribe :: String }
@@ -231,10 +231,7 @@ userView { setState, state: { logger } } user = React.fragment
           , children:
               [ componentHeader "Mina inställningar:"
               , componentBlockContent $ AccountEdit.accountEdit
-                  { formatIconAction: formatIconAction
-                  , accountEditAnchor: accountEditAnchor
-                  , accountEditDiv: accountEditDiv
-                  , logger: logger
+                  { logger: logger
                   }
               ]
           }
@@ -263,10 +260,10 @@ userView { setState, state: { logger } } user = React.fragment
       DOM.div
         { className: "mt2"
         , children:
-            [ formatIconAction
-                { element: accountEditAnchor "https://ksfmedia1.typeform.com/to/zbh3kU" true
+            [ IconAction.iconAction
+                { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
-                , className: "mitt-konto--cancel-subscription"
+                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU" true
                 }
             ]
         }
@@ -330,35 +327,6 @@ userView { setState, state: { logger } } user = React.fragment
          { className: "mitt-konto--component-block-content"
          , children: [ child ]
          }
-
-    formatIconAction :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
-    formatIconAction { element, description, className } =
-      classy DOM.div "clearfix mitt-konto--account-edit-container"
-        [ classy DOM.div "col-12 mt1"
-            [ element
-              $ classy DOM.div "mitt-konto--icon-container col circle"
-                  [ classy DOM.div className [] ]
-            , classy DOM.div "col col-8 pl1 pt2"
-                [ element $ DOM.text description ]
-            ]
-        ]
-
-    accountEditAnchor :: String -> Boolean -> JSX -> JSX
-    accountEditAnchor href targetBlank children =
-      DOM.a
-        { href
-        , className: ""
-        , children: [ children ]
-        , target: if targetBlank then "_blank" else ""
-        }
-
-    accountEditDiv :: EventHandler -> JSX -> JSX
-    accountEditDiv onClick children =
-      DOM.div
-        { className: ""
-        , children: [ children ]
-        , onClick: onClick
-        }
 
 -- | Specialized view with user's payment list
 paymentView :: Self -> User -> JSX

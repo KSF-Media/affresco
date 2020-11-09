@@ -1,19 +1,6 @@
 @import (reference) 'ksf-variables';
 @import (reference) 'IconAction';
 
-.account-edit--actions-container {
-    margin-top: 0;
-    @media @to-xlarge {
-	margin-top: 1.5em;
-    }
-    @media @to-medium {
-	margin-top: 0;
-    }
-    @media @to-xsmall {
-	margin-top: 1.5em;
-    }
-}
-
 .account-edit--password-change {
     .icon-action--format-icon('sec-shield.svg');
 }
@@ -25,20 +12,3 @@
 .account-edit--credit-card-update {
     .icon-action--format-icon('fin-card-front-back.svg');
 }
-
-// .format-account-edit-block(@icon-name) {
-//     display: block;
-//     width: @width-of-account-edit-icon;
-//     height: @height-of-account-edit-icon;
-//     background-position: center;
-//     background-repeat: no-repeat, repeat;
-//     background-image: url('../images/@{icon-name}');
-//     background-size: 30px;
-//     border-radius: 50%;
-// }
-
-// .account-edit--container {
-//     color: @grey-dark;
-//     text-decoration: underline;
-//     cursor: pointer;
-// }

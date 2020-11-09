@@ -3,7 +3,7 @@ module MittKonto.AccountEdit where
 import Prelude
 
 import Bottega.Models (CreditCard)
-import Data.Array (cons)
+import Data.Array (null)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -12,23 +12,18 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Update as CreditCard
+import KSF.IconAction as IconAction
 import KSF.Sentry as Sentry
 import KSF.User as User
 import MittKonto.ActionsWrapper as ActionsWrapper
 import React.Basic (make, JSX)
 import React.Basic as React
-import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler, handler_)
-
-import KSF.IconAction as Aa
+import React.Basic.Events (handler_)
 
 type Self = React.Self Props State
 
 type Props =
-  { formatIconAction  :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
-  , accountEditAnchor :: String -> Boolean-> JSX -> JSX
-  , accountEditDiv    :: EventHandler -> JSX -> JSX
-  , logger            :: Sentry.Logger
+  { logger :: Sentry.Logger
   }
 
 type State =
@@ -75,46 +70,28 @@ render self =
   where
     accountEditActions :: Array JSX
     accountEditActions =
-      [ Aa.iconAction
+      [ IconAction.iconAction
           { iconClassName: passwordChangeClass
           , description: "Byt lösenord"
-          , href: "https://www.hbl.fi/losenord"
-          , onClick: Aa.Href "https://www.hbl.fi/losenord"
+          , onClick: IconAction.Href "https://www.hbl.fi/losenord" true
           }
-      , Aa.iconAction
+      , IconAction.iconAction
           { iconClassName: paymentHistoryClass
           , description: "Fakturor"
-          , href: "/fakturor"
-          , onClick: Aa.Href "/fakturor"
+          , onClick: IconAction.Href "/fakturor" false
           }
-      , Aa.iconAction
-          { iconClassName: creditCardUpdateClass
-          , description: "Uppdatera ditt kredit- eller bankkort"
-          , href: ""
-          , onClick:
-              Aa.Custom $ self.setState _
-                { editAction = Just UpdateCreditCard
-                , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
-                }
-          }
-      ] <>
-      map self.props.formatIconAction
-      [
-        -- { element: self.props.accountEditAnchor "https://www.hbl.fi/losenord" true
-        -- , description: "Byt lösenord"
-        -- , className: passwordChangeClass
-        -- }
-      --  { element: self.props.accountEditAnchor "/fakturor" false
-      --   , description: "Fakturor"
-      --   , className: paymentHistoryClass
-      --   }
-      -- , case self.state.creditCards of
-      --   [] -> mempty
-      --   _ ->
-      --     { element: self.props.accountEditDiv showCreditCardUpdate
-      --     , description: "Uppdatera ditt kredit- eller bankkort"
-      --     , className: creditCardUpdateClass
-      --     }
+      , if not $ null self.state.creditCards
+        then
+          IconAction.iconAction
+            { iconClassName: creditCardUpdateClass
+            , description: "Uppdatera ditt kredit- eller bankkort"
+            , onClick:
+                IconAction.Action $ self.setState _
+                  { editAction = Just UpdateCreditCard
+                  , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
+                  }
+            }
+        else mempty
       ]
       where
         passwordChangeClass = "account-edit--password-change"
@@ -135,38 +112,3 @@ render self =
       , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
       , onError: self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
       }
-
--- formatIconAction :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
--- formatIconAction { element, description, className } =
---   DOM.div
---     { className: "clearfix mitt-konto--account-edit-container"
---     , children:
---         [ DOM.div
---             { className: "col-12 mt1"
---             , children:
---                 [ element
---                   $ classy DOM.div "mitt-konto--icon-container col circle"
---                             [ classy DOM.div className [] ]
---                         , classy DOM.div "col col-8 pl1 pt2"
---                           [ element $ DOM.text description ]
---                         ]
---             }
---         ]
---     }
-
--- accountEditAnchor :: String -> Boolean -> JSX -> JSX
--- accountEditAnchor href targetBlank children =
---   DOM.a
---     { href
---     , className: ""
---     , children: [ children ]
---     , target: if targetBlank then "_blank" else ""
---     }
-
--- accountEditDiv :: EventHandler -> JSX -> JSX
--- accountEditDiv onClick children =
---   DOM.div
---     { className: ""
---     , children: [ children ]
---     , onClick: onClick
---     }
