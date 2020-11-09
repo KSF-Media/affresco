@@ -362,7 +362,13 @@ userView { setState, state: { logger } } user = React.fragment
 
 -- | Specialized view with user's payment list
 paymentView :: Self -> User -> JSX
-paymentView self user = PaymentAccordion.payments { paymentsLoad: paymentsLoad }
+paymentView self user = DOM.div_
+  [ DOM.a
+      { href: "/"
+      , className: "mitt-konto--backwards"
+      }
+  , PaymentAccordion.payments { paymentsLoad: paymentsLoad }
+  ]
   where
     paymentsLoad = withSpinner (self.setState <<< setLoading) do
       p <- User.getPayments user.uuid
