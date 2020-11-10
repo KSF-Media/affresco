@@ -76,6 +76,7 @@ render self =
         , case self.state.updateState of
             ChooseCreditCard -> Menu.menu 
               { creditCards: self.props.creditCards
+              , onSubmit: \_ -> pure unit
               }
             RegisterCreditCard url -> netsTerminalIframe url
         ]
