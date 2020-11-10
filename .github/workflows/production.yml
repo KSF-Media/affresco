@@ -157,7 +157,7 @@ jobs:
       - name: Invalidate CDN cache
         run: |2
             gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
-            gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*
+            gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"
 name: production
 on:
   pull_request:
