@@ -12,10 +12,10 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Update as CreditCard
-import KSF.IconAction as IconAction
 import KSF.Sentry as Sentry
 import KSF.User as User
 import MittKonto.ActionsWrapper as ActionsWrapper
+import MittKonto.IconAction as IconAction
 import React.Basic (make, JSX)
 import React.Basic as React
 import React.Basic.Events (handler_)

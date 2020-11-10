@@ -18,12 +18,12 @@ import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.AccountEdit as AccountEdit
+import MittKonto.IconAction as IconAction
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
-import KSF.IconAction as IconAction
 import KSF.JSError as Error
 import KSF.Navbar.Component (Paper(..))
 import KSF.Navbar.Component as Navbar

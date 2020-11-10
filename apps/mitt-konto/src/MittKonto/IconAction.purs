@@ -1,4 +1,4 @@
-module KSF.IconAction where
+module MittKonto.IconAction where
 
 import Prelude
 
