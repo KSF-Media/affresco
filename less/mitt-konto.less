@@ -100,48 +100,37 @@ h2.mitt-konto---heading {
     p:last-child { margin-bottom: 0 }
 }
 
-@width-of-account-edit-icon: 50px;
-@height-of-account-edit-icon: 50px;
+@width-of-edit-subscription-icon: 50px;
+@height-of-edit-subscription-icon: 50px;
 
 .mitt-konto--icon-container {
-    width: @width-of-account-edit-icon;
-    height: @height-of-account-edit-icon;
+    width: @width-of-edit-subscription-icon;
+    height: @height-of-edit-subscription-icon;
     background: @grey-almostlight;
 }
 
 .format-edit-subscription-block(@icon-name) {
     display: block;
-    width: @width-of-account-edit-icon;
-    height: @height-of-account-edit-icon;
+    width: @width-of-edit-subscription-icon;
+    height: @height-of-edit-subscription-icon;
     background-position: center;
     background-repeat: no-repeat, repeat;
     background-image: url('../images/@{icon-name}');
     background-size: 30px;
 }
 
-.mitt-konto--temporary-address-change {
-    .format-edit-subscription-block('loc-point-map.svg');
-}
-
-.mitt-konto--permanent-address-change {
-    .format-edit-subscription-block('loc-point-distance.svg');
-}
-
-.mitt-konto--password-change {
-    .format-edit-subscription-block('sec-shield.svg');
-}
-
-.mitt-konto--payment-history {
-    .format-edit-subscription-block('payment-history.svg');
-}
-
-.mitt-konto--feedback {
-    .format-edit-subscription-block('cha-rect-text.svg');
-    padding-top: 3px;
-}
-
 .mitt-konto--cancel-subscription {
     .format-edit-subscription-block('ui-cross-2.svg');
+}
+
+.mitt-konto--backwards {
+    background-position: center;
+    background-repeat: no-repeat, repeat;
+    background-image: url('../images/backwards.svg');
+    background-size: 120px;
+    width: 140px;
+    height: 40px;
+    display: inline-block;
 }
 
 .mitt-konto--account-edit-container {
