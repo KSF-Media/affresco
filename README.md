@@ -2,22 +2,20 @@
 
 ![Affresco](http://www.hotelfororomano.com/wp-content/gallery/gallery-arte-braocca-roma/vita-di-mose-affresco-cappella-sistina-michelangelo.jpg)
 
-Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful frontends are contained in this repo.
+Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful frontends can be found in this repo.
 
 ![production](https://github.com/KSF-Media/affresco/workflows/production/badge.svg)
 
 | Deploy | Lang(s) |
 | --- | --- |
 | [Mitt Konto](https://konto.ksfmedia.fi/) | PureScript |
-| [Prenumerera](https://prenumerera.netlify.com/) | PureScript |
-| [KSF National Elections](https://elections.frontends.ksfmedia.fi/) | JavaScript |
-| [KSF EU Elections](https://ksf-elections-eu.netlify.com/) | JavaScript |
-| [Duellen](https://duellen.netlify.com/) | JavaScript |
+| [KSF National Elections](https://frontends.ksfmedia.fi/elections/index.html) | JavaScript |
+| [KSF EU Elections](https://frontends.ksfmedia.fi/elections-eu/index.html) | JavaScript |
 | [App Article View](https://app-article.ksfmedia.fi/) | PS/JS |
-| [Scripts](https://scripts.ksfmedia.fi) | JS |
-| [Vetrina (test)](https://vetrina.frontends.ksfmedia.fi) | PS |
-| [Podcasts](https://podcasts.frontends.ksfmedia.fi) | JS |
-| [Podcasts (VN)](https://podcasts-vn.frontends.ksfmedia.fi) | JS |
+| [Scripts](https://frontends.ksfmedia.fi/scripts) | JS |
+| [Vetrina (test)](https://frontends.ksfmedia.fi/vetrina/index.html) | PS |
+| [Podcasts](https://frontends.ksfmedia.fi/podcasts/index.html) | JS |
+| [Podcasts (VN)](https://frontends.ksfmedia.fi/podcasts-vn/index.html) | JS |
 
 ## Developing
 

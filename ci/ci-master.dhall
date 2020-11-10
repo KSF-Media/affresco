@@ -19,7 +19,7 @@ let steps
 
 in
   { name = "production"
-  , on = { pull_request = { branches = ["master"] }, push = { branches = [ "master" ] } }
+  , on = { push = { branches = [ "master" ] } }
   , jobs = { deploy = { runs-on = "ubuntu-latest", steps = steps } }
   , env = {
     , PRODUCTION_FACEBOOK_APP_ID = "1742585382627694"

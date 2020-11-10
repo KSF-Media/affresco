@@ -160,9 +160,6 @@ jobs:
             gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"
 name: production
 on:
-  pull_request:
-    branches:
-      - master
   push:
     branches:
       - master
