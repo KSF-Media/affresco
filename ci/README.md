@@ -36,12 +36,22 @@ should go in the `apps.dhall` file.
 
 ## Adding a new app
 
-0. Edit the [`apps.dhall`](./apps.dhall) file to add the new app details
-1. If you need a special host (i.e. `something.frontends.ksfmedia.fi` is not fine),
-   then you need to point an A record from that host to the IP of the `ksf-frontends-lb` in `ksf-production`
-2. Then go to that load balancer, and edit it. You'll need to add a new "host and path rule", where:
+1. Edit the [`apps.dhall`](./apps.dhall) file to add the new app details
+2. You'll find the production app deployed at `https://frontends.ksfmedia.fi/$deployDir/index.html`
+
+If you need to redirect `index.html` to the `/`, you can add a rewriting rule to the `ksf-frontends-lb` load balancer
+(in the `ksf-production` project)
+
+### Getting a "nice url" for the app
+
+Sometimes you need a nicer URL for the deployed frontend, e.g. as it's the case for Mitt Konto.
+
+In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
+1. Create a new "Cloud CDN" resource backed by the `ksf-frontends` bucket
+2. For this you'll need to create new load balancer. You'll need to add a new "host and path rule", where:
   - the host is the one you need for the app
   - the path rules are:
     - path `/` with a URL rewrite to `$deployDir/index.html` (note that `deployDir` is one of the configurations of an app, and ultimately the location of it in the bucket)
     - path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
-3. Add a new SSL certificate for the new host to the load balancer (from the "frontend configuration" section)
+3. Create a new SSL certificate for the new host on this load balancer, and point a DNS A record to the IP of the load balancer
+4. Edit the `refreshCDNSteps` [source](./workflows.dhall) to include a `gcloud` command to clear the CDN cache on new deployments

@@ -133,6 +133,7 @@ let refreshCDNSteps = [
       , name = Some "Invalidate CDN cache"
       , run = Some ''
         gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
+        gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*
       ''
     }
   ]
