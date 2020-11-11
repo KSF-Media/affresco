@@ -96,7 +96,7 @@ render self =
             )
         }
     headerRow =
-      DOM.tr_ [ DOM.th_ [ DOM.text "Förfallodag" ]
+      DOM.tr_ [ DOM.th_ [ DOM.text "Betaldatum" ]
               , DOM.th_ [ DOM.text "Typ" ]
               , DOM.th_ [ DOM.text "Status" ]
               , DOM.th_ [ DOM.text "Moms %" ]
@@ -110,7 +110,7 @@ render self =
       DOM.tr
         { className: "payment-accordion--item"
         , children:
-            [ DOM.td_ [ DOM.text $ formatDate payment.dueDate ]
+            [ DOM.td_ [ DOM.text $ formatDate payment.date ]
             , DOM.td_ [ DOM.text $ typeString payment.type ]
             , DOM.td_ [ DOM.text $ stateString payment.state ]
             , percent $ if payment.amount > 0.01
