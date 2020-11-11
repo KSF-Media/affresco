@@ -3,6 +3,7 @@ module MittKonto.AccountEdit where
 import Prelude
 
 import Bottega.Models (CreditCard)
+import Data.Array (null)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -14,17 +15,15 @@ import KSF.CreditCard.Update as CreditCard
 import KSF.Sentry as Sentry
 import KSF.User as User
 import MittKonto.ActionsWrapper as ActionsWrapper
+import MittKonto.IconAction as IconAction
 import React.Basic (make, JSX)
 import React.Basic as React
-import React.Basic.Events (EventHandler, handler_)
+import React.Basic.Events (handler_)
 
 type Self = React.Self Props State
 
 type Props =
-  { formatIconAction  :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
-  , accountEditAnchor :: String -> Boolean-> JSX -> JSX
-  , accountEditDiv    :: EventHandler -> JSX -> JSX
-  , logger            :: Sentry.Logger
+  { logger :: Sentry.Logger
   }
 
 type State =
@@ -70,35 +69,42 @@ render self =
     }
   where
     accountEditActions :: Array JSX
-    accountEditActions = map self.props.formatIconAction
-      [ { element: self.props.accountEditAnchor "https://www.hbl.fi/losenord" true
-        , description: "Byt lösenord"
-        , className: passwordChangeClass
-        }
-      , { element: self.props.accountEditAnchor "/fakturor" false
-        , description: "Fakturor"
-        , className: paymentHistoryClass
-        }
-      , case self.state.creditCards of 
-        [] -> mempty
-        _ -> 
-          { element: self.props.accountEditDiv showCreditCardUpdate
-          , description: "Uppdatera ditt kredit- eller bankkort"
-          , className: creditCardUpdateClass
+    accountEditActions =
+      [ IconAction.iconAction
+          { iconClassName: passwordChangeClass
+          , description: "Byt lösenord"
+          , onClick: IconAction.Href "https://www.hbl.fi/losenord" true
           }
+      , IconAction.iconAction
+          { iconClassName: paymentHistoryClass
+          , description: "Fakturor"
+          , onClick: IconAction.Href "/fakturor" false
+          }
+      , if not $ null self.state.creditCards
+        then
+          IconAction.iconAction
+            { iconClassName: creditCardUpdateClass
+            , description: "Uppdatera ditt kredit- eller bankkort"
+            , onClick:
+                IconAction.Action $ self.setState _
+                  { editAction = Just UpdateCreditCard
+                  , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
+                  }
+            }
+        else mempty
       ]
       where
         passwordChangeClass = "account-edit--password-change"
         paymentHistoryClass = "account-edit--payment-history"
         creditCardUpdateClass = "account-edit--credit-card-update"
-        
+
         showCreditCardUpdate = handler_ $
           self.setState _
             { editAction = Just UpdateCreditCard
             , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
             }
 
-    creditCardUpdateComponent = CreditCard.update 
+    creditCardUpdateComponent = CreditCard.update
       { creditCards: self.state.creditCards
       , logger: self.props.logger
       , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
