@@ -268,7 +268,7 @@ userView { setState, state: { logger, creditCards } } user = React.fragment
             [ IconAction.iconAction
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
-                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU" true
+                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU"
                 }
             ]
         }

@@ -79,12 +79,12 @@ render self =
       [ IconAction.iconAction
           { iconClassName: passwordChangeClass
           , description: "Byt lösenord"
-          , onClick: IconAction.Href "https://www.hbl.fi/losenord" true
+          , onClick: IconAction.Href "https://www.hbl.fi/losenord"
           }
       , IconAction.iconAction
           { iconClassName: paymentHistoryClass
           , description: "Fakturor"
-          , onClick: IconAction.Href "/fakturor" false
+          , onClick: IconAction.Router "/fakturor"
           }
       , if not $ null self.state.creditCards
         then
