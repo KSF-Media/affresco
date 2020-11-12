@@ -21,7 +21,7 @@ type State =
 
 type Props = 
   { creditCards :: Array CreditCard
-  , onSubmit :: Maybe CreditCard -> Effect Unit
+  , onSelect :: CreditCard -> Effect Unit
   }
 
 menu :: Props -> JSX
@@ -37,7 +37,7 @@ initialState :: State
 initialState = { chosenCard: Nothing }
 
 render :: Self -> JSX
-render self@{ setState, state: { chosenCard }, props: { creditCards, onSubmit } } = 
+render self@{ setState, state: { chosenCard }, props: { creditCards, onSelect } } = 
   DOM.div
     { className: "credit-card-menu--wrapper"
     , children: [ creditCardsForm ]
@@ -46,29 +46,11 @@ render self@{ setState, state: { chosenCard }, props: { creditCards, onSubmit } 
     creditCardsForm :: JSX
     creditCardsForm = DOM.div
                         { className: "credit-card-menu--list"
-                        , children: [ DOM.form
-                                        { onSubmit: handler preventDefault (\_ -> onSubmit chosenCard)
-                                        , children: map creditCardMenuItem creditCards 
-                                            `snoc`foldMap errorMessage self.state.validationError
-                                            `snoc` DOM.div
-                                              { children: [ submitFormButton ]
-                                              , className: "mt2 clearfix"
-                                              }
-                                        } 
-                                    ]
+                        , children:  map creditCardMenuItem creditCards 
                         }
 
     creditCardMenuItem :: CreditCard -> JSX
     creditCardMenuItem creditCard = CreditCard.item 
       { creditCard: creditCard
-      , onClick: setState _ { chosenCard = Just creditCard }
+      , onClick: onSelect creditCard
       }
-
-    submitFormButton :: JSX
-    submitFormButton =
-      Grid.columnThird $
-        DOM.button
-          { type: "submit"
-          , children: [ DOM.text "Continue" ]
-          , className: "button-green"
-          }
