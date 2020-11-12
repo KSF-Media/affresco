@@ -2,6 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.Array (snoc, sortBy, (:))
 import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
@@ -53,6 +54,7 @@ type State =
   , alert :: Maybe Alert
   , logger :: Sentry.Logger
   , payments :: Maybe (Array SubscriptionPayments)
+  , creditCards :: Array CreditCard
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -84,6 +86,7 @@ app = make component
       , alert: Nothing
       , logger: Sentry.emptyLogger
       , payments: Nothing
+      , creditCards: []
       }
   , didMount
   , render
@@ -203,7 +206,7 @@ footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: Self -> User -> JSX
-userView { setState, state: { logger } } user = React.fragment
+userView { setState, state: { logger, creditCards } } user = React.fragment
   [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -232,6 +235,8 @@ userView { setState, state: { logger } } user = React.fragment
               [ componentHeader "Mina inställningar:"
               , componentBlockContent $ AccountEdit.accountEdit
                   { logger: logger
+                  , creditCards
+                  , setCreditCards: \cards -> setState _ { creditCards = cards }
                   }
               ]
           }
