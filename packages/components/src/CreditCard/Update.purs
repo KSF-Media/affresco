@@ -11,12 +11,14 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import KSF.CreditCard.Choice (choice) as Choice
+import KSF.Grid as Grid
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
 import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
 
 type Props = 
   { creditCards :: Array CreditCard
@@ -64,20 +66,26 @@ didMount self@{ state, setState, props: { creditCards, onError, logger } } =
       _        -> pure unit
 
 render :: Self -> JSX
-render self@{ setState, state, props } = 
+render self@{ setState, state: { updateState }, props: { creditCards, onCancel } } = 
   DOM.div
     { className: "clearfix credit-card-update--container"
     , children:
-        [ DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
-        , case self.state.updateState of
-            ChooseCreditCard -> Choice.choice 
-              { creditCards: self.props.creditCards
-              , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState props state creditCard        
-              }
-            RegisterCreditCard url -> netsTerminalIframe url
-        ]
+        case updateState of
+            ChooseCreditCard -> [ Choice.choice 
+                                    { creditCards: creditCards
+                                    , title: title
+                                    , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard   
+                                    , onCancel: onCancel     
+                                    } 
+                                ]
+            RegisterCreditCard url -> [ title
+                                      , netsTerminalIframe url
+                                      ]
     }         
   where
+    title :: JSX 
+    title = DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
+
     netsTerminalIframe :: PaymentTerminalUrl -> JSX
     netsTerminalIframe { paymentTerminalUrl } =
       DOM.div 
