@@ -336,24 +336,32 @@ userView { setState, state: { logger, creditCards } } user = React.fragment
 -- | Specialized view with user's payment list
 paymentView :: Self -> User -> JSX
 paymentView self user = DOM.div_
-  [ DOM.a
-      { href: "/"
-      , className: "mitt-konto--backwards"
-      }
-  , PaymentAccordion.payments { paymentsLoad: paymentsLoad }
+  [ element
+      Router.link
+        { to: { pathname: "/", state: {} }
+        , children: [ ]
+        , className: "mitt-konto--backwards"
+        }
+  , PaymentAccordion.payments { paymentsLoad }
   ]
   where
-    paymentsLoad = withSpinner (self.setState <<< setLoading) do
-      p <- User.getPayments user.uuid
-      case p of
-        Right payments -> pure payments
-        Left _         -> do
-          liftEffect $ self.setState $ setAlert $ Just
-            { level: Alert.warning
-            , title: "Laddningen misslyckades."
-            , message: "Något gick fel, ta kontakt med kundservice."
-            }
-          pure []
+    paymentsLoad =
+      case self.state.payments of
+        Just payments -> pure payments
+        Nothing ->
+          withSpinner (self.setState <<< setLoading) do
+            p <- User.getPayments user.uuid
+            case p of
+              Right payments -> do
+                liftEffect $ self.setState _ { payments = Just payments }
+                pure payments
+              Left _         -> do
+                liftEffect $ self.setState $ setAlert $ Just
+                  { level: Alert.warning
+                  , title: "Laddningen misslyckades."
+                  , message: "Något gick fel, ta kontakt med kundservice."
+                  }
+                pure []
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Self -> JSX
