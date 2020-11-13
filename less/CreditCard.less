@@ -1,3 +1,9 @@
+.credit-card-update--container {
+    h3 { margin-top: 0 };
+    justify-content: flex-end;
+
+}
+
 .credit-card-update--register-wrapper {
     display: flex;
     align-items: center;
@@ -9,35 +15,44 @@
     height: 311px;
 }
 
-.credit-card-update--container {
-    h3 { margin-top: 0 };
-    justify-content: flex-end;
-
+.credit-card-choice--form-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.credit-card-update--close-icon {
-    justify-content: right;
-    align-items: center;
+.credit-card-choice--form {
+    width: 90%;
+}
+
+.credit-card-choice--close-icon {
+    align-items: flex-end;
+    flex-direction: column;
     height: 1.5em;
     .close-icon {
 	cursor: pointer;
     }
 }
 
+.credit-card-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-gap: 1em;
+}
+
 .credit-card-menu-item {
     cursor: pointer;
     background: @grey-light;
     border-style: solid;
-    border-color: @grey-almostlight;
+    border-color: @grey-slightlylight;
     border-width: 1px;
     border-radius: 5px;
     padding: 10px;
     display: grid;
-    grid-template-columns: 60px auto;
+    grid-template-columns: auto;
     grid-template-rows: auto;
-    grid-auto-flow: row;
+    grid-auto-flow: column;
     position: relative;
-    margin-bottom: 1em;
     input[type="radio"] {
         outline: 0;
         display: none;
@@ -48,7 +63,7 @@
     height: 30px;
     width: 30px;
     border-radius: 50%;
-    background-color: #eee;
+    background-color: @grey-almostlight;
     margin-top: .5em;
     margin-left: .5em;
 }
@@ -81,4 +96,9 @@
 
 .credit-card-menu-item input:checked ~ .credit-card-menu-item--radio-button > .credit-card-menu-item--radio-button_checked {
     display: block;
+}
+
+.credit-card-menu-item--number {
+    margin-block-start: auto;
+    margin-block-end: 0.35em;
 }

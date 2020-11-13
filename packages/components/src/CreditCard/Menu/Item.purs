@@ -1,6 +1,6 @@
 module KSF.CreditCard.Menu.Item where
 
-import Prelude (Unit, ($), show)
+import Prelude (Unit, ($), (<>), show)
 
 import Bottega.Models (CreditCard, CreditCardId(..))
 import Effect (Effect)
@@ -59,7 +59,7 @@ render self@{ setState, state: { selected }, props: { creditCard, onClick } } = 
     creditCardId (CreditCardId id) = show id
 
     number :: String -> JSX
-    number n = DOM.div 
+    number n = DOM.h4 
                  { className: "credit-card-menu-item--number"
                  , children: [ DOM.text n ]
                  }
@@ -67,5 +67,5 @@ render self@{ setState, state: { selected }, props: { creditCard, onClick } } = 
     expiryDate :: String -> JSX
     expiryDate d = DOM.div 
                      { className: "credit-card-menu-item--expiry-date"
-                     , children: [ DOM.text d ]
+                     , children: [ DOM.text $ "Expiry date: " <> d ]
                      }

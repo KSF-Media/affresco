@@ -46,10 +46,7 @@ initialState = { chosenCard: Nothing
 
 render :: Self -> JSX
 render self@{ setState, state: { chosenCard, validationError }, props: { creditCards, title, onSubmit, onCancel } } = 
-  DOM.div
-    { className: "credit-card-choice--wrapper"
-    , children: [ header, creditCardsForm ]
-    }
+  DOM.div_ [ header, creditCardsForm ]
   where
     header :: JSX
     header = Grid.row_
@@ -65,20 +62,21 @@ render self@{ setState, state: { chosenCard, validationError }, props: { creditC
       ]
     creditCardsForm :: JSX
     creditCardsForm = DOM.div
-                        { className: "credit-card-choice--form"
+                        { className: "credit-card-choice--form-wrapper"
                         , children: [ DOM.form
-                                          { onSubmit: handler preventDefault $ (\_ -> submitForm chosenCard)
-                                          , children: [ Menu.menu
-                                                          { creditCards: creditCards
-                                                          , onSelect: \creditCard -> setState _ { chosenCard = Just creditCard }
-                                                          }
-                                                      ]
-                                              `snoc` foldMap InputField.errorMessage validationError
-                                              `snoc` DOM.div
-                                                { children: [ submitFormButton ]
-                                                , className: "mt2 clearfix"
-                                                }
-                                          } 
+                                        { onSubmit: handler preventDefault $ (\_ -> submitForm chosenCard)
+                                        , className: "credit-card-choice--form"
+                                        , children: [ Menu.menu
+                                                        { creditCards: creditCards
+                                                        , onSelect: \creditCard -> setState _ { chosenCard = Just creditCard }
+                                                        }
+                                                    ]
+                                            `snoc` foldMap InputField.errorMessage validationError
+                                            `snoc` DOM.div
+                                              { children: [ submitFormButton ]
+                                              , className: "mt2 clearfix"
+                                              }
+                                        } 
                                     ]
                         }
 

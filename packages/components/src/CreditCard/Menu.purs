@@ -39,16 +39,10 @@ initialState = { chosenCard: Nothing }
 render :: Self -> JSX
 render self@{ setState, state: { chosenCard }, props: { creditCards, onSelect } } = 
   DOM.div
-    { className: "credit-card-menu--wrapper"
-    , children: [ creditCardsForm ]
+    { className: "credit-card-menu"
+    , children:  map creditCardMenuItem creditCards 
     }
   where
-    creditCardsForm :: JSX
-    creditCardsForm = DOM.div
-                        { className: "credit-card-menu--list"
-                        , children:  map creditCardMenuItem creditCards 
-                        }
-
     creditCardMenuItem :: CreditCard -> JSX
     creditCardMenuItem creditCard = CreditCard.item 
       { creditCard: creditCard

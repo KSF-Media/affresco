@@ -97,8 +97,6 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
                      ]
         }
 
-    
-
 registerCreditCard :: SetState -> Props -> State -> CreditCard -> Aff Unit
 registerCreditCard setState props@{ logger, onError } state oldCreditCard = do
   creditCardRegister <- User.registerCreditCard
