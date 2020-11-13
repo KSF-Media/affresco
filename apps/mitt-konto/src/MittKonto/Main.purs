@@ -117,11 +117,11 @@ render self@{ state, setState } =
          }
    mittKontoView =
       classy DOM.div "mitt-konto--container clearfix"
-               [ foldMap loadingIndicator state.loading
-               , case state.loggedInUser of
-                   Just user -> userView self user
-                   Nothing   -> loginView self
-               ]
+        [ foldMap loadingIndicator state.loading
+        , case state.loggedInUser of
+            Just user -> userView self user
+            Nothing   -> loginView self
+        ]
    paymentListRoute =
      element
        Router.route
