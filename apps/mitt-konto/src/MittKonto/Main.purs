@@ -113,7 +113,7 @@ render self@{ state, setState } =
        Router.route
          { exact: true
          , path: toNullable $ Just "/"
-         , render: \_ -> mittKontoView
+         , render: const mittKontoView
          }
    mittKontoView =
       classy DOM.div "mitt-konto--container clearfix"
@@ -127,13 +127,13 @@ render self@{ state, setState } =
        Router.route
          { exact: true
          , path: toNullable $ Just "/fakturor"
-         , render:
-             \_ -> classy DOM.div "mitt-konto--container clearfix"
-               [ foldMap loadingIndicator state.loading
-               , case state.loggedInUser of
-                   Just user -> paymentView self user
-                   Nothing   -> loginView self
-               ]
+         , render: const
+             $ classy DOM.div "mitt-konto--container clearfix"
+                 [ foldMap loadingIndicator state.loading
+                 , case state.loggedInUser of
+                     Just user -> paymentView self user
+                     Nothing   -> loginView self
+                 ]
          }
    noMatchRoute =
       element
