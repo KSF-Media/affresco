@@ -103,25 +103,26 @@ render self@{ state, setState } =
         [ foldMap alertView state.alert ]
     , classy DOM.div "mt4 mb4 clearfix"
         [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ element Router.switch { children: [ paymentList, mittKonto ] } ]
+            [ element Router.switch { children: [ paymentListRoute, mittKontoRoute, noMatchRoute ] } ]
         ]
     , footerView
     ]
  where
-   mittKonto =
+   mittKontoRoute =
      element
        Router.route
          { exact: true
          , path: toNullable $ Just "/"
-         , render:
-             \_ -> classy DOM.div "mitt-konto--container clearfix"
+         , render: \_ -> mittKontoView
+         }
+   mittKontoView =
+      classy DOM.div "mitt-konto--container clearfix"
                [ foldMap loadingIndicator state.loading
                , case state.loggedInUser of
                    Just user -> userView self user
                    Nothing   -> loginView self
                ]
-         }
-   paymentList =
+   paymentListRoute =
      element
        Router.route
          { exact: true
@@ -134,6 +135,13 @@ render self@{ state, setState } =
                    Nothing   -> loginView self
                ]
          }
+   noMatchRoute =
+      element
+        Router.route
+          { exact: false
+          , path: toNullable Nothing
+          , render: const mittKontoView
+          }
 
 loadingIndicator :: Loading -> JSX
 loadingIndicator Loading =
