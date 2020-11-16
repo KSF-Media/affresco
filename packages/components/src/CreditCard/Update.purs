@@ -11,14 +11,13 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import KSF.CreditCard.Choice (choice) as Choice
-import KSF.Grid as Grid
+import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
 import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
 
 type Props = 
   { creditCards :: Array CreditCard
@@ -52,7 +51,7 @@ initialState =
   }
 
 component :: React.Component Props
-component = React.createComponent "update"
+component = React.createComponent "Update"
 
 didMount :: Self -> Effect Unit
 didMount self@{ state, setState, props: { creditCards, onError, logger } } =
@@ -70,39 +69,23 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
   DOM.div
     { className: "clearfix credit-card-update--container"
     , children:
-        case updateState of
-            ChooseCreditCard -> [ Choice.choice 
-                                    { creditCards: creditCards
-                                    , title: title
-                                    , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard   
-                                    , onCancel: onCancel     
-                                    } 
-                                ]
-            RegisterCreditCard url -> [ title
-                                      , warning
-                                      , netsTerminalIframe url
-                                      ]
-    }         
+        [ case updateState of
+            ChooseCreditCard       -> Choice.choice
+                                        { creditCards: creditCards
+                                        , title: title
+                                        , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard
+                                        , onCancel: onCancel
+                                        } 
+
+            RegisterCreditCard url -> Register.register
+                                        { title: title
+                                        , terminalUrl: url
+                                        }
+        ]  
+    }
   where
-    title :: JSX 
+    title :: JSX
     title = DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
-
-    warning :: JSX
-    warning = DOM.div 
-      { className: "credit-card-update--warning"
-      , children: [ DOM.text "På kortet görs en reservation på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
-      }
-
-    netsTerminalIframe :: PaymentTerminalUrl -> JSX
-    netsTerminalIframe { paymentTerminalUrl } =
-      DOM.div 
-        { className: "credit-card-update--register-wrapper"
-        , children : [ DOM.iframe
-                         { src: paymentTerminalUrl
-                         , className: "credit-card-update--register-terminal"
-                         }
-                     ]
-        }
 
 registerCreditCard :: SetState -> Props -> State -> CreditCard -> Aff Unit
 registerCreditCard setState props@{ logger, onError } state oldCreditCard = do
