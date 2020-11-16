@@ -79,12 +79,19 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
                                     } 
                                 ]
             RegisterCreditCard url -> [ title
+                                      , warning
                                       , netsTerminalIframe url
                                       ]
     }         
   where
     title :: JSX 
     title = DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
+
+    warning :: JSX
+    warning = DOM.div 
+      { className: "credit-card-update--warning"
+      , children: [ DOM.text "På kortet görs en reservation på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
+      }
 
     netsTerminalIframe :: PaymentTerminalUrl -> JSX
     netsTerminalIframe { paymentTerminalUrl } =

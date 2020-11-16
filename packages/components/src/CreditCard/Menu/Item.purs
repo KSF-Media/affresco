@@ -3,6 +3,7 @@ module KSF.CreditCard.Menu.Item where
 import Prelude (Unit, ($), (<>), show)
 
 import Bottega.Models (CreditCard, CreditCardId(..))
+import Data.String.CodePoints (splitAt)
 import Effect (Effect)
 import React.Basic as React
 import React.Basic (JSX, make)
@@ -65,7 +66,13 @@ render self@{ setState, state: { selected }, props: { creditCard, onClick } } = 
                  }
     
     expiryDate :: String -> JSX
-    expiryDate d = DOM.div 
-                     { className: "credit-card-menu-item--expiry-date"
-                     , children: [ DOM.text $ "Expiry date: " <> d ]
-                     }
+    expiryDate d = 
+      DOM.div 
+        { className: "credit-card-menu-item--expiry-date"
+        , children: [ DOM.text $ "Giltighetstid (månad/år): " <> formattedDate ]
+        }
+      where
+        formattedDate :: String
+        formattedDate = 
+          let { before: year, after: month } = splitAt 2 d
+           in month <> "/" <> year

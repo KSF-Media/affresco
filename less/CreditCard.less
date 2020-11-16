@@ -1,7 +1,11 @@
 .credit-card-update--container {
     h3 { margin-top: 0 };
     justify-content: flex-end;
+}
 
+.credit-card-update--warning {
+    margin-bottom: 0.5em;
+    color: @alert-info;
 }
 
 .credit-card-update--register-wrapper {
@@ -22,7 +26,7 @@
 }
 
 .credit-card-choice--form {
-    width: 90%;
+    width: 100%;
 }
 
 .credit-card-choice--close-icon {
@@ -34,9 +38,13 @@
     }
 }
 
+.credit-card-choice--description {
+    margin-bottom: 0.5em;
+}
+
 .credit-card-menu {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     grid-gap: 1em;
 }
 
@@ -81,7 +89,7 @@
 }
 
 .credit-card-menu-item:hover input ~ .credit-card-menu-item--radio-button {
-    background-color: #ccc;
+    background-color: #c2c1c1;
 }
 
 .credit-card-menu-item input:checked ~ .credit-card-menu-item--radio-button {

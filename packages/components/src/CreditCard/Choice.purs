@@ -60,13 +60,15 @@ render self@{ setState, state: { chosenCard, validationError }, props: { creditC
           , onClick: handler_ onCancel
           }
       ]
+
     creditCardsForm :: JSX
     creditCardsForm = DOM.div
                         { className: "credit-card-choice--form-wrapper"
                         , children: [ DOM.form
                                         { onSubmit: handler preventDefault $ (\_ -> submitForm chosenCard)
                                         , className: "credit-card-choice--form"
-                                        , children: [ Menu.menu
+                                        , children: [ description
+                                                    , Menu.menu
                                                         { creditCards: creditCards
                                                         , onSelect: \creditCard -> setState _ { chosenCard = Just creditCard }
                                                         }
@@ -79,6 +81,12 @@ render self@{ setState, state: { chosenCard, validationError }, props: { creditC
                                         } 
                                     ]
                         }
+
+    description :: JSX
+    description = DOM.div 
+      { className: "credit-card-choice--description"
+      , children: [ DOM.text "Välj ett av dina kort ur listan nedan:" ]
+      } 
 
     submitFormButton :: JSX
     submitFormButton =
