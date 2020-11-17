@@ -12,11 +12,9 @@ import React.Basic.Events (handler_)
 
 type Self = React.Self Props State
 
-type State = {
-  selected :: Boolean
-}
+type State = { selected :: Boolean }
 
-type Props = 
+type Props =
   { creditCard :: CreditCard
   , onClick :: Effect Unit
   }
@@ -52,27 +50,23 @@ render self@{ setState, state: { selected }, props: { creditCard, onClick } } = 
                             ]
                 }
   where
-
-    setSelected :: Effect Unit
-    setSelected = setState _ { selected = true }
-    
     creditCardId :: CreditCardId -> String
     creditCardId (CreditCardId id) = show id
 
     number :: String -> JSX
-    number n = DOM.h4 
+    number n = DOM.h4
                  { className: "credit-card-menu-item--number"
                  , children: [ DOM.text n ]
                  }
-    
+
     expiryDate :: String -> JSX
-    expiryDate d = 
-      DOM.div 
+    expiryDate d =
+      DOM.div
         { className: "credit-card-menu-item--expiry-date"
         , children: [ DOM.text $ "Giltighetstid (månad/år): " <> formattedDate ]
         }
       where
         formattedDate :: String
-        formattedDate = 
+        formattedDate =
           let { before: year, after: month } = splitAt 2 d
            in month <> "/" <> year

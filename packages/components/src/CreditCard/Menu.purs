@@ -12,17 +12,17 @@ import React.Basic.DOM as DOM
 
 type Self = React.Self Props State
 
-type State = 
+type State =
   { chosenCard :: Maybe CreditCard
   }
 
-type Props = 
+type Props =
   { creditCards :: Array CreditCard
   , onSelect :: CreditCard -> Effect Unit
   }
 
 menu :: Props -> JSX
-menu = make component 
+menu = make component
   { initialState
   , render
   }
@@ -34,14 +34,14 @@ initialState :: State
 initialState = { chosenCard: Nothing }
 
 render :: Self -> JSX
-render self@{ setState, state: { chosenCard }, props: { creditCards, onSelect } } = 
+render self@{ setState, state: { chosenCard }, props: { creditCards, onSelect } } =
   DOM.div
     { className: "credit-card-menu"
-    , children:  map creditCardMenuItem creditCards 
+    , children:  map creditCardMenuItem creditCards
     }
   where
     creditCardMenuItem :: CreditCard -> JSX
-    creditCardMenuItem creditCard = CreditCard.item 
+    creditCardMenuItem creditCard = CreditCard.item
       { creditCard: creditCard
       , onClick: onSelect creditCard
       }

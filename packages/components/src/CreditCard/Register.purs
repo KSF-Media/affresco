@@ -5,9 +5,9 @@ import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
 
-type Props = 
+type Props =
   { title :: JSX
-  , terminalUrl :: PaymentTerminalUrl 
+  , terminalUrl :: PaymentTerminalUrl
   }
 
 type Self = React.Self Props State
@@ -21,21 +21,21 @@ component :: React.Component Props
 component = React.createComponent "Register"
 
 render :: Self -> JSX
-render self@{ props: { title, terminalUrl } } = 
+render self@{ props: { title, terminalUrl } } =
   DOM.div_ [ title
            , warning
            , netsTerminalIframe terminalUrl
            ]
   where
     warning :: JSX
-    warning = DOM.div 
+    warning = DOM.div
       { className: "credit-card-register--warning"
       , children: [ DOM.text "På kortet görs en reservation på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
       }
 
     netsTerminalIframe :: PaymentTerminalUrl -> JSX
     netsTerminalIframe { paymentTerminalUrl } =
-      DOM.div 
+      DOM.div
         { className: "credit-card-register--wrapper"
         , children : [ DOM.iframe
                          { src: paymentTerminalUrl

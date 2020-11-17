@@ -19,7 +19,7 @@ import React.Basic as React
 import React.Basic (JSX, make)
 import React.Basic.DOM as DOM
 
-type Props = 
+type Props =
   { creditCards :: Array CreditCard
   , logger      :: Sentry.Logger
   , onCancel    :: Effect Unit
@@ -57,7 +57,7 @@ didMount :: Self -> Effect Unit
 didMount self@{ state, setState, props: { creditCards, onError, logger } } =
   Aff.launchAff_ do
     case creditCards of
-      []       -> liftEffect $ do 
+      []       -> liftEffect $ do
         logger.log "No credit cards found" Sentry.Error
         onError
       [ card ] -> do
@@ -75,13 +75,13 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
                                         , title: title
                                         , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard
                                         , onCancel: onCancel
-                                        } 
+                                        }
 
             RegisterCreditCard url -> Register.register
                                         { title: title
                                         , terminalUrl: url
                                         }
-        ]  
+        ]
     }
   where
     title :: JSX
@@ -124,7 +124,7 @@ pollRegister props@{ logger, onError, onSuccess, onCancel } oldCreditCard (Right
     CreditCardRegisterCompleted -> do
       result <- User.updateCreditCardSubscriptions oldCreditCard.id register.creditCardId
       liftEffect $ case result of
-        Left err -> do 
+        Left err -> do
           logger.log ("Server encountered the following error while trying to update credit card's subscriptions: " <> err) Sentry.Error
           onError
         Right _  -> onSuccess

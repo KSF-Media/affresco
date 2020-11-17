@@ -18,12 +18,12 @@ import React.Basic.Events (handler, handler_)
 
 type Self = React.Self Props State
 
-type State = 
+type State =
   { chosenCard :: Maybe CreditCard
   , validationError :: Maybe String
   }
 
-type Props = 
+type Props =
   { creditCards :: Array CreditCard
   , title :: JSX
   , onSubmit :: CreditCard -> Effect Unit
@@ -78,15 +78,15 @@ render self@{ setState, state: { chosenCard, validationError }, props: { creditC
                                               { children: [ submitFormButton ]
                                               , className: "mt2 clearfix"
                                               }
-                                        } 
+                                        }
                                     ]
                         }
 
     description :: JSX
-    description = DOM.div 
+    description = DOM.div
       { className: "credit-card-choice--description"
       , children: [ DOM.text "Välj ett av dina kort ur listan nedan:" ]
-      } 
+      }
 
     submitFormButton :: JSX
     submitFormButton =
