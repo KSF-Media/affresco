@@ -44,7 +44,7 @@
 
 .credit-card-menu {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     grid-gap: 1em;
 }
 
@@ -60,6 +60,9 @@
     grid-template-columns: auto;
     grid-template-rows: auto;
     grid-auto-flow: column;
+    grid-gap: 0.3em;
+    justify-items: center;
+    align-items: center;
     position: relative;
     input[type="radio"] {
         outline: 0;
@@ -72,8 +75,7 @@
     width: 30px;
     border-radius: 50%;
     background-color: @grey-almostlight;
-    margin-top: .5em;
-    margin-left: .5em;
+    margin-left: .05em;
 }
 
 .credit-card-menu-item--radio-button_checked {
@@ -109,4 +111,8 @@
 .credit-card-menu-item--number {
     margin-block-start: auto;
     margin-block-end: 0.35em;
+}
+
+.credit-card-menu-item--expiry-date {
+    font-size: 14px;
 }
