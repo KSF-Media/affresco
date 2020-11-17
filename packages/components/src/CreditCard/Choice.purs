@@ -93,7 +93,7 @@ render self@{ setState, state: { chosenCard, validationError }, props: { creditC
       Grid.columnThird $
         DOM.button
           { type: "submit"
-          , children: [ DOM.text "Continue" ]
+          , children: [ DOM.text "Fortsätt" ]
           , className: "button-green"
           }
 
