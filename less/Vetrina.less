@@ -5,6 +5,14 @@
 @import 'Product';
 @import 'Spinner';
 
+.vetrina--headline {
+    font-family: 'Duplex Serif Web';
+    font-size: 3rem;
+    .vetrina--price-headline {
+	border-bottom: 2px solid #f07e26;
+    }
+}
+
 .vetrina--container {
     font-family: 'Duplex Sans', sans-serif;
     font-weight: 300;
@@ -15,12 +23,21 @@
     }
     display: grid;
     justify-content: center;
-    grid-template-columns: minmax(100px, 505px);
-    h1, p { text-align: center }
     .vetrina--description-text:not(:first-of-type) {
 	margin-top: 0;
     }
-    padding-bottom: 1.5em;
+
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+	". headline ."
+	". links ."
+	". form ."
+	"product product product";
+}
+
+.vetrina--headline {
+    grid-area: headline;
 }
 
 .vetrina--product-description {
@@ -49,11 +66,11 @@
 .vetrina--form {
     max-width: 600px;
     display: grid;
-    justify-items: center;
     margin-top: 1em;
     .input-field--container {
 	width: 100%;
     }
+    grid-area: form;
 }
 
 .vetrina--checbox-container {
@@ -77,8 +94,6 @@
     }
     font-family: 'Duplex Sans Titling', sans-serif;
     font-weight: bold !important;
-    font-size: 16px;
-    line-height: 16px;
     letter-spacing: 0.015em;
     background: @brand-neutral;
     color: @white;
@@ -89,15 +104,13 @@
     font-weight: 500;
     margin-top: 2em;
     max-width: 250px;
-    max-height: 3em;
+    height: 3.5em;
     cursor: pointer;
 }
 
 .vetrina--links {
-    margin-top: 2em;
-    display: grid;
-    text-align: center;
-    grid-row-gap: 0.5em;
+    margin-top: 1em;
+    grid-area: links;
 }
 
 .vetrina--link {
@@ -228,8 +241,19 @@
 .vetrina--with-label {
     display: flex;
     flex-direction: column;
+    label { font-weight: 300 }
 }
 
 .vetrina--product-selection-text {
     margin-bottom: 1em;
+}
+
+.vetrina--product-information {
+    display: grid;
+    grid-row-gap: .5em;
+    grid-template-rows: auto auto;
+    margin-top: 4em;
+    background: @grey-almostlight;
+    padding: 1em;
+    grid-area: product;
 }
