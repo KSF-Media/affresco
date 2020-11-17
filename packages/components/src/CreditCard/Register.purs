@@ -7,7 +7,8 @@ import React.Basic.DOM as DOM
 
 type Props = 
   { title :: JSX
-  , terminalUrl :: PaymentTerminalUrl }
+  , terminalUrl :: PaymentTerminalUrl 
+  }
 
 type Self = React.Self Props State
 
