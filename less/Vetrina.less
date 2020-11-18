@@ -13,6 +13,10 @@
     }
 }
 
+.vetrina--container > .spinner--loading-spinner {
+    grid-area: beef;
+}
+
 .vetrina--container {
     font-family: 'Duplex Sans', sans-serif;
     font-weight: 300;
@@ -27,15 +31,20 @@
 	margin-top: 0;
     }
 
+    .spinner--loading-spinner__with-message {
+	grid-area: beef;
+    }
+
     grid-template-columns: 1fr 600px 1fr;
     grid-template-rows: auto;
     grid-template-areas:
-	". headline ."
-	". notification ."
-	". login-link ."
-	". form ."
-	". links ."
-	"product product product";
+	". headline ."		     // Always there
+	". customer-email-address ." // Shown if user is logged in and real name is not present
+	". notification ."	     // A small description what's going on, not present in NewPurchase state
+	". login-link ."	     // Only in NewPurchase state, the link to login action
+	". beef ."		     // The main thing to show, purchase form or even loading spinner
+	". links ."		     // Whatever links we want to show, not present in NewPurchase state (because of login-link)
+	"product product product";   // Product information, wider than other content
 }
 
 .vetrina--headline {
@@ -72,7 +81,7 @@
     .input-field--container {
 	width: 100%;
     }
-    grid-area: form;
+    grid-area: beef;
 }
 
 .vetrina--checbox-container {
@@ -170,8 +179,8 @@
 }
 
 .vetrina--temporary-user-email {
-    text-align: center;
     margin-bottom: 1em;
+    grid-area: customer-email-address;
 }
 
 .vetrina--product {
@@ -272,6 +281,6 @@
 }
 
 .vetrina--subscription-exists {
-    grid-area: form;
+    grid-area: beef;
     margin-bottom: 3em;
 }
