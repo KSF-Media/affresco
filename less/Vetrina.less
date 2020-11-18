@@ -27,12 +27,14 @@
 	margin-top: 0;
     }
 
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 600px 1fr;
     grid-template-rows: auto;
     grid-template-areas:
 	". headline ."
-	". links ."
+	". notification ."
+	". login-link ."
 	". form ."
+	". links ."
 	"product product product";
 }
 
@@ -109,7 +111,9 @@
 }
 
 .vetrina--links {
-    margin-top: 1em;
+    display: grid;
+    grid-row-gap: .5em;
+    margin-top: 2em;
     grid-area: links;
 }
 
@@ -117,6 +121,10 @@
   color: @brand-neutral;
   outline: 0;
   text-decoration: none;
+}
+
+.vetrina--login-link {
+    grid-area: login-link;
 }
 
 .vetrina--login-callback {
@@ -149,6 +157,7 @@
 }
 
 .vetrina--description-text {
+    grid-area: notification;
     font-size: 1.2em;
 }
 
@@ -252,8 +261,17 @@
     display: grid;
     grid-row-gap: .5em;
     grid-template-rows: auto auto;
-    margin-top: 4em;
+    margin-top: 2em;
     background: @grey-almostlight;
     padding: 1em;
     grid-area: product;
+    .vetrina--product-information__name {
+	font-size: 1.2em;
+	font-weight: 500;
+    }
+}
+
+.vetrina--subscription-exists {
+    grid-area: form;
+    margin-bottom: 3em;
 }

@@ -13,8 +13,16 @@ type Props =
 
 subscriptionExists :: Props -> JSX
 subscriptionExists props =
-  DOM.h1_ [  DOM.text "Du har redan en prenumeration" ]
-  <> closeButton props
+  DOM.div
+    { className: "vetrina--subscription-exists"
+    , children:
+       [ DOM.h1
+           { className: "vetrina--headline"
+           , children: [ DOM.text "Du har redan en prenumeration" ]
+           }
+       , closeButton props
+       ]
+    }
 
 closeButton :: Props -> JSX
 closeButton props =

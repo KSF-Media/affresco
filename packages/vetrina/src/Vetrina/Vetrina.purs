@@ -7,6 +7,7 @@ import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
+import Data.Foldable (fold)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -47,6 +48,7 @@ type JSProps =
   , products           :: Nullable (Array JSProduct)
   , unexpectedError    :: Nullable JSX
   , accessEntitlements :: Nullable (Array String)
+  , headline :: Nullable JSX
   }
 
 type Props =
@@ -55,6 +57,7 @@ type Props =
   , products           :: Either Error (Array Product)
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
+  , headline :: Maybe JSX
   }
 
 fromJSProps :: JSProps -> Props
@@ -71,6 +74,7 @@ fromJSProps jsProps =
           Nothing -> Left productError
   , unexpectedError: fromMaybe mempty $ toMaybe jsProps.unexpectedError
   , accessEntitlements: maybe Set.empty Set.fromFoldable $ toMaybe jsProps.accessEntitlements
+  , headline: toMaybe jsProps.headline
   }
 
 type State =
@@ -247,6 +251,7 @@ render self = vetrinaContainer self $
         , paymentMethod: self.state.paymentMethod
         , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
+        , headline: self.props.headline
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
@@ -266,6 +271,7 @@ render self = vetrinaContainer self $
             , paymentMethod: self.state.paymentMethod
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
+            , headline: self.props.headline
             }
         ServerError ->
           Purchase.Error.error

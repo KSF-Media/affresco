@@ -2,7 +2,8 @@ module Vetrina.Types where
 
 import Prelude
 
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Foldable (fold)
+import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
 import KSF.User as User
 import React.Basic (JSX)
@@ -19,6 +20,7 @@ type Product =
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
   , campaignNo                   :: Maybe Int
+  , headline                     :: JSX
   }
 
 type JSProduct =
@@ -28,6 +30,7 @@ type JSProduct =
   , descriptionPurchaseCompleted :: Nullable JSX
   , priceCents                   :: Nullable Int
   , campaignNo                   :: Nullable Int
+  , headline :: Nullable JSX
   }
 
 fromJSProduct :: JSProduct -> Maybe Product
@@ -37,5 +40,6 @@ fromJSProduct jsProduct = do
   description <- toMaybe jsProduct.description
   priceCents  <- toMaybe jsProduct.priceCents
   let campaignNo = toMaybe jsProduct.campaignNo
-      descriptionPurchaseCompleted = fromMaybe mempty $ toMaybe jsProduct.descriptionPurchaseCompleted
-  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted }
+      descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
+      headline = fold $ toMaybe jsProduct.headline
+  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted, headline }
