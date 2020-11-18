@@ -8,7 +8,7 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 
 type Props =
-  { onClose       :: Effect Unit
+  { onClose :: Effect Unit
   }
 
 subscriptionExists :: Props -> JSX
@@ -29,5 +29,5 @@ closeButton props =
   DOM.button
     { className: "vetrina--button vetrina--completed-close"
     , children: [ DOM.text "Fortsätt läsa artikeln" ]
-    , onClick: handler_ $ props.onClose
+    , onClick: handler_ props.onClose
     }
