@@ -26,7 +26,21 @@ var hblPremium = {
     </div>,
   priceCents: 690,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
-  name: "Hufvudstadsbladet Premium"
+    name: "Hufvudstadsbladet Premium",
+    contents: [
+	{
+	    title: "Premium",
+	    description: "Alla artiklar på hbl.fi"
+	},
+	{
+	    title: "Nyhetsappen HBL Nyheter",
+	    description: "Nyheter på mobilen och surfplattan, pushnotiser"
+	},
+	{
+	    title: "Digitalt månadsbrev",
+	    description: "Nyheter & fårmåner"
+	}
+    ]
 }
 
 var hbl365 = {

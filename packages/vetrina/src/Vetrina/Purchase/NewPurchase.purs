@@ -425,8 +425,18 @@ productInformation self =
             [ DOM.text $ foldMap (formatEur <<< _.priceCents) self.state.productSelection
             , DOM.text "€/månad" -- TODO: Always maybe not month
             ]
-        ]
+        ] <> p
     }
+  where
+    p = foldMap (map asd) $ _.contents <$> self.state.productSelection
+    yolo pr =
+      DOM.ul_ $ map asd pr
+    asd productContent =
+      DOM.li_
+        [ DOM.strong_ [ DOM.text productContent.title ]
+        , DOM.span_ [ DOM.text productContent.description ]
+        ]
+
 
 
 newAccountFormValidations :: Self -> Form.ValidatedForm FormInputField NewAccountForm

@@ -2,6 +2,7 @@ module Vetrina.Types where
 
 import Prelude
 
+import Data.Array (mapMaybe)
 import Data.Foldable (fold)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
@@ -13,6 +14,17 @@ data AccountStatus
   | ExistingAccount String
   | LoggedInAccount User.User
 
+
+type JSProductContent =
+  { title       :: Nullable String
+  , description :: Nullable String
+  }
+
+type ProductContent =
+  { title       :: String
+  , description :: String
+  }
+
 type Product =
   { id                           :: String
   , name                         :: String
@@ -20,7 +32,7 @@ type Product =
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
   , campaignNo                   :: Maybe Int
-  , headline                     :: JSX
+  , contents :: Array ProductContent
   }
 
 type JSProduct =
@@ -30,7 +42,7 @@ type JSProduct =
   , descriptionPurchaseCompleted :: Nullable JSX
   , priceCents                   :: Nullable Int
   , campaignNo                   :: Nullable Int
-  , headline :: Nullable JSX
+  , contents :: Nullable (Array JSProductContent)
   }
 
 fromJSProduct :: JSProduct -> Maybe Product
@@ -41,5 +53,13 @@ fromJSProduct jsProduct = do
   priceCents  <- toMaybe jsProduct.priceCents
   let campaignNo = toMaybe jsProduct.campaignNo
       descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
-      headline = fold $ toMaybe jsProduct.headline
-  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted, headline }
+      contents = mapMaybe fromJSProductContent $ fold $ toMaybe jsProduct.contents
+  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted, contents }
+
+fromJSProductContent ::  JSProductContent -> Maybe ProductContent
+fromJSProductContent jsProduct =
+  { title: _
+  , description: _
+  }
+  <$> toMaybe jsProduct.title
+  <*> toMaybe jsProduct.description
