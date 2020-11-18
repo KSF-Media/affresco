@@ -23,7 +23,6 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import Vetrina.Products as Products
 import Vetrina.Types (AccountStatus(..), Product)
 
 type Self = React.Self Props State
@@ -184,7 +183,7 @@ form self = DOM.form $
       [ -- Don't show the product selection if we are asking the user to login
         if not isExistingAccount self.state.accountStatus
            || isNothing self.state.productSelection
-        then DOM.p_ [ foldMap _.description self.state.productSelection ]
+        then foldMap _.description self.state.productSelection
         else mempty
       , self.state.errorMessage
       , emailInput self self.state.accountStatus
