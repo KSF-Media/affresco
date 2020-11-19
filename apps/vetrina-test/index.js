@@ -40,7 +40,8 @@ var hblPremium = {
 	    title: "Digitalt månadsbrev",
 	    description: "Nyheter & förmåner"
 	}
-    ]
+    ],
+  campaignNo: 4071
 }
 
 var hbl365 = {
