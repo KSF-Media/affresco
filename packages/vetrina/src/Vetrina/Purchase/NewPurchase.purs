@@ -23,7 +23,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import Vetrina.Types (AccountStatus(..), Product)
+import Vetrina.Types (AccountStatus(..), Product, ProductContent)
 
 type Self = React.Self Props State
 
@@ -41,6 +41,7 @@ type State =
   , errorMessage        :: JSX
   , productSelection    :: Maybe Product
   , paymentMethod       :: Maybe PaymentMethod
+  , showProductContents :: Boolean
   }
 
 type Props =
@@ -110,6 +111,7 @@ newPurchase props = make component
                   , errorMessage: foldMap formatErrorMessage props.errorMessage
                   , productSelection: Nothing
                   , paymentMethod: Nothing
+                  , showProductContents: false
                   }
   , render
   , didMount
@@ -417,27 +419,53 @@ productInformation self =
   DOM.div
     { className: "vetrina--product-information"
     , children:
-        [ DOM.span
-            { className: "vetrina--product-information__name"
-            , children: [ DOM.text $ foldMap _.name self.state.productSelection ]
+        [ DOM.div
+            { className: "vetrina--product-information__headline"
+            , onClick: handler_ $ self.setState _ { showProductContents = not self.state.showProductContents }
+            , children:
+                [ DOM.span
+                   { className: "vetrina--product-information__name"
+                   , children: [ DOM.text $ foldMap _.name self.state.productSelection ]
+                   }
+               , DOM.span
+                   { className: "vetrina--product-information__description"
+                   , children:
+                       [ DOM.text $ foldMap (formatEur <<< _.priceCents) self.state.productSelection
+                       , DOM.text "€/månad" -- TODO: Always maybe not month
+                       ]
+                   }
+               , DOM.span
+                   { className: "vetrina--product-information__arrow-"
+                                <> if self.state.showProductContents
+                                   then "down"
+                                   else "up"
+                   }
+               ]
             }
-        , DOM.span_
-            [ DOM.text $ foldMap (formatEur <<< _.priceCents) self.state.productSelection
-            , DOM.text "€/månad" -- TODO: Always maybe not month
-            ]
-        ] <> p
+        ] <> if self.state.showProductContents
+             then (foldMap (map renderProductContents) $ _.contents <$> self.state.productSelection)
+             else mempty
     }
   where
-    p = foldMap (map asd) $ _.contents <$> self.state.productSelection
-    yolo pr =
-      DOM.ul_ $ map asd pr
-    asd productContent =
-      DOM.li_
-        [ DOM.strong_ [ DOM.text productContent.title ]
-        , DOM.span_ [ DOM.text productContent.description ]
-        ]
-
-
+    renderProductContents :: ProductContent -> JSX
+    renderProductContents productContent =
+      DOM.span
+        { className: "vetrina--product-information__contents"
+        , children:
+            [ DOM.strong
+                { className: "vetrina--product-information__contents-name"
+                , children: [ DOM.text productContent.title ]
+                }
+            , DOM.span
+                { className: "vetrina--product-information__contents-description"
+                , children: [ DOM.text productContent.description ]
+                }
+            , DOM.span
+                { className: "vetrina--product-information__checkmark"
+                , children: []
+                }
+            ]
+        }
 
 newAccountFormValidations :: Self -> Form.ValidatedForm FormInputField NewAccountForm
 newAccountFormValidations self =

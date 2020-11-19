@@ -267,20 +267,77 @@
 }
 
 .vetrina--product-information {
-    display: grid;
-    grid-row-gap: .5em;
-    grid-template-rows: auto auto;
     margin-top: 2em;
     background: @grey-almostlight;
     padding: 1em;
     grid-area: product;
+    .vetrina--product-information__headline {
+	.vetrina--product-grid();
+    }
     .vetrina--product-information__name {
 	font-size: 1.2em;
 	font-weight: 500;
+	grid-area: content-name;
+
     }
+    .vetrina--product-information__contents:first-of-type {
+	margin-top: 1.5em;
+    }
+    .vetrina--product-information__contents {
+	display: grid;
+	row-gap: .5em;
+	margin-top: 1em;
+	.vetrina--product-grid();
+    }
+    .vetrina--product-information__description {
+	grid-area: content-description;
+    }
+}
+
+.vetrina--product-grid() {
+    display: grid;
+    row-gap: .5em;
+    grid-template-rows: auto auto;
+    grid-template-columns: 1fr 50px;
+    grid-template-areas:
+	"content-name check"
+	"content-description check";
+}
+
+.vetrina--product-information__arrow-up {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-image: url('../images/chevron.svg');
+    grid-area: check;
+}
+
+.vetrina--product-information__arrow-down {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-image: url('../images/chevron.svg');
+    grid-area: check;
+    transform: rotate(180deg);
+}
+
+.vetrina--product-information__contents-name {
+    grid-area: content-name;
+}
+
+.vetrina--product-information__contents-description {
+    grid-area: content-description;
 }
 
 .vetrina--subscription-exists {
     grid-area: beef;
     margin-bottom: 3em;
+}
+
+.vetrina--product-information__checkmark {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-image: url('../images/check-circle.svg');
+    grid-area: check;
 }
