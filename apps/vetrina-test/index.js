@@ -41,7 +41,7 @@ var hblPremium = {
 	    description: "Nyheter & förmåner"
 	}
     ],
-  campaignNo: 4071
+  campaignNo: 4052 // NOTE! This id exists only in staging!
 }
 
 var hbl365 = {
