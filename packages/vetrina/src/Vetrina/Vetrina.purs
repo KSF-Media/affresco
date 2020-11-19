@@ -7,7 +7,7 @@ import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
-import Data.Foldable (fold)
+import Data.Foldable (fold, foldMap)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -209,9 +209,10 @@ pollOrder setState state@{ logger } (Right order) = do
             _               -> PurchaseCompleted userAccountStatus
       liftEffect do
         setState _ { purchaseState = nextPurchaseStep }
-        productId    <- LocalStorage.getItem "productId" --analytics
-        productPrice <- LocalStorage.getItem "productPrice" --analytics
-        Tracking.transaction order.number productId productPrice --analyics
+        productId         <- LocalStorage.getItem "productId" -- analytics
+        productPrice      <- LocalStorage.getItem "productPrice" -- analytics
+        productCampaignNo <- LocalStorage.getItem "productCampaignNo" -- analytics
+        Tracking.transaction order.number productId productPrice productCampaignNo -- analyics
       where
         chooseAccountStatus user
           | user.hasCompletedRegistration = ExistingAccount user.email
@@ -362,8 +363,11 @@ mkPurchase self@{ state: { logger } } validForm affUser =
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
-    liftEffect $ LocalStorage.setItem "productId" product.id -- for analytics
-    liftEffect $ LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
+    liftEffect do
+      LocalStorage.setItem "productId" product.id -- for analytics
+      LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
+      LocalStorage.setItem "productCampaingNo" $ foldMap show product.campaignNo
+
     pure { paymentUrl, order }
   case eitherOrder of
     Right { paymentUrl, order } ->
