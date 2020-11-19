@@ -38,7 +38,7 @@ var hblPremium = {
 	},
 	{
 	    title: "Digitalt månadsbrev",
-	    description: "Nyheter & fårmåner"
+	    description: "Nyheter & förmåner"
 	}
     ]
 }
