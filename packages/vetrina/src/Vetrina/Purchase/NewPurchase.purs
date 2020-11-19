@@ -417,34 +417,38 @@ acceptTermsCheckbox =
 productInformation :: Self -> JSX
 productInformation self =
   DOM.div
-    { className: "vetrina--product-information"
-    , children:
-        [ DOM.div
-            { className: "vetrina--product-information__headline"
-            , onClick: handler_ $ self.setState _ { showProductContents = not self.state.showProductContents }
-            , children:
-                [ DOM.span
-                   { className: "vetrina--product-information__name"
-                   , children: [ DOM.text $ foldMap _.name self.state.productSelection ]
-                   }
-               , DOM.span
-                   { className: "vetrina--product-information__description"
-                   , children:
-                       [ DOM.text $ foldMap (formatEur <<< _.priceCents) self.state.productSelection
-                       , DOM.text "€/månad" -- TODO: Always maybe not month
-                       ]
-                   }
-               , DOM.span
-                   { className: "vetrina--product-information__arrow-"
-                                <> if self.state.showProductContents
-                                   then "down"
-                                   else "up"
-                   }
-               ]
-            }
-        ] <> if self.state.showProductContents
-             then (foldMap (map renderProductContents) $ _.contents <$> self.state.productSelection)
-             else mempty
+    { className: "vetrina--product-container"
+    , children: Array.singleton $
+        DOM.div
+          { className: "vetrina--product-information"
+          , children:
+              [ DOM.div
+                  { className: "vetrina--product-information__headline"
+                  , onClick: handler_ $ self.setState _ { showProductContents = not self.state.showProductContents }
+                  , children:
+                      [ DOM.span
+                         { className: "vetrina--product-information__name"
+                         , children: [ DOM.text $ foldMap _.name self.state.productSelection ]
+                         }
+                     , DOM.span
+                         { className: "vetrina--product-information__description"
+                         , children:
+                             [ DOM.text $ foldMap (formatEur <<< _.priceCents) self.state.productSelection
+                             , DOM.text "€/månad" -- TODO: Always maybe not month
+                             ]
+                         }
+                     , DOM.span
+                         { className: "vetrina--product-information__arrow-"
+                                      <> if self.state.showProductContents
+                                         then "down"
+                                         else "up"
+                         }
+                     ]
+                  }
+              ] <> if self.state.showProductContents
+                   then (foldMap (map renderProductContents) $ _.contents <$> self.state.productSelection)
+                   else mempty
+          }
     }
   where
     renderProductContents :: ProductContent -> JSX
