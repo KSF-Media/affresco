@@ -244,13 +244,16 @@ newPurchaseLinks self =
 
 links :: Self -> JSX
 links self =
-  DOM.div
-    { className: "vetrina--links"
-    , children: case self.state.accountStatus of
-                  NewAccount        -> mempty -- Login link shown elsewhere
-                  ExistingAccount _ -> resetPasswordLink <> subscribePagesLink
-                  LoggedInAccount _ -> faqLink <> subscribePagesLink
-    }
+  case self.state.accountStatus of
+    NewAccount        -> mempty -- Login link shown elsewhere
+    ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
+    LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
+  where
+    linksDiv linksJsx =
+      DOM.div
+        { className: "vetrina--links"
+        , children: linksJsx
+        }
 
 resetPasswordLink :: Array JSX
 resetPasswordLink =
