@@ -326,21 +326,21 @@
 	"content-description check";
 }
 
-.vetrina--product-information__arrow-up {
+.vetrina--arrow-icon(@rotation-degrees) {
     background-position: center;
     background-repeat: no-repeat;
     background-size: 20px;
     background-image: url('../images/chevron.svg');
     grid-area: check;
+    transform: rotate(@rotation-degrees);
+}
+
+.vetrina--product-information__arrow-up {
+    .vetrina--arrow-icon(0deg);
 }
 
 .vetrina--product-information__arrow-down {
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 20px;
-    background-image: url('../images/chevron.svg');
-    grid-area: check;
-    transform: rotate(180deg);
+    .vetrina--arrow-icon(180deg);
 }
 
 .vetrina--product-information__contents-name {
