@@ -329,12 +329,14 @@ emailInput self accountStatus =
      , children:
          [ case accountStatus of
               NewAccount ->
-                DOM.h3
+                DOM.div
                   { className: "vetrina--create-account"
                   , children:
-                      [ DOM.text "Skapa konto"
-                      -- , DOM.br {}
-                      -- , DOM.text "STEG 1 / 2 ??"
+                      [ DOM.span
+                          { className: "vetrina--create-account__headline"
+                          , children: [ DOM.text "Skapa konto" ]
+                          }
+                      , DOM.text "STEG 1 / 2 KONTOINFORMATION"
                       ]
                   }
               _ -> mempty

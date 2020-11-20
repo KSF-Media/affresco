@@ -9,7 +9,7 @@
     font-family: 'Duplex Serif Web';
     font-size: 3rem;
     .vetrina--price-headline {
-	border-bottom: 2px solid #f07e26;
+	border-bottom: 2px solid #f07e26; // TODO: Paper dependent?
     }
 }
 
@@ -369,5 +369,12 @@
 }
 
 .vetrina--create-account {
+    display: flex;
+    flex-direction: column;
     margin-top: 2em;
+    margin-bottom: 1em;
+    .vetrina--create-account__headline {
+	font-size: 1.2em;
+	font-weight: 500;
+    }
 }
