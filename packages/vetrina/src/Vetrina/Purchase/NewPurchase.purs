@@ -406,7 +406,7 @@ acceptTermsCheckbox =
           <> mkLink "" "https://www.hbl.fi/bruksvillkor/#privacy" "integritets-policyn"
 
   in DOM.div
-    { className: "vetrina--checbox-container"
+    { className: "vetrina--checkbox-container"
     , children:
         [ DOM.input
             { className: "vetrina--checkbox"
