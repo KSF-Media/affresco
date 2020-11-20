@@ -9,7 +9,7 @@ import Data.Nullable (Nullable, toMaybe)
 import Data.Set as Set
 import KSF.Vetrina as Vetrina
 import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Classic as React
 import Vetrina.Types (JSProduct, Product, fromJSProduct)
 
 type JSProps =

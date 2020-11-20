@@ -14,8 +14,8 @@ import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isFormInvalid, validateField, validateForm, validatePassword, validatePasswordComparison)
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)

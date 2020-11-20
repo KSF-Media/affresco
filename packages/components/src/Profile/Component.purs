@@ -33,8 +33,9 @@ import KSF.Sentry as Sentry
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
-import React.Basic (make, JSX)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler_)

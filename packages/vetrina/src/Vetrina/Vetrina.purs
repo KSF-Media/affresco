@@ -25,8 +25,8 @@ import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (Order, FailReason(..), OrderState(..), PaymentMethod(..), PaymentTerminalUrl, User)
 import KSF.User as User
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Tracking as Tracking

@@ -15,8 +15,9 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import React.Basic as React
-import React.Basic (JSX, make)
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 type Props =

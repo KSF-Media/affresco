@@ -1,8 +1,9 @@
 module KSF.CreditCard.Register where
 
 import KSF.User (PaymentTerminalUrl)
-import React.Basic as React
-import React.Basic (JSX, make)
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 type Props =

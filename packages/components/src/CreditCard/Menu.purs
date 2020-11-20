@@ -6,8 +6,9 @@ import Bottega.Models (CreditCard)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import KSF.CreditCard.Menu.Item (item) as CreditCard
-import React.Basic as React
-import React.Basic (JSX, make)
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 type Self = React.Self Props State
