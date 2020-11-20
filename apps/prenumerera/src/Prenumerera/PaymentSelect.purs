@@ -11,8 +11,8 @@ import Foreign (Foreign)
 import Persona as Persona
 import Prenumerera.Confirm as Confirm
 import Prenumerera.Prenumerera (Product)
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (EventHandler, handler)

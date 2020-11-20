@@ -6,8 +6,8 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Foreign (Foreign, unsafeFromForeign)
 import KSF.Navbar.Component (Paper(..))
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic as React
 import Effect (Effect)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)

@@ -17,8 +17,9 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.User (SubscriptionPayments, PaymentState(..), PaymentType(..))
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 
@@ -32,9 +33,6 @@ type State =
   { focus :: Maybe Int
   , payments :: Array SubscriptionPayments
   }
-
-jsComponent :: React.Component Props
-jsComponent = component
 
 component :: React.Component Props
 component = React.createComponent "PaymentList"

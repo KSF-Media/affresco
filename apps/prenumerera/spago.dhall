@@ -10,6 +10,8 @@
     , "formatters"
     , "datetime"
     , "react-basic"
+    , "react-basic-classic"
+    , "react-basic-dom"
     , "psci-support"
     , "prelude"
     , "js-date"

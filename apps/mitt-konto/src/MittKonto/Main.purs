@@ -35,8 +35,9 @@ import KSF.Subscription.Component (subscription) as Subscription
 import KSF.User (User, UserError(..), SubscriptionPayments)
 import KSF.User (logout, getPayments) as User
 import KSF.User.Login (login) as Login
-import React.Basic (JSX, element, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (element, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router as Router
 

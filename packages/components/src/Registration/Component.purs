@@ -21,8 +21,9 @@ import KSF.InputField as InputField
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateZipCode)
 import Persona as Persona
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)

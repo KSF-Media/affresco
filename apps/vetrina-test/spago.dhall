@@ -18,6 +18,8 @@
   , "prelude"
   , "psci-support"
   , "react-basic"
+  , "react-basic-classic"
+  , "react-basic-dom"
   , "simple-json"
   , "test-unit"
   , "toppokki"

@@ -17,8 +17,8 @@ import Prenumerera.Confirm as Confirm
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.ProductSelect as ProductSelect
 import Prenumerera.User as User
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router as Router
 

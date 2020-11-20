@@ -14,6 +14,8 @@ You can edit this file as you like.
     , "formatters"
     , "datetime"
     , "react-basic"
+    , "react-basic-classic"
+    , "react-basic-dom"
     , "react-basic-router"
     , "psci-support"
     , "prelude"
