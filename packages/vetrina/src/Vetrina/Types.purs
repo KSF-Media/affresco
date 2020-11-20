@@ -14,7 +14,6 @@ data AccountStatus
   | ExistingAccount String
   | LoggedInAccount User.User
 
-
 type JSProductContent =
   { title       :: Nullable String
   , description :: Nullable String
@@ -42,7 +41,7 @@ type JSProduct =
   , descriptionPurchaseCompleted :: Nullable JSX
   , priceCents                   :: Nullable Int
   , campaignNo                   :: Nullable Int
-  , contents :: Nullable (Array JSProductContent)
+  , contents                     :: Nullable (Array JSProductContent)
   }
 
 fromJSProduct :: JSProduct -> Maybe Product

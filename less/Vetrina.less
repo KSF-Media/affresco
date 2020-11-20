@@ -5,12 +5,27 @@
 @import 'Product';
 @import 'Spinner';
 
-.vetrina--headline {
+
+.mk-vetrina--headline(@brand-color) {
     font-family: 'Duplex Serif Web';
     font-size: 3rem;
+    grid-area: headline;
     .vetrina--price-headline {
-	border-bottom: 2px solid #f07e26; // TODO: Paper dependent?
+	border-bottom: 2px solid @brand-color;
     }
+}
+
+.vetrina--headline-KSF {
+    .mk-vetrina--headline(@brand-neutral)
+}
+.vetrina--headline-HBL {
+    .mk-vetrina--headline(@hbl-orange)
+}
+.vetrina--headline-ON {
+    .mk-vetrina--headline(@on-blue)
+}
+.vetrina--headline-VN {
+    .mk-vetrina--headline(@vn-red)
 }
 
 .vetrina--container > .spinner--loading-spinner {

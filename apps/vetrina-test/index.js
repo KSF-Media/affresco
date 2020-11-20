@@ -11,7 +11,8 @@ function main() {
       <Main.jsComponent
     products={[hblPremium]}
     accessEntitlements={["hbl-365", "articles-365"]}
-    headline={<div class="vetrina--headline">Läs HBL digitalt för <span class="vetrina--price-headline">endast 1€</span></div>}/>
+    headline={<div class="vetrina--headline">Läs HBL digitalt för <span class="vetrina--price-headline">endast 1€</span></div>}
+    paper="HBL"/>
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));

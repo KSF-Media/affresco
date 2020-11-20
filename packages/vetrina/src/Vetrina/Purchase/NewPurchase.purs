@@ -8,12 +8,14 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.List.NonEmpty as NonEmptyList
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
 import KSF.Helpers (formatEur)
 import KSF.InputField as InputField
+import KSF.Paper (Paper)
+import KSF.Paper as Paper
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -55,6 +57,7 @@ type Props =
   , productSelection              :: Maybe Product
   , onLogin                       :: Effect Unit
   , headline :: Maybe JSX
+  , paper :: Maybe Paper
   }
 
 data FormInputField
@@ -136,7 +139,7 @@ didMount self = do
 render :: Self -> JSX
 render self =
   DOM.h1
-    { className: "vetrina--headline"
+    { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
     , children: [ title self.state.accountStatus self.props.headline ]
     }
   <> newPurchaseLinks self

@@ -22,6 +22,8 @@ import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
+import KSF.Paper (Paper(..))
+import KSF.Paper as Paper
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (Order, FailReason(..), OrderState(..), PaymentMethod(..), PaymentTerminalUrl, User)
@@ -48,7 +50,8 @@ type JSProps =
   , products           :: Nullable (Array JSProduct)
   , unexpectedError    :: Nullable JSX
   , accessEntitlements :: Nullable (Array String)
-  , headline :: Nullable JSX
+  , headline           :: Nullable JSX
+  , paper              :: Nullable String
   }
 
 type Props =
@@ -57,7 +60,8 @@ type Props =
   , products           :: Either Error (Array Product)
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
-  , headline :: Maybe JSX
+  , headline           :: Maybe JSX
+  , paper              :: Maybe Paper
   }
 
 fromJSProps :: JSProps -> Props
@@ -75,6 +79,7 @@ fromJSProps jsProps =
   , unexpectedError: fromMaybe mempty $ toMaybe jsProps.unexpectedError
   , accessEntitlements: maybe Set.empty Set.fromFoldable $ toMaybe jsProps.accessEntitlements
   , headline: toMaybe jsProps.headline
+  , paper: Paper.fromString =<< toMaybe jsProps.paper
   }
 
 type State =
@@ -253,6 +258,7 @@ render self = vetrinaContainer self $
         , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
         , headline: self.props.headline
+        , paper: self.props.paper
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
@@ -273,6 +279,7 @@ render self = vetrinaContainer self $
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
             , headline: self.props.headline
+            , paper: self.props.paper
             }
         ServerError ->
           Purchase.Error.error
