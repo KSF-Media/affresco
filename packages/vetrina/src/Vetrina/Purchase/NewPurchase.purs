@@ -3,10 +3,10 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, cons, head)
+import Data.Array (all, head)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (fold, foldMap)
+import Data.Foldable (foldMap)
 import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
@@ -56,8 +56,8 @@ type Props =
   , paymentMethod                 :: PaymentMethod
   , productSelection              :: Maybe Product
   , onLogin                       :: Effect Unit
-  , headline :: Maybe JSX
-  , paper :: Maybe Paper
+  , headline                      :: Maybe JSX
+  , paper                         :: Maybe Paper
   }
 
 data FormInputField

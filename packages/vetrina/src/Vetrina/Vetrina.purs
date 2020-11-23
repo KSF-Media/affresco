@@ -7,7 +7,7 @@ import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
-import Data.Foldable (fold, foldMap)
+import Data.Foldable (foldMap)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -22,7 +22,7 @@ import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
-import KSF.Paper (Paper(..))
+import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner

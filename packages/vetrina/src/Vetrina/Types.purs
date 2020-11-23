@@ -31,7 +31,7 @@ type Product =
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
   , campaignNo                   :: Maybe Int
-  , contents :: Array ProductContent
+  , contents                     :: Array ProductContent
   }
 
 type JSProduct =
