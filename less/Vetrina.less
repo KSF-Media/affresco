@@ -10,6 +10,7 @@
     font-size: 3rem;
     grid-area: headline;
     margin-bottom: .5em;
+    margin-top: 0;
     .vetrina--price-headline {
 	border-bottom: 2px solid @brand-color;
     }
@@ -37,18 +38,20 @@
 @vetrina-content-width: 600px;
 @vetrina-content-to-small-margin: 1em;
 
+@page-margin: 3em;
+
 .vetrina--container {
     @media @to-small {
 	padding-left: @vetrina-content-to-small-margin;
 	padding-right: @vetrina-content-to-small-margin;
     }
-    padding-top: 2em;
+    padding-top: @page-margin;
     font-family: 'Duplex Sans', sans-serif;
     font-weight: 300;
-    background-color: @nude;
+    background-color: @grey-light;
     margin: 0;
     .spinner--loading-spinner {
-	background-color: @nude;
+	background-color: @grey-light;
     }
     display: grid;
     justify-content: center;
@@ -60,7 +63,7 @@
 	grid-area: beef;
     }
 
-    grid-template-columns: 1fr minmax(auto, @vetrina-content-width) 1fr;
+    grid-template-columns: @page-margin minmax(auto, @vetrina-content-width) 1fr;
     grid-template-rows: auto;
     grid-template-areas:
 	". headline ."		     // Always there
@@ -302,11 +305,11 @@
 	margin-right: -@vetrina-content-to-small-margin;
     }
 
-    margin-top: 2em;
+    margin-top: @page-margin;
     grid-area: product;
     display: grid;
-    background: @grey-almostlight;
-    grid-template-columns: 1fr minmax(auto, @vetrina-content-width) 1fr;
+    background: @footer-background;
+    grid-template-columns: @page-margin minmax(auto, @vetrina-content-width) 1fr;
     grid-template-areas: ". product-contents product-contents";
 }
 
