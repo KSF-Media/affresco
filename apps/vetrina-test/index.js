@@ -11,7 +11,7 @@ function main() {
       <Main.jsComponent
     products={[hblPremium]}
     accessEntitlements={["hbl-365", "articles-365"]}
-    headline={<div className="vetrina--headline">Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
+    headline={<div>Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
     paper="HBL"/>
   );
 
