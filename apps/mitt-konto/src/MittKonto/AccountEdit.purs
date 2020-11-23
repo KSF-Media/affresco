@@ -4,7 +4,6 @@ import Prelude
 
 import Bottega.Models (CreditCard)
 import Data.Array (null)
-import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -24,6 +23,8 @@ type Self = React.Self Props State
 
 type Props =
   { logger :: Sentry.Logger
+  , creditCards :: Array CreditCard
+  , setCreditCards :: Array CreditCard -> Effect Unit
   }
 
 type State =
@@ -51,13 +52,18 @@ accountEdit = make component
 
 didMount :: Self -> Effect Unit
 didMount self =
-  Aff.launchAff_ do
-    creditCards <- User.getCreditCards
-    case creditCards of
-      Left err    -> liftEffect $ self.props.logger.log ("Error while fetching credit cards: " <> err) Sentry.Error
-      Right cards -> case Array.head cards of
-        Nothing   -> pure unit
-        Just card -> liftEffect $ self.setState _ { creditCards = cards }
+  if null self.props.creditCards
+  then
+    Aff.launchAff_ do
+      creditCards <- User.getCreditCards
+      case creditCards of
+        Left err    -> liftEffect $ self.props.logger.log ("Error while fetching credit cards: " <> err) Sentry.Error
+        Right []    -> pure unit
+        Right cards -> liftEffect do
+          self.props.setCreditCards cards
+          self.setState _ { creditCards = cards }
+  else do
+    self.setState _ { creditCards = self.props.creditCards }
 
 render :: Self -> JSX
 render self =
@@ -73,12 +79,12 @@ render self =
       [ IconAction.iconAction
           { iconClassName: passwordChangeClass
           , description: "Byt lösenord"
-          , onClick: IconAction.Href "https://www.hbl.fi/losenord" true
+          , onClick: IconAction.Href "https://www.hbl.fi/losenord"
           }
       , IconAction.iconAction
           { iconClassName: paymentHistoryClass
           , description: "Fakturor"
-          , onClick: IconAction.Href "/fakturor" false
+          , onClick: IconAction.Router "/fakturor"
           }
       , if not $ null self.state.creditCards
         then
