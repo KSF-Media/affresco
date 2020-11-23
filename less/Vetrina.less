@@ -44,6 +44,7 @@
     @media @to-small {
 	padding-left: @vetrina-content-to-small-margin;
 	padding-right: @vetrina-content-to-small-margin;
+	grid-template-columns: 1fr minmax(auto, @vetrina-content-width) 1fr;
     }
     padding-top: @page-margin;
     font-family: 'Duplex Sans', sans-serif;
@@ -63,9 +64,6 @@
 	grid-area: beef;
     }
 
-    @media @to-small {
-	grid-template-columns: 1fr minmax(auto, @vetrina-content-width) 1fr;
-    }
     grid-template-columns: @page-margin minmax(auto, @vetrina-content-width) 1fr;
     grid-template-rows: auto;
     grid-template-areas:
