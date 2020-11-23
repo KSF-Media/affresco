@@ -63,6 +63,9 @@
 	grid-area: beef;
     }
 
+    @media @to-small {
+	grid-template-columns: 1fr minmax(auto, @vetrina-content-width) 1fr;
+    }
     grid-template-columns: @page-margin minmax(auto, @vetrina-content-width) 1fr;
     grid-template-rows: auto;
     grid-template-areas:
@@ -309,6 +312,9 @@
     grid-area: product;
     display: grid;
     background: @footer-background;
+    @media @to-small {
+	grid-template-columns: 1fr minmax(auto, @vetrina-content-width) 1fr;
+    }
     grid-template-columns: @page-margin minmax(auto, @vetrina-content-width) 1fr;
     grid-template-areas: ". product-contents product-contents";
 }
