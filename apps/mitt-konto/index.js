@@ -9,13 +9,7 @@ React.createClass = createReactClass;
 var Main = require('./output/MittKonto.Main/index.js');
 
 function main() {
-  const myComponent = (
-    <Router>
-      <Main.app/>
-    </Router>
-  );
-
-  ReactDOM.render(myComponent, document.getElementById('app'));
+  Main.main();
 }
 
 

@@ -7,6 +7,7 @@ import Data.Array (snoc, sortBy, (:))
 import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
+import Data.Function.Uncurried (Fn0, runFn0)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Data.Set as Set
@@ -16,7 +17,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Exception (Error, error, message)
+import Effect.Exception (Error, error, message, throw)
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.AccountEdit as AccountEdit
 import MittKonto.IconAction as IconAction
@@ -35,17 +36,22 @@ import KSF.Subscription.Component (subscription) as Subscription
 import KSF.User (User, UserError(..), SubscriptionPayments)
 import KSF.User (logout, getPayments) as User
 import KSF.User.Login (login) as Login
-import React.Basic (JSX)
-import React.Basic.Classic (element, make)
-import React.Basic.Classic as React
+import React.Basic (JSX, ReactComponent, element)
 import React.Basic.DOM as DOM
+import React.Basic.Hooks (component, useState, (/\))
+import React.Basic.Hooks as React
 import React.Basic.Router as Router
+import Web.DOM.NonElementParentNode (getElementById)
+import Web.HTML (window)
+import Web.HTML.HTMLDocument (toNonElementParentNode)
+import Web.HTML.Window (document)
+
+type RouterProps =
+  { children :: Array JSX }
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String
-
-type Props =
-  {}
+foreign import router_ :: Fn0 (ReactComponent RouterProps)
 
 type State =
   { paper :: Navbar.Paper
@@ -53,9 +59,13 @@ type State =
   , loading :: Maybe Loading
   , showWelcome :: Boolean
   , alert :: Maybe Alert
-  , logger :: Sentry.Logger
   , payments :: Maybe (Array SubscriptionPayments)
   , creditCards :: Array CreditCard
+  }
+
+type Self =
+  { state :: State
+  , setState :: (State -> State) -> Effect Unit
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -72,37 +82,37 @@ setPayments payments = _ { payments = payments }
 
 data Loading = Loading
 
-type Self = React.Self Props State
-
-component :: React.Component Props
-component = React.createComponent "MittKonto"
-
-app :: Props -> JSX
-app = make component
-  { initialState:
-      { paper: KSF
-      , loggedInUser: Nothing
-      , loading: Nothing
-      , showWelcome: true
-      , alert: Nothing
-      , logger: Sentry.emptyLogger
-      , payments: Nothing
-      , creditCards: []
-      }
-  , didMount
-  , render
-  }
-
-didMount :: Self -> Effect Unit
-didMount self = do
+main :: Effect Unit
+main = do
+  container <- getElementById "app" =<< (map toNonElementParentNode $ document =<< window)
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
-  self.setState _ { logger = logger }
+  let initialState =
+        { paper: KSF
+        , loggedInUser: Nothing
+        , loading: Nothing
+        , showWelcome: true
+        , alert: Nothing
+        , payments: Nothing
+        , creditCards: []
+        }
+  case container of
+    Nothing -> throw "Container element not found."
+    Just c  -> do
+      app <- component "MittKonto" \_ -> React.do
+        state /\ setState <- useState initialState
+        let self = { state, setState }
+        pure $ element (runFn0 router_)
+          { children:
+              [ mkApp self logger
+              ]
+          }
+      DOM.render (app {}) c
 
-render :: Self -> JSX
-render self@{ state, setState } =
+mkApp :: Self -> Sentry.Logger -> JSX
+mkApp self@{ state, setState } logger =
   React.fragment
-    [ navbarView self
+    [ navbarView self logger
     , classy DOM.div "mt4 mb4"
         [ foldMap alertView state.alert ]
     , classy DOM.div "mt4 mb4 clearfix"
@@ -121,8 +131,8 @@ render self@{ state, setState } =
              \_ -> classy DOM.div "mitt-konto--container clearfix"
                [ foldMap loadingIndicator state.loading
                , case state.loggedInUser of
-                   Just user -> userView self user
-                   Nothing   -> loginView self
+                   Just user -> userView self logger user
+                   Nothing   -> loginView self logger
                ]
          }
    paymentList =
@@ -135,7 +145,7 @@ render self@{ state, setState } =
                [ foldMap loadingIndicator state.loading
                , case state.loggedInUser of
                    Just user -> paymentView self user
-                   Nothing   -> loginView self
+                   Nothing   -> loginView self logger
                ]
          }
 
@@ -184,8 +194,8 @@ withSpinner setLoadingState action = do
      Aff.killFiber (error "Action is done") loadingFiber
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: Self -> JSX
-navbarView self@{ state, setState } =
+navbarView :: Self -> Sentry.Logger -> JSX
+navbarView self@{ state, setState } logger =
     Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
@@ -193,7 +203,7 @@ navbarView self@{ state, setState } =
           Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
-              self.state.logger.setUser Nothing
+              logger.setUser Nothing
               setState $ setLoggedInUser Nothing
       }
 
@@ -206,8 +216,8 @@ footerView :: React.JSX
 footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: Self -> User -> JSX
-userView { setState, state: { logger, creditCards } } user = React.fragment
+userView :: Self -> Sentry.Logger -> User -> JSX
+userView { setState, state: { creditCards } } logger user = React.fragment
   [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -365,8 +375,8 @@ paymentView self user = DOM.div_
                 pure []
 
 -- | Login page with welcoming header, description text and login form.
-loginView :: Self -> JSX
-loginView self@{ state: state@{ logger }, setState } = React.fragment
+loginView :: Self -> Sentry.Logger -> JSX
+loginView self@{ state, setState } logger = React.fragment
   [ DOM.div_
       case state.showWelcome of
         false -> []
