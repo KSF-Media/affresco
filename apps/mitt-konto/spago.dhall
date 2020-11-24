@@ -16,6 +16,7 @@ You can edit this file as you like.
     , "react-basic"
     , "react-basic-classic"
     , "react-basic-dom"
+    , "react-basic-hooks"
     , "react-basic-router"
     , "psci-support"
     , "prelude"
