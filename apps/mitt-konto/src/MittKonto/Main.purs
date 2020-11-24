@@ -26,7 +26,7 @@ import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
 import KSF.JSError as Error
-import KSF.Navbar.Component (Paper(..))
+import KSF.Paper (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.PaymentAccordion as PaymentAccordion
 import KSF.Profile.Component as Profile
@@ -47,7 +47,7 @@ type Props =
   {}
 
 type State =
-  { paper :: Navbar.Paper
+  { paper :: Paper
   , loggedInUser :: Maybe User
   , loading :: Maybe Loading
   , showWelcome :: Boolean

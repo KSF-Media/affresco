@@ -75,22 +75,19 @@ render self =
   if isJust self.state.isLoading
   then Spinner.loadingSpinner
   else
-    DOM.h1_ [ DOM.text "Tack för din beställning!" ]
+    DOM.h1
+      { className: "vetrina--headline"
+      , children:[ DOM.text "Tack för din beställning!" ]
+      }
     <> case self.props.user of
         Just u ->
           DOM.p
             { className: "vetrina--description-text"
             , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
             }
-          <> setNewPassword self
+          <> setPasswordForm self
         _ -> DOM.text "SOMETHING WENT WRONG!"
 
-setNewPassword :: Self -> JSX
-setNewPassword self =
-  DOM.div
-    { className: "vetrina-purchanse-completed--set-password"
-    , children: [ setPasswordForm self ]
-    }
 
 setPasswordForm :: Self -> JSX
 setPasswordForm self@{ state: { passwordForm } } =

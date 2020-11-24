@@ -7,9 +7,14 @@
     background: @grey-light;
     z-index: @loading;
     .spinner--spinner-image {
-        background-image: url("../images/loader-gif.gif");
-        background-size: 32px 32px;
-        width: 32px;
-        height: 32px;
+	background-image: url("../images/loader-gif.gif");
+	background-size: 32px 32px;
+	width: 32px;
+	height: 32px;
     }
+}
+
+.spinner--loading-spinner__with-message {
+    display: grid;
+    justify-content: center;
 }

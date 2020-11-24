@@ -12,6 +12,7 @@ import Effect (Effect)
 import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
+import KSF.Paper (Paper (..))
 import Persona as Persona
 import React.Basic (JSX, make)
 import React.Basic as React
@@ -152,9 +153,6 @@ hamburgerButton self =
     }
   where
     hamburgerStripe = DOM.div { className: "nav--hamburger-stripe" }
-
-data Paper = HBL | ON | VN | KSF
-derive instance eqPaper :: Eq Paper
 
 paperLogoUrl :: Paper -> String
 paperLogoUrl paper =
