@@ -2,6 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.Array (snoc, sortBy, (:))
 import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
@@ -53,6 +54,7 @@ type State =
   , alert :: Maybe Alert
   , logger :: Sentry.Logger
   , payments :: Maybe (Array SubscriptionPayments)
+  , creditCards :: Array CreditCard
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -84,6 +86,7 @@ app = make component
       , alert: Nothing
       , logger: Sentry.emptyLogger
       , payments: Nothing
+      , creditCards: []
       }
   , didMount
   , render
@@ -203,7 +206,7 @@ footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: Self -> User -> JSX
-userView { setState, state: { logger } } user = React.fragment
+userView { setState, state: { logger, creditCards } } user = React.fragment
   [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -232,6 +235,8 @@ userView { setState, state: { logger } } user = React.fragment
               [ componentHeader "Mina inställningar:"
               , componentBlockContent $ AccountEdit.accountEdit
                   { logger: logger
+                  , creditCards
+                  , setCreditCards: \cards -> setState _ { creditCards = cards }
                   }
               ]
           }
@@ -263,7 +268,7 @@ userView { setState, state: { logger } } user = React.fragment
             [ IconAction.iconAction
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
-                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU" true
+                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU"
                 }
             ]
         }
@@ -331,24 +336,32 @@ userView { setState, state: { logger } } user = React.fragment
 -- | Specialized view with user's payment list
 paymentView :: Self -> User -> JSX
 paymentView self user = DOM.div_
-  [ DOM.a
-      { href: "/"
-      , className: "mitt-konto--backwards"
-      }
-  , PaymentAccordion.payments { paymentsLoad: paymentsLoad }
+  [ element
+      Router.link
+        { to: { pathname: "/", state: {} }
+        , children: [ ]
+        , className: "mitt-konto--backwards"
+        }
+  , PaymentAccordion.payments { paymentsLoad }
   ]
   where
-    paymentsLoad = withSpinner (self.setState <<< setLoading) do
-      p <- User.getPayments user.uuid
-      case p of
-        Right payments -> pure payments
-        Left _         -> do
-          liftEffect $ self.setState $ setAlert $ Just
-            { level: Alert.warning
-            , title: "Laddningen misslyckades."
-            , message: "Något gick fel, ta kontakt med kundservice."
-            }
-          pure []
+    paymentsLoad =
+      case self.state.payments of
+        Just payments -> pure payments
+        Nothing ->
+          withSpinner (self.setState <<< setLoading) do
+            p <- User.getPayments user.uuid
+            case p of
+              Right payments -> do
+                liftEffect $ self.setState _ { payments = Just payments }
+                pure payments
+              Left _         -> do
+                liftEffect $ self.setState $ setAlert $ Just
+                  { level: Alert.warning
+                  , title: "Laddningen misslyckades."
+                  , message: "Något gick fel, ta kontakt med kundservice."
+                  }
+                pure []
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Self -> JSX

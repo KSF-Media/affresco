@@ -3,15 +3,17 @@ module MittKonto.IconAction where
 import Prelude
 
 import Effect (Effect)
-import React.Basic (JSX, make)
+import React.Basic (JSX, element, make)
 import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
+import React.Basic.Router as Router
 
 type Self = React.Self Props {}
 
 data OnClick
-  = Href String Boolean -- TODO: Boolean can be removed when "/fakturor" uses React Router
+  = Href String
+  | Router String
   | Action (Effect Unit)
 
 type Props =
@@ -32,7 +34,8 @@ component = React.createComponent "IconAction"
 render :: Self -> JSX
 render self =
   case self.props.onClick of
-    Href url openInNewTab -> accountActionAnchor url openInNewTab
+    Href url -> accountActionAnchor url
+    Router path -> routerLink path
     Action onClick -> accountActionContainer
 
   where
@@ -41,16 +44,24 @@ render self =
         { className: "icon-action--container"
         , onClick: handler_ case self.props.onClick of
           Action onClickAction -> onClickAction
-          Href _ _ -> pure unit
+          _ -> pure unit
         , children:
             [ DOM.div { className: self.props.iconClassName }
             , DOM.div_ [ DOM.text self.props.description ]
             ]
         }
 
-    accountActionAnchor href openNewTab =
+    accountActionAnchor href =
       DOM.a
         { href
         , children: [ accountActionContainer ]
-        , target: if openNewTab then "_blank" else ""
+        , target: "_blank"
         }
+
+    routerLink pathname =
+      element
+        Router.link
+          { to: { pathname, state: {} }
+          , children: [ accountActionContainer ]
+          , className: mempty
+          }
