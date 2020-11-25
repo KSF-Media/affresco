@@ -10,8 +10,8 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Persona as Persona
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router (Location)
 import React.Basic.Router as Router

@@ -11,7 +11,7 @@ import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import KSF.Vetrina as Vetrina
 import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Classic as React
 import Vetrina.Types (JSProduct, Product, fromJSProduct)
 
 type JSProps =

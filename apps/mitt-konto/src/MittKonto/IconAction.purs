@@ -3,8 +3,9 @@ module MittKonto.IconAction where
 import Prelude
 
 import Effect (Effect)
-import React.Basic (JSX, element, make)
-import React.Basic as React
+import React.Basic (JSX, element)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Router as Router

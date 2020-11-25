@@ -11,7 +11,7 @@ var Main = require('./output/MittKonto.Main/index.js');
 function main() {
   const myComponent = (
     <Router>
-      <Main.app/>
+      <Main.jsApp/>
     </Router>
   );
 

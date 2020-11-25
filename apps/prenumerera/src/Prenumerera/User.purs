@@ -15,8 +15,8 @@ import KSF.User.Login as Login
 import Persona as Persona
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.Prenumerera (Product)
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router (Match, Location)
 import React.Basic.Router as Router
