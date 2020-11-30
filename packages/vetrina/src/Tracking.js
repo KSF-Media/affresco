@@ -2,7 +2,6 @@ window.dataLayer = window.dataLayer || [];
 
 exports.transaction_ = function (orderNumber, productId, productPriceInCents, productCampaignNo) {
     return function () {
-	var tracker = new Tracker();
 	var referringArticle = window.location.href.split('?')[0];
 	var productPrice = productPriceInCents / 100;
 	var brand;
@@ -19,7 +18,7 @@ exports.transaction_ = function (orderNumber, productId, productPriceInCents, pr
 	    default:
 		brand = ""
 	}
-	tracker.dataLayer.push({
+	dataLayer.push({
 	    'event': 'transaction',
 	    'ecommerce': {
 		'purchase': {
