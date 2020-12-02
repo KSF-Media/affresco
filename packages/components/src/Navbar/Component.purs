@@ -12,11 +12,9 @@ import Effect (Effect)
 import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
-import KSF.Paper (Paper (..))
-import Persona as Persona
-import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
+import KSF.User (User)
+import React.Basic (JSX, make)
+import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
 import React.Basic.Router as Router
@@ -32,7 +30,7 @@ type Props =
   { paper :: Paper
   , adminMode :: Boolean
   , isPersonating :: Boolean
-  , activeUser :: Maybe Persona.User
+  , activeUser :: Maybe User
   , logout :: Effect Unit
   }
 
@@ -40,7 +38,7 @@ type JSProps =
   { paperCode :: String
   , adminMode :: Boolean
   , isPersonating :: Boolean
-  , activeUser :: Nullable Persona.User
+  , activeUser :: Nullable User
   , onLogout :: Effect Unit
   }
 
