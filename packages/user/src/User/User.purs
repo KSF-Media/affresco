@@ -93,6 +93,7 @@ data UserError =
   | RegistrationEmailInUse
   | MergeEmailInUse MergeInfo
   | SomethingWentWrong
+  | ServiceUnavailable
   | UnexpectedError Error
 derive instance genericUserError :: Generic UserError _
 instance showUserError :: Show UserError where
@@ -199,6 +200,9 @@ loginTraditional loginData = do
       | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
           Console.error errData.invalid_credentials.description
           pure $ Left LoginInvalidCredentials
+      | KSF.Error.serviceUnavailableError err -> do
+          Console.error "Service unavailable with traditional login"
+          pure $ Left ServiceUnavailable
       | Just serverError <- KSF.Error.internalServerError err -> do
           Console.error "Something went wrong with traditional login"
           pure $ Left SomethingWentWrong
@@ -218,7 +222,11 @@ magicLogin maybeInvalidateCache callback = do
     Nothing -> do
       Console.log "Couldn't load the saved token, giving SSO a try"
       loginSso maybeInvalidateCache callback `catchError` case _ of
-        err | Just serverError <- KSF.Error.internalServerError err -> do
+        err | KSF.Error.serviceUnavailableError err -> do
+                Console.error "Service unavailable with SSO login"
+                liftEffect $ callback $ Left ServiceUnavailable
+                throwError err
+            | Just serverError <- KSF.Error.internalServerError err -> do
                 Console.error "Something went wrong with SSO login"
                 liftEffect $ callback $ Left SomethingWentWrong
                 throwError err
@@ -253,6 +261,9 @@ someAuth maybeInvalidateCache mergeInfo email token provider = do
               , newProvider: provider
               , userEmail: email
               }
+      | KSF.Error.serviceUnavailableError err -> do
+           Console.error "Service unavailable with SoMe login"
+           pure $ Left ServiceUnavailable
       | Just serverError <- KSF.Error.internalServerError err -> do
            Console.error "Something went wrong with SoMe login"
            pure $ Left SomethingWentWrong
