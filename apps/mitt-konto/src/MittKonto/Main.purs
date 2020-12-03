@@ -102,37 +102,46 @@ render self@{ state, setState } logger =
         [ foldMap alertView state.alert ]
     , classy DOM.div "mt4 mb4 clearfix"
         [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ element Router.switch { children: [ paymentList, mittKonto ] } ]
+            [ element Router.switch { children: [ paymentListRoute, mittKontoRoute, noMatchRoute ] } ]
         ]
     , footerView
     ]
  where
-   mittKonto =
+   mittKontoRoute =
      element
        Router.route
          { exact: true
          , path: toNullable $ Just "/"
-         , render:
-             \_ -> classy DOM.div "mitt-konto--container clearfix"
-               [ foldMap loadingIndicator state.loading
-               , case state.loggedInUser of
-                   Just user -> userView self logger user
-                   Nothing   -> loginView self logger
-               ]
+         , render: const mittKontoView
          }
-   paymentList =
+   mittKontoView =
+      classy DOM.div "mitt-konto--container clearfix"
+        [ foldMap loadingIndicator state.loading
+        , case state.loggedInUser of
+            Just user -> userView self logger user
+            Nothing   -> loginView self logger
+        ]
+   paymentListRoute =
      element
        Router.route
          { exact: true
          , path: toNullable $ Just "/fakturor"
-         , render:
-             \_ -> classy DOM.div "mitt-konto--container clearfix"
-               [ foldMap loadingIndicator state.loading
-               , case state.loggedInUser of
-                   Just user -> paymentView self user
-                   Nothing   -> loginView self logger
-               ]
+         , render: const
+             $ classy DOM.div "mitt-konto--container clearfix"
+                 [ foldMap loadingIndicator state.loading
+                 , case state.loggedInUser of
+                     Just user -> paymentView self user
+                     Nothing   -> loginView self logger
+                 ]
          }
+   noMatchRoute =
+     -- TODO: Use Redirect when supported!
+      element
+        Router.route
+          { exact: false
+          , path: toNullable Nothing
+          , render: const mittKontoView
+          }
 
 loadingIndicator :: Loading -> JSX
 loadingIndicator Loading =

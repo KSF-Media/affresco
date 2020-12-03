@@ -5,7 +5,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Foreign (Foreign, unsafeFromForeign)
-import KSF.Navbar.Component (Paper(..))
+import KSF.Paper (Paper(..))
 import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
 import React.Basic.Classic as React
 import Effect (Effect)
