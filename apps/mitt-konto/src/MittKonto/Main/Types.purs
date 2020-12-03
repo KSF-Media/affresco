@@ -12,7 +12,8 @@ import KSF.User (User, SubscriptionPayments)
 
 type State =
   { paper :: Paper
-  , loggedInUser :: Maybe User
+  , adminMode :: Boolean
+  , activeUser :: Maybe User
   , loading :: Maybe Spinner.Loading
   , showWelcome :: Boolean
   , alert :: Maybe Alert
@@ -28,8 +29,8 @@ type Self =
 setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { loading = loading }
 
-setLoggedInUser :: Maybe User -> State -> State
-setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
+setActiveUser :: Maybe User -> State -> State
+setActiveUser activeUser = _ { activeUser = activeUser }
 
 setAlert :: Maybe Alert -> State -> State
 setAlert alert = _ { alert = alert }

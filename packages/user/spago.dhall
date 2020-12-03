@@ -2,6 +2,7 @@
     "affresco-user"
 , dependencies =
     [ "effect"
+    , "record"
     , "console"
     , "aff"
     , "aff-promise"
