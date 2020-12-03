@@ -94,10 +94,7 @@ render self =
             { iconClassName: creditCardUpdateClass
             , description: "Uppdatera ditt kredit- eller bankkort"
             , onClick:
-                IconAction.Action $ self.setState _
-                  { editAction = Just UpdateCreditCard
-                  , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
-                  }
+                IconAction.Action showCreditCardUpdate
             }
         else mempty
       ]
@@ -106,7 +103,7 @@ render self =
         paymentHistoryClass = "account-edit--payment-history"
         creditCardUpdateClass = "account-edit--credit-card-update"
 
-        showCreditCardUpdate = handler_ $
+        showCreditCardUpdate =
           self.setState _
             { editAction = Just UpdateCreditCard
             , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
