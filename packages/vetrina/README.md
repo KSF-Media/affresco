@@ -39,16 +39,29 @@ The props/callbacks for `Vetrina` are
     - a list of entitlement names required to do the action the parent wants
     - if at least one of the entitlements given matches with the user entitlements, vetrina will not proceed with the purchase
     - `[ "hbl-web", "hbl-epaper" ]`
-
+- headline
+    - headline to show above Vetrina (JSX)
+    - `headline={<div className="vetrina--headline">Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}`
+- paper
+    - name of the paper (brand) in question
+    - `paper` should belong to `("HBL", "VN", "ON", "ÖN", "ÖNY", "KSF")`
+    - if `paper` is missing or invalid, the brand neutral `"KSF"` is used
 ### Product
 
 ```purescript
 type Product =
   { id                           :: String -- The package id of the product
+  , name                         :: String -- Name of the product, e.g. "Hufvudstadsbladet Premium"
   , description                  :: JSX -- Description is JSX and it's shown when selecting a product
   , descriptionPurchaseCompleted :: JSX -- A description/guide to show when the purchase is completed
   , priceCents                   :: Int -- The product price in cents
   , campaignNo                   :: Maybe Int -- The campaign used for this product (optional)
+  , contents                     :: Array ProductContent -- For describing the product in more detail
+  }
+
+type ProductContent =
+  { description :: String
+  , title       :: String
   }
 ```
 

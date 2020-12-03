@@ -1,7 +1,7 @@
 module Vetrina.Purchase.Processing where
 
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 type Self = React.Self Props State

@@ -39,9 +39,6 @@ main = launchAff_ do
   -- and (2) a subscription
   withBrowser (runTest "visit with entitled user (from scratch)" loginWithEntitledCustomer customer2)
 
-  -- Try buying HBL365 with a new customer
-  withBrowser (runTest "subscribe new customer to HBL365" subscribe365NewCustomer customer3)
-
   where
     mkEmail :: String -> String
     mkEmail dateTimeStr = "zztelefon+test." <> dateTimeStr <> "@ksfmedia.fi"
@@ -72,9 +69,9 @@ subscribeNewCustomer page email password = do
   Chrome.waitFor_ passSelector1 page
   Chrome.type_ passSelector1 password page
   Chrome.type_ passSelector2 password page
-  Chrome.click (Chrome.Selector "#app > div > div > form > input") page
+  Chrome.click (Chrome.Selector "input[type=\"submit\"]") page
 
-  let titleSelector = Chrome.Selector "#app > div > h1"
+  let titleSelector = Chrome.Selector ".vetrina--headline"
   log "Check that we land on the right page at the end"
   Chrome.assertContent titleSelector "Ditt KSF Media-konto är klart!" page
 
@@ -146,7 +143,7 @@ formatDate = Format.format $ List.fromFoldable
 
 fillEmail :: forall page. Chrome.HasFrame page => String -> page -> Aff Unit
 fillEmail email page = do
-  let emailField = Chrome.Selector ".input-field--container > input:nth-child(1)"
+  let emailField = Chrome.Selector ".input-field--container > input[type=\"email\"]"
   Chrome.waitFor_ emailField page
   Chrome.type_ emailField email page
   log "Accepting terms"
@@ -189,8 +186,8 @@ payWithNets page = do
 assertUserHasSubscription :: Chrome.Page -> Aff Unit
 assertUserHasSubscription page = do
   log "Vetrina should have checked that we are entitled"
-  let titleSelector = Chrome.Selector "#app > div > h1"
+  let titleSelector = Chrome.Selector ".vetrina--headline"
   Chrome.assertContent titleSelector "Du har redan en prenumeration" page
 
   log "We then click on 'whatever go ahead' and we should be done"
-  Chrome.click (Chrome.Selector "#app > div > button") page
+  Chrome.click (Chrome.Selector ".vetrina--completed-close") page

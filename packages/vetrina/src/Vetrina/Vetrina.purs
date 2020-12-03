@@ -7,6 +7,7 @@ import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
+import Data.Foldable (foldMap)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -21,12 +22,14 @@ import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
+import KSF.Paper (Paper)
+import KSF.Paper as Paper
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (Order, FailReason(..), OrderState(..), PaymentMethod(..), PaymentTerminalUrl, User)
 import KSF.User as User
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Tracking as Tracking
@@ -47,6 +50,8 @@ type JSProps =
   , products           :: Nullable (Array JSProduct)
   , unexpectedError    :: Nullable JSX
   , accessEntitlements :: Nullable (Array String)
+  , headline           :: Nullable JSX
+  , paper              :: Nullable String
   }
 
 type Props =
@@ -55,6 +60,8 @@ type Props =
   , products           :: Either Error (Array Product)
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
+  , headline           :: Maybe JSX
+  , paper              :: Maybe Paper
   }
 
 fromJSProps :: JSProps -> Props
@@ -71,6 +78,8 @@ fromJSProps jsProps =
           Nothing -> Left productError
   , unexpectedError: fromMaybe mempty $ toMaybe jsProps.unexpectedError
   , accessEntitlements: maybe Set.empty Set.fromFoldable $ toMaybe jsProps.accessEntitlements
+  , headline: toMaybe jsProps.headline
+  , paper: Paper.fromString =<< toMaybe jsProps.paper
   }
 
 type State =
@@ -205,9 +214,10 @@ pollOrder setState state@{ logger } (Right order) = do
             _               -> PurchaseCompleted userAccountStatus
       liftEffect do
         setState _ { purchaseState = nextPurchaseStep }
-        productId    <- LocalStorage.getItem "productId" --analytics
-        productPrice <- LocalStorage.getItem "productPrice" --analytics
-        Tracking.transaction order.number productId productPrice --analyics
+        productId         <- LocalStorage.getItem "productId" -- analytics
+        productPrice      <- LocalStorage.getItem "productPrice" -- analytics
+        productCampaignNo <- LocalStorage.getItem "productCampaignNo" -- analytics
+        Tracking.transaction order.number productId productPrice productCampaignNo -- analyics
       where
         chooseAccountStatus user
           | user.hasCompletedRegistration = ExistingAccount user.email
@@ -247,6 +257,8 @@ render self = vetrinaContainer self $
         , paymentMethod: self.state.paymentMethod
         , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
+        , headline: self.props.headline
+        , paper: self.props.paper
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
@@ -266,6 +278,8 @@ render self = vetrinaContainer self $
             , paymentMethod: self.state.paymentMethod
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
+            , headline: self.props.headline
+            , paper: self.props.paper
             }
         ServerError ->
           Purchase.Error.error
@@ -356,8 +370,11 @@ mkPurchase self@{ state: { logger } } validForm affUser =
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
-    liftEffect $ LocalStorage.setItem "productId" product.id -- for analytics
-    liftEffect $ LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
+    liftEffect do
+      LocalStorage.setItem "productId" product.id -- for analytics
+      LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
+      LocalStorage.setItem "productCampaingNo" $ foldMap show product.campaignNo
+
     pure { paymentUrl, order }
   case eitherOrder of
     Right { paymentUrl, order } ->

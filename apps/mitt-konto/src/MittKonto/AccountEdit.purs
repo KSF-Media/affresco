@@ -15,8 +15,9 @@ import KSF.Sentry as Sentry
 import KSF.User as User
 import MittKonto.ActionsWrapper as ActionsWrapper
 import MittKonto.IconAction as IconAction
-import React.Basic (make, JSX)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.Events (handler_)
 
 type Self = React.Self Props State

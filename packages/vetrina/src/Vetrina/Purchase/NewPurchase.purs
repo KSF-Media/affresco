@@ -3,27 +3,29 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, cons, head)
+import Data.Array (all, head)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.List.NonEmpty as NonEmptyList
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
+import KSF.Helpers (formatEur)
 import KSF.InputField as InputField
+import KSF.Paper (Paper)
+import KSF.Paper as Paper
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
-import Vetrina.Products as Products
-import Vetrina.Types (AccountStatus(..), Product)
+import Vetrina.Types (AccountStatus(..), Product, ProductContent)
 
 type Self = React.Self Props State
 
@@ -41,6 +43,7 @@ type State =
   , errorMessage        :: JSX
   , productSelection    :: Maybe Product
   , paymentMethod       :: Maybe PaymentMethod
+  , showProductContents :: Boolean
   }
 
 type Props =
@@ -53,6 +56,8 @@ type Props =
   , paymentMethod                 :: PaymentMethod
   , productSelection              :: Maybe Product
   , onLogin                       :: Effect Unit
+  , headline                      :: Maybe JSX
+  , paper                         :: Maybe Paper
   }
 
 data FormInputField
@@ -109,6 +114,7 @@ newPurchase props = make component
                   , errorMessage: foldMap formatErrorMessage props.errorMessage
                   , productSelection: Nothing
                   , paymentMethod: Nothing
+                  , showProductContents: false
                   }
   , render
   , didMount
@@ -132,7 +138,11 @@ didMount self = do
 
 render :: Self -> JSX
 render self =
-  DOM.h1_ [ title self.state.accountStatus ]
+  DOM.h1
+    { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
+    , children: [ title self.state.accountStatus self.props.headline ]
+    }
+  <> newPurchaseLinks self
   <> case self.state.accountStatus of
     LoggedInAccount user
       | isNothing $ toMaybe user.firstName ->
@@ -141,35 +151,30 @@ render self =
           , children: [ DOM.text user.email ]
           }
     _ -> mempty
-  <> DOM.p
-       { className: "vetrina--description-text"
-       , children: [ description self.state.accountStatus ]
-       }
+  <> case self.state.accountStatus of
+       NewAccount -> mempty
+       _ -> description self.state.accountStatus
   <> form self
   <> links self
+  <> productInformation self
 
-title :: AccountStatus -> JSX
-title accountStatus = case accountStatus of
-  NewAccount           -> DOM.text "Hej kära läsare!"
+title :: AccountStatus -> Maybe JSX -> JSX
+title accountStatus maybeHeadline = case accountStatus of
+  NewAccount           -> case maybeHeadline of
+                               Just headline -> headline
+                               Nothing -> DOM.text "Hej kära läsare!"
   ExistingAccount _    -> DOM.text "Du har redan ett KSF Media-konto"
   LoggedInAccount user -> DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
 
 description :: AccountStatus -> JSX
-description accountStatus = case accountStatus of
-  NewAccount        -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
-  ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
-  LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
-
-renderProducts :: Self -> JSX
-renderProducts self =
-  DOM.div
-    { className: "vetrina--product-selection-text"
-    , children: [ DOM.text "För att läsa artikeln måste du först välja en prenumeration:" ]
-    } <>
-  Products.product
-    { products: self.props.products
-    , onProductChange: \p -> self.setState _ { productSelection = Just p }
-    , selectedProduct: self.state.productSelection
+description accountStatus =
+  DOM.p
+    { className: "vetrina--description-text"
+    , children: Array.singleton $
+      case accountStatus of
+        NewAccount        -> mempty
+        ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+        LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
     }
 
 form :: Self -> JSX
@@ -183,7 +188,7 @@ form self = DOM.form $
       [ -- Don't show the product selection if we are asking the user to login
         if not isExistingAccount self.state.accountStatus
            || isNothing self.state.productSelection
-        then renderProducts self
+        then foldMap _.description self.state.productSelection
         else mempty
       , self.state.errorMessage
       , emailInput self self.state.accountStatus
@@ -232,50 +237,64 @@ form self = DOM.form $
     additionalFormRequirements NewAccount = acceptTermsCheckbox
     additionalFormRequirements _ = mempty
 
+
+-- | Only show this when initial screen with new account
+newPurchaseLinks :: Self -> JSX
+newPurchaseLinks self =
+  case self.state.accountStatus of
+    NewAccount -> loginLink self
+    _ -> mempty
+
 links :: Self -> JSX
 links self =
-  DOM.div
-    { className: "vetrina--links"
-    , children: case self.state.accountStatus of
-                  NewAccount        -> loginLink `cons` faqLink <> subscribePagesLink
-                  ExistingAccount _ -> resetPasswordLink <> subscribePagesLink
-                  LoggedInAccount _ -> faqLink <> subscribePagesLink
-    }
+  case self.state.accountStatus of
+    NewAccount        -> mempty -- Login link shown elsewhere
+    ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
+    LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
   where
-    resetPasswordLink :: Array JSX
-    resetPasswordLink =
-      mkLink "Glömt lösenordet?" "https://www.hbl.fi/losenord/" "Klicka här"
+    linksDiv linksJsx =
+      DOM.div
+        { className: "vetrina--links"
+        , children: linksJsx
+        }
 
-    faqLink :: Array JSX
-    faqLink =
-      mkLink "Vad är Premium?" "https://www.hbl.fi/fragor-och-svar/" "Frågor och svar"
+resetPasswordLink :: Array JSX
+resetPasswordLink =
+  mkLink "Glömt lösenordet?" "https://www.hbl.fi/losenord/" "Klicka här"
 
-    loginLink :: JSX
-    loginLink =
-      DOM.span_
-        [ DOM.text "Redan kund? "
+faqLink :: Array JSX
+faqLink =
+  mkLink "Vad är Premium?" "https://www.hbl.fi/fragor-och-svar/" "Frågor och svar"
+
+loginLink :: Self -> JSX
+loginLink self =
+  DOM.span
+    { className: "vetrina--login-link"
+    , children:
+        [ DOM.text "Redan prenumerant? "
         , DOM.span
             { className:"vetrina--login-callback"
-            , children: [ DOM.text "Logga in här" ]
+            , children: [ DOM.text "Logga in för att fortsätta läsa" ]
             , onClick: handler_ self.props.onLogin
             }
         ]
+    }
 
-    subscribePagesLink :: Array JSX
-    subscribePagesLink =
-      mkLink "" "https://prenumerera.ksfmedia.fi/" "Övriga prenumerationer och betalningssätt"
+subscribePagesLink :: Array JSX
+subscribePagesLink =
+  mkLink "" "https://prenumerera.ksfmedia.fi/" "Övriga prenumerationer och betalningssätt"
 
-    mkLink :: String -> String -> String -> Array JSX
-    mkLink linkDescription href linkText = Array.singleton $
-      DOM.span_
-        [ DOM.text $ linkDescription <> " "
-        , DOM.a
-            { className: "vetrina--link"
-            , href
-            , children: [ DOM.text linkText ]
-            , target: "_blank"
-            }
-        ]
+mkLink :: String -> String -> String -> Array JSX
+mkLink linkDescription href linkText = Array.singleton $
+  DOM.span_
+    [ DOM.text $ linkDescription <> " "
+    , DOM.a
+        { className: "vetrina--link"
+        , href
+        , children: [ DOM.text linkText ]
+        , target: "_blank"
+        }
+    ]
 
 formSubmitButton :: Self -> JSX
 formSubmitButton self =
@@ -287,9 +306,9 @@ formSubmitButton self =
     }
   where
     value = case self.state.accountStatus of
-      NewAccount        -> "Beställ med kreditkort"
+      NewAccount        -> "Bekräfta och gå vidare"
       ExistingAccount _ -> "Logga in"
-      LoggedInAccount _ -> "Beställ med kreditkort"
+      LoggedInAccount _ -> "Bekräfta och gå vidare"
     disabled =  case self.state.accountStatus of
       NewAccount        -> isFormInvalid $ newAccountFormValidations self
       ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations self
@@ -313,15 +332,20 @@ emailInput self accountStatus =
      , children:
          [ case accountStatus of
               NewAccount ->
-                DOM.label
-                  { className: "vetrina--email-address-label"
-                  , htmlFor: "emailAddress"
-                  , children: [ DOM.text "Fyll sen i din e-post:" ]
+                DOM.div
+                  { className: "vetrina--create-account"
+                  , children:
+                      [ DOM.span
+                          { className: "vetrina--create-account__headline"
+                          , children: [ DOM.text "Skapa konto" ]
+                          }
+                      , DOM.text "STEG 1 / 2 KONTOINFORMATION"
+                      ]
                   }
               _ -> mempty
          , InputField.inputField
              { type_: InputField.Email
-             , label: Nothing
+             , label: Just "E-postadress"
              , name: "emailAddress"
              , placeholder: "E-postadress"
              , onChange: onChange
@@ -354,12 +378,12 @@ emailInput self accountStatus =
 passwordInput :: Self -> JSX
 passwordInput self =
   DOM.div
-    { className: "vetrina--input-wrapper"
+    { className: "vetrina--input-wrapper vetrina--with-label"
     , children:
         [ InputField.inputField
             { type_: InputField.Password
             , placeholder: "Lösenord"
-            , label: Nothing
+            , label: Just "Lösenord"
             , name: "password"
             , value: self.state.existingAccountForm.password
             , onChange: \pw -> self.setState _ { existingAccountForm { password = pw } }
@@ -370,13 +394,19 @@ passwordInput self =
         ]
     }
 
+
 acceptTermsCheckbox :: JSX
 acceptTermsCheckbox =
   let id    = "accept-terms"
-      label = """Jag godkänner KSF Medias användarvillkor och
-                 bekräftar att jag har läst och förstått integritets-policyn"""
+      label =
+        DOM.span_ $
+          [ DOM.text "Jag godkänner KSF Medias " ]
+          <> mkLink "" "https://www.hbl.fi/bruksvillkor/#terms" "användarvillkor"
+          <> [ DOM.text " och bekräftar att jag har läst och förstått " ]
+          <> mkLink "" "https://www.hbl.fi/bruksvillkor/#privacy" "integritets-policyn"
+
   in DOM.div
-    { className: "vetrina--checbox-container"
+    { className: "vetrina--checkbox-container"
     , children:
         [ DOM.input
             { className: "vetrina--checkbox"
@@ -387,10 +417,67 @@ acceptTermsCheckbox =
         , DOM.label
             { className: "vetrina--checkbox-label"
             , htmlFor: id
-            , children: [ DOM.text label ]
+            , children: [ label ]
             }
         ]
     }
+
+productInformation :: Self -> JSX
+productInformation self =
+  DOM.div
+    { className: "vetrina--product-container"
+    , children: Array.singleton $
+        DOM.div
+          { className: "vetrina--product-information"
+          , children:
+              [ DOM.div
+                  { className: "vetrina--product-information__headline"
+                  , onClick: handler_ $ self.setState _ { showProductContents = not self.state.showProductContents }
+                  , children:
+                      [ DOM.span
+                         { className: "vetrina--product-information__name"
+                         , children: [ DOM.text $ foldMap _.name self.state.productSelection ]
+                         }
+                     , DOM.span
+                         { className: "vetrina--product-information__description"
+                         , children:
+                             [ DOM.text $ foldMap (formatEur <<< _.priceCents) self.state.productSelection
+                             , DOM.text "€/månad" -- TODO: Always maybe not month
+                             ]
+                         }
+                     , DOM.span
+                         { className: "vetrina--product-information__arrow-"
+                                      <> if self.state.showProductContents
+                                         then "down"
+                                         else "up"
+                         }
+                     ]
+                  }
+              ] <> if self.state.showProductContents
+                   then (foldMap (map renderProductContents) $ _.contents <$> self.state.productSelection)
+                   else mempty
+          }
+    }
+  where
+    renderProductContents :: ProductContent -> JSX
+    renderProductContents productContent =
+      DOM.span
+        { className: "vetrina--product-information__contents"
+        , children:
+            [ DOM.strong
+                { className: "vetrina--product-information__contents-name"
+                , children: [ DOM.text productContent.title ]
+                }
+            , DOM.span
+                { className: "vetrina--product-information__contents-description"
+                , children: [ DOM.text productContent.description ]
+                }
+            , DOM.span
+                { className: "vetrina--product-information__checkmark"
+                , children: []
+                }
+            ]
+        }
 
 newAccountFormValidations :: Self -> Form.ValidatedForm FormInputField NewAccountForm
 newAccountFormValidations self =

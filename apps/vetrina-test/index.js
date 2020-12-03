@@ -8,7 +8,11 @@ React.createClass = createReactClass;
 
 function main() {
   const myComponent = (
-	  <Main.jsComponent products={[hblPremium, hbl365]} accessEntitlements={["hbl-365", "articles-365"]}/>
+      <Main.jsComponent
+    products={[hblPremium]}
+    accessEntitlements={["hbl-365", "articles-365"]}
+    headline={<div>Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
+    paper="HBL"/>
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));
@@ -18,12 +22,27 @@ var hblPremium = {
   id: "HBL WEBB",
   description:
     <div>
-      För 6,90€/månad får du tillgång till alla artiklar på hbl.fi <br />
-      Du kan avsluta när du vill.
+      Kvalitetsjournalistik när, var och hur du vill <br />
+      Läs Hufvudstadsbladet för 1€ i en månad, därefter 6,90€ / månad tills vidare. Du kan avsluta när du vill.
     </div>,
   priceCents: 690,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
-  name: "HBL PREMIUM"
+    name: "Hufvudstadsbladet Premium",
+    contents: [
+	{
+	    title: "Premium",
+	    description: "Alla artiklar på hbl.fi"
+	},
+	{
+	    title: "Nyhetsappen HBL Nyheter",
+	    description: "Nyheter på mobilen och surfplattan, pushnotiser"
+	},
+	{
+	    title: "Digitalt månadsbrev",
+	    description: "Nyheter & förmåner"
+	}
+    ],
+  campaignNo: 4052 // NOTE! This id exists only in staging!
 }
 
 var hbl365 = {
