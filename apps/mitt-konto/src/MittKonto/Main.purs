@@ -118,8 +118,8 @@ render self@{ state, setState } logger =
       classy DOM.div "mitt-konto--container clearfix"
         [ foldMap loadingIndicator state.loading
         , case state.loggedInUser of
-            Just user -> userView self user
-            Nothing   -> loginView self
+            Just user -> userView self logger user
+            Nothing   -> loginView self logger
         ]
    paymentListRoute =
      element
@@ -131,7 +131,7 @@ render self@{ state, setState } logger =
                  [ foldMap loadingIndicator state.loading
                  , case state.loggedInUser of
                      Just user -> paymentView self user
-                     Nothing   -> loginView self
+                     Nothing   -> loginView self logger
                  ]
          }
    noMatchRoute =
