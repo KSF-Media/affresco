@@ -74,7 +74,7 @@ render self@{ state, setState } logger searchView isPersonating =
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ Router.switch { children: [ paymentListRoute, search, mittKontoRoute, noMatchRoute ] } ]
+            [ Router.switch { children: [ paymentListRoute, search, mittKontoRoute, updateCreditCard, noMatchRoute ] } ]
         ]
     , Views.footerView
     ]
@@ -104,6 +104,26 @@ render self@{ state, setState } logger searchView isPersonating =
                    Nothing   -> Views.loginView self logger
                ]
        }
+   updateCreditCard =
+      element
+        Router.route
+          { exact: true
+          , path: toNullable $ Just "/kortt/uppdatera"
+          , render: \_ -> Wrappers.viewWrapper
+              { content: creditCardUpdateComponent
+              , wrapperState: state.wrapperProgress
+              , onTryAgain: pure unit
+              }
+          }
+      where
+        creditCardUpdateComponent = CreditCard.update
+          { creditCards: fromMaybe mempty $ _.creditCards <$> state.loggedInUser
+          , logger: state.logger
+          , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+          , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+          , onSuccess: self.setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
+          , onError: self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+          }
    search =
      Router.route
        { exact: true
