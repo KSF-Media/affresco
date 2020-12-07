@@ -16,6 +16,7 @@ import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import React.Basic.Router as Router
 
 type Self = React.Self Props State
 
@@ -46,7 +47,7 @@ initialState = { chosenCard: Nothing
                }
 
 render :: Self -> JSX
-render self@{ setState, state: { chosenCard, validationError }, props: { creditCards, title, onSubmit, onCancel } } = 
+render self@{ setState, state: { chosenCard, validationError }, props: { creditCards, title, onSubmit, onCancel } } =
   DOM.div_ [ header, creditCardsForm ]
   where
     header :: JSX
@@ -57,7 +58,13 @@ render self@{ setState, state: { chosenCard, validationError }, props: { creditC
           }
       , DOM.div
           { className: "col-1 flex credit-card-choice--close-icon"
-          , children: [ DOM.div { className: "close-icon" } ]
+          , children: [ element
+                          Router.link
+                            { to: { pathname: "/", state: {} }
+                            , children: [ ]
+                            , className: "close-icon"
+                            }
+                      ]
           , onClick: handler_ onCancel
           }
       ]
