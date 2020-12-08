@@ -20,6 +20,7 @@ import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
+import React.Basic.Router as Router
 
 type Props =
   { creditCards :: Array CreditCard
@@ -42,6 +43,7 @@ type SetState = (State -> State) -> Effect Unit
 data UpdateState
   = ChooseCreditCard
   | RegisterCreditCard PaymentTerminalUrl
+  | Cancel
 
 update :: Props -> JSX
 update = make component { initialState, render, didMount }
@@ -72,18 +74,26 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
     { className: "clearfix credit-card-update--container"
     , children:
         [ case updateState of
-            ChooseCreditCard ->
-              Choice.choice
-                { creditCards: creditCards
-                , title: title
-                , onSubmit: Aff.launchAff_ <<< registerCreditCard setState self.props self.state
-                , onCancel: onCancel
-                }
-            RegisterCreditCard url ->
-              Register.register
-                { title: title
-                , terminalUrl: url
-                }
+            ChooseCreditCard       -> Choice.choice
+                                        { creditCards: creditCards
+                                        , title: title
+                                        , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard
+                                        , onCancel: onCancel
+                                        }
+
+            RegisterCreditCard url -> Register.register
+                                        { title: title
+                                        , terminalUrl: url
+                                        }
+                                      
+            Cancel                 -> element 
+                                        Router.redirect
+                                          { to: { pathname: "/"
+                                                , state: {}
+                                                }
+                                          , from: "/kreditkortt/uppdatera"
+                                          , push: true
+                                          }
         ]
     }
   where
@@ -114,16 +124,16 @@ startRegisterPoller :: SetState -> Props -> State -> CreditCard -> CreditCardReg
 startRegisterPoller setState props state oldCreditCard creditCardRegister = do
   newPoller <- Aff.forkAff do
     killRegisterPoller state
-    newPoller <- Aff.forkAff $ pollRegister props oldCreditCard (Right creditCardRegister)
+    newPoller <- Aff.forkAff $ pollRegister setState props state oldCreditCard (Right creditCardRegister)
     Aff.joinFiber newPoller
   liftEffect $ setState _ { poller = newPoller }
 
-pollRegister :: Props -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-pollRegister props@{ logger, onError, onSuccess, onCancel } oldCreditCard (Right register) = do
+pollRegister :: SetState -> Props -> State -> CreditCard -> Either String CreditCardRegister -> Aff Unit
+pollRegister setState props@{ logger, onError, onSuccess, onCancel } state oldCreditCard (Right register) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case register.status.state of
     CreditCardRegisterStarted ->
-      pollRegister props oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+      pollRegister setState props state oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterCompleted -> do
       result <- User.updateCreditCardSubscriptions oldCreditCard.id register.creditCardId
       liftEffect $ case result of
@@ -135,8 +145,11 @@ pollRegister props@{ logger, onError, onSuccess, onCancel } oldCreditCard (Right
           onError
         Right _  -> onSuccess
     CreditCardRegisterFailed _ -> liftEffect onError
-    CreditCardRegisterCanceled -> liftEffect onCancel
-    CreditCardRegisterCreated -> pollRegister props oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+    CreditCardRegisterCanceled -> liftEffect $ do 
+      onCancel 
+      setState \_ -> state { updateState = Cancel }
+
+    CreditCardRegisterCreated -> pollRegister setState props state oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
       onError
