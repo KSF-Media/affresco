@@ -39,6 +39,7 @@ import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
+import Vetrina.Purchase.InsufficientAccount as Purchase.InsufficientAccount
 import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 
@@ -112,6 +113,7 @@ data PurchaseState
 data OrderFailure
   = EmailInUse String
   | SubscriptionExists
+  | InsufficientAccount
   | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
@@ -267,6 +269,11 @@ render self = vetrinaContainer self $
         SubscriptionExists ->
           Purchase.SubscriptionExists.subscriptionExists
             { onClose: self.props.onClose }
+        InsufficientAccount ->
+          Purchase.InsufficientAccount.insufficientAccount
+           { user: self.state.user
+           , onRetry: onRetry
+           }
         AuthenticationError ->
           Purchase.NewPurchase.newPurchase
             { accountStatus: self.state.accountStatus
@@ -402,6 +409,7 @@ mkPurchase self@{ state: { logger } } validForm affUser =
                                                         }
             SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
             AuthenticationError           -> self.state { purchaseState = PurchaseFailed AuthenticationError }
+            InsufficientAccount           -> self.state { purchaseState = PurchaseFailed InsufficientAccount }
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
       liftEffect $ self.setState \_ -> errState
