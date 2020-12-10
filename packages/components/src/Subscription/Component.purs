@@ -126,6 +126,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              <> deliveryAddress
              <> foldMap pendingAddressChanges self.state.pendingAddressChanges
              <> foldMap billingDateTerm billingPeriodEndDate
+             <> foldMap subscriptionEndTerm subscriptionEndDate
              <> paymentMethod
          })
       (if package.digitalOnly
@@ -155,6 +156,12 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     billingDateTerm :: String -> Array DescriptionList.Definition
     billingDateTerm date = Array.singleton $
       { term: "Faktureringsperioden upphör:"
+      , description: [ DOM.text date ]
+      }
+
+    subscriptionEndTerm :: String -> Array DescriptionList.Definition
+    subscriptionEndTerm date = Array.singleton $
+      { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text date ]
       }
 
@@ -471,6 +478,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     billingPeriodEndDate =
           map trim $ formatDate =<< toMaybe props.subscription.dates.end
+
+    subscriptionEndDate =
+          map trim $ formatDate =<< toMaybe props.subscription.dates.suspend
 
     -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
     -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
