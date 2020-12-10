@@ -112,12 +112,13 @@ render self@{ state, setState } logger searchView isPersonating =
           , render: \_ -> Wrappers.viewWrapper
               { content: creditCardUpdateComponent
               , wrapperState: state.wrapperProgress
+              , closeType: Wrappers.Countdown 
               , onTryAgain: pure unit
               }
           }
       where
         creditCardUpdateComponent = CreditCard.update
-          { creditCards: fromMaybe mempty $ _.creditCards <$> state.loggedInUser
+          { creditCards: fromMaybe mempty $ state.loggedInUser <#> _.creditCards
           , logger: state.logger
           , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
           , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
