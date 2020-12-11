@@ -15,9 +15,10 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..), contains)
 import Data.String as String
+import Data.Time.Duration (Milliseconds(..))
 import Data.Validation.Semigroup (unV)
 import Effect (Effect)
-import Effect.Aff (Aff, error)
+import Effect.Aff (Aff, error, delay)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
@@ -198,6 +199,22 @@ failOnEmailMismatch self email
       liftEffect $ self.setState _ { errors { login = Just LoginEmailMismatchError } }
       throwError $ error "Emails don't match"
 
+loginWithRetry :: (Aff (Either UserError User)) -> (User -> Aff Unit) -> (UserError -> Aff Unit) -> (Either UserError User -> Aff Unit) -> Aff Unit
+loginWithRetry action handleSuccess handleError handleFinish = do
+  result <- withRetry 0
+  case result of
+    Right user -> handleSuccess user
+    Left err -> handleError err
+  handleFinish result
+  where
+    withRetry retry = do
+      user <- action
+      case user of
+        Left ServiceUnavailable | retry < 1 -> do
+          delay $ Milliseconds 1000.0
+          withRetry $ retry+1
+        _ -> pure user
+
 onLogin :: Self -> Form.ValidatedForm LoginField LoginForm -> Effect Unit
 onLogin self@{ props, state } = unV
   (\errors -> do
@@ -205,31 +222,34 @@ onLogin self@{ props, state } = unV
         { formEmail    = state.formEmail    <|> Just ""
         , formPassword = state.formPassword <|> Just ""
         })
-  logUserIn
+  (\validForm -> props.launchAff_
+                   $ loginWithRetry (logUserIn validForm) handleSuccess handleError handleFinish)
   where
     logUserIn validForm
       | Just validUsername <- validForm.username
       , Just validPassword <- validForm.password
       , not String.null $ validUsername
       , not String.null $ validPassword
-      = props.launchAff_ do
-        user <- User.loginTraditional
-            { username: validUsername
-            , password: validPassword
-            , mergeToken: toNullable $ map _.token state.merge
-            }
-        case user of
-          Right user' -> liftEffect do
-            -- removing merge token from state in case of success
-            self.setState _ { merge = Nothing }
-            Tracking.login (Just user'.cusno) "email login" "success"
-          Left err -> liftEffect do
-            self.setState _ { errors { login = Just err } }
-            Tracking.login Nothing  "email login" "error"
-        -- This call needs to be last, as it will unmount the login component.
-        -- (We cannot set state of an unmounted component)
-        liftEffect $ props.onUserFetch user
-      | otherwise = Log.error "Strange, had validated form with invalid input values"
+      = User.loginTraditional
+          { username: validUsername
+          , password: validPassword
+          , mergeToken: toNullable $ map _.token state.merge
+          }
+      | otherwise = do
+          Log.error "Strange, had validated form with invalid input values"
+          pure $ Left SomethingWentWrong
+    handleSuccess user = liftEffect do
+      -- removing merge token from state in case of success
+      self.setState _ { merge = Nothing }
+      Tracking.login (Just user.cusno) "email login" "success"
+    handleFinish user =
+      -- This call needs to be last, as it will unmount the login component.
+      -- (We cannot set state of an unmounted component)
+      liftEffect $ props.onUserFetch user
+
+    handleError err = liftEffect do
+      self.setState _ { errors { login = Just err } }
+      Tracking.login Nothing  "email login" "error"
 
 loginFormValidations :: Self -> Form.ValidatedForm LoginField LoginForm
 loginFormValidations self =
@@ -432,12 +452,13 @@ googleLogin self =
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = Just email }
+      loginWithRetry (logUserIn email accessToken) handleSuccess handleError handleFinish
 
-      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+    logUserIn email accessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+    handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "google login" "success"
+    handleError err = liftEffect $ Tracking.login Nothing "google login" "error"
+    handleFinish user = do
       finalizeSomeAuth self user
-      case user of
-        Left err -> liftEffect $ Tracking.login Nothing "google login" "error"
-        Right user' -> liftEffect $ Tracking.login (Just user'.cusno) "google login" "success"
       liftEffect $ self.props.onUserFetch user
 
     -- | Handles Google login errors. The matched cases are:
@@ -503,11 +524,13 @@ facebookLogin self =
       -- setting the email in the state to eventually send it from the merge view form
       liftEffect $ self.setState _ { formEmail = Just email }
       let (FB.AccessToken fbAccessToken) = accessToken
-      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
-      case user of
-        Left err -> liftEffect $ Tracking.login Nothing "facebook login" "error: could not fetch user"
-        Right user' -> liftEffect $ Tracking.login (Just user'.cusno) "facebook login" "success"
-      liftEffect $ self.props.onUserFetch user
+
+      loginWithRetry (logUserIn email fbAccessToken) handleSuccess handleError handleFinish
+
+    logUserIn email fbAccessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+    handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "facebook login" "success"
+    handleError err = liftEffect $ Tracking.login Nothing "facebook login" "error: could not fetch user"
+    handleFinish user = do
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
@@ -520,6 +543,7 @@ finalizeSomeAuth self = case _ of
     self.props.onMerge
     self.setState _ { merge = Just newMergeInfo }
   Left SomethingWentWrong -> liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
+  Left ServiceUnavailable -> liftEffect $ self.setState _ { errors { login = Just ServiceUnavailable } }
   Left _ -> throwError $ error "An unexpected error occurred during SoMe login"
 
 someLoginButton ::
