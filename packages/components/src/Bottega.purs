@@ -3,11 +3,14 @@ module Bottega where
 import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)
 import KSF.Api (UUID, UserAuth, oauthToken)
+import KSF.Api.Error (ServerError)
 import KSF.Api.Package (Package)
 import OpenApiClient (Api, callApi)
 
@@ -24,7 +27,7 @@ type ApiOrder =
 type ApiOrderStatus =
   { state :: String
   , time :: String
-  , failReason :: Nullable String 
+  , failReason :: Nullable String
   }
 
 type ApiCreditCard =
@@ -32,7 +35,7 @@ type ApiCreditCard =
   , user :: UUID
   , paymentMethodId :: PaymentMethodId
   , maskedPan :: String
-  , expiryDate :: String 
+  , expiryDate :: String
   }
 
 type ApiCreditCardRegister =
@@ -40,15 +43,32 @@ type ApiCreditCardRegister =
    , user :: UUID
    , creditCardId :: CreditCardId
    , paymentTerminalUrl :: Nullable PaymentTerminalUrl
-   , status :: ApiCreditCardRegisterStatus 
+   , status :: ApiCreditCardRegisterStatus
    }
 
 type ApiCreditCardRegisterStatus =
   { state :: String
   , time :: String
-  , failReason :: Nullable String 
+  , failReason :: Nullable String
   }
 
+type InsufficientAccount = ServerError
+  ( missing_address_details ::
+    { message :: String }
+  )
+
+-- TODO: Add more errors!
+data BottegaError
+  = BottegaInsufficientAccount -- ^ Cannot create order due to missing account data
+  | BottegaUnexpectedError String
+
+derive instance genericBottegaError :: Generic BottegaError _
+instance showBottegaError :: Show BottegaError where
+  show = genericShow
+
+bottegaErrorMessage :: BottegaError -> String
+bottegaErrorMessage (BottegaUnexpectedError errMsg) = errMsg
+bottegaErrorMessage e = show e
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder@{ campaignNo } =
@@ -83,7 +103,7 @@ getPackages :: Aff (Array Package)
 getPackages = callApi packagesApi "packageGet" [] {}
 
 readCreditCard :: ApiCreditCard -> Aff CreditCard
-readCreditCard creditCardObj = pure $ 
+readCreditCard creditCardObj = pure $
   { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: creditCardObj.paymentMethodId, maskedPan: creditCardObj.maskedPan, expiryDate: creditCardObj.expiryDate }
 
 readCreditCardRegister :: ApiCreditCardRegister -> Aff CreditCardRegister
@@ -127,7 +147,7 @@ getCreditCardRegister { userId, authToken } creditCardId creditCardRegisterNumbe
     authUser = unsafeToForeign userId
 
 updateCreditCardSubscriptions :: UserAuth -> CreditCardId -> CreditCardId -> Aff Unit
-updateCreditCardSubscriptions { userId, authToken } oldCreditCardId newCreditCardId = 
+updateCreditCardSubscriptions { userId, authToken } oldCreditCardId newCreditCardId =
   callApi paymentMethodsApi "paymentMethodCreditCardIdSubscriptionPut" [ unsafeToForeign oldCreditCardId, unsafeToForeign newCreditCardId ] { authorization, authUser }
   where
     authorization = oauthToken authToken

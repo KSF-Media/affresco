@@ -2,6 +2,7 @@ module KSF.CreditCard.Update where
 
 import Prelude
 
+import Bottega (BottegaError, bottegaErrorMessage)
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterState(..))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -31,7 +32,7 @@ type Props =
 
 type Self = React.Self Props State
 
-type State = 
+type State =
   { updateState      :: UpdateState
   , poller           :: Aff.Fiber Unit
   }
@@ -66,22 +67,23 @@ didMount self@{ state, setState, props: { creditCards, onError, logger } } =
       _        -> pure unit
 
 render :: Self -> JSX
-render self@{ setState, state: { updateState }, props: { creditCards, onCancel } } = 
+render self@{ setState, state: { updateState }, props: { creditCards, onCancel } } =
   DOM.div
     { className: "clearfix credit-card-update--container"
     , children:
         [ case updateState of
-            ChooseCreditCard       -> Choice.choice
-                                        { creditCards: creditCards
-                                        , title: title
-                                        , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard
-                                        , onCancel: onCancel
-                                        }
-
-            RegisterCreditCard url -> Register.register
-                                        { title: title
-                                        , terminalUrl: url
-                                        }
+            ChooseCreditCard ->
+              Choice.choice
+                { creditCards: creditCards
+                , title: title
+                , onSubmit: Aff.launchAff_ <<< registerCreditCard setState self.props self.state
+                , onCancel: onCancel
+                }
+            RegisterCreditCard url ->
+              Register.register
+                { title: title
+                , terminalUrl: url
+                }
         ]
     }
   where
@@ -96,13 +98,13 @@ registerCreditCard setState props@{ logger, onError } state oldCreditCard = do
       let newState = state { updateState = RegisterCreditCard url }
       liftEffect $ setState \_ -> newState
       void $ Aff.forkAff $ startRegisterPoller setState props newState oldCreditCard register
-    Right register@{ terminalUrl: Nothing } -> 
-      liftEffect $ do 
+    Right register@{ terminalUrl: Nothing } ->
+      liftEffect $ do
         logger.log "No terminal url received" Sentry.Error
         onError
     Left err ->
       liftEffect $ do
-        logger.log ("Got the following error when registering credit card: " <> err) Sentry.Error
+        logger.log ("Got the following error when registering credit card: " <> bottegaErrorMessage err) Sentry.Error
         onError
 
 killRegisterPoller :: State -> Aff Unit
@@ -116,7 +118,7 @@ startRegisterPoller setState props state oldCreditCard creditCardRegister = do
     Aff.joinFiber newPoller
   liftEffect $ setState _ { poller = newPoller }
 
-pollRegister :: Props -> CreditCard -> Either String CreditCardRegister -> Aff Unit
+pollRegister :: Props -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
 pollRegister props@{ logger, onError, onSuccess, onCancel } oldCreditCard (Right register) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case register.status.state of
@@ -126,7 +128,10 @@ pollRegister props@{ logger, onError, onSuccess, onCancel } oldCreditCard (Right
       result <- User.updateCreditCardSubscriptions oldCreditCard.id register.creditCardId
       liftEffect $ case result of
         Left err -> do
-          logger.log ("Server encountered the following error while trying to update credit card's subscriptions: " <> err) Sentry.Error
+          let errMsg = bottegaErrorMessage err
+          logger.log
+            ("Server encountered the following error while trying to update credit card's subscriptions: " <> errMsg)
+            Sentry.Error
           onError
         Right _  -> onSuccess
     CreditCardRegisterFailed _ -> liftEffect onError
@@ -135,6 +140,6 @@ pollRegister props@{ logger, onError, onSuccess, onCancel } oldCreditCard (Right
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
       onError
-pollRegister props state (Left err) = liftEffect $ do 
-  props.logger.log ("Could not fetch register status: " <> err) Sentry.Error
+pollRegister props state (Left err) = liftEffect $ do
+  props.logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
   props.onError

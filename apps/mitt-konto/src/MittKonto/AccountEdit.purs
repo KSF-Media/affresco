@@ -2,6 +2,7 @@ module MittKonto.AccountEdit where
 
 import Prelude
 
+import Bottega (bottegaErrorMessage)
 import Bottega.Models (CreditCard)
 import Data.Array (null)
 import Data.Either (Either(..))
@@ -58,7 +59,7 @@ didMount self =
     Aff.launchAff_ do
       creditCards <- User.getCreditCards
       case creditCards of
-        Left err    -> liftEffect $ self.props.logger.log ("Error while fetching credit cards: " <> err) Sentry.Error
+        Left err    -> liftEffect $ self.props.logger.log ("Error while fetching credit cards: " <> bottegaErrorMessage err) Sentry.Error
         Right []    -> pure unit
         Right cards -> liftEffect do
           self.props.setCreditCards cards
