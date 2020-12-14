@@ -2,6 +2,7 @@ module KSF.Vetrina where
 
 import Prelude
 
+import Bottega (BottegaError (..))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
@@ -115,6 +116,7 @@ data OrderFailure
   | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
+  | InsufficientAccount
   | ServerError
   | UnexpectedError String
 
@@ -199,7 +201,7 @@ startOrderPoller setState state order = do
         Aff.joinFiber newPoller
   setState _ { poller = newPoller }
 
-pollOrder :: SetState -> State -> Either String Order -> Aff Unit
+pollOrder :: SetState -> State -> Either BottegaError Order -> Aff Unit
 pollOrder setState state@{ logger } (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case order.status.state of
@@ -237,8 +239,11 @@ pollOrder setState state@{ logger } (Right order) = do
     OrderUnknownState -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
       setState _ { purchaseState = PurchaseFailed ServerError }
-pollOrder setState { logger } (Left err) = liftEffect do
-  logger.error $ Error.orderError $ "Failed to get order from server: " <> err
+pollOrder setState { logger } (Left bottegaErr) = liftEffect do
+  let errMessage = case bottegaErr of
+        BottegaUnexpectedError e   -> e
+        BottegaInsufficientAccount -> "InsufficientAccount"
+  logger.error $ Error.orderError $ "Failed to get order from server: " <> errMessage
   setState _ { purchaseState = PurchaseFailed ServerError }
 
 render :: Self -> JSX
@@ -474,14 +479,20 @@ createOrder user product = do
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of
     Right order -> Right order
-    Left err    -> Left $ UnexpectedError err
+    Left err    -> Left $ toOrderFailure err
 
 payOrder :: Order -> PaymentMethod -> Aff (Either OrderFailure PaymentTerminalUrl)
 payOrder order paymentMethod =
   User.payOrder order.number paymentMethod >>= \eitherUrl ->
     pure $ case eitherUrl of
       Right url -> Right url
-      Left err  -> Left $ UnexpectedError err
+      Left err  -> Left $ toOrderFailure err
+
+toOrderFailure :: BottegaError -> OrderFailure
+toOrderFailure bottegaErr =
+  case bottegaErr of
+    BottegaInsufficientAccount    -> InsufficientAccount
+    BottegaUnexpectedError errMsg -> UnexpectedError errMsg
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =
