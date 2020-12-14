@@ -3,11 +3,9 @@ module Persona where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Except (runExcept)
 import Data.Array (catMaybes)
 import Data.Date (Date)
 import Data.DateTime (DateTime)
-import Data.Either (hush)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
@@ -19,17 +17,15 @@ import Data.String (toLower)
 import Data.String.Read (class Read, read)
 import Data.Traversable (sequence)
 import Effect.Aff (Aff)
-import Effect.Exception (Error)
 import Foreign (unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
-import Foreign.Index (readProp) as Foreign
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token(..), UUID, invalidateCacheHeader)
+import KSF.Api.Error (ServerError)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
 import KSF.Api.Subscription as Subscription
 import OpenApiClient (Api, callApi)
 import Simple.JSON (class ReadForeign, class WriteForeign)
-import Simple.JSON as JSON
 
 foreign import loginApi :: Api
 foreign import usersApi :: Api
@@ -232,13 +228,7 @@ data UserUpdate
   = UpdateName { firstName :: String, lastName :: String }
   | UpdateAddress { countryCode :: String, zipCode :: String, streetAddress :: String }
 
-type PersonaError extraFields =
-  { http_status :: String
-  , http_code :: Int
-  | extraFields
-  }
-
-type EmailAddressInUse = PersonaError
+type EmailAddressInUse = ServerError
   ( email_address_in_use ::
     { existing_provider :: Provider
     , merge_token :: MergeToken
@@ -246,15 +236,15 @@ type EmailAddressInUse = PersonaError
     }
   )
 
-type TokenInvalid = PersonaError
+type TokenInvalid = ServerError
   ( login_token_expired ::
     { description :: String }
   )
 
-type InvalidCredentials = PersonaError
+type InvalidCredentials = ServerError
   ( invalid_credentials :: { description :: String } )
 
-type InvalidFormFields = PersonaError
+type InvalidFormFields = ServerError
   ( invalid_form_fields ::
        { description :: String
        , errors :: Object (Array String)
@@ -273,7 +263,7 @@ derive instance genericInvalidPauseDateError :: Generic InvalidPauseDateError _
 instance readInvalidPauseDateError :: ReadForeign InvalidPauseDateError where
   readImpl a = genericDecodeEnum defaultGenericEnumOptions a <|> pure PauseInvalidUnexpected
 
-type InvalidPauseDates = PersonaError
+type InvalidPauseDates = ServerError
   ( invalid_pause_dates ::
     { message :: InvalidPauseDateError }
   )
@@ -293,7 +283,7 @@ instance readInvalidDateInput :: ReadForeign InvalidDateInput where
 instance showSubscriptionError :: Show InvalidDateInput where
   show = genericShow
 
-type InvalidDates = PersonaError
+type InvalidDates = ServerError
   ( invalid_param ::
     { message :: InvalidDateInput }
   )
@@ -307,20 +297,8 @@ pauseDateErrorToInvalidDateError = case _ of
   PauseInvalidTooRecent   -> InvalidTooRecent
   PauseInvalidUnexpected  -> InvalidUnexpected
 
-type EmailAddressInUseRegistration = PersonaError
+type EmailAddressInUseRegistration = ServerError
   ( email_address_in_use_registration :: { description :: String } )
-
-errorData
-  :: forall fields
-   . ReadForeign (PersonaError fields)
-  => Error
-  -> Maybe (PersonaError fields)
-errorData =
-  hush
-    <<< (JSON.read =<< _)
-    <<< runExcept
-          <<< Foreign.readProp "data"
-          <<< unsafeToForeign
 
 data Provider
   = Facebook
