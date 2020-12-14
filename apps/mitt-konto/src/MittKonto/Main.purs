@@ -20,6 +20,9 @@ import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.AccountEdit as AccountEdit
 import MittKonto.IconAction as IconAction
+import MittKonto.Main.LoginView as LoginView
+import MittKonto.Main.Helpers as Helpers
+import MittKonto.Main.Types as Types
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
@@ -47,14 +50,14 @@ foreign import sentryDsn_ :: Effect String
 type State =
   { paper :: Paper
   , loggedInUser :: Maybe User
-  , loading :: Maybe Loading
+  , loading :: Maybe Types.Loading
   , showWelcome :: Boolean
   , alert :: Maybe Alert
   , payments :: Maybe (Array SubscriptionPayments)
   , creditCards :: Array CreditCard
   }
 
-setLoading :: Maybe Loading -> State -> State
+setLoading :: Maybe Types.Loading -> State -> State
 setLoading loading = _ { loading = loading }
 
 setLoggedInUser :: Maybe User -> State -> State
@@ -65,8 +68,6 @@ setAlert alert = _ { alert = alert }
 
 setPayments :: Maybe (Array SubscriptionPayments) -> State -> State
 setPayments payments = _ { payments = payments }
-
-data Loading = Loading
 
 type Self =
   { state :: State
@@ -98,10 +99,10 @@ render :: Self -> Sentry.Logger -> JSX
 render self@{ state, setState } logger =
   React.fragment
     [ navbarView self logger
-    , classy DOM.div "mt4 mb4"
+    , Helpers.classy DOM.div "mt4 mb4"
         [ foldMap alertView state.alert ]
-    , classy DOM.div "mt4 mb4 clearfix"
-        [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
+    , Helpers.classy DOM.div "mt4 mb4 clearfix"
+        [ Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
             [ element Router.switch { children: [ paymentListRoute, mittKontoRoute, noMatchRoute ] } ]
         ]
     , footerView
@@ -115,11 +116,11 @@ render self@{ state, setState } logger =
          , render: const mittKontoView
          }
    mittKontoView =
-      classy DOM.div "mitt-konto--container clearfix"
+      Helpers.classy DOM.div "mitt-konto--container clearfix"
         [ foldMap loadingIndicator state.loading
         , case state.loggedInUser of
             Just user -> userView self logger user
-            Nothing   -> loginView self logger
+            Nothing   -> LoginView.loginView self logger
         ]
    paymentListRoute =
      element
@@ -127,11 +128,11 @@ render self@{ state, setState } logger =
          { exact: true
          , path: toNullable $ Just "/fakturor"
          , render: const
-             $ classy DOM.div "mitt-konto--container clearfix"
+             $ Helpers.classy DOM.div "mitt-konto--container clearfix"
                  [ foldMap loadingIndicator state.loading
                  , case state.loggedInUser of
                      Just user -> paymentView self user
-                     Nothing   -> loginView self logger
+                     Nothing   -> LoginView.loginView self logger
                  ]
          }
    noMatchRoute =
@@ -143,8 +144,8 @@ render self@{ state, setState } logger =
           , render: const mittKontoView
           }
 
-loadingIndicator :: Loading -> JSX
-loadingIndicator Loading =
+loadingIndicator :: Types.Loading -> JSX
+loadingIndicator Types.Loading =
   DOM.div
       { className: "mitt-konto--loading flex items-center"
       , children:
@@ -155,38 +156,6 @@ loadingIndicator Loading =
           ]
       }
 
--- | Allows to run the asynchronous action while showing the loading indicator
---   and handling the result.
-withSpinner :: forall a. (Maybe Loading -> Effect Unit) -> Aff a -> Aff a
-withSpinner setLoadingState action = do
-   let timeoutDelay = Aff.Milliseconds $ 30.0 * 1000.0
-       flickerDelay = Aff.Milliseconds $ 200.0
-   -- The "loading" thread turns the spinner on (when started) and off (when killed).
-   -- Prevent the spinner from flickering.
-   loadingFiber <-
-     Aff.forkAff $ (do
-       -- delay turning on the spinner, in case if the action is "instantanious"
-       Aff.delay flickerDelay
-       -- invincibly sleep for a bit more (would still wait if killed here)
-       Aff.invincible $ do
-         -- turn the spinner on
-         liftEffect $ setLoadingState $ Just Loading
-         Aff.delay flickerDelay
-       -- in the end we sleep indefinetely. When killed, remove the spinner
-       Aff.never) `Aff.cancelWith` Aff.effectCanceler (setLoadingState Nothing)
-   -- The "action" thread runs the asynchronous task
-   actionFiber <- Aff.forkAff action
-   -- The "timeout" thread would kill the "action" thread after the delay.
-   timeoutFiber <- Aff.forkAff do
-     Aff.delay timeoutDelay
-     Aff.killFiber (error "Timeout reached") actionFiber
-     Aff.killFiber (error "Timeout reached") loadingFiber
-   Aff.joinFiber actionFiber # Aff.finally do
-     -- finally in the end, when the action has been completed
-     -- we kill all other threads and switch the loading off
-     Aff.killFiber (error "Action is done") timeoutFiber
-     Aff.killFiber (error "Action is done") loadingFiber
-
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: Self -> Sentry.Logger -> JSX
 navbarView self@{ state, setState } logger =
@@ -194,7 +163,7 @@ navbarView self@{ state, setState } logger =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
+          Aff.launchAff_ $ Helpers.withSpinner (setState <<< setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
               logger.setUser Nothing
@@ -203,7 +172,7 @@ navbarView self@{ state, setState } logger =
 
 alertView :: Alert -> JSX
 alertView alert =
-  classy DOM.div "col-4 mx-auto center"
+  Helpers.classy DOM.div "col-4 mx-auto center"
     [ Alert.alert alert ]
 
 footerView :: React.JSX
@@ -212,12 +181,12 @@ footerView = Footer.footer {}
 -- | User info page with profile info, subscriptions, etc.
 userView :: Self -> Sentry.Logger -> User -> JSX
 userView { setState, state: { creditCards } } logger user = React.fragment
-  [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
-  , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
+  [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
+  , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
   where
     componentHeader title =
-      classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]
+      Helpers.classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]
 
     profileView =
       componentBlock
@@ -282,14 +251,14 @@ userView { setState, state: { creditCards } } logger user = React.fragment
       DOM.div
         { className: "mitt-konto--subscribe-image flex"
         , children:
-            [ anchor "https://prenumerera.ksfmedia.fi/" "" [ DOM.img { src: images.subscribe } ] ]
+            [ Helpers.anchor "https://prenumerera.ksfmedia.fi/" "" [ DOM.img { src: images.subscribe } ] ]
         }
 
     noSubscriptionsText =
-      classy DOM.div "mitt-konto--no-subscriptions"
+      Helpers.classy DOM.div "mitt-konto--no-subscriptions"
         [ DOM.p_
             [ DOM.text "Har du redan en prenumeration? Kontakta vår "
-            , anchor "https://www.hbl.fi/kundservice/" "kundtjänst" []
+            , Helpers.anchor "https://www.hbl.fi/kundservice/" "kundtjänst" []
             , DOM.text " och vi kopplar den till ditt konto."
             ]
         ]
@@ -354,7 +323,7 @@ paymentView self user = DOM.div_
       case self.state.payments of
         Just payments -> pure payments
         Nothing ->
-          withSpinner (self.setState <<< setLoading) do
+          Helpers.withSpinner (self.setState <<< setLoading) do
             p <- User.getPayments user.uuid
             case p of
               Right payments -> do
@@ -368,102 +337,6 @@ paymentView self user = DOM.div_
                   }
                 pure []
 
--- | Login page with welcoming header, description text and login form.
-loginView :: Self -> Sentry.Logger -> JSX
-loginView self@{ state, setState } logger = React.fragment
-  [ DOM.div_
-      case state.showWelcome of
-        false -> []
-        true  ->
-          [ classy DOM.div "pb2 center" [ heading ]
-          , classy DOM.div "center"     [ pageDescription ]
-          ]
-  , classy DOM.div "center" [ loginForm ]
-  ]
-  where
-    loginForm =
-        Login.login
-          { onMerge:             setState \s -> s { showWelcome = false }
-          , onMergeCancelled:    setState \s -> s { showWelcome = true }
-          , onRegister:          setState \s -> s { showWelcome = false }
-          , onRegisterCancelled: setState \s -> s { showWelcome = true }
-          , onUserFetch:
-            case _ of
-              Left err -> do
-                case err of
-                  SomethingWentWrong -> logger.error $ Error.loginError $ show err
-                  UnexpectedError e  -> logger.error $ Error.loginError $ message e
-                  -- If any other UserError occurs, only send an Info event of it
-                  _ -> logger.log (show err) Sentry.Info
-                self.setState $ setLoggedInUser Nothing
-              Right user -> do
-                setState $ setLoggedInUser $ Just user
-                logger.setUser $ Just user
-          , launchAff_:
-              Aff.runAff_ (setState <<< setAlert <<< either errorAlert (const Nothing))
-                <<< withSpinner (setState <<< setLoading)
-          , disableSocialLogins: Set.empty
-          }
-
-    heading =
-      classy DOM.h1 "mitt-konto--heading"
-        [ DOM.text "Välkommen till KSF Media’s Mitt Konto" ]
-
-    frequentIssues =
-      classy DOM.p "mitt-konto--faq"
-        [ DOM.a
-            { href: "https://www.hbl.fi/fragor-och-svar/"
-            , children: [ DOM.text "Frågor och svar" ]
-            , target: "_blank"
-            }
-        , DOM.text " * "
-        , DOM.a
-            { href: "https://www.hbl.fi/ingen-tidning/"
-            , children: [ DOM.text "Ingen tidning" ]
-            , target: "_blank"
-            }
-        , DOM.text " * "
-        , DOM.a
-            { href: "https://www.hbl.fi/epaper/"
-            , children: [ DOM.text "Läs e-tidning" ]
-            , target: "_blank"
-            }
-        ]
-
-    pageDescription =
-      classy DOM.div "mitt-konto--description"
-        [ frequentIssues
-        , DOM.p_
-            [ DOM.text
-                """Här kan du göra tillfällig eller permanent
-                   adressändring eller göra uppehåll i tidningsutdelningen.
-                   Dessutom kan du få allmän information som är
-                   relevant för dig som prenumerant.
-                """
-            ]
-        , DOM.p_
-            [ DOM.text "Allt du behöver göra för att komma igång är att logga in!" ]
-        , DOM.p_
-            [ DOM.text "Behöver du hjälp? "
-            , anchor "https://www.hbl.fi/kundservice/" "Kundservice" []
-            ]
-        ]
-
-errorAlert :: Error -> Maybe Alert
-errorAlert err = oneOf
-  [ do { method, url } <- KSF.Error.networkError err
-       pure
-         { level: Alert.danger
-         , title: "Anslutningen misslyckades."
-         , message: "Vänligen kontrollera din internetanslutning och försök om en stund igen."
-         }
-  , pure
-      { level: Alert.warning
-      , title: "Något gick fel vid inloggningen."
-      , message: "Vänligen försök om en stund igen."
-      }
-  ]
-
 break :: JSX
 break = DOM.hr { className: "mitt-konto--break" }
 
@@ -474,15 +347,6 @@ disappearingBreak =
     { className: "mitt-konto--disappearing-break"
     , children: [ break ]
     }
-
-classy
-  :: ({ className :: String, children :: Array JSX} -> JSX)
-  -> String
-  -> (Array JSX -> JSX)
-classy element className children = element { className, children }
-
-anchor :: String -> String -> Array JSX -> JSX
-anchor href description children = DOM.a { href, children: DOM.text description : children, target: "_blank" }
 
 -- I know, but it's just for accessing locale
 readJSDate :: String -> JSDate
