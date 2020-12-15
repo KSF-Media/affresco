@@ -13,6 +13,7 @@ foreign import reclamation_ :: EffectFn5 Cusno Subsno DateString Claim Result Un
 foreign import tempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import pauseSubscription_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
+foreign import cancelSubscription_ :: EffectFn5 Cusno Subsno Reason String Result Unit
 foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import changeName_ :: EffectFn2 Cusno Result Unit
 foreign import changeAddress_ :: EffectFn2 Cusno Result Unit
@@ -21,6 +22,7 @@ type Cusno = String
 type Subsno = String
 type DateString = String
 type Claim = String
+type Reason = String
 type StartDate = DateTime
 type StartDateString = String
 type EndDate = DateTime
@@ -43,6 +45,9 @@ pauseSubscription cusno subsno startDate endDate result =
 
 unpauseSubscription :: Cusno -> Subsno -> Result -> Effect Unit
 unpauseSubscription = runEffectFn3 unpauseSubscription_
+
+cancelSubscription :: Cusno -> Subsno -> Reason -> String -> Result -> Effect Unit
+cancelSubscription = runEffectFn5 cancelSubscription_
 
 deleteTempAddressChange :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
 deleteTempAddressChange cusno subsno startDate endDate result =

@@ -62,59 +62,39 @@
   }
 }
 
-.subscription--pause-icon {
+.subscription--icon(@icon-name) {
     display: block;
     width: 30px;
     height: 30px;
     background-position: center;
     background-repeat: no-repeat, repeat;
-    background-image: url('../images/pause.svg');
+    background-image: url('../images/@{icon-name}');
     background-size: 20px;
     cursor: pointer;
+}
+
+.subscription--pause-icon {
+    .subscription--icon('pause.svg')
 }
 
 .subscription--unpause-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url('../images/start.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--icon('start.svg');
 }
 
 .subscription--temporary-address-change-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/loc-point-map.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--icon('loc-point-map.svg');
 }
 
 .subscription--delete-temporary-address-change-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/loc-point-map-cancel.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--icon('loc-point-map-cancel.svg');
 }
 
 .subscription--delivery-reclamation-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url('../images/delivery-reclamation.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--icon('delivery-reclamation.svg');
+}
+
+.subscription--cancel-subscription-icon {
+    .subscription--icon('ui-cross-2.svg');
 }
 
 .subscription--update-action-text {

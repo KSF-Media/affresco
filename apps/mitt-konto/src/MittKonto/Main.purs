@@ -3,7 +3,7 @@ module MittKonto.Main where
 import Prelude
 
 import Bottega.Models (CreditCard)
-import Data.Array (snoc, sortBy, (:))
+import Data.Array (sortBy, (:))
 import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
 import Data.JSDate (JSDate, parse)
@@ -19,7 +19,6 @@ import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.AccountEdit as AccountEdit
-import MittKonto.IconAction as IconAction
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
@@ -254,9 +253,10 @@ userView { setState, state: { creditCards } } logger user = React.fragment
           case sortBy (comparing _.state) user.subs of
             []   -> [ componentBlockContent noSubscriptionsText ]
             subs -> do
-              map subscriptionComponentBlockContent subs `snoc` cancelSubscription
+              map subscriptionComponentBlockContent subs
               where
-                subscriptionView subscription = Subscription.subscription { subscription, user, logger }
+                subscriptionView subscription = let onSubscriptionUpdate = updateUser subscription.subsno
+                                                in Subscription.subscription { subscription, onSubscriptionUpdate, user, logger }
                 subscriptionComponentBlockContent subscription
                   -- If the subscription has a canceled state, we want to add extra css to it.
                   | Subscription.isSubscriptionCanceled subscription =
@@ -265,19 +265,11 @@ userView { setState, state: { creditCards } } logger user = React.fragment
                         , children: [ componentBlockContent $ subscriptionView subscription ]
                         }
                   | otherwise = componentBlockContent $ subscriptionView subscription
-
-    cancelSubscription =
-      DOM.div
-        { className: "mt2"
-        , children:
-            [ IconAction.iconAction
-                { iconClassName: "mitt-konto--cancel-subscription-icon"
-                , description: "Avsluta din prenumeration"
-                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU"
-                }
-            ]
-        }
-
+        updateUser oldSubsno newSub =
+          setState _ { loggedInUser = Just $ user
+                                      { subs = map (\sub -> if oldSubsno == sub.subsno then newSub else sub) user.subs
+                                      }
+                     }
     subscribeImage =
       DOM.div
         { className: "mitt-konto--subscribe-image flex"

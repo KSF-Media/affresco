@@ -11,7 +11,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate, toDate)
 import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
@@ -175,6 +175,26 @@ createDeliveryReclamation uuid subsno date claim token = do
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
     , unsafeToForeign { publicationDate: dateISO, claim: claim' }
+    ]
+    { authorization }
+  where
+    authorization = oauthToken token
+
+
+cancelSubscription
+  :: UUID
+  -> Int
+  -> CancelReason
+  -> Maybe String
+  -> Token
+  -> Aff Subscription
+cancelSubscription uuid subsno reason notes token = do
+  let reason' = show reason
+      notes' = fromMaybe "" notes
+  callApi usersApi "usersUuidSubscriptionsSubsnoCancelPut"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { reason: reason', notes: notes' }
     ]
     { authorization }
   where
@@ -423,6 +443,34 @@ instance readForeignDeliveryReclamationStatus :: ReadForeign DeliveryReclamation
 instance writeForeignDeliveryReclamationStatus :: WriteForeign DeliveryReclamationStatus where
   writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
 instance showDeliveryReclamationStatus :: Show DeliveryReclamationStatus where
+  show = genericShow
+
+type CancelSubscription =
+  { subscriptionNumber :: Int
+  , customerNumber     :: Int
+  , reason             :: CancelReason
+  , notes              :: String
+  }
+
+data CancelReason
+  = Price
+  | Distribution
+  | Content
+  | Other
+  | ChangeProduct
+
+instance readCancelReason :: Read CancelReason where
+  read c =
+    case c of
+      "Price"         -> pure Price
+      "Distribution"  -> pure Distribution
+      "Content"       -> pure Content
+      "Other"         -> pure Other
+      "ChangeProduct" -> pure ChangeProduct
+      _               -> Nothing
+
+derive instance genericCancelReason :: Generic CancelReason _
+instance showCancelReason :: Show CancelReason where
   show = genericShow
 
 data PaymentState
