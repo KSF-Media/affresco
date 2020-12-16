@@ -1,7 +1,4 @@
 # SHA256 of the content of the build directory.
 # This is used for triggering project deployment when there are updated dependecies.
-<<<<<<< HEAD
 6e0222cd758515c6f8c5e4b668e6b4eab84412815134c108d5de06f3df924df3
-=======
-f5499a9662fad192ea6acd189255a9da2ed76a3f47f26a494fb6ded25f5bc2d2
->>>>>>> Refactor MittKonto.Main.Types
+

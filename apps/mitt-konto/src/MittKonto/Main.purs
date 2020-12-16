@@ -1,6 +1,6 @@
 module MittKonto.Main where
 
-import Prelude (bind, const, discard, pure, when, ($), (<<<))
+import Prelude
 
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
