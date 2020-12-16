@@ -21,10 +21,11 @@ type CreditCard =
 newtype CreditCardRegisterNumber = CreditCardRegisterNumber String 
 
 type CreditCardRegister =
-  { number      :: CreditCardRegisterNumber
-  , user        :: UUID
-  , terminalUrl :: Maybe PaymentTerminalUrl
-  , status      :: CreditCardRegisterStatus
+  { number       :: CreditCardRegisterNumber
+  , user         :: UUID
+  , creditCardId :: CreditCardId
+  , terminalUrl  :: Maybe PaymentTerminalUrl
+  , status       :: CreditCardRegisterStatus
   }
 
 type CreditCardRegisterStatus =

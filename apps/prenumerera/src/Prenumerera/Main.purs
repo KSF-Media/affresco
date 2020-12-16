@@ -10,15 +10,15 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Footer.Component as Footer
 import KSF.User as KSF.User
-import KSF.Navbar.Component (Paper(..))
+import KSF.Paper (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
 import Prenumerera.Confirm as Confirm
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.ProductSelect as ProductSelect
 import Prenumerera.User as User
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router as Router
 
@@ -29,7 +29,7 @@ type Props = {}
 type State =
   { loading :: Maybe Loading
   , loggedInUser :: Maybe Persona.User
-  , paper :: Navbar.Paper
+  , paper :: Paper
   }
 
 data Action =

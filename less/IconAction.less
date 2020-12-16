@@ -1,0 +1,30 @@
+@width-of-account-edit-icon: 50px;
+@height-of-account-edit-icon: 50px;
+
+.icon-action--container {
+    margin: .5em;
+    display: grid;
+    grid-template-columns: 60px [icon] auto [description];
+    align-items: center;
+    div, a {
+	color: @grey-dark;
+	text-decoration: underline;
+	cursor: pointer;
+    }
+    @media @to-xsmall {
+	margin-left: 1em;
+    }
+}
+
+.icon-action--format-icon(@icon-name) {
+    display: block;
+    background: @grey-almostlight;
+    width: @width-of-account-edit-icon;
+    height: @height-of-account-edit-icon;
+    background-position: center;
+    background-repeat: no-repeat, repeat;
+    background-image: url('../images/@{icon-name}');
+    background-size: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+}

@@ -1,8 +1,9 @@
 module KSF.Footer.Component where
 
 import KSF.Icons (papers)
-import React.Basic (JSX, createComponent, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (createComponent, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 type Self = React.Self Props {}

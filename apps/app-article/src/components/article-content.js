@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import quoteIcon from "../assets/images/quotes-png-11.png";
-import { getBrandValueParam } from '../helper';
+import { getBrandValueParam, isDarkModeOn } from '../helper';
 
 class Content extends Component {
     constructor(props) {
@@ -64,7 +64,7 @@ class Content extends Component {
 
     renderHeadline(block, key) {
         return (
-            <h4 className={"headline"} key={key}>{block.headline}</h4>
+            <h4 className={`headline ${isDarkModeOn() ? 'darkMode': ''}`} key={key}>{block.headline}</h4>
         );
     }
 
@@ -94,15 +94,15 @@ class Content extends Component {
 
     renderGenericBox(block, key) {
         return (
-            <div className={`genericBox ${this.countBlockChatacters(block.box.content) > 400 ? '':'genericBoxAutoHeight'} genericBox-border-${getBrandValueParam()} `} key={key} id={"genericBox-" + key}>
+            <div className={`genericBox ${isDarkModeOn() ? 'darkMode': ''} ${this.countBlockChatacters(block.box.content) > 400 ? '':'genericBoxAutoHeight'} genericBox-border-${getBrandValueParam()} `} key={key} id={"genericBox-" + key}>
                 {
                     block.box && block.box.headline ?  
-                    <div className={"genericBox-headline"}>{block.box.headline}</div>
+                    <div className={`genericBox-headline ${isDarkModeOn() ? 'darkMode': ''}`}>{block.box.headline}</div>
                     : 
-                    <div className={"genericBox-headline"}>{block.box.type === "fact" ? 'FAKTA': ''}</div>
+                    <div className={`genericBox-headline ${isDarkModeOn() ? 'darkMode': ''}`}>{block.box.type === "fact" ? 'FAKTA': ''}</div>
                 }
-                <h3>{block && block.box && block.box.title}</h3>
-                <ul className={"factboxList"}>
+                <h3 class={isDarkModeOn() ? 'faktBoxdarkMode': ''}>{block && block.box && block.box.title}</h3>
+                <ul className={`factboxList ${isDarkModeOn() ? 'darkMode': ''}`}>
                     { block.box && 
                         block.box.content.map((fact, key) => {
                             return (
@@ -113,9 +113,9 @@ class Content extends Component {
                 </ul>
                 
                 { block && block.box && block.box.content && this.countBlockChatacters(block.box.content) > 400 && 
-                <div className={"expand"} id={"expandFactBox-" + key} onClick={() => {this.expandFaktBox(key)}}>
-                    <div className={"expandOpacity"} id={"expandOpacity"}></div>
-                    <div className={"expandOpacity2"} id={"expandOpacity2"}></div>
+                <div className={`expand ${isDarkModeOn() ? 'darkMode': ''}`} id={"expandFactBox-" + key} onClick={() => {this.expandFaktBox(key)}}>
+                    <div className={`expandOpacity ${isDarkModeOn() ? 'darkMode': ''}`} id={"expandOpacity"}></div>
+                    <div className={`expandOpacity2 ${isDarkModeOn() ? 'darkMode': ''}`} id={"expandOpacity2"}></div>
                     <div class={`brandColor-${getBrandValueParam()}`} style={{display:'inline-block'}}><span>VIK UT</span></div>
                     <div style={{display:'inline-block'}}><i className={`arrow down border-${getBrandValueParam()}`}/></div>
                 </div>
@@ -126,7 +126,7 @@ class Content extends Component {
 
     renderHtml(block, key) {
         return (
-            <div className={"html"} key={key} dangerouslySetInnerHTML={{__html: block.html}}/>
+            <div className={`html ${isDarkModeOn() ? 'darkMode': ''}`} key={key} dangerouslySetInnerHTML={{__html: block.html}}/>
             //    {/*<div className={"html"} key={key}>{htmlToReactParser.parse(block.html)}</div>*/} // youplay videos does not work
         );
     }

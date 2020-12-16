@@ -2,6 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.Array (snoc, sortBy, (:))
 import Data.Either (Either(..), either, isLeft)
 import Data.Foldable (foldMap, oneOf)
@@ -17,13 +18,15 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
+import MittKonto.AccountEdit as AccountEdit
+import MittKonto.IconAction as IconAction
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
 import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
 import KSF.JSError as Error
-import KSF.Navbar.Component (Paper(..))
+import KSF.Paper (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.PaymentAccordion as PaymentAccordion
 import KSF.Profile.Component as Profile
@@ -32,25 +35,23 @@ import KSF.Subscription.Component (subscription) as Subscription
 import KSF.User (User, UserError(..), SubscriptionPayments)
 import KSF.User (logout, getPayments) as User
 import KSF.User.Login (login) as Login
-import React.Basic (JSX, element, make)
-import React.Basic as React
+import React.Basic (JSX, element)
 import React.Basic.DOM as DOM
+import React.Basic.Hooks (Component, component, useState, (/\))
+import React.Basic.Hooks as React
 import React.Basic.Router as Router
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String
 
-type Props =
-  {}
-
 type State =
-  { paper :: Navbar.Paper
+  { paper :: Paper
   , loggedInUser :: Maybe User
   , loading :: Maybe Loading
   , showWelcome :: Boolean
   , alert :: Maybe Alert
-  , logger :: Sentry.Logger
   , payments :: Maybe (Array SubscriptionPayments)
+  , creditCards :: Array CreditCard
   }
 
 setLoading :: Maybe Loading -> State -> State
@@ -67,71 +68,80 @@ setPayments payments = _ { payments = payments }
 
 data Loading = Loading
 
-type Self = React.Self Props State
-
-component :: React.Component Props
-component = React.createComponent "MittKonto"
-
-app :: Props -> JSX
-app = make component
-  { initialState:
-      { paper: KSF
-      , loggedInUser: Nothing
-      , loading: Nothing
-      , showWelcome: true
-      , alert: Nothing
-      , logger: Sentry.emptyLogger
-      , payments: Nothing
-      }
-  , didMount
-  , render
+type Self =
+  { state :: State
+  , setState :: (State -> State) -> Effect Unit
   }
-  
-didMount :: Self -> Effect Unit
-didMount self = do
+
+app :: Component {}
+app = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
-  self.setState _ { logger = logger }
+  let initialState =
+        { paper: KSF
+        , loggedInUser: Nothing
+        , loading: Nothing
+        , showWelcome: true
+        , alert: Nothing
+        , payments: Nothing
+        , creditCards: []
+        }
+  component "MittKonto" \_ -> React.do
+    state /\ setState <- useState initialState
+    let self = { state, setState }
+    pure $ render self logger
 
-render :: Self -> JSX
-render self@{ state, setState } =
+jsApp :: {} -> JSX
+jsApp = unsafePerformEffect app
+
+render :: Self -> Sentry.Logger -> JSX
+render self@{ state, setState } logger =
   React.fragment
-    [ navbarView self
+    [ navbarView self logger
     , classy DOM.div "mt4 mb4"
         [ foldMap alertView state.alert ]
     , classy DOM.div "mt4 mb4 clearfix"
         [ classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ element Router.switch { children: [ paymentList, mittKonto ] } ]
+            [ element Router.switch { children: [ paymentListRoute, mittKontoRoute, noMatchRoute ] } ]
         ]
     , footerView
     ]
  where
-   mittKonto =
+   mittKontoRoute =
      element
        Router.route
          { exact: true
          , path: toNullable $ Just "/"
-         , render:
-             \_ -> classy DOM.div "mitt-konto--container clearfix"
-               [ foldMap loadingIndicator state.loading
-               , case state.loggedInUser of
-                   Just user -> userView self user
-                   Nothing   -> loginView self
-               ]
+         , render: const mittKontoView
          }
-   paymentList =
+   mittKontoView =
+      classy DOM.div "mitt-konto--container clearfix"
+        [ foldMap loadingIndicator state.loading
+        , case state.loggedInUser of
+            Just user -> userView self logger user
+            Nothing   -> loginView self logger
+        ]
+   paymentListRoute =
      element
        Router.route
          { exact: true
          , path: toNullable $ Just "/fakturor"
-         , render:
-             \_ -> classy DOM.div "mitt-konto--container clearfix"
-               [ foldMap loadingIndicator state.loading
-               , case state.loggedInUser of
-                   Just user -> paymentView self user
-                   Nothing   -> loginView self
-               ]
+         , render: const
+             $ classy DOM.div "mitt-konto--container clearfix"
+                 [ foldMap loadingIndicator state.loading
+                 , case state.loggedInUser of
+                     Just user -> paymentView self user
+                     Nothing   -> loginView self logger
+                 ]
          }
+   noMatchRoute =
+     -- TODO: Use Redirect when supported!
+      element
+        Router.route
+          { exact: false
+          , path: toNullable Nothing
+          , render: const mittKontoView
+          }
 
 loadingIndicator :: Loading -> JSX
 loadingIndicator Loading =
@@ -178,8 +188,8 @@ withSpinner setLoadingState action = do
      Aff.killFiber (error "Action is done") loadingFiber
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: Self -> JSX
-navbarView self@{ state, setState } =
+navbarView :: Self -> Sentry.Logger -> JSX
+navbarView self@{ state, setState } logger =
     Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
@@ -187,7 +197,7 @@ navbarView self@{ state, setState } =
           Aff.launchAff_ $ withSpinner (setState <<< setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
-              self.state.logger.setUser Nothing
+              logger.setUser Nothing
               setState $ setLoggedInUser Nothing
       }
 
@@ -200,8 +210,8 @@ footerView :: React.JSX
 footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: Self -> User -> JSX
-userView { setState, state: { logger } } user = React.fragment
+userView :: Self -> Sentry.Logger -> User -> JSX
+userView { setState, state: { creditCards } } logger user = React.fragment
   [ classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -214,7 +224,7 @@ userView { setState, state: { logger } } user = React.fragment
         "Mina uppgifter:"
         [ profileComponentBlock
         , break
-        , editAccount
+        , editAccountBlock
         , needHelp
         , disappearingBreak
         ]
@@ -223,6 +233,17 @@ userView { setState, state: { logger } } user = React.fragment
           { profile: user
           , onUpdate: setState <<< setLoggedInUser <<< Just
           , logger
+          }
+        editAccountBlock = DOM.div
+          { className: "mitt-konto--edit-account"
+          , children:
+              [ componentHeader "Mina inställningar:"
+              , componentBlockContent $ AccountEdit.accountEdit
+                  { logger: logger
+                  , creditCards
+                  , setCreditCards: \cards -> setState _ { creditCards = cards }
+                  }
+              ]
           }
 
     subscriptionsView =
@@ -249,11 +270,10 @@ userView { setState, state: { logger } } user = React.fragment
       DOM.div
         { className: "mt2"
         , children:
-            [ formatIconLink
-                { href: "https://ksfmedia1.typeform.com/to/zbh3kU"
+            [ IconAction.iconAction
+                { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
-                , className: "mitt-konto--cancel-subscription"
-                , targetBlank: true
+                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU"
                 }
             ]
         }
@@ -273,15 +293,6 @@ userView { setState, state: { logger } } user = React.fragment
             , DOM.text " och vi kopplar den till ditt konto."
             ]
         ]
-
-    editAccount :: JSX
-    editAccount =
-      DOM.div
-        { className: "mitt-konto--edit-account"
-        , children:
-            componentHeader "Mina inställningar:"
-            : accountEditLinks
-        }
 
     needHelp :: JSX
     needHelp =
@@ -327,64 +338,39 @@ userView { setState, state: { logger } } user = React.fragment
          , children: [ child ]
          }
 
-    accountEditLinks :: Array JSX
-    accountEditLinks =
-      [ formatIconLink
-          { href: "https://www.hbl.fi/losenord"
-          , description: "Byt lösenord"
-          , className: passwordChangeClass
-          , targetBlank: true
-          }
-      , formatIconLink
-          { href: "/fakturor"
-          , description: "Fakturor"
-          , className: "mitt-konto--payment-history"
-          , targetBlank: false
-          }
-      ]
-      where
-        passwordChangeClass = "mitt-konto--password-change"
-
-    formatIconLink :: { href :: String, description :: String, className :: String, targetBlank :: Boolean } -> JSX
-    formatIconLink { href, description, className, targetBlank } =
-      classy DOM.div "clearfix mitt-konto--account-edit-container"
-        [ classy DOM.div "col-12 mt1"
-            [ accountEditAnchor href targetBlank
-              $ classy DOM.div "mitt-konto--icon-container col circle"
-                  [ classy DOM.div className [] ]
-            , classy DOM.div "col col-8 pl1 pt2"
-                [ accountEditAnchor href targetBlank $ DOM.text description ]
-            ]
-        ]
-
-    accountEditAnchor :: String -> Boolean -> JSX -> JSX
-    accountEditAnchor href targetBlank children =
-      DOM.a
-        { href
-        , className: ""
-        , children: [ children ]
-        , target: if targetBlank then "_blank" else ""
-        }
-
 -- | Specialized view with user's payment list
 paymentView :: Self -> User -> JSX
-paymentView self user = PaymentAccordion.payments { paymentsLoad: paymentsLoad }
+paymentView self user = DOM.div_
+  [ element
+      Router.link
+        { to: { pathname: "/", state: {} }
+        , children: [ ]
+        , className: "mitt-konto--backwards"
+        }
+  , PaymentAccordion.payments { paymentsLoad }
+  ]
   where
-    paymentsLoad = withSpinner (self.setState <<< setLoading) do
-      p <- User.getPayments user.uuid
-      case p of
-        Right payments -> pure payments
-        Left _         -> do
-          liftEffect $ self.setState $ setAlert $ Just
-            { level: Alert.warning
-            , title: "Laddningen misslyckades."
-            , message: "Något gick fel, ta kontakt med kundservice."
-            }
-          pure []
+    paymentsLoad =
+      case self.state.payments of
+        Just payments -> pure payments
+        Nothing ->
+          withSpinner (self.setState <<< setLoading) do
+            p <- User.getPayments user.uuid
+            case p of
+              Right payments -> do
+                liftEffect $ self.setState _ { payments = Just payments }
+                pure payments
+              Left _         -> do
+                liftEffect $ self.setState $ setAlert $ Just
+                  { level: Alert.warning
+                  , title: "Laddningen misslyckades."
+                  , message: "Något gick fel, ta kontakt med kundservice."
+                  }
+                pure []
 
 -- | Login page with welcoming header, description text and login form.
-loginView :: Self -> JSX
-loginView self@{ state: state@{ logger }, setState } = React.fragment
+loginView :: Self -> Sentry.Logger -> JSX
+loginView self@{ state, setState } logger = React.fragment
   [ DOM.div_
       case state.showWelcome of
         false -> []

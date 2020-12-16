@@ -2,7 +2,9 @@ module Vetrina.Types where
 
 import Prelude
 
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Array (mapMaybe)
+import Data.Foldable (fold)
+import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
 import KSF.User as User
 import React.Basic (JSX)
@@ -12,6 +14,16 @@ data AccountStatus
   | ExistingAccount String
   | LoggedInAccount User.User
 
+type JSProductContent =
+  { title       :: Nullable String
+  , description :: Nullable String
+  }
+
+type ProductContent =
+  { title       :: String
+  , description :: String
+  }
+
 type Product =
   { id                           :: String
   , name                         :: String
@@ -19,6 +31,7 @@ type Product =
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
   , campaignNo                   :: Maybe Int
+  , contents                     :: Array ProductContent
   }
 
 type JSProduct =
@@ -28,6 +41,7 @@ type JSProduct =
   , descriptionPurchaseCompleted :: Nullable JSX
   , priceCents                   :: Nullable Int
   , campaignNo                   :: Nullable Int
+  , contents                     :: Nullable (Array JSProductContent)
   }
 
 fromJSProduct :: JSProduct -> Maybe Product
@@ -37,5 +51,14 @@ fromJSProduct jsProduct = do
   description <- toMaybe jsProduct.description
   priceCents  <- toMaybe jsProduct.priceCents
   let campaignNo = toMaybe jsProduct.campaignNo
-      descriptionPurchaseCompleted = fromMaybe mempty $ toMaybe jsProduct.descriptionPurchaseCompleted
-  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted }
+      descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
+      contents = mapMaybe fromJSProductContent $ fold $ toMaybe jsProduct.contents
+  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted, contents }
+
+fromJSProductContent ::  JSProductContent -> Maybe ProductContent
+fromJSProductContent jsProduct =
+  { title: _
+  , description: _
+  }
+  <$> toMaybe jsProduct.title
+  <*> toMaybe jsProduct.description

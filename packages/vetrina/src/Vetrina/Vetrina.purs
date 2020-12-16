@@ -2,11 +2,13 @@ module KSF.Vetrina where
 
 import Prelude
 
+import Bottega (BottegaError (..))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
+import Data.Foldable (foldMap)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -21,12 +23,14 @@ import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
+import KSF.Paper (Paper)
+import KSF.Paper as Paper
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (Order, FailReason(..), OrderState(..), PaymentMethod(..), PaymentTerminalUrl, User)
 import KSF.User as User
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Tracking as Tracking
@@ -47,6 +51,8 @@ type JSProps =
   , products           :: Nullable (Array JSProduct)
   , unexpectedError    :: Nullable JSX
   , accessEntitlements :: Nullable (Array String)
+  , headline           :: Nullable JSX
+  , paper              :: Nullable String
   }
 
 type Props =
@@ -55,6 +61,8 @@ type Props =
   , products           :: Either Error (Array Product)
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
+  , headline           :: Maybe JSX
+  , paper              :: Maybe Paper
   }
 
 fromJSProps :: JSProps -> Props
@@ -71,6 +79,8 @@ fromJSProps jsProps =
           Nothing -> Left productError
   , unexpectedError: fromMaybe mempty $ toMaybe jsProps.unexpectedError
   , accessEntitlements: maybe Set.empty Set.fromFoldable $ toMaybe jsProps.accessEntitlements
+  , headline: toMaybe jsProps.headline
+  , paper: Paper.fromString =<< toMaybe jsProps.paper
   }
 
 type State =
@@ -106,6 +116,7 @@ data OrderFailure
   | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
+  | InsufficientAccount
   | ServerError
   | UnexpectedError String
 
@@ -190,7 +201,7 @@ startOrderPoller setState state order = do
         Aff.joinFiber newPoller
   setState _ { poller = newPoller }
 
-pollOrder :: SetState -> State -> Either String Order -> Aff Unit
+pollOrder :: SetState -> State -> Either BottegaError Order -> Aff Unit
 pollOrder setState state@{ logger } (Right order) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case order.status.state of
@@ -203,10 +214,12 @@ pollOrder setState state@{ logger } (Right order) = do
           nextPurchaseStep = case userAccountStatus of
             NewAccount      -> PurchaseSetPassword
             _               -> PurchaseCompleted userAccountStatus
-      liftEffect $ setState _ { purchaseState = nextPurchaseStep }
-      productId    <- LocalStorage.getItem "productId" --analytics
-      productPrice <- LocalStorage.getItem "productPrice" --analytics
-      liftEffect $ Tracking.transaction order.number productId productPrice --analyics
+      liftEffect do
+        setState _ { purchaseState = nextPurchaseStep }
+        productId         <- LocalStorage.getItem "productId" -- analytics
+        productPrice      <- LocalStorage.getItem "productPrice" -- analytics
+        productCampaignNo <- LocalStorage.getItem "productCampaignNo" -- analytics
+        Tracking.transaction order.number productId productPrice productCampaignNo -- analyics
       where
         chooseAccountStatus user
           | user.hasCompletedRegistration = ExistingAccount user.email
@@ -226,8 +239,11 @@ pollOrder setState state@{ logger } (Right order) = do
     OrderUnknownState -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
       setState _ { purchaseState = PurchaseFailed ServerError }
-pollOrder setState { logger } (Left err) = liftEffect do
-  logger.error $ Error.orderError $ "Failed to get order from server: " <> err
+pollOrder setState { logger } (Left bottegaErr) = liftEffect do
+  let errMessage = case bottegaErr of
+        BottegaUnexpectedError e   -> e
+        BottegaInsufficientAccount -> "InsufficientAccount"
+  logger.error $ Error.orderError $ "Failed to get order from server: " <> errMessage
   setState _ { purchaseState = PurchaseFailed ServerError }
 
 render :: Self -> JSX
@@ -246,6 +262,8 @@ render self = vetrinaContainer self $
         , paymentMethod: self.state.paymentMethod
         , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
+        , headline: self.props.headline
+        , paper: self.props.paper
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
@@ -265,6 +283,8 @@ render self = vetrinaContainer self $
             , paymentMethod: self.state.paymentMethod
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
+            , headline: self.props.headline
+            , paper: self.props.paper
             }
         ServerError ->
           Purchase.Error.error
@@ -355,8 +375,11 @@ mkPurchase self@{ state: { logger } } validForm affUser =
 
     order <- ExceptT $ createOrder user product
     paymentUrl <- ExceptT $ payOrder order paymentMethod
-    liftEffect $ LocalStorage.setItem "productId" product.id -- for analytics
-    liftEffect $ LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
+    liftEffect do
+      LocalStorage.setItem "productId" product.id -- for analytics
+      LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
+      LocalStorage.setItem "productCampaingNo" $ foldMap show product.campaignNo
+
     pure { paymentUrl, order }
   case eitherOrder of
     Right { paymentUrl, order } ->
@@ -456,14 +479,20 @@ createOrder user product = do
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of
     Right order -> Right order
-    Left err    -> Left $ UnexpectedError err
+    Left err    -> Left $ toOrderFailure err
 
 payOrder :: Order -> PaymentMethod -> Aff (Either OrderFailure PaymentTerminalUrl)
 payOrder order paymentMethod =
   User.payOrder order.number paymentMethod >>= \eitherUrl ->
     pure $ case eitherUrl of
       Right url -> Right url
-      Left err  -> Left $ UnexpectedError err
+      Left err  -> Left $ toOrderFailure err
+
+toOrderFailure :: BottegaError -> OrderFailure
+toOrderFailure bottegaErr =
+  case bottegaErr of
+    BottegaInsufficientAccount    -> InsufficientAccount
+    BottegaUnexpectedError errMsg -> UnexpectedError errMsg
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
 netsTerminalIframe { paymentTerminalUrl } =

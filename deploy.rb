@@ -10,6 +10,9 @@ env_variables = {
     PRODUCTION_GOOGLE_CLIENT_ID
     PRODUCTION_FACEBOOK_APP_ID
   ],
+  "bottega" => %w[
+    PRODUCTION_BOTTEGA_URL
+  ],
   "persona" => %w[
     PRODUCTION_PERSONA_URL
   ],
@@ -26,6 +29,7 @@ apps = {
   "mitt-konto" => {
     "env_variables" =>
     env_variables["social_login"] +
+    env_variables["bottega"] +
     env_variables["persona"] +
     env_variables["sentry"]
   },

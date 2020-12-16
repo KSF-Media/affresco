@@ -22,6 +22,12 @@ module KSF.User
   , createOrder
   , payOrder
   , getOrder
+  , getCreditCards
+  , getCreditCard
+  , deleteCreditCard
+  , registerCreditCard
+  , getCreditCardRegister
+  , updateCreditCardSubscriptions
   , getPackages
   , getUserEntitlementsLoadToken
   , module Api
@@ -31,10 +37,10 @@ where
 
 import Prelude
 
+import Bottega (BottegaError(..))
+import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, getCreditCardRegister, updateCreditCardSubscriptions, InsufficientAccount) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
-
-import Bottega (createOrder, getOrder, getPackages, payOrder) as Bottega
-import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl) as Bottega
+import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
@@ -62,6 +68,7 @@ import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache)
 import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken, Password) as Api
+import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
 import KSF.Error as KSF.Error
@@ -87,6 +94,7 @@ data UserError =
   | RegistrationEmailInUse
   | MergeEmailInUse MergeInfo
   | SomethingWentWrong
+  | ServiceUnavailable
   | UnexpectedError Error
 derive instance genericUserError :: Generic UserError _
 instance showUserError :: Show UserError where
@@ -106,10 +114,10 @@ createUser newUser = do
   registeredUser <- try $ Persona.register newUser
   case registeredUser of
     Left err
-      | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
+      | Just (errData :: Persona.EmailAddressInUseRegistration) <- Api.Error.errorData err -> do
           Console.error errData.email_address_in_use_registration.description
           pure $ Left RegistrationEmailInUse
-      | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+      | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
           Console.error errData.invalid_form_fields.description
           pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
       | otherwise -> do
@@ -122,10 +130,10 @@ createUserWithEmail newTemporaryUser = do
   newUser <- try $ Persona.registerWithEmail newTemporaryUser
   case newUser of
     Left err
-      | Just (errData :: Persona.EmailAddressInUseRegistration) <- Persona.errorData err -> do
+      | Just (errData :: Persona.EmailAddressInUseRegistration) <- Api.Error.errorData err -> do
           Console.error errData.email_address_in_use_registration.description
           pure $ Left RegistrationEmailInUse
-      | Just (errData :: Persona.InvalidFormFields) <- Persona.errorData err -> do
+      | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
           Console.error errData.invalid_form_fields.description
           pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
       | otherwise -> do
@@ -140,7 +148,7 @@ getUser maybeInvalidateCache uuid token = do
     Persona.getUser maybeInvalidateCache uuid token
   case userResponse of
     Left err
-      | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
+      | Just (errData :: Persona.TokenInvalid) <- Api.Error.errorData err -> do
           Console.error "Failed to fetch the user: Invalid token"
           liftEffect deleteToken
           throwError err
@@ -164,7 +172,7 @@ getUserEntitlements uuid token = do
   case eitherEntitlements of
     Right entitlements -> pure $ Right $ Set.fromFoldable entitlements
     Left err
-      | Just (_ :: Persona.TokenInvalid) <- Persona.errorData err ->
+      | Just (_ :: Persona.TokenInvalid) <- Api.Error.errorData err ->
         pure $ Left LoginTokenInvalid
       -- TODO: Handle other errors as well
       | otherwise ->
@@ -190,9 +198,12 @@ loginTraditional loginData = do
   case loginResponse of
     Right lr -> finalizeLogin Nothing lr
     Left err
-      | Just (errData :: Persona.InvalidCredentials) <- Persona.errorData err -> do
+      | Just (errData :: Persona.InvalidCredentials) <- Api.Error.errorData err -> do
           Console.error errData.invalid_credentials.description
           pure $ Left LoginInvalidCredentials
+      | KSF.Error.serviceUnavailableError err -> do
+          Console.error "Service unavailable with traditional login"
+          pure $ Left ServiceUnavailable
       | Just serverError <- KSF.Error.internalServerError err -> do
           Console.error "Something went wrong with traditional login"
           pure $ Left SomethingWentWrong
@@ -212,7 +223,11 @@ magicLogin maybeInvalidateCache callback = do
     Nothing -> do
       Console.log "Couldn't load the saved token, giving SSO a try"
       loginSso maybeInvalidateCache callback `catchError` case _ of
-        err | Just serverError <- KSF.Error.internalServerError err -> do
+        err | KSF.Error.serviceUnavailableError err -> do
+                Console.error "Service unavailable with SSO login"
+                liftEffect $ callback $ Left ServiceUnavailable
+                throwError err
+            | Just serverError <- KSF.Error.internalServerError err -> do
                 Console.error "Something went wrong with SSO login"
                 liftEffect $ callback $ Left SomethingWentWrong
                 throwError err
@@ -237,7 +252,7 @@ someAuth maybeInvalidateCache mergeInfo email token provider = do
   case loginResponse of
     Right t -> finalizeLogin maybeInvalidateCache t
     Left err
-      | Just (errData :: Persona.EmailAddressInUse) <- Persona.errorData err -> do
+      | Just (errData :: Persona.EmailAddressInUse) <- Api.Error.errorData err -> do
           Console.error errData.email_address_in_use.description
           pure $ Left $ MergeEmailInUse newMergeInfo
           where
@@ -247,6 +262,9 @@ someAuth maybeInvalidateCache mergeInfo email token provider = do
               , newProvider: provider
               , userEmail: email
               }
+      | KSF.Error.serviceUnavailableError err -> do
+           Console.error "Service unavailable with SoMe login"
+           pure $ Left ServiceUnavailable
       | Just serverError <- KSF.Error.internalServerError err -> do
            Console.error "Something went wrong with SoMe login"
            pure $ Left SomethingWentWrong
@@ -355,7 +373,7 @@ finalizeLogin maybeInvalidateCache loginResponse = do
     Persona.getUser maybeInvalidateCache loginResponse.uuid loginResponse.token
   case userResponse of
     Left err
-      | Just (errData :: Persona.TokenInvalid) <- Persona.errorData err -> do
+      | Just (errData :: Persona.TokenInvalid) <- Api.Error.errorData err -> do
           Console.error "Failed to fetch the user: Invalid token"
           liftEffect deleteToken
           pure $ Left LoginTokenInvalid
@@ -412,7 +430,7 @@ pauseSubscription userUuid subsno startDate endDate = do
   case pausedSub of
     Right sub -> pure $ Right sub
     Left err
-      | Just (errData :: Persona.InvalidPauseDates) <- Persona.errorData err ->
+      | Just (errData :: Persona.InvalidPauseDates) <- Api.Error.errorData err ->
           pure $ Left $ Persona.pauseDateErrorToInvalidDateError errData.invalid_pause_dates.message
       | otherwise -> do
           Console.error "Unexpected error when pausing subscription."
@@ -440,7 +458,7 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
   case addressChangedSub of
     Right sub -> pure $ Right sub
     Left err
-      | Just (errData :: Persona.InvalidDates) <- Persona.errorData err ->
+      | Just (errData :: Persona.InvalidDates) <- Api.Error.errorData err ->
           pure $ Left errData.invalid_param.message
       | otherwise -> do
           Console.error "Unexpected error when making temporary address change."
@@ -476,22 +494,45 @@ getPayments uuid = do
       Console.error "Unexpected error when getting user payment history "
       pure $ Left "unexpected"
 
-createOrder :: Bottega.NewOrder -> Aff (Either String Bottega.Order)
+
+createOrder :: Bottega.NewOrder -> Aff (Either BottegaError Bottega.Order)
 createOrder newOrder = callBottega \tokens -> Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder
 
-payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either String Bottega.PaymentTerminalUrl)
+payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either BottegaError Bottega.PaymentTerminalUrl)
 payOrder orderNum paymentMethod = callBottega $ \tokens ->  Bottega.payOrder { userId: tokens.uuid, authToken: tokens.token } orderNum paymentMethod
 
-getOrder :: Bottega.OrderNumber -> Aff (Either String Bottega.Order)
+getOrder :: Bottega.OrderNumber -> Aff (Either BottegaError Bottega.Order)
 getOrder orderNum = callBottega $ \tokens -> Bottega.getOrder { userId: tokens.uuid, authToken: tokens.token } orderNum
 
-callBottega :: forall a. (Persona.LoginResponse -> Aff a) -> Aff (Either String a)
+getCreditCards :: Aff (Either BottegaError (Array Bottega.CreditCard))
+getCreditCards = callBottega $ \tokens -> Bottega.getCreditCards { userId: tokens.uuid, authToken: tokens.token }
+
+getCreditCard :: Bottega.CreditCardId -> Aff (Either BottegaError Bottega.CreditCard)
+getCreditCard creditCardId = callBottega $ \tokens -> Bottega.getCreditCard { userId: tokens.uuid, authToken: tokens.token } creditCardId
+
+deleteCreditCard :: Bottega.CreditCardId -> Aff (Either BottegaError Unit)
+deleteCreditCard creditCardId = callBottega $ \tokens -> Bottega.deleteCreditCard { userId: tokens.uuid, authToken: tokens.token } creditCardId
+
+registerCreditCard :: Aff (Either BottegaError Bottega.CreditCardRegister)
+registerCreditCard = callBottega $ \tokens -> Bottega.registerCreditCard { userId: tokens.uuid, authToken: tokens.token }
+
+getCreditCardRegister :: Bottega.CreditCardId -> Bottega.CreditCardRegisterNumber ->  Aff (Either BottegaError Bottega.CreditCardRegister)
+getCreditCardRegister creditCardId creditCardRegisterNumber =
+  callBottega $ \tokens -> Bottega.getCreditCardRegister { userId: tokens.uuid, authToken: tokens.token } creditCardId creditCardRegisterNumber
+
+updateCreditCardSubscriptions :: Bottega.CreditCardId -> Bottega.CreditCardId -> Aff (Either BottegaError Unit)
+updateCreditCardSubscriptions oldCreditCardId newCreditCardId = callBottega $ \tokens -> Bottega.updateCreditCardSubscriptions { userId: tokens.uuid, authToken: tokens.token } oldCreditCardId newCreditCardId
+
+callBottega :: forall a. (Persona.LoginResponse -> Aff a) -> Aff (Either BottegaError a)
 callBottega f = do
   tokens <- requireToken
   (try $ f tokens) >>= case _ of
     Right a  -> pure $ Right a
-    -- TODO: Come up with better errors
-    Left err -> pure $ Left $ Error.message err
+    Left err
+      | Just (errData :: Bottega.InsufficientAccount) <- Api.Error.errorData err ->
+          pure $ Left BottegaInsufficientAccount
+      | otherwise ->
+          pure $ Left (BottegaUnexpectedError $ Error.message err)
 
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages

@@ -1,10 +1,11 @@
 {
   "name": "@ksf-media/vetrina",
-  "version": "2.0.2",
+  "version": "3.0.1",
   "description": "Vetrina, frontend for purchasing KSF Media products",
   "license": "MIT",
   "scripts": {
-    "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d build ../../less/Vetrina.less"
+    "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d build ../../less/Vetrina.less",
+    "prepublishOnly": "yarn --cwd ../../apps/vetrina-test test"
   },
   "dependencies": {
     "@sentry/browser": "^5.13.2",
