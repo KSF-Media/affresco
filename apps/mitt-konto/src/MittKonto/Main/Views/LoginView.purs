@@ -1,4 +1,4 @@
-module MittKonto.Main.LoginView where
+module MittKonto.Main.Views.LoginView where
 
 import Prelude
 

@@ -1,5 +1,5 @@
 module MittKonto.Main.Types where
-  
+
 import Prelude
 
 import Bottega.Models (CreditCard)
@@ -39,7 +39,6 @@ import React.Basic (JSX, element)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
-import React.Basic.Router as Router
 
 type State =
   { paper :: Paper
