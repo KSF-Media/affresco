@@ -7,6 +7,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Class (liftEffect)
 import KSF.Alert.Component as Alert
 import KSF.PaymentAccordion as PaymentAccordion
+import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
 import MittKonto.Main.Helpers as Helpers
@@ -31,7 +32,7 @@ paymentView self user = DOM.div_
       case self.state.payments of
         Just payments -> pure payments
         Nothing ->
-          Helpers.withSpinner (self.setState <<< Helpers.setLoading) do
+          Spinner.withSpinner (self.setState <<< Helpers.setLoading) do
             p <- User.getPayments user.uuid
             case p of
               Right payments -> do

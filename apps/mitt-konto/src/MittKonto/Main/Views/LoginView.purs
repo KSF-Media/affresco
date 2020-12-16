@@ -9,6 +9,7 @@ import Effect.Aff as Aff
 import Effect.Exception (message)
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
+import KSF.Spinner as Spinner
 import KSF.User (UserError(..))
 import KSF.User.Login (login) as Login
 import MittKonto.Main.Helpers as Helpers
@@ -50,7 +51,7 @@ loginView self@{ state, setState } logger = React.fragment
                 logger.setUser $ Just user
           , launchAff_:
               Aff.runAff_ (setState <<< Helpers.setAlert <<< either Helpers.errorAlert (const Nothing))
-                <<< Helpers.withSpinner (setState <<< Helpers.setLoading)
+                <<< Spinner.withSpinner (setState <<< Helpers.setLoading)
           , disableSocialLogins: Set.empty
           }
 

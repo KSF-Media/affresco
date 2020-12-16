@@ -1,5 +1,6 @@
 module MittKonto.Main.Elements where
 
+import KSF.Spinner as Spinner
 import MittKonto.Main.Types as Types
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -15,8 +16,8 @@ disappearingBreak =
     , children: [ break ]
     }
 
-loadingIndicator :: Types.Loading -> JSX
-loadingIndicator Types.Loading =
+loadingIndicator :: Spinner.Loading -> JSX
+loadingIndicator Spinner.Loading =
   DOM.div
     { className: "mitt-konto--loading flex items-center"
     , children:

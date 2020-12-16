@@ -10,7 +10,6 @@ import Prelude
 
 import Data.Either (isLeft)
 import Data.Maybe (Maybe(..))
-import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -19,6 +18,7 @@ import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
 import KSF.Navbar.Component as Navbar
 import KSF.Sentry as Sentry
+import KSF.Spinner as Spinner
 import KSF.User (logout) as User
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.LoginView (loginView) as Views
@@ -37,7 +37,7 @@ navbarView self@{ state, setState } logger =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          Aff.launchAff_ $ Helpers.withSpinner (setState <<< Helpers.setLoading) do
+          Aff.launchAff_ $ Spinner.withSpinner (setState <<< Helpers.setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
               logger.setUser Nothing
