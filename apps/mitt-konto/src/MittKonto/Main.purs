@@ -1,27 +1,18 @@
 module MittKonto.Main where
 
-import Prelude (bind, const, discard, pure, when, ($), (<<<))
+import Prelude
 
-import Data.Either (isLeft)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Effect (Effect)
-import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (loginView, paymentView, userView ) as Views
-import KSF.Alert.Component (Alert)
-import KSF.Alert.Component as Alert
-import KSF.Footer.Component as Footer
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, paymentView, userView) as Views
 import KSF.Paper (Paper(..))
-import KSF.Navbar.Component as Navbar
 import KSF.Sentry as Sentry
-import KSF.User (logout) as User
 import React.Basic (JSX, element)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useState, (/\))
@@ -54,14 +45,14 @@ jsApp = unsafePerformEffect app
 render :: Types.Self -> Sentry.Logger -> JSX
 render self@{ state, setState } logger =
   React.fragment
-    [ navbarView self logger
+    [ Views.navbarView self logger
     , Helpers.classy DOM.div "mt4 mb4"
-        [ foldMap alertView state.alert ]
+        [ foldMap Views.alertView state.alert ]
     , Helpers.classy DOM.div "mt4 mb4 clearfix"
         [ Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
             [ element Router.switch { children: [ paymentListRoute, mittKontoRoute, noMatchRoute ] } ]
         ]
-    , footerView
+    , Views.footerView
     ]
  where
    mittKontoRoute =
@@ -99,25 +90,3 @@ render self@{ state, setState } logger =
           , path: toNullable Nothing
           , render: const mittKontoView
           }
-
--- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: Types.Self -> Sentry.Logger -> JSX
-navbarView self@{ state, setState } logger =
-    Navbar.navbar
-      { paper: state.paper
-      , loggedInUser: state.loggedInUser
-      , logout: do
-          Aff.launchAff_ $ Helpers.withSpinner (setState <<< Helpers.setLoading) do
-            User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
-            liftEffect do
-              logger.setUser Nothing
-              setState $ Helpers.setLoggedInUser Nothing
-      }
-
-alertView :: Alert -> JSX
-alertView alert =
-  Helpers.classy DOM.div "col-4 mx-auto center"
-    [ Alert.alert alert ]
-
-footerView :: React.JSX
-footerView = Footer.footer {}

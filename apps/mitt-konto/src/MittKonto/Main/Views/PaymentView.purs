@@ -1,4 +1,4 @@
-module MittKonto.Main.Views.PaymentView where
+module MittKonto.Main.PaymentView where
 
 import Prelude
 
