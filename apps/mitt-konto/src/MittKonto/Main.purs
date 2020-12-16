@@ -1,22 +1,18 @@
 module MittKonto.Main where
 
-import Prelude
+import Prelude (bind, comparing, const, discard, map, otherwise, pure, when, ($), (<<<), (<>))
 
-import Bottega.Models (CreditCard)
 import Data.Array (snoc, sortBy, (:))
-import Data.Either (Either(..), either, isLeft)
-import Data.Foldable (foldMap, oneOf)
+import Data.Either (Either(..), isLeft)
+import Data.Foldable (foldMap)
 import Data.JSDate (JSDate, parse)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
-import Data.Set as Set
 import Data.String (toUpper)
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Exception (Error, error, message)
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.AccountEdit as AccountEdit
 import MittKonto.IconAction as IconAction
@@ -26,18 +22,15 @@ import MittKonto.Main.Types as Types
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
-import KSF.Error as KSF.Error
 import KSF.Footer.Component as Footer
-import KSF.JSError as Error
 import KSF.Paper (Paper(..))
 import KSF.Navbar.Component as Navbar
 import KSF.PaymentAccordion as PaymentAccordion
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.Subscription.Component (subscription) as Subscription
-import KSF.User (User, UserError(..), SubscriptionPayments)
+import KSF.User (User)
 import KSF.User (logout, getPayments) as User
-import KSF.User.Login (login) as Login
 import React.Basic (JSX, element)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useState, (/\))
@@ -46,33 +39,6 @@ import React.Basic.Router as Router
 
 foreign import images :: { subscribe :: String }
 foreign import sentryDsn_ :: Effect String
-
-type State =
-  { paper :: Paper
-  , loggedInUser :: Maybe User
-  , loading :: Maybe Types.Loading
-  , showWelcome :: Boolean
-  , alert :: Maybe Alert
-  , payments :: Maybe (Array SubscriptionPayments)
-  , creditCards :: Array CreditCard
-  }
-
-setLoading :: Maybe Types.Loading -> State -> State
-setLoading loading = _ { loading = loading }
-
-setLoggedInUser :: Maybe User -> State -> State
-setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
-
-setAlert :: Maybe Alert -> State -> State
-setAlert alert = _ { alert = alert }
-
-setPayments :: Maybe (Array SubscriptionPayments) -> State -> State
-setPayments payments = _ { payments = payments }
-
-type Self =
-  { state :: State
-  , setState :: (State -> State) -> Effect Unit
-  }
 
 app :: Component {}
 app = do
@@ -95,7 +61,7 @@ app = do
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Self -> Sentry.Logger -> JSX
+render :: Types.Self -> Sentry.Logger -> JSX
 render self@{ state, setState } logger =
   React.fragment
     [ navbarView self logger
@@ -157,17 +123,17 @@ loadingIndicator Types.Loading =
       }
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: Self -> Sentry.Logger -> JSX
+navbarView :: Types.Self -> Sentry.Logger -> JSX
 navbarView self@{ state, setState } logger =
     Navbar.navbar
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          Aff.launchAff_ $ Helpers.withSpinner (setState <<< setLoading) do
+          Aff.launchAff_ $ Helpers.withSpinner (setState <<< Helpers.setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
               logger.setUser Nothing
-              setState $ setLoggedInUser Nothing
+              setState $ Helpers.setLoggedInUser Nothing
       }
 
 alertView :: Alert -> JSX
@@ -179,7 +145,7 @@ footerView :: React.JSX
 footerView = Footer.footer {}
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: Self -> Sentry.Logger -> User -> JSX
+userView :: Types.Self -> Sentry.Logger -> User -> JSX
 userView { setState, state: { creditCards } } logger user = React.fragment
   [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
@@ -200,7 +166,7 @@ userView { setState, state: { creditCards } } logger user = React.fragment
       where
         profileComponentBlock = componentBlockContent $ Profile.profile
           { profile: user
-          , onUpdate: setState <<< setLoggedInUser <<< Just
+          , onUpdate: setState <<< Helpers.setLoggedInUser <<< Just
           , logger
           }
         editAccountBlock = DOM.div
@@ -308,7 +274,7 @@ userView { setState, state: { creditCards } } logger user = React.fragment
          }
 
 -- | Specialized view with user's payment list
-paymentView :: Self -> User -> JSX
+paymentView :: Types.Self -> User -> JSX
 paymentView self user = DOM.div_
   [ element
       Router.link
@@ -323,14 +289,14 @@ paymentView self user = DOM.div_
       case self.state.payments of
         Just payments -> pure payments
         Nothing ->
-          Helpers.withSpinner (self.setState <<< setLoading) do
+          Helpers.withSpinner (self.setState <<< Helpers.setLoading) do
             p <- User.getPayments user.uuid
             case p of
               Right payments -> do
                 liftEffect $ self.setState _ { payments = Just payments }
                 pure payments
               Left _         -> do
-                liftEffect $ self.setState $ setAlert $ Just
+                liftEffect $ self.setState $ Helpers.setAlert $ Just
                   { level: Alert.warning
                   , title: "Laddningen misslyckades."
                   , message: "Något gick fel, ta kontakt med kundservice."
