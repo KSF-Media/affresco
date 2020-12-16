@@ -16,6 +16,7 @@ data SubscriptionError
   = SubscriptionTemporaryAddressChange
   | SubscriptionPause
   | SubscriptionReclamation
+  | SubscriptionCancel
 
 derive instance genericSubscriptionError :: Generic SubscriptionError _
 instance showSubscriptionError :: Show SubscriptionError where

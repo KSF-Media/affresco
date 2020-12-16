@@ -19,6 +19,7 @@ import Effect.Class (liftEffect)
 import Effect.Now as Now
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
+import KSF.Subscription.Cancel as Cancel
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -39,6 +40,7 @@ type Self = React.Self Props State
 
 type Props =
   { subscription :: User.Subscription
+  , onSubscriptionUpdate :: User.Subscription -> Effect Unit
   , user :: User
   , logger :: Sentry.Logger
   }
@@ -55,6 +57,7 @@ data SubscriptionUpdateAction
   = PauseSubscription
   | TemporaryAddressChange
   | DeliveryReclamation
+  | CancelSubscription
 
 type Subscription =
   { package :: { name :: String
@@ -200,6 +203,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                    Just a -> removeTempAddressChanges a
                    Nothing -> mempty
             , deliveryReclamationIcon
+            , case toMaybe props.subscription.dates.suspend of
+                   Nothing -> cancelSubscriptionIcon
+                   _ -> mempty
             ]
 
           successWrapper msg =
@@ -236,6 +242,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                   Just PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
                   Just TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
                   Just DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
+                  Just CancelSubscription     -> AsyncWrapper.Editing cancelSubscriptionComponent
                   Nothing                     -> AsyncWrapper.Ready
 
     temporaryAddressChangeComponent =
@@ -326,6 +333,23 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                          }
         , onError: \err -> do
             self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
+            self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+        }
+
+    cancelSubscriptionComponent =
+      Cancel.cancelSubscription
+        { subsno:    props.subscription.subsno
+        , cusno:     props.user.cusno
+        , userUuid:  props.user.uuid
+        , onCancel:  self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+        , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+        , onSuccess: \newSub -> do
+                       self.props.onSubscriptionUpdate newSub
+                       self.setState _
+                         { wrapperProgress = AsyncWrapper.Success successText
+                         }
+        , onError: \err -> do
+            self.props.logger.error $ Error.subscriptionError Error.SubscriptionCancel $ show err
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
         }
 
@@ -474,6 +498,29 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             self.setState _
               { updateAction = Just DeliveryReclamation
               , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
+              }
+
+    cancelSubscriptionIcon =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+            [ DOM.div
+               { className: "subscription--cancel-subscription-icon circle"
+               , onClick: showCancelSubscription
+               }
+            , DOM.span
+                { className: "subscription--update-action-text"
+                , children:
+                    [ DOM.u_ [ DOM.text "Avsluta prenumerationen" ] ]
+                , onClick: showCancelSubscription
+                }
+            ]
+        }
+        where
+          showCancelSubscription = handler_ do
+            self.setState _
+              { updateAction = Just CancelSubscription
+              , wrapperProgress = AsyncWrapper.Editing cancelSubscriptionComponent
               }
 
     billingPeriodEndDate =

@@ -15,6 +15,7 @@ module KSF.User
   , updatePassword
   , pauseSubscription
   , unpauseSubscription
+  , cancelSubscription
   , temporaryAddressChange
   , deleteTemporaryAddressChange
   , createDeliveryReclamation
@@ -76,7 +77,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..), CancelReason) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -442,6 +443,18 @@ unpauseSubscription
   -> Aff Subscription.Subscription
 unpauseSubscription userUuid subsno = do
   Persona.unpauseSubscription userUuid subsno <<< _.token =<< requireToken
+
+cancelSubscription
+  :: Api.UUID
+  -> Int
+  -> Persona.CancelReason
+  -> Maybe String
+  -> Aff (Either String Subscription.Subscription)
+cancelSubscription userUuid subsno reason notes = do
+  cancelledSub <- try $ Persona.cancelSubscription userUuid subsno reason notes <<< _.token =<< requireToken
+  case cancelledSub of
+    Right sub -> pure $ Right sub
+    Left err -> pure $ Left $ show err
 
 temporaryAddressChange
   :: Api.UUID
