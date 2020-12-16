@@ -18,11 +18,11 @@ disappearingBreak =
 loadingIndicator :: Types.Loading -> JSX
 loadingIndicator Types.Loading =
   DOM.div
-      { className: "mitt-konto--loading flex items-center"
-      , children:
-          [ DOM.div
-              { className: "clearfix mx-auto"
-              , children: [ DOM.div { className: "mitt-konto--loading-image", children: [] } ]
-              }
-          ]
-      }
+    { className: "mitt-konto--loading flex items-center"
+    , children:
+        [ DOM.div
+            { className: "clearfix mx-auto"
+            , children: [ DOM.div { className: "mitt-konto--loading-image", children: [] } ]
+            }
+        ]
+    }

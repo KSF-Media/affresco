@@ -145,7 +145,7 @@ userView { setState, state: { creditCards } } logger user = React.fragment
         }
 
     componentBlockContent child =
-       DOM.div
-         { className: "mitt-konto--component-block-content"
-         , children: [ child ]
-         }
+      DOM.div
+        { className: "mitt-konto--component-block-content"
+        , children: [ child ]
+        }
