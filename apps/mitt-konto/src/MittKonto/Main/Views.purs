@@ -1,0 +1,53 @@
+module MittKonto.Main.Views
+  ( module Views
+  , alertView
+  , footerView
+  , navbarView
+  )
+  where
+
+import Prelude
+
+import Data.Either (isLeft)
+import Data.Maybe (Maybe(..))
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
+import KSF.Alert.Component (Alert)
+import KSF.Alert.Component as Alert
+import KSF.Footer.Component as Footer
+import KSF.Navbar.Component as Navbar
+import KSF.Sentry as Sentry
+import KSF.Spinner as Spinner
+import KSF.User (logout) as User
+import MittKonto.Main.Helpers as Helpers
+import MittKonto.Main.LoginView (loginView) as Views
+import MittKonto.Main.PaymentView (paymentView) as Views
+import MittKonto.Main.Types as Types
+import MittKonto.Main.UserView (userView) as Views
+import React.Basic (JSX)
+import React.Basic.DOM as DOM
+import React.Basic.Hooks as React
+
+
+-- | Navbar with logo, contact info, logout button, language switch, etc.
+navbarView :: Types.Self -> Sentry.Logger -> JSX
+navbarView self@{ state, setState } logger =
+    Navbar.navbar
+      { paper: state.paper
+      , loggedInUser: state.loggedInUser
+      , logout: do
+          Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
+            User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
+            liftEffect do
+              logger.setUser Nothing
+              setState $ Types.setLoggedInUser Nothing
+      }
+
+alertView :: Alert -> JSX
+alertView alert =
+  Helpers.classy DOM.div "col-4 mx-auto center"
+    [ Alert.alert alert ]
+
+footerView :: React.JSX
+footerView = Footer.footer {}
