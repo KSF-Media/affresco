@@ -2,7 +2,7 @@ module KSF.Vetrina where
 
 import Prelude
 
-import Bottega (BottegaError (..))
+import Bottega (BottegaError(..), InsufficientAccount)
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
@@ -36,11 +36,13 @@ import Record (merge)
 import Tracking as Tracking
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
+import Vetrina.Purchase.InsufficientAccount (mkInsufficientAccount)
+import Vetrina.Purchase.InsufficientAccount as InsufficientAccount
+import Vetrina.Purchase.InsufficientAccount as Purchase.InsufficientAccount
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
-import Vetrina.Purchase.InsufficientAccount as Purchase.InsufficientAccount
 import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
 
@@ -95,8 +97,11 @@ type State =
   , products         :: Array Product
   , productSelection :: Maybe Product
   , paymentMethod    :: User.PaymentMethod
+  , insufficientAccountComponent :: InsufficientAccount.Props -> JSX
+  , retryPurchase :: User -> Effect Unit
   }
 
+newtype Self' = Self' Self
 type Self = React.Self Props State
 
 type SetState = (State -> State) -> Effect Unit
@@ -118,7 +123,6 @@ data OrderFailure
   | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
-  | InsufficientAccount
   | ServerError
   | UnexpectedError String
 
@@ -147,13 +151,18 @@ initialState =
   , products: []
   , productSelection: Nothing
   , paymentMethod: CreditCard
+  , insufficientAccountComponent: const $ DOM.text "YOLLO"
+  , retryPurchase: const $ pure unit
+  -- , retryPurchase: \(Self' self) validForm user ->
+  --     mkPurchaseWithLoggedInAccount self  user
   }
 
 didMount :: Self -> Effect Unit
 didMount self = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "vetrina"
-  self.setState _ { logger = logger }
+  insufficientAccountComponent <- mkInsufficientAccount
+
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
   Aff.launchAff_ do
@@ -171,7 +180,11 @@ didMount self = do
             logger.error err
             throwError err
 
-        liftEffect $ self.setState _ { products = products }
+        liftEffect $ self.setState _
+          { products = products
+          , insufficientAccountComponent = insufficientAccountComponent
+          , logger = logger
+          }
 
 tryMagicLogin :: Self -> Aff Unit
 tryMagicLogin self =
@@ -275,10 +288,14 @@ render self = vetrinaContainer self $
           Purchase.SubscriptionExists.subscriptionExists
             { onClose: self.props.onClose }
         InsufficientAccount ->
-          Purchase.InsufficientAccount.insufficientAccount
-           { user: self.state.user
-           , onRetry: onRetry
-           }
+          case self.state.user of
+            Just u ->
+              self.state.insufficientAccountComponent
+                { user: u
+                , retryPurchase: self.state.retryPurchase
+                }
+            -- Can't do much without a user
+            Nothing -> self.props.unexpectedError
         AuthenticationError ->
           Purchase.NewPurchase.newPurchase
             { accountStatus: self.state.accountStatus
@@ -334,6 +351,7 @@ vetrinaContainer self@{ state: { purchaseState } } child =
       errorClass       = case purchaseState of
                            PurchaseFailed SubscriptionExists  -> mempty
                            PurchaseFailed AuthenticationError -> mempty
+                           PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
                            otherwise                          -> mempty
   in
@@ -414,7 +432,11 @@ mkPurchase self@{ state: { logger } } validForm affUser =
                                                         }
             SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
             AuthenticationError           -> self.state { purchaseState = PurchaseFailed AuthenticationError }
-            InsufficientAccount           -> self.state { purchaseState = PurchaseFailed InsufficientAccount }
+            InsufficientAccount           ->
+              self.state { purchaseState = PurchaseFailed InsufficientAccount
+                         , retryPurchase = \user ->
+                             mkPurchase self validForm (pure $ Right user)
+                         }
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
       liftEffect $ self.setState \_ -> errState

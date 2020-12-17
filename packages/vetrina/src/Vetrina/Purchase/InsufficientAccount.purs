@@ -2,50 +2,175 @@ module Vetrina.Purchase.InsufficientAccount where
 
 import Prelude
 
+import Control.Alt ((<|>))
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
+import Data.Validation.Semigroup (unV)
 import Effect (Effect)
-import Data.Maybe (Maybe)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import KSF.InputField as InputField
+import KSF.User (User, UserUpdate(..))
+import KSF.User as User
+import KSF.ValidatableForm (CommonContactInformation, CommonContactInformationFormField(..), emptyCommonContactInformation)
+import KSF.ValidatableForm as Form
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-
-import KSF.User as User
-
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler)
+import React.Basic.Hooks (Component, component, fragment, useState, (/\))
+import React.Basic.Hooks as React
 
 type Props =
-  { user    :: Maybe User.User
-  , onRetry :: Effect Unit
+  { user    :: User
+  , retryPurchase :: User -> Effect Unit
+--  , onUserUpdate :: U
   }
 
-insufficientAccount :: Props -> JSX
-insufficientAccount props =
-  DOM.div
-    { className: "vetrina--insufficient-account"
+type State =
+  { contactForm :: CommonContactInformation
+  }
+
+type Self =
+  { state :: State
+  , setState :: (State -> State) -> Effect Unit
+  }
+
+mkInsufficientAccount :: Component Props
+mkInsufficientAccount = do
+  let initialState =
+        { contactForm: emptyCommonContactInformation }
+  component "insufficientAccount" \props -> React.do
+    state /\ setState <- useState initialState
+    let self = { state, setState }
+    pure $ render props self
+
+render :: Props -> Self -> JSX
+render props self@{ state: { contactForm } } = fragment
+  [ DOM.h1
+      { className: "vetrina--headline"
+      , children: [ DOM.text "Adressuppgifter" ]
+      }
+  , DOM.form
+    { className: "vetrina--form"
+    , onSubmit: handler preventDefault $ (\_ -> submitForm formValidations)
     , children:
-       [ DOM.h1
-           { className: "vetrina--headline"
-           , children: [ DOM.text "Adressuppgifter" ]
-           }
-       , DOM.p { children: [ DOM.text "Vänligen komplettera ditt konto med följande uppgifter" ] }
-       , DOM.form
-        { className: "vetrina-form"
-        , children:
-          [ DOM.label { htmlFor: "account--first-name" }
-          , DOM.input { type: "text", name: "account--first-name" }
-
-          , DOM.label { htmlFor: "account--last-name" }
-          , DOM.input { type: "text", name: "account--last-name" }
-
-          , DOM.label { htmlFor: "account--street-address" }
-          , DOM.input { type: "text", name: "account--street-address" }
-
-          , DOM.label { htmlFor: "account--city" }
-          , DOM.input { type: "text", name: "account--city" }
-
-          , DOM.label { htmlFor: "account--postal-code" }
-          , DOM.input { type: "text", name: "account--postal-code" }
-
-          , DOM.label { htmlFor: "account--country" }
-          , DOM.input { type: "text", name: "account--country" }
-          ]
-        }
-      ]
+        [ DOM.div
+            { className: "vetrina--step"
+            , children:
+                [ DOM.span
+                    { className: "vetrina--step__headline"
+                    , children: [ DOM.text "Dina uppgifter" ]
+                    }
+                , DOM.text "STEG 1 / 2 KONTOINFORMATION"
+                ]
+            }
+        , InputField.inputField
+            { type_: InputField.Text
+            , label: Just "Förnamn"
+            , name: "firstName"
+            , placeholder: "Förnamn"
+            , onChange: \newFirstName -> self.setState _ { contactForm { firstName = newFirstName }}
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField FirstName contactForm.firstName []
+            , value: contactForm.firstName
+            }
+        , InputField.inputField
+            { type_: InputField.Text
+            , label: Just "Efternamn"
+            , name: "lastName"
+            , placeholder: "Efternamn"
+            , onChange: \newLastName -> self.setState _ { contactForm { lastName = newLastName }}
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField LastName contactForm.lastName []
+            , value: contactForm.lastName
+            }
+        , InputField.inputField
+            { type_: InputField.Text
+            , label: Just "Adress"
+            , name: "streetAddress"
+            , placeholder: "Adress"
+            , onChange: \newStreetAddress -> self.setState _ { contactForm { streetAddress = newStreetAddress }}
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField StreetAddress contactForm.streetAddress []
+            , value: contactForm.streetAddress
+            }
+        , InputField.inputField
+            { type_: InputField.Text
+            , label: Just "Stad"
+            , name: "city"
+            , placeholder: "Stad"
+            , onChange: \newCity -> self.setState _ { contactForm { city = newCity }}
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField City contactForm.city []
+            , value: contactForm.city
+            }
+        , InputField.inputField
+            { type_: InputField.Text
+            , label: Just "Postnummer"
+            , name: "zipCode"
+            , placeholder: "Postnummer"
+            , onChange: \newZipCode -> self.setState _ { contactForm { zipCode = newZipCode }}
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField Zip contactForm.zipCode []
+            , value: contactForm.zipCode
+            }
+        , InputField.inputField
+            { type_: InputField.Text
+            , label: Just "Land"
+            , name: "countryCode"
+            , placeholder: "Land"
+            , onChange: \newCountry -> self.setState _ { contactForm { countryCode = newCountry }}
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField Country contactForm.countryCode []
+            , value: contactForm.countryCode
+            }
+        , DOM.input
+            { type: "submit"
+            , className: "vetrina--button"
+            , disabled: Form.isFormInvalid formValidations
+            , value: "Bekräfta och gå vidare"
+            }
+        ]
     }
+  ]
+  where
+    formValidations =
+      { firstName: _
+      , lastName: _
+      , streetAddress: _
+      , city: _
+      , zipCode: _
+      , countryCode: _
+      }
+      <$> Form.validateField FirstName self.state.contactForm.firstName mempty
+      <*> Form.validateField LastName  self.state.contactForm.lastName  mempty
+      <*> Form.validateField StreetAddress self.state.contactForm.streetAddress mempty
+      <*> Form.validateField City self.state.contactForm.city mempty
+      <*> Form.validateField Zip self.state.contactForm.zipCode mempty
+      <*> Form.validateField Country self.state.contactForm.countryCode mempty
+
+    submitForm = unV
+      (\errors -> do
+          let form = self.state.contactForm
+          self.setState _
+            { contactForm
+                { firstName       = form.firstName     <|> Just ""
+                , lastName        = form.lastName      <|> Just ""
+                , streetAddress   = form.streetAddress <|> Just ""
+                , city            = form.city          <|> Just ""
+                , zipCode         = form.zipCode       <|> Just ""
+                , countryCode     = form.countryCode   <|> Just ""
+                }
+            })
+      (\validForm -> do
+          let updateAddress = do
+                firstName     <- validForm.firstName
+                lastName      <- validForm.lastName
+                streetAddress <- validForm.streetAddress
+                city          <- validForm.city
+                zipCode       <- validForm.zipCode
+                countryCode   <- validForm.zipCode
+                pure { firstName, lastName, streetAddress, city, zipCode, countryCode }
+          case updateAddress of
+            Nothing -> pure unit
+            Just addr -> Aff.launchAff_ do
+              eitherUser <- User.updateUser props.user.uuid $ UpdateFull addr
+              case eitherUser of
+                Right user -> liftEffect $ props.retryPurchase user
+                Left err -> pure unit
+      )

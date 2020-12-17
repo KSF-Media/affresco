@@ -60,8 +60,9 @@ updateUser :: UUID -> UserUpdate -> Token -> Aff User
 updateUser uuid update token = do
   let authorization = oauthToken token
       body = case update of
-        UpdateName names      -> unsafeToForeign names
-        UpdateAddress address -> unsafeToForeign { address }
+        UpdateName names          -> unsafeToForeign names
+        UpdateAddress address     -> unsafeToForeign { address }
+        UpdateFull namesAddresses -> unsafeToForeign namesAddresses
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
   let parsedSubs = map Subscription.parseSubscription user.subs
   pure $ user { subs = parsedSubs }
@@ -227,6 +228,7 @@ type LoginDataSso =
 data UserUpdate
   = UpdateName { firstName :: String, lastName :: String }
   | UpdateAddress { countryCode :: String, zipCode :: String, streetAddress :: String }
+  | UpdateFull { firstName :: String, lastName :: String, city :: String, countryCode :: String, zipCode :: String, streetAddress :: String }
 
 type EmailAddressInUse = ServerError
   ( email_address_in_use ::
