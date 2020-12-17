@@ -5,33 +5,14 @@ import Prelude
 import Data.Array ((:))
 import Data.Foldable (oneOf)
 import Data.JSDate (JSDate, parse)
-import Data.Maybe (Maybe(..))
-import Effect (Effect)
-import Effect.Aff (Aff)
-import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import Effect.Exception (Error, error)
+import Data.Maybe (Maybe)
+import Effect.Exception (Error)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Error as KSF.Error
-import KSF.Spinner as Spinner
-import KSF.User (SubscriptionPayments, User)
-import MittKonto.Main.Types as Types
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-
-setLoading :: Maybe Spinner.Loading -> Types.State -> Types.State
-setLoading loading = _ { loading = loading }
-
-setLoggedInUser :: Maybe User -> Types.State -> Types.State
-setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
-
-setAlert :: Maybe Alert -> Types.State -> Types.State
-setAlert alert = _ { alert = alert }
-
-setPayments :: Maybe (Array SubscriptionPayments) -> Types.State -> Types.State
-setPayments payments = _ { payments = payments }
 
 errorAlert :: Error -> Maybe Alert
 errorAlert err = oneOf

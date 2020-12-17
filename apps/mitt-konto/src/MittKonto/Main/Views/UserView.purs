@@ -43,7 +43,7 @@ userView { setState, state: { creditCards } } logger user = React.fragment
       where
         profileComponentBlock = componentBlockContent $ Profile.profile
           { profile: user
-          , onUpdate: setState <<< Helpers.setLoggedInUser <<< Just
+          , onUpdate: setState <<< Types.setLoggedInUser <<< Just
           , logger
           }
         editAccountBlock = DOM.div

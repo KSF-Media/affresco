@@ -10,7 +10,6 @@ import KSF.PaymentAccordion as PaymentAccordion
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
-import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import React.Basic (JSX, element)
 import React.Basic.DOM as DOM
@@ -32,14 +31,14 @@ paymentView self user = DOM.div_
       case self.state.payments of
         Just payments -> pure payments
         Nothing ->
-          Spinner.withSpinner (self.setState <<< Helpers.setLoading) do
+          Spinner.withSpinner (self.setState <<< Types.setLoading) do
             p <- User.getPayments user.uuid
             case p of
               Right payments -> do
                 liftEffect $ self.setState _ { payments = Just payments }
                 pure payments
               Left _         -> do
-                liftEffect $ self.setState $ Helpers.setAlert $ Just
+                liftEffect $ self.setState $ Types.setAlert $ Just
                   { level: Alert.warning
                   , title: "Laddningen misslyckades."
                   , message: "Något gick fel, ta kontakt med kundservice."

@@ -37,11 +37,11 @@ navbarView self@{ state, setState } logger =
       { paper: state.paper
       , loggedInUser: state.loggedInUser
       , logout: do
-          Aff.launchAff_ $ Spinner.withSpinner (setState <<< Helpers.setLoading) do
+          Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
               logger.setUser Nothing
-              setState $ Helpers.setLoggedInUser Nothing
+              setState $ Types.setLoggedInUser Nothing
       }
 
 alertView :: Alert -> JSX

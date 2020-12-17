@@ -45,13 +45,13 @@ loginView self@{ state, setState } logger = React.fragment
                   UnexpectedError e  -> logger.error $ Error.loginError $ message e
                   -- If any other UserError occurs, only send an Info event of it
                   _ -> logger.log (show err) Sentry.Info
-                self.setState $ Helpers.setLoggedInUser Nothing
+                self.setState $ Types.setLoggedInUser Nothing
               Right user -> do
-                setState $ Helpers.setLoggedInUser $ Just user
+                setState $ Types.setLoggedInUser $ Just user
                 logger.setUser $ Just user
           , launchAff_:
-              Aff.runAff_ (setState <<< Helpers.setAlert <<< either Helpers.errorAlert (const Nothing))
-                <<< Spinner.withSpinner (setState <<< Helpers.setLoading)
+              Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
+                <<< Spinner.withSpinner (setState <<< Types.setLoading)
           , disableSocialLogins: Set.empty
           }
 

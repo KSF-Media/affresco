@@ -1,7 +1,6 @@
 module MittKonto.Main.Elements where
 
 import KSF.Spinner as Spinner
-import MittKonto.Main.Types as Types
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 

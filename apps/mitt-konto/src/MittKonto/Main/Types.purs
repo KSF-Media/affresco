@@ -24,3 +24,15 @@ type Self =
   { state :: State
   , setState :: (State -> State) -> Effect Unit
   }
+
+setLoading :: Maybe Spinner.Loading -> State -> State
+setLoading loading = _ { loading = loading }
+
+setLoggedInUser :: Maybe User -> State -> State
+setLoggedInUser loggedInUser = _ { loggedInUser = loggedInUser }
+
+setAlert :: Maybe Alert -> State -> State
+setAlert alert = _ { alert = alert }
+
+setPayments :: Maybe (Array SubscriptionPayments) -> State -> State
+setPayments payments = _ { payments = payments }
