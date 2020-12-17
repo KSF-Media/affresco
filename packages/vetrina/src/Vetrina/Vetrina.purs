@@ -101,7 +101,6 @@ type State =
   , retryPurchase :: User -> Effect Unit
   }
 
-newtype Self' = Self' Self
 type Self = React.Self Props State
 
 type SetState = (State -> State) -> Effect Unit
@@ -153,8 +152,6 @@ initialState =
   , paymentMethod: CreditCard
   , insufficientAccountComponent: const $ DOM.text "YOLLO"
   , retryPurchase: const $ pure unit
-  -- , retryPurchase: \(Self' self) validForm user ->
-  --     mkPurchaseWithLoggedInAccount self  user
   }
 
 didMount :: Self -> Effect Unit
