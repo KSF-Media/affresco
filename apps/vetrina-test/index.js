@@ -9,13 +9,39 @@ React.createClass = createReactClass;
 function main() {
   const myComponent = (
       <Main.jsComponent
-    products={[hblPremium]}
+    products={[hblPaper]}
     accessEntitlements={["hbl-365", "articles-365"]}
     headline={<div>Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
     paper="HBL"/>
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));
+}
+
+var hblPaper = {
+  id: "HBL P+D LÖ",
+  description:
+    <div>
+      Kvalitetsjournalistik när, var och hur du vill <br />
+      HBL WEEKEND LÖ-SÖ! A paper product yo.
+    </div>,
+  priceCents: 2990,
+  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
+    name: "Hufvudstadsbladet Premium",
+    contents: [
+	{
+	    title: "Premium",
+	    description: "Alla artiklar på hbl.fi"
+	},
+	{
+	    title: "Nyhetsappen HBL Nyheter",
+	    description: "Nyheter på mobilen och surfplattan, pushnotiser"
+	},
+	{
+	    title: "Digitalt månadsbrev",
+	    description: "Nyheter & förmåner"
+	}
+    ]
 }
 
 var hblPremium = {
