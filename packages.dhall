@@ -3,6 +3,7 @@ let upstream =
       with toppokki.repo
            = "https://github.com/KSF-Media/purescript-toppokki.git"
       with toppokki.version = "81e63299d0765e4b54cb0e26a5edc9d7b6cc5036"
+      with react-basic-router = /home/kaol/src/purescript-react-basic-router/spago.dhall as Location
 
 let additions =
       { facebook =
