@@ -27,14 +27,24 @@ type State =
   , onClose :: Effect Unit
   }
 
+data BasicRoute = BasicRoute
+  { titleText :: String
+  , renderedContent :: JSX
+  }
+
 type SetRouteWrapperState = (State -> State) -> Effect Unit
 
 class RouteWrapperContent p where
   instantiate :: p -> SetRouteWrapperState -> Effect Unit
 
+instance basicRouteWrapper :: RouteWrapperContent BasicRoute where
+  instantiate (BasicRoute { titleText, renderedContent }) setWrapperState = do
+    setWrapperState \s -> s { titleText = titleText, renderedContent = renderedContent }
+
 routeWrapper :: forall p t. Eq t => RouteWrapperContent p => (p -> t) -> Component (Props p)
 routeWrapper f = do
   component "RouteWrapper" \props@{ content, closeType, route, routeFrom } -> React.do
+--    routeHooks content
     state /\ setState <- useState initialState
     useEffect (f content) do
       instantiate content setState
@@ -106,7 +116,7 @@ routeWrapper f = do
             , className
             }
 
-autoClose :: forall p. (RouteWrapperContent p) => Props p -> AutoClose -> JSX
+autoClose :: forall a. { route :: String, routeFrom :: String | a } -> AutoClose -> JSX
 autoClose props@{ route, routeFrom } Immediate = Router.redirect
   { to: { pathname: routeFrom
         , state: {}
