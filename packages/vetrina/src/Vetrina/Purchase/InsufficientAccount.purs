@@ -65,6 +65,7 @@ render props self@{ state: { contactForm } } = fragment
                 , DOM.text "STEG 1 / 2 KONTOINFORMATION"
                 ]
             }
+        -- TODO: FILL IN FORM WITH USER ADDRESS IF DEFINED
         , InputField.inputField
             { type_: InputField.Text
             , label: Just "Förnamn"
@@ -110,6 +111,7 @@ render props self@{ state: { contactForm } } = fragment
             , validationError: Form.inputFieldErrorMessage $ Form.validateField Zip contactForm.zipCode []
             , value: contactForm.zipCode
             }
+        -- TODO: USE COUNTRY DROPDOWN
         , InputField.inputField
             { type_: InputField.Text
             , label: Just "Land"
@@ -164,7 +166,7 @@ render props self@{ state: { contactForm } } = fragment
                 streetAddress <- validForm.streetAddress
                 city          <- validForm.city
                 zipCode       <- validForm.zipCode
-                countryCode   <- validForm.zipCode
+                countryCode   <- validForm.countryCode
                 pure { firstName, lastName, streetAddress, city, zipCode, countryCode }
           case updateAddress of
             Nothing -> pure unit
