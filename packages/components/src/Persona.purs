@@ -62,7 +62,18 @@ updateUser uuid update token = do
       body = case update of
         UpdateName names          -> unsafeToForeign names
         UpdateAddress address     -> unsafeToForeign { address }
-        UpdateFull namesAddresses -> unsafeToForeign namesAddresses
+        UpdateFull userInfo ->
+          unsafeToForeign
+            { firstName: userInfo.firstName
+            , lastName: userInfo.lastName
+            , address:
+                { streetAddress: userInfo.streetAddress
+                , zipCode: userInfo.zipCode
+                , countryCode: userInfo.countryCode
+                , city: userInfo.city
+                }
+            }
+
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] { authorization }
   let parsedSubs = map Subscription.parseSubscription user.subs
   pure $ user { subs = parsedSubs }
