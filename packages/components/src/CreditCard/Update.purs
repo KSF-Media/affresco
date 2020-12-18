@@ -17,7 +17,7 @@ import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
 import React.Basic (JSX)
-import React.Basic.Classic (make)
+import React.Basic.Classic (element, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router as Router
@@ -128,7 +128,7 @@ startRegisterPoller setState props state oldCreditCard creditCardRegister = do
     Aff.joinFiber newPoller
   liftEffect $ setState _ { poller = newPoller }
 
-pollRegister :: SetState -> Props -> State -> CreditCard -> Either String CreditCardRegister -> Aff Unit
+pollRegister :: SetState -> Props -> State -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
 pollRegister setState props@{ logger, onError, onSuccess, onCancel } state oldCreditCard (Right register) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case register.status.state of
@@ -153,6 +153,6 @@ pollRegister setState props@{ logger, onError, onSuccess, onCancel } state oldCr
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
       onError
-pollRegister props state (Left err) = liftEffect $ do
+pollRegister _ props _ _ (Left err) = liftEffect $ do
   props.logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
   props.onError

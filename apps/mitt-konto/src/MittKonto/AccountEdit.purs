@@ -15,8 +15,8 @@ import KSF.CreditCard.Update as CreditCard
 import KSF.Sentry as Sentry
 import KSF.User as User
 import MittKonto.IconAction as IconAction
-import React.Basic (make, JSX)
-import React.Basic as React
+import React.Basic.Classic (make, JSX)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 

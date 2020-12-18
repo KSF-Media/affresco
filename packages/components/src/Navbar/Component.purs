@@ -12,9 +12,10 @@ import Effect (Effect)
 import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
+import KSF.Paper (Paper(..))
 import KSF.User (User)
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
 import React.Basic.Router as Router

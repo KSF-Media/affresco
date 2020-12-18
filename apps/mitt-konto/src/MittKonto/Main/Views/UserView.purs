@@ -51,10 +51,6 @@ userView { setState, state: { creditCards } } logger user = React.fragment
           , children:
               [ componentHeader "Mina inställningar:"
               , componentBlockContent $ AccountEdit.accountEdit
-                  { logger: logger
-                  , creditCards
-                  , setCreditCards: \cards -> setState _ { creditCards = cards }
-                  }
               ]
           }
 

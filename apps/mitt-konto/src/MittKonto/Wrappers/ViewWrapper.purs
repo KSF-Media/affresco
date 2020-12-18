@@ -6,8 +6,8 @@ import Data.Foldable (foldMap)
 import Effect (Effect)
 import KSF.AsyncWrapper as AsyncWrapper
 import MittKonto.Wrappers.Elements
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic.Classic (JSX, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Router as Router
