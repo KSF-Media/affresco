@@ -25,7 +25,7 @@ loginView self@{ state, setState } logger = React.fragment
       case state.showWelcome of
         false -> []
         true  ->
-          [ Helpers.classy DOM.div "pb2 center" [ heading ]
+          [ Helpers.classy DOM.div "pb2 center" [ logos, heading ]
           , Helpers.classy DOM.div "center"     [ pageDescription ]
           ]
   , Helpers.classy DOM.div "center" [ loginForm ]
@@ -56,9 +56,16 @@ loginView self@{ state, setState } logger = React.fragment
           , disableSocialLogins: Set.empty
           }
 
+    logos = Helpers.classy DOM.div "mitt-konto--heading-logos"
+              [ DOM.div { className: "mitt-konto--vn-logo" }
+              , DOM.div { className: "mitt-konto--hbl-logo" }
+              , DOM.div { className: "mitt-konto--on-logo" }
+              ]
+
     heading =
       Helpers.classy DOM.h1 "mitt-konto--heading"
-        [ DOM.text "Välkommen till KSF Media’s Mitt Konto" ]
+        [ DOM.text "Välkommen till KSF Media’s Mitt Konto"
+        ]
 
     frequentIssues =
       Helpers.classy DOM.p "mitt-konto--faq"

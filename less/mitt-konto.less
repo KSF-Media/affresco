@@ -43,6 +43,36 @@ h2.mitt-konto---heading {
     font-size: 1.75rem;
 }
 
+@logo-size: 2em;
+
+.mitt-konto--heading-logos {
+    display: grid;
+    grid-template-columns: @logo-size @logo-size @logo-size;
+    column-gap: 2.6em;
+    justify-content: center;
+}
+
+.mitt-konto--logo(@path) {
+    background-repeat: no-repeat;
+    border-radius: .16em;
+    background-size: 100%;
+    width: @logo-size;
+    height: @logo-size;
+    background-image: url(@path);
+}
+
+.mitt-konto--vn-logo {
+    .mitt-konto--logo('../images/vn-logo.png');
+}
+
+.mitt-konto--hbl-logo {
+    .mitt-konto--logo('../images/hbl-logo.png');
+}
+
+.mitt-konto--on-logo {
+    .mitt-konto--logo('../images/on-logo.png');
+}
+
 .mitt-konto--component-heading {
     color: @grey-mediumlight;
     font-family: 'Roboto', serif;
