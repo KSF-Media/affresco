@@ -4,7 +4,7 @@
 
 .profile--edit-address {
     display: grid;
-    grid-template-rows: repeat(5, 1fr);
+    grid-template-rows: repeat(6, 1fr);
     grid-template-columns: 1fr .5fr;
     grid-auto-flow: column;
 }
@@ -50,4 +50,14 @@
 .profile--edit-try-again {
     text-decoration: underline;
     cursor: pointer;
+}
+
+.profile--edit-address--date-picker {
+    width: 100%;
+    .react-date-picker__wrapper {
+	width: 100%;
+	border-color: @grey-mediumlight;
+	border-radius: 3px;
+	padding: 3px;
+    }
 }
