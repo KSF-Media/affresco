@@ -50,38 +50,6 @@ h2.mitt-konto--heading {
     font-size: 1.75rem;
 }
 
-@logo-size: 2em;
-
-.mitt-konto--heading-logos {
-    grid-column-start: 3;
-    grid-row-start: 1;
-    display: grid;
-    grid-template-columns: @logo-size @logo-size @logo-size;
-    column-gap: 2.6em;
-    justify-content: center;
-}
-
-.mitt-konto--logo(@path) {
-    background-repeat: no-repeat;
-    border-radius: .16em;
-    background-size: 100%;
-    width: @logo-size;
-    height: @logo-size;
-    background-image: url(@path);
-}
-
-.mitt-konto--vn-logo {
-    .mitt-konto--logo('../images/vn-logo.png');
-}
-
-.mitt-konto--hbl-logo {
-    .mitt-konto--logo('../images/hbl-logo.png');
-}
-
-.mitt-konto--on-logo {
-    .mitt-konto--logo('../images/on-logo.png');
-}
-
 .mitt-konto--component-heading {
     color: @grey-mediumlight;
     font-family: 'Roboto', serif;
@@ -90,6 +58,38 @@ h2.mitt-konto--heading {
 .mitt-konto--frontpage {
     display: grid;
     grid-template-columns: 2fr 1fr 4fr 1fr 2fr;
+
+    @logo-size: 2em;
+
+    .logo(@path) {
+        background-repeat: no-repeat;
+        border-radius: .16em;
+        background-size: 100%;
+        width: @logo-size;
+        height: @logo-size;
+        background-image: url(@path);
+    }
+
+    .vn-logo {
+        .logo('../images/vn-logo.png');
+    }
+
+    .hbl-logo {
+        .logo('../images/hbl-logo.png');
+    }
+
+    .on-logo {
+        .logo('../images/on-logo.png');
+    }
+
+    .logos {
+        grid-column-start: 3;
+        grid-row-start: 1;
+        display: grid;
+        grid-template-columns: @logo-size @logo-size @logo-size;
+        column-gap: 2.6em;
+        justify-content: center;
+    }
 
     .description {
         grid-column-start: 3;
@@ -123,11 +123,11 @@ h2.mitt-konto--heading {
         }
     }
 
-}
+    .login-form {
+        grid-column-start: 3;
+        grid-row-start: 4;
+    }
 
-.mitt-konto--login-form {
-    grid-column-start: 3;
-    grid-row-start: 4;
 }
 
 .mitt-konto--main-container {

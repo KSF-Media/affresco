@@ -28,7 +28,7 @@ loginView self@{ state, setState } logger =
           , heading
           , description
           ]
-    <> [ Helpers.classy DOM.div "center mitt-konto--login-form" [ loginForm ] ]
+    <> [ Helpers.classy DOM.div "center login-form" [ loginForm ] ]
   where
     loginForm =
         Login.login
@@ -55,10 +55,10 @@ loginView self@{ state, setState } logger =
           , disableSocialLogins: Set.empty
           }
 
-    logos = Helpers.classy DOM.div "mitt-konto--heading-logos"
-              [ DOM.div { className: "mitt-konto--vn-logo" }
-              , DOM.div { className: "mitt-konto--hbl-logo" }
-              , DOM.div { className: "mitt-konto--on-logo" }
+    logos = Helpers.classy DOM.div "logos"
+              [ DOM.div { className: "vn-logo" }
+              , DOM.div { className: "hbl-logo" }
+              , DOM.div { className: "on-logo" }
               ]
 
     heading =
@@ -67,7 +67,7 @@ loginView self@{ state, setState } logger =
         ]
 
     frequentIssues =
-      Helpers.classy DOM.p "mitt-konto--faq"
+      Helpers.classy DOM.p "faq"
         [ DOM.a
             { href: "https://www.hbl.fi/fragor-och-svar/"
             , children: [ DOM.text "Frågor och svar" ]
