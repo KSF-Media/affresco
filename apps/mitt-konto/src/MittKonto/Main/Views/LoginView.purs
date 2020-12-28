@@ -16,20 +16,19 @@ import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks as React
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Types.Self-> Sentry.Logger -> JSX
-loginView self@{ state, setState } logger = React.fragment
-  [ DOM.div_
-      case state.showWelcome of
+loginView self@{ state, setState } logger =
+  Helpers.classy DOM.div "mitt-konto--frontpage" $
+    case state.showWelcome of
         false -> []
         true  ->
-          [ Helpers.classy DOM.div "pb2 center" [ logos, heading ]
-          , Helpers.classy DOM.div "center"     [ pageDescription ]
+          [ logos
+          , heading
+          , description
           ]
-  , Helpers.classy DOM.div "center" [ loginForm ]
-  ]
+    <> [ Helpers.classy DOM.div "center mitt-konto--login-form" [ loginForm ] ]
   where
     loginForm =
         Login.login
@@ -64,7 +63,7 @@ loginView self@{ state, setState } logger = React.fragment
 
     heading =
       Helpers.classy DOM.h1 "mitt-konto--heading"
-        [ DOM.text "Välkommen till KSF Media’s Mitt Konto"
+        [ DOM.text "Välkommen till Mitt konto"
         ]
 
     frequentIssues =
@@ -88,6 +87,7 @@ loginView self@{ state, setState } logger = React.fragment
             }
         ]
 
+<<<<<<< HEAD
     pageDescription =
       Helpers.classy DOM.div "mitt-konto--description"
         [ frequentIssues
@@ -106,3 +106,29 @@ loginView self@{ state, setState } logger = React.fragment
             , Helpers.anchor "https://www.hbl.fi/kundservice/" "Kundservice" []
             ]
         ]
+=======
+    description =
+      Helpers.classy DOM.div "description"
+        [ DOM.h2_ [ DOM.text "I Mitt konto sköter du smidigt dina prenumerationsärenden för Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. Du kan lätt:" ]
+        , descriptionList
+        ]
+
+    descriptionList :: JSX
+    descriptionList = Helpers.classy DOM.div "list" $
+                        descriptionListItem <$> [ "göra addressändringar"
+                                                , "göra uppehåll"
+                                                , "reklamera utebliven tidning"
+                                                , "uppdatera ditt kredit- eller bankkort"
+                                                , "visa din fakturor"
+                                                , "avsluta din prenumeration"
+                                                , "med mera ..."
+                                                ]
+
+
+    descriptionListItem :: String -> JSX
+    descriptionListItem text = Helpers.classy DOM.div "item"
+                                 [ DOM.div { className: "check-icon" }
+                                 , Helpers.classy DOM.div "text"
+                                     [ DOM.text text ]
+                                 ]
+>>>>>>> Patch MittKonto.Main.Views.LoginView
