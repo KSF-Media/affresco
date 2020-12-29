@@ -25,10 +25,10 @@ loginView self@{ state, setState } logger =
         false -> []
         true  ->
           [ logos
-          , heading
+          , title
           , description
           ]
-    <> [ Helpers.classy DOM.div "center login-form" [ loginForm ] ]
+    <> [ Helpers.classy DOM.div "form" [ loginForm ] ]
   where
     loginForm =
         Login.login
@@ -61,52 +61,13 @@ loginView self@{ state, setState } logger =
               , DOM.div { className: "on-logo" }
               ]
 
-    heading =
-      Helpers.classy DOM.h1 "mitt-konto--heading"
-        [ DOM.text "Välkommen till Mitt konto"
-        ]
-
-    frequentIssues =
-      Helpers.classy DOM.p "faq"
-        [ DOM.a
-            { href: "https://www.hbl.fi/fragor-och-svar/"
-            , children: [ DOM.text "Frågor och svar" ]
-            , target: "_blank"
-            }
-        , DOM.text " * "
-        , DOM.a
-            { href: "https://www.hbl.fi/ingen-tidning/"
-            , children: [ DOM.text "Ingen tidning" ]
-            , target: "_blank"
-            }
-        , DOM.text " * "
-        , DOM.a
-            { href: "https://www.hbl.fi/epaper/"
-            , children: [ DOM.text "Läs e-tidning" ]
-            , target: "_blank"
-            }
-        ]
-
-<<<<<<< HEAD
-    pageDescription =
-      Helpers.classy DOM.div "mitt-konto--description"
-        [ frequentIssues
-        , DOM.p_
-            [ DOM.text
-                """Här kan du göra tillfällig eller permanent
-                   adressändring eller göra uppehåll i tidningsutdelningen.
-                   Dessutom kan du få allmän information som är
-                   relevant för dig som prenumerant.
-                """
-            ]
-        , DOM.p_
-            [ DOM.text "Allt du behöver göra för att komma igång är att logga in!" ]
-        , DOM.p_
-            [ DOM.text "Behöver du hjälp? "
-            , Helpers.anchor "https://www.hbl.fi/kundservice/" "Kundservice" []
+    title =
+      Helpers.classy DOM.div "title"
+        [ Helpers.classy DOM.h1 "mitt-konto--heading"
+            [ DOM.text "Välkommen till Mitt konto"
             ]
         ]
-=======
+
     description =
       Helpers.classy DOM.div "description"
         [ DOM.h2_ [ DOM.text "I Mitt konto sköter du smidigt dina prenumerationsärenden för Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. Du kan lätt:" ]
@@ -131,4 +92,3 @@ loginView self@{ state, setState } logger =
                                  , Helpers.classy DOM.div "text"
                                      [ DOM.text text ]
                                  ]
->>>>>>> Patch MittKonto.Main.Views.LoginView
