@@ -3,7 +3,7 @@ module MittKonto.IconAction where
 import Prelude
 
 import Effect (Effect)
-import React.Basic (JSX, element)
+import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -60,9 +60,8 @@ render self =
         }
 
     routerLink pathname =
-      element
-        Router.link
-          { to: { pathname, state: {} }
-          , children: [ accountActionContainer ]
-          , className: mempty
-          }
+      Router.link
+        { to: { pathname, state: {} }
+        , children: [ accountActionContainer ]
+        , className: mempty
+        }

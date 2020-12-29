@@ -5,12 +5,12 @@ import Prelude
 import Data.Array (catMaybes)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Nullable (Nullable, toMaybe)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Persona as Persona
-import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router (Location)
@@ -55,7 +55,7 @@ fromJSProps { location: { key, pathname, search, hash, state } } =
         , pathname
         , search
         , hash
-        , state: setState <$> toMaybe state
+        , state: toNullable $ ((setState <$> _) <<< toMaybe) <$> toMaybe state
         }
   }
   where
@@ -87,12 +87,12 @@ confirm = make component
   }
 
 didMount :: Self -> Effect Unit
-didMount self@{ props: { location: { state: Just state } } } = do
+didMount self = do
+  let state = join $ toMaybe self.props.location.state
   Console.log $ unsafeCoerce state
-  maybe (pure unit) (send self) $ SetProduct <$> state.product
-  maybe (pure unit) (send self) $ SetUser <$> state.user
-  maybe (pure unit) (send self) $ SetPayment <$> state.payment
-didMount _ = pure unit
+  maybe (pure unit) (send self) $ SetProduct <$> (_.product =<< state)
+  maybe (pure unit) (send self) $ SetUser <$> (_.user =<< state)
+  maybe (pure unit) (send self) $ SetPayment <$> (_.payment =<< state)
 
 initialState :: State
 initialState =
@@ -191,12 +191,11 @@ confirmButton =
     }
   where
     link =
-      element
-        Router.link
-          { to: { pathname: "/order-successful", state: {} }
-          , children: [ button ]
-          , className: "prenumerera--button-link center col-2"
-          }
+      Router.link
+        { to: { pathname: "/order-successful", state: {} }
+        , children: [ button ]
+        , className: "prenumerera--button-link center col-2"
+        }
     button = DOM.span_ [ DOM.text "Godkänn" ]
 
 update :: Self -> Action -> StateUpdate Props State

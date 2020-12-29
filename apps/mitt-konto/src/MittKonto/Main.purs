@@ -5,7 +5,6 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
-import Data.Nullable (toNullable)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Unsafe (unsafePerformEffect)
@@ -19,7 +18,7 @@ import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User as User
-import React.Basic (JSX, element)
+import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useState, useState', (/\))
 import React.Basic.Hooks as React
@@ -75,18 +74,17 @@ render self@{ state, setState } logger searchView isPersonating =
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ element Router.switch { children: [ paymentListRoute, search, mittKontoRoute, noMatchRoute ] } ]
+            [ Router.switch { children: [ paymentListRoute, search, mittKontoRoute, noMatchRoute ] } ]
         ]
     , Views.footerView
     ]
  where
    mittKontoRoute =
-     element
-       Router.route
-         { exact: true
-         , path: toNullable $ Just "/"
-         , render: const mittKontoView
-         }
+     Router.route
+       { exact: true
+       , path: Just "/"
+       , render: const mittKontoView
+       }
    mittKontoView =
       Helpers.classy DOM.div "mitt-konto--container clearfix"
         [ foldMap Elements.loadingIndicator state.loading
@@ -95,36 +93,33 @@ render self@{ state, setState } logger searchView isPersonating =
             Nothing   -> Views.loginView self logger
         ]
    paymentListRoute =
-     element
-       Router.route
-         { exact: true
-         , path: toNullable $ Just "/fakturor"
-         , render: const
-             $ Helpers.classy DOM.div "mitt-konto--container clearfix"
-                 [ foldMap Elements.loadingIndicator state.loading
-                 , case state.activeUser of
-                     Just user -> Views.paymentView self user
-                     Nothing   -> Views.loginView self logger
-                 ]
-         }
+     Router.route
+       { exact: true
+       , path: Just "/fakturor"
+       , render: const
+           $ Helpers.classy DOM.div "mitt-konto--container clearfix"
+               [ foldMap Elements.loadingIndicator state.loading
+               , case state.activeUser of
+                   Just user -> Views.paymentView self user
+                   Nothing   -> Views.loginView self logger
+               ]
+       }
    search =
-     element
-       Router.route
-         { exact: true
-         , path: toNullable $ Just "/sök"
-         , render:
-           \_ -> Helpers.classy DOM.div "mitt-konto--container clearfix"
-                   [ foldMap Elements.loadingIndicator state.loading
-                   , case state.activeUser /\ state.adminMode of
-                       Just user /\ true -> searchView
-                       _ -> Views.loginView self logger
-                   ]
-         }
+     Router.route
+       { exact: true
+       , path: Just "/sök"
+       , render:
+         \_ -> Helpers.classy DOM.div "mitt-konto--container clearfix"
+                 [ foldMap Elements.loadingIndicator state.loading
+                 , case state.activeUser /\ state.adminMode of
+                     Just user /\ true -> searchView
+                     _ -> Views.loginView self logger
+                 ]
+       }
    noMatchRoute =
      -- TODO: Use Redirect when supported!
-      element
-        Router.route
-          { exact: false
-          , path: toNullable Nothing
-          , render: const mittKontoView
-          }
+     Router.route
+       { exact: false
+       , path: Nothing
+       , render: const mittKontoView
+       }
