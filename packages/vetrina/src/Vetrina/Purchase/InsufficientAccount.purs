@@ -5,10 +5,12 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (unV)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import KSF.CountryDropDown as CountryDropdown
 import KSF.InputField as InputField
 import KSF.User (User, UserUpdate(..))
 import KSF.User as User
@@ -38,9 +40,18 @@ type Self =
 
 mkInsufficientAccount :: Component Props
 mkInsufficientAccount = do
-  let initialState =
-        { contactForm: emptyCommonContactInformation }
   component "insufficientAccount" \props -> React.do
+    -- Set initial form values from user if defined
+    let initialContactInformation =
+          emptyCommonContactInformation
+            { firstName = toMaybe props.user.firstName
+            , lastName = toMaybe props.user.lastName
+            , streetAddress = _.streetAddress <$> toMaybe props.user.address
+            , city = toMaybe <<< _.city =<< toMaybe props.user.address
+            , zipCode =  toMaybe <<< _.zipCode =<< toMaybe props.user.address
+            , countryCode = _.countryCode <$> toMaybe props.user.address
+            }
+    let initialState = { contactForm: initialContactInformation }
     state /\ setState <- useState initialState
     let self = { state, setState }
     pure $ render props self
@@ -65,7 +76,6 @@ render props self@{ state: { contactForm } } = fragment
                 , DOM.text "STEG 1 / 2 KONTOINFORMATION"
                 ]
             }
-        -- TODO: FILL IN FORM WITH USER ADDRESS IF DEFINED
         , InputField.inputField
             { type_: InputField.Text
             , label: Just "Förnamn"
