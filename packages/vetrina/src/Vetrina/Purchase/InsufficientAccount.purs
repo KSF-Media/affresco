@@ -6,12 +6,15 @@ import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
+import Data.Traversable (for, for_)
 import Data.Validation.Semigroup (unV)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import KSF.CountryDropDown as CountryDropdown
 import KSF.InputField as InputField
+import KSF.Spinner as Spinner
 import KSF.User (User, UserUpdate(..))
 import KSF.User as User
 import KSF.ValidatableForm (CommonContactInformation, CommonContactInformationFormField(..), emptyCommonContactInformation)
@@ -24,9 +27,9 @@ import React.Basic.Hooks (Component, component, fragment, useState, (/\))
 import React.Basic.Hooks as React
 
 type Props =
-  { user    :: User
+  { user :: User
   , retryPurchase :: User -> Effect Unit
---  , onUserUpdate :: U
+  , setLoading :: Maybe Spinner.Loading -> Effect Unit
   }
 
 type State =
@@ -49,10 +52,9 @@ mkInsufficientAccount = do
             , streetAddress = _.streetAddress <$> toMaybe props.user.address
             , city = toMaybe <<< _.city =<< toMaybe props.user.address
             , zipCode =  toMaybe <<< _.zipCode =<< toMaybe props.user.address
-            , countryCode = _.countryCode <$> toMaybe props.user.address
+            , countryCode = _.countryCode <$> toMaybe props.user.address <|> Just "FI"
             }
-    let initialState = { contactForm: initialContactInformation }
-    state /\ setState <- useState initialState
+    state /\ setState <- useState { contactForm: initialContactInformation }
     let self = { state, setState }
     pure $ render props self
 
@@ -129,6 +131,7 @@ render props self@{ state: { contactForm } } = fragment
             , className: "vetrina--button vetrina--button__contact_information"
             , disabled: Form.isFormInvalid formValidations
             , value: "Bekräfta och gå vidare"
+            , onSubmit: handler preventDefault $ (\_ -> submitForm formValidations)
             }
         ]
     }
@@ -174,8 +177,14 @@ render props self@{ state: { contactForm } } = fragment
           case updateAddress of
             Nothing -> pure unit
             Just addr -> Aff.launchAff_ do
-              eitherUser <- User.updateUser props.user.uuid $ UpdateFull addr
-              case eitherUser of
-                Right user -> liftEffect $ props.retryPurchase user
-                Left err -> pure unit
+              -- TODO: This `finally` thing could be implemented as a generic solution in `Spinner`
+              -- FIXME: STILL FLASHES THE FORM AFTER PATCHING USER!!
+              liftEffect $ props.setLoading (Just Spinner.Loading)
+              Aff.finally
+                (liftEffect $ props.setLoading Nothing)
+                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull addr
+                   case eitherUser of
+                     Right user -> liftEffect $ props.retryPurchase user
+                     Left err -> pure unit
+
       )

@@ -290,6 +290,7 @@ render self = vetrinaContainer self $
               self.state.insufficientAccountComponent
                 { user: u
                 , retryPurchase: self.state.retryPurchase
+                , setLoading: \loading -> self.setState _ { isLoading = loading }
                 }
             -- Can't do much without a user
             Nothing -> self.props.unexpectedError
@@ -384,6 +385,7 @@ mkPurchase self@{ state: { logger } } validForm affUser =
   Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
   eitherUser <- affUser
   eitherOrder <- runExceptT do
+    -- TODO: CHECK INSUFFICIENT ACCOUNT BEFORE TRYING TO MAKE ORDER!!
     user          <- except eitherUser
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
