@@ -121,19 +121,12 @@ render props self@{ state: { contactForm } } = fragment
             , validationError: Form.inputFieldErrorMessage $ Form.validateField Zip contactForm.zipCode []
             , value: contactForm.zipCode
             }
-        -- TODO: USE COUNTRY DROPDOWN
-        , InputField.inputField
-            { type_: InputField.Text
-            , label: Just "Land"
-            , name: "countryCode"
-            , placeholder: "Land"
-            , onChange: \newCountry -> self.setState _ { contactForm { countryCode = newCountry }}
-            , validationError: Form.inputFieldErrorMessage $ Form.validateField Country contactForm.countryCode []
-            , value: contactForm.countryCode
-            }
+        , CountryDropdown.defaultCountryDropDown
+            (\newCountry -> self.setState _ { contactForm { countryCode = newCountry } })
+            (contactForm.countryCode <|> _.countryCode <$> toMaybe props.user.address)
         , DOM.input
             { type: "submit"
-            , className: "vetrina--button"
+            , className: "vetrina--button vetrina--button__contact_information"
             , disabled: Form.isFormInvalid formValidations
             , value: "Bekräfta och gå vidare"
             }
