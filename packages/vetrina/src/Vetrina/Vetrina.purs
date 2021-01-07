@@ -385,7 +385,10 @@ mkPurchase self@{ state: { logger } } validForm affUser =
   Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
   eitherUser <- affUser
   eitherOrder <- runExceptT do
-    -- TODO: CHECK INSUFFICIENT ACCOUNT BEFORE TRYING TO MAKE ORDER!!
+
+    -- TODO: We could check for insufficient account before trying to create the order and
+    -- wait for the validation done server side. For this, we would need the packages from Bottega so
+    -- that we can tell if a package id belongs to a paper product or not.
     user          <- except eitherUser
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
