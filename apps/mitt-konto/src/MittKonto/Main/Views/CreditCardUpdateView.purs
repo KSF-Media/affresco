@@ -1,4 +1,4 @@
-module KSF.CreditCard.Update where
+module MittKonto.Main.CreditCardUpdateView where
 
 import Prelude
 
@@ -11,24 +11,35 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
+import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Choice (choice) as Choice
 import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
+import MittKonto.Wrappers (class ViewWrapperContent, instantiate)
 import React.Basic (JSX)
 import React.Basic.Classic (element, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router as Router
+import Record as Record
+
+type BaseProps =
+  ( creditCards :: Array CreditCard
+  , logger      :: Sentry.Logger
+  )
+
+type Inputs = Record BaseProps
+
+newtype ViewWrapperContentInputs = ViewWrapperContentInputs Inputs
 
 type Props =
-  { creditCards :: Array CreditCard
-  , logger      :: Sentry.Logger
-  , onCancel    :: Effect Unit
+  { onCancel    :: Effect Unit
   , onLoading   :: Effect Unit
   , onSuccess   :: Effect Unit
   , onError     :: Effect Unit
+  | BaseProps
   }
 
 type Self = React.Self Props State
@@ -45,8 +56,18 @@ data UpdateState
   | RegisterCreditCard PaymentTerminalUrl
   | Cancel
 
-update :: Props -> JSX
-update = make component { initialState, render, didMount }
+creditCardUpdateView :: Props -> JSX
+creditCardUpdateView = make component { initialState, render, didMount }
+
+instance viewWrapperContentCardUpdate :: ViewWrapperContent ViewWrapperContentInputs where
+  instantiate (ViewWrapperContentInputs inputs) setState = creditCardUpdateView $ Record.merge inputs hooks
+    where
+      hooks =
+        { onCancel: setState _ { wrapperState = AsyncWrapper.Ready }
+        , onLoading: setState _ { wrapperState = AsyncWrapper.Loading mempty }
+        , onSuccess: setState _ { wrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
+        , onError: setState _ { wrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+        }
 
 initialState :: State
 initialState =
@@ -85,8 +106,8 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
                                         { title: title
                                         , terminalUrl: url
                                         }
-                                      
-            Cancel                 -> element 
+
+            Cancel                 -> element
                                         Router.redirect
                                           { to: { pathname: "/"
                                                 , state: {}
@@ -145,8 +166,8 @@ pollRegister setState props@{ logger, onError, onSuccess, onCancel } state oldCr
           onError
         Right _  -> onSuccess
     CreditCardRegisterFailed _ -> liftEffect onError
-    CreditCardRegisterCanceled -> liftEffect $ do 
-      onCancel 
+    CreditCardRegisterCanceled -> liftEffect $ do
+      onCancel
       setState \_ -> state { updateState = Cancel }
 
     CreditCardRegisterCreated -> pollRegister setState props state oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number

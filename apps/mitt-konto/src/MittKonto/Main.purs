@@ -9,13 +9,14 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.AsyncWrapper as AsyncWrapper
-import KSF.CreditCard.Update as CreditCard
 import KSF.Paper (Paper(..))
 import KSF.Sentry as Sentry
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, paymentView, userView) as Views
+import MittKonto.Main.Views (alertView, creditCardUpdateView, footerView, loginView, navbarView, paymentView, userView) as Views
+import MittKonto.Main.CreditCardUpdateView (ViewWrapperContentInputs (..)) as CreditCardUpdateView
+import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
 import KSF.Paper (Paper(..))
 import KSF.Search as Search
@@ -23,7 +24,6 @@ import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User as User
 import React.Basic (JSX)
-import MittKonto.Wrappers as Wrappers
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useState, useState', (/\))
 import React.Basic.Hooks as React
@@ -116,20 +116,15 @@ render self@{ state, setState } logger searchView isPersonating =
           { exact: true
           , path: toNullable $ Just "/kortt/uppdatera"
           , render: \_ -> Wrappers.viewWrapper
-              { content: creditCardUpdateComponent
-              , wrapperState: state.wrapperProgress
+              { content: creditCardUpdateInputs
               , closeType: Wrappers.Countdown
               , onTryAgain: pure unit
               }
           }
       where
-        creditCardUpdateComponent = CreditCard.update
+        creditCardUpdateInputs = CreditCardUpdateView.ViewWrapperContentInputs
           { creditCards: fromMaybe mempty $ state.loggedInUser <#> _.creditCards
           , logger: logger
-          , onCancel: setState _ { wrapperProgress = AsyncWrapper.Ready }
-          , onLoading: setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-          , onSuccess: setState _ { wrapperProgress = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
-          , onError: setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
           }
    search =
      Router.route

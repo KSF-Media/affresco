@@ -11,7 +11,6 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.AsyncWrapper as AsyncWrapper
-import KSF.CreditCard.Update as CreditCard
 import KSF.Sentry as Sentry
 import KSF.User as User
 import MittKonto.IconAction as IconAction
