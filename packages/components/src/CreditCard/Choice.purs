@@ -27,7 +27,6 @@ type State =
 
 type Props =
   { creditCards :: Array CreditCard
-  , title :: JSX
   , onSubmit :: CreditCard -> Effect Unit
   , onCancel :: Effect Unit
   }
@@ -47,49 +46,27 @@ initialState = { chosenCard: Nothing
                }
 
 render :: Self -> JSX
-render self@{ setState, state: { chosenCard, validationError }, props: { creditCards, title, onSubmit, onCancel } } =
-  DOM.div_ [ header, creditCardsForm ]
+render self@{ setState, state: { chosenCard, validationError }, props: { creditCards, onSubmit, onCancel } } =
+  DOM.div
+    { className: "credit-card-choice--form-wrapper"
+    , children: [ DOM.form
+                    { onSubmit: handler preventDefault $ (\_ -> submitForm chosenCard)
+                    , className: "credit-card-choice--form"
+                    , children: [ description
+                                , Menu.menu
+                                    { creditCards: creditCards
+                                    , onSelect: \creditCard -> setState _ { chosenCard = Just creditCard }
+                                    }
+                                ]
+                        `snoc` foldMap InputField.errorMessage validationError
+                        `snoc` DOM.div
+                          { children: [ submitFormButton ]
+                          , className: "mt2 clearfix"
+                          }
+                    }
+                ]
+    }
   where
-    header :: JSX
-    header = Grid.row_
-      [ DOM.div
-          { className: "col col-11"
-          , children: [ title ]
-          }
-      , DOM.div
-          { className: "col-1 flex credit-card-choice--close-icon"
-          , children: [ element
-                          Router.link
-                            { to: { pathname: "/", state: {} }
-                            , children: [ ]
-                            , className: "close-icon"
-                            }
-                      ]
-          , onClick: handler_ onCancel
-          }
-      ]
-
-    creditCardsForm :: JSX
-    creditCardsForm = DOM.div
-                        { className: "credit-card-choice--form-wrapper"
-                        , children: [ DOM.form
-                                        { onSubmit: handler preventDefault $ (\_ -> submitForm chosenCard)
-                                        , className: "credit-card-choice--form"
-                                        , children: [ description
-                                                    , Menu.menu
-                                                        { creditCards: creditCards
-                                                        , onSelect: \creditCard -> setState _ { chosenCard = Just creditCard }
-                                                        }
-                                                    ]
-                                            `snoc` foldMap InputField.errorMessage validationError
-                                            `snoc` DOM.div
-                                              { children: [ submitFormButton ]
-                                              , className: "mt2 clearfix"
-                                              }
-                                        }
-                                    ]
-                        }
-
     description :: JSX
     description = DOM.div
       { className: "credit-card-choice--description"

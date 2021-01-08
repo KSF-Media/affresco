@@ -17,7 +17,7 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class ViewWrapperContent, instantiate)
+import MittKonto.Wrappers (class ViewWrapperContent, ViewWrapperState, instantiate)
 import React.Basic (JSX)
 import React.Basic.Classic (element, make)
 import React.Basic.Classic as React
@@ -35,10 +35,11 @@ type Inputs = Record BaseProps
 newtype ViewWrapperContentInputs = ViewWrapperContentInputs Inputs
 
 type Props =
-  { onCancel    :: Effect Unit
-  , onLoading   :: Effect Unit
-  , onSuccess   :: Effect Unit
-  , onError     :: Effect Unit
+  { onCancel        :: Effect Unit
+  , onLoading       :: Effect Unit
+  , onSuccess       :: Effect Unit
+  , onError         :: Effect Unit
+  , setWrapperState :: (ViewWrapperState -> ViewWrapperState) -> Effect Unit
   | BaseProps
   }
 
@@ -60,13 +61,14 @@ creditCardUpdateView :: Props -> JSX
 creditCardUpdateView = make component { initialState, render, didMount }
 
 instance viewWrapperContentCardUpdate :: ViewWrapperContent ViewWrapperContentInputs where
-  instantiate (ViewWrapperContentInputs inputs) setState = creditCardUpdateView $ Record.merge inputs hooks
+  instantiate (ViewWrapperContentInputs inputs) setWrapperState = creditCardUpdateView $ Record.merge inputs hooks
     where
       hooks =
-        { onCancel: setState _ { wrapperState = AsyncWrapper.Ready }
-        , onLoading: setState _ { wrapperState = AsyncWrapper.Loading mempty }
-        , onSuccess: setState _ { wrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
-        , onError: setState _ { wrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+        { onCancel: setWrapperState _ { asyncWrapperState = AsyncWrapper.Ready }
+        , onLoading: setWrapperState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
+        , onSuccess: setWrapperState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
+        , onError: setWrapperState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+        , setWrapperState: setWrapperState
         }
 
 initialState :: State
@@ -79,7 +81,8 @@ component :: React.Component Props
 component = React.createComponent "Update"
 
 didMount :: Self -> Effect Unit
-didMount self@{ state, setState, props: { creditCards, onError, logger } } =
+didMount self@{ state, setState, props: { creditCards, onCancel, onError, logger, setWrapperState } } = do
+  setWrapperState _ { titleText = "Uppdatera ditt kredit- eller bankkort", onCancel = onCancel }
   Aff.launchAff_ do
     case creditCards of
       []       -> liftEffect $ do
@@ -97,14 +100,12 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
         [ case updateState of
             ChooseCreditCard       -> Choice.choice
                                         { creditCards: creditCards
-                                        , title: title
                                         , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard
                                         , onCancel: onCancel
                                         }
 
             RegisterCreditCard url -> Register.register
-                                        { title: title
-                                        , terminalUrl: url
+                                        { terminalUrl: url
                                         }
 
             Cancel                 -> element
@@ -122,12 +123,14 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
     title = DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
 
 registerCreditCard :: SetState -> Props -> State -> CreditCard -> Aff Unit
-registerCreditCard setState props@{ logger, onError } state oldCreditCard = do
+registerCreditCard setState props@{ logger, onError, setWrapperState } state oldCreditCard = do
   creditCardRegister <- User.registerCreditCard
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
       let newState = state { updateState = RegisterCreditCard url }
-      liftEffect $ setState \_ -> newState
+      liftEffect $ do
+        setState \_ -> newState
+        setWrapperState _ { closeable = false }
       void $ Aff.forkAff $ startRegisterPoller setState props newState oldCreditCard register
     Right register@{ terminalUrl: Nothing } ->
       liftEffect $ do
