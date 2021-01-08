@@ -210,11 +210,11 @@ fillAddress page = do
       zipCodeSelector   = idSelector "zipCode"
 
   Chrome.waitFor_ firstNameSelector page
-  Chrome.type_ firstNameSelector "Testi" page
-  Chrome.type_ lastNameSelector  "Testinen" page
-  Chrome.type_ addressSelector "Mannerheimintie 18" page
-  Chrome.type_ citySelector "Helsingfors" page
-  Chrome.type_ zipCodeSelector "00100" page
+  Chrome.type_ firstNameSelector "Testi"              page
+  Chrome.type_ lastNameSelector  "Testinen"           page
+  Chrome.type_ addressSelector   "Mannerheimintie 18" page
+  Chrome.type_ citySelector      "Helsingfors"        page
+  Chrome.type_ zipCodeSelector   "00100"              page
 
   Chrome.click (Chrome.Selector ".vetrina--button") page
 
