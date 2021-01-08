@@ -389,6 +389,7 @@ mkPurchase self@{ state: { logger } } validForm affUser =
     -- TODO: We could check for insufficient account before trying to create the order and
     -- wait for the validation done server side. For this, we would need the packages from Bottega so
     -- that we can tell if a package id belongs to a paper product or not.
+    -- Insufficient account = user not having contact information and trying to purchase a paper product
     user          <- except eitherUser
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod

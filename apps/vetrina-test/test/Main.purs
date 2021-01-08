@@ -13,6 +13,10 @@ import Effect.Now as Now
 import Persona as Persona
 import Puppeteer as Chrome
 
+data ProductType
+  = PaperProduct
+  | DigitalProduct
+
 -- | Run all tests here
 main :: Effect Unit
 main = launchAff_ do
@@ -21,33 +25,38 @@ main = launchAff_ do
   let customer1 = mkEmail dateTimeStr
   let customer2 = mkEmail (dateTimeStr <> "-2")
   let customer3 = mkEmail (dateTimeStr <> "-3")
+  let customer4 = mkEmail (dateTimeStr <> "-4")
 
   -- First of all we just try to subscribe as a fresh customer, so everything from scratch
-  withBrowser (runTest "subscribe new customer" subscribeNewCustomer customer1)
+  withBrowser (runTest "subscribe new customer" DigitalProduct subscribeNewCustomer customer1)
+
+  withBrowser $ runTest "subscribe new customer to paper product" PaperProduct subscribePaperProductNewCustomer customer4
 
   -- Then we open another browser (otherwise we'd be logged in with the first customer)
   withBrowser \browser -> do
     -- ..and we buy the package with an existing customer (that we create on the
     -- fly just with the Persona API)
-    runTest "subscribe with existing (non-entitled) customer" buyWithExistingCustomer customer2 browser
+    runTest "subscribe with existing (non-entitled) customer" DigitalProduct buyWithExistingCustomer customer2 browser
     -- ..and after that we just try to visit again, and verify that Vetrina
     -- figures out that we already have a subscription. Good.
-    runTest "visit with entitled user" navigateLoggedIn customer2 browser
+    runTest "visit with entitled user" DigitalProduct navigateLoggedIn customer2 browser
 
   -- Then we try to login from scratch with the customer of the previous step,
   -- and verify that Vetrina figures out that we already have (1) and account
   -- and (2) a subscription
-  withBrowser (runTest "visit with entitled user (from scratch)" loginWithEntitledCustomer customer2)
-
+  withBrowser (runTest "visit with entitled user (from scratch)" DigitalProduct loginWithEntitledCustomer customer2)
   where
     mkEmail :: String -> String
     mkEmail dateTimeStr = "zztelefon+test." <> dateTimeStr <> "@ksfmedia.fi"
 
-    runTest name test email browser = do
+    runTest name product test email browser = do
       log $ ">>> Running test: " <> show name
       page <- Chrome.newPage browser
       let password = "test123"
-      Chrome.goto (Chrome.URL "http://localhost:8000") page
+      Chrome.goto (Chrome.URL case product of
+                      DigitalProduct -> "http://localhost:8000"
+                      PaperProduct   -> "http://localhost:8000/#paperProduct"
+                  ) page
       test page email password
       log $ ">>> Test successful."
 
@@ -57,12 +66,24 @@ main = launchAff_ do
       Chrome.close browser
 
 
+subscribePaperProductNewCustomer :: Test
+subscribePaperProductNewCustomer page email password = do
+  log $ "Fill in a fresh email, so we create a new account: " <> email
+  fillEmail email page
+  log "As the test is trying to subscribe to a paper product, contact information should be asked of new user"
+  fillAddress page
+  subscribeNewCustomerPay page password
+
 subscribeNewCustomer :: Test
 subscribeNewCustomer page email password = do
   log $ "Fill in a fresh email, so we create a new account: " <> email
   fillEmail email page
-  payWithNets page
+  subscribeNewCustomerPay page password
 
+-- | Payment and setting password of freshly created user
+subscribeNewCustomerPaySetPassword :: Chrome.Page -> String -> Aff Unit
+subscribeNewCustomerPaySetPassword page password = do
+  payWithNets page
   log "Payment should have succeeded, so we can now set the password of the account"
   let passSelector1 = Chrome.Selector "#setPassword > div:nth-child(1) > input[type=password]"
   let passSelector2 = Chrome.Selector "#setPassword > div:nth-child(2) > input[type=password]"
@@ -169,19 +190,34 @@ payWithNets page = do
   let netsIframe = Chrome.Selector "iframe.vetrina--payment-terminal"
   frameHandle <- Chrome.waitFor netsIframe page
   iframe <- Chrome.contentFrame frameHandle
-  let netsSubmit = Chrome.Selector "#nextButton"
-  log "Waiting for submit button"
-  Chrome.waitFor_ netsSubmit iframe
-  Chrome.click netsSubmit iframe
 
   log "Waiting for credit card fields and typing credit card details"
   let creditCardNumber = "4925000000000004"
   let creditCardField = Chrome.Selector "#cardNumber"
   Chrome.waitFor_ creditCardField iframe
   Chrome.type_ creditCardField creditCardNumber iframe
-  Chrome.select (Chrome.Selector "#year") "50" iframe
+  Chrome.select (Chrome.Selector "#year") "30" iframe -- Year 2030
   Chrome.type_ (Chrome.Selector "#securityCode") "666" iframe
   Chrome.click (Chrome.Selector "#okButton") iframe
+
+fillAddress :: forall page. Chrome.HasFrame page => page -> Aff Unit
+fillAddress page = do
+  log "Asking for contact information of customer"
+  let idSelector id = Chrome.Selector $ "[id^=" <> id <> "]"
+      firstNameSelector = idSelector "firstName"
+      lastNameSelector  = idSelector "lastName"
+      addressSelector   = idSelector "streetAddress"
+      citySelector      = idSelector "city"
+      zipCodeSelector   = idSelector "zipCode"
+
+  Chrome.waitFor_ firstNameSelector page
+  Chrome.type_ firstNameSelector "Testi" page
+  Chrome.type_ lastNameSelector  "Testinen" page
+  Chrome.type_ addressSelector "Mannerheimintie 18" page
+  Chrome.type_ citySelector "Helsingfors" page
+  Chrome.type_ zipCodeSelector "00100" page
+
+  Chrome.click (Chrome.Selector ".vetrina--button") page
 
 assertUserHasSubscription :: Chrome.Page -> Aff Unit
 assertUserHasSubscription page = do
