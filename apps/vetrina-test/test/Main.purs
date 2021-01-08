@@ -65,20 +65,19 @@ main = launchAff_ do
       action browser
       Chrome.close browser
 
-
 subscribePaperProductNewCustomer :: Test
 subscribePaperProductNewCustomer page email password = do
   log $ "Fill in a fresh email, so we create a new account: " <> email
   fillEmail email page
   log "As the test is trying to subscribe to a paper product, contact information should be asked of new user"
   fillAddress page
-  subscribeNewCustomerPay page password
+  subscribeNewCustomerPaySetPassword page password
 
 subscribeNewCustomer :: Test
 subscribeNewCustomer page email password = do
   log $ "Fill in a fresh email, so we create a new account: " <> email
   fillEmail email page
-  subscribeNewCustomerPay page password
+  subscribeNewCustomerPaySetPassword page password
 
 -- | Payment and setting password of freshly created user
 subscribeNewCustomerPaySetPassword :: Chrome.Page -> String -> Aff Unit
