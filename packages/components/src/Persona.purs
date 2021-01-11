@@ -89,6 +89,7 @@ updateUser uuid update auth = do
                 , city: userInfo.city
                 }
             }
+        DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth
   let parsedSubs = map Subscription.parseSubscription user.subs
@@ -253,6 +254,7 @@ data UserUpdate
                , streetAddress :: String
                , startDate :: Maybe DateTime
                }
+  | DeletePendingAddressChanges
 
 type EmailAddressInUse = ServerError
   ( email_address_in_use ::
