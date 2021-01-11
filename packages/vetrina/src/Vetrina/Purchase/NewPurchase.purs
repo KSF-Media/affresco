@@ -3,7 +3,7 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, head)
+import Data.Array (all, find, head, length)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
@@ -12,7 +12,9 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
+import Effect.Class.Console as Console
 import KSF.Helpers (formatEur)
+import KSF.Helpers as Helpers
 import KSF.InputField as InputField
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
@@ -23,7 +25,7 @@ import KSF.ValidatableForm as Form
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler, handler_)
 import Vetrina.Types (AccountStatus(..), Product, ProductContent)
 
@@ -156,13 +158,15 @@ render self =
        _ -> description self.state.accountStatus
   <> form self
   <> links self
-  <> productInformation self
+  <> if length self.props.products == 1
+     then productInformation self
+     else mempty
 
 title :: AccountStatus -> Maybe JSX -> JSX
 title accountStatus maybeHeadline = case accountStatus of
   NewAccount           -> case maybeHeadline of
                                Just headline -> headline
-                               Nothing -> DOM.text "Hej kära läsare!"
+                               Nothing -> mempty
   ExistingAccount _    -> DOM.text "Du har redan ett KSF Media-konto"
   LoggedInAccount user -> DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
 
@@ -185,8 +189,9 @@ form self = DOM.form $
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
   , children:
-      [ -- Don't show the product selection if we are asking the user to login
-        if not isExistingAccount self.state.accountStatus
+      [ if length self.props.products > 1 then productDropdown self self.props.products else mempty
+       -- Don't show the product selection if we are asking the user to login
+      , if not isExistingAccount self.state.accountStatus
            || isNothing self.state.productSelection
         then foldMap _.description self.state.productSelection
         else mempty
@@ -237,6 +242,31 @@ form self = DOM.form $
     additionalFormRequirements NewAccount = acceptTermsCheckbox
     additionalFormRequirements _ = mempty
 
+productDropdown :: Self -> Array Product -> JSX
+productDropdown self products =
+  divWithClass "vetrina--input-wrapper"
+  $ divWithClass "input-field--container"
+  $ DOM.select
+      { children: map mkOption products
+      , onChange: handler targetValue
+          \newProductSelection ->
+             let foundProduct = find ((_ == newProductSelection) <<< Just <<< _.id) products
+             in self.setState _ { productSelection = foundProduct }
+      , value: fromMaybe "" $ _.id <$> self.state.productSelection
+      }
+  where
+    mkOption product =
+      DOM.option
+        { value: product.id
+        , children:
+            [ DOM.text
+              $ product.name
+              <> ", "
+              <> Helpers.formatEur product.priceCents <> " € / månad"
+            ]
+        }
+    -- | Just a small helper as we need to wrap this thing inside two divs
+    divWithClass className child = DOM.div { className, children: [ child ] }
 
 -- | Only show this when initial screen with new account
 newPurchaseLinks :: Self -> JSX

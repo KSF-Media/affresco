@@ -48,8 +48,8 @@ fromJSProduct :: JSProduct -> Maybe Product
 fromJSProduct jsProduct = do
   id          <- toMaybe jsProduct.id
   name        <- toMaybe jsProduct.name
-  description <- toMaybe jsProduct.description
   priceCents  <- toMaybe jsProduct.priceCents
+  let description = fold $ toMaybe jsProduct.description
   let campaignNo = toMaybe jsProduct.campaignNo
       descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
       contents = mapMaybe fromJSProductContent $ fold $ toMaybe jsProduct.contents
