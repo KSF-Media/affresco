@@ -27,6 +27,7 @@ loginView self@{ state, setState } logger =
           [ logos
           , title
           , description
+          , descriptionList
           ]
     <> [ Helpers.classy DOM.div "form" [ loginForm ] ]
   where
@@ -71,7 +72,6 @@ loginView self@{ state, setState } logger =
     description =
       Helpers.classy DOM.div "description"
         [ DOM.h2_ [ DOM.text "I Mitt konto sköter du smidigt dina prenumerationsärenden för Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. Du kan lätt:" ]
-        , descriptionList
         ]
 
     descriptionList :: JSX

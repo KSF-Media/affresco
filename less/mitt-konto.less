@@ -51,7 +51,7 @@ h2.mitt-konto--heading {
 
 .mitt-konto--frontpage {
     display: grid;
-    grid-template-rows: 70px auto 360px auto;
+    grid-template-rows: 70px auto auto auto auto;
     grid-template-columns: 2fr 1fr 345px 1fr 2fr;
 
     background-image: url('../images/shield.png');
@@ -96,46 +96,53 @@ h2.mitt-konto--heading {
         grid-column: 1 / span 5;
         grid-row-start: 2;
         justify-self: center;
+        text-align: center;
     }
 
     .description {
-        grid-column-start: 3;
+        grid-column: 2 / span 3;
         grid-row-start: 3;
+
+        text-align: center;
+
         @media @to-large {
-            text-align: center;
             padding-bottom: 10px;
         }
+    }
 
-        .list {
+    .list {
+
+        grid-column-start: 3;
+        grid-row-start: 4;
+
+        display: grid;
+        row-gap: 0.2em;
+        .item {
+            @check-size: 16px;
+
             display: grid;
-            row-gap: 0.2em;
-            .item {
-                @check-size: 16px;
+            grid-template-columns: @check-size auto;
+            align-items: center;
+            column-gap: 0.6em;
 
-                display: grid;
-                grid-template-columns: @check-size auto;
-                align-items: center;
-                column-gap: 0.6em;
+            .check-icon {
+                background-repeat: no-repeat;
+                border-radius: .16em;
+                background-size: 100%;
+                width: @check-size;
+                height: @check-size;
+                background-image: url('../images/checkmark-round.png');
+            }
 
-                .check-icon {
-                    background-repeat: no-repeat;
-                    border-radius: .16em;
-                    background-size: 100%;
-                    width: @check-size;
-                    height: @check-size;
-                    background-image: url('../images/checkmark-round.png');
-                }
-
-                .text {
-                    font-weight: 370;
-                }
+            .text {
+                font-weight: 370;
             }
         }
     }
 
     .form {
         grid-column-start: 3;
-        grid-row-start: 4;
+        grid-row-start: 5;
     }
 
 }
