@@ -52,7 +52,12 @@ h2.mitt-konto--heading {
 .mitt-konto--frontpage {
     display: grid;
     grid-template-rows: 70px auto 360px auto;
-    grid-template-columns: 2fr 1fr 4fr 1fr 2fr;
+    grid-template-columns: 2fr 1fr 345px 1fr 2fr;
+
+    background-image: url('../images/shield.png');
+    background-repeat: no-repeat;
+    background-size: 280px 380px;
+    background-position: 50% 30%;
 
     .logos {
         grid-column-start: 3;
@@ -88,7 +93,7 @@ h2.mitt-konto--heading {
     }
 
     .title {
-        grid-column: 2 / span 3;
+        grid-column: 1 / span 5;
         grid-row-start: 2;
         justify-self: center;
     }

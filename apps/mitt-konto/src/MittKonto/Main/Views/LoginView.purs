@@ -64,7 +64,7 @@ loginView self@{ state, setState } logger =
     title =
       Helpers.classy DOM.div "title"
         [ Helpers.classy DOM.h1 "mitt-konto--heading"
-            [ DOM.text "Välkommen till Mitt konto"
+            [ DOM.text "Mitt konto – kundservice för HBL, VN, ÖN och HBL Junior"
             ]
         ]
 
