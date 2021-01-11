@@ -1,4 +1,4 @@
-module Vetrina.Purchase.InsufficientAccount where
+module Vetrina.Purchase.AccountForm where
 
 import Prelude
 
@@ -41,8 +41,8 @@ type Self =
   , setState :: (State -> State) -> Effect Unit
   }
 
-mkInsufficientAccount :: Component Props
-mkInsufficientAccount = do
+mkAccountForm :: Component Props
+mkAccountForm = do
   component "insufficientAccount" \props -> React.do
     -- Set initial form values from user if defined
     let initialContactInformation =

@@ -2,7 +2,7 @@ module KSF.Vetrina where
 
 import Prelude
 
-import Bottega (BottegaError(..), InsufficientAccount)
+import Bottega (BottegaError(..))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
@@ -36,9 +36,8 @@ import Record (merge)
 import Tracking as Tracking
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
-import Vetrina.Purchase.InsufficientAccount (mkInsufficientAccount)
-import Vetrina.Purchase.InsufficientAccount as InsufficientAccount
-import Vetrina.Purchase.InsufficientAccount as Purchase.InsufficientAccount
+import Vetrina.Purchase.AccountForm (mkAccountForm)
+import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
@@ -97,7 +96,7 @@ type State =
   , products         :: Array Product
   , productSelection :: Maybe Product
   , paymentMethod    :: User.PaymentMethod
-  , insufficientAccountComponent :: InsufficientAccount.Props -> JSX
+  , accountFormComponent :: AccountForm.Props -> JSX
   , retryPurchase :: User -> Effect Unit
   }
 
@@ -150,7 +149,7 @@ initialState =
   , products: []
   , productSelection: Nothing
   , paymentMethod: CreditCard
-  , insufficientAccountComponent: const $ DOM.text "YOLLO"
+  , accountFormComponent: const mempty
   , retryPurchase: const $ pure unit
   }
 
@@ -158,7 +157,7 @@ didMount :: Self -> Effect Unit
 didMount self = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "vetrina"
-  insufficientAccountComponent <- mkInsufficientAccount
+  accountFormComponent <- mkAccountForm
 
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
@@ -179,7 +178,7 @@ didMount self = do
 
         liftEffect $ self.setState _
           { products = products
-          , insufficientAccountComponent = insufficientAccountComponent
+          , accountFormComponent = accountFormComponent
           , logger = logger
           }
 
@@ -287,7 +286,7 @@ render self = vetrinaContainer self $
         InsufficientAccount ->
           case self.state.user of
             Just u ->
-              self.state.insufficientAccountComponent
+              self.state.accountFormComponent
                 { user: u
                 , retryPurchase: self.state.retryPurchase
                 , setLoading: \loading -> self.setState _ { isLoading = loading }
