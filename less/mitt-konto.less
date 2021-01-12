@@ -37,9 +37,10 @@ h1, .mitt-konto--heading {
     font-weight: 700;
     letter-spacing: -.015em;
     margin-bottom: 10px;
+    font-size: 2.35rem;
 }
 
-h2.mitt-konto---heading {
+h2.mitt-konto--heading {
     font-size: 1.75rem;
 }
 
@@ -48,12 +49,93 @@ h2.mitt-konto---heading {
     font-family: 'Roboto', serif;
 }
 
+.mitt-konto--frontpage {
+    display: grid;
+    grid-template-rows: 70px auto auto auto auto;
+    grid-template-columns: 2fr 1fr 345px 1fr 2fr;
 
-.mitt-konto--description {
-    @media @to-large {
-	text-align: center;
-	padding-bottom: 10px;
+    background-image: url('../images/shield.png');
+    background-repeat: no-repeat;
+    background-size: 280px 380px;
+    background-position: 50% 30%;
+
+    .logos {
+        grid-column-start: 3;
+        grid-row-start: 1;
+
+        display: grid;
+        @logo-size: 32px;
+        grid-template-columns: @logo-size @logo-size @logo-size;
+        column-gap: 2.6em;
+        justify-content: center;
+
+        .logo {
+            align-self: center;
+            border-radius: 1.6px;
+            width: @logo-size;
+            height: @logo-size;
+        }
     }
+
+    .title {
+        grid-column: 1 / span 5;
+        grid-row-start: 2;
+        justify-self: center;
+        text-align: center;
+    }
+
+    .description {
+        grid-column: 2 / span 3;
+        grid-row-start: 3;
+
+        text-align: center;
+        color: @grey-dark;
+
+        h2 {
+            font-weight: 400;
+        }
+
+
+        @media @to-large {
+            padding-bottom: 10px;
+        }
+    }
+
+    .list {
+
+        grid-column-start: 3;
+        grid-row-start: 4;
+
+        display: grid;
+        row-gap: 0.2em;
+        .item {
+            @check-size: 16px;
+
+            display: grid;
+            grid-template-columns: @check-size auto;
+            align-items: center;
+            column-gap: 0.6em;
+
+            .check-icon {
+                background-repeat: no-repeat;
+                border-radius: .16em;
+                background-size: 100%;
+                width: @check-size;
+                height: @check-size;
+                background-image: url('../images/checkmark-round.png');
+            }
+
+            .text {
+                font-weight: 370;
+            }
+        }
+    }
+
+    .form {
+        grid-column-start: 3;
+        grid-row-start: 5;
+    }
+
 }
 
 .mitt-konto--main-container {

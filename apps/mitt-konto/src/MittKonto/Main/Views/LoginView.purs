@@ -16,20 +16,26 @@ import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks as React
+
+foreign import logos ::
+  { hbl :: String
+  , on  :: String
+  , vn  :: String
+  }
 
 -- | Login page with welcoming header, description text and login form.
 loginView :: Types.Self-> Sentry.Logger -> JSX
-loginView self@{ state, setState } logger = React.fragment
-  [ DOM.div_
-      case state.showWelcome of
+loginView self@{ state, setState } logger =
+  Helpers.classy DOM.div "mitt-konto--frontpage" $
+    case state.showWelcome of
         false -> []
         true  ->
-          [ Helpers.classy DOM.div "pb2 center" [ heading ]
-          , Helpers.classy DOM.div "center"     [ pageDescription ]
+          [ logosWrapper
+          , title
+          , description
+          , descriptionList
           ]
-  , Helpers.classy DOM.div "center" [ loginForm ]
-  ]
+    <> [ Helpers.classy DOM.div "form" [ loginForm ] ]
   where
     loginForm =
         Login.login
@@ -56,46 +62,39 @@ loginView self@{ state, setState } logger = React.fragment
           , disableSocialLogins: Set.empty
           }
 
-    heading =
-      Helpers.classy DOM.h1 "mitt-konto--heading"
-        [ DOM.text "Välkommen till KSF Media’s Mitt Konto" ]
+    logosWrapper = Helpers.classy DOM.div "logos"
+              [ DOM.img { src: logos.vn, className: "logo", alt: "VN Västis" }
+              , DOM.img { src: logos.hbl, className: "logo", alt: "HBL Husis" }
+              , DOM.img { src: logos.on, className: "logo", alt: "ÖN" }
+              ]
 
-    frequentIssues =
-      Helpers.classy DOM.p "mitt-konto--faq"
-        [ DOM.a
-            { href: "https://www.hbl.fi/fragor-och-svar/"
-            , children: [ DOM.text "Frågor och svar" ]
-            , target: "_blank"
-            }
-        , DOM.text " * "
-        , DOM.a
-            { href: "https://www.hbl.fi/ingen-tidning/"
-            , children: [ DOM.text "Ingen tidning" ]
-            , target: "_blank"
-            }
-        , DOM.text " * "
-        , DOM.a
-            { href: "https://www.hbl.fi/epaper/"
-            , children: [ DOM.text "Läs e-tidning" ]
-            , target: "_blank"
-            }
-        ]
-
-    pageDescription =
-      Helpers.classy DOM.div "mitt-konto--description"
-        [ frequentIssues
-        , DOM.p_
-            [ DOM.text
-                """Här kan du göra tillfällig eller permanent
-                   adressändring eller göra uppehåll i tidningsutdelningen.
-                   Dessutom kan du få allmän information som är
-                   relevant för dig som prenumerant.
-                """
-            ]
-        , DOM.p_
-            [ DOM.text "Allt du behöver göra för att komma igång är att logga in!" ]
-        , DOM.p_
-            [ DOM.text "Behöver du hjälp? "
-            , Helpers.anchor "https://www.hbl.fi/kundservice/" "Kundservice" []
+    title =
+      Helpers.classy DOM.div "title"
+        [ Helpers.classy DOM.h1 "mitt-konto--heading"
+            [ DOM.text "Mitt konto – kundservice för HBL, VN, ÖN och HBL Junior"
             ]
         ]
+
+    description =
+      Helpers.classy DOM.div "description"
+        [ DOM.h2_ [ DOM.text "I Mitt konto sköter du smidigt dina prenumerationsärenden för Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. Du kan lätt:" ]
+        ]
+
+    descriptionList :: JSX
+    descriptionList = Helpers.classy DOM.div "list" $
+                        descriptionListItem <$> [ "göra addressändringar"
+                                                , "göra uppehåll"
+                                                , "reklamera utebliven tidning"
+                                                , "uppdatera ditt kredit- eller bankkort"
+                                                , "visa din fakturor"
+                                                , "avsluta din prenumeration"
+                                                , "med mera ..."
+                                                ]
+
+
+    descriptionListItem :: String -> JSX
+    descriptionListItem text = Helpers.classy DOM.div "item"
+                                 [ DOM.div { className: "check-icon" }
+                                 , Helpers.classy DOM.div "text"
+                                     [ DOM.text text ]
+                                 ]

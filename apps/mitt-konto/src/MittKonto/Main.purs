@@ -72,10 +72,9 @@ render :: Types.Self -> Sentry.Logger -> JSX -> Boolean -> JSX
 render self@{ state, setState } logger searchView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
-    , Helpers.classy DOM.div "mt4 mb4"
-        [ foldMap Views.alertView state.alert ]
-    , Helpers.classy DOM.div "mt4 mb4 clearfix"
-        [ Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
+    , Helpers.classy DOM.div "mt3 mb4 clearfix"
+        [ foldMap Views.alertView state.alert
+        , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
             [ element Router.switch { children: [ paymentListRoute, search, mittKontoRoute, noMatchRoute ] } ]
         ]
     , Views.footerView
