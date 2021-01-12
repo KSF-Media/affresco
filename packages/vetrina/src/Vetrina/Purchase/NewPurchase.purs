@@ -333,10 +333,10 @@ emailInput self accountStatus =
          [ case accountStatus of
               NewAccount ->
                 DOM.div
-                  { className: "vetrina--create-account"
+                  { className: "vetrina--step vetrina--create-account"
                   , children:
                       [ DOM.span
-                          { className: "vetrina--create-account__headline"
+                          { className: "vetrina--step__headline"
                           , children: [ DOM.text "Skapa konto" ]
                           }
                       , DOM.text "STEG 1 / 2 KONTOINFORMATION"
