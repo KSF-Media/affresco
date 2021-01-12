@@ -3,9 +3,10 @@ module Vetrina.Types where
 import Prelude
 
 import Data.Array (mapMaybe)
-import Data.Foldable (fold)
+import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
+import KSF.Api.Package (Campaign, JSCampaign, toCampaignLengthUnit)
 import KSF.User as User
 import React.Basic (JSX)
 
@@ -36,7 +37,7 @@ type Product =
   , description                  :: JSX
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
-  , campaignNo                   :: Maybe Int
+  , campaign                     :: Maybe Campaign
   , contents                     :: Array ProductContent
   }
 
@@ -46,7 +47,7 @@ type JSProduct =
   , description                  :: Nullable JSX
   , descriptionPurchaseCompleted :: Nullable JSX
   , priceCents                   :: Nullable Int
-  , campaignNo                   :: Nullable Int
+  , campaign                     :: Nullable JSCampaign
   , contents                     :: Nullable (Array JSProductContent)
   }
 
@@ -56,10 +57,10 @@ fromJSProduct jsProduct = do
   name        <- toMaybe jsProduct.name
   priceCents  <- toMaybe jsProduct.priceCents
   let description = fold $ toMaybe jsProduct.description
-  let campaignNo = toMaybe jsProduct.campaignNo
+  let campaign = fromJSCampaign =<< toMaybe jsProduct.campaign
       descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
       contents = mapMaybe fromJSProductContent $ fold $ toMaybe jsProduct.contents
-  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted, contents }
+  pure { id, name, description, priceCents, campaign, descriptionPurchaseCompleted, contents }
 
 fromJSProductContent ::  JSProductContent -> Maybe ProductContent
 fromJSProductContent jsProduct =
@@ -68,3 +69,19 @@ fromJSProductContent jsProduct =
   }
   <$> toMaybe jsProduct.title
   <*> toMaybe jsProduct.description
+
+fromJSCampaign :: JSCampaign -> Maybe Campaign
+fromJSCampaign jsCampaign =
+  { id: _
+  , no: _
+  , name: _
+  , length: _
+  , lengthUnit: _
+  , priceEur: _
+  }
+  <$> toMaybe jsCampaign.id
+  <*> toMaybe jsCampaign.no
+  <*> toMaybe jsCampaign.name
+  <*> toMaybe jsCampaign.length
+  <*> (map toCampaignLengthUnit $ toMaybe jsCampaign.lengthUnit)
+  <*> toMaybe jsCampaign.priceEur

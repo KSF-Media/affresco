@@ -430,7 +430,7 @@ mkPurchase self@{ state: { logger } } validForm affUser =
     liftEffect do
       LocalStorage.setItem "productId" product.id -- for analytics
       LocalStorage.setItem "productPrice" $ show product.priceCents -- for analytics
-      LocalStorage.setItem "productCampaingNo" $ foldMap show product.campaignNo
+      LocalStorage.setItem "productCampaingNo" $ foldMap show $ map _.no product.campaign
 
     pure { paymentUrl, order }
   case eitherOrder of
@@ -531,7 +531,7 @@ createOrder user product = do
         { packageId: product.id
         , period: 1
         , payAmountCents: product.priceCents
-        , campaignNo: product.campaignNo
+        , campaignNo: map _.no product.campaign
         }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of

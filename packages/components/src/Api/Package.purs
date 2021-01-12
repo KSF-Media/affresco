@@ -2,6 +2,7 @@ module KSF.Api.Package where
 
 import Data.JSDate (JSDate)
 import Data.Nullable (Nullable)
+import Data.String as String
 
 type PackageId = String
 
@@ -52,8 +53,37 @@ type ActiveDays =
   , sun :: Boolean
   }
 
+data CampaignLengthUnit
+  = Day
+  | Week
+  | Month
+  | Year
+
+toCampaignLengthUnit :: String -> CampaignLengthUnit
+toCampaignLengthUnit lengthUnit =
+  case String.toLower lengthUnit of
+    "day"   -> Day
+    "week"  -> Week
+    "month" -> Month
+    "year"  -> Year
+    -- Default to Month if not defined,
+    -- as this is the most common case
+    _       -> Month
+
 type Campaign =
-  { no   :: Int
-  , id   :: String
-  , name :: String
+  { no         :: Int
+  , id         :: String
+  , name       :: String
+  , length     :: Int
+  , lengthUnit :: CampaignLengthUnit
+  , priceEur   :: Number
+  }
+
+type JSCampaign =
+  { no         :: Nullable Int
+  , id         :: Nullable String
+  , name       :: Nullable String
+  , length     :: Nullable Int
+  , lengthUnit :: Nullable String
+  , priceEur   :: Nullable Number
   }
