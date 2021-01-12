@@ -11,6 +11,8 @@
     , "datetime"
     , "react-basic"
     , "react-basic-classic"
+    , "react-basic-hooks"
+    , "react-basic-router"
     , "react-basic-dom"
     , "psci-support"
     , "prelude"

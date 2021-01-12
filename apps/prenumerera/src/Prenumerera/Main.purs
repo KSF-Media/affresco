@@ -154,7 +154,9 @@ navbarView :: Self -> JSX
 navbarView self  =
   Navbar.navbar
     { paper: self.state.paper
-    , loggedInUser: self.state.loggedInUser
+    , activeUser: self.state.loggedInUser
+    , adminMode: false
+    , isPersonating: false
     , logout: do
         Aff.launchAff_ do
           KSF.User.logout (const $ pure unit)
