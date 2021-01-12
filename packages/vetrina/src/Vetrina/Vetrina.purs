@@ -2,7 +2,7 @@ module KSF.Vetrina where
 
 import Prelude
 
-import Bottega (BottegaError (..))
+import Bottega (BottegaError(..))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
@@ -36,6 +36,8 @@ import Record (merge)
 import Tracking as Tracking
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
+import Vetrina.Purchase.AccountForm (mkAccountForm)
+import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
@@ -94,6 +96,8 @@ type State =
   , products         :: Array Product
   , productSelection :: Maybe Product
   , paymentMethod    :: User.PaymentMethod
+  , accountFormComponent :: AccountForm.Props -> JSX
+  , retryPurchase :: User -> Effect Unit
   }
 
 type Self = React.Self Props State
@@ -113,10 +117,10 @@ data PurchaseState
 data OrderFailure
   = EmailInUse String
   | SubscriptionExists
+  | InsufficientAccount
   | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
   | AuthenticationError
-  | InsufficientAccount
   | ServerError
   | UnexpectedError String
 
@@ -145,13 +149,16 @@ initialState =
   , products: []
   , productSelection: Nothing
   , paymentMethod: CreditCard
+  , accountFormComponent: const mempty
+  , retryPurchase: const $ pure unit
   }
 
 didMount :: Self -> Effect Unit
 didMount self = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "vetrina"
-  self.setState _ { logger = logger }
+  accountFormComponent <- mkAccountForm
+
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
   Aff.launchAff_ do
@@ -169,7 +176,11 @@ didMount self = do
             logger.error err
             throwError err
 
-        liftEffect $ self.setState _ { products = products }
+        liftEffect $ self.setState _
+          { products = products
+          , accountFormComponent = accountFormComponent
+          , logger = logger
+          }
 
 tryMagicLogin :: Self -> Aff Unit
 tryMagicLogin self =
@@ -272,6 +283,16 @@ render self = vetrinaContainer self $
         SubscriptionExists ->
           Purchase.SubscriptionExists.subscriptionExists
             { onClose: self.props.onClose }
+        InsufficientAccount ->
+          case self.state.user of
+            Just u ->
+              self.state.accountFormComponent
+                { user: u
+                , retryPurchase: self.state.retryPurchase
+                , setLoading: \loading -> self.setState _ { isLoading = loading }
+                }
+            -- Can't do much without a user
+            Nothing -> self.props.unexpectedError
         AuthenticationError ->
           Purchase.NewPurchase.newPurchase
             { accountStatus: self.state.accountStatus
@@ -327,6 +348,7 @@ vetrinaContainer self@{ state: { purchaseState } } child =
       errorClass       = case purchaseState of
                            PurchaseFailed SubscriptionExists  -> mempty
                            PurchaseFailed AuthenticationError -> mempty
+                           PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
                            otherwise                          -> mempty
   in
@@ -362,6 +384,11 @@ mkPurchase self@{ state: { logger } } validForm affUser =
   Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
   eitherUser <- affUser
   eitherOrder <- runExceptT do
+
+    -- TODO: We could check for insufficient account before trying to create the order and
+    -- wait for the validation done server side. For this, we would need the packages from Bottega so
+    -- that we can tell if a package id belongs to a paper product or not.
+    -- Insufficient account = user not having contact information and trying to purchase a paper product
     user          <- except eitherUser
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
@@ -407,6 +434,11 @@ mkPurchase self@{ state: { logger } } validForm affUser =
                                                         }
             SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
             AuthenticationError           -> self.state { purchaseState = PurchaseFailed AuthenticationError }
+            InsufficientAccount           ->
+              self.state { purchaseState = PurchaseFailed InsufficientAccount
+                         , retryPurchase = \user ->
+                             mkPurchase self validForm (pure $ Right user)
+                         }
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
       liftEffect $ self.setState \_ -> errState

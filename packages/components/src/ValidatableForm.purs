@@ -24,6 +24,42 @@ data ValidationError a
   | InvalidEmailInUse a String
   | InvalidNotInitialized a -- Fictional state only to be set when the form is first rendered
 
+type CommonContactInformation =
+  { firstName     :: Maybe String
+  , lastName      :: Maybe String
+  , streetAddress :: Maybe String
+  , city          :: Maybe String
+  , zipCode       :: Maybe String
+  , countryCode   :: Maybe String
+  }
+
+data CommonContactInformationFormField
+  = FirstName
+  | LastName
+  | StreetAddress
+  | City
+  | Zip
+  | Country
+
+derive instance eqCommonContactInformationFormField :: Eq CommonContactInformationFormField
+instance validatableFieldRegistrationFormField :: ValidatableField CommonContactInformationFormField where
+  validateField field value serverErrors = case field of
+    FirstName     -> validateEmptyField FirstName     "Förnamn krävs."   value
+    LastName      -> validateEmptyField LastName      "Efternamn krävs." value
+    StreetAddress -> validateEmptyField StreetAddress "Adress krävs."    value
+    City          -> validateEmptyField City          "Stad krävs."      value
+    Country       -> validateEmptyField Country       "Land krävs."      value
+    Zip           -> validateZipCode field value
+
+emptyCommonContactInformation :: CommonContactInformation
+emptyCommonContactInformation =
+  { firstName: Nothing
+  , lastName: Nothing
+  , streetAddress: Nothing
+  , city: Nothing
+  , zipCode: Nothing
+  , countryCode: Nothing
+  }
 
 validateForm :: forall a b. ValidatedForm a b -> (Either (NonEmptyList (ValidationError a)) b -> Effect Unit) -> Effect Unit
 validateForm form callback = unV (callback <<< Left) (callback <<< Right) form

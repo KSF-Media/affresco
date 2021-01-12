@@ -11,6 +11,7 @@
     , "affresco-components"
     , "affresco-user"
     , "uuid"
+    , "react-basic-hooks"
     ]
 , packages =
     ../../packages.dhall

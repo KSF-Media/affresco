@@ -4,18 +4,48 @@ import ReactDOM from 'react-dom';
 // yup, welcome to react 16
 import createReactClass from 'create-react-class';
 React.createClass = createReactClass;
- var Main = require('./output/VetrinaTest.Main/index.js');
+var Main = require('./output/VetrinaTest.Main/index.js');
 
 function main() {
+  // HACK: As we only support one product now, we can easily switch between paper and digital product by an url hash.
+  // This also makes testing the thing a lot easier
+  const product = document.location.hash === '#paperProduct' ? hblPaper : hblPremium;
+
   const myComponent = (
-      <Main.jsComponent
-    products={[hblPremium]}
-    accessEntitlements={["hbl-365", "articles-365"]}
-    headline={<div>Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
-    paper="HBL"/>
+    <Main.jsComponent
+      products={[product]}
+      accessEntitlements={["hbl-365", "articles-365"]}
+      headline={<div>Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
+      paper="HBL" />
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));
+}
+
+var hblPaper = {
+  id: "HBL P+D LÖ",
+  description:
+    <div>
+      Kvalitetsjournalistik när, var och hur du vill <br />
+      HBL WEEKEND LÖ-SÖ! A paper product yo.
+    </div>,
+  priceCents: 2990,
+  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
+  name: "Hufvudstadsbladet Premium",
+  contents: [
+    {
+      title: "Premium",
+      description: "Alla artiklar på hbl.fi"
+    },
+    {
+      title: "Nyhetsappen HBL Nyheter",
+      description: "Nyheter på mobilen och surfplattan, pushnotiser"
+    },
+    {
+      title: "Digitalt månadsbrev",
+      description: "Nyheter & förmåner"
+    }
+  ]
 }
 
 var hblPremium = {
@@ -27,21 +57,21 @@ var hblPremium = {
     </div>,
   priceCents: 690,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
-    name: "Hufvudstadsbladet Premium",
-    contents: [
-	{
-	    title: "Premium",
-	    description: "Alla artiklar på hbl.fi"
-	},
-	{
-	    title: "Nyhetsappen HBL Nyheter",
-	    description: "Nyheter på mobilen och surfplattan, pushnotiser"
-	},
-	{
-	    title: "Digitalt månadsbrev",
-	    description: "Nyheter & förmåner"
-	}
-    ],
+  name: "Hufvudstadsbladet Premium",
+  contents: [
+    {
+      title: "Premium",
+      description: "Alla artiklar på hbl.fi"
+    },
+    {
+      title: "Nyhetsappen HBL Nyheter",
+      description: "Nyheter på mobilen och surfplattan, pushnotiser"
+    },
+    {
+      title: "Digitalt månadsbrev",
+      description: "Nyheter & förmåner"
+    }
+  ],
   campaignNo: 4052 // NOTE! This id exists only in staging!
 }
 
