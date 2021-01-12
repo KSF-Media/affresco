@@ -14,6 +14,12 @@ data AccountStatus
   | ExistingAccount String
   | LoggedInAccount User.User
 
+instance eqAccountStatus :: Eq AccountStatus where
+  eq NewAccount NewAccount = true
+  eq (ExistingAccount _) (ExistingAccount _) = true
+  eq (LoggedInAccount _) (LoggedInAccount _) = true
+  eq _ _ = false
+
 type JSProductContent =
   { title       :: Nullable String
   , description :: Nullable String

@@ -15,11 +15,11 @@ paymentMethod :: (Maybe PaymentMethod -> Effect Unit) -> JSX
 paymentMethod onChange =
   DOM.div
     { className: "payment-method--payment-options"
-    , children: [ paymentMethodOption CreditCard onChange ]
+    , children: [ paymentMethodOption onChange CreditCard ]
     }
 
-paymentMethodOption :: PaymentMethod -> (Maybe PaymentMethod -> Effect Unit) -> JSX
-paymentMethodOption method onChange =
+paymentMethodOption :: (Maybe PaymentMethod -> Effect Unit) -> PaymentMethod -> JSX
+paymentMethodOption onChange method =
   let (Tuple methodString methodDescription) = case method of
         CreditCard -> Tuple "credit-card" "Kreditkort"
         PaperInvoice -> Tuple "paper-invoice" "Faktura"

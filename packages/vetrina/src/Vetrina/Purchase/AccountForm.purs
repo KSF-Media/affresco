@@ -75,7 +75,7 @@ render props self@{ state: { contactForm } } = fragment
                     { className: "vetrina--step__headline"
                     , children: [ DOM.text "Dina uppgifter" ]
                     }
-                , DOM.text "STEG 1 / 2 KONTOINFORMATION"
+                , DOM.text "STEG 2 / 2 KONTOINFORMATION"
                 ]
             }
         , InputField.inputField

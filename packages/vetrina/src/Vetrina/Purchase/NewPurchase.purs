@@ -18,6 +18,7 @@ import KSF.Helpers as Helpers
 import KSF.InputField as InputField
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
+import KSF.PaymentMethod (paymentMethodOption)
 import KSF.User (PaymentMethod, User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -55,11 +56,13 @@ type Props =
   , mkPurchaseWithNewAccount      :: NewAccountForm -> Effect Unit
   , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
   , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
-  , paymentMethod                 :: PaymentMethod
   , productSelection              :: Maybe Product
   , onLogin                       :: Effect Unit
   , headline                      :: Maybe JSX
   , paper                         :: Maybe Paper
+  , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
+  , paymentMethods                :: Array PaymentMethod
+  , minimalLayout :: Boolean
   }
 
 data FormInputField
@@ -130,7 +133,7 @@ didMount self = do
           ExistingAccount email -> Just email
           _                     -> Nothing
   self.setState _ { accountStatus = self.props.accountStatus
-                  , paymentMethod = Just self.props.paymentMethod
+                  , paymentMethod = self.props.paymentMethod
                   , productSelection =
                       -- If there's already a selected product, pick that
                       -- or take the first item on the products list
@@ -140,10 +143,7 @@ didMount self = do
 
 render :: Self -> JSX
 render self =
-  DOM.h1
-    { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
-    , children: [ title self.state.accountStatus self.props.headline ]
-    }
+  title self
   <> newPurchaseLinks self
   <> case self.state.accountStatus of
     LoggedInAccount user
@@ -162,13 +162,21 @@ render self =
      then productInformation self
      else mempty
 
-title :: AccountStatus -> Maybe JSX -> JSX
-title accountStatus maybeHeadline = case accountStatus of
-  NewAccount           -> case maybeHeadline of
-                               Just headline -> headline
-                               Nothing -> mempty
-  ExistingAccount _    -> DOM.text "Du har redan ett KSF Media-konto"
-  LoggedInAccount user -> DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
+title :: Self -> JSX
+title self =
+  if not self.props.minimalLayout
+  then DOM.h1
+         { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
+         , children: Array.singleton $
+             case self.state.accountStatus of
+               NewAccount           ->
+                 case self.props.headline of
+                   Just headline -> headline
+                   Nothing -> mempty
+               ExistingAccount _    -> DOM.text "Du har redan ett KSF Media-konto"
+               LoggedInAccount user -> DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
+         }
+  else mempty
 
 description :: AccountStatus -> JSX
 description accountStatus =
@@ -189,7 +197,8 @@ form self = DOM.form $
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
   , children:
-      [ if length self.props.products > 1 then productDropdown self self.props.products else mempty
+      [ if length self.props.products > 1 then productDropdown self.props.products else mempty
+      , renderPaymentMethods self.props.paymentMethods
        -- Don't show the product selection if we are asking the user to login
       , if not isExistingAccount self.state.accountStatus
            || isNothing self.state.productSelection
@@ -242,31 +251,46 @@ form self = DOM.form $
     additionalFormRequirements NewAccount = acceptTermsCheckbox
     additionalFormRequirements _ = mempty
 
-productDropdown :: Self -> Array Product -> JSX
-productDropdown self products =
-  divWithClass "vetrina--input-wrapper"
-  $ divWithClass "input-field--container"
-  $ DOM.select
-      { children: map mkOption products
-      , onChange: handler targetValue
-          \newProductSelection ->
-             let foundProduct = find ((_ == newProductSelection) <<< Just <<< _.id) products
-             in self.setState _ { productSelection = foundProduct }
-      , value: fromMaybe "" $ _.id <$> self.state.productSelection
-      }
-  where
-    mkOption product =
-      DOM.option
-        { value: product.id
-        , children:
-            [ DOM.text
-              $ product.name
-              <> ", "
-              <> Helpers.formatEur product.priceCents <> " € / månad"
-            ]
-        }
-    -- | Just a small helper as we need to wrap this thing inside two divs
-    divWithClass className child = DOM.div { className, children: [ child ] }
+    renderPaymentMethods :: Array User.PaymentMethod -> JSX
+    renderPaymentMethods paymentMethods =
+      if length paymentMethods > 1
+      then
+        DOM.div
+          { className: "vetrina--payment-methods"
+          , children: map mkPaymentMethodOption paymentMethods
+          }
+      else mempty
+      where
+        mkPaymentMethodOption p =
+          paymentMethodOption
+          (\newPaymentMethod -> self.setState _ { paymentMethod = newPaymentMethod })
+          p
+
+    productDropdown :: Array Product -> JSX
+    productDropdown products =
+      divWithClass "vetrina--input-wrapper"
+      $ divWithClass "input-field--container"
+      $ DOM.select
+          { children: map mkOption products
+          , onChange: handler targetValue
+              \newProductSelection ->
+                 let foundProduct = find ((_ == newProductSelection) <<< Just <<< _.id) products
+                 in self.setState _ { productSelection = foundProduct }
+          , value: fromMaybe "" $ _.id <$> self.state.productSelection
+          }
+      where
+        mkOption product =
+          DOM.option
+            { value: product.id
+            , children:
+                [ DOM.text
+                  $ product.name
+                  <> ", "
+                  <> Helpers.formatEur product.priceCents <> " € / månad"
+                ]
+            }
+        -- | Just a small helper as we need to wrap this thing inside two divs
+        divWithClass className child = DOM.div { className, children: [ child ] }
 
 -- | Only show this when initial screen with new account
 newPurchaseLinks :: Self -> JSX
@@ -298,17 +322,19 @@ faqLink =
 
 loginLink :: Self -> JSX
 loginLink self =
-  DOM.span
-    { className: "vetrina--login-link"
-    , children:
-        [ DOM.text "Redan prenumerant? "
-        , DOM.span
-            { className:"vetrina--login-callback"
-            , children: [ DOM.text "Logga in för att fortsätta läsa" ]
-            , onClick: handler_ self.props.onLogin
-            }
-        ]
-    }
+  if self.props.minimalLayout
+  then mempty
+  else DOM.span
+         { className: "vetrina--login-link"
+         , children:
+             [ DOM.text "Redan prenumerant? "
+             , DOM.span
+                 { className:"vetrina--login-callback"
+                 , children: [ DOM.text "Logga in för att fortsätta läsa" ]
+                 , onClick: handler_ self.props.onLogin
+                 }
+             ]
+         }
 
 subscribePagesLink :: Array JSX
 subscribePagesLink =
@@ -360,9 +386,8 @@ emailInput self accountStatus =
   in DOM.div
      { className: "vetrina--input-wrapper vetrina--with-label"
      , children:
-         [ case accountStatus of
-              NewAccount ->
-                DOM.div
+         [ if accountStatus == NewAccount && not self.props.minimalLayout
+           then DOM.div
                   { className: "vetrina--step vetrina--create-account"
                   , children:
                       [ DOM.span
@@ -372,7 +397,7 @@ emailInput self accountStatus =
                       , DOM.text "STEG 1 / 2 KONTOINFORMATION"
                       ]
                   }
-              _ -> mempty
+           else mempty
          , InputField.inputField
              { type_: InputField.Email
              , label: Just "E-postadress"

@@ -3,6 +3,8 @@ module KSF.Vetrina where
 import Prelude
 
 import Bottega (BottegaError(..))
+import Bottega.Models.PaymentMethod (toPaymentMethod)
+import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (mapMaybe, null)
@@ -34,10 +36,10 @@ import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Tracking as Tracking
-import Vetrina.Purchase.Completed as Purchase.Completed
-import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Purchase.AccountForm (mkAccountForm)
 import Vetrina.Purchase.AccountForm as AccountForm
+import Vetrina.Purchase.Completed as Purchase.Completed
+import Vetrina.Purchase.Error as Purchase.Error
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
@@ -55,21 +57,28 @@ type JSProps =
   , accessEntitlements :: Nullable (Array String)
   , headline           :: Nullable JSX
   , paper              :: Nullable String
+  , paymentMethods     :: Nullable (Array String)
+  , minimalLayout      :: Nullable Boolean
   }
 
 type Props =
-  { onClose            :: Effect Unit
+   -- If onClose is Nothing, the final button in `Completed` view will not be shown
+  { onClose            :: Maybe (Effect Unit)
   , onLogin            :: Effect Unit
   , products           :: Either Error (Array Product)
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
   , headline           :: Maybe JSX
   , paper              :: Maybe Paper
+  , paymentMethods     :: Array User.PaymentMethod
+  -- If true, will show texts, links etc.
+  -- FIXME: This is nothing but a band-aid and the entire thing should be redesigned
+  , minimalLayout      :: Boolean
   }
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
-  { onClose: fromMaybe (pure unit) $ toMaybe jsProps.onClose
+  { onClose: toMaybe jsProps.onClose
   , onLogin: fromMaybe (pure unit) $ toMaybe jsProps.onLogin
   , products:
       let productError = error "Did not get any valid products in props!"
@@ -83,6 +92,8 @@ fromJSProps jsProps =
   , accessEntitlements: maybe Set.empty Set.fromFoldable $ toMaybe jsProps.accessEntitlements
   , headline: toMaybe jsProps.headline
   , paper: Paper.fromString =<< toMaybe jsProps.paper
+  , paymentMethods: foldMap (mapMaybe toPaymentMethod) $ toMaybe jsProps.paymentMethods
+  , minimalLayout: fromMaybe false $ toMaybe jsProps.minimalLayout
   }
 
 type State =
@@ -95,9 +106,10 @@ type State =
   , logger           :: Sentry.Logger
   , products         :: Array Product
   , productSelection :: Maybe Product
-  , paymentMethod    :: User.PaymentMethod
+  , paymentMethod    :: Maybe User.PaymentMethod
   , accountFormComponent :: AccountForm.Props -> JSX
   , retryPurchase :: User -> Effect Unit
+  , paymentMethods :: Array User.PaymentMethod
   }
 
 type Self = React.Self Props State
@@ -148,9 +160,10 @@ initialState =
   , logger: Sentry.emptyLogger
   , products: []
   , productSelection: Nothing
-  , paymentMethod: CreditCard
+  , paymentMethod: Nothing
   , accountFormComponent: const mempty
   , retryPurchase: const $ pure unit
+  , paymentMethods: mempty
   }
 
 didMount :: Self -> Effect Unit
@@ -158,7 +171,10 @@ didMount self = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "vetrina"
   accountFormComponent <- mkAccountForm
-
+  let paymentMethods =
+        if null self.props.paymentMethods
+        then [ User.CreditCard ]
+        else self.props.paymentMethods
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
   Aff.launchAff_ do
@@ -180,6 +196,7 @@ didMount self = do
           { products = products
           , accountFormComponent = accountFormComponent
           , logger = logger
+          , paymentMethods = paymentMethods
           }
 
 tryMagicLogin :: Self -> Aff Unit
@@ -270,11 +287,13 @@ render self = vetrinaContainer self $
         , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
         , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
         , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
-        , paymentMethod: self.state.paymentMethod
         , productSelection: self.state.productSelection
         , onLogin: self.props.onLogin
         , headline: self.props.headline
         , paper: self.props.paper
+        , paymentMethod: self.state.paymentMethod <|> Just CreditCard
+        , paymentMethods: self.state.paymentMethods
+        , minimalLayout: self.props.minimalLayout
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
@@ -282,7 +301,7 @@ render self = vetrinaContainer self $
       case failure of
         SubscriptionExists ->
           Purchase.SubscriptionExists.subscriptionExists
-            { onClose: self.props.onClose }
+            { onClose: fromMaybe (pure unit) self.props.onClose }
         InsufficientAccount ->
           case self.state.user of
             Just u ->
@@ -301,11 +320,13 @@ render self = vetrinaContainer self $
             , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
             , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
             , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
-            , paymentMethod: self.state.paymentMethod
+            , paymentMethod: self.state.paymentMethod <|> Just CreditCard
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
             , headline: self.props.headline
             , paper: self.props.paper
+            , paymentMethods: self.state.paymentMethods
+            , minimalLayout: self.props.minimalLayout
             }
         ServerError ->
           Purchase.Error.error
@@ -351,9 +372,13 @@ vetrinaContainer self@{ state: { purchaseState } } child =
                            PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
                            otherwise                          -> mempty
+      minimalClass = if self.props.minimalLayout then "vetrina--minimal-layout" else mempty
   in
     DOM.div
-      { className: "vetrina--container " <> errorClass
+      { className:
+          "vetrina--container "
+          <> errorClass
+          <> minimalClass
       , children: [ child ]
       }
 
