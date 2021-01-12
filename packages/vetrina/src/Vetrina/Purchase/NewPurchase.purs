@@ -377,7 +377,6 @@ mkLink linkDescription href linkText = Array.singleton $
 
 formSubmitButton :: Self -> JSX
 formSubmitButton self =
-  DOM.text ("IS DISABLED: " <> show disabled) <>
   DOM.input
     { type: "submit"
     , className: "vetrina--button"
