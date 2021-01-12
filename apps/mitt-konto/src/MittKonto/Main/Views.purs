@@ -31,17 +31,19 @@ import React.Basic.Hooks as React
 
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: Types.Self -> Sentry.Logger -> JSX
-navbarView self@{ state, setState } logger =
+navbarView :: Types.Self -> Sentry.Logger -> Boolean -> JSX
+navbarView self@{ state, setState } logger isPersonating =
     Navbar.navbar
       { paper: state.paper
-      , loggedInUser: state.loggedInUser
+      , adminMode: state.adminMode
+      , isPersonating: isPersonating
+      , activeUser: state.activeUser
       , logout: do
           Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
               logger.setUser Nothing
-              setState $ Types.setLoggedInUser Nothing
+              setState $ Types.setActiveUser Nothing
       }
 
 alertView :: Alert -> JSX

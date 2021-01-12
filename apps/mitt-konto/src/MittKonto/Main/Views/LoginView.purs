@@ -10,7 +10,7 @@ import Effect.Exception (message)
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
-import KSF.User (UserError(..))
+import KSF.User (UserError(..), isAdminUser)
 import KSF.User.Login (login) as Login
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
@@ -45,9 +45,10 @@ loginView self@{ state, setState } logger = React.fragment
                   UnexpectedError e  -> logger.error $ Error.loginError $ message e
                   -- If any other UserError occurs, only send an Info event of it
                   _ -> logger.log (show err) Sentry.Info
-                self.setState $ Types.setLoggedInUser Nothing
+                self.setState $ Types.setActiveUser Nothing
               Right user -> do
-                setState $ Types.setLoggedInUser $ Just user
+                admin <- isAdminUser
+                setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
                 logger.setUser $ Just user
           , launchAff_:
               Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
