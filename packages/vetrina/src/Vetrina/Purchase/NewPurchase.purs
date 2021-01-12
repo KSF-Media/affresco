@@ -7,12 +7,15 @@ import Data.Array (all, find, head, length)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
+import Data.Int as Int
 import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
+import Data.Tuple as Tuple
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
 import Effect.Class.Console as Console
+import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
 import KSF.InputField as InputField
@@ -62,7 +65,7 @@ type Props =
   , paper                         :: Maybe Paper
   , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
   , paymentMethods                :: Array PaymentMethod
-  , minimalLayout :: Boolean
+  , minimalLayout                 :: Boolean
   }
 
 data FormInputField
@@ -82,7 +85,7 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInput
       if isNothing value
       then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "")) -- TODO: Do we need an error message here?
       else pure $ Just mempty
-    PaymentMethod    -> Form.noValidation value
+    PaymentMethod    -> Form.validateEmptyField PaymentMethod "Betalningssätt krävs." value
 
 type PurchaseParameters =
   ( productSelection :: Maybe Product
@@ -286,9 +289,29 @@ form self = DOM.form $
                 [ DOM.text
                   $ product.name
                   <> ", "
-                  <> Helpers.formatEur product.priceCents <> " € / månad"
+                  <> renderPrice product
                 ]
             }
+        renderPrice :: Product -> String
+        renderPrice product =
+          let priceCents =
+                -- If campaign given, show that price
+                case _.priceEur <$> product.campaign of
+                  Just campaignPriceEur -> Int.ceil $ campaignPriceEur * 100.0
+                  _ -> product.priceCents
+              pricePeriod =
+                case product.campaign of
+                  Just c ->
+                    let monthString = toSwedish c.lengthUnit #
+                          if c.length > 1
+                          then Tuple.snd -- Plural
+                          else Tuple.fst -- Singular
+                    in show c.length <> " " <> monthString
+                  -- TODO: This should probably be defined in props,
+                  -- however currently we are using the one month
+                  -- prices of a product
+                  _ -> "månad"
+          in Helpers.formatEur priceCents <> " € / " <> pricePeriod
         -- | Just a small helper as we need to wrap this thing inside two divs
         divWithClass className child = DOM.div { className, children: [ child ] }
 
@@ -354,6 +377,7 @@ mkLink linkDescription href linkText = Array.singleton $
 
 formSubmitButton :: Self -> JSX
 formSubmitButton self =
+  DOM.text ("IS DISABLED: " <> show disabled) <>
   DOM.input
     { type: "submit"
     , className: "vetrina--button"
@@ -365,7 +389,7 @@ formSubmitButton self =
       NewAccount        -> "Bekräfta och gå vidare"
       ExistingAccount _ -> "Logga in"
       LoggedInAccount _ -> "Bekräfta och gå vidare"
-    disabled =  case self.state.accountStatus of
+    disabled = case self.state.accountStatus of
       NewAccount        -> isFormInvalid $ newAccountFormValidations self
       ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations self
       LoggedInAccount _ -> isFormInvalid $ loggedInAccountFormValidations self
@@ -377,7 +401,7 @@ isFormInvalid validations
   | otherwise = false
 
 formatErrorMessage :: String -> JSX
-formatErrorMessage message = InputField.errorMessage message
+formatErrorMessage = InputField.errorMessage
 
 emailInput :: Self -> AccountStatus -> JSX
 emailInput _ (LoggedInAccount _) = mempty
@@ -541,10 +565,11 @@ newAccountFormValidations self =
     -- TODO: Validate this and show error message. We are checking this on server side and with
     -- default browser validation. However, a custom JS validation is missing.
   , acceptLegalTerms: self.state.newAccountForm.acceptLegalTerms
-  , paymentMethod: self.state.paymentMethod
+  , paymentMethod: _
   }
   <$> Form.validateField EmailAddress self.state.newAccountForm.emailAddress []
   <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
+  <*> (Form.validateField PaymentMethod (map show self.state.paymentMethod) [] *> pure self.state.paymentMethod)
 
 existingAccountFormValidations :: Self -> Form.ValidatedForm FormInputField ExistingAccountForm
 existingAccountFormValidations self =

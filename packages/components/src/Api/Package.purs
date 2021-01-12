@@ -3,6 +3,7 @@ module KSF.Api.Package where
 import Data.JSDate (JSDate)
 import Data.Nullable (Nullable)
 import Data.String as String
+import Data.Tuple (Tuple(..))
 
 type PackageId = String
 
@@ -69,6 +70,14 @@ toCampaignLengthUnit lengthUnit =
     -- Default to Month if not defined,
     -- as this is the most common case
     _       -> Month
+
+toSwedish :: CampaignLengthUnit -> Tuple String String
+toSwedish lengthUnit =
+  case lengthUnit of
+    Day   -> Tuple "dag"   "dagar"
+    Week  -> Tuple "vecka" "veckor"
+    Month -> Tuple "månad" "månader"
+    Year  -> Tuple "år"    "år"
 
 type Campaign =
   { no         :: Int

@@ -7,7 +7,7 @@ import Bottega.Models.PaymentMethod (toPaymentMethod)
 import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
-import Data.Array (mapMaybe, null)
+import Data.Array (head, length, mapMaybe, null)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
 import Data.Foldable (foldMap)
@@ -175,6 +175,10 @@ didMount self = do
         if null self.props.paymentMethods
         then [ User.CreditCard ]
         else self.props.paymentMethods
+      paymentMethod =
+        if length paymentMethods == 1
+        then head paymentMethods
+        else Nothing
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
   Aff.launchAff_ do
@@ -291,7 +295,7 @@ render self = vetrinaContainer self $
         , onLogin: self.props.onLogin
         , headline: self.props.headline
         , paper: self.props.paper
-        , paymentMethod: self.state.paymentMethod <|> Just CreditCard
+        , paymentMethod: self.state.paymentMethod
         , paymentMethods: self.state.paymentMethods
         , minimalLayout: self.props.minimalLayout
         }
@@ -320,7 +324,7 @@ render self = vetrinaContainer self $
             , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
             , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
             , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
-            , paymentMethod: self.state.paymentMethod <|> Just CreditCard
+            , paymentMethod: self.state.paymentMethod
             , productSelection: self.state.productSelection
             , onLogin: self.props.onLogin
             , headline: self.props.headline
@@ -372,11 +376,11 @@ vetrinaContainer self@{ state: { purchaseState } } child =
                            PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
                            otherwise                          -> mempty
-      minimalClass = if self.props.minimalLayout then "vetrina--minimal-layout" else mempty
+      minimalClass = if self.props.minimalLayout then " vetrina--minimal-layout " else mempty
   in
     DOM.div
       { className:
-          "vetrina--container "
+          "vetrina--container"
           <> errorClass
           <> minimalClass
       , children: [ child ]

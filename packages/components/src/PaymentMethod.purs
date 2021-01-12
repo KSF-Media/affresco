@@ -46,4 +46,5 @@ paymentMethodString PaperInvoice = "paper-invoice"
 stringToPaymentMethod :: String -> Maybe PaymentMethod
 stringToPaymentMethod p = case p of
   "credit-card" -> Just CreditCard
+  "paper-invoice" -> Just PaperInvoice
   _ -> Nothing
