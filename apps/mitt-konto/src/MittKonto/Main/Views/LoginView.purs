@@ -17,6 +17,12 @@ import MittKonto.Main.Types as Types
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
+foreign import logos ::
+  { hbl :: String
+  , on  :: String
+  , vn  :: String
+  }
+
 -- | Login page with welcoming header, description text and login form.
 loginView :: Types.Self-> Sentry.Logger -> JSX
 loginView self@{ state, setState } logger =
@@ -24,7 +30,7 @@ loginView self@{ state, setState } logger =
     case state.showWelcome of
         false -> []
         true  ->
-          [ logos
+          [ logosWrapper
           , title
           , description
           , descriptionList
@@ -56,10 +62,10 @@ loginView self@{ state, setState } logger =
           , disableSocialLogins: Set.empty
           }
 
-    logos = Helpers.classy DOM.div "logos"
-              [ DOM.div { className: "vn-logo" }
-              , DOM.div { className: "hbl-logo" }
-              , DOM.div { className: "on-logo" }
+    logosWrapper = Helpers.classy DOM.div "logos"
+              [ DOM.img { src: logos.vn, className: "logo" }
+              , DOM.img { src: logos.hbl, className: "logo" }
+              , DOM.img { src: logos.on, className: "logo" }
               ]
 
     title =
