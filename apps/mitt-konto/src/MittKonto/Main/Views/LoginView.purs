@@ -63,9 +63,9 @@ loginView self@{ state, setState } logger =
           }
 
     logosWrapper = Helpers.classy DOM.div "logos"
-              [ DOM.img { src: logos.vn, className: "logo" }
-              , DOM.img { src: logos.hbl, className: "logo" }
-              , DOM.img { src: logos.on, className: "logo" }
+              [ DOM.img { src: logos.vn, className: "logo", alt: "VN Västis" }
+              , DOM.img { src: logos.hbl, className: "logo", alt: "HBL Husis" }
+              , DOM.img { src: logos.on, className: "logo", alt: "ÖN" }
               ]
 
     title =
