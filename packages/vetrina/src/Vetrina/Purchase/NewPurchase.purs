@@ -158,7 +158,7 @@ render self =
     _ -> mempty
   <> case self.state.accountStatus of
        NewAccount -> mempty
-       _ -> description self.state.accountStatus
+       _ -> description self
   <> form self
   <> links self
   <> if length self.props.products == 1
@@ -181,16 +181,23 @@ title self =
          }
   else mempty
 
-description :: AccountStatus -> JSX
-description accountStatus =
-  DOM.p
-    { className: "vetrina--description-text"
-    , children: Array.singleton $
-      case accountStatus of
-        NewAccount        -> mempty
-        ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
-        LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
-    }
+description :: Self -> JSX
+description self =
+  -- Let's not show logged in text if minimal layout activated
+  if self.props.minimalLayout && isLoggedInAccount self.state.accountStatus
+  then mempty
+  else
+    DOM.p
+      { className: "vetrina--description-text"
+      , children: Array.singleton $
+        case self.state.accountStatus of
+          NewAccount        -> mempty
+          ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+          LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
+      }
+  where
+    isLoggedInAccount (LoggedInAccount _) = true
+    isLoggedInAccount _ = false
 
 form :: Self -> JSX
 form self = DOM.form $
