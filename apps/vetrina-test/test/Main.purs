@@ -41,7 +41,7 @@ main = launchAff_ do
   withBrowser $ runTest "subscribe new customer to digital product with paper invoice" DigitalProduct PaperInvoice subscribePaperInvoiceNewCustomer customer5
 
   -- Then we open another browser (otherwise we'd be logged in with the first customer)
-  -- withBrowser \browser -> do
+  withBrowser \browser -> do
     -- ..and we buy the package with an existing customer (that we create on the
     -- fly just with the Persona API)
     runTest "subscribe with existing (non-entitled) customer" DigitalProduct CreditCard buyWithExistingCustomer customer2 browser
