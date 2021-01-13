@@ -300,6 +300,7 @@ render self = vetrinaContainer self $
         , paper: self.props.paper
         , paymentMethod: self.state.paymentMethod
         , paymentMethods: self.state.paymentMethods
+        , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
         , minimalLayout: self.props.minimalLayout
         }
     CapturePayment url -> netsTerminalIframe url
@@ -333,6 +334,7 @@ render self = vetrinaContainer self $
             , headline: self.props.headline
             , paper: self.props.paper
             , paymentMethods: self.state.paymentMethods
+            , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
             , minimalLayout: self.props.minimalLayout
             }
         ServerError ->
@@ -481,9 +483,12 @@ mkPurchase self@{ state: { logger } } validForm affUser =
     loadingWithMessage spinner = self.setState _
         { isLoading = spinner
         , loadingMessage =
-            if isJust spinner
-            then Just "Tack, vi skickar dig nu vidare till betalningsleverantören Nets."
-            else Nothing
+            case self.state.paymentMethod of
+              Just CreditCard ->
+                if isJust spinner
+                then Just "Tack, vi skickar dig nu vidare till betalningsleverantören Nets."
+                else Nothing
+              _ -> Nothing
         }
 
 userHasPackage :: PackageId -> Array Package -> Boolean

@@ -65,6 +65,7 @@ type Props =
   , paper                         :: Maybe Paper
   , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
   , paymentMethods                :: Array PaymentMethod
+  , onPaymentMethodChange         :: Maybe PaymentMethod -> Effect Unit
   , minimalLayout                 :: Boolean
   }
 
@@ -281,7 +282,9 @@ form self = DOM.form $
       where
         mkPaymentMethodOption p =
           paymentMethodOption
-          (\newPaymentMethod -> self.setState _ { paymentMethod = newPaymentMethod })
+          (\newPaymentMethod -> do
+              self.props.onPaymentMethodChange newPaymentMethod
+              self.setState _ { paymentMethod = newPaymentMethod })
           p
 
     productDropdown :: Array Product -> JSX
