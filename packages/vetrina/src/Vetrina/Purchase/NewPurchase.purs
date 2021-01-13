@@ -342,10 +342,13 @@ newPurchaseLinks self =
 
 links :: Self -> JSX
 links self =
-  case self.state.accountStatus of
-    NewAccount        -> mempty -- Login link shown elsewhere
-    ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
-    LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
+  if self.props.minimalLayout
+  then mempty
+  else
+    case self.state.accountStatus of
+      NewAccount        -> mempty -- Login link shown elsewhere
+      ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
+      LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
   where
     linksDiv linksJsx =
       DOM.div
