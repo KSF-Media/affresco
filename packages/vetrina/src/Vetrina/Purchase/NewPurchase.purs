@@ -161,12 +161,14 @@ render self =
        _ -> description self
   <> form self
   <> links self
-  <> if length self.props.products == 1
+  -- Do not show product details if minimalLayout
+  <> if not self.props.minimalLayout && length self.props.products == 1
      then productInformation self
      else mempty
 
 title :: Self -> JSX
 title self =
+  -- Do not show title if minimalLayout
   if not self.props.minimalLayout
   then DOM.h1
          { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
@@ -183,7 +185,7 @@ title self =
 
 description :: Self -> JSX
 description self =
-  -- Let's not show logged in text if minimal layout activated
+  -- Do not show logged in text if minimal layout activated
   if self.props.minimalLayout && isLoggedInAccount self.state.accountStatus
   then mempty
   else
@@ -207,10 +209,15 @@ form self = DOM.form $
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
   , children:
-      [ if length self.props.products > 1 then productDropdown self.props.products else mempty
+      -- Show dropdown if more than one product OR in any case if minimalLayout is enabled
+      [ if length self.props.products > 1 || self.props.minimalLayout
+        then productDropdown self.props.products
+        else mempty
       , renderPaymentMethods self.props.paymentMethods
        -- Don't show the product selection if we are asking the user to login
-      , if not isExistingAccount self.state.accountStatus
+       -- or if on minimalLayout
+      , if not self.props.minimalLayout
+           && not isExistingAccount self.state.accountStatus
            || isNothing self.state.productSelection
         then foldMap _.description self.state.productSelection
         else mempty
