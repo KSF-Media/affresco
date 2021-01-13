@@ -55,7 +55,7 @@ main = launchAff_ do
       let password = "test123"
       Chrome.goto (Chrome.URL case product of
                       DigitalProduct -> "http://localhost:8000"
-                      PaperProduct   -> "http://localhost:8000/#paperProduct"
+                      PaperProduct   -> "http://localhost:8000/?paperProduct=true"
                   ) page
       test page email password
       log $ ">>> Test successful."
@@ -178,7 +178,7 @@ loginExistingUser password page = do
   Chrome.assertContent (Chrome.Selector "#app > div > h1") "Du har redan ett KSF Media-konto" page
 
   log "Well, then we fill the password in and we login"
-  let passwordSelector = Chrome.Selector "#app > div > form > div:nth-child(2) > div > input[type=password]"
+  let passwordSelector = Chrome.Selector $ "[id^=password]"
   Chrome.waitFor_ passwordSelector page
   Chrome.type_ passwordSelector password page
   Chrome.click (Chrome.Selector "#app > div > form > input") page
