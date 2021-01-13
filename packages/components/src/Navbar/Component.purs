@@ -14,7 +14,7 @@ import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Paper (Paper (..))
 import Persona as Persona
-import React.Basic (JSX, element)
+import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -158,12 +158,11 @@ customerService :: Boolean -> Maybe Persona.User -> JSX
 customerService isPersonating activeUser = do
   DOM.div
     { className: "nav--logout-limpet"
-    , children: [ element
-                    Router.link
-                      { to: { pathname: "/sök", state: {} }
-                      , children: [ DOM.text "Sök kund" ]
-                      , className: ""
-                      }
+    , children: [ Router.link
+                    { to: { pathname: "/sök", state: {} }
+                    , children: [ DOM.text "Sök kund" ]
+                    , className: ""
+                    }
                 ] <> if isPersonating
                        then ( case activeUser of
                                  Just user -> [ DOM.div_ [ DOM.strong_ [ DOM.text "Aktiv kund" ] ]
@@ -175,15 +174,14 @@ customerService isPersonating activeUser = do
     }
     where
       userLink user =
-        element
-          Router.link
-            { to: { pathname: "/", state: {} }
-            , children: [ DOM.text $ user.cusno <> " - " <>
-                            ( String.joinWith " " $
-                              mapMaybe toMaybe [ user.firstName, user.lastName ] )
-                        ]
-            , className: ""
-            }
+        Router.link
+          { to: { pathname: "/", state: {} }
+          , children: [ DOM.text $ user.cusno <> " - " <>
+                          ( String.joinWith " " $
+                            mapMaybe toMaybe [ user.firstName, user.lastName ] )
+                      ]
+          , className: ""
+          }
 
 hamburgerButton :: Self -> JSX
 hamburgerButton self =

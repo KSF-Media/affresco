@@ -11,19 +11,18 @@ import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
 import MittKonto.Main.Types as Types
-import React.Basic (JSX, element)
+import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Router as Router
 
 -- | Specialized view with user's payment list
 paymentView :: Types.Self -> User -> JSX
 paymentView self user = DOM.div_
-  [ element
-      Router.link
-        { to: { pathname: "/", state: {} }
-        , children: [ ]
-        , className: "mitt-konto--backwards"
-        }
+  [ Router.link
+      { to: { pathname: "/", state: {} }
+      , children: [ ]
+      , className: "mitt-konto--backwards"
+      }
   , PaymentAccordion.payments { paymentsLoad }
   ]
   where
