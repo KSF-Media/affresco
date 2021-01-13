@@ -34,25 +34,25 @@ main = launchAff_ do
       customer5 = mkEmail (dateTimeStr <> "-5")
 
   -- First of all we just try to subscribe as a fresh customer, so everything from scratch
-  -- withBrowser (runTest "subscribe new customer" DigitalProduct CreditCard subscribeNewCustomer customer1)
+  withBrowser (runTest "subscribe new customer" DigitalProduct CreditCard subscribeNewCustomer customer1)
 
-  -- withBrowser $ runTest "subscribe new customer to paper product" PaperProduct CreditCard subscribePaperProductNewCustomer customer4
+  withBrowser $ runTest "subscribe new customer to paper product" PaperProduct CreditCard subscribePaperProductNewCustomer customer4
 
   withBrowser $ runTest "subscribe new customer to digital product with paper invoice" DigitalProduct PaperInvoice subscribePaperInvoiceNewCustomer customer5
 
   -- Then we open another browser (otherwise we'd be logged in with the first customer)
   -- withBrowser \browser -> do
-  --   -- ..and we buy the package with an existing customer (that we create on the
-  --   -- fly just with the Persona API)
-  --   runTest "subscribe with existing (non-entitled) customer" DigitalProduct CreditCard buyWithExistingCustomer customer2 browser
-  --   -- ..and after that we just try to visit again, and verify that Vetrina
-  --   -- figures out that we already have a subscription. Good.
-  --   runTest "visit with entitled user" DigitalProduct CreditCard navigateLoggedIn customer2 browser
+    -- ..and we buy the package with an existing customer (that we create on the
+    -- fly just with the Persona API)
+    runTest "subscribe with existing (non-entitled) customer" DigitalProduct CreditCard buyWithExistingCustomer customer2 browser
+    -- ..and after that we just try to visit again, and verify that Vetrina
+    -- figures out that we already have a subscription. Good.
+    runTest "visit with entitled user" DigitalProduct CreditCard navigateLoggedIn customer2 browser
 
-  -- -- Then we try to login from scratch with the customer of the previous step,
-  -- -- and verify that Vetrina figures out that we already have (1) and account
-  -- -- and (2) a subscription
-  -- withBrowser (runTest "visit with entitled user (from scratch)" DigitalProduct CreditCard loginWithEntitledCustomer customer2)
+  -- Then we try to login from scratch with the customer of the previous step,
+  -- and verify that Vetrina figures out that we already have (1) and account
+  -- and (2) a subscription
+  withBrowser (runTest "visit with entitled user (from scratch)" DigitalProduct CreditCard loginWithEntitledCustomer customer2)
   where
     mkEmail :: String -> String
     mkEmail dateTimeStr = "zztelefon+test." <> dateTimeStr <> "@ksfmedia.fi"
