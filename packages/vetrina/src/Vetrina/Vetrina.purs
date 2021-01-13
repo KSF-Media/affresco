@@ -474,6 +474,7 @@ mkPurchase self@{ state: { logger } } validForm affUser =
             InsufficientAccount           ->
               self.state { purchaseState = PurchaseFailed InsufficientAccount
                          , retryPurchase = \user ->
+                             -- NOTE: This will make the purchase as "logged in user"
                              mkPurchase self validForm (pure $ Right user)
                          }
             -- TODO: Handle all cases explicitly
