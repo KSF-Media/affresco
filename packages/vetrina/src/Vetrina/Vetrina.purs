@@ -7,7 +7,7 @@ import Bottega.Models.PaymentMethod (toPaymentMethod)
 import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
-import Data.Array (head, length, mapMaybe, null)
+import Data.Array (filter, head, length, mapMaybe, null, take)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, note)
 import Data.Foldable (foldMap)
@@ -16,6 +16,8 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Set (Set)
 import Data.Set as Set
+import Data.String (joinWith)
+import Data.String as String
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -376,13 +378,16 @@ vetrinaContainer self@{ state: { purchaseState } } child =
                            PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
                            otherwise                          -> mempty
-      minimalClass = if self.props.minimalLayout then " vetrina--minimal-layout " else mempty
+      minimalClass = if self.props.minimalLayout then "vetrina--minimal-layout" else mempty
   in
     DOM.div
       { className:
-          "vetrina--container"
-          <> errorClass
-          <> minimalClass
+          joinWith " "
+          -- `errorClass` and `minimalClass` do not play well together
+          -- Yeah this is not that good...
+          -- TODO: Make a saner way of `minimalLayout`
+          $ take 2
+          $ filter (not String.null) [ "vetrina--container", errorClass, minimalClass ]
       , children: [ child ]
       }
 
