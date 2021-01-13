@@ -168,20 +168,21 @@ render self =
 
 title :: Self -> JSX
 title self =
-  -- Do not show title if minimalLayout
-  if not self.props.minimalLayout
-  then DOM.h1
-         { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
-         , children: Array.singleton $
-             case self.state.accountStatus of
-               NewAccount           ->
-                 case self.props.headline of
-                   Just headline -> headline
-                   Nothing -> mempty
-               ExistingAccount _    -> DOM.text "Du har redan ett KSF Media-konto"
-               LoggedInAccount user -> DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
-         }
-  else mempty
+  let headlineText =
+        case self.state.accountStatus of
+          ExistingAccount _    -> Just $ DOM.text "Du har redan ett KSF Media-konto"
+          LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
+          NewAccount ->
+            if self.props.minimalLayout
+            then Nothing
+            else self.props.headline
+  in foldMap headline headlineText
+  where
+    headline child =
+      DOM.h1
+        { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
+        , children: [ child ]
+        }
 
 description :: Self -> JSX
 description self =

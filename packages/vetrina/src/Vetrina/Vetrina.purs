@@ -203,6 +203,7 @@ didMount self = do
           , accountFormComponent = accountFormComponent
           , logger = logger
           , paymentMethods = paymentMethods
+          , paymentMethod = paymentMethod
           }
 
 tryMagicLogin :: Self -> Aff Unit
