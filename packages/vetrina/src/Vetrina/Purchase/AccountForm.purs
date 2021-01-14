@@ -15,7 +15,7 @@ import Effect.Class.Console as Console
 import KSF.CountryDropDown as CountryDropdown
 import KSF.InputField as InputField
 import KSF.Spinner as Spinner
-import KSF.User (User, UserUpdate(..))
+import KSF.User (User, UserError, UserUpdate(..))
 import KSF.User as User
 import KSF.ValidatableForm (CommonContactInformation, CommonContactInformationFormField(..), emptyCommonContactInformation)
 import KSF.ValidatableForm as Form
@@ -30,6 +30,7 @@ type Props =
   { user :: User
   , retryPurchase :: User -> Effect Unit
   , setLoading :: Maybe Spinner.Loading -> Effect Unit
+  , onError :: UserError -> Effect Unit
   }
 
 type State =
@@ -185,6 +186,6 @@ render props self@{ state: { contactForm } } = fragment
                 do eitherUser <- User.updateUser props.user.uuid $ UpdateFull addr
                    case eitherUser of
                      Right user -> liftEffect $ props.retryPurchase user
-                     Left err -> pure unit
+                     Left err -> liftEffect $ props.onError err
 
       )
