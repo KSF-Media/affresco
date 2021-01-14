@@ -2,9 +2,10 @@ module Vetrina.Types where
 
 import Prelude
 
-import Data.Array (mapMaybe)
+import Data.Array (any, mapMaybe)
+import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..), isJust)
 import Data.Nullable (Nullable, toMaybe)
 import KSF.Api.Package (Campaign, JSCampaign, toCampaignLengthUnit)
 import KSF.User as User
@@ -57,8 +58,9 @@ fromJSProduct jsProduct = do
   name        <- toMaybe jsProduct.name
   priceCents  <- toMaybe jsProduct.priceCents
   let description = fold $ toMaybe jsProduct.description
+  -- NOTE: Campaign validation needs to be done separately
   let campaign = fromJSCampaign =<< toMaybe jsProduct.campaign
-      descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
+  let descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
       contents = mapMaybe fromJSProductContent $ fold $ toMaybe jsProduct.contents
   pure { id, name, description, priceCents, campaign, descriptionPurchaseCompleted, contents }
 
@@ -85,3 +87,12 @@ fromJSCampaign jsCampaign =
   <*> toMaybe jsCampaign.length
   <*> (map toCampaignLengthUnit $ toMaybe jsCampaign.lengthUnit)
   <*> toMaybe jsCampaign.priceEur
+
+parseJSCampaign :: JSProduct -> Either String (Maybe Campaign)
+parseJSCampaign jsProduct =
+  case toMaybe jsProduct.campaign of
+    Nothing -> Right Nothing
+    Just jsCampaign ->
+      case fromJSCampaign jsCampaign of
+        Just validCampaign -> Right $ Just validCampaign
+        Nothing            -> Left "Could not parse campaign"

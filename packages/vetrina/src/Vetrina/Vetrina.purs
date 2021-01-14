@@ -7,9 +7,9 @@ import Bottega.Models.PaymentMethod (toPaymentMethod)
 import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
-import Data.Array (filter, head, length, mapMaybe, null, take)
+import Data.Array (any, concatMap, filter, head, length, mapMaybe, null, take)
 import Data.Array as Array
-import Data.Either (Either(..), either, hush, note)
+import Data.Either (Either(..), either, hush, isLeft, note)
 import Data.Foldable (foldMap)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
@@ -49,7 +49,7 @@ import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
 import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
-import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct)
+import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct, parseJSCampaign)
 
 foreign import sentryDsn_ :: Effect String
 
@@ -88,6 +88,8 @@ fromJSProps jsProps =
       let productError = error "Did not get any valid products in props!"
       in case toMaybe jsProps.products of
           Just jsProducts
+            | any isLeft $ map parseJSCampaign jsProducts
+            -> Left $ error "Got faulty campaign in one of the products!"
             | products <- mapMaybe fromJSProduct jsProducts
             , not null products -> Right products
             | otherwise -> Left productError
