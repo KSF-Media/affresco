@@ -123,6 +123,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                        in (map DOM.text pausedDates) <> [ descriptionText ]
                }
              ]
+             <> receiverName
              <> deliveryAddress
              <> foldMap pendingAddressChanges self.state.pendingAddressChanges
              <> foldMap billingDateTerm billingPeriodEndDate
@@ -134,6 +135,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
        else subscriptionUpdates)
       $ Just { extraClasses: [ "subscription--container" ] }
   where
+    receiverName =
+      foldMap (\receiver -> Array.singleton
+                            { term: "Mottagare"
+                            , description: [ DOM.text receiver ]
+                            }) $ toMaybe props.subscription.receiver
     deliveryAddress =
        if package.digitalOnly
        then mempty
