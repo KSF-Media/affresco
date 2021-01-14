@@ -283,6 +283,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           { subsno: props.subscription.subsno
           , cusno: props.user.cusno
           , userUuid: props.user.uuid
+          , ranges: PauseSubscription.ranges self.state.pausedSubscriptions
           , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
           , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
           , onSuccess: \pausedSubscription ->
