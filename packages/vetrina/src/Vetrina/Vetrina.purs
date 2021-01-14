@@ -22,6 +22,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
@@ -38,6 +39,7 @@ import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Tracking as Tracking
+import Unsafe.Coerce (unsafeCoerce)
 import Vetrina.Purchase.AccountForm (mkAccountForm)
 import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.Completed as Purchase.Completed
@@ -127,6 +129,7 @@ data PurchaseState
   | PurchaseFailed OrderFailure
   | PurchaseSetPassword
   | PurchaseCompleted AccountStatus
+  | PurchasePolling
 
 data OrderFailure
   = EmailInUse String
@@ -286,6 +289,7 @@ render self = vetrinaContainer self $
   if isJust self.state.isLoading
   then maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
   else case self.state.purchaseState of
+    PurchasePolling -> maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
     NewPurchase ->
       Purchase.NewPurchase.newPurchase
         { accountStatus: self.state.accountStatus
@@ -315,8 +319,15 @@ render self = vetrinaContainer self $
             Just u ->
               self.state.accountFormComponent
                 { user: u
-                , retryPurchase: self.state.retryPurchase
+                , retryPurchase: \user -> do
+                    self.setState _ { purchaseState = PurchasePolling }
+                    self.state.retryPurchase user
                 , setLoading: \loading -> self.setState _ { isLoading = loading }
+                , onError: \userError -> do
+                     -- NOTE: The temporary user is already created at this point, but no passwords are given (impossible to login).
+                     -- The user is logged in the current session though, so it's recoverable.
+                     self.state.logger.error $ Error.orderError $ "Failed to update user: " <> show userError
+                     self.setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
                 }
             -- Can't do much without a user
             Nothing -> self.props.unexpectedError
@@ -337,20 +348,10 @@ render self = vetrinaContainer self $
             , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
             , minimalLayout: self.props.minimalLayout
             }
-        ServerError ->
-          Purchase.Error.error
-            { onRetry: onRetry
-            }
-        UnexpectedError _ ->
-          Purchase.Error.error
-            { onRetry: onRetry
-            }
-        InitializationError ->
-          self.props.unexpectedError
-        _ ->
-          Purchase.Error.error
-            { onRetry: onRetry
-            }
+        ServerError         -> Purchase.Error.error { onRetry }
+        UnexpectedError _   -> Purchase.Error.error { onRetry }
+        InitializationError -> self.props.unexpectedError
+        _                   -> Purchase.Error.error { onRetry }
     PurchaseSetPassword ->
       Purchase.SetPassword.setPassword
         -- TODO: The onError callback is invoked if setting the new password fails.
@@ -448,8 +449,15 @@ mkPurchase self@{ state: { logger } } validForm affUser =
   case eitherOrder of
     Right { paymentUrl, order } ->
       liftEffect do
+        Console.log $ "PAYMENT URL!!!" <> unsafeCoerce paymentUrl
+        let newPurchaseState =
+              -- If paper invoice, we don't
+              case paymentUrl of
+                Just url -> CapturePayment url
+                Nothing  -> PurchasePolling
+
         let newState =
-              self.state { purchaseState = CapturePayment paymentUrl
+              self.state { purchaseState = newPurchaseState
                          , user = hush eitherUser
                          , accountStatus = newAccountStatus
                          }
@@ -554,7 +562,7 @@ createOrder user product = do
     Right order -> Right order
     Left err    -> Left $ toOrderFailure err
 
-payOrder :: Order -> PaymentMethod -> Aff (Either OrderFailure PaymentTerminalUrl)
+payOrder :: Order -> PaymentMethod -> Aff (Either OrderFailure (Maybe PaymentTerminalUrl))
 payOrder order paymentMethod =
   User.payOrder order.number paymentMethod >>= \eitherUrl ->
     pure $ case eitherUrl of

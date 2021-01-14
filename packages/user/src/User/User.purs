@@ -51,7 +51,7 @@ import Data.Foldable (for_, traverse_)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
-import Data.Nullable (toNullable)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
@@ -498,8 +498,9 @@ getPayments uuid = do
 createOrder :: Bottega.NewOrder -> Aff (Either BottegaError Bottega.Order)
 createOrder newOrder = callBottega \tokens -> Bottega.createOrder { userId: tokens.uuid, authToken: tokens.token } newOrder
 
-payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either BottegaError Bottega.PaymentTerminalUrl)
-payOrder orderNum paymentMethod = callBottega $ \tokens ->  Bottega.payOrder { userId: tokens.uuid, authToken: tokens.token } orderNum paymentMethod
+payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either BottegaError (Maybe Bottega.PaymentTerminalUrl))
+payOrder orderNum paymentMethod = callBottega $ \tokens ->
+  Bottega.payOrder { userId: tokens.uuid, authToken: tokens.token } orderNum paymentMethod
 
 getOrder :: Bottega.OrderNumber -> Aff (Either BottegaError Bottega.Order)
 getOrder orderNum = callBottega $ \tokens -> Bottega.getOrder { userId: tokens.uuid, authToken: tokens.token } orderNum

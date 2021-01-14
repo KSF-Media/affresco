@@ -3,8 +3,10 @@ module Bottega where
 import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
+import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
@@ -92,9 +94,15 @@ readOrder orderObj = do
   let state = parseOrderState orderObj.status.state (toMaybe orderObj.status.failReason)
   pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
 
-payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff PaymentTerminalUrl
-payOrder { userId, authToken } orderNumber paymentMethod =
-  callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
+type PaymentTerminalUrlApi = Nullable { paymentTerminalUrl :: Nullable String }
+
+payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff (Maybe PaymentTerminalUrl)
+payOrder { userId, authToken } orderNumber paymentMethod = do
+  nullableTerminalUrl :: PaymentTerminalUrlApi <- callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
+  pure do
+    urlObject <- toMaybe nullableTerminalUrl
+    url <- toMaybe urlObject.paymentTerminalUrl
+    pure { paymentTerminalUrl: url }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
