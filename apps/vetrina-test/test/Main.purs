@@ -63,7 +63,8 @@ main = launchAff_ do
       let password = "test123"
           paymentMethodQparam =
             case paymentMethod of
-              PaperInvoice -> "paperInvoice=true"
+              -- Use minimal layout with paper invoice for now
+              PaperInvoice -> "paperInvoice=true&minimalLayout=true"
               _ -> mempty
       Chrome.goto (Chrome.URL case product of
                       DigitalProduct -> "http://localhost:8000" <> "?" <> paymentMethodQparam

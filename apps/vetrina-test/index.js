@@ -7,15 +7,38 @@ React.createClass = createReactClass;
 var Main = require('./output/VetrinaTest.Main/index.js');
 
 function main() {
-  // HACK: As we only support one product now, we can easily switch between paper and digital product by an url hash.
-  // This also makes testing the thing a lot easier
-  const product = document.location.hash === '#paperProduct' ? hblPaper : hblPremium;
+  // NOTE: These are mainly for automated tests
+  let queryString = new URLSearchParams(window.location.search);
+  let paperInvoice = queryString.get('paperInvoice') == 'true';
+  let paperProduct = queryString.get('paperProduct') == 'true';
+  let multipleProducts = queryString.get('multipleProducts') == 'true';
+  let minimalLayout = queryString.get('minimalLayout') == 'true';
+
+  let products = [];
+  let paymentMethods = ["creditcard"];
+
+  if (paperProduct) {
+    products.push(hblPaper);
+  }
+  else if (multipleProducts) {
+    products.push(hblPremium, hblPaper);
+  }
+  else {
+    products.push(hblPremium);
+  }
+
+  if (paperInvoice) {
+    paymentMethods.push("paperinvoice");
+  }
 
   const myComponent = (
     <Main.jsComponent
-      products={[product]}
+      products={products}
       accessEntitlements={["hbl-365", "articles-365"]}
+      paymentMethods={paperInvoice ? ["creditcard", "paperinvoice"] : ["creditcard"]}
+      minimalLayout={minimalLayout}
       headline={<div>Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
+      onClose={() => console.log("ok")}
       paper="HBL" />
   );
 
@@ -31,7 +54,7 @@ var hblPaper = {
     </div>,
   priceCents: 2990,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
-  name: "Hufvudstadsbladet Premium",
+  name: "Hufvudstadsbladet LÖ-SÖ",
   contents: [
     {
       title: "Premium",
@@ -72,7 +95,14 @@ var hblPremium = {
       description: "Nyheter & förmåner"
     }
   ],
-  campaignNo: 4052 // NOTE! This id exists only in staging!
+  campaign: {
+    "length": 3,
+    "priceEur": 19.9,
+    "lengthUnit": "Month",
+    "no": 4033,
+    "name": "VÅR PRE 2020",
+    "id": "VÅREN 2020"
+  }
 }
 
 var hbl365 = {
@@ -85,7 +115,6 @@ var hbl365 = {
   priceCents: 1490,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
   name: "HBL 365",
-  campaignNo: 3842
 }
 
 if (module.hot) {
