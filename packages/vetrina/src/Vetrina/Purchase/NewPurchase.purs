@@ -3,7 +3,7 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, find, head, length)
+import Data.Array (all, find, head, length, snoc, (:))
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
@@ -22,7 +22,7 @@ import KSF.InputField as InputField
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import KSF.PaymentMethod (paymentMethodOption)
-import KSF.User (PaymentMethod, User)
+import KSF.User (PaymentMethod(..), User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
@@ -276,7 +276,9 @@ form self = DOM.form $
       then
         DOM.div
           { className: "vetrina--payment-methods"
-          , children: map mkPaymentMethodOption paymentMethods
+          , children:
+              map mkPaymentMethodOption paymentMethods
+              `snoc` (if self.state.paymentMethod == Just PaperInvoice then paperInvoiceFee else mempty)
           }
       else mempty
       where
@@ -286,6 +288,11 @@ form self = DOM.form $
               self.props.onPaymentMethodChange newPaymentMethod
               self.setState _ { paymentMethod = newPaymentMethod })
           p
+        paperInvoiceFee =
+          DOM.div
+            { className: "vetrina--paper-invoice-fee"
+            , children: [ DOM.text "Obs! På pappersfakturor som levereras per post uppbär vi en tilläggsavgift på 5,00 euro per faktura (inkl. Moms)." ]
+            }
 
     productDropdown :: Array Product -> JSX
     productDropdown products =
