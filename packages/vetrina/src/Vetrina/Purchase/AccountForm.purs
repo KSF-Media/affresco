@@ -29,6 +29,7 @@ type Props =
   , retryPurchase :: User -> Effect Unit
   , setLoading :: Maybe Spinner.Loading -> Effect Unit
   , onError :: UserError -> Effect Unit
+  , minimalLayout :: Boolean
   }
 
 type State =
@@ -74,7 +75,9 @@ render props self@{ state: { contactForm } } = fragment
                     { className: "vetrina--step__headline"
                     , children: [ DOM.text "Dina uppgifter" ]
                     }
-                , DOM.text "STEG 2 / 2 KONTOINFORMATION"
+                , if props.minimalLayout
+                  then mempty
+                  else DOM.text "STEG 2 / 2 KONTOINFORMATION"
                 ]
             }
         , InputField.inputField

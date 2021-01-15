@@ -329,6 +329,7 @@ render self = vetrinaContainer self $
                      -- The user is logged in the current session though, so it's recoverable.
                      self.state.logger.error $ Error.orderError $ "Failed to update user: " <> show userError
                      self.setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
+                , minimalLayout: self.props.minimalLayout
                 }
             -- Can't do much without a user
             Nothing -> self.props.unexpectedError
