@@ -522,8 +522,9 @@ getPayments uuid = do
 createOrder :: Bottega.NewOrder -> Aff (Either BottegaError Bottega.Order)
 createOrder newOrder = callBottega \tokens -> Bottega.createOrder tokens newOrder
 
-payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either BottegaError Bottega.PaymentTerminalUrl)
-payOrder orderNum paymentMethod = callBottega $ \tokens ->  Bottega.payOrder tokens orderNum paymentMethod
+payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either BottegaError (Maybe Bottega.PaymentTerminalUrl))
+payOrder orderNum paymentMethod = callBottega $ \tokens ->
+  Bottega.payOrder tokens orderNum paymentMethod
 
 getOrder :: Bottega.OrderNumber -> Aff (Either BottegaError Bottega.Order)
 getOrder orderNum = callBottega $ \tokens -> Bottega.getOrder tokens orderNum

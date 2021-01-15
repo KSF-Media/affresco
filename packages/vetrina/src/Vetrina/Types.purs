@@ -3,9 +3,11 @@ module Vetrina.Types where
 import Prelude
 
 import Data.Array (mapMaybe)
+import Data.Either (Either(..))
 import Data.Foldable (fold)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
+import KSF.Api.Package (Campaign, JSCampaign, toCampaignLengthUnit)
 import KSF.User as User
 import React.Basic (JSX)
 
@@ -13,6 +15,12 @@ data AccountStatus
   = NewAccount
   | ExistingAccount String
   | LoggedInAccount User.User
+
+instance eqAccountStatus :: Eq AccountStatus where
+  eq NewAccount NewAccount = true
+  eq (ExistingAccount _) (ExistingAccount _) = true
+  eq (LoggedInAccount _) (LoggedInAccount _) = true
+  eq _ _ = false
 
 type JSProductContent =
   { title       :: Nullable String
@@ -30,7 +38,7 @@ type Product =
   , description                  :: JSX
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
-  , campaignNo                   :: Maybe Int
+  , campaign                     :: Maybe Campaign
   , contents                     :: Array ProductContent
   }
 
@@ -40,7 +48,7 @@ type JSProduct =
   , description                  :: Nullable JSX
   , descriptionPurchaseCompleted :: Nullable JSX
   , priceCents                   :: Nullable Int
-  , campaignNo                   :: Nullable Int
+  , campaign                     :: Nullable JSCampaign
   , contents                     :: Nullable (Array JSProductContent)
   }
 
@@ -48,12 +56,13 @@ fromJSProduct :: JSProduct -> Maybe Product
 fromJSProduct jsProduct = do
   id          <- toMaybe jsProduct.id
   name        <- toMaybe jsProduct.name
-  description <- toMaybe jsProduct.description
   priceCents  <- toMaybe jsProduct.priceCents
-  let campaignNo = toMaybe jsProduct.campaignNo
-      descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
+  let description = fold $ toMaybe jsProduct.description
+  -- NOTE: Campaign validation needs to be done separately
+  let campaign = fromJSCampaign =<< toMaybe jsProduct.campaign
+  let descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
       contents = mapMaybe fromJSProductContent $ fold $ toMaybe jsProduct.contents
-  pure { id, name, description, priceCents, campaignNo, descriptionPurchaseCompleted, contents }
+  pure { id, name, description, priceCents, campaign, descriptionPurchaseCompleted, contents }
 
 fromJSProductContent ::  JSProductContent -> Maybe ProductContent
 fromJSProductContent jsProduct =
@@ -62,3 +71,28 @@ fromJSProductContent jsProduct =
   }
   <$> toMaybe jsProduct.title
   <*> toMaybe jsProduct.description
+
+fromJSCampaign :: JSCampaign -> Maybe Campaign
+fromJSCampaign jsCampaign =
+  { id: _
+  , no: _
+  , name: _
+  , length: _
+  , lengthUnit: _
+  , priceEur: _
+  }
+  <$> toMaybe jsCampaign.id
+  <*> toMaybe jsCampaign.no
+  <*> toMaybe jsCampaign.name
+  <*> toMaybe jsCampaign.length
+  <*> (map toCampaignLengthUnit $ toMaybe jsCampaign.lengthUnit)
+  <*> toMaybe jsCampaign.priceEur
+
+parseJSCampaign :: JSProduct -> Either String (Maybe Campaign)
+parseJSCampaign jsProduct =
+  case toMaybe jsProduct.campaign of
+    Nothing -> Right Nothing
+    Just jsCampaign ->
+      case fromJSCampaign jsCampaign of
+        Just validCampaign -> Right $ Just validCampaign
+        Nothing            -> Left "Could not parse campaign"

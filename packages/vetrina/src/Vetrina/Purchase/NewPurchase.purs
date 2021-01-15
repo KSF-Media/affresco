@@ -3,27 +3,32 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, head)
+import Data.Array (all, find, head, length, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
+import Data.Int as Int
 import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
+import Data.Tuple as Tuple
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
+import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
+import KSF.Helpers as Helpers
 import KSF.InputField as InputField
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import KSF.User (PaymentMethod, User)
+import KSF.PaymentMethod (paymentMethodOption)
+import KSF.User (PaymentMethod(..), User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler, handler_)
 import Vetrina.Types (AccountStatus(..), Product, ProductContent)
 
@@ -53,11 +58,14 @@ type Props =
   , mkPurchaseWithNewAccount      :: NewAccountForm -> Effect Unit
   , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
   , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
-  , paymentMethod                 :: PaymentMethod
   , productSelection              :: Maybe Product
   , onLogin                       :: Effect Unit
   , headline                      :: Maybe JSX
   , paper                         :: Maybe Paper
+  , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
+  , paymentMethods                :: Array PaymentMethod
+  , onPaymentMethodChange         :: Maybe PaymentMethod -> Effect Unit
+  , minimalLayout                 :: Boolean
   }
 
 data FormInputField
@@ -77,7 +85,7 @@ instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInput
       if isNothing value
       then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "")) -- TODO: Do we need an error message here?
       else pure $ Just mempty
-    PaymentMethod    -> Form.noValidation value
+    PaymentMethod    -> Form.validateEmptyField PaymentMethod "Betalningssätt krävs." value
 
 type PurchaseParameters =
   ( productSelection :: Maybe Product
@@ -128,7 +136,7 @@ didMount self = do
           ExistingAccount email -> Just email
           _                     -> Nothing
   self.setState _ { accountStatus = self.props.accountStatus
-                  , paymentMethod = Just self.props.paymentMethod
+                  , paymentMethod = self.props.paymentMethod
                   , productSelection =
                       -- If there's already a selected product, pick that
                       -- or take the first item on the products list
@@ -138,10 +146,7 @@ didMount self = do
 
 render :: Self -> JSX
 render self =
-  DOM.h1
-    { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
-    , children: [ title self.state.accountStatus self.props.headline ]
-    }
+  title self
   <> newPurchaseLinks self
   <> case self.state.accountStatus of
     LoggedInAccount user
@@ -153,29 +158,49 @@ render self =
     _ -> mempty
   <> case self.state.accountStatus of
        NewAccount -> mempty
-       _ -> description self.state.accountStatus
+       _ -> description self
   <> form self
   <> links self
-  <> productInformation self
+  -- Do not show product details if minimalLayout
+  <> if not self.props.minimalLayout && length self.props.products == 1
+     then productInformation self
+     else mempty
 
-title :: AccountStatus -> Maybe JSX -> JSX
-title accountStatus maybeHeadline = case accountStatus of
-  NewAccount           -> case maybeHeadline of
-                               Just headline -> headline
-                               Nothing -> DOM.text "Hej kära läsare!"
-  ExistingAccount _    -> DOM.text "Du har redan ett KSF Media-konto"
-  LoggedInAccount user -> DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
+title :: Self -> JSX
+title self =
+  let headlineText =
+        case self.state.accountStatus of
+          ExistingAccount _    -> Just $ DOM.text "Du har redan ett KSF Media-konto"
+          LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
+          NewAccount ->
+            if self.props.minimalLayout
+            then Nothing
+            else self.props.headline
+  in foldMap headline headlineText
+  where
+    headline child =
+      DOM.h1
+        { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
+        , children: [ child ]
+        }
 
-description :: AccountStatus -> JSX
-description accountStatus =
-  DOM.p
-    { className: "vetrina--description-text"
-    , children: Array.singleton $
-      case accountStatus of
-        NewAccount        -> mempty
-        ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
-        LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
-    }
+description :: Self -> JSX
+description self =
+  -- Do not show logged in text if minimal layout activated
+  if self.props.minimalLayout && isLoggedInAccount self.state.accountStatus
+  then mempty
+  else
+    DOM.p
+      { className: "vetrina--description-text"
+      , children: Array.singleton $
+        case self.state.accountStatus of
+          NewAccount        -> mempty
+          ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+          LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
+      }
+  where
+    isLoggedInAccount (LoggedInAccount _) = true
+    isLoggedInAccount _ = false
 
 form :: Self -> JSX
 form self = DOM.form $
@@ -185,8 +210,15 @@ form self = DOM.form $
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
   , children:
-      [ -- Don't show the product selection if we are asking the user to login
-        if not isExistingAccount self.state.accountStatus
+      -- Show dropdown if more than one product OR in any case if minimalLayout is enabled
+      [ if length self.props.products > 1 || self.props.minimalLayout
+        then productDropdown self.props.products
+        else mempty
+      , renderPaymentMethods self.props.paymentMethods
+       -- Don't show the product selection if we are asking the user to login
+       -- or if on minimalLayout
+      , if not self.props.minimalLayout
+           && not isExistingAccount self.state.accountStatus
            || isNothing self.state.productSelection
         then foldMap _.description self.state.productSelection
         else mempty
@@ -237,6 +269,75 @@ form self = DOM.form $
     additionalFormRequirements NewAccount = acceptTermsCheckbox
     additionalFormRequirements _ = mempty
 
+    renderPaymentMethods :: Array User.PaymentMethod -> JSX
+    renderPaymentMethods paymentMethods =
+      if length paymentMethods > 1
+      then
+        DOM.div
+          { className: "vetrina--payment-methods"
+          , children:
+              map mkPaymentMethodOption paymentMethods
+              `snoc` (if self.state.paymentMethod == Just PaperInvoice then paperInvoiceFee else mempty)
+          }
+      else mempty
+      where
+        mkPaymentMethodOption p =
+          paymentMethodOption
+          (\newPaymentMethod -> do
+              self.props.onPaymentMethodChange newPaymentMethod
+              self.setState _ { paymentMethod = newPaymentMethod })
+          p
+        paperInvoiceFee =
+          DOM.div
+            { className: "vetrina--paper-invoice-fee"
+            , children: [ DOM.text "Obs! På pappersfakturor som levereras per post uppbär vi en tilläggsavgift på 5,00 euro per faktura (inkl. Moms)." ]
+            }
+
+    productDropdown :: Array Product -> JSX
+    productDropdown products =
+      divWithClass "vetrina--input-wrapper"
+      $ divWithClass "input-field--container"
+      $ DOM.select
+          { children: map mkOption products
+          , onChange: handler targetValue
+              \newProductSelection ->
+                 let foundProduct = find ((_ == newProductSelection) <<< Just <<< _.id) products
+                 in self.setState _ { productSelection = foundProduct }
+          , value: fromMaybe "" $ _.id <$> self.state.productSelection
+          }
+      where
+        mkOption product =
+          DOM.option
+            { value: product.id
+            , children:
+                [ DOM.text
+                  $ product.name
+                  <> ", "
+                  <> renderPrice product
+                ]
+            }
+        renderPrice :: Product -> String
+        renderPrice product =
+          let priceCents =
+                -- If campaign given, show that price
+                case _.priceEur <$> product.campaign of
+                  Just campaignPriceEur -> Int.ceil $ campaignPriceEur * 100.0
+                  _ -> product.priceCents
+              pricePeriod =
+                case product.campaign of
+                  Just c ->
+                    let monthString = toSwedish c.lengthUnit #
+                          if c.length > 1
+                          then Tuple.snd -- Plural
+                          else Tuple.fst -- Singular
+                    in show c.length <> " " <> monthString
+                  -- TODO: This should probably be defined in props,
+                  -- however currently we are using the one month
+                  -- prices of a product
+                  _ -> "månad"
+          in Helpers.formatEur priceCents <> " € / " <> pricePeriod
+        -- | Just a small helper as we need to wrap this thing inside two divs
+        divWithClass className child = DOM.div { className, children: [ child ] }
 
 -- | Only show this when initial screen with new account
 newPurchaseLinks :: Self -> JSX
@@ -247,10 +348,13 @@ newPurchaseLinks self =
 
 links :: Self -> JSX
 links self =
-  case self.state.accountStatus of
-    NewAccount        -> mempty -- Login link shown elsewhere
-    ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
-    LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
+  if self.props.minimalLayout
+  then mempty
+  else
+    case self.state.accountStatus of
+      NewAccount        -> mempty -- Login link shown elsewhere
+      ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
+      LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
   where
     linksDiv linksJsx =
       DOM.div
@@ -268,17 +372,19 @@ faqLink =
 
 loginLink :: Self -> JSX
 loginLink self =
-  DOM.span
-    { className: "vetrina--login-link"
-    , children:
-        [ DOM.text "Redan prenumerant? "
-        , DOM.span
-            { className:"vetrina--login-callback"
-            , children: [ DOM.text "Logga in för att fortsätta läsa" ]
-            , onClick: handler_ self.props.onLogin
-            }
-        ]
-    }
+  if self.props.minimalLayout
+  then mempty
+  else DOM.span
+         { className: "vetrina--login-link"
+         , children:
+             [ DOM.text "Redan prenumerant? "
+             , DOM.span
+                 { className:"vetrina--login-callback"
+                 , children: [ DOM.text "Logga in för att fortsätta läsa" ]
+                 , onClick: handler_ self.props.onLogin
+                 }
+             ]
+         }
 
 subscribePagesLink :: Array JSX
 subscribePagesLink =
@@ -309,7 +415,7 @@ formSubmitButton self =
       NewAccount        -> "Bekräfta och gå vidare"
       ExistingAccount _ -> "Logga in"
       LoggedInAccount _ -> "Bekräfta och gå vidare"
-    disabled =  case self.state.accountStatus of
+    disabled = case self.state.accountStatus of
       NewAccount        -> isFormInvalid $ newAccountFormValidations self
       ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations self
       LoggedInAccount _ -> isFormInvalid $ loggedInAccountFormValidations self
@@ -321,7 +427,7 @@ isFormInvalid validations
   | otherwise = false
 
 formatErrorMessage :: String -> JSX
-formatErrorMessage message = InputField.errorMessage message
+formatErrorMessage = InputField.errorMessage
 
 emailInput :: Self -> AccountStatus -> JSX
 emailInput _ (LoggedInAccount _) = mempty
@@ -330,9 +436,8 @@ emailInput self accountStatus =
   in DOM.div
      { className: "vetrina--input-wrapper vetrina--with-label"
      , children:
-         [ case accountStatus of
-              NewAccount ->
-                DOM.div
+         [ if accountStatus == NewAccount && not self.props.minimalLayout
+           then DOM.div
                   { className: "vetrina--step vetrina--create-account"
                   , children:
                       [ DOM.span
@@ -342,7 +447,7 @@ emailInput self accountStatus =
                       , DOM.text "STEG 1 / 2 KONTOINFORMATION"
                       ]
                   }
-              _ -> mempty
+           else mempty
          , InputField.inputField
              { type_: InputField.Email
              , label: Just "E-postadress"
@@ -486,10 +591,11 @@ newAccountFormValidations self =
     -- TODO: Validate this and show error message. We are checking this on server side and with
     -- default browser validation. However, a custom JS validation is missing.
   , acceptLegalTerms: self.state.newAccountForm.acceptLegalTerms
-  , paymentMethod: self.state.paymentMethod
+  , paymentMethod: _
   }
   <$> Form.validateField EmailAddress self.state.newAccountForm.emailAddress []
   <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
+  <*> (Form.validateField PaymentMethod (map show self.state.paymentMethod) [] *> pure self.state.paymentMethod)
 
 existingAccountFormValidations :: Self -> Form.ValidatedForm FormInputField ExistingAccountForm
 existingAccountFormValidations self =
