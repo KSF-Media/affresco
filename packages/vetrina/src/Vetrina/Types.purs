@@ -2,10 +2,10 @@ module Vetrina.Types where
 
 import Prelude
 
-import Data.Array (any, mapMaybe)
+import Data.Array (mapMaybe)
 import Data.Either (Either(..))
-import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe(..), isJust)
+import Data.Foldable (fold)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
 import KSF.Api.Package (Campaign, JSCampaign, toCampaignLengthUnit)
 import KSF.User as User

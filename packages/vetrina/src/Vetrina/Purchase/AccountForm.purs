@@ -6,12 +6,10 @@ import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
-import Data.Traversable (for, for_)
 import Data.Validation.Semigroup (unV)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import KSF.CountryDropDown as CountryDropdown
 import KSF.InputField as InputField
 import KSF.Spinner as Spinner

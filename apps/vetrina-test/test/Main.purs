@@ -6,8 +6,7 @@ import Data.DateTime (DateTime)
 import Data.Formatter.DateTime as Format
 import Data.List as List
 import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds(..), launchAff_)
-import Effect.Aff as Aff
+import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import Effect.Now as Now

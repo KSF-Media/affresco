@@ -4,10 +4,9 @@ import Prelude
 
 import Bottega (BottegaError(..))
 import Bottega.Models.PaymentMethod (toPaymentMethod)
-import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
-import Data.Array (any, concatMap, filter, head, length, mapMaybe, null, take)
+import Data.Array (any, filter, head, length, mapMaybe, null, take)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, isLeft, note)
 import Data.Foldable (foldMap)
@@ -44,8 +43,6 @@ import Vetrina.Purchase.AccountForm (mkAccountForm)
 import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
-import Vetrina.Purchase.AccountForm (mkAccountForm)
-import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase

@@ -3,7 +3,7 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, find, head, length, snoc, (:))
+import Data.Array (all, find, head, length, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
@@ -14,7 +14,6 @@ import Data.Nullable (toMaybe)
 import Data.Tuple as Tuple
 import Data.Validation.Semigroup (toEither, unV, invalid)
 import Effect (Effect)
-import Effect.Class.Console as Console
 import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
