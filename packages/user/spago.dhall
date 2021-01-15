@@ -9,6 +9,8 @@
     , "formatters"
     , "datetime"
     , "react-basic"
+    , "react-basic-hooks"
+    , "react-basic-router"
     , "psci-support"
     , "prelude"
     , "js-date"
