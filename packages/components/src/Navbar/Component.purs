@@ -153,7 +153,7 @@ needHelp paper =
       formatMailtoAnchorTag :: String -> JSX
       formatMailtoAnchorTag email = DOM.a { href: "mailto:" <> email, children: [ DOM.text email ] }
 
-customerService :: Boolean -> Maybe Persona.User -> JSX
+customerService :: Boolean -> Maybe User -> JSX
 customerService isPersonating activeUser = do
   DOM.div
     { className: "nav--logout-limpet"

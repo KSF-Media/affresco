@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Unsafe (unsafePerformEffect)
@@ -111,19 +111,18 @@ render self@{ state, setState } logger searchView isPersonating =
                ]
        }
    updateCreditCard =
-      element
-        Router.route
-          { exact: true
-          , path: toNullable $ Just "/kortt/uppdatera"
-          , render: \_ -> Wrappers.viewWrapper
-              { content: creditCardUpdateInputs
-              , closeType: Wrappers.Countdown
-              , onTryAgain: pure unit
-              }
-          }
+      Router.route
+        { exact: true
+        , path: Just "/kortt/uppdatera"
+        , render: \_ -> Wrappers.viewWrapper
+            { content: creditCardUpdateInputs
+            , closeType: Wrappers.Countdown
+            , onTryAgain: pure unit
+            }
+        }
       where
         creditCardUpdateInputs = CreditCardUpdateView.ViewWrapperContentInputs
-          { creditCards: fromMaybe mempty $ state.loggedInUser <#> _.creditCards
+          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
           , logger: logger
           }
    search =

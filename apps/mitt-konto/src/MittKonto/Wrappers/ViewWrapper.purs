@@ -63,12 +63,11 @@ render self@{ props: { content, closeType }, state: { asyncWrapperState, closeab
       , if closeable then
           DOM.div
             { className: "col-1 flex credit-card-choice--close-icon"
-            , children: [ element
-                            Router.link
-                              { to: { pathname: "/", state: {} }
-                              , children: [ ]
-                              , className: "close-icon"
-                              }
+            , children: [ Router.link
+                            { to: { pathname: "/", state: {} }
+                            , children: [ ]
+                            , className: "close-icon"
+                            }
                         ]
             , onClick: handler_ onCancel
             }

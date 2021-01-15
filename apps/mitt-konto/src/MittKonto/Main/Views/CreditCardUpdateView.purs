@@ -108,14 +108,13 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
                                         { terminalUrl: url
                                         }
 
-            Cancel                 -> element
-                                        Router.redirect
-                                          { to: { pathname: "/"
-                                                , state: {}
-                                                }
-                                          , from: "/kreditkortt/uppdatera"
-                                          , push: true
-                                          }
+            Cancel                 -> Router.redirect
+                                        { to: { pathname: "/"
+                                              , state: {}
+                                              }
+                                        , from: "/kreditkortt/uppdatera"
+                                        , push: true
+                                        }
         ]
     }
   where

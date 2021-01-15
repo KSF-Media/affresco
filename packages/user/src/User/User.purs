@@ -386,8 +386,8 @@ logoutJanrain = do
 
 finalizeLogin :: Maybe InvalidateCache -> UserAuth -> Aff (Either UserError User)
 finalizeLogin maybeInvalidateCache auth = do
-  userResponse <- try do
-    getUser maybeInvalidateCache auth.userId auth.token
+  userResponse <- try $
+    getUser maybeInvalidateCache auth.userId
   case userResponse of
     Left err
       | Just (errData :: Persona.TokenInvalid) <- Api.Error.errorData err -> do
@@ -509,11 +509,11 @@ createDeliveryReclamation uuid subsno date claim = do
 
 searchUsers
   :: String
-  -> Aff (Either String (Array Persona.User))
+  -> Aff (Either String (Array User))
 searchUsers query = do
   users <- try $ Persona.searchUsers query =<< requireToken
   case users of
-    Right xs -> pure $ Right xs
+    Right xs -> pure $ Right $ fromPersonaUser <$> xs
     Left err
       | Just (errData :: Persona.Forbidden) <- Api.Error.errorData err ->
           pure $ Left $ errData.forbidden.description
