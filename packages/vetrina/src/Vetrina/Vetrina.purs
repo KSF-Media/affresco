@@ -451,7 +451,6 @@ mkPurchase self@{ state: { logger } } validForm affUser =
   case eitherOrder of
     Right { paymentUrl, order } ->
       liftEffect do
-        Console.log $ "PAYMENT URL!!!" <> unsafeCoerce paymentUrl
         let newPurchaseState =
               -- If paper invoice, we don't
               case paymentUrl of
