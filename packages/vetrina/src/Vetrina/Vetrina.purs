@@ -44,6 +44,8 @@ import Vetrina.Purchase.AccountForm (mkAccountForm)
 import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.Completed as Purchase.Completed
 import Vetrina.Purchase.Error as Purchase.Error
+import Vetrina.Purchase.AccountForm (mkAccountForm)
+import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.NewPurchase (FormInputField(..))
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase

@@ -11,7 +11,7 @@ import Foreign (Foreign)
 import Persona as Persona
 import Prenumerera.Confirm as Confirm
 import Prenumerera.Prenumerera (Product)
-import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
@@ -64,7 +64,7 @@ fromJsProps { match, location: { key, pathname, search, hash, state } } =
       , pathname
       , search
       , hash
-      , state: convertState $ toMaybe state
+      , state: toNullable $ (convertState <<< toMaybe) <$> toMaybe state
       }
   }
   where
@@ -84,14 +84,14 @@ paymentSelect :: Props -> JSX
 paymentSelect props = make component { initialState, render, didMount, didUpdate } props
 
 didMount :: Self -> Effect Unit
-didMount self@{ props: { location: { state: Just state } } } = do
-  updateState (SetUser <$> state.user)
-  updateState (SetProduct <$> state.product)
+didMount self = do
+  let state = join $ toMaybe self.props.location.state
+  updateState (SetUser <$> (_.user =<< state))
+  updateState (SetProduct <$> (_.product =<< state))
   send self (PaymentMethod "bill")
   where
     updateState maybeAction =
       maybe (pure unit) (send self) maybeAction
-didMount _ = pure unit
 
 didUpdate :: Self -> { prevProps :: Props, prevState :: State } -> Effect Unit
 didUpdate self _ = do
@@ -202,12 +202,11 @@ continueButton self =
     }
   where
     link =
-      element
-        Router.link
-          { to: { pathname: "/confirm", state }
-          , children: [ button ]
-          , className: "prenumerera--button-link " <> disabled
-          }
+      Router.link
+        { to: { pathname: "/confirm", state }
+        , children: [ button ]
+        , className: "prenumerera--button-link " <> disabled
+        }
     state :: Confirm.LocationJsState
     state =
       { user: toNullable self.state.user

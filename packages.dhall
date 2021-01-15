@@ -22,7 +22,7 @@ let additions =
         { dependencies = [ "react-basic", "foreign-generic", "prelude" ]
         , repo =
             "https://github.com/KSF-Media/purescript-react-basic-router.git"
-        , version = "03b5ce8462f57d930929dc6d037b1093fece2128"
+        , version = "65ae7ae9dfd89213d11ce6679594ccf4dea8576e"
         }
       , uuid =
         { dependencies = [ "effect", "maybe" ]
