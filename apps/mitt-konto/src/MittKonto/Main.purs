@@ -62,10 +62,10 @@ app = do
           Right user -> do
             setState $ Types.setActiveUser $ Just user
             setPersonating true
-        searchSelect user =
+        searchSelect uuid =
           Aff.runAff_
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
-              $ User.getUser Nothing user.uuid
+              $ User.getUser Nothing uuid
         searchView :: JSX
         searchView = search { setActiveUser: searchSelect }
         usePayments = Helpers.useLoadSpinner setState
