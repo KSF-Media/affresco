@@ -6,10 +6,12 @@ import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (any, catMaybes, filter, intercalate, mapMaybe, null, (:))
 import Data.Array as Array
-import Data.DateTime (DateTime)
+import Data.Date as Date
+import Data.DateTime (DateTime, modifyDate)
+import Data.Time.Duration (Days(..))
 import Data.Either (Either(..))
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime)
+import Data.JSDate (JSDate, toDateTime, fromDateTime)
 import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
@@ -17,6 +19,7 @@ import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Validation.Semigroup (isValid, unV)
+import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -27,6 +30,7 @@ import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
+import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
@@ -54,6 +58,7 @@ type State =
   { name :: Name
   , address :: Address
   , now :: Maybe DateTime
+  , changeDate :: Maybe DateTime
   , editFields :: Set EditField
   , editName :: AsyncWrapper.Progress JSX
   , editAddress :: AsyncWrapper.Progress JSX
@@ -107,6 +112,7 @@ profile = make component
       { name: { firstName: Nothing, lastName: Nothing }
       , address: { zipCode: Nothing, countryCode: Nothing, streetAddress: Nothing, city: Nothing }
       , now: Nothing
+      , changeDate: Nothing
       , editFields: Set.empty
       , editName: Ready
       , editAddress: Ready
@@ -269,7 +275,28 @@ editAddress self =
   DOM.form
     { className: "profile--edit-address"
     , children:
-        [ InputField.inputField
+        [ Grid.row_
+            [ Grid.row_ [ DOM.label
+                            { className: "input-field--input-label"
+                            , children: [ DOM.text "Giltig från" ]
+                            }
+                        ]
+            , Grid.row_
+                [ DatePicker.datePicker
+                    { onChange: (_ >>= \newDate -> self.setState _ { changeDate = newDate })
+                    , className: "profile--edit-address--date-picker"
+                    , value: Nullable.toNullable $ fromDateTime <$> self.state.changeDate
+                    , format: "d.M.yyyy"
+                    , required: true
+                    , minDate: Nullable.toNullable
+                        $ (fromDateTime <<< modifyDate (\x -> fromMaybe x $ Date.adjust (Days 1.0) x)) <$> self.state.now
+                    , maxDate: Nullable.null
+                    , disabled: false
+                    , locale: "sv-FI"
+                    }
+                ]
+            ]
+        , InputField.inputField
             { type_: InputField.Text
             , name: "streetAddress"
             , placeholder: "Gatuadress"
@@ -331,7 +358,7 @@ editAddress self =
                   } = do
       self.setState _ { editAddress = Loading mempty }
       Aff.launchAff_ do
-        newUser <- User.updateUser self.props.profile.uuid $ User.UpdateAddress { streetAddress, zipCode, countryCode }
+        newUser <- User.updateUser self.props.profile.uuid $ User.UpdateAddress { streetAddress, zipCode, countryCode, date: self.state.changeDate }
         case newUser of
           Right u -> liftEffect do
             self.props.onUpdate u
@@ -486,6 +513,7 @@ resetFields self EditAddress =
         , zipCode: toMaybe <<< _.zipCode =<< toMaybe self.props.profile.address
         , city: toMaybe <<< _.city =<< toMaybe self.props.profile.address
         }
+    , changeDate = Nothing
     }
 resetFields self EditName =
   self.setState _ { name = { firstName: toMaybe self.props.profile.firstName
