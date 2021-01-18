@@ -1,4 +1,5 @@
 "use strict";
+const util = require('util');
 
 exports.callApi_ = function(api, methodName, params, opts) {
   var debugInfo = { api: api, methodName: methodName, params: params, opts: opts };
@@ -17,7 +18,8 @@ exports.callApi_ = function(api, methodName, params, opts) {
             console.error("Failed to parse error response body", decodeErr)
           }
         }
-        console.error("Superagent error", err, debugInfo);
+        const debugString = util.inspect(debugInfo, {depth: null});
+        console.error("Superagent error", err, debugInfo, debugString.replaceAll(/OAuth [0-9a-zA-Z]+/g, '<omitted>'));
         onError(err);
       } else {
         onSuccess(data);
