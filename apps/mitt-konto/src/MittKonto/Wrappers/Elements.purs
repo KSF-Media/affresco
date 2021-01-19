@@ -10,7 +10,8 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 
-data CloseType = Countdown | Button
+data CloseType = Countdown | XButton | BackArrow
+data WrapperType = Basic | Async
 
 successWrapper msg =
   DOM.div { className: "actions-wrapper--action-item"

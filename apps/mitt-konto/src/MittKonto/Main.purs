@@ -117,6 +117,7 @@ render self@{ state, setState } logger searchView isPersonating =
         , render: \_ -> Wrappers.viewWrapper
             { content: creditCardUpdateInputs
             , closeType: Wrappers.Countdown
+            , wrapperType: Wrappers.Async
             , onTryAgain: pure unit
             }
         }

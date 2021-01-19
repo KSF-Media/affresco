@@ -21,16 +21,21 @@ type Self = forall p. (ViewWrapperContent p) => React.Self (Props p) ViewWrapper
 -- Something to think about.
 type Props p =
   { content :: p
+  , wrapperType :: WrapperType
   , closeType :: CloseType
   , onTryAgain :: Effect Unit
   }
 
-type ViewWrapperState =
-  { closeable :: Boolean
+type BaseViewWrapperState =
+  ( closeable :: Boolean
   , asyncWrapperState :: AsyncWrapper.Progress JSX
   , titleText :: String
   , onCancel :: Effect Unit
-  }
+  )
+
+type ViewWrapperState = Record BaseViewWrapperState
+
+type ViewWrapperStateAsync = { asyncWrapperState :: AsyncWrapper.Progress JSX | BaseViewWrapperState }
 
 type SetState = (ViewWrapperState -> ViewWrapperState) -> Effect Unit
 
