@@ -14,10 +14,6 @@ import React.Basic.Events (handler_)
 import React.Basic.Router as Router
 import Record as Record
 
--- TODO: the `closeType` prop is there because it would be good to control the way we close the view,
--- as now separate views have separate implementations, but they could be unified
--- through this component, which would need expansion.
--- Something to think about.
 type Props p =
   { content :: p
   , wrapperType :: WrapperType
@@ -26,6 +22,7 @@ type Props p =
 
 type BaseViewWrapperState =
   ( closeable :: Boolean
+  , closeAutomatically :: Boolean
   , titleText :: String
   , renderedContent :: JSX
   , onCancel :: Effect Unit
@@ -64,6 +61,7 @@ viewWrapper props@{ wrapperType } = case wrapperType of
 
     initialStateBasic =
       { closeable: true
+      , closeAutomatically: false
       , titleText: mempty
       , renderedContent: mempty
       , onCancel: pure unit
@@ -97,9 +95,10 @@ renderBasic self@{ state: { closeable, titleText, onCancel, renderedContent }, s
   render self.state renderedContent
 
 renderAsync :: forall p. (ViewWrapperContent p) => React.Self (Props p) ViewWrapperStateAsync -> JSX
-renderAsync self@{ props: { content, closeType, wrapperType }, state: { closeable, titleText, onCancel, onTryAgain, renderedContent }, setState } =
+renderAsync self@{ props: { content, closeType, wrapperType }, state: { closeable, closeAutomatically, titleText, onCancel, onTryAgain, renderedContent }, setState } =
   render
     { closeable
+    , closeAutomatically
     , titleText
     , onCancel
     , renderedContent
@@ -111,16 +110,20 @@ renderAsync self@{ props: { content, closeType, wrapperType }, state: { closeabl
       { wrapperState: self.state.asyncWrapperState
       , readyView: renderedContent
       , editingView: identity
-      , successView: \msg -> close closeType <> successWrapper msg
+      , successView: \msg -> successWrapper msg
       , errorView: \err -> errorWrapper onTryAgain err
       , loadingView: identity
       }
 
 render :: ViewWrapperStateBasic -> JSX -> JSX
-render state@{ closeable, titleText, onCancel, renderedContent } content =
+render state@{ closeable, closeAutomatically, titleText, onCancel, renderedContent } content =
   DOM.div_
   [ header
   , content ]
+  <> if closeAutomatically then
+       autoClose
+     else
+       mempty
   where
     header :: JSX
     header = Grid.row_
@@ -146,8 +149,8 @@ render state@{ closeable, titleText, onCancel, renderedContent } content =
     title :: JSX
     title = DOM.h3_ [ DOM.text titleText ]
 
-close :: CloseType -> JSX
-close Countdown = Router.delayedRedirect
+autoClose :: JSX
+autoClose = Router.delayedRedirect
   { to: { pathname: "/"
         , state: {}
         }
@@ -155,4 +158,3 @@ close Countdown = Router.delayedRedirect
   , push: true
   , delay: 2000.0
   }
-close _ = mempty

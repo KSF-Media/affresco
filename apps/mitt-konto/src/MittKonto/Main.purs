@@ -116,7 +116,7 @@ render self@{ state, setState } logger searchView isPersonating =
         , path: Just "/kortt/uppdatera"
         , render: \_ -> Wrappers.viewWrapper
             { content: creditCardUpdateInputs
-            , closeType: Wrappers.Countdown
+            , closeType: Wrappers.XButton
             , wrapperType: Wrappers.Async
             }
         }
