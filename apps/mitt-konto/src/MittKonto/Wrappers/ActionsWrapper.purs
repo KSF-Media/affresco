@@ -29,7 +29,7 @@ actionsWrapper :: Props -> JSX
 actionsWrapper = make component { initialState: {}, render }
 
 render :: Self -> JSX
-render self@{ props: { actions, wrapperState } } =
+render self@{ props: { actions, wrapperState, onTryAgain } } =
   AsyncWrapper.asyncWrapper
     { wrapperState: wrapperState
     , readyView: actionsContainer actions
@@ -40,7 +40,7 @@ render self@{ props: { actions, wrapperState } } =
                              ]
     , errorView: \err -> DOM.div_
                            [ actionsContainer actions
-                           , errorWrapper self err
+                           , errorWrapper onTryAgain err
                            ]
     , loadingView: identity
     }

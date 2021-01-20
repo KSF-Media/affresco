@@ -118,7 +118,6 @@ render self@{ state, setState } logger searchView isPersonating =
             { content: creditCardUpdateInputs
             , closeType: Wrappers.Countdown
             , wrapperType: Wrappers.Async
-            , onTryAgain: pure unit
             }
         }
       where

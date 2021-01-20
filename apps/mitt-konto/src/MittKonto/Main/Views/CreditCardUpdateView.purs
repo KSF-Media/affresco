@@ -17,7 +17,7 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class ViewWrapperContent, ViewWrapperState, instantiate)
+import MittKonto.Wrappers (class ViewWrapperContent, ViewWrapperStateAsync, SetViewWrapperState(..), instantiate)
 import React.Basic (JSX)
 import React.Basic.Classic (element, make)
 import React.Basic.Classic as React
@@ -39,7 +39,8 @@ type Props =
   , onLoading       :: Effect Unit
   , onSuccess       :: Effect Unit
   , onError         :: Effect Unit
-  , setWrapperState :: (ViewWrapperState -> ViewWrapperState) -> Effect Unit
+  , onTryAgain      :: Effect Unit
+  , setWrapperState :: (ViewWrapperStateAsync -> ViewWrapperStateAsync) -> Effect Unit
   | BaseProps
   }
 
@@ -61,15 +62,19 @@ creditCardUpdateView :: Props -> JSX
 creditCardUpdateView = make component { initialState, render, didMount }
 
 instance viewWrapperContentCardUpdate :: ViewWrapperContent ViewWrapperContentInputs where
-  instantiate (ViewWrapperContentInputs inputs) setWrapperState = creditCardUpdateView $ Record.merge inputs hooks
+  instantiate (ViewWrapperContentInputs inputs) (SetViewWrapperStateAsync setWrapperState) = do
+    pure $ creditCardUpdateView (Record.merge inputs hooks)
     where
       hooks =
         { onCancel: setWrapperState _ { asyncWrapperState = AsyncWrapper.Ready }
         , onLoading: setWrapperState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
         , onSuccess: setWrapperState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
         , onError: setWrapperState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+        , onTryAgain: setWrapperState _ { asyncWrapperState = AsyncWrapper.Ready }
         , setWrapperState: setWrapperState
         }
+
+  instantiate _ (SetViewWrapperStateBasic setWrapperState) = mempty
 
 initialState :: State
 initialState =

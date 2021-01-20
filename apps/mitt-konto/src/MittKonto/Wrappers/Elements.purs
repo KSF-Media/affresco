@@ -20,9 +20,9 @@ successWrapper msg =
                                             ]
                         ]
             }
-errorWrapper self err =
+errorWrapper onTryAgain err =
   DOM.div { className: "actions-wrapper--action-item"
-          , children: [ errorContainer [ errorMessage err, tryAgain self ] ]
+          , children: [ errorContainer [ errorMessage err, tryAgain onTryAgain ] ]
           }
 
 successMessage msg =
@@ -37,11 +37,11 @@ errorMessage msg =
     , children: [ DOM.text msg ]
     }
 
-tryAgain self =
+tryAgain onTryAgain =
   DOM.span
     { className: "actions-wrapper--try-again"
     , children: [ DOM.text "Försök igen" ]
-    , onClick: handler_ self.props.onTryAgain
+    , onClick: handler_ onTryAgain
     }
 
 actionsContainer self children =
