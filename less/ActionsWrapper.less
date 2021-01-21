@@ -1,0 +1,48 @@
+.actions-wrapper--success-container {
+    justify-content: flex-end;
+    align-items: center;
+    flex-direction: row;
+    margin-top: 0;
+    @media @to-xlarge {
+        margin-top: 1.5em;
+    }
+    @media @to-medium {
+        margin-top: 0;
+    }
+    @media @to-xsmall {
+        margin-top: 1.5em;
+    }
+  }
+
+.actions-wrapper--action-text {
+    cursor: pointer;
+}
+
+.actions-wrapper--success {
+    min-height: 30px;
+}
+
+.actions-wrapper--success:first-child {
+    margin-right: 0.5em;
+}
+
+.actions-wrapper--try-again {
+    color: red;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.actions-wrapper--error-container {
+    flex-direction: column;
+}
+
+.actions-wrapper--action-container {
+    flex-direction: column;
+}
+
+.actions-wrapper--action-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}

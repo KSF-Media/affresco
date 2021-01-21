@@ -5,18 +5,19 @@ import Prelude
 import Data.Array (filter)
 import Data.Array as Array
 import Data.DateTime (DateTime)
-import Data.Foldable (foldMap)
+import Data.Either (Either(..))
+import Data.Foldable (foldMap, for_)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.JSDate (JSDate, toDateTime)
 import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
-import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Now as Now
-import Effect.Aff as Aff
+import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -27,10 +28,12 @@ import KSF.Sentry as Sentry
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.User (User, InvalidDateInput(..))
 import KSF.User as User
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
+import KSF.Tracking as Tracking
 
 type Self = React.Self Props State
 
@@ -113,12 +116,18 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              , { term: "Status:"
                , description:
                    [ DOM.text $ translateStatus props.subscription.state ]
-                   <> (map DOM.text $ foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions)
+                   <> let pausedDates = foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions
+                          descriptionText = if Array.null pausedDates
+                                            then mempty
+                                            else pauseDescription
+                       in (map DOM.text pausedDates) <> [ descriptionText ]
                }
              ]
              <> deliveryAddress
              <> foldMap pendingAddressChanges self.state.pendingAddressChanges
              <> foldMap billingDateTerm billingPeriodEndDate
+             <> foldMap subscriptionEndTerm subscriptionEndDate
+             <> paymentMethod
          })
       (if package.digitalOnly
        then mempty
@@ -133,6 +142,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               , description: [ DOM.text currentDeliveryAddress ]
               }
 
+    paymentMethod = Array.singleton
+              { term: "Faktureringsmetoden:"
+              , description: [ DOM.text $ translatePaymentMethod props.subscription.paymentMethod ]
+              }
+
     pendingAddressChanges :: Array User.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
       { term: "Tillfällig adressändring:"
@@ -142,6 +156,12 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     billingDateTerm :: String -> Array DescriptionList.Definition
     billingDateTerm date = Array.singleton $
       { term: "Faktureringsperioden upphör:"
+      , description: [ DOM.text date ]
+      }
+
+    subscriptionEndTerm :: String -> Array DescriptionList.Definition
+    subscriptionEndTerm date = Array.singleton $
+      { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text date ]
       }
 
@@ -163,19 +183,36 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         where
           asyncWrapper = AsyncWrapper.asyncWrapper
             { wrapperState: self.state.wrapperProgress
-            , readyView: actionsContainer $ [ pauseIcon
-                                            , if maybe true Array.null self.state.pausedSubscriptions
-                                              then mempty
-                                              else removeSubscriptionPauses
-                                            , temporaryAddressChangeIcon
-                                            , deliveryReclamationIcon
-                                            ]
+            , readyView: actionsContainer $ defaultActions
             , editingView: identity
-            , successView: \msg -> successContainer [ DOM.div { className: "subscription--update-success check-icon" }, foldMap successMessage msg  ]
-            , errorView: \err -> errorContainer [ errorMessage err, tryAgain ]
+            , successView: \msg -> actionsContainer $ defaultActions <> [successWrapper msg]
+            , errorView: \err -> actionsContainer $ defaultActions <> [errorWrapper err]
             , loadingView: identity
             }
 
+          defaultActions =
+            [ pauseIcon
+            , if maybe true Array.null self.state.pausedSubscriptions
+              then mempty
+              else removeSubscriptionPauses
+            , temporaryAddressChangeIcon
+            , case self.state.pendingAddressChanges of
+                   Just a -> removeTempAddressChanges a
+                   Nothing -> mempty
+            , deliveryReclamationIcon
+            ]
+
+          successWrapper msg =
+            DOM.div { className: "subscription--action-item"
+                    , children: [ successContainer [ DOM.div { className: "subscription--update-success check-icon" }
+                                                   , foldMap successMessage msg
+                                                   ]
+                                ]
+                    }
+          errorWrapper err =
+            DOM.div { className: "subscription--action-item"
+                    , children: [ errorContainer [ errorMessage err, tryAgain ] ]
+                    }
           successMessage msg =
             DOM.div
               { className: "success-text"
@@ -204,6 +241,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
         { subsno: props.subscription.subsno
+        , cusno: props.user.cusno
+        , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
@@ -221,14 +260,28 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidStartDate   -> startDateError
                     InvalidLength      -> lengthError
                     _                  -> unexpectedError
-              self.props.logger.error
-                $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange $ show err
+              case err of
+                InvalidUnexpected ->
+                  self.props.logger.error
+                  $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange
+                  $ show err
+                -- Other cases are not really errors we want notifications from
+                _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
         }
+
+    readPastTemporaryAddress tmp =
+      { streetAddress: Just tmp.street
+      , zipCode: Just tmp.zipcode
+      , cityName: toMaybe tmp.cityName
+      , countryCode: Just tmp.countryCode
+      , temporaryName: toMaybe tmp.temporaryName
+      }
 
     pauseSubscriptionComponent =
         PauseSubscription.pauseSubscription
           { subsno: props.subscription.subsno
+          , cusno: props.user.cusno
           , userUuid: props.user.uuid
           , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
           , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
@@ -250,13 +303,20 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                     InvalidOverlapping -> overlappingError
                     InvalidTooRecent   -> tooRecentError
                     InvalidUnexpected  -> unexpectedError
-              self.props.logger.error $ Error.subscriptionError Error.SubscriptionPause $ show err
+              case err of
+                InvalidUnexpected ->
+                  self.props.logger.error
+                  $ Error.subscriptionError Error.SubscriptionPause
+                  $ show err
+                -- Other cases are not really errors we want notifications from
+                _ -> self.props.logger.log (show err) Sentry.Info
               self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
           }
 
     deliveryReclamationComponent =
       DeliveryReclamation.deliveryReclamation
         { subsno:   props.subscription.subsno
+        , cusno:    props.user.cusno
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
@@ -324,13 +384,16 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
              unpausedSubscription <- Aff.try $ do
                User.unpauseSubscription props.user.uuid props.subscription.subsno
              case unpausedSubscription of
-                 Left err -> do
-                   liftEffect $ self.setState _
+                 Left err -> liftEffect do
+                   self.setState _
                      { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                 Right newSubscription -> liftEffect $ self.setState _
-                   { pausedSubscriptions = toMaybe newSubscription.paused
-                   , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
-                   }
+                   Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "error"
+                 Right newSubscription -> liftEffect do
+                   self.setState _
+                     { pausedSubscriptions = toMaybe newSubscription.paused
+                     , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
+                     }
+                   Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "success"
         }
 
     temporaryAddressChangeIcon =
@@ -355,6 +418,40 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               { updateAction = Just TemporaryAddressChange
               , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
               }
+
+    removeTempAddressChanges tempAddressChanges =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+          [ DOM.div
+              { className: "subscription--delete-temporary-address-change-icon circle" }
+          , DOM.span
+              { className: "subscription--update-action-text"
+              , children:
+                  [ DOM.u_ [ DOM.text "Avbryt tillfälliga adressändringar" ] ]
+              }
+          ]
+        , onClick: handler_ $ do
+           self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+           Aff.launchAff_ $ do
+             for_ tempAddressChanges $ \tempAddressChange -> do
+               let startDate = toDateTime tempAddressChange.startDate
+               let endDate   = toDateTime tempAddressChange.endDate
+               case startDate, endDate of
+                 (Just startDate'), (Just endDate') -> do
+                   tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
+                   case tempAddressChangesDeleted of
+                     Right newSubscription -> liftEffect do
+                       self.setState _
+                         { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
+                           pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
+                       Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
+                     Left _ -> liftEffect do
+                       self.setState _
+                         { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                       Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
+                 _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
+        }
 
     deliveryReclamationIcon =
       DOM.div
@@ -381,6 +478,17 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     billingPeriodEndDate =
           map trim $ formatDate =<< toMaybe props.subscription.dates.end
+
+    subscriptionEndDate =
+          map trim $ formatDate =<< toMaybe props.subscription.dates.suspend
+
+    -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
+    -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
+    -- This is why we tell the customer to delete the pause and create a new one.
+    pauseDescription = DOM.div
+                         { className: "mitt-konto--note"
+                         , children: [ DOM.text "Om du vill ändra på din tillfälliga adressändring eller ditt uppehåll, vänligen radera den gamla först och lägg sedan in den nya." ]
+                         }
 
     currentDeliveryAddress :: String
     currentDeliveryAddress
@@ -415,6 +523,16 @@ translateStatus (User.SubscriptionState englishStatus) = do
     "DeactivatedRecently"       -> "Förnyad tillsvidare"
     "Unknown"                   -> "Okänd"
     _                           -> englishStatus
+
+translatePaymentMethod :: SubscriptionPaymentMethod -> String
+translatePaymentMethod paymentMethod =
+  case paymentMethod of
+    PaperInvoice         -> "Pappersfaktura"
+    CreditCard           -> "Kreditkort"
+    NetBank              -> "Netbank"
+    ElectronicInvoice    -> "Nätfaktura"
+    DirectPayment        -> "Direktbetalning"
+    UnknownPaymentMethod -> "Okänd"
 
 isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
 isPeriodExpired baseDate endDate =

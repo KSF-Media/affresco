@@ -15,28 +15,31 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..), contains)
 import Data.String as String
+import Data.Time.Duration (Milliseconds(..))
 import Data.Validation.Semigroup (unV)
 import Effect (Effect)
-import Effect.Aff (Aff, error)
+import Effect.Aff (Aff, error, delay)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import KSF.Button.Component as Button
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
 import KSF.Registration.Component as Registration
 import KSF.User (User, UserError(..))
 import KSF.User as User
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
 import KSF.ValidatableForm as Form
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
+import KSF.Tracking as Tracking
 
 foreign import hideLoginLinks :: Boolean
 
@@ -172,8 +175,10 @@ didMount :: Self -> Effect Unit
 didMount self@{ props, state } = do
   props.launchAff_ $ User.magicLogin Nothing \user -> do
     case user of
-      Left _ -> self.setState _ { errors { login = Just SomethingWentWrong } }
-      Right _ -> pure unit
+      Left _ -> do
+        self.setState _ { errors { login = Just SomethingWentWrong } }
+      Right user' -> do
+        Tracking.login (Just user'.cusno) "magic login" "success"
     props.onUserFetch user
 
 render :: Self -> JSX
@@ -194,6 +199,22 @@ failOnEmailMismatch self email
       liftEffect $ self.setState _ { errors { login = Just LoginEmailMismatchError } }
       throwError $ error "Emails don't match"
 
+loginWithRetry :: (Aff (Either UserError User)) -> (User -> Aff Unit) -> (UserError -> Aff Unit) -> (Either UserError User -> Aff Unit) -> Aff Unit
+loginWithRetry action handleSuccess handleError handleFinish = do
+  result <- withRetry 0
+  case result of
+    Right user -> handleSuccess user
+    Left err -> handleError err
+  handleFinish result
+  where
+    withRetry retry = do
+      user <- action
+      case user of
+        Left ServiceUnavailable | retry < 1 -> do
+          delay $ Milliseconds 1000.0
+          withRetry $ retry+1
+        _ -> pure user
+
 onLogin :: Self -> Form.ValidatedForm LoginField LoginForm -> Effect Unit
 onLogin self@{ props, state } = unV
   (\errors -> do
@@ -201,29 +222,34 @@ onLogin self@{ props, state } = unV
         { formEmail    = state.formEmail    <|> Just ""
         , formPassword = state.formPassword <|> Just ""
         })
-  logUserIn
+  (\validForm -> props.launchAff_
+                   $ loginWithRetry (logUserIn validForm) handleSuccess handleError handleFinish)
   where
     logUserIn validForm
       | Just validUsername <- validForm.username
       , Just validPassword <- validForm.password
       , not String.null $ validUsername
       , not String.null $ validPassword
-      = props.launchAff_ do
-        user <- User.loginTraditional
-            { username: validUsername
-            , password: validPassword
-            , mergeToken: toNullable $ map _.token state.merge
-            }
-        case user of
-          Right _ ->
-            -- removing merge token from state in case of success
-            liftEffect $ self.setState _ { merge = Nothing }
-          Left err ->
-            liftEffect $ self.setState _ { errors { login = Just err } }
-        -- This call needs to be last, as it will unmount the login component.
-        -- (We cannot set state of an unmounted component)
-        liftEffect $ props.onUserFetch user
-      | otherwise = Log.error "Strange, had validated form with invalid input values"
+      = User.loginTraditional
+          { username: validUsername
+          , password: validPassword
+          , mergeToken: toNullable $ map _.token state.merge
+          }
+      | otherwise = do
+          Log.error "Strange, had validated form with invalid input values"
+          pure $ Left SomethingWentWrong
+    handleSuccess user = liftEffect do
+      -- removing merge token from state in case of success
+      self.setState _ { merge = Nothing }
+      Tracking.login (Just user.cusno) "email login" "success"
+    handleFinish user =
+      -- This call needs to be last, as it will unmount the login component.
+      -- (We cannot set state of an unmounted component)
+      liftEffect $ props.onUserFetch user
+
+    handleError err = liftEffect do
+      self.setState _ { errors { login = Just err } }
+      Tracking.login Nothing  "email login" "error"
 
 loginFormValidations :: Self -> Form.ValidatedForm LoginField LoginForm
 loginFormValidations self =
@@ -426,8 +452,12 @@ googleLogin self =
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = Just email }
+      loginWithRetry (logUserIn email accessToken) handleSuccess handleError handleFinish
 
-      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+    logUserIn email accessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
+    handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "google login" "success"
+    handleError err = liftEffect $ Tracking.login Nothing "google login" "error"
+    handleFinish user = do
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
@@ -468,9 +498,10 @@ facebookLogin self =
       sdk <- User.facebookSdk
       FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
       case authResponse of
-        Nothing -> do
-          liftEffect Facebook.Success.unsetFacebookSuccess
+        Nothing -> liftEffect do
+          Facebook.Success.unsetFacebookSuccess
           Log.error "Facebook login failed"
+          Tracking.login Nothing "facebook login" "error: Facebook login failed"
         Just auth -> do
           liftEffect Facebook.Success.setFacebookSuccess
           fetchFacebookUser auth sdk
@@ -493,7 +524,13 @@ facebookLogin self =
       -- setting the email in the state to eventually send it from the merge view form
       liftEffect $ self.setState _ { formEmail = Just email }
       let (FB.AccessToken fbAccessToken) = accessToken
-      user <- User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+
+      loginWithRetry (logUserIn email fbAccessToken) handleSuccess handleError handleFinish
+
+    logUserIn email fbAccessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
+    handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "facebook login" "success"
+    handleError err = liftEffect $ Tracking.login Nothing "facebook login" "error: could not fetch user"
+    handleFinish user = do
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
 
@@ -506,6 +543,7 @@ finalizeSomeAuth self = case _ of
     self.props.onMerge
     self.setState _ { merge = Just newMergeInfo }
   Left SomethingWentWrong -> liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
+  Left ServiceUnavailable -> liftEffect $ self.setState _ { errors { login = Just ServiceUnavailable } }
   Left _ -> throwError $ error "An unexpected error occurred during SoMe login"
 
 someLoginButton ::

@@ -1,8 +1,9 @@
 module KSF.Footer.Component where
 
 import KSF.Icons (papers)
-import React.Basic (JSX, createComponent, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (createComponent, make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 type Self = React.Self Props {}
@@ -73,7 +74,6 @@ paperImages =
     , children:
         [ imageLink "https://www.hbl.fi/" papers.hbl
         , imageLink "https://www.vastranyland.fi/" papers.vn
-        , imageLink "http://hangotidningen.fi/" papers.hthl
         , imageLink "https://www.ostnyland.fi/" papers.on
         ]
     }

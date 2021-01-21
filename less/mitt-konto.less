@@ -18,8 +18,8 @@ a {
     color: @link-color;
     text-decoration: none;
     &:hover {
-        transition: color 0.2s linear;
-        color: @grey-mediumdark;
+	transition: color 0.2s linear;
+	color: @grey-mediumdark;
     }
 }
 
@@ -37,9 +37,10 @@ h1, .mitt-konto--heading {
     font-weight: 700;
     letter-spacing: -.015em;
     margin-bottom: 10px;
+    font-size: 2.35rem;
 }
 
-h2.mitt-konto---heading {
+h2.mitt-konto--heading {
     font-size: 1.75rem;
 }
 
@@ -48,17 +49,98 @@ h2.mitt-konto---heading {
     font-family: 'Roboto', serif;
 }
 
+.mitt-konto--frontpage {
+    display: grid;
+    grid-template-rows: 70px auto auto auto auto;
+    grid-template-columns: 2fr 1fr 345px 1fr 2fr;
 
-.mitt-konto--description {
-    @media @to-large {
-        text-align: center;
-        padding-bottom: 10px;
+    background-image: url('../images/shield.png');
+    background-repeat: no-repeat;
+    background-size: 280px 380px;
+    background-position: 50% 30%;
+
+    .logos {
+        grid-column-start: 3;
+        grid-row-start: 1;
+
+        display: grid;
+        @logo-size: 32px;
+        grid-template-columns: @logo-size @logo-size @logo-size;
+        column-gap: 2.6em;
+        justify-content: center;
+
+        .logo {
+            align-self: center;
+            border-radius: 1.6px;
+            width: @logo-size;
+            height: @logo-size;
+        }
     }
+
+    .title {
+        grid-column: 1 / span 5;
+        grid-row-start: 2;
+        justify-self: center;
+        text-align: center;
+    }
+
+    .description {
+        grid-column: 2 / span 3;
+        grid-row-start: 3;
+
+        text-align: center;
+        color: @grey-dark;
+
+        h2 {
+            font-weight: 400;
+        }
+
+
+        @media @to-large {
+            padding-bottom: 10px;
+        }
+    }
+
+    .list {
+
+        grid-column-start: 3;
+        grid-row-start: 4;
+
+        display: grid;
+        row-gap: 0.2em;
+        .item {
+            @check-size: 16px;
+
+            display: grid;
+            grid-template-columns: @check-size auto;
+            align-items: center;
+            column-gap: 0.6em;
+
+            .check-icon {
+                background-repeat: no-repeat;
+                border-radius: .16em;
+                background-size: 100%;
+                width: @check-size;
+                height: @check-size;
+                background-image: url('../images/checkmark-round.png');
+            }
+
+            .text {
+                font-weight: 370;
+            }
+        }
+    }
+
+    .form {
+        grid-column-start: 3;
+        grid-row-start: 5;
+    }
+
 }
 
 .mitt-konto--main-container {
     @media @to-xsmall {
-        width: 100% !important;
+	width: 100% !important;
     }
 }
 
@@ -73,25 +155,25 @@ h2.mitt-konto---heading {
     background: @grey-light;
     z-index: @loading;
     .mitt-konto--loading-image {
-        background-image: url("../images/loader-gif.gif");
-        background-size: 32px 32px;
-        width: 32px;
-        height: 32px;
+	background-image: url("../images/loader-gif.gif");
+	background-size: 32px 32px;
+	width: 32px;
+	height: 32px;
     }
 }
 
 .mitt-konto--subscribe-button-container {
     @media @to-xsmall {
-        justify-content: center;
+	justify-content: center;
     }
 }
 
 .mitt-konto--subscribe-button {
     .button--blank-button {
-        background-color: @button-color-primary;
-        &:hover {
-            background-color: @button-color-primary-hover;
-        }
+	background-color: @button-color-primary;
+	&:hover {
+	    background-color: @button-color-primary-hover;
+	}
     }
 }
 
@@ -100,54 +182,18 @@ h2.mitt-konto---heading {
     p:last-child { margin-bottom: 0 }
 }
 
-@width-of-account-edit-icon: 50px;
-@height-of-account-edit-icon: 50px;
-
-.mitt-konto--icon-container {
-    width: @width-of-account-edit-icon;
-    height: @height-of-account-edit-icon;
-    background: white;
+.mitt-konto--cancel-subscription-icon {
+    .icon-action--format-icon('ui-cross-2.svg');
 }
 
-.format-edit-subscription-block(@icon-name) {
-    display: block;
-    width: @width-of-account-edit-icon;
-    height: @height-of-account-edit-icon;
+.mitt-konto--backwards {
     background-position: center;
     background-repeat: no-repeat, repeat;
-    background-image: url('../images/@{icon-name}');
-    background-size: 30px;
-}
-
-.mitt-konto--temporary-address-change {
-    .format-edit-subscription-block('loc-point-map.svg');
-}
-
-.mitt-konto--permanent-address-change {
-    .format-edit-subscription-block('loc-point-distance.svg');
-}
-
-.mitt-konto--password-change {
-    .format-edit-subscription-block('sec-shield.svg');
-}
-
-.mitt-konto--feedback {
-    .format-edit-subscription-block('cha-rect-text.svg');
-    padding-top: 3px;
-}
-
-.mitt-konto--cancel-subscription {
-    .format-edit-subscription-block('ui-cross-2.svg');
-}
-
-.mitt-konto--account-edit-container {
-    a {
-        color: @grey-dark;
-        text-decoration: underline;
-    }
-    @media @to-xsmall {
-        margin-left: 1em;
-    }
+    background-image: url('../images/backwards.svg');
+    background-size: 120px;
+    width: 140px;
+    height: 40px;
+    display: inline-block;
 }
 
 .mitt-konto--subscribe-image {
@@ -171,25 +217,25 @@ h2.mitt-konto---heading {
 .mitt-konto--need-help {
     margin-top: 2em;
     dl {
-        @media @to-xsmall {
-            margin-left: 1em;
-        }
+	@media @to-xsmall {
+	    margin-left: 1em;
+	}
     }
     dt {
-        font-weight: 400;
+	font-weight: 400;
     }
 }
 
 .mitt-konto--component-block-container {
     @media @to-medium {
-        margin-right: 1em;
+	margin-right: 1em;
 
     }
     @media @to-xsmall {
-        margin-left: 1em;
+	margin-left: 1em;
     }
     .mitt-konto--heading {
-        padding-bottom: 1em;
+	padding-bottom: 1em;
     }
 }
 
@@ -199,33 +245,42 @@ h2.mitt-konto---heading {
     margin-top: 1em;
     padding: 15px;
     dl {
-        margin-top: 0;
-        margin-bottom: 0;
-        > dt {
-            color: @grey-mediumlight;
-            margin-top: 1em;
-            font-weight: 300;
-            &:first-child {
-                margin-top: 0;
-            }
-        }
+	margin-top: 0;
+	margin-bottom: 0;
+	> dt {
+	    color: @grey-mediumlight;
+	    margin-top: 1em;
+	    font-weight: 300;
+	    &:first-child {
+		margin-top: 0;
+	    }
+	}
     }
 }
 
 .mitt-konto--profile {
     padding-right: 2em;
     @media @to-medium {
-        padding: 0;
+	padding: 0;
     }
 }
 
 .mitt-konto--disappearing-break {
     display: none;
     @media @to-medium {
-        display: block;
+	display: block;
     }
 }
 
 .mitt-konto--canceled-subscription {
     opacity: 0.5;
+}
+
+.mitt-konto--note {
+   font-size: 0.85em;
+   color: gray;
+}
+
+.mitt-konto--personating {
+    background-color: palegoldenrod;
 }

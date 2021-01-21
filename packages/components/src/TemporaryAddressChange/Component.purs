@@ -3,6 +3,7 @@ module KSF.TemporaryAddressChange.Component where
 import Prelude
 
 import Control.Alt ((<|>))
+import Data.Array (length)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime)
@@ -18,36 +19,46 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
-import KSF.InputField.Component as InputField
+import KSF.InputField as InputField
+import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
-import React.Basic (JSX, make)
-import React.Basic as React
+import KSF.TemporaryAddressChange.DropDown (pastTemporaryAddressDropDown)
+import KSF.TemporaryAddressChange.Types (AddressChange)
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
+import KSF.Tracking as Tracking
 
 type State =
-  { startDate     :: Maybe DateTime
-  , minStartDate  :: Maybe DateTime
-  , endDate       :: Maybe DateTime
-  , minEndDate    :: Maybe DateTime
-  , streetAddress :: Maybe String
-  , zipCode       :: Maybe String
-  , countryCode   :: Maybe String
-  , temporaryName :: Maybe String
+  { startDate      :: Maybe DateTime
+  , minStartDate   :: Maybe DateTime
+  , endDate        :: Maybe DateTime
+  , minEndDate     :: Maybe DateTime
+  , streetAddress  :: Maybe String
+  , zipCode        :: Maybe String
+  -- | Ignored on save and inferred from zipCode
+  , cityName       :: Maybe String
+  , countryCode    :: Maybe String
+  , temporaryName  :: Maybe String
+  , isIndefinite   :: Boolean
   }
 
 type Self = React.Self Props State
 
 type Props =
-  { subsno    :: Int
-  , userUuid  :: User.UUID
-  , onCancel  :: Effect Unit
-  , onLoading :: Effect Unit
-  , onSuccess :: User.Subscription -> Effect Unit
-  , onError   :: User.InvalidDateInput -> Effect Unit
+  { subsno        :: Int
+  , cusno         :: String
+  , pastAddresses :: Array AddressChange
+  , userUuid      :: User.UUID
+  , onCancel      :: Effect Unit
+  , onLoading     :: Effect Unit
+  , onSuccess     :: User.Subscription -> Effect Unit
+  , onError       :: User.InvalidDateInput -> Effect Unit
   }
 
 data Action
@@ -58,21 +69,16 @@ data Action
 data AddressChangeFields
   = StreetAddress
   | Zip
+  | CityName
   | CountryCode
   | TemporaryName
 instance validatableFieldAddressChangeFields :: VF.ValidatableField AddressChangeFields where
   validateField field value _serverErrors = case field of
     StreetAddress -> VF.validateEmptyField field "Adress krävs." value
     Zip           -> VF.validateZipCode field value
+    CityName      -> VF.noValidation value
     CountryCode   -> VF.validateEmptyField field "Land krävs." value
     TemporaryName -> VF.noValidation value
-
-type AddressChange =
-  { streetAddress :: Maybe String
-  , zipCode       :: Maybe String
-  , countryCode   :: Maybe String
-  , temporaryName :: Maybe String
-  }
 
 temporaryAddressChange :: Props -> JSX
 temporaryAddressChange = make component { initialState, render, didMount }
@@ -85,8 +91,10 @@ initialState =
   , minEndDate: Nothing
   , streetAddress: Nothing
   , zipCode: Nothing
+  , cityName: Nothing
   , countryCode: Just "FI"
   , temporaryName: Nothing
+  , isIndefinite: false
   }
 
 component :: React.Component Props
@@ -96,7 +104,8 @@ component = React.createComponent "TemporaryAddressChange"
 calcMinEndDate :: Maybe DateTime -> Maybe DateTime
 calcMinEndDate Nothing = Nothing
 calcMinEndDate (Just startDate) = do
-  let week = Time.Duration.Days 7.0
+  -- 6 days added to the starting date = 7 (one week)
+  let week = Time.Duration.Days 6.0
   adjust week startDate
 
 didMount :: Self -> Effect Unit
@@ -108,30 +117,46 @@ didMount self = do
   self.setState _ { minStartDate = dayAfterTomorrow }
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, isIndefinite }} =
   DOM.div
-    { className: "clearfix temporary-address-change--container"
+    { className: "temporary-address-change--container"
     , children:
-        [ Grid.row_
-           [ DOM.div
-               { className: "col col-11"
-               , children: [ DOM.h3_ [ DOM.text "Gör tillfällig adressändring" ] ]
-               }
-           , DOM.div
-               { className: "col-1 flex temporary-address-change--close-icon"
-               , children: [ DOM.div { className: "close-icon" } ]
-               , onClick: handler_ self.props.onCancel
-               }
-           , addressChangeForm
-           ]
+        [ DOM.div
+            { className: "temporary-address-change--header"
+            , children:
+                [ DOM.div_ [ DOM.h3_ [ DOM.text "Gör tillfällig adressändring" ] ]
+                , DOM.div
+                    { className: "temporary-address-change--close-icon"
+                    , children: [ DOM.div { className: "close-icon" } ]
+                    , onClick: handler_ self.props.onCancel
+                    }
+                ]
+            }
+        , addressChangeForm
         ]
     }
   where
+    pastTempSelection =
+      pastTemporaryAddressDropDown
+        self.props.pastAddresses
+        (\newTemp -> do
+            case newTemp of
+              Just tmp -> self.setState _ { streetAddress = tmp.streetAddress
+                                          , zipCode = tmp.zipCode
+                                          , cityName = tmp.cityName
+                                          , countryCode = tmp.countryCode
+                                          , temporaryName = tmp.temporaryName
+                                          }
+              Nothing -> mempty
+        )
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, countryCode, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
           , children:
-              [ startDayInput
+              (if length self.props.pastAddresses == 0
+                 then identity
+                 else ([ pastTempSelection ] <> _))
+              [ DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
               , endDayInput
               , addressInput
               , zipInput
@@ -160,6 +185,16 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , label: "Börjar från"
         }
 
+    isIndefiniteCheckbox =
+      InputCheckbox.inputCheckbox
+        { type_: InputCheckbox.Checkbox
+        , name: "indefinite"
+        , value: Nothing
+        , onChange: \checked -> self.setState _ { isIndefinite = checked }
+        , label: Just "Tillsvidare"
+        , required: false
+        }
+
     endDayInput =
       dateInput
         self
@@ -167,7 +202,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: Nothing
-        , disabled: isNothing self.state.startDate
+        , disabled: isNothing self.state.startDate || self.state.isIndefinite
         , label: "Avslutas"
         }
 
@@ -177,7 +212,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , placeholder: "Gatuadress"
         , name: "address"
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
-        , value: Nothing
+        , value: self.state.streetAddress
         , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
         }
@@ -188,7 +223,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , placeholder: "Postnummer"
         , name: "zipCode"
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
-        , value: Nothing
+        , value: self.state.zipCode
         , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
         }
@@ -198,9 +233,8 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         { type_: InputField.Text
         , placeholder: "Stad"
         , name: "city"
-        -- We don't care about the city input, as on the server side, the city is inferred by the zip code
-        , onChange: \_ -> pure unit
-        , value: Nothing
+        , onChange: \newCity -> self.setState _ { cityName = newCity }
+        , value: self.state.cityName
         , validationError: Nothing
         , label: Just "Stad"
         }
@@ -219,7 +253,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , placeholder: "Tillfällig namnändring eller C/O"
         , name: "temporaryName"
         , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
-        , value: Nothing
+        , value: self.state.temporaryName
         , validationError: Nothing
         , label: Just "Tillfällig namnändring eller C/O"
         }
@@ -233,7 +267,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           }
 
     submitForm :: Maybe DateTime -> Maybe DateTime -> AddressChange -> Effect Unit
-    submitForm (Just startDate') (Just endDate') addressChangeFormValues = do
+    submitForm (Just startDate') endDate' addressChangeFormValues = do
       Aff.launchAff_ do
         unV
           -- Shows validation errors if submit button is pushed with uninitialized values
@@ -254,8 +288,12 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           liftEffect $ self.props.onLoading
           User.temporaryAddressChange self.props.userUuid self.props.subsno startDate' endDate' streetAddress' zipCode' countryCode' temporaryName' >>=
             case _ of
-              Right sub -> liftEffect $ self.props.onSuccess sub
-              Left invalidDateInput -> liftEffect $ self.props.onError invalidDateInput
+              Right sub -> liftEffect do
+                self.props.onSuccess sub
+                Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "success"
+              Left invalidDateInput -> liftEffect do
+                self.props.onError invalidDateInput
+                Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "error: invalidDateInput"
         makeTemporaryAddressChange _ = Console.error "Form should be valid, however it looks like it's not"
     submitForm _ _ _ = Console.error "Temporary address change dates were not defined."
 
@@ -292,10 +330,12 @@ validateTemporaryAddressChangeForm :: AddressChange -> VF.ValidatedForm AddressC
 validateTemporaryAddressChangeForm form =
   { streetAddress: _
   , zipCode: _
+  , cityName: _
   , countryCode: _
   , temporaryName: _
   }
   <$> VF.validateField StreetAddress form.streetAddress []
   <*> VF.validateField Zip form.zipCode []
+  <*> VF.validateField CityName form.cityName []
   <*> VF.validateField CountryCode form.countryCode []
   <*> VF.validateField TemporaryName form.temporaryName []

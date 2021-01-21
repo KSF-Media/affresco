@@ -55,5 +55,15 @@ loadingSpinner =
         ]
     }
 
+loadingSpinnerWithMessage :: String -> JSX
+loadingSpinnerWithMessage msg =
+  DOM.div
+    { className: "spinner--loading-spinner__with-message"
+    , children:
+        [ DOM.text msg
+        , loadingSpinner
+        ]
+    }
+
 setSpinner :: forall r. Maybe Loading -> { isLoading :: Maybe Loading | r } -> { isLoading :: Maybe Loading | r }
 setSpinner loading = _ { isLoading = loading }

@@ -13,20 +13,26 @@ type Props =
 
 error :: Props -> JSX
 error props =
-  DOM.h1_ [ DOM.text "Något gick fel med ditt inköp!"
-          ]
-  <> DOM.p
+  DOM.h1
+    { className: "vetrina--headline"
+    , children: [ DOM.text "Något gick fel med ditt inköp!" ]
+    }
+  <> DOM.div
        { className: "vetrina--description-text"
-       , children: [ DOM.text "Klicka nedan för pröva på nytt eller ta kontakt med vår kundservice på "
-                   , DOM.b_ [ DOM.text "pren@hbl.fi"
-                           ]
+       , children:
+           [ DOM.p
+               { className: ""
+               , children:
+                   [ DOM.text "Klicka nedan för pröva på nytt eller ta kontakt med vår kundservice på "
+                   , DOM.b_ [ DOM.text "pren@hbl.fi" ]
                    , DOM.text "."
                    ]
-       }
-  <> DOM.p
-       { className: "vetrina--description-text"
-       , children: [ DOM.text "Vi beklagar strulet!"
-                   ]
+               }
+           , DOM.p
+               { className: ""
+               , children: [ DOM.text "Vi beklagar strulet!" ]
+               }
+           ]
        }
   <> retryButton props
 

@@ -1,92 +1,14 @@
 var googletag = googletag || {};
 var ksfDfp = {};
-ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
 
 (function() {
     'use strict';
     googletag.cmd = googletag.cmd || [];
 
     ksfDfp.displayBanner = function(id) {
-        // run display function but first check that the slot is supposed to render. This avoids DFP silent errors  and might improve performance. Placed here because this function needs to exits even if the onSwitch is in off position.
         googletag.cmd.push(function() {
             googletag.display(id);
         });
-    };
-    ksfDfp.mover.checkPara = function(ptag, expectedType, expectedClass) {
-        // used by the bannerMover function
-        var response = false;
-        expectedType = expectedType.toUpperCase(); // nodeName is always uppercase
-        // check that the surrounding paragraphs are OK when placing the in text ad
-        var pBefore = ptag.previousElementSibling;
-        var pBeforeContent = pBefore.innerHTML.replace(/[^A-Za-z0-9]/g, '');
-        var pBeforeClass = pBefore.classList.contains(expectedClass);
-        var pSelf = ptag;
-        var pSelfContent = pSelf.innerHTML.replace(/[^A-Za-z0-9]/g, '');
-        var pSelfClass = pSelf.classList.contains(expectedClass);
-        if ((!(/^\s*$/.test(pBeforeContent)) && !(/^\s*$/.test(pSelfContent))) && (pSelf.nodeName === expectedType && pBefore.nodeName === expectedType) && (pBeforeClass && pSelfClass)) {
-            response = true;
-        }
-        return response;
-    };
-    /*
-    Set up mover function. Find ad slot for DIGIHELMOB and move it into the middle of the text,
-        if available.
-    */
-    // this must be true. Setting it to false is the way to chicken out
-    ksfDfp.mover.letTheBoxMove = true;
-    // reduce risk of banner collisions and other placement oddities
-    ksfDfp.mover.paragraphType = 'div'; // the type of HTML element used for paragraphs
-    ksfDfp.mover.paragraphClass = 'html'; // the name of the css class of egible paragraphs
-    ksfDfp.mover.articleContainerName = 'App'; // the class of the main article container. Could make sense to have this as id. But it is a class in the documents.
-    ksfDfp.mover.articleTextContainerName = 'content'; // this is an id
-    ksfDfp.mover.minimumTextLength = 7; // text with less paragraphs are not touched
-    ksfDfp.mover.adDivToMove = "DIGIHELMOB"; // name of the div that we should move up
-    ksfDfp.mover.done = false;
-    ksfDfp.mover.report = 'OK';
-    ksfDfp.bannerMover = function() {
-        let textDivTop = window.document.getElementsByClassName(ksfDfp.mover.articleContainerName);
-        if (!(textDivTop[0] === undefined)) {
-            let textDiv = document.getElementById(ksfDfp.mover.articleTextContainerName);
-
-            // count the number of paragraphs
-            let paras = textDivTop[0].querySelectorAll(ksfDfp.mover.paragraphType + '.' + ksfDfp.mover.paragraphClass);
-            let parasNum = paras.length;
-            if (parasNum < ksfDfp.mover.minimumTextLength) {
-                ksfDfp.mover.report = 'Short text ' + parasNum;
-                // not worth moving ads in very short texts
-                ksfDfp.mover.letTheBoxMove = false;
-            }
-            let placementPositionNum = Math.floor(parasNum / 2);
-            let placementElement = paras[placementPositionNum];
-            if (placementElement && ksfDfp.mover.letTheBoxMove) {
-                // verify that the new placement is OK. This requires the new placement to be surrounded by non-empty text tags.
-                let isParaOK = ksfDfp.mover.checkPara(placementElement, ksfDfp.mover.paragraphType, ksfDfp.mover.paragraphClass); // element + expected type and class name
-                if (!isParaOK) {
-                    ksfDfp.mover.report = 'First attempt failed ' + placementPositionNum;
-                    //last ditch attempt or give up
-                    placementElement = paras[placementPositionNum - 2];
-                    isParaOK = ksfDfp.mover.checkPara(placementElement, ksfDfp.mover.paragraphType, ksfDfp.mover.paragraphClass);
-                    // if still not OK, we chicken out
-                    if (!isParaOK) {
-                        ksfDfp.mover.letTheBoxMove = false;
-                        ksfDfp.mover.report = 'Both attempts failed ' + placementPositionNum;
-                    }
-                }
-                let adDivToMoveElement = window.document.getElementById(ksfDfp.mover.adDivToMove);
-                if (adDivToMoveElement !== null) {
-                    if (ksfDfp.mover.letTheBoxMove) {
-                        textDiv.insertBefore(adDivToMoveElement, placementElement);
-                        ksfDfp.mover.done = true; // don't run this more than once
-                    }
-                } else {
-                    ksfDfp.mover.report = 'Could not find specified div to move';
-                }
-            }
-            // found the necessary text containers
-        } else {
-            ksfDfp.mover.report = 'Failed to find top container';
-        }
-
     };
 
     ksfDfp.getBannerWidth = function(banner) {
@@ -112,11 +34,6 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
         ksfDfp.startUp = function() {
             if (!ksfDfp.activated) {
                 ksfDfp.activated = true;
-                // move slots that are to be repositioned in the document
-                if (!ksfDfp.mover.done) {
-                    // timeout is really ugly but the react onload in componentdidmount is not reliable. This is even recommended by some. Without it long articles will fail. With it some short articles fail. 
-                    window.setTimeout(ksfDfp.bannerMover, 200);
-                }
                 // activate display for all slots
                 var n = ksfDfp.numberOfSlots - 1;
                 var slotId = [];
@@ -146,6 +63,8 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
 
         // this var is available in KSF sites
         ksfDfp.site = "app"; // there is only one site in the app
+        googletag.pubads().setTargeting('newspaper', ksfDfp.site);
+        googletag.pubads().setTargeting('consent', 1);
 
         ksfDfp.allPageSlots = [];
         // the order of sizes should be the same as in dfp:s ad unit definition
@@ -158,6 +77,14 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
                     [300, 300],
                     [300, 600]
                 ]],
+            ["MOBMITT", [
+
+                    [300, 100],
+                    [300, 250],
+                    [300, 300],
+                    [300, 600]
+                ]],
+
             ["MOBNER", [
                     [300, 100],
                     [300, 250],
@@ -202,9 +129,6 @@ ksfDfp.mover = {}; // holds vars and functions needed for the ad mover functions
                     ksfDfp.slotObjects[ksfDfp.slots[n][0]] = googletag.defineSlot(ksfDfp.account +
                         ksfDfp.slots[n][0], bannerSizeList, ksfDfp.slots[n][0]).addService(
                         googletag.pubads());
-                    // add a targeting value that differentiates the site. key=newpaper, value is site from the ksf wordpress code base. Such as vn, hbl etc.
-                    ksfDfp.slotObjects[ksfDfp.slots[n][0]].setTargeting("newspaper", [ksfDfp.site]);
-                    ksfDfp.slotObjects[ksfDfp.slots[n][0]].setTargeting("consent", 1); // this sets consent to not accept tracking ads, for use in campaigns trafficed by us. This is hardcoded for now due to policy. 20191029
                 } // slot size to screen comparison end of if
                 n -= 1;
             }

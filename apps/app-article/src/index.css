@@ -185,32 +185,13 @@ body {
 }
 
 /*Ads*/
-#MOBPARAD {
+#MOBPARAD, #MOBMITT, #MOBNER, #DIGIHELMOB {
     text-align: center;
     margin-bottom: 20px;
     overflow: hidden;
     max-width: 100%;
-}
-
-#MOBMITT {
-    text-align: center;
-    margin-bottom: 20px;
-    overflow: hidden;
-    max-width: 100%;
-}
-
-#MOBNER {
-    text-align: center;
-    margin-bottom: 20px;
-    overflow: hidden;
-    max-width: 100%;
-}
-
-#DIGIHELMOB {
-    text-align: center;
-    margin-bottom: 20px;
-    overflow: hidden;
-    max-width: 100%;
+    display: grid;
+    justify-content: center;
 }
 
 .ksfDFPadHeader {
@@ -659,6 +640,9 @@ body {
     .mobileListItems a {
         font-size: 16px;
     }
+    .relatedArticles .articleItem a.darkMode{
+        color:white;
+    }
 }
 
 /*Tablets*/
@@ -729,4 +713,52 @@ body {
 
 .article .vn a {
     color: #C90C0F;
+}
+
+.article.darkMode {
+    background-color: black;
+}
+
+.title.darkMode {
+    color:white;
+}
+
+.preamble.darkMode{
+    color:white;
+}
+
+.html.darkMode{
+    color:white;
+}
+
+.headline.darkMode{
+    color:white;
+}
+
+.genericBox.darkMode{
+    background-color:#2B2B2B;
+}
+
+.factboxList.darkMode{
+    color:white;
+}
+
+.faktBoxdarkMode{
+    color:white;
+}
+
+.latest.darkMode {
+    color:white;
+}
+
+.expand.darkMode {
+    background-color:#2B2B2B;
+}
+
+.expandOpacity.darkMode {
+    display: none;
+}
+
+.expandOpacity2.darkMode {
+    display: none;
 }

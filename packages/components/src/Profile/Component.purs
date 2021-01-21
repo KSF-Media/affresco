@@ -6,10 +6,12 @@ import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (any, catMaybes, filter, intercalate, mapMaybe, null, (:))
 import Data.Array as Array
-import Data.DateTime (DateTime)
+import Data.Date as Date
+import Data.DateTime (DateTime, modifyDate)
+import Data.Time.Duration (Days(..))
 import Data.Either (Either(..))
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime)
+import Data.JSDate (JSDate, toDateTime, fromDateTime)
 import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
@@ -17,6 +19,7 @@ import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Validation.Semigroup (isValid, unV)
+import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -27,17 +30,21 @@ import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
-import KSF.InputField.Component as InputField
+import KSF.Grid as Grid
+import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
-import React.Basic (make, JSX)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
+import React.Basic.Events (handler_)
 import React.Basic.Events as Events
+import KSF.Tracking as Tracking
 
 type Self = React.Self Props State
 
@@ -51,6 +58,7 @@ type State =
   { name :: Name
   , address :: Address
   , now :: Maybe DateTime
+  , changeDate :: Maybe DateTime
   , editFields :: Set EditField
   , editName :: AsyncWrapper.Progress JSX
   , editAddress :: AsyncWrapper.Progress JSX
@@ -104,6 +112,7 @@ profile = make component
       { name: { firstName: Nothing, lastName: Nothing }
       , address: { zipCode: Nothing, countryCode: Nothing, streetAddress: Nothing, city: Nothing }
       , now: Nothing
+      , changeDate: Nothing
       , editFields: Set.empty
       , editName: Ready
       , editAddress: Ready
@@ -145,7 +154,7 @@ render self@{ props: { profile: user } } =
         , editingView: \_ -> profileNameEditing
         , loadingView: profileNameLoading
         , successView: \_ -> profileNameReady
-        , errorView: \e -> DOM.text e
+        , errorView: editingError self EditName
         }
       where
         profileNameReady = DOM.div
@@ -187,7 +196,7 @@ render self@{ props: { profile: user } } =
         , editingView: \_ -> profileAddressEditing
         , loadingView: profileAddressLoading
         , successView: \_ -> profileAddressReady
-        , errorView: \e -> DOM.text e
+        , errorView: editingError self EditAddress
         }
       where
         profileAddressReady =
@@ -232,6 +241,22 @@ render self@{ props: { profile: user } } =
                 ]
             }
 
+editingError :: Self -> EditField -> String -> JSX
+editingError self fieldName errMessage =
+   DOM.div
+     { className: "profile--edit-error"
+     , children:
+         [ DOM.text $ errMessage <> " "
+         , DOM.span
+             { className: "profile--edit-try-again"
+             , children: [ DOM.text "Försök igen" ]
+             , onClick: handler_ $ case fieldName of
+               EditAddress -> self.setState _ { editAddress = AsyncWrapper.Ready }
+               EditName    -> self.setState _ { editName    = AsyncWrapper.Ready }
+             }
+         ]
+     }
+
 showPendingAddressChanges :: Self -> Array DescriptionList.Definition
 showPendingAddressChanges self =
   case toMaybe self.props.profile.pendingAddressChanges of
@@ -250,7 +275,28 @@ editAddress self =
   DOM.form
     { className: "profile--edit-address"
     , children:
-        [ InputField.inputField
+        [ Grid.row_
+            [ Grid.row_ [ DOM.label
+                            { className: "input-field--input-label"
+                            , children: [ DOM.text "Giltig från" ]
+                            }
+                        ]
+            , Grid.row_
+                [ DatePicker.datePicker
+                    { onChange: (_ >>= \newDate -> self.setState _ { changeDate = newDate })
+                    , className: "profile--edit-address--date-picker"
+                    , value: Nullable.toNullable $ fromDateTime <$> self.state.changeDate
+                    , format: "d.M.yyyy"
+                    , required: true
+                    , minDate: Nullable.toNullable
+                        $ (fromDateTime <<< modifyDate (\x -> fromMaybe x $ Date.adjust (Days 1.0) x)) <$> self.state.now
+                    , maxDate: Nullable.null
+                    , disabled: false
+                    , locale: "sv-FI"
+                    }
+                ]
+            ]
+        , InputField.inputField
             { type_: InputField.Text
             , name: "streetAddress"
             , placeholder: "Gatuadress"
@@ -280,7 +326,8 @@ editAddress self =
         , CountryDropDown.defaultCountryDropDown
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
             self.state.address.countryCode
-        , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditAddress ] }
+        , submitButton
+        , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditAddress ] }
         ]
     , onSubmit: Events.handler preventDefault $ \_ -> submitNewAddress $ validateAddressForm self.state.address
     }
@@ -311,15 +358,17 @@ editAddress self =
                   } = do
       self.setState _ { editAddress = Loading mempty }
       Aff.launchAff_ do
-        newUser <- User.updateUser self.props.profile.uuid $ User.UpdateAddress { streetAddress, zipCode, countryCode }
+        newUser <- User.updateUser self.props.profile.uuid $ User.UpdateAddress { streetAddress, zipCode, countryCode, startDate: self.state.changeDate }
         case newUser of
           Right u -> liftEffect do
             self.props.onUpdate u
             self.setState _ { editAddress = Success Nothing }
+            Tracking.changeAddress self.props.profile.cusno "success"
           Left err -> do
             liftEffect do
               self.props.logger.error $ Error.userError $ show err
-              self.setState _ { editName = AsyncWrapper.Error "Adressändringen misslyckades." }
+              self.setState _ { editAddress = AsyncWrapper.Error "Adressändringen misslyckades." }
+              Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating address"
     updateAddress _ = pure unit
 
 editName :: Self -> JSX
@@ -345,7 +394,8 @@ editName self =
             , label: Just "Efternamn"
             , validationError: inputFieldErrorMessage $ validateField LastName self.state.name.lastName []
             }
-        , DOM.div { className: "profile--submit-buttons", children: [ submitButton, iconClose self EditName ] }
+        , submitButton
+        , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditName ] }
         ]
     , onSubmit: Events.handler preventDefault $ \_ -> submitNewName $ validateNameForm self.state.name
     }
@@ -374,10 +424,12 @@ editName self =
             Right u -> liftEffect do
               self.props.onUpdate u
               self.setState _ { editName = Success Nothing }
+              Tracking.changeName self.props.profile.cusno "success"
             Left err -> do
               liftEffect do
                 self.props.logger.error $ Error.userError $ show err
                 self.setState _ { editName = AsyncWrapper.Error "Namnändringen misslyckades." }
+                Tracking.changeName self.props.profile.cusno "error: unexpected error when updating name"
               throwError $ error "Unexpected error when updating name."
       updateName _ = pure unit
 
@@ -461,6 +513,7 @@ resetFields self EditAddress =
         , zipCode: toMaybe <<< _.zipCode =<< toMaybe self.props.profile.address
         , city: toMaybe <<< _.city =<< toMaybe self.props.profile.address
         }
+    , changeDate = Nothing
     }
 resetFields self EditName =
   self.setState _ { name = { firstName: toMaybe self.props.profile.firstName

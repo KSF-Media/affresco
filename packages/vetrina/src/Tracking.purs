@@ -1,14 +1,20 @@
 module Tracking where
 
-import Data.Function.Uncurried (Fn3, runFn3)
+import Data.Foldable (fold)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Data.Function.Uncurried (Fn4, runFn4)
 import KSF.User (OrderNumber)
 import Prelude (Unit, pure, unit)
 
-foreign import data Tracker :: Type
-foreign import transaction_ :: Fn3 OrderNumber String String (Effect Unit)
+foreign import transaction_ :: Fn4 OrderNumber String String String (Effect Unit)
 
-transaction :: OrderNumber -> Maybe String -> Maybe String -> Effect Unit
-transaction orderNumber (Just productId) (Just productPrice)  = runFn3 transaction_ orderNumber productId productPrice
-transaction orderNumber _ _ = pure unit
+transaction
+  :: OrderNumber
+  -> Maybe String
+  -> Maybe String
+  -> Maybe String
+  -> Effect Unit
+transaction orderNumber (Just productId) (Just productPrice) maybeCampaignNo =
+  runFn4 transaction_ orderNumber productId productPrice (fold maybeCampaignNo)
+transaction orderNumber _ _ _ = pure unit

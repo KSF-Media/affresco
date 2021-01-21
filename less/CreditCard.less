@@ -1,0 +1,118 @@
+.credit-card-update--container {
+    h3 { margin-top: 0 };
+    justify-content: flex-end;
+}
+
+.credit-card-register--warning {
+    margin-bottom: 0.5em;
+    color: @alert-info;
+}
+
+.credit-card-register--wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.credit-card-register--terminal {
+    width: 99%;
+    height: 311px;
+}
+
+.credit-card-choice--form-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.credit-card-choice--form {
+    width: 100%;
+}
+
+.credit-card-choice--close-icon {
+    align-items: flex-end;
+    flex-direction: column;
+    height: 1.5em;
+    .close-icon {
+	cursor: pointer;
+    }
+}
+
+.credit-card-choice--description {
+    margin-bottom: 0.5em;
+}
+
+.credit-card-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-gap: 1em;
+}
+
+.credit-card-menu-item {
+    cursor: pointer;
+    background: @grey-light;
+    border-style: solid;
+    border-color: @grey-slightlylight;
+    border-width: 1px;
+    border-radius: 5px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: auto;
+    grid-template-rows: auto;
+    grid-auto-flow: column;
+    grid-gap: 0.3em;
+    justify-items: center;
+    align-items: center;
+    position: relative;
+    input[type="radio"] {
+        outline: 0;
+        display: none;
+    }
+}
+
+.credit-card-menu-item--radio-button {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    background-color: @grey-almostlight;
+    margin-left: .05em;
+}
+
+.credit-card-menu-item--radio-button_checked {
+    margin: 7px;
+    top: 17px;
+    left: 17px;
+    height: 15px;
+    width: 15px;
+    background-color: white;
+    border-radius: 50%;
+    display: none;
+    box-shadow: 2px 2px 2px 0px rgba(0, 0, 0, 0.18);
+}
+
+.credit-card-menu-item:hover input ~ .credit-card-menu-item--radio-button {
+    background-color: #c2c1c1;
+}
+
+.credit-card-menu-item input:checked ~ .credit-card-menu-item--radio-button {
+    background-color: @brand-neutral;
+}
+
+.credit-card-menu-item--radio-button:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.credit-card-menu-item input:checked ~ .credit-card-menu-item--radio-button > .credit-card-menu-item--radio-button_checked {
+    display: block;
+}
+
+.credit-card-menu-item--number {
+    margin-block-start: auto;
+    margin-block-end: 0.35em;
+}
+
+.credit-card-menu-item--expiry-date {
+    font-size: 14px;
+}

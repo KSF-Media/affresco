@@ -7,12 +7,12 @@
     "basscss": "^8.0.4",
     "create-react-class": "^15.6.3",
     "less": "^3.8.1",
-    "react": ">=15.5",
-    "react-date-picker": "^7.5.0",
-    "react-dom": ">=15.5"
+    "react": ">=16.12",
+    "react-date-picker": "^8.0.3",
+    "react-dom": ">=16.12"
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "spago build && parcel build index.html --no-cache && cp xd_receiver.html ./dist"
+    "build": "spago build && parcel build index.html --no-cache && cp xd_receiver.html _redirects ./dist"
   }
 }

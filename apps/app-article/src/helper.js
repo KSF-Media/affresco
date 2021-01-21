@@ -15,6 +15,22 @@ export const getBrandValueParam = () => {
     }
     return 'hbl'
 }
+export const getMode = () => {
+    let urlParams = getUrlParam();
+    if (urlParams.has('mode') && urlParams.get('mode') == 'dark') {
+        return 'dark'
+    }
+
+    return 'normal'
+}
+
+export const isDarkModeOn = () => {
+    let urlParams = getUrlParam();
+    if (urlParams.has('mode') && urlParams.get('mode') == 'dark') {
+        return true
+    }
+    return false
+}
 
 async function AndroidNativeShare(Title, URL, Description) {
     if (typeof navigator.share === 'undefined' || !navigator.share) {

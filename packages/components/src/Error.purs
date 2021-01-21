@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Except (runExcept)
 import Data.Either (hush)
-import Data.Maybe (Maybe, isNothing)
+import Data.Maybe (Maybe, isJust, isNothing)
 import Control.MonadPlus (guard)
 import Data.Traversable (traverse)
 import Effect.Exception (Error)
@@ -20,6 +20,11 @@ internalServerError err = do
   status <- err # errorField "status"
   guard $ status >= 500 && status <= 599
   pure { status }
+
+serviceUnavailableError :: Error -> Boolean
+serviceUnavailableError err = isJust $ do
+  status <- err # errorField "status"
+  guard $ status == 503
 
 -- | Matches network error produced by superagent.
 --   Checks that it has `method` and `url` fields, but no `status`.

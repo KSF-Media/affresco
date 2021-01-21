@@ -5,8 +5,8 @@ import Prelude
 import Data.Foldable (fold)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import React.Basic (JSX, StateUpdate(..), make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Prenumerera.Prenumerera (Package)
 

@@ -1,0 +1,42 @@
+.payment-accordion--header {
+    display: flex;
+    font-size: larger;
+    background: lightgray;
+    padding: 0.5ex;
+    border-radius: 5px;
+}
+
+.payment-accordion--header span {
+    flex: 1;
+}
+
+.payment-accordion--header div {
+    flex: 0 0 2em;
+}
+
+.payment-accordion--header.focus div::before {
+    content: "▼";
+    color: black;
+}
+
+.payment-accordion--header.nofocus div::before {
+    content: "▲";
+    color: black;
+}
+
+.payment-accordion--header.nofocus {
+    cursor: pointer;
+    background: darkgray;
+}
+
+.payment-accordion-subscription .euro {
+    text-align: right;
+}
+
+.payment-accordion--details {
+    width: 100%;
+}
+
+.payment-accordion--details-container {
+    overflow-x: auto;
+}

@@ -5,9 +5,9 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Foreign (Foreign, unsafeFromForeign)
-import KSF.Navbar.Component (Paper(..))
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import KSF.Paper (Paper(..))
+import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic.Classic as React
 import Effect (Effect)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
@@ -57,7 +57,6 @@ fromJsProps jsProps =
         "HBL"  -> HBL
         "ON"   -> ON
         "VN"   -> VN
-        "HTHL" -> HTHL
         _      -> KSF
     jsMatch match =
       Just
@@ -109,7 +108,6 @@ render self@{ props, state } =
             , paperLink HBL "Hufvudstadsbladet"
             , paperLink VN "Västra Nyland"
             , paperLink ON "Östnyland"
-            , paperLink HTHL "Hangötidningen - Hangonlehti"
             ]
         }
 
@@ -167,12 +165,11 @@ buyNowButton linkTo product =
   DOM.div
     { className: "flex justify-center"
     , children:
-        [ element
-            Router.link
-              { to: { pathname: linkTo, state: userState }
-              , children: [ button ]
-              , className: "prenumerera--button-link"
-              }
+        [ Router.link
+            { to: { pathname: linkTo, state: userState }
+            , children: [ button ]
+            , className: "prenumerera--button-link"
+            }
         ]
     }
   where
@@ -184,5 +181,4 @@ paperToString :: Paper -> String
 paperToString HBL  = "hbl"
 paperToString ON   = "on"
 paperToString VN   = "vn"
-paperToString HTHL = "hthl"
 paperToString KSF  = "ksf"

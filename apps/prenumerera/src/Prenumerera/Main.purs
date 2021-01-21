@@ -3,22 +3,21 @@ module Prenumerera.Main where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Data.Nullable (toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Footer.Component as Footer
 import KSF.User as KSF.User
-import KSF.Navbar.Component (Paper(..))
+import KSF.Paper (Paper(..))
 import KSF.Navbar.Component as Navbar
 import Persona as Persona
 import Prenumerera.Confirm as Confirm
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.ProductSelect as ProductSelect
 import Prenumerera.User as User
-import React.Basic (JSX, StateUpdate(..), element, make, runUpdate)
-import React.Basic as React
+import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router as Router
 
@@ -29,7 +28,7 @@ type Props = {}
 type State =
   { loading :: Maybe Loading
   , loggedInUser :: Maybe Persona.User
-  , paper :: Navbar.Paper
+  , paper :: Paper
   }
 
 data Action =
@@ -56,46 +55,41 @@ render self  =
     [ navbarView self
     , classy DOM.div "clearfix"
         [ classy DOM.div "prenumerera--main-container col-10 lg-col-7 mx-auto"
-            [ element Router.switch { children: [ confirmPurchase, selectPayment, productRoute, buyRoute, noMatchRoute ] } ]
+            [ Router.switch { children: [ confirmPurchase, selectPayment, productRoute, buyRoute, noMatchRoute ] } ]
         ]
     , footerView
     ]
   where
     confirmPurchase =
-      element
-        Router.route
-          { exact: true
-          , path: toNullable $ Just "/confirm"
-          , render: Confirm.confirm <<< Confirm.fromJSProps
-          }
+      Router.route
+        { exact: true
+        , path: Just "/confirm"
+        , render: Confirm.confirm <<< Confirm.fromJSProps
+        }
     selectPayment =
-      element
-        Router.route
-          { exact: true
-          , path: toNullable $ Just "/payment"
-          , render: PaymentSelect.paymentSelect <<< PaymentSelect.fromJsProps
-          }
+      Router.route
+        { exact: true
+        , path: Just "/payment"
+        , render: PaymentSelect.paymentSelect <<< PaymentSelect.fromJsProps
+        }
     buyRoute =
-      element
-        Router.route
-            { exact: true
-            , path: toNullable $ Just "/buy/:product"
-            , render: renderUser self
-            }
+      Router.route
+        { exact: true
+        , path: Just "/buy/:product"
+        , render: renderUser self
+        }
     productRoute =
-      element
-        Router.route
-            { exact: true
-            , path: toNullable $ Just "/"
-            , render: ProductSelect.productSelect <<< ProductSelect.fromJsProps
-            }
+      Router.route
+        { exact: true
+        , path: Just "/"
+        , render: ProductSelect.productSelect <<< ProductSelect.fromJsProps
+        }
     noMatchRoute =
-      element
-        Router.route
-          { exact: false
-          , path: toNullable Nothing
-          , render: ProductSelect.productSelect <<< ProductSelect.fromJsProps
-          }
+      Router.route
+        { exact: false
+        , path: Nothing
+        , render: ProductSelect.productSelect <<< ProductSelect.fromJsProps
+        }
 
 update :: Self -> Action -> StateUpdate Props State
 update self = case _ of
@@ -154,7 +148,9 @@ navbarView :: Self -> JSX
 navbarView self  =
   Navbar.navbar
     { paper: self.state.paper
-    , loggedInUser: self.state.loggedInUser
+    , activeUser: self.state.loggedInUser
+    , adminMode: false
+    , isPersonating: false
     , logout: do
         Aff.launchAff_ do
           KSF.User.logout (const $ pure unit)
