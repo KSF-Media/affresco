@@ -69,13 +69,13 @@ updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
   let body = case update of
         UpdateName names          -> unsafeToForeign names
-        UpdateAddress { countryCode, zipCode, streetAddress, date } ->
+        UpdateAddress { countryCode, zipCode, streetAddress, startDate } ->
           unsafeToForeign
             { address:
                 { countryCode
                 , zipCode
                 , streetAddress
-                , validFrom: toNullable $ formatDate <$> date
+                , validFrom: toNullable $ formatDate <$> startDate
                 }
             }
         UpdateFull userInfo ->
@@ -243,7 +243,7 @@ data UserUpdate
   | UpdateAddress { countryCode :: String
                   , zipCode :: String
                   , streetAddress :: String
-                  , date :: Maybe DateTime
+                  , startDate :: Maybe DateTime
                   }
   | UpdateFull { firstName :: String
                , lastName :: String
@@ -251,7 +251,7 @@ data UserUpdate
                , countryCode :: String
                , zipCode :: String
                , streetAddress :: String
-               , date :: Maybe DateTime
+               , startDate :: Maybe DateTime
                }
 
 type EmailAddressInUse = ServerError

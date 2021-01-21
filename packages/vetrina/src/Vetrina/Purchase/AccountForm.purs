@@ -185,7 +185,7 @@ render props self@{ state: { contactForm } } = fragment
               liftEffect $ props.setLoading (Just Spinner.Loading)
               Aff.finally
                 (liftEffect $ props.setLoading Nothing)
-                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull $ addr `merge` { date: Nothing }
+                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull $ addr `merge` { startDate: Nothing }
                    case eitherUser of
                      Right user -> liftEffect $ props.retryPurchase user
                      Left err -> liftEffect $ props.onError err
