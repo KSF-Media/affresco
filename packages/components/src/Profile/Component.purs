@@ -358,7 +358,7 @@ editAddress self =
                   } = do
       self.setState _ { editAddress = Loading mempty }
       Aff.launchAff_ do
-        newUser <- User.updateUser self.props.profile.uuid $ User.UpdateAddress { streetAddress, zipCode, countryCode, date: self.state.changeDate }
+        newUser <- User.updateUser self.props.profile.uuid $ User.UpdateAddress { streetAddress, zipCode, countryCode, startDate: self.state.changeDate }
         case newUser of
           Right u -> liftEffect do
             self.props.onUpdate u
