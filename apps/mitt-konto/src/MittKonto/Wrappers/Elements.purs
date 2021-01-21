@@ -12,6 +12,7 @@ import React.Basic.Events (handler_)
 
 data CloseType = Countdown | XButton | BackArrow
 data WrapperType = Basic | Async
+data AutoClose = On Number | Off
 
 successWrapper msg =
   DOM.div { className: "actions-wrapper--action-item"

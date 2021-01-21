@@ -17,7 +17,7 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class ViewWrapperContent, ViewWrapperStateAsync, SetViewWrapperState(..), instantiate)
+import MittKonto.Wrappers (class ViewWrapperContent, AutoClose(..), ViewWrapperStateAsync, SetViewWrapperState(..), instantiate)
 import React.Basic (JSX)
 import React.Basic.Classic (element, make)
 import React.Basic.Classic as React
@@ -70,7 +70,7 @@ instance viewWrapperContentCardUpdate :: ViewWrapperContent ViewWrapperContentIn
         { onCancel: setWrapperState _ { asyncWrapperState = AsyncWrapper.Ready }
         , onLoading: setWrapperState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
         , onSuccess: setWrapperState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades."
-                                       , closeAutomatically = true
+                                       , closeAutomatically = On 3000.0
                                        }
         , onError: setWrapperState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
         , setWrapperState: setWrapperState

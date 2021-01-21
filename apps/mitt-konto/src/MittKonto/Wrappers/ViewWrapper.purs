@@ -3,6 +3,7 @@ module MittKonto.Wrappers.ViewWrapper where
 import Prelude
 
 import Data.Foldable (foldMap)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Grid as Grid
@@ -16,13 +17,15 @@ import Record as Record
 
 type Props p =
   { content :: p
-  , wrapperType :: WrapperType
   , closeType :: CloseType
+  , route :: String
+  , routeFrom :: String
+  , wrapperType :: WrapperType
   }
 
 type BaseViewWrapperState =
   ( closeable :: Boolean
-  , closeAutomatically :: Boolean
+  , closeAutomatically :: AutoClose
   , titleText :: String
   , renderedContent :: JSX
   , onCancel :: Effect Unit
@@ -61,7 +64,7 @@ viewWrapper props@{ wrapperType } = case wrapperType of
 
     initialStateBasic =
       { closeable: true
-      , closeAutomatically: false
+      , closeAutomatically: Off
       , titleText: mempty
       , renderedContent: mempty
       , onCancel: pure unit
@@ -87,14 +90,14 @@ viewWrapper props@{ wrapperType } = case wrapperType of
     didMountAsync self@{ props: { content }, setState } = do
       instantiate content $ SetViewWrapperStateAsync setState
 
-
 renderBasic :: forall p. (ViewWrapperContent p) => React.Self (Props p) ViewWrapperStateBasic -> JSX
-renderBasic self@{ state: { closeable, titleText, onCancel, renderedContent }, setState } =
-  render self.state renderedContent
+renderBasic self@{ props, state: { closeable, titleText, onCancel, renderedContent }, setState } =
+  render props self.state renderedContent
 
 renderAsync :: forall p. (ViewWrapperContent p) => React.Self (Props p) ViewWrapperStateAsync -> JSX
 renderAsync self@{ props: { content, closeType, wrapperType }, state: { closeable, closeAutomatically, titleText, onCancel, onTryAgain, renderedContent }, setState } =
   render
+    self.props
     { closeable
     , closeAutomatically
     , titleText
@@ -113,16 +116,18 @@ renderAsync self@{ props: { content, closeType, wrapperType }, state: { closeabl
       , loadingView: identity
       }
 
-
-render :: ViewWrapperStateBasic -> JSX -> JSX
-render state@{ closeable, closeAutomatically, titleText, onCancel, renderedContent } content =
-  DOM.div_
-  [ header
-  , content ]
-  <> if closeAutomatically then
-       autoClose
-     else
-       mempty
+render :: forall p. (ViewWrapperContent p) => Props p -> ViewWrapperStateBasic -> JSX -> JSX
+render props@{ route, routeFrom } state@{ closeable, closeAutomatically, titleText, onCancel, renderedContent } content =
+  Router.route
+    { exact: true
+    , path: Just route
+    , render: \_ -> DOM.div_
+        [ header
+        , content
+        ] <> case closeAutomatically of
+               On delay -> autoClose props delay
+               Off      -> mempty
+    }
   where
     header :: JSX
     header = Grid.row_
@@ -134,7 +139,7 @@ render state@{ closeable, closeAutomatically, titleText, onCancel, renderedConte
           DOM.div
             { className: "col-1 flex credit-card-choice--close-icon"
             , children: [ Router.link
-                            { to: { pathname: "/", state: {} }
+                            { to: { pathname: routeFrom, state: {} }
                             , children: [ ]
                             , className: "close-icon"
                             }
@@ -148,12 +153,12 @@ render state@{ closeable, closeAutomatically, titleText, onCancel, renderedConte
     title :: JSX
     title = DOM.h3_ [ DOM.text titleText ]
 
-autoClose :: JSX
-autoClose = Router.delayedRedirect
-  { to: { pathname: "/"
+autoClose :: forall p. (ViewWrapperContent p) => Props p -> Number -> JSX
+autoClose props@{ route, routeFrom } delay = Router.delayedRedirect
+  { to: { pathname: routeFrom
         , state: {}
         }
-  , from: "/kortt/uppdatera"
+  , from: route
   , push: true
-  , delay: 2000.0
+  , delay
   }

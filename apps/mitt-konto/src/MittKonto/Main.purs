@@ -111,14 +111,12 @@ render self@{ state, setState } logger searchView isPersonating =
                ]
        }
    updateCreditCard =
-      Router.route
-        { exact: true
-        , path: Just "/kortt/uppdatera"
-        , render: \_ -> Wrappers.viewWrapper
-            { content: creditCardUpdateInputs
-            , closeType: Wrappers.XButton
-            , wrapperType: Wrappers.Async
-            }
+      Wrappers.viewWrapper
+        { content: creditCardUpdateInputs
+        , closeType: Wrappers.XButton
+        , route: "/kortt/uppdatera"
+        , routeFrom: "/"
+        , wrapperType: Wrappers.Async
         }
       where
         creditCardUpdateInputs = CreditCardUpdateView.ViewWrapperContentInputs
