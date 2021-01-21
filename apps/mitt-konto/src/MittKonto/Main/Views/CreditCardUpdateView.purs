@@ -39,7 +39,6 @@ type Props =
   , onLoading       :: Effect Unit
   , onSuccess       :: Effect Unit
   , onError         :: Effect Unit
-  , onTryAgain      :: Effect Unit
   , setWrapperState :: (ViewWrapperStateAsync -> ViewWrapperStateAsync) -> Effect Unit
   | BaseProps
   }
@@ -63,14 +62,17 @@ creditCardUpdateView = make component { initialState, render, didMount }
 
 instance viewWrapperContentCardUpdate :: ViewWrapperContent ViewWrapperContentInputs where
   instantiate (ViewWrapperContentInputs inputs) (SetViewWrapperStateAsync setWrapperState) = do
-    pure $ creditCardUpdateView (Record.merge inputs hooks)
+    setWrapperState \s -> s { onTryAgain = setWrapperState \s -> s { asyncWrapperState = AsyncWrapper.Ready } }
+    renderedContent <- pure $ creditCardUpdateView (Record.merge inputs hooks)
+    setWrapperState \s -> s { renderedContent = renderedContent }
     where
       hooks =
         { onCancel: setWrapperState _ { asyncWrapperState = AsyncWrapper.Ready }
         , onLoading: setWrapperState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
-        , onSuccess: setWrapperState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
+        , onSuccess: setWrapperState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades."
+                                       , closeAutomatically = true
+                                       }
         , onError: setWrapperState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
-        , onTryAgain: setWrapperState _ { asyncWrapperState = AsyncWrapper.Ready }
         , setWrapperState: setWrapperState
         }
 

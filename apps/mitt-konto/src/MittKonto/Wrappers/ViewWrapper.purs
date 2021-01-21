@@ -42,7 +42,7 @@ type SetStateAsync = (ViewWrapperStateAsync -> ViewWrapperStateAsync) -> Effect 
 data SetViewWrapperState = SetViewWrapperStateBasic SetStateBasic | SetViewWrapperStateAsync SetStateAsync
 
 class ViewWrapperContent p where
-  instantiate :: p -> SetViewWrapperState -> Effect JSX
+  instantiate :: p -> SetViewWrapperState -> Effect Unit
 
 component :: forall p. React.Component (Props p)
 component = React.createComponent "ViewWrapper"
@@ -69,8 +69,7 @@ viewWrapper props@{ wrapperType } = case wrapperType of
 
     didMountBasic :: React.Self (Props p) ViewWrapperStateBasic -> Effect Unit
     didMountBasic self@{ props: { content }, setState } = do
-      renderedContent <- instantiate content $ SetViewWrapperStateBasic setState
-      setState \s -> s { renderedContent = renderedContent }
+      instantiate content $ SetViewWrapperStateBasic setState
 
     viewWrapperAsync :: (Props p) -> JSX
     viewWrapperAsync = make component
@@ -86,8 +85,7 @@ viewWrapper props@{ wrapperType } = case wrapperType of
 
     didMountAsync :: React.Self (Props p) ViewWrapperStateAsync -> Effect Unit
     didMountAsync self@{ props: { content }, setState } = do
-      renderedContent <- instantiate content $ SetViewWrapperStateAsync setState
-      setState \s -> s { renderedContent = renderedContent }
+      instantiate content $ SetViewWrapperStateAsync setState
 
 
 renderBasic :: forall p. (ViewWrapperContent p) => React.Self (Props p) ViewWrapperStateBasic -> JSX
@@ -114,6 +112,7 @@ renderAsync self@{ props: { content, closeType, wrapperType }, state: { closeabl
       , errorView: \err -> errorWrapper onTryAgain err
       , loadingView: identity
       }
+
 
 render :: ViewWrapperStateBasic -> JSX -> JSX
 render state@{ closeable, closeAutomatically, titleText, onCancel, renderedContent } content =
