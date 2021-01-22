@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
-import Data.Array (any, catMaybes, filter, intercalate, mapMaybe, null, (:))
+import Data.Array (any, catMaybes, filter, intercalate, length, mapMaybe, null, (:))
 import Data.Array as Array
 import Data.Date as Date
 import Data.DateTime (DateTime, modifyDate)
@@ -140,13 +140,14 @@ render self@{ props: { profile: user } } =
     , profileAddress
     , DescriptionList.descriptionList
         { definitions:
-          showPendingAddressChanges self <>
+          visiblePendingAddressChanges <>
             [ { term: "E-postadress:", description: [ DOM.text user.email ] }
             , { term: "Kundnummer:", description: [ DOM.text user.cusno ] }
             ]
         }
     ]
   where
+    visiblePendingAddressChanges = showPendingAddressChanges self
     profileName =
       AsyncWrapper.asyncWrapper
         { wrapperState: self.state.editName
@@ -209,7 +210,7 @@ render self@{ props: { profile: user } } =
                     false
                       | isNothing $ toMaybe user.address -> addAddressButton self
                       | otherwise -> changeAddressButton self
-                    true -> mempty
+                    true -> deletePendingAddressChanges self $ length visiblePendingAddressChanges /= 1
                 ]
             }
           where
@@ -463,6 +464,36 @@ addAddressButton self = editButton "Lägg till adress" self EditAddress
 
 changeAddressButton :: Self -> JSX
 changeAddressButton self = changeAttributeButton self EditAddress
+
+deletePendingAddressChanges :: Self -> Boolean -> JSX
+deletePendingAddressChanges self multiple =
+  DOM.div
+    { className: "profile--edit-attribute-button"
+    , children:
+        [ DOM.div
+            { className: "profile--delete-pending-address-change-icon circle" }
+        , DOM.span
+            { className: "profile--edit-text"
+            , children:
+                [ DOM.u_ [ DOM.text $ if multiple then "Avbryt adressändringar" else "Avbryt adressändringen" ] ]
+            }
+        ]
+    , onClick: handler_ do
+       self.setState _ { editAddress = Loading mempty }
+       Aff.launchAff_ do
+         deleted <- User.updateUser self.props.profile.uuid $ User.DeletePendingAddressChanges
+         case deleted of
+           Right _ -> liftEffect do
+             self.setState _
+               { editAddress = Success Nothing }
+             self.props.onUpdate $ self.props.profile { pendingAddressChanges = Nullable.null }
+             Tracking.deletePendingAddressChanges self.props.profile.cusno "success"
+           Left err -> liftEffect do
+             self.props.logger.error $ Error.userError $ show err
+             self.setState _
+               { editAddress = AsyncWrapper.Error "Begäran misslyckades." }
+             Tracking.deletePendingAddressChanges self.props.profile.cusno "error: unexpected error when updating address"
+    }
 
 changeNameButton :: Self -> JSX
 changeNameButton self = changeAttributeButton self EditName

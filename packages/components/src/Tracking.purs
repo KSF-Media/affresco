@@ -16,6 +16,7 @@ foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
 foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import changeName_ :: EffectFn2 Cusno Result Unit
 foreign import changeAddress_ :: EffectFn2 Cusno Result Unit
+foreign import deletePendingAddressChanges_ :: EffectFn2 Cusno Result Unit
 
 type Cusno = String
 type Subsno = String
@@ -53,6 +54,9 @@ changeName = runEffectFn2 changeName_
 
 changeAddress :: Cusno -> Result -> Effect Unit
 changeAddress = runEffectFn2 changeAddress_
+
+deletePendingAddressChanges :: Cusno -> Result -> Effect Unit
+deletePendingAddressChanges = runEffectFn2 deletePendingAddressChanges_
 
 login :: Maybe Cusno -> LoginMethod -> Result -> Effect Unit
 login (Just cusno) method result = runEffectFn3 login_ cusno method result
