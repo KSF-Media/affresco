@@ -80,7 +80,7 @@ render self@{ state, setState } logger searchView isPersonating =
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ Router.switch { children: [ paymentListRoute, search, mittKontoRoute, updateCreditCard, noMatchRoute ] } ]
+            [ Router.switch { children: [ paymentListRoute, search, mittKontoRoute, updateCreditCardRoute, noMatchRoute ] } ]
         ]
     , Views.footerView
     ]
@@ -110,7 +110,7 @@ render self@{ state, setState } logger searchView isPersonating =
                    Nothing   -> Views.loginView self logger
                ]
        }
-   updateCreditCard =
+   updateCreditCardRoute =
       Wrappers.routeWrapper
         { content: creditCardUpdateInputs
         , closeType: Wrappers.XButton
