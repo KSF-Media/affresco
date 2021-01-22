@@ -67,9 +67,7 @@ viewWrapper = make component
         , render: \_ -> DOM.div_
             [ header
             , renderedContent
-            ] <> case closeAutomatically of
-                  On delay -> autoClose self.props delay
-                  Off      -> mempty
+            ] <> autoClose self.props closeAutomatically
         }
       where
         header :: JSX
@@ -110,8 +108,15 @@ viewWrapper = make component
         title :: JSX
         title = DOM.h3_ [ DOM.text titleText ]
 
-autoClose :: forall p. (ViewWrapperContent p) => Props p -> Number -> JSX
-autoClose props@{ route, routeFrom } delay = Router.delayedRedirect
+autoClose :: forall p. (ViewWrapperContent p) => Props p -> AutoClose -> JSX
+autoClose props@{ route, routeFrom } Immediate = Router.redirect
+  { to: { pathname: routeFrom
+        , state: {}
+        }
+  , from: route
+  , push: true
+  }
+autoClose props@{ route, routeFrom } (Delayed delay) = Router.delayedRedirect
   { to: { pathname: routeFrom
         , state: {}
         }
@@ -119,3 +124,4 @@ autoClose props@{ route, routeFrom } delay = Router.delayedRedirect
   , push: true
   , delay
   }
+autoClose _ Off = mempty

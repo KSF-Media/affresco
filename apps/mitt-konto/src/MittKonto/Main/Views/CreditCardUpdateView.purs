@@ -53,7 +53,6 @@ type SetState = (State -> State) -> Effect Unit
 data UpdateState
   = ChooseCreditCard
   | RegisterCreditCard PaymentTerminalUrl
-  | Cancel
 
 creditCardUpdateView :: Props -> JSX
 creditCardUpdateView = make component { initialState, render, didMount }
@@ -99,14 +98,6 @@ render self@{ setState, state: { asyncWrapperState, updateState }, props: { cred
 
             RegisterCreditCard url -> Register.register
                                         { terminalUrl: url
-                                        }
-
-            Cancel                 -> Router.redirect
-                                        { to: { pathname: "/"
-                                              , state: {}
-                                              }
-                                        , from: "/kreditkortt/uppdatera"
-                                        , push: true
                                         }
         ]
     }
@@ -172,7 +163,6 @@ pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right re
     CreditCardRegisterFailed _ -> liftEffect $ onError self
     CreditCardRegisterCanceled -> liftEffect $ do
       onCancel self
-      setState \_ -> self.state { updateState = Cancel }
     CreditCardRegisterCreated -> delayedPollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
@@ -187,7 +177,7 @@ pollRegister self@{ props: { logger } } _ (Left err) = liftEffect $ do
   onError self
 
 onCancel :: Self -> Effect Unit
-onCancel self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Ready }
+onCancel self@{ props: { setWrapperState } } = setWrapperState _ { closeAutomatically = Immediate }
 
 onLoading :: Self -> Effect Unit
 onLoading self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
@@ -195,7 +185,7 @@ onLoading self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Load
 onSuccess :: Self -> Effect Unit
 onSuccess self@{ setState, props: { setWrapperState } } = do
   setState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
-  setWrapperState _ { closeAutomatically = On 5000.0 }
+  setWrapperState _ { closeAutomatically = Delayed 5000.0 }
 
 onError :: Self -> Effect Unit
 onError self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }

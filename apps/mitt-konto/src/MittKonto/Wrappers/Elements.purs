@@ -12,7 +12,7 @@ import React.Basic.Events (handler_)
 
 data CloseType = XButton | Back
 data WrapperType = Basic | Async
-data AutoClose = On Number | Off
+data AutoClose = Immediate | Delayed Number | Off
 
 successWrapper msg =
   DOM.div { className: "actions-wrapper--action-item"
