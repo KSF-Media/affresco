@@ -60,7 +60,7 @@ viewWrapper = make component
       instantiate content setState
 
     render :: React.Self (Props p) ViewWrapperState -> JSX
-    render self@{ props: { route, routeFrom }, state: { closeable, closeAutomatically, titleText, onCancel, renderedContent } } =
+    render self@{ props: { closeType, route, routeFrom }, state: { closeable, closeAutomatically, titleText, onCancel, renderedContent } } =
       Router.route
         { exact: true
         , path: Just route
@@ -74,21 +74,35 @@ viewWrapper = make component
       where
         header :: JSX
         header = Grid.row_
-          [ DOM.div
+          [ if closeable then
+              case closeType of
+                Back ->
+                  Router.link
+                    { to: { pathname: routeFrom, state: {} }
+                    , children: [ ]
+                    , className: "mitt-konto--backwards"
+                    }
+                _ -> mempty
+            else
+              mempty
+          , DOM.div
               { className: "col col-11"
               , children: [ title ]
               }
           , if closeable then
-              DOM.div
-                { className: "col-1 flex credit-card-choice--close-icon"
-                , children: [ Router.link
-                                { to: { pathname: routeFrom, state: {} }
-                                , children: [ ]
-                                , className: "close-icon"
-                                }
-                            ]
-                , onClick: handler_ onCancel
-                }
+              case closeType of
+                XButton ->
+                  DOM.div
+                    { className: "col-1 flex credit-card-choice--close-icon"
+                    , children: [ Router.link
+                                    { to: { pathname: routeFrom, state: {} }
+                                    , children: [ ]
+                                    , className: "close-icon"
+                                    }
+                                ]
+                    , onClick: handler_ onCancel
+                    }
+                _ -> mempty
             else
               mempty
           ]

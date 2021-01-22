@@ -10,7 +10,7 @@ import React.Basic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 
-data CloseType = Countdown | XButton | BackArrow
+data CloseType = XButton | Back
 data WrapperType = Basic | Async
 data AutoClose = On Number | Off
 
