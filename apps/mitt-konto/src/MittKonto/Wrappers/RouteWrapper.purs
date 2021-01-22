@@ -23,7 +23,7 @@ type Props p =
   , wrapperType :: WrapperType
   }
 
-type RouteWrapperState =
+type State =
   { closeable :: Boolean
   , closeAutomatically :: AutoClose
   , titleText :: String
@@ -31,7 +31,7 @@ type RouteWrapperState =
   , onClose :: Effect Unit
   }
 
-type SetRouteWrapperState = (RouteWrapperState -> RouteWrapperState) -> Effect Unit
+type SetRouteWrapperState = (State -> State) -> Effect Unit
 
 class RouteWrapperContent p where
   instantiate :: p -> SetRouteWrapperState -> Effect Unit
@@ -46,7 +46,7 @@ routeWrapper = make component
   , render
   }
   where
-    initialState :: RouteWrapperState
+    initialState :: State
     initialState =
       { closeable: true
       , closeAutomatically: Off
@@ -55,11 +55,11 @@ routeWrapper = make component
       , onClose: pure unit
       }
 
-    didMount :: React.Self (Props p) RouteWrapperState -> Effect Unit
+    didMount :: React.Self (Props p) State -> Effect Unit
     didMount self@{ props: { content }, setState } = do
       instantiate content setState
 
-    render :: React.Self (Props p) RouteWrapperState -> JSX
+    render :: React.Self (Props p) State -> JSX
     render self@{ props: { closeType, route, routeFrom }, state: { closeable, closeAutomatically, titleText, onClose, renderedContent } } =
       Router.route
         { exact: true

@@ -17,7 +17,7 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class RouteWrapperContent, AutoClose(..), RouteWrapperState, SetRouteWrapperState, instantiate)
+import MittKonto.Wrappers (class RouteWrapperContent, AutoClose(..), SetRouteWrapperState, instantiate)
 import MittKonto.Wrappers.Elements as WrapperElements
 import React.Basic (JSX)
 import React.Basic.Classic (element, make)
