@@ -86,7 +86,7 @@ didMount self@{ state, setState, props: { creditCards, logger, setWrapperState }
       _        -> pure unit
 
 render :: Self -> JSX
-render self@{ setState, state: { updateState }, props: { creditCards } } =
+render self@{ setState, state: { asyncWrapperState, updateState }, props: { creditCards } } =
   asyncWrapper $ DOM.div
     { className: "clearfix credit-card-update--container"
     , children:
@@ -114,7 +114,7 @@ render self@{ setState, state: { updateState }, props: { creditCards } } =
     asyncWrapper :: JSX -> JSX
     asyncWrapper content =
       AsyncWrapper.asyncWrapper
-        { wrapperState: AsyncWrapper.Ready
+        { wrapperState: asyncWrapperState
         , readyView: content
         , editingView: identity
         , successView: \msg -> WrapperElements.successWrapper msg
@@ -156,10 +156,9 @@ startRegisterPoller self@{ setState, state } oldCreditCard creditCardRegister = 
 
 pollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
 pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right register) = do
-  Aff.delay $ Aff.Milliseconds 1000.0
   case register.status.state of
     CreditCardRegisterStarted ->
-      pollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+      delayedPollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterCompleted -> do
       result <- User.updateCreditCardSubscriptions oldCreditCard.id register.creditCardId
       liftEffect $ case result of
@@ -174,10 +173,15 @@ pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right re
     CreditCardRegisterCanceled -> liftEffect $ do
       onCancel self
       setState \_ -> self.state { updateState = Cancel }
-    CreditCardRegisterCreated -> pollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+    CreditCardRegisterCreated -> delayedPollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
       onError self
+  where
+    delayedPollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
+    delayedPollRegister self creditCard eitherRegister = do
+      Aff.delay $ Aff.Milliseconds 1000.0
+      pollRegister self creditCard eitherRegister
 pollRegister self@{ props: { logger } } _ (Left err) = liftEffect $ do
   logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
   onError self
@@ -191,7 +195,7 @@ onLoading self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Load
 onSuccess :: Self -> Effect Unit
 onSuccess self@{ setState, props: { setWrapperState } } = do
   setState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
-  setWrapperState _ { closeAutomatically = On 3000.0 }
+  setWrapperState _ { closeAutomatically = On 5000.0 }
 
 onError :: Self -> Effect Unit
 onError self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
