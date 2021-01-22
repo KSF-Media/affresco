@@ -64,10 +64,13 @@ routeWrapper = make component
       Router.route
         { exact: true
         , path: Just route
-        , render: \_ -> DOM.div_
-            [ header
-            , renderedContent
-            ] <> autoClose self.props closeAutomatically
+        , render: \_ -> DOM.div
+            { className: "route-wrapper"
+            , children:
+                [ header
+                , renderedContent
+                ] <> [ autoClose self.props closeAutomatically ]
+            }
         }
       where
         header :: JSX
@@ -91,7 +94,7 @@ routeWrapper = make component
               case closeType of
                 XButton ->
                   DOM.div
-                    { className: "col-1 flex credit-card-choice--close-icon"
+                    { className: "col-1 flex close-button"
                     , children: [ Router.link
                                     { to: { pathname: routeFrom, state: {} }
                                     , children: [ ]
