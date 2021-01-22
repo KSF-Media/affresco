@@ -1,4 +1,4 @@
-module MittKonto.Wrappers.ViewWrapper where
+module MittKonto.Wrappers.RouteWrapper where
 
 import Prelude
 
@@ -23,44 +23,44 @@ type Props p =
   , wrapperType :: WrapperType
   }
 
-type ViewWrapperState =
+type RouteWrapperState =
   { closeable :: Boolean
   , closeAutomatically :: AutoClose
   , titleText :: String
   , renderedContent :: JSX
-  , onCancel :: Effect Unit
+  , onClose :: Effect Unit
   }
 
-type SetViewWrapperState = (ViewWrapperState -> ViewWrapperState) -> Effect Unit
+type SetRouteWrapperState = (RouteWrapperState -> RouteWrapperState) -> Effect Unit
 
-class ViewWrapperContent p where
-  instantiate :: p -> SetViewWrapperState -> Effect Unit
+class RouteWrapperContent p where
+  instantiate :: p -> SetRouteWrapperState -> Effect Unit
 
 component :: forall p. React.Component (Props p)
-component = React.createComponent "ViewWrapper"
+component = React.createComponent "RouteWrapper"
 
-viewWrapper :: forall p. (ViewWrapperContent p) => (Props p) -> JSX
+viewWrapper :: forall p. (RouteWrapperContent p) => (Props p) -> JSX
 viewWrapper = make component
   { initialState
   , didMount
   , render
   }
   where
-    initialState :: ViewWrapperState
+    initialState :: RouteWrapperState
     initialState =
       { closeable: true
       , closeAutomatically: Off
       , titleText: mempty
       , renderedContent: mempty
-      , onCancel: pure unit
+      , onClose: pure unit
       }
 
-    didMount :: React.Self (Props p) ViewWrapperState -> Effect Unit
+    didMount :: React.Self (Props p) RouteWrapperState -> Effect Unit
     didMount self@{ props: { content }, setState } = do
       instantiate content setState
 
-    render :: React.Self (Props p) ViewWrapperState -> JSX
-    render self@{ props: { closeType, route, routeFrom }, state: { closeable, closeAutomatically, titleText, onCancel, renderedContent } } =
+    render :: React.Self (Props p) RouteWrapperState -> JSX
+    render self@{ props: { closeType, route, routeFrom }, state: { closeable, closeAutomatically, titleText, onClose, renderedContent } } =
       Router.route
         { exact: true
         , path: Just route
@@ -98,7 +98,7 @@ viewWrapper = make component
                                     , className: "close-icon"
                                     }
                                 ]
-                    , onClick: handler_ onCancel
+                    , onClick: handler_ onClose
                     }
                 _ -> mempty
             else
@@ -108,7 +108,7 @@ viewWrapper = make component
         title :: JSX
         title = DOM.h3_ [ DOM.text titleText ]
 
-autoClose :: forall p. (ViewWrapperContent p) => Props p -> AutoClose -> JSX
+autoClose :: forall p. (RouteWrapperContent p) => Props p -> AutoClose -> JSX
 autoClose props@{ route, routeFrom } Immediate = Router.redirect
   { to: { pathname: routeFrom
         , state: {}

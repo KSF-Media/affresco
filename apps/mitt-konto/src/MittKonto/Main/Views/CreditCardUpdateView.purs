@@ -17,7 +17,7 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class ViewWrapperContent, AutoClose(..), ViewWrapperState, SetViewWrapperState, instantiate)
+import MittKonto.Wrappers (class RouteWrapperContent, AutoClose(..), RouteWrapperState, SetRouteWrapperState, instantiate)
 import MittKonto.Wrappers.Elements as WrapperElements
 import React.Basic (JSX)
 import React.Basic.Classic (element, make)
@@ -33,10 +33,10 @@ type BaseProps =
 
 type Inputs = Record BaseProps
 
-newtype ViewWrapperContentInputs = ViewWrapperContentInputs Inputs
+newtype RouteWrapperContentInputs = RouteWrapperContentInputs Inputs
 
 type Props =
-  { setWrapperState :: SetViewWrapperState
+  { setWrapperState :: SetRouteWrapperState
   | BaseProps
   }
 
@@ -57,10 +57,12 @@ data UpdateState
 creditCardUpdateView :: Props -> JSX
 creditCardUpdateView = make component { initialState, render, didMount }
 
-instance viewWrapperContentCardUpdate :: ViewWrapperContent ViewWrapperContentInputs where
-  instantiate (ViewWrapperContentInputs inputs) setWrapperState = do
+instance viewWrapperContentCardUpdate :: RouteWrapperContent RouteWrapperContentInputs where
+  instantiate (RouteWrapperContentInputs inputs) setWrapperState = do
     renderedContent <- pure $ creditCardUpdateView $ Record.merge inputs { setWrapperState }
-    setWrapperState \s -> s { renderedContent = renderedContent }
+    setWrapperState \s -> s { titleText = "Uppdatera ditt kredit- eller bankkort"
+                            , renderedContent = renderedContent
+                            }
 
 initialState :: State
 initialState =
@@ -74,7 +76,6 @@ component = React.createComponent "CreditCardUpdateView"
 
 didMount :: Self -> Effect Unit
 didMount self@{ state, setState, props: { creditCards, logger, setWrapperState } } = do
-  setWrapperState _ { titleText = "Uppdatera ditt kredit- eller bankkort", onCancel = onCancel self }
   Aff.launchAff_ do
     case creditCards of
       []       -> liftEffect $ do

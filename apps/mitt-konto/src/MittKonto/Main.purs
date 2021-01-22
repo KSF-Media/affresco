@@ -15,7 +15,7 @@ import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.Views (alertView, creditCardUpdateView, footerView, loginView, navbarView, paymentView, userView) as Views
-import MittKonto.Main.CreditCardUpdateView (ViewWrapperContentInputs (..)) as CreditCardUpdateView
+import MittKonto.Main.CreditCardUpdateView (RouteWrapperContentInputs (..)) as CreditCardUpdateView
 import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
 import KSF.Paper (Paper(..))
@@ -119,7 +119,7 @@ render self@{ state, setState } logger searchView isPersonating =
         , wrapperType: Wrappers.Async
         }
       where
-        creditCardUpdateInputs = CreditCardUpdateView.ViewWrapperContentInputs
+        creditCardUpdateInputs = CreditCardUpdateView.RouteWrapperContentInputs
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
           , logger: logger
           }

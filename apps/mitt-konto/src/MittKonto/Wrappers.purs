@@ -5,4 +5,4 @@ module MittKonto.Wrappers
 
 import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..), WrapperType(..)) as Wrappers
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as Wrappers
-import MittKonto.Wrappers.ViewWrapper (class ViewWrapperContent, ViewWrapperState, SetViewWrapperState, instantiate, viewWrapper) as Wrappers
+import MittKonto.Wrappers.RouteWrapper (class RouteWrapperContent, RouteWrapperState, SetRouteWrapperState, instantiate, viewWrapper) as Wrappers
