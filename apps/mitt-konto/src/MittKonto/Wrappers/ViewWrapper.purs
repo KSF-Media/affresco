@@ -39,8 +39,8 @@ class RouteWrapperContent p where
 component :: forall p. React.Component (Props p)
 component = React.createComponent "RouteWrapper"
 
-viewWrapper :: forall p. (RouteWrapperContent p) => (Props p) -> JSX
-viewWrapper = make component
+routeWrapper :: forall p. (RouteWrapperContent p) => (Props p) -> JSX
+routeWrapper = make component
   { initialState
   , didMount
   , render

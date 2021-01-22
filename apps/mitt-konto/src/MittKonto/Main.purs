@@ -111,7 +111,7 @@ render self@{ state, setState } logger searchView isPersonating =
                ]
        }
    updateCreditCard =
-      Wrappers.viewWrapper
+      Wrappers.routeWrapper
         { content: creditCardUpdateInputs
         , closeType: Wrappers.XButton
         , route: "/kortt/uppdatera"
