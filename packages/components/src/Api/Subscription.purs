@@ -39,6 +39,7 @@ type Subscription =
   , campaign              :: Campaign
   , paused                :: Nullable (Array PausedSubscription)
   , deliveryAddress       :: Nullable DeliveryAddress
+  , receiver              :: Nullable String
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
   , paymentMethod         :: SubscriptionPaymentMethod
   }
