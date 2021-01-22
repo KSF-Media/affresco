@@ -17,7 +17,8 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class ViewWrapperContent, AutoClose(..), ViewWrapperStateAsync, SetViewWrapperState(..), instantiate)
+import MittKonto.Wrappers (class ViewWrapperContent, AutoClose(..), ViewWrapperState, SetViewWrapperState, instantiate)
+import MittKonto.Wrappers.Elements as WrapperElements
 import React.Basic (JSX)
 import React.Basic.Classic (element, make)
 import React.Basic.Classic as React
@@ -35,19 +36,16 @@ type Inputs = Record BaseProps
 newtype ViewWrapperContentInputs = ViewWrapperContentInputs Inputs
 
 type Props =
-  { onCancel        :: Effect Unit
-  , onLoading       :: Effect Unit
-  , onSuccess       :: Effect Unit
-  , onError         :: Effect Unit
-  , setWrapperState :: (ViewWrapperStateAsync -> ViewWrapperStateAsync) -> Effect Unit
+  { setWrapperState :: SetViewWrapperState
   | BaseProps
   }
 
 type Self = React.Self Props State
 
 type State =
-  { updateState      :: UpdateState
-  , poller           :: Aff.Fiber Unit
+  { asyncWrapperState :: AsyncWrapper.Progress JSX
+  , updateState       :: UpdateState
+  , poller            :: Aff.Fiber Unit
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -61,54 +59,42 @@ creditCardUpdateView :: Props -> JSX
 creditCardUpdateView = make component { initialState, render, didMount }
 
 instance viewWrapperContentCardUpdate :: ViewWrapperContent ViewWrapperContentInputs where
-  instantiate (ViewWrapperContentInputs inputs) (SetViewWrapperStateAsync setWrapperState) = do
-    setWrapperState \s -> s { onTryAgain = setWrapperState \s -> s { asyncWrapperState = AsyncWrapper.Ready } }
-    renderedContent <- pure $ creditCardUpdateView (Record.merge inputs hooks)
+  instantiate (ViewWrapperContentInputs inputs) setWrapperState = do
+    renderedContent <- pure $ creditCardUpdateView $ Record.merge inputs { setWrapperState }
     setWrapperState \s -> s { renderedContent = renderedContent }
-    where
-      hooks =
-        { onCancel: setWrapperState _ { asyncWrapperState = AsyncWrapper.Ready }
-        , onLoading: setWrapperState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
-        , onSuccess: setWrapperState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades."
-                                       , closeAutomatically = On 3000.0
-                                       }
-        , onError: setWrapperState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
-        , setWrapperState: setWrapperState
-        }
-
-  instantiate _ (SetViewWrapperStateBasic setWrapperState) = mempty
 
 initialState :: State
 initialState =
-  { poller: pure unit
+  { asyncWrapperState: AsyncWrapper.Ready
+  , poller: pure unit
   , updateState: ChooseCreditCard
   }
 
 component :: React.Component Props
-component = React.createComponent "Update"
+component = React.createComponent "CreditCardUpdateView"
 
 didMount :: Self -> Effect Unit
-didMount self@{ state, setState, props: { creditCards, onCancel, onError, logger, setWrapperState } } = do
-  setWrapperState _ { titleText = "Uppdatera ditt kredit- eller bankkort", onCancel = onCancel }
+didMount self@{ state, setState, props: { creditCards, logger, setWrapperState } } = do
+  setWrapperState _ { titleText = "Uppdatera ditt kredit- eller bankkort", onCancel = onCancel self }
   Aff.launchAff_ do
     case creditCards of
       []       -> liftEffect $ do
         logger.log "No credit cards found" Sentry.Error
-        onError
+        onError self
       [ card ] -> do
-        registerCreditCard setState self.props state card
+        registerCreditCard self card
       _        -> pure unit
 
 render :: Self -> JSX
-render self@{ setState, state: { updateState }, props: { creditCards, onCancel } } =
-  DOM.div
+render self@{ setState, state: { updateState }, props: { creditCards } } =
+  asyncWrapper $ DOM.div
     { className: "clearfix credit-card-update--container"
     , children:
         [ case updateState of
             ChooseCreditCard       -> Choice.choice
                                         { creditCards: creditCards
-                                        , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard setState self.props self.state creditCard
-                                        , onCancel: onCancel
+                                        , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard self creditCard
+                                        , onCancel: onCancel self
                                         }
 
             RegisterCreditCard url -> Register.register
@@ -125,11 +111,21 @@ render self@{ setState, state: { updateState }, props: { creditCards, onCancel }
         ]
     }
   where
-    title :: JSX
-    title = DOM.h3_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ]
+    asyncWrapper :: JSX -> JSX
+    asyncWrapper content =
+      AsyncWrapper.asyncWrapper
+        { wrapperState: AsyncWrapper.Ready
+        , readyView: content
+        , editingView: identity
+        , successView: \msg -> WrapperElements.successWrapper msg
+        , errorView: \err -> WrapperElements.errorWrapper onTryAgain err
+        , loadingView: identity
+        }
+    onTryAgain :: Effect Unit
+    onTryAgain = setState \s -> s { asyncWrapperState = AsyncWrapper.Ready }
 
-registerCreditCard :: SetState -> Props -> State -> CreditCard -> Aff Unit
-registerCreditCard setState props@{ logger, onError, setWrapperState } state oldCreditCard = do
+registerCreditCard :: Self -> CreditCard -> Aff Unit
+registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } oldCreditCard = do
   creditCardRegister <- User.registerCreditCard
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
@@ -137,33 +133,33 @@ registerCreditCard setState props@{ logger, onError, setWrapperState } state old
       liftEffect $ do
         setState \_ -> newState
         setWrapperState _ { closeable = false }
-      void $ Aff.forkAff $ startRegisterPoller setState props newState oldCreditCard register
+      void $ Aff.forkAff $ startRegisterPoller self { state = newState } oldCreditCard register
     Right register@{ terminalUrl: Nothing } ->
       liftEffect $ do
         logger.log "No terminal url received" Sentry.Error
-        onError
+        onError self
     Left err ->
       liftEffect $ do
         logger.log ("Got the following error when registering credit card: " <> bottegaErrorMessage err) Sentry.Error
-        onError
+        onError self
 
 killRegisterPoller :: State -> Aff Unit
 killRegisterPoller state = Aff.killFiber (error "Canceled poller") state.poller
 
-startRegisterPoller :: SetState -> Props -> State -> CreditCard -> CreditCardRegister -> Aff Unit
-startRegisterPoller setState props state oldCreditCard creditCardRegister = do
+startRegisterPoller :: Self -> CreditCard -> CreditCardRegister -> Aff Unit
+startRegisterPoller self@{ setState, state } oldCreditCard creditCardRegister = do
   newPoller <- Aff.forkAff do
     killRegisterPoller state
-    newPoller <- Aff.forkAff $ pollRegister setState props state oldCreditCard (Right creditCardRegister)
+    newPoller <- Aff.forkAff $ pollRegister self oldCreditCard (Right creditCardRegister)
     Aff.joinFiber newPoller
   liftEffect $ setState _ { poller = newPoller }
 
-pollRegister :: SetState -> Props -> State -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-pollRegister setState props@{ logger, onError, onSuccess, onCancel } state oldCreditCard (Right register) = do
+pollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
+pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right register) = do
   Aff.delay $ Aff.Milliseconds 1000.0
   case register.status.state of
     CreditCardRegisterStarted ->
-      pollRegister setState props state oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+      pollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterCompleted -> do
       result <- User.updateCreditCardSubscriptions oldCreditCard.id register.creditCardId
       liftEffect $ case result of
@@ -172,17 +168,30 @@ pollRegister setState props@{ logger, onError, onSuccess, onCancel } state oldCr
           logger.log
             ("Server encountered the following error while trying to update credit card's subscriptions: " <> errMsg)
             Sentry.Error
-          onError
-        Right _  -> onSuccess
-    CreditCardRegisterFailed _ -> liftEffect onError
+          onError self
+        Right _  -> onSuccess self
+    CreditCardRegisterFailed _ -> liftEffect $ onError self
     CreditCardRegisterCanceled -> liftEffect $ do
-      onCancel
-      setState \_ -> state { updateState = Cancel }
-
-    CreditCardRegisterCreated -> pollRegister setState props state oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+      onCancel self
+      setState \_ -> self.state { updateState = Cancel }
+    CreditCardRegisterCreated -> pollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
-      onError
-pollRegister _ props _ _ (Left err) = liftEffect $ do
-  props.logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
-  props.onError
+      onError self
+pollRegister self@{ props: { logger } } _ (Left err) = liftEffect $ do
+  logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
+  onError self
+
+onCancel :: Self -> Effect Unit
+onCancel self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Ready }
+
+onLoading :: Self -> Effect Unit
+onLoading self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
+
+onSuccess :: Self -> Effect Unit
+onSuccess self@{ setState, props: { setWrapperState } } = do
+  setState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
+  setWrapperState _ { closeAutomatically = On 3000.0 }
+
+onError :: Self -> Effect Unit
+onError self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }

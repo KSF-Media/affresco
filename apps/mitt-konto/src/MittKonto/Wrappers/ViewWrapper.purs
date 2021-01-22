@@ -23,26 +23,15 @@ type Props p =
   , wrapperType :: WrapperType
   }
 
-type BaseViewWrapperState =
-  ( closeable :: Boolean
+type ViewWrapperState =
+  { closeable :: Boolean
   , closeAutomatically :: AutoClose
   , titleText :: String
   , renderedContent :: JSX
   , onCancel :: Effect Unit
-  )
-
-type ViewWrapperStateBasic = Record BaseViewWrapperState
-
-type ViewWrapperStateAsync =
-  { asyncWrapperState :: AsyncWrapper.Progress JSX
-  , onTryAgain :: Effect Unit
-  | BaseViewWrapperState
   }
 
-type SetStateBasic = (ViewWrapperStateBasic -> ViewWrapperStateBasic) -> Effect Unit
-type SetStateAsync = (ViewWrapperStateAsync -> ViewWrapperStateAsync) -> Effect Unit
-
-data SetViewWrapperState = SetViewWrapperStateBasic SetStateBasic | SetViewWrapperStateAsync SetStateAsync
+type SetViewWrapperState = (ViewWrapperState -> ViewWrapperState) -> Effect Unit
 
 class ViewWrapperContent p where
   instantiate :: p -> SetViewWrapperState -> Effect Unit
@@ -51,18 +40,14 @@ component :: forall p. React.Component (Props p)
 component = React.createComponent "ViewWrapper"
 
 viewWrapper :: forall p. (ViewWrapperContent p) => (Props p) -> JSX
-viewWrapper props@{ wrapperType } = case wrapperType of
-  Basic -> viewWrapperBasic props
-  Async -> viewWrapperAsync props
+viewWrapper = make component
+  { initialState
+  , didMount
+  , render
+  }
   where
-    viewWrapperBasic :: (Props p) -> JSX
-    viewWrapperBasic = make component
-      { initialState: initialStateBasic
-      , didMount: didMountBasic
-      , render: renderBasic
-      }
-
-    initialStateBasic =
+    initialState :: ViewWrapperState
+    initialState =
       { closeable: true
       , closeAutomatically: Off
       , titleText: mempty
@@ -70,88 +55,46 @@ viewWrapper props@{ wrapperType } = case wrapperType of
       , onCancel: pure unit
       }
 
-    didMountBasic :: React.Self (Props p) ViewWrapperStateBasic -> Effect Unit
-    didMountBasic self@{ props: { content }, setState } = do
-      instantiate content $ SetViewWrapperStateBasic setState
+    didMount :: React.Self (Props p) ViewWrapperState -> Effect Unit
+    didMount self@{ props: { content }, setState } = do
+      instantiate content setState
 
-    viewWrapperAsync :: (Props p) -> JSX
-    viewWrapperAsync = make component
-      { initialState: initialStateAsync
-      , didMount: didMountAsync
-      , render: renderAsync
-      }
+    render :: React.Self (Props p) ViewWrapperState -> JSX
+    render self@{ props: { route, routeFrom }, state: { closeable, closeAutomatically, titleText, onCancel, renderedContent } } =
+      Router.route
+        { exact: true
+        , path: Just route
+        , render: \_ -> DOM.div_
+            [ header
+            , renderedContent
+            ] <> case closeAutomatically of
+                  On delay -> autoClose self.props delay
+                  Off      -> mempty
+        }
+      where
+        header :: JSX
+        header = Grid.row_
+          [ DOM.div
+              { className: "col col-11"
+              , children: [ title ]
+              }
+          , if closeable then
+              DOM.div
+                { className: "col-1 flex credit-card-choice--close-icon"
+                , children: [ Router.link
+                                { to: { pathname: routeFrom, state: {} }
+                                , children: [ ]
+                                , className: "close-icon"
+                                }
+                            ]
+                , onClick: handler_ onCancel
+                }
+            else
+              mempty
+          ]
 
-    initialStateAsync = Record.merge initialStateBasic
-      { asyncWrapperState: AsyncWrapper.Ready
-      , onTryAgain: pure unit
-      }
-
-    didMountAsync :: React.Self (Props p) ViewWrapperStateAsync -> Effect Unit
-    didMountAsync self@{ props: { content }, setState } = do
-      instantiate content $ SetViewWrapperStateAsync setState
-
-renderBasic :: forall p. (ViewWrapperContent p) => React.Self (Props p) ViewWrapperStateBasic -> JSX
-renderBasic self@{ props, state: { closeable, titleText, onCancel, renderedContent }, setState } =
-  render props self.state renderedContent
-
-renderAsync :: forall p. (ViewWrapperContent p) => React.Self (Props p) ViewWrapperStateAsync -> JSX
-renderAsync self@{ props: { content, closeType, wrapperType }, state: { closeable, closeAutomatically, titleText, onCancel, onTryAgain, renderedContent }, setState } =
-  render
-    self.props
-    { closeable
-    , closeAutomatically
-    , titleText
-    , onCancel
-    , renderedContent
-    }
-    asyncWrapper
-  where
-    asyncWrapper :: JSX
-    asyncWrapper = AsyncWrapper.asyncWrapper
-      { wrapperState: self.state.asyncWrapperState
-      , readyView: renderedContent
-      , editingView: identity
-      , successView: \msg -> successWrapper msg
-      , errorView: \err -> errorWrapper onTryAgain err
-      , loadingView: identity
-      }
-
-render :: forall p. (ViewWrapperContent p) => Props p -> ViewWrapperStateBasic -> JSX -> JSX
-render props@{ route, routeFrom } state@{ closeable, closeAutomatically, titleText, onCancel, renderedContent } content =
-  Router.route
-    { exact: true
-    , path: Just route
-    , render: \_ -> DOM.div_
-        [ header
-        , content
-        ] <> case closeAutomatically of
-               On delay -> autoClose props delay
-               Off      -> mempty
-    }
-  where
-    header :: JSX
-    header = Grid.row_
-      [ DOM.div
-          { className: "col col-11"
-          , children: [ title ]
-          }
-      , if closeable then
-          DOM.div
-            { className: "col-1 flex credit-card-choice--close-icon"
-            , children: [ Router.link
-                            { to: { pathname: routeFrom, state: {} }
-                            , children: [ ]
-                            , className: "close-icon"
-                            }
-                        ]
-            , onClick: handler_ onCancel
-            }
-        else
-          mempty
-      ]
-
-    title :: JSX
-    title = DOM.h3_ [ DOM.text titleText ]
+        title :: JSX
+        title = DOM.h3_ [ DOM.text titleText ]
 
 autoClose :: forall p. (ViewWrapperContent p) => Props p -> Number -> JSX
 autoClose props@{ route, routeFrom } delay = Router.delayedRedirect
