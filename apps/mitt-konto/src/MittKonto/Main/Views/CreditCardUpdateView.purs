@@ -185,8 +185,10 @@ onLoading self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Load
 
 onSuccess :: Self -> Effect Unit
 onSuccess self@{ setState, props: { setWrapperState } } = do
-  setState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Uppdateringen av betalningsinformationen lyckades." }
-  setWrapperState _ { closeAutomatically = Delayed 5000.0 }
+  setState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Betalningsinformationen har uppdaterats. Du styrs strax tillbaka till kontosidan." }
+  setWrapperState _ { closeable = true
+                    , closeAutomatically = Delayed 5000.0
+                    }
 
 onError :: Self -> Effect Unit
 onError self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
