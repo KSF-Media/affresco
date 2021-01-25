@@ -17,8 +17,9 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.User (SubscriptionPayments, PaymentState(..), PaymentType(..))
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 
@@ -32,9 +33,6 @@ type State =
   { focus :: Maybe Int
   , payments :: Array SubscriptionPayments
   }
-
-jsComponent :: React.Component Props
-jsComponent = component
 
 component :: React.Component Props
 component = React.createComponent "PaymentList"
@@ -96,7 +94,7 @@ render self =
             )
         }
     headerRow =
-      DOM.tr_ [ DOM.th_ [ DOM.text "Förfallodag" ]
+      DOM.tr_ [ DOM.th_ [ DOM.text "Betaldatum" ]
               , DOM.th_ [ DOM.text "Typ" ]
               , DOM.th_ [ DOM.text "Status" ]
               , DOM.th_ [ DOM.text "Moms %" ]
@@ -110,7 +108,7 @@ render self =
       DOM.tr
         { className: "payment-accordion--item"
         , children:
-            [ DOM.td_ [ DOM.text $ formatDate payment.dueDate ]
+            [ DOM.td_ [ DOM.text $ formatDate payment.date ]
             , DOM.td_ [ DOM.text $ typeString payment.type ]
             , DOM.td_ [ DOM.text $ stateString payment.state ]
             , percent $ if payment.amount > 0.01

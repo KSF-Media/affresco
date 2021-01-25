@@ -9,11 +9,14 @@ import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.String (toLower)
 import Effect (Effect)
+import Effect.Unsafe (unsafePerformEffect)
 import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
+
+foreign import generateIdNumber :: Effect Int
 
 type Self = React.Self Props State
 
@@ -57,10 +60,11 @@ render self@{ props, state } =
     , children:
         -- The final order of the children is defined in css!
         [ case props.label of
-             Just label -> inputLabel { label, nameFor: props.name }
+             Just label -> inputLabel { label, nameFor: id }
              _          -> mempty
         , DOM.input
             { type: show props.type_
+            , id: id
             , placeholder: props.placeholder
             , name: props.name
             , value: fromMaybe state.inputValue props.value
@@ -74,6 +78,10 @@ render self@{ props, state } =
             }
         ] `snoc` foldMap errorMessage props.validationError
     }
+  where
+    id = case props.label of
+      Just _ -> props.name <> "-" <> show (unsafePerformEffect generateIdNumber)
+      _ -> ""
 
 classNameFromInputType :: InputType -> String
 classNameFromInputType inputType = case inputType of

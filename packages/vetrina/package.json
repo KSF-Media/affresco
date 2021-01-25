@@ -1,6 +1,6 @@
 {
   "name": "@ksf-media/vetrina",
-  "version": "2.0.2",
+  "version": "4.0.0",
   "description": "Vetrina, frontend for purchasing KSF Media products",
   "license": "MIT",
   "scripts": {
@@ -11,7 +11,7 @@
     "@sentry/browser": "^5.13.2",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48",
     "create-react-class": "^15.6.3",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#6ce506e5446d2517e4c7303b329c7cc85a5ae5e7",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#b81c62382533f5577976dc82406e903059c42403",
     "purescript": "^0.13.8",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",

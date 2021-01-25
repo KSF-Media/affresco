@@ -4,26 +4,105 @@ import ReactDOM from 'react-dom';
 // yup, welcome to react 16
 import createReactClass from 'create-react-class';
 React.createClass = createReactClass;
- var Main = require('./output/VetrinaTest.Main/index.js');
+var Main = require('./output/VetrinaTest.Main/index.js');
 
 function main() {
+  // NOTE: These are mainly for automated tests
+  let queryString = new URLSearchParams(window.location.search);
+  let paperInvoice = queryString.get('paperInvoice') == 'true';
+  let paperProduct = queryString.get('paperProduct') == 'true';
+  let multipleProducts = queryString.get('multipleProducts') == 'true';
+  let minimalLayout = queryString.get('minimalLayout') == 'true';
+
+  let products = [];
+  let paymentMethods = ["creditcard"];
+
+  if (paperProduct) {
+    products.push(hblPaper);
+  }
+  else if (multipleProducts) {
+    products.push(hblPremium, hblPaper);
+  }
+  else {
+    products.push(hblPremium);
+  }
+
+  if (paperInvoice) {
+    paymentMethods.push("paperinvoice");
+  }
+
   const myComponent = (
-	  <Main.jsComponent products={[hblPremium, hbl365]} accessEntitlements={["hbl-365", "articles-365"]}/>
+    <Main.jsComponent
+      products={products}
+      accessEntitlements={["hbl-365", "articles-365"]}
+      paymentMethods={paperInvoice ? ["creditcard", "paperinvoice"] : ["creditcard"]}
+      minimalLayout={minimalLayout}
+      headline={<div>Läs HBL digitalt för <span className="vetrina--price-headline">endast 1€</span></div>}
+      onClose={() => console.log("ok")}
+      paper="HBL" />
   );
 
   ReactDOM.render(myComponent, document.getElementById('app'));
+}
+
+var hblPaper = {
+  id: "HBL P+D LÖ",
+  description:
+    <div>
+      Kvalitetsjournalistik när, var och hur du vill <br />
+      HBL WEEKEND LÖ-SÖ! A paper product yo.
+    </div>,
+  priceCents: 2990,
+  descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
+  name: "Hufvudstadsbladet LÖ-SÖ",
+  contents: [
+    {
+      title: "Premium",
+      description: "Alla artiklar på hbl.fi"
+    },
+    {
+      title: "Nyhetsappen HBL Nyheter",
+      description: "Nyheter på mobilen och surfplattan, pushnotiser"
+    },
+    {
+      title: "Digitalt månadsbrev",
+      description: "Nyheter & förmåner"
+    }
+  ]
 }
 
 var hblPremium = {
   id: "HBL WEBB",
   description:
     <div>
-      För 6,90€/månad får du tillgång till alla artiklar på hbl.fi <br />
-      Du kan avsluta när du vill.
+      Kvalitetsjournalistik när, var och hur du vill <br />
+      Läs Hufvudstadsbladet för 1€ i en månad, därefter 6,90€ / månad tills vidare. Du kan avsluta när du vill.
     </div>,
   priceCents: 690,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
-  name: "HBL PREMIUM"
+  name: "Hufvudstadsbladet Premium",
+  contents: [
+    {
+      title: "Premium",
+      description: "Alla artiklar på hbl.fi"
+    },
+    {
+      title: "Nyhetsappen HBL Nyheter",
+      description: "Nyheter på mobilen och surfplattan, pushnotiser"
+    },
+    {
+      title: "Digitalt månadsbrev",
+      description: "Nyheter & förmåner"
+    }
+  ],
+  campaign: {
+    "length": 3,
+    "priceEur": 19.9,
+    "lengthUnit": "Month",
+    "no": 4033,
+    "name": "VÅR PRE 2020",
+    "id": "VÅREN 2020"
+  }
 }
 
 var hbl365 = {
@@ -36,7 +115,6 @@ var hbl365 = {
   priceCents: 1490,
   descriptionPurchaseCompleted: "Du kan nu läsa Premiumartiklar på HBL.fi.",
   name: "HBL 365",
-  campaignNo: 3842
 }
 
 if (module.hot) {

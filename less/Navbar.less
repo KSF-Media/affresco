@@ -26,7 +26,7 @@
     grid-template-columns:
         [margin-left] @page-full-margin
         [logo] 1fr
-        [need-help] 1fr
+        [logout-limpet] 1fr
         [logout-button] minmax(min-content, auto)
         [margin-right]  @page-full-margin;
     grid-column-gap: 2em;
@@ -70,14 +70,18 @@
     }
 }
 
+.mitt-konto--personating .nav--nav-container {
+    background-color: gold;
+}
+
 .nav--paper-logo {
     grid-column-start: logo;
     align-self: center;
     height: 38px;
 }
 
-.nav--need-help {
-    grid-column-start: need-help;
+.nav--logout-limpet {
+    grid-column-start: logout-limpet;
     justify-self: end;
 }
 

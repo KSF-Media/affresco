@@ -28,8 +28,9 @@ import KSF.Sentry as Sentry
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.User (User, InvalidDateInput(..))
 import KSF.User as User
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import KSF.Tracking as Tracking
@@ -122,9 +123,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                        in (map DOM.text pausedDates) <> [ descriptionText ]
                }
              ]
+             <> receiverName
              <> deliveryAddress
              <> foldMap pendingAddressChanges self.state.pendingAddressChanges
              <> foldMap billingDateTerm billingPeriodEndDate
+             <> foldMap subscriptionEndTerm subscriptionEndDate
              <> paymentMethod
          })
       (if package.digitalOnly
@@ -132,6 +135,11 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
        else subscriptionUpdates)
       $ Just { extraClasses: [ "subscription--container" ] }
   where
+    receiverName =
+      foldMap (\receiver -> Array.singleton
+                            { term: "Mottagare"
+                            , description: [ DOM.text receiver ]
+                            }) $ toMaybe props.subscription.receiver
     deliveryAddress =
        if package.digitalOnly
        then mempty
@@ -154,6 +162,12 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     billingDateTerm :: String -> Array DescriptionList.Definition
     billingDateTerm date = Array.singleton $
       { term: "Faktureringsperioden upphör:"
+      , description: [ DOM.text date ]
+      }
+
+    subscriptionEndTerm :: String -> Array DescriptionList.Definition
+    subscriptionEndTerm date = Array.singleton $
+      { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text date ]
       }
 
@@ -470,6 +484,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     billingPeriodEndDate =
           map trim $ formatDate =<< toMaybe props.subscription.dates.end
+
+    subscriptionEndDate =
+          map trim $ formatDate =<< toMaybe props.subscription.dates.suspend
 
     -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
     -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.

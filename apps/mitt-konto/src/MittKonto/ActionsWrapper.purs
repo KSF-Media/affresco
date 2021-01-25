@@ -5,8 +5,9 @@ import Prelude
 import Data.Foldable (foldMap)
 import Effect (Effect)
 import KSF.AsyncWrapper as AsyncWrapper
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 

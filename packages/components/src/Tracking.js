@@ -32,3 +32,6 @@ exports.changeAddress_ = function(cusno, result) {
     dataLayer.push({'event': 'changeAddress', 'cusno': cusno, 'result': result})
 }
 
+exports.deletePendingAddressChanges_ = function(cusno, result) {
+    dataLayer.push({'event': 'deletePendingAddressChanges', 'cusno': cusno, 'result': result})
+}

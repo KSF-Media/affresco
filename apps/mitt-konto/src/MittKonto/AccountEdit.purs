@@ -2,8 +2,9 @@ module MittKonto.AccountEdit where
 
 import Prelude
 
+import Bottega (bottegaErrorMessage)
 import Bottega.Models (CreditCard)
-import Data.Array as Array
+import Data.Array (null)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -14,17 +15,18 @@ import KSF.CreditCard.Update as CreditCard
 import KSF.Sentry as Sentry
 import KSF.User as User
 import MittKonto.ActionsWrapper as ActionsWrapper
-import React.Basic (make, JSX)
-import React.Basic as React
-import React.Basic.Events (EventHandler, handler_)
+import MittKonto.IconAction as IconAction
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
+import React.Basic.Events (handler_)
 
 type Self = React.Self Props State
 
 type Props =
-  { formatIconAction  :: { element :: JSX -> JSX, description :: String, className :: String } -> JSX
-  , accountEditAnchor :: String -> Boolean-> JSX -> JSX
-  , accountEditDiv    :: EventHandler -> JSX -> JSX
-  , logger            :: Sentry.Logger
+  { logger :: Sentry.Logger
+  , creditCards :: Array CreditCard
+  , setCreditCards :: Array CreditCard -> Effect Unit
   }
 
 type State =
@@ -52,13 +54,18 @@ accountEdit = make component
 
 didMount :: Self -> Effect Unit
 didMount self =
-  Aff.launchAff_ do
-    creditCards <- User.getCreditCards
-    case creditCards of
-      Left err    -> liftEffect $ self.props.logger.log ("Error while fetching credit cards: " <> err) Sentry.Error
-      Right cards -> case Array.head cards of
-        Nothing   -> pure unit
-        Just card -> liftEffect $ self.setState _ { creditCards = cards }
+  if null self.props.creditCards
+  then
+    Aff.launchAff_ do
+      creditCards <- User.getCreditCards
+      case creditCards of
+        Left err    -> liftEffect $ self.props.logger.log ("Error while fetching credit cards: " <> bottegaErrorMessage err) Sentry.Error
+        Right []    -> pure unit
+        Right cards -> liftEffect do
+          self.props.setCreditCards cards
+          self.setState _ { creditCards = cards }
+  else do
+    self.setState _ { creditCards = self.props.creditCards }
 
 render :: Self -> JSX
 render self =
@@ -70,35 +77,42 @@ render self =
     }
   where
     accountEditActions :: Array JSX
-    accountEditActions = map self.props.formatIconAction
-      [ { element: self.props.accountEditAnchor "https://www.hbl.fi/losenord" true
-        , description: "Byt lösenord"
-        , className: passwordChangeClass
-        }
-      , { element: self.props.accountEditAnchor "/fakturor" false
-        , description: "Fakturor"
-        , className: paymentHistoryClass
-        }
-      , case self.state.creditCards of 
-        [] -> mempty
-        _ -> 
-          { element: self.props.accountEditDiv showCreditCardUpdate
-          , description: "Uppdatera ditt kredit- eller bankkort"
-          , className: creditCardUpdateClass
+    accountEditActions =
+      [ IconAction.iconAction
+          { iconClassName: passwordChangeClass
+          , description: "Byt lösenord"
+          , onClick: IconAction.Href "https://www.hbl.fi/losenord"
           }
+      , IconAction.iconAction
+          { iconClassName: paymentHistoryClass
+          , description: "Fakturor"
+          , onClick: IconAction.Router "/fakturor"
+          }
+      , if not $ null self.state.creditCards
+        then
+          IconAction.iconAction
+            { iconClassName: creditCardUpdateClass
+            , description: "Uppdatera ditt kredit- eller bankkort"
+            , onClick:
+                IconAction.Action $ self.setState _
+                  { editAction = Just UpdateCreditCard
+                  , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
+                  }
+            }
+        else mempty
       ]
       where
         passwordChangeClass = "account-edit--password-change"
         paymentHistoryClass = "account-edit--payment-history"
         creditCardUpdateClass = "account-edit--credit-card-update"
-        
+
         showCreditCardUpdate = handler_ $
           self.setState _
             { editAction = Just UpdateCreditCard
             , wrapperProgress = AsyncWrapper.Editing creditCardUpdateComponent
             }
 
-    creditCardUpdateComponent = CreditCard.update 
+    creditCardUpdateComponent = CreditCard.update
       { creditCards: self.state.creditCards
       , logger: self.props.logger
       , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }

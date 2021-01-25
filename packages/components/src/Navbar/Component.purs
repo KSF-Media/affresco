@@ -2,21 +2,24 @@ module KSF.Navbar.Component where
 
 import Prelude
 
-import Data.Array (replicate)
+import Data.Array (replicate, mapMaybe)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe)
-import Data.Nullable (Nullable)
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.String as String
 import Effect (Effect)
 import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
+import KSF.Paper (Paper (..))
 import Persona as Persona
-import React.Basic (JSX, make)
-import React.Basic as React
+import React.Basic (JSX)
+import React.Basic.Classic (make)
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
+import React.Basic.Router as Router
 
 foreign import icons ::
   { signOut :: String
@@ -27,20 +30,26 @@ type Self = React.Self Props State
 
 type Props =
   { paper :: Paper
-  , loggedInUser :: Maybe Persona.User
+  , adminMode :: Boolean
+  , isPersonating :: Boolean
+  , activeUser :: Maybe Persona.User
   , logout :: Effect Unit
   }
 
 type JSProps =
   { paperCode :: String
-  , loggedInUser :: Nullable Persona.User
+  , adminMode :: Boolean
+  , isPersonating :: Boolean
+  , activeUser :: Nullable Persona.User
   , onLogout :: Effect Unit
   }
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { paper
-  , loggedInUser: Nullable.toMaybe jsProps.loggedInUser
+  , adminMode: jsProps.adminMode
+  , isPersonating: jsProps.isPersonating
+  , activeUser: Nullable.toMaybe jsProps.activeUser
   , logout: jsProps.onLogout
   }
   where
@@ -85,14 +94,16 @@ fullNav self@{ props, state } =
     { className: "nav--nav-container"
     , children:
         [ paperLogo props.paper
-        , needHelp props.paper
+        , if not props.adminMode
+            then needHelp props.paper
+            else customerService props.isPersonating props.activeUser
         , logoutButton self
         ]
     }
 
 logoutButton :: Self -> JSX
-logoutButton self@{ props: { logout, loggedInUser } } =
-  foldMap button loggedInUser
+logoutButton self@{ props: { logout, activeUser } } =
+  foldMap button activeUser
   where
     button _user =
       DOM.div
@@ -133,7 +144,7 @@ paperLogo paper =
 needHelp :: Paper -> JSX
 needHelp paper =
   DOM.div
-    { className: "nav--need-help"
+    { className: "nav--logout-limpet"
     , children:
         [ DOM.strong_ [ DOM.text "Behöver du hjälp?" ]
         , DOM.div_ [ formatMailtoAnchorTag $ paperEmail paper ]
@@ -142,6 +153,35 @@ needHelp paper =
     where
       formatMailtoAnchorTag :: String -> JSX
       formatMailtoAnchorTag email = DOM.a { href: "mailto:" <> email, children: [ DOM.text email ] }
+
+customerService :: Boolean -> Maybe Persona.User -> JSX
+customerService isPersonating activeUser = do
+  DOM.div
+    { className: "nav--logout-limpet"
+    , children: [ Router.link
+                    { to: { pathname: "/sök", state: {} }
+                    , children: [ DOM.text "Sök kund" ]
+                    , className: ""
+                    }
+                ] <> if isPersonating
+                       then ( case activeUser of
+                                 Just user -> [ DOM.div_ [ DOM.strong_ [ DOM.text "Aktiv kund" ] ]
+                                              , userLink user
+                                              ]
+                                 Nothing -> []
+                            )
+                       else []
+    }
+    where
+      userLink user =
+        Router.link
+          { to: { pathname: "/", state: {} }
+          , children: [ DOM.text $ user.cusno <> " - " <>
+                          ( String.joinWith " " $
+                            mapMaybe toMaybe [ user.firstName, user.lastName ] )
+                      ]
+          , className: ""
+          }
 
 hamburgerButton :: Self -> JSX
 hamburgerButton self =
@@ -152,9 +192,6 @@ hamburgerButton self =
     }
   where
     hamburgerStripe = DOM.div { className: "nav--hamburger-stripe" }
-
-data Paper = HBL | ON | VN | KSF
-derive instance eqPaper :: Eq Paper
 
 paperLogoUrl :: Paper -> String
 paperLogoUrl paper =

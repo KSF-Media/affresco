@@ -7,9 +7,9 @@
     "basscss": "^8.0.4",
     "create-react-class": "^15.6.3",
     "less": "^3.8.1",
-    "react": ">=16.3",
+    "react": ">=16.12",
     "react-date-picker": "^8.0.3",
-    "react-dom": ">=16.3"
+    "react-dom": ">=16.12"
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
