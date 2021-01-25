@@ -5,7 +5,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import KSF.Grid as Grid
-import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..), WrapperType)
+import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..))
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -17,7 +17,6 @@ type Props p =
   , closeType :: CloseType
   , route :: String
   , routeFrom :: String
-  , wrapperType :: WrapperType
   }
 
 type State =

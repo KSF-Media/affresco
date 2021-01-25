@@ -114,7 +114,6 @@ render self@{ state, setState } logger searchView isPersonating =
         , closeType: Wrappers.XButton
         , route: "/kortt/uppdatera"
         , routeFrom: "/"
-        , wrapperType: Wrappers.Async
         }
       where
         creditCardUpdateInputs = CreditCardUpdateView.RouteWrapperContentInputs

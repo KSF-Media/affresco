@@ -9,7 +9,6 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 
 data CloseType = XButton | Back
-data WrapperType = Basic | Async
 data AutoClose = Immediate | Delayed Number | Off
 
 successWrapper :: forall t. Foldable t => t String -> JSX
