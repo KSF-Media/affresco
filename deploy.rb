@@ -34,10 +34,10 @@ end
 apps_json = ""
 begin
   apps_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'")
-rescue
+rescue Exception => e
   # FIXME: this is here because Netlify doesn't have nix-shell.
   # This is terrible and should be removed ASAP. Really.
-  apps_json = run_command("cat temp-apps-deprecate-me-asap.json")
+  apps_json = file = File.read('./temp-apps-deprecate-me-asap.json')
 end
 
 apps_list = JSON.parse(apps_json)
