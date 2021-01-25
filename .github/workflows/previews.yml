@@ -67,18 +67,6 @@ jobs:
         run: |2
             ruby deploy.rb duellen
             mv apps/duellen/dist build/duellen
-      - env:
-          PODCAST_IDS: "694513583,705599305,630339678,542583531"
-        name: Build Podcasts
-        run: |2
-            ruby deploy.rb podcasts
-            mv apps/podcasts/dist build/podcasts
-      - env:
-          PODCAST_IDS: '806886790'
-        name: "Build Podcasts (VN)"
-        run: |2
-            ruby deploy.rb podcasts
-            mv apps/podcasts/dist build/podcasts-vn
       - name: Upload Scripts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -127,18 +115,6 @@ jobs:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/duellen
-      - name: Upload Podcasts
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
-        with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
-          path: build/podcasts
-      - name: "Upload Podcasts (VN)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
-        with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
-          path: build/podcasts-vn
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
@@ -154,8 +130,6 @@ jobs:
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
             - [Prenumerera PoC](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/prenumerera/index.html)
             - [Duellen](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/duellen/index.html)
-            - [Podcasts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/podcasts/index.html)
-            - [Podcasts (VN)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/podcasts-vn/index.html)
 name: previews
 on:
   pull_request:

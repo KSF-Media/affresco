@@ -61,6 +61,7 @@ let apps = [
   , buildDir = "duellen"
   , deployDir = "duellen"
   }
+{-
 , Actions.App::{
   , name = "Podcasts"
   , buildDir = "podcasts"
@@ -75,6 +76,7 @@ let apps = [
   , deployDir = "podcasts-vn"
   , env = toMap { PODCAST_IDS = "806886790" }
   }
+-}
 ] : List Actions.App.Type
 
 in apps

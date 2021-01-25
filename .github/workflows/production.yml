@@ -78,18 +78,6 @@ jobs:
         run: |2
             ruby deploy.rb duellen
             mv apps/duellen/dist build/duellen
-      - env:
-          PODCAST_IDS: "694513583,705599305,630339678,542583531"
-        name: Build Podcasts
-        run: |2
-            ruby deploy.rb podcasts
-            mv apps/podcasts/dist build/podcasts
-      - env:
-          PODCAST_IDS: '806886790'
-        name: "Build Podcasts (VN)"
-        run: |2
-            ruby deploy.rb podcasts
-            mv apps/podcasts/dist build/podcasts-vn
       - name: Upload Scripts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -138,18 +126,6 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/duellen
-      - name: Upload Podcasts
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
-          path: build/podcasts
-      - name: "Upload Podcasts (VN)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
-          path: build/podcasts-vn
       - name: Install gcloud
         uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
         with:
