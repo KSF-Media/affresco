@@ -69,7 +69,15 @@ updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
   let body = case update of
         UpdateName names          -> unsafeToForeign names
-        UpdateAddress address     -> unsafeToForeign { address }
+        UpdateAddress { countryCode, zipCode, streetAddress, startDate } ->
+          unsafeToForeign
+            { address:
+                { countryCode
+                , zipCode
+                , streetAddress
+                , validFrom: toNullable $ formatDate <$> startDate
+                }
+            }
         UpdateFull userInfo ->
           unsafeToForeign
             { firstName: userInfo.firstName
@@ -81,6 +89,7 @@ updateUser uuid update auth = do
                 , city: userInfo.city
                 }
             }
+        DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth
   let parsedSubs = map Subscription.parseSubscription user.subs
@@ -232,8 +241,20 @@ type LoginDataSso =
 
 data UserUpdate
   = UpdateName { firstName :: String, lastName :: String }
-  | UpdateAddress { countryCode :: String, zipCode :: String, streetAddress :: String }
-  | UpdateFull { firstName :: String, lastName :: String, city :: String, countryCode :: String, zipCode :: String, streetAddress :: String }
+  | UpdateAddress { countryCode :: String
+                  , zipCode :: String
+                  , streetAddress :: String
+                  , startDate :: Maybe DateTime
+                  }
+  | UpdateFull { firstName :: String
+               , lastName :: String
+               , city :: String
+               , countryCode :: String
+               , zipCode :: String
+               , streetAddress :: String
+               , startDate :: Maybe DateTime
+               }
+  | DeletePendingAddressChanges
 
 type EmailAddressInUse = ServerError
   ( email_address_in_use ::

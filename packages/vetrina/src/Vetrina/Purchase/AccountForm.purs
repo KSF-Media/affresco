@@ -23,6 +23,7 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, component, fragment, useState, (/\))
 import React.Basic.Hooks as React
+import Record (merge)
 
 type Props =
   { user :: User
@@ -184,7 +185,7 @@ render props self@{ state: { contactForm } } = fragment
               liftEffect $ props.setLoading (Just Spinner.Loading)
               Aff.finally
                 (liftEffect $ props.setLoading Nothing)
-                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull addr
+                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull $ addr `merge` { startDate: Nothing }
                    case eitherUser of
                      Right user -> liftEffect $ props.retryPurchase user
                      Left err -> liftEffect $ props.onError err

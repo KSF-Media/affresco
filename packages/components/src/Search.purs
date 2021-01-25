@@ -15,6 +15,7 @@ import Data.String.Common as String
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import KSF.Api (nullUuid)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.InputField as InputField
 import KSF.User (User)
@@ -147,7 +148,8 @@ search = do
     renderUser setActiveUser user =
       [ DOM.tr
           { className: "search--item"
-          , onClick: Events.handler_ $ setActiveUser user
+              <> if haveDetails then " selectable" else " unselectable"
+          , onClick: Events.handler_ $ when haveDetails $ setActiveUser user
           , children:
               [ td [ DOM.text user.cusno ]
               , td $ map DOM.text $ pure $ String.joinWith " " $
@@ -173,6 +175,7 @@ search = do
       ] <> (DOM.tr_ <<< subscriptionRow <$> drop 1 user.subs)
 
       where
+        haveDetails = user.uuid /= nullUuid
         td children = DOM.td { rowSpan: rowSpan, children: children }
         rowSpan = if Array.null user.subs then 1 else length user.subs
         subscriptionRow sub =
