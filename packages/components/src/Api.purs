@@ -10,6 +10,9 @@ derive newtype instance showUUID :: Show UUID
 derive newtype instance readforeignUUID :: ReadForeign UUID
 derive newtype instance writeforeignUUID :: WriteForeign UUID
 
+nullUuid :: UUID
+nullUuid = UUID "00000000-0000-0000-0000-000000000000"
+
 newtype Token = Token String
 derive newtype instance showToken :: Show Token
 derive newtype instance readforeignToken :: ReadForeign Token

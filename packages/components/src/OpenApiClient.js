@@ -17,7 +17,8 @@ exports.callApi_ = function(api, methodName, params, opts) {
             console.error("Failed to parse error response body", decodeErr)
           }
         }
-        console.error("Superagent error", err, debugInfo);
+        const debugString = JSON.stringify(debugInfo.params);
+        console.error("Superagent error", err, debugInfo, debugString);
         onError(err);
       } else {
         onSuccess(data);
