@@ -13,8 +13,7 @@
     "npmClient": "yarn"
   },
   "scripts": {
-    "clean": "rm -rf .cache .psci_modules node_modules output dist",
-    "copy-hooks": "cp hooks/* .git/hooks"
+    "clean": "rm -rf .cache .psci_modules node_modules output dist"
   },
   "workspaces": [
     "packages/*",
