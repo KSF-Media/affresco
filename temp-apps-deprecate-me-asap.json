@@ -47,5 +47,33 @@
       "HIDE_LOGIN_LINKS": "false"
     },
     "name": "App article"
+  },
+  {
+    "buildDir": "prenumerera",
+    "deployDir": "prenumerera",
+    "env": {},
+    "name": "Prenumerera PoC"
+  },
+  {
+    "buildDir": "duellen",
+    "deployDir": "duellen",
+    "env": {},
+    "name": "Duellen"
+  },
+  {
+    "buildDir": "podcasts",
+    "deployDir": "podcasts",
+    "env": {
+      "PODCAST_IDS": "694513583,705599305,630339678,542583531"
+    },
+    "name": "Podcasts"
+  },
+  {
+    "buildDir": "podcasts",
+    "deployDir": "podcasts-vn",
+    "env": {
+      "PODCAST_IDS": "806886790"
+    },
+    "name": "Podcasts (VN)"
   }
 ]
