@@ -8,7 +8,6 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Unsafe (unsafePerformEffect)
-import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Paper (Paper(..))
 import KSF.Search as Search
 import KSF.Sentry as Sentry
@@ -42,8 +41,6 @@ app = do
         , showWelcome: true
         , alert: Nothing
         , payments: Nothing
-        , creditCards: []
-        , wrapperProgress: AsyncWrapper.Ready
         }
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState

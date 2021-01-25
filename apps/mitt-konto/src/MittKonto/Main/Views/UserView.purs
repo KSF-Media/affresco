@@ -23,7 +23,7 @@ foreign import images :: { subscribe :: String }
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: Types.Self -> Sentry.Logger -> User -> JSX
-userView { setState, state: { creditCards } } logger user = React.fragment
+userView { setState } logger user = React.fragment
   [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
