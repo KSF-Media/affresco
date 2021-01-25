@@ -23,6 +23,6 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "parcel build index.html --no-cache"
+    "build": "parcel build index.html --no-cache --public-url ./"
   }
 }
