@@ -31,7 +31,16 @@ end
 
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
-apps_list = JSON.parse(run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'"))
+apps_json = ""
+begin
+  apps_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'")
+rescue
+  # FIXME: this is here because Netlify doesn't have nix-shell.
+  # This is terrible and should be removed ASAP. Really.
+  apps_json = run_command("cat temp-apps-deprecate-me-asap.json")
+end
+
+apps_list = JSON.parse(apps_json)
 apps = apps_list.map{ |x| [x["deployDir"], x] }.to_h
 
 app_name = ARGV.first
