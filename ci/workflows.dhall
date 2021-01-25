@@ -50,7 +50,10 @@ let setupSteps = [
     , uses = Some "actions/setup-ruby@v1"
     , `with` = toMap { ruby-version = "2.6" }
   }
-  , Step::{ uses = Some "cachix/install-nix-action@v9" }
+  , Step::{
+    , uses = Some "cachix/install-nix-action@v12"
+    , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
+    }
   , Step::{
     , run = Some ''
       yarn install --pure-lockfile
