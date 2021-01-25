@@ -2,14 +2,12 @@ module MittKonto.Wrappers.ActionsWrapper where
 
 import Prelude
 
-import Data.Foldable (foldMap)
 import Effect (Effect)
 import KSF.AsyncWrapper as AsyncWrapper
-import MittKonto.Wrappers.Elements
+import MittKonto.Wrappers.Elements (errorWrapper, successWrapper)
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
 
 type Self = React.Self Props State
 

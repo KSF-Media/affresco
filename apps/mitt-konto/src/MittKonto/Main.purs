@@ -10,17 +10,15 @@ import Effect.Aff as Aff
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Paper (Paper(..))
+import KSF.Search as Search
 import KSF.Sentry as Sentry
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, creditCardUpdateView, footerView, loginView, navbarView, paymentView, userView) as Views
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, paymentView, userView) as Views
 import MittKonto.Main.CreditCardUpdateView (RouteWrapperContentInputs (..)) as CreditCardUpdateView
 import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
-import KSF.Paper (Paper(..))
-import KSF.Search as Search
-import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User as User
 import React.Basic (JSX)

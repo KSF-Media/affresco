@@ -17,13 +17,12 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class RouteWrapperContent, AutoClose(..), SetRouteWrapperState, instantiate)
+import MittKonto.Wrappers (class RouteWrapperContent, AutoClose(..), SetRouteWrapperState)
 import MittKonto.Wrappers.Elements as WrapperElements
 import React.Basic (JSX)
-import React.Basic.Classic (element, make)
+import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.Router as Router
 import Record as Record
 
 type BaseProps =
@@ -75,7 +74,8 @@ component :: React.Component Props
 component = React.createComponent "CreditCardUpdateView"
 
 didMount :: Self -> Effect Unit
-didMount self@{ state, setState, props: { creditCards, logger, setWrapperState } } = do
+didMount self@{ setState, props: { creditCards, logger, setWrapperState } } = do
+  setState _ { asyncWrapperState = AsyncWrapper.Ready }
   Aff.launchAff_ do
     case creditCards of
       []       -> liftEffect $ do
@@ -150,7 +150,7 @@ pollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> 
 pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right register) = do
   case register.status.state of
     CreditCardRegisterStarted ->
-      delayedPollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+      delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterCompleted -> do
       result <- User.updateCreditCardSubscriptions oldCreditCard.id register.creditCardId
       liftEffect $ case result of
@@ -164,15 +164,15 @@ pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right re
     CreditCardRegisterFailed _ -> liftEffect $ onError self
     CreditCardRegisterCanceled -> liftEffect $ do
       onCancel self
-    CreditCardRegisterCreated -> delayedPollRegister self oldCreditCard =<< User.getCreditCardRegister register.creditCardId register.number
+    CreditCardRegisterCreated -> delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect $ do
       logger.log "Server is in an unknown state" Sentry.Info
       onError self
   where
-    delayedPollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-    delayedPollRegister self creditCard eitherRegister = do
+    delayedPollRegister :: Either BottegaError CreditCardRegister -> Aff Unit
+    delayedPollRegister eitherRegister = do
       Aff.delay $ Aff.Milliseconds 1000.0
-      pollRegister self creditCard eitherRegister
+      pollRegister self oldCreditCard eitherRegister
 pollRegister self@{ props: { logger } } _ (Left err) = liftEffect $ do
   logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
   onError self

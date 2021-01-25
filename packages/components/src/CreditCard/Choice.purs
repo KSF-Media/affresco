@@ -11,12 +11,11 @@ import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.CreditCard.Menu (menu) as Menu
 import React.Basic (JSX)
-import React.Basic.Classic (element, make)
+import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler, handler_)
-import React.Basic.Router as Router
+import React.Basic.Events (handler)
 
 type Self = React.Self Props State
 

@@ -2,18 +2,15 @@ module MittKonto.Wrappers.RouteWrapper where
 
 import Prelude
 
-import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Grid as Grid
-import MittKonto.Wrappers.Elements
-import React.Basic.Classic (JSX, element, make)
+import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..), WrapperType)
+import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Router as Router
-import Record as Record
 
 type Props p =
   { content :: p

@@ -1,23 +1,8 @@
 module MittKonto.AccountEdit where
 
-import Prelude
-
-import Bottega (bottegaErrorMessage)
-import Bottega.Models (CreditCard)
-import Data.Array (null)
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Effect (Effect)
-import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import KSF.AsyncWrapper as AsyncWrapper
-import KSF.Sentry as Sentry
-import KSF.User as User
 import MittKonto.IconAction as IconAction
-import React.Basic.Classic (make, JSX)
-import React.Basic.Classic as React
+import React.Basic.Classic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
 
 accountEdit :: JSX
 accountEdit = DOM.div
