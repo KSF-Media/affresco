@@ -13,6 +13,10 @@ import Effect.Now as Now
 import Persona as Persona
 import Puppeteer as Chrome
 
+data PaymentMethod
+  = PaperInvoice
+  | CreditCard
+
 data ProductType
   = PaperProduct
   | DigitalProduct
@@ -23,39 +27,47 @@ main = launchAff_ do
   -- Setup
   dateTimeStr <- liftEffect $ formatDate <$> Now.nowDateTime
   let customer1 = mkEmail dateTimeStr
-  let customer2 = mkEmail (dateTimeStr <> "-2")
-  let customer3 = mkEmail (dateTimeStr <> "-3")
-  let customer4 = mkEmail (dateTimeStr <> "-4")
+      customer2 = mkEmail (dateTimeStr <> "-2")
+      customer3 = mkEmail (dateTimeStr <> "-3")
+      customer4 = mkEmail (dateTimeStr <> "-4")
+      customer5 = mkEmail (dateTimeStr <> "-5")
 
   -- First of all we just try to subscribe as a fresh customer, so everything from scratch
-  withBrowser (runTest "subscribe new customer" DigitalProduct subscribeNewCustomer customer1)
+  withBrowser (runTest "subscribe new customer" DigitalProduct CreditCard subscribeNewCustomer customer1)
 
-  withBrowser $ runTest "subscribe new customer to paper product" PaperProduct subscribePaperProductNewCustomer customer4
+  withBrowser $ runTest "subscribe new customer to paper product" PaperProduct CreditCard subscribePaperProductNewCustomer customer4
+
+  withBrowser $ runTest "subscribe new customer to digital product with paper invoice" DigitalProduct PaperInvoice subscribePaperInvoiceNewCustomer customer5
 
   -- Then we open another browser (otherwise we'd be logged in with the first customer)
   withBrowser \browser -> do
     -- ..and we buy the package with an existing customer (that we create on the
     -- fly just with the Persona API)
-    runTest "subscribe with existing (non-entitled) customer" DigitalProduct buyWithExistingCustomer customer2 browser
+    runTest "subscribe with existing (non-entitled) customer" DigitalProduct CreditCard buyWithExistingCustomer customer2 browser
     -- ..and after that we just try to visit again, and verify that Vetrina
     -- figures out that we already have a subscription. Good.
-    runTest "visit with entitled user" DigitalProduct navigateLoggedIn customer2 browser
+    runTest "visit with entitled user" DigitalProduct CreditCard navigateLoggedIn customer2 browser
 
   -- Then we try to login from scratch with the customer of the previous step,
   -- and verify that Vetrina figures out that we already have (1) and account
   -- and (2) a subscription
-  withBrowser (runTest "visit with entitled user (from scratch)" DigitalProduct loginWithEntitledCustomer customer2)
+  withBrowser (runTest "visit with entitled user (from scratch)" DigitalProduct CreditCard loginWithEntitledCustomer customer2)
   where
     mkEmail :: String -> String
     mkEmail dateTimeStr = "zztelefon+test." <> dateTimeStr <> "@ksfmedia.fi"
 
-    runTest name product test email browser = do
+    runTest name product paymentMethod test email browser = do
       log $ ">>> Running test: " <> show name
       page <- Chrome.newPage browser
       let password = "test123"
+          paymentMethodQparam =
+            case paymentMethod of
+              -- Use minimal layout with paper invoice for now
+              PaperInvoice -> "paperInvoice=true&minimalLayout=true"
+              _ -> mempty
       Chrome.goto (Chrome.URL case product of
-                      DigitalProduct -> "http://localhost:8000"
-                      PaperProduct   -> "http://localhost:8000/#paperProduct"
+                      DigitalProduct -> "http://localhost:8000" <> "?" <> paymentMethodQparam
+                      PaperProduct   -> "http://localhost:8000/?paperProduct=true" <> paymentMethodQparam
                   ) page
       test page email password
       log $ ">>> Test successful."
@@ -78,6 +90,19 @@ subscribeNewCustomer page email password = do
   log $ "Fill in a fresh email, so we create a new account: " <> email
   fillEmail email page
   subscribeNewCustomerPaySetPassword page password
+
+subscribePaperInvoiceNewCustomer :: Test
+subscribePaperInvoiceNewCustomer page email password = do
+  log "Choose paper invoice as payment method"
+  Chrome.click (Chrome.Selector "input[id=paper-invoice]") page
+
+  fillEmail email page
+
+  log "As the test is trying to subscribe with a paper invoice, contact information should be asked of new user"
+  fillAddress page
+  let titleSelector = Chrome.Selector "#app > div > h1"
+  Chrome.waitFor_ titleSelector page
+  Chrome.assertContent titleSelector "Tack för din beställning!" page
 
 -- | Payment and setting password of freshly created user
 subscribeNewCustomerPaySetPassword :: Chrome.Page -> String -> Aff Unit
@@ -148,7 +173,6 @@ loginWithEntitledCustomer page email password = do
   loginExistingUser password page
   assertUserHasSubscription page
 
-
 type Test = Chrome.Page -> String -> String -> Aff Unit
 
 formatDate :: DateTime -> String
@@ -178,7 +202,7 @@ loginExistingUser password page = do
   Chrome.assertContent (Chrome.Selector "#app > div > h1") "Du har redan ett KSF Media-konto" page
 
   log "Well, then we fill the password in and we login"
-  let passwordSelector = Chrome.Selector "#app > div > form > div:nth-child(2) > div > input[type=password]"
+  let passwordSelector = Chrome.Selector $ "[id^=password]"
   Chrome.waitFor_ passwordSelector page
   Chrome.type_ passwordSelector password page
   Chrome.click (Chrome.Selector "#app > div > form > input") page

@@ -6,16 +6,14 @@ import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
-import Data.Traversable (for, for_)
 import Data.Validation.Semigroup (unV)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import KSF.CountryDropDown as CountryDropdown
 import KSF.InputField as InputField
 import KSF.Spinner as Spinner
-import KSF.User (User, UserUpdate(..))
+import KSF.User (User, UserError, UserUpdate(..))
 import KSF.User as User
 import KSF.ValidatableForm (CommonContactInformation, CommonContactInformationFormField(..), emptyCommonContactInformation)
 import KSF.ValidatableForm as Form
@@ -25,11 +23,14 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, component, fragment, useState, (/\))
 import React.Basic.Hooks as React
+import Record (merge)
 
 type Props =
   { user :: User
   , retryPurchase :: User -> Effect Unit
   , setLoading :: Maybe Spinner.Loading -> Effect Unit
+  , onError :: UserError -> Effect Unit
+  , minimalLayout :: Boolean
   }
 
 type State =
@@ -75,7 +76,9 @@ render props self@{ state: { contactForm } } = fragment
                     { className: "vetrina--step__headline"
                     , children: [ DOM.text "Dina uppgifter" ]
                     }
-                , DOM.text "STEG 1 / 2 KONTOINFORMATION"
+                , if props.minimalLayout
+                  then mempty
+                  else DOM.text "STEG 2 / 2 KONTOINFORMATION"
                 ]
             }
         , InputField.inputField
@@ -182,9 +185,9 @@ render props self@{ state: { contactForm } } = fragment
               liftEffect $ props.setLoading (Just Spinner.Loading)
               Aff.finally
                 (liftEffect $ props.setLoading Nothing)
-                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull addr
+                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull $ addr `merge` { startDate: Nothing }
                    case eitherUser of
                      Right user -> liftEffect $ props.retryPurchase user
-                     Left err -> pure unit
+                     Left err -> liftEffect $ props.onError err
 
       )

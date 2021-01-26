@@ -15,7 +15,7 @@ import KSF.User.Login as Login
 import Persona as Persona
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.Prenumerera (Product)
-import React.Basic.Classic (JSX, StateUpdate(..), element, make, runUpdate)
+import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Router (Match, Location)
@@ -59,7 +59,7 @@ fromJsProps { match, location: { key, pathname, search, hash, state }, onUserLog
          , pathname
          , search
          , hash
-         , state: convertState $ toMaybe state
+         , state: toNullable $ (convertState <<< toMaybe) <$> toMaybe state
          }
     , onUserLogin
     }
@@ -86,10 +86,9 @@ initialState =
   }
 
 didMount :: Self -> Effect Unit
-didMount self@{ props: { location: { state: Just state } } } = do
-  setProduct self state.product
-
-didMount _ = pure unit
+didMount self = do
+  let state = join $ toMaybe self.props.location.state
+  setProduct self (_.product =<< state)
 
 setProduct :: Self -> Maybe Product -> Effect Unit
 setProduct self (Just p) = send self (SetProduct p)
@@ -236,12 +235,11 @@ continueButton self  =
     }
   where
     link =
-      element
-        Router.link
-          { to: { pathname: "/payment", state: paymentSelectState }
-          , children: [ button ]
-          , className: "prenumerera--button-link"
-          }
+      Router.link
+        { to: { pathname: "/payment", state: paymentSelectState }
+        , children: [ button ]
+        , className: "prenumerera--button-link"
+        }
     button = DOM.span_ [ DOM.text "Fortsätt" ]
     paymentSelectState :: PaymentSelect.LocationJsState
     paymentSelectState = { user: toNullable self.state.loggedInUser, product: toNullable self.state.product }
