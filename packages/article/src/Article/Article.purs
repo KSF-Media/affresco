@@ -11,7 +11,7 @@ import Data.Nullable (Nullable, toMaybe)
 import Data.Maybe (fromMaybe)
 import Data.Array (head)
 import React.Basic (JSX)
-import React.Basic as React
+import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 

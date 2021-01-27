@@ -8,6 +8,7 @@ import createReactClass from 'create-react-class';
 React.createClass = createReactClass;
 var Main = require('./output/Article/index.js');
 
+
 function main() {
 
   const articleUuid = location.hash.replace("#", "");
@@ -16,7 +17,7 @@ function main() {
     .then(resp => resp.json())
     .then(json => {
       const myComponent = (
-        <Main.article 
+        <Main.article
           article={json}
           brand="hbl"
         />

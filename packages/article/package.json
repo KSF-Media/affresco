@@ -6,10 +6,12 @@
   "dependencies": {
     "basscss": "^8.0.4",
     "create-react-class": "^15.6.3",
+    "express": "^4.17.1",
     "less": "^3.8.1",
     "react": ">=15.5",
     "react-date-picker": "^7.5.0",
-    "react-dom": ">=15.5"
+    "react-dom": ">=15.5",
+    "request": "^2.88.2"
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
