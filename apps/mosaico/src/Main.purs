@@ -2,7 +2,7 @@ module Main where
 
 import Prelude
 
-import Article as Article
+import Mosaico.Article as Article
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID (UUID)
 import Data.UUID as UUID

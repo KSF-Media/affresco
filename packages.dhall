@@ -32,7 +32,6 @@ let additions =
       , affresco-components = ./packages/components/spago.dhall as Location
       , affresco-user = ./packages/user/spago.dhall as Location
       , affresco-vetrina = ./packages/vetrina/spago.dhall as Location
-      , affresco-article = ./packages/article/spago.dhall as Location
       }
 
 in  upstream // additions
