@@ -2,14 +2,15 @@ module Mosaico.Article where
 
 import Prelude
 
+import Data.Array (head)
 import Data.Either (Either(..))
 import Data.Foldable (fold)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Generic.Rep.Show (genericShow)
-import Data.Nullable (Nullable, toMaybe)
 import Data.Maybe (fromMaybe)
-import Data.Array (head)
+import Data.Nullable (Nullable, toMaybe)
+import Lettera.Models (Article, BodyElement(..), BoxInfo, Image)
 import React.Basic (JSX)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -22,50 +23,8 @@ type Props =
   , brand :: String
   }
 
-type Article =
-  { title     :: String
-  , body      :: Array BodyElementJS
-  , mainImage :: Image
-  , tags      :: Array String
-  }
-
-type BodyElementJS =
-  { html     :: Nullable String
-  , image    :: Nullable Image
-  , box      :: Nullable BoxInfo
-  , headline :: Nullable String
-  , footnote :: Nullable String
-  , question :: Nullable String
-  , quote    :: Nullable String
-  }
-
 type State =
   { body :: Array (Either String BodyElement) }
-
-data BodyElement
-  = Html String
-  | Image Image
-  | Box BoxInfo
-  | Headline String
-  | Footnote String
-  | Question String
-  | Quote String
-derive instance bodyElementGeneric :: Generic BodyElement _
-instance bodyElementShow :: Show BodyElement where show = genericShow
-
-type BoxInfo =
-  { title :: Nullable String
-  , headline :: Nullable String
-  , content :: Array String
-  }
-
-type Image =
-  { url       :: String
-  , caption   :: Nullable String
-  , thumb     :: Nullable String
-  , alignment :: Nullable String
-  , byline    :: Nullable String
-  }
 
 component :: React.Component Props
 component = React.createComponent "Article"
