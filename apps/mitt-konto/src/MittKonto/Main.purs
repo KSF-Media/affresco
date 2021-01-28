@@ -109,7 +109,7 @@ render self@{ state, setState } logger searchView isPersonating =
       Wrappers.routeWrapper
         { content: creditCardUpdateInputs
         , closeType: Wrappers.XButton
-        , route: "/kortt/uppdatera"
+        , route: "/kreditkort/uppdatera"
         , routeFrom: "/"
         }
       where

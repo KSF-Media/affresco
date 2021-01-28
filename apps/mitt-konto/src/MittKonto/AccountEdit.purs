@@ -26,7 +26,7 @@ accountEdit = DOM.div
           { iconClassName: creditCardUpdateClass
           , description: "Uppdatera ditt kredit- eller bankkort"
           , onClick:
-              IconAction.Router "/kortt/uppdatera"
+              IconAction.Router "/kreditkort/uppdatera"
           }
       ]
       where
