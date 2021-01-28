@@ -116,7 +116,7 @@ jobs:
         run: |2
             gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
             gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"
-            gcloud compute url-maps invalidate-cdn-cache app-article --path "/*
+            gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
 name: production
 on:
   push:
