@@ -4,7 +4,6 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import KSF.Grid as Grid
 import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..))
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
@@ -65,47 +64,51 @@ routeWrapper = make component
             , children:
                 [ header
                 , renderedContent
-                ] <> [ autoClose self.props closeAutomatically ]
+                , autoClose self.props closeAutomatically
+                ]
             }
         }
       where
         header :: JSX
-        header = Grid.row_
-          [ if closeable then
-              case closeType of
-                Back ->
-                  Router.link
-                    { to: { pathname: routeFrom, state: {} }
-                    , children: [ ]
-                    , className: "mitt-konto--backwards"
-                    }
-                _ -> mempty
-            else
-              mempty
-          , DOM.div
-              { className: "col col-11"
-              , children: [ title ]
+        header = DOM.div $
+          case closeType of
+            XButton ->
+              { className: "header-x-button"
+              , children:
+                  [ title
+                  , if closeable then
+                      DOM.div
+                        { className: "flex close-button"
+                        , children: [ closeLink "close-icon" ]
+                        , onClick: handler_ onClose
+                        }
+                    else mempty
+                  ]
               }
-          , if closeable then
-              case closeType of
-                XButton ->
-                  DOM.div
-                    { className: "col-1 flex close-button"
-                    , children: [ Router.link
-                                    { to: { pathname: routeFrom, state: {} }
-                                    , children: [ ]
-                                    , className: "close-icon"
-                                    }
-                                ]
-                    , onClick: handler_ onClose
-                    }
-                _ -> mempty
-            else
-              mempty
-          ]
+            Back ->
+              { className: ""
+              , children:
+                  [ if closeable then
+                      DOM.div
+                        { children: [ closeLink "mitt-konto--backwards" ]
+                        , onClick: handler_ onClose
+                        }
+                    else
+                      mempty
+                    , title
+                  ]
+              }
 
         title :: JSX
         title = DOM.h3_ [ DOM.text titleText ]
+
+        closeLink :: String -> JSX
+        closeLink className =
+          Router.link
+            { to: { pathname: routeFrom, state: {} }
+            , children: [ ]
+            , className
+            }
 
 autoClose :: forall p. (RouteWrapperContent p) => Props p -> AutoClose -> JSX
 autoClose props@{ route, routeFrom } Immediate = Router.redirect
