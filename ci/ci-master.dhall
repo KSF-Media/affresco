@@ -30,7 +30,7 @@ in
     , PRODUCTION_JANRAIN_XD_RECEIVER_PATH = "/xd_receiver.html"
     , PRODUCTION_BOTTEGA_URL = "https://bottega.api.ksfmedia.fi/v1"
     , PRODUCTION_PERSONA_URL = "https://persona.api.ksfmedia.fi/v1"
-    , PRODUCTION_LETTERA_URL = "https://lettera.api.ksfmedia.fi/v1"
+    , PRODUCTION_LETTERA_URL = "https://lettera.api.ksfmedia.fi/v1/"
     , PRODUCTION_DUELLEN_URL = "https://duellen.api.ksfmedia.fi"
     }
   }
