@@ -23,7 +23,7 @@ type DeliveryAddress =
 type PendingAddressChange =
   { address   :: DeliveryAddress
   , startDate :: JSDate
-  , endDate   :: JSDate
+  , endDate   :: Nullable JSDate
   }
 
 type Subscription =
