@@ -181,7 +181,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     filterExpiredPendingChanges pendingChanges =
       case self.state.now of
         Nothing  -> pendingChanges
-        Just now -> filter (not isPeriodExpired now <<< toMaybe <<< _.endDate) pendingChanges
+        Just now -> filter (not isPeriodExpired now <<< Just <<< _.endDate) pendingChanges
 
     subscriptionUpdates :: JSX
     subscriptionUpdates =
@@ -442,7 +442,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
            Aff.launchAff_ $ do
              for_ tempAddressChanges $ \tempAddressChange -> do
                let startDate = toDateTime tempAddressChange.startDate
-               let endDate   = toDateTime <$> toMaybe tempAddressChange.endDate
+               let endDate   = toDateTime tempAddressChange.endDate
                case startDate, endDate of
                  (Just startDate'), (Just endDate') -> do
                    tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
@@ -557,7 +557,7 @@ showPausedDates pausedSubs =
 showPendingAddressChange :: User.PendingAddressChange -> String
 showPendingAddressChange { address, startDate, endDate } =
   let addressString = formatAddress address
-      pendingPeriod = formatDateString startDate (toMaybe endDate)
+      pendingPeriod = formatDateString startDate (Just endDate)
   in addressString <> " (" <> pendingPeriod <> ")"
 
 formatDateString :: JSDate -> Maybe JSDate -> String

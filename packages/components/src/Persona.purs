@@ -167,16 +167,16 @@ deleteTemporaryAddressChange
   :: UUID
   -> Int
   -> DateTime
-  -> Maybe DateTime
+  -> DateTime
   -> UserAuth
   -> Aff Subscription
 deleteTemporaryAddressChange uuid subsno startDate endDate auth = do
   let startDateISO = formatDate startDate
-      endDateISO   = formatDate <$> endDate
+      endDateISO   = formatDate endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO  }
+    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO  }
     ]
     ( authHeaders uuid auth )
 

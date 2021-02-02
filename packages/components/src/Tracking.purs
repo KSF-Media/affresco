@@ -45,10 +45,9 @@ pauseSubscription cusno subsno startDate endDate result =
 unpauseSubscription :: Cusno -> Subsno -> Result -> Effect Unit
 unpauseSubscription = runEffectFn3 unpauseSubscription_
 
-deleteTempAddressChange :: Cusno -> Subsno -> StartDate -> Maybe EndDate -> Result -> Effect Unit
+deleteTempAddressChange :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
 deleteTempAddressChange cusno subsno startDate endDate result =
-  let endDateString = maybe "indefinite" Helpers.formatDate endDate
-  in runEffectFn5 deleteTempAddressChange_ cusno subsno (Helpers.formatDate startDate) endDateString result
+  runEffectFn5 deleteTempAddressChange_ cusno subsno (Helpers.formatDate startDate) (Helpers.formatDate endDate) result
 
 changeName :: Cusno -> Result -> Effect Unit
 changeName = runEffectFn2 changeName_
