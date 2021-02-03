@@ -442,9 +442,9 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
            Aff.launchAff_ $ do
              for_ tempAddressChanges $ \tempAddressChange -> do
                let startDate = toDateTime tempAddressChange.startDate
-               let endDate   = toDateTime <$> toMaybe tempAddressChange.endDate
+               let endDate   = toDateTime =<< toMaybe tempAddressChange.endDate
                case startDate, endDate of
-                 (Just startDate'), (Just endDate') -> do
+                 (Just startDate'), endDate' -> do
                    tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
                    case tempAddressChangesDeleted of
                      Right newSubscription -> liftEffect do
