@@ -12,10 +12,9 @@ import Effect (Effect)
 import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
-import KSF.Paper (Paper (..))
-import Persona as Persona
-import React.Basic (JSX)
-import React.Basic.Classic (make)
+import KSF.Paper (Paper(..))
+import KSF.User (User)
+import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
@@ -32,7 +31,7 @@ type Props =
   { paper :: Paper
   , adminMode :: Boolean
   , isPersonating :: Boolean
-  , activeUser :: Maybe Persona.User
+  , activeUser :: Maybe User
   , logout :: Effect Unit
   }
 
@@ -40,7 +39,7 @@ type JSProps =
   { paperCode :: String
   , adminMode :: Boolean
   , isPersonating :: Boolean
-  , activeUser :: Nullable Persona.User
+  , activeUser :: Nullable User
   , onLogout :: Effect Unit
   }
 
@@ -154,7 +153,7 @@ needHelp paper =
       formatMailtoAnchorTag :: String -> JSX
       formatMailtoAnchorTag email = DOM.a { href: "mailto:" <> email, children: [ DOM.text email ] }
 
-customerService :: Boolean -> Maybe Persona.User -> JSX
+customerService :: Boolean -> Maybe User -> JSX
 customerService isPersonating activeUser = do
   DOM.div
     { className: "nav--logout-limpet"

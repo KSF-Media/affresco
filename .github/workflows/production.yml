@@ -1,0 +1,124 @@
+env:
+  PRODUCTION_BOTTEGA_URL: https://bottega.api.ksfmedia.fi/v1
+  PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi
+  PRODUCTION_FACEBOOK_APP_ID: '1742585382627694'
+  PRODUCTION_GOOGLE_CLIENT_ID: "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
+  PRODUCTION_JANRAIN_FLOW_VERSION: '20201223120649370442'
+  PRODUCTION_JANRAIN_LOGIN_CLIENT_ID: jzbqvf3p68e8hje6wrzhezk98m8qndmz
+  PRODUCTION_JANRAIN_SSO_SERVER: https://ksf-media.eu.janrainsso.com
+  PRODUCTION_JANRAIN_XD_RECEIVER_PATH: /xd_receiver.html
+  PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v1
+  PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup node and yarn
+        uses: "actions/setup-node@v1"
+        with:
+          node-version: '12'
+      - name: Setup ruby
+        uses: "actions/setup-ruby@v1"
+        with:
+          ruby-version: '2.6'
+      - uses: "cachix/install-nix-action@v12"
+        with:
+          nix_path: nixpkgs=channel:nixos-20.09
+      - run: |2
+            yarn install --pure-lockfile
+            mkdir -p build
+      - name: Check CI script has been generated from Dhall
+        run: |2
+            make
+            git diff --exit-code
+      - name: Build Scripts
+        run: |2
+            ruby deploy.rb scripts
+            mv apps/scripts/dist build/scripts
+      - env:
+          PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+        name: Build Mitt Konto
+        run: |2
+            ruby deploy.rb mitt-konto
+            mv apps/mitt-konto/dist build/mitt-konto
+      - env:
+          NODE_ENV: development
+          SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
+        name: "Build Vetrina (for testing only)"
+        run: |2
+            ruby deploy.rb vetrina-test
+            mv apps/vetrina-test/dist build/vetrina-test
+      - env:
+          ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
+          ELECTION_TYPE: EU
+        name: "Build Elections (EU)"
+        run: |2
+            ruby deploy.rb elections
+            mv apps/elections/dist build/elections-eu
+      - env:
+          ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
+          ELECTION_TYPE: PARLIAMENT
+        name: "Build Elections (Parliament)"
+        run: |2
+            ruby deploy.rb elections
+            mv apps/elections/dist build/elections
+      - env:
+          HIDE_LOGIN_LINKS: 'false'
+        name: Build App article
+        run: |2
+            ruby deploy.rb app-article
+            mv apps/app-article/dist build/app-article
+      - name: Upload Scripts
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/scripts
+      - name: Upload Mitt Konto
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/mitt-konto
+      - name: "Upload Vetrina (for testing only)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/vetrina-test
+      - name: "Upload Elections (EU)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/elections-eu
+      - name: "Upload Elections (Parliament)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/elections
+      - name: Upload App article
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/app-article
+      - name: Install gcloud
+        uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
+      - name: Invalidate CDN cache
+        run: |2
+            gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
+            gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"
+            gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
+name: production
+on:
+  push:
+    branches:
+      - master

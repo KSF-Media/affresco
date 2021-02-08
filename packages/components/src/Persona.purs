@@ -167,16 +167,16 @@ deleteTemporaryAddressChange
   :: UUID
   -> Int
   -> DateTime
-  -> DateTime
+  -> Maybe DateTime
   -> UserAuth
   -> Aff Subscription
 deleteTemporaryAddressChange uuid subsno startDate endDate auth = do
   let startDateISO = formatDate startDate
-      endDateISO   = formatDate endDate
+      endDateISO   = formatDate <$> endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO  }
+    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO  }
     ]
     ( authHeaders uuid auth )
 
@@ -346,8 +346,10 @@ derive newtype instance showMergeToken :: Show MergeToken
 derive newtype instance readMergeToken :: ReadForeign MergeToken
 derive newtype instance writeMergeToken :: WriteForeign MergeToken
 
-type User =
-  { uuid :: UUID
+type User = Record BaseUser
+
+type BaseUser =
+  ( uuid :: UUID
   , email :: String
   , firstName :: Nullable String
   , lastName :: Nullable String
@@ -358,7 +360,7 @@ type User =
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
   , pastTemporaryAddresses :: Array TemporaryAddressChange
   , hasCompletedRegistration :: Boolean
-  }
+  )
 
 type NewUser =
   { firstName :: String

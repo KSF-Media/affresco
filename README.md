@@ -2,17 +2,20 @@
 
 ![Affresco](http://www.hotelfororomano.com/wp-content/gallery/gallery-arte-braocca-roma/vita-di-mose-affresco-cappella-sistina-michelangelo.jpg)
 
-Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful frontends are contained in this repo.
+Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful frontends can be found in this repo.
 
-| App | Deploy status | Langs |
-| --- | --- | --- |
-| [Mitt Konto](https://konto.ksfmedia.fi/) | [![Netlify Status](https://api.netlify.com/api/v1/badges/078bfa8b-14c4-45f2-8866-5176e7e25d08/deploy-status)](https://app.netlify.com/sites/mitt-konto/deploys) | PureScript |
-| [Prenumerera](https://prenumerera.netlify.com/) | [![Netlify Status](https://api.netlify.com/api/v1/badges/4b9be1bf-389a-457f-8cbf-a39662efca3f/deploy-status)](https://app.netlify.com/sites/prenumerera/deploys) | PureScript |
-| [KSF National Elections](https://ksf-elections.netlify.com/) | [![Netlify Status](https://api.netlify.com/api/v1/badges/5e80eb03-8a93-4e4e-94f4-966b63e761e5/deploy-status)](https://app.netlify.com/sites/ksf-elections/deploys) | JavaScript |
-| [KSF EU Elections](https://ksf-elections-eu.netlify.com/) | [![Netlify Status](https://api.netlify.com/api/v1/badges/4c33a8b4-0409-44b0-91e5-7d20c36a3095/deploy-status)](https://app.netlify.com/sites/ksf-elections-eu/deploys) | JavaScript |
-| [Duellen](https://duellen.netlify.com/) | [![Netlify Status](https://api.netlify.com/api/v1/badges/7984db0a-22d1-49f1-badf-660d9ac3ad3b/deploy-status)](https://app.netlify.com/sites/duellen/deploys) | JavaScript |
-| [App Article View](https://app-article.ksfmedia.fi/) | [![Netlify Status](https://api.netlify.com/api/v1/badges/1754f1af-5065-4ebb-b498-97ace58a8817/deploy-status)](https://app.netlify.com/sites/app-article/deploys) | PS/JS |
+![production](https://github.com/KSF-Media/affresco/workflows/production/badge.svg)
 
+| Deploy | Lang(s) |
+| --- | --- |
+| [Mitt Konto](https://konto.ksfmedia.fi/) | PureScript |
+| [KSF National Elections](https://frontends.ksfmedia.fi/elections/index.html) | JavaScript |
+| [KSF EU Elections](https://frontends.ksfmedia.fi/elections-eu/index.html) | JavaScript |
+| [App Article View](https://app-article.ksfmedia.fi/) | PS/JS |
+| [Scripts](https://frontends.ksfmedia.fi/scripts) | JS |
+| [Vetrina (test)](https://frontends.ksfmedia.fi/vetrina/index.html) | PS |
+| [Podcasts](https://frontends.ksfmedia.fi/podcasts/index.html) | JS |
+| [Podcasts (VN)](https://frontends.ksfmedia.fi/podcasts-vn/index.html) | JS |
 
 ## Developing
 
@@ -68,3 +71,7 @@ For static scripts, the build command is defined in Netlify. In this case, we ju
 ruby -e 'Dir.glob("scripts/**/*.js").each { |f| `uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }'
 ```
 Here, for example, a file `scripts/apps/appScript.js` is minified to `scripts/apps/appScript.min.js`.
+
+### Adding a new deployment
+
+See the [CI README](./ci/README.md) for info about the CI setup, and how to add a new app

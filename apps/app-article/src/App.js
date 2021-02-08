@@ -462,7 +462,7 @@ if (window.ksfDfp) {
         //Cookie will expire after 7 days 
         Cookies.set('LoginStatus', true, { expires: 7 });
         //To get User data from Android side 
-        Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 100}));
+        Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 365}));
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
         this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
