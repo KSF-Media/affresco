@@ -10,6 +10,9 @@ import KSF.Api (UUID)
 
 newtype CreditCardId = CreditCardId Int
 
+instance eqPaymentMethodId :: Eq CreditCardId where
+  eq (CreditCardId a) (CreditCardId b) = a == b
+
 type CreditCard =
   { id              :: CreditCardId
   , user            :: UUID

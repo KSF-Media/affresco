@@ -33,6 +33,7 @@ app = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   search <- Search.search
+  routeWrapper <- Wrappers.routeWrapper (\(CreditCardUpdateView.RouteWrapperContentInputs inputs) -> inputs.creditCards)
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -63,13 +64,25 @@ app = do
               $ User.getUser Nothing user.uuid
         searchView :: JSX
         searchView = search { setActiveUser: searchSelect }
-    pure $ render self logger searchView isPersonating
+        creditCardUpdateInputs =
+          CreditCardUpdateView.RouteWrapperContentInputs
+            { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
+            , logger: logger
+            }
+        updateCreditCardRoute =
+          routeWrapper
+            { content: creditCardUpdateInputs
+            , closeType: Wrappers.XButton
+            , route: "/kreditkort/uppdatera"
+            , routeFrom: "/"
+            }
+    pure $ render self logger searchView updateCreditCardRoute isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Types.Self -> Sentry.Logger -> JSX -> Boolean -> JSX
-render self@{ state, setState } logger searchView isPersonating =
+render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> Boolean -> JSX
+render self@{ state, setState } logger searchView updateCreditCardRoute isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
@@ -105,18 +118,6 @@ render self@{ state, setState } logger searchView isPersonating =
                    Nothing   -> Views.loginView self logger
                ]
        }
-   updateCreditCardRoute =
-      Wrappers.routeWrapper
-        { content: creditCardUpdateInputs
-        , closeType: Wrappers.XButton
-        , route: "/kreditkort/uppdatera"
-        , routeFrom: "/"
-        }
-      where
-        creditCardUpdateInputs = CreditCardUpdateView.RouteWrapperContentInputs
-          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
-          , logger: logger
-          }
    search =
      Router.route
        { exact: true
