@@ -486,7 +486,7 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
 
-deleteTemporaryAddressChange :: Api.UUID -> Int -> DateTime -> DateTime -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+deleteTemporaryAddressChange :: Api.UUID -> Int -> DateTime -> Maybe DateTime -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 deleteTemporaryAddressChange userUuid subsno startDate endDate = do
   tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate =<< requireToken
   case tempAddressChangeDeletedSub of
