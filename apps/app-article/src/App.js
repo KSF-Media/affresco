@@ -466,7 +466,6 @@ if (window.ksfDfp) {
         Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 365}));
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
         // Call Android bridge 
         try {
             Android.isLoggedIn();
