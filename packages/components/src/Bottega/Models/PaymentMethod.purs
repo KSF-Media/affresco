@@ -13,6 +13,9 @@ data PaymentMethod
 
 newtype PaymentMethodId = PaymentMethodId Int
 
+instance eqPaymentMethodId :: Eq PaymentMethodId where
+  eq (PaymentMethodId a) (PaymentMethodId b) = a == b
+
 toPaymentMethod :: String -> Maybe PaymentMethod
 toPaymentMethod paymentMethod =
   case String.toLower paymentMethod of

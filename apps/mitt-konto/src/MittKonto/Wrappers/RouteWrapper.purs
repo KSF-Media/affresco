@@ -4,8 +4,9 @@ import Prelude
 
 import Effect (Effect)
 import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..))
-import React.Basic.Classic (JSX, make)
-import React.Basic.Classic as React
+import React.Basic (JSX)
+import React.Basic.Hooks ((/\), Component, component, useState, useEffect)
+import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Router as Router
@@ -30,15 +31,14 @@ type SetRouteWrapperState = (State -> State) -> Effect Unit
 class RouteWrapperContent p where
   instantiate :: p -> SetRouteWrapperState -> Effect Unit
 
-component :: forall p. React.Component (Props p)
-component = React.createComponent "RouteWrapper"
-
-routeWrapper :: forall p. (RouteWrapperContent p) => (Props p) -> JSX
-routeWrapper = make component
-  { initialState
-  , didMount
-  , render
-  }
+routeWrapper :: forall p t. Eq t => RouteWrapperContent p => (p -> t) -> Component (Props p)
+routeWrapper f = do
+  component "RouteWrapper" \props@{ content, closeType, route, routeFrom } -> React.do
+    state /\ setState <- useState initialState
+    useEffect (f content) do
+      instantiate content setState
+      pure $ pure unit
+    pure $ render props state
   where
     initialState :: State
     initialState =
@@ -49,17 +49,13 @@ routeWrapper = make component
       , onClose: pure unit
       }
 
-    didMount :: React.Self (Props p) State -> Effect Unit
-    didMount self@{ props: { content }, setState } = do
-      instantiate content setState
-
-    render :: React.Self (Props p) State -> JSX
-    render self@{ props: { closeType, route, routeFrom }, state: { closeable, closeAutomatically, titleText, onClose, renderedContent } } = DOM.div
+    render :: (Props p) -> State -> JSX
+    render props@{ closeType, route, routeFrom } { closeable, closeAutomatically, titleText, onClose, renderedContent } = DOM.div
          { className: "route-wrapper"
          , children:
              [ header
              , renderedContent
-             , autoClose self.props closeAutomatically
+             , autoClose props closeAutomatically
              ]
          }
       where
