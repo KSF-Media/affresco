@@ -18,8 +18,6 @@ import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
-import { try } from '@ksf-media/user/build';
-
 
 class App extends Component {
     constructor(props) {
