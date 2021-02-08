@@ -470,7 +470,7 @@ if (window.ksfDfp) {
         // Call Android bridge 
         try {
             Android.isLoggedIn();
-        } catch () {
+        } catch (e) {
             console.error('Android not defined');
         }
     }
