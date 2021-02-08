@@ -18,6 +18,7 @@ import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
+import { try } from '@ksf-media/user/build';
 
 
 class App extends Component {
@@ -463,11 +464,17 @@ if (window.ksfDfp) {
         Cookies.set('LoginStatus', true, { expires: 7 });
         //To get User data from Android side 
         Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 365}));
+        Cookies.set('token', localStorage.getItem('token'), { expires: 365 });
+        Cookies.set('uuid', localStorage.getItem('uuid'), { expires: 365 });
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
         this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
-        //Call Android bridge 
-        Android.isLoggedIn();        
+        // Call Android bridge 
+        try {
+            Android.isLoggedIn();
+        } catch () {
+            console.error('Android not defined');
+        }
     }
 
     onUserFetchFail(error){
