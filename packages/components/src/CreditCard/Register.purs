@@ -7,8 +7,7 @@ import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 type Props =
-  { title :: JSX
-  , terminalUrl :: PaymentTerminalUrl
+  { terminalUrl :: PaymentTerminalUrl
   }
 
 type Self = React.Self Props State
@@ -22,9 +21,8 @@ component :: React.Component Props
 component = React.createComponent "Register"
 
 render :: Self -> JSX
-render self@{ props: { title, terminalUrl } } =
-  DOM.div_ [ title
-           , warning
+render self@{ props: { terminalUrl } } =
+  DOM.div_ [ warning
            , netsTerminalIframe terminalUrl
            ]
   where

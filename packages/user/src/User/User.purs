@@ -1,5 +1,6 @@
 module KSF.User
   ( UserError (..)
+  , User
   , MergeInfo
   , ValidationServerError
   , module PersonaReExport
@@ -49,7 +50,7 @@ import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
 import Data.DateTime (DateTime)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (for_, traverse_)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
@@ -79,7 +80,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (User, MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -112,7 +113,18 @@ type MergeInfo =
   , userEmail :: Persona.Email
   }
 
-createUser :: Persona.NewUser -> Aff (Either UserError Persona.User)
+type User = { creditCards :: Array Bottega.CreditCard | Persona.BaseUser }
+
+fromPersonaUser :: Persona.User -> User
+fromPersonaUser personaUser = Record.merge personaUser { creditCards: [] }
+
+fromPersonaUserWithCards :: Persona.User -> Aff User
+fromPersonaUserWithCards personaUser = do
+  creditCards <- either (const []) identity <$> getCreditCards
+  let user = fromPersonaUser personaUser
+  pure user { creditCards = creditCards }
+
+createUser :: Persona.NewUser -> Aff (Either UserError User)
 createUser newUser = do
   registeredUser <- try $ Persona.register newUser
   case registeredUser of
@@ -128,7 +140,7 @@ createUser newUser = do
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin Nothing =<< saveToken user
 
-createUserWithEmail :: Persona.NewTemporaryUser -> Aff (Either UserError Persona.User)
+createUserWithEmail :: Persona.NewTemporaryUser -> Aff (Either UserError User)
 createUserWithEmail newTemporaryUser = do
   newUser <- try $ Persona.registerWithEmail newTemporaryUser
   case newUser of
@@ -145,7 +157,7 @@ createUserWithEmail newTemporaryUser = do
     Right user -> finalizeLogin Nothing =<< saveToken user
 
 
-getUser :: Maybe InvalidateCache -> Api.UUID -> Aff Persona.User
+getUser :: Maybe InvalidateCache -> Api.UUID -> Aff User
 getUser maybeInvalidateCache uuid = do
   userResponse <- try do
     Persona.getUser maybeInvalidateCache uuid =<< requireToken
@@ -160,7 +172,7 @@ getUser maybeInvalidateCache uuid = do
           throwError err
     Right user -> do
       Console.info "User fetched successfully"
-      pure user
+      fromPersonaUserWithCards user
 
 isAdminUser :: Effect Boolean
 isAdminUser = (_ == Just "1") <$> LocalStorage.getItem "isAdmin"
@@ -184,21 +196,21 @@ getUserEntitlements auth = do
       | otherwise ->
         pure $ Left $ UnexpectedError err
 
-updateUser :: Api.UUID -> Persona.UserUpdate -> Aff (Either UserError Persona.User)
+updateUser :: Api.UUID -> Persona.UserUpdate -> Aff (Either UserError User)
 updateUser uuid update = do
   newUser <- try $ Persona.updateUser uuid update =<< requireToken
   case newUser of
-    Right user -> pure $ Right user
+    Right user -> Right <$> fromPersonaUserWithCards user
     Left err   -> pure $ Left $ UnexpectedError err
 
-updatePassword :: Api.UUID -> Api.Password -> Api.Password -> Aff (Either UserError Persona.User)
+updatePassword :: Api.UUID -> Api.Password -> Api.Password -> Aff (Either UserError User)
 updatePassword uuid password confirmPassword = do
   eitherUser <- try $ Persona.updatePassword uuid password confirmPassword =<< requireToken
   case eitherUser of
     Left err   -> pure $ Left $ UnexpectedError err
-    Right user -> pure $ Right user
+    Right user -> Right <$> fromPersonaUserWithCards user
 
-loginTraditional :: Persona.LoginData -> Aff (Either UserError Persona.User)
+loginTraditional :: Persona.LoginData -> Aff (Either UserError User)
 loginTraditional loginData = do
   loginResponse <- try $ Persona.login loginData
   case loginResponse of
@@ -218,7 +230,7 @@ loginTraditional loginData = do
           pure $ Left $ UnexpectedError err
 
 -- | Tries to login with token in local storage or, if that fails, SSO.
-magicLogin :: Maybe InvalidateCache -> (Either UserError Persona.User -> Effect Unit) -> Aff Unit
+magicLogin :: Maybe InvalidateCache -> (Either UserError User -> Effect Unit) -> Aff Unit
 magicLogin maybeInvalidateCache callback = do
   loadedToken <- loadToken
   case loadedToken of
@@ -248,7 +260,7 @@ someAuth
   -> Persona.Email
   -> Api.Token
   -> Persona.Provider
-  -> Aff (Either UserError Persona.User)
+  -> Aff (Either UserError User)
 someAuth maybeInvalidateCache mergeInfo email token provider = do
   loginResponse <- try $ Persona.loginSome
       { provider: show provider
@@ -278,7 +290,7 @@ someAuth maybeInvalidateCache mergeInfo email token provider = do
            Console.error "An unexpected error occurred during SoMe login"
            pure $ Left $ UnexpectedError err
 
-loginSso :: Maybe InvalidateCache -> (Either UserError Persona.User -> Effect Unit) -> Aff Unit
+loginSso :: Maybe InvalidateCache -> (Either UserError User -> Effect Unit) -> Aff Unit
 loginSso maybeInvalidateCache callback = do
   config <- liftEffect $ JanrainSSO.loadConfig
   case Nullable.toMaybe config of
@@ -372,10 +384,10 @@ logoutJanrain = do
       liftEffect $ JanrainSSO.checkSession conf
       JanrainSSO.endSession conf
 
-finalizeLogin :: Maybe InvalidateCache -> UserAuth -> Aff (Either UserError Persona.User)
+finalizeLogin :: Maybe InvalidateCache -> UserAuth -> Aff (Either UserError User)
 finalizeLogin maybeInvalidateCache auth = do
-  userResponse <- try do
-    Persona.getUser maybeInvalidateCache auth.userId auth
+  userResponse <- try $
+    getUser maybeInvalidateCache auth.userId
   case userResponse of
     Left err
       | Just (errData :: Persona.TokenInvalid) <- Api.Error.errorData err -> do
@@ -497,11 +509,11 @@ createDeliveryReclamation uuid subsno date claim = do
 
 searchUsers
   :: String
-  -> Aff (Either String (Array Persona.User))
+  -> Aff (Either String (Array User))
 searchUsers query = do
   users <- try $ Persona.searchUsers query =<< requireToken
   case users of
-    Right xs -> pure $ Right xs
+    Right xs -> pure $ Right $ fromPersonaUser <$> xs
     Left err
       | Just (errData :: Persona.Forbidden) <- Api.Error.errorData err ->
           pure $ Left $ errData.forbidden.description

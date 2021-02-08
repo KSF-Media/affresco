@@ -12,11 +12,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    iframe {
+        border-style: none;
+    }
 }
 
 .credit-card-register--terminal {
-    width: 99%;
-    height: 311px;
+    width: 100%;
+    height: 335px;
+
+    @media screen and (min-width: 481px) {
+        height: 315px;
+    }
 }
 
 .credit-card-choice--form-wrapper {
@@ -27,15 +34,6 @@
 
 .credit-card-choice--form {
     width: 100%;
-}
-
-.credit-card-choice--close-icon {
-    align-items: flex-end;
-    flex-direction: column;
-    height: 1.5em;
-    .close-icon {
-	cursor: pointer;
-    }
 }
 
 .credit-card-choice--description {

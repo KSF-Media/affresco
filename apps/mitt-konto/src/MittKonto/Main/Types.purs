@@ -2,7 +2,6 @@ module MittKonto.Main.Types where
 
 import Prelude
 
-import Bottega.Models (CreditCard)
 import Data.Maybe (Maybe)
 import Effect (Effect)
 import KSF.Alert.Component (Alert)
@@ -18,7 +17,6 @@ type State =
   , showWelcome :: Boolean
   , alert :: Maybe Alert
   , payments :: Maybe (Array SubscriptionPayments)
-  , creditCards :: Array CreditCard
   }
 
 type Self =
