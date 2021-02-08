@@ -21,6 +21,7 @@ import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (logout) as User
 import MittKonto.Main.Helpers as Helpers
+import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as Views
 import MittKonto.Main.LoginView (loginView) as Views
 import MittKonto.Main.PaymentView (paymentView) as Views
 import MittKonto.Main.Types as Types
