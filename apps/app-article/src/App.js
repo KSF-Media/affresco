@@ -459,7 +459,7 @@ if (window.ksfDfp) {
 
     onUserFetchSuccess(user) {
         //Cookie will expire after 7 days 
-        Cookies.set('LoginStatus', true, { expires: 7 });
+        Cookies.set('LoginStatus', true, { expires: 365 });
         Cookies.set('token', localStorage.getItem('token'), { expires: 365 });
         Cookies.set('uuid', localStorage.getItem('uuid'), { expires: 365 });
         //To get User data from Android side 
