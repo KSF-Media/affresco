@@ -96,8 +96,9 @@ class App extends Component {
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
         localStorage.removeItem("token");
-        localStorage.removeItem("uuid");
+        localStorage.removeItem("token");
         localStorage.removeItem("cachedArticles");
+        Cookies.set('LoginStatus', false);
     }    
     getArticle() {
         let urlParams = getUrlParam();
