@@ -91,7 +91,7 @@ mosaico a =
         { children:
           [ DOM.meta { charSet: "UTF-8" }
           , DOM.meta
-            { name: "viewport",
+            { name: "viewport"
             , content: "width=device-width, initial-scale=1.0"
             }
           , DOM.link
