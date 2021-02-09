@@ -80,6 +80,10 @@ class App extends Component {
 
             logout(this.onLogout);
         }
+        if(getUrlParam().has('logout')){
+            logout(this.onLogout);
+            Cookies.set('LoginStatus', false);
+        }
         if(getUrlParam().has('login')){
             this.setState({forceLoginView: true});
         }else {
@@ -95,7 +99,10 @@ class App extends Component {
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
+        localStorage.removeItem("token");
+        localStorage.removeItem("uuid");
         localStorage.removeItem("cachedArticles");
+        Cookies.set('LoginStatus', false);
     }    
     getArticle() {
         let urlParams = getUrlParam();
