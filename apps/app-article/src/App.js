@@ -81,7 +81,7 @@ class App extends Component {
             logout(this.onLogout);
         }
         if(getUrlParam().has('logout')){
-            logout(this.onLogout, (err) => console.log("Error logout"));
+            logout(this.onLogout, (err) => Android.onLogoutFailed());
         }
         if(getUrlParam().has('login')){
             this.setState({forceLoginView: true});
@@ -95,6 +95,7 @@ class App extends Component {
     componentWillUnmount() {
     }  
     onLogout() {
+        Android.onLogoutSuccess();
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
