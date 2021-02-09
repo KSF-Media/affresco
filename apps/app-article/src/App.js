@@ -81,8 +81,7 @@ class App extends Component {
             logout(this.onLogout);
         }
         if(getUrlParam().has('logout')){
-            logout(this.onLogout);
-            Cookies.set('LoginStatus', false);
+            logout(this.onLogout, (err) => console.log("Error logout"));
         }
         if(getUrlParam().has('login')){
             this.setState({forceLoginView: true});
