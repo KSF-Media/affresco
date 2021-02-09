@@ -457,8 +457,7 @@ if (window.ksfDfp) {
         // alert("register opn .");
     }
 
-    onUserFetchSuccess(user) {
-        //Cookie will expire after 7 days 
+    onUserFetchSuccess(user) { 
         Cookies.set('LoginStatus', true, { expires: 365 });
         Cookies.set('token', localStorage.getItem('token'), { expires: 365 });
         Cookies.set('uuid', localStorage.getItem('uuid'), { expires: 365 });
@@ -466,8 +465,9 @@ if (window.ksfDfp) {
         Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 365}));
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        if(getUrlParam().has('uuid') && getUrlParam().has('uuid') != ""){
-            this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
+        const articleUuid = getUrlParam().get('uuid');
+        if (articleUuid) { 
+            this.fetchArticleFromApi(articleUuid);
         }
         // Call Android bridge 
         try {
