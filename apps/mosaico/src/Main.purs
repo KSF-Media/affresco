@@ -21,7 +21,7 @@ import Payload.Server.Guards as Guards
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic (JSX)
-import React.Basic.DOM (div, text) as DOM
+import React.Basic.DOM (html, head, meta, link, body ,div, text) as DOM
 import React.Basic.DOM.Server (renderToString) as DOM
 
 -- NOTE: We need to require dotenv in JS
@@ -84,13 +84,35 @@ mosaicoString = DOM.renderToString <<< mosaico
 
 mosaico :: Article -> JSX
 mosaico a =
-  DOM.div
-    { className: "mosaico"
+  DOM.html
+    { lang: "sv"
     , children:
-        [ DOM.text "THIS IS AN ARTICLE"
-        , Article.article
-            { article: a
-            , brand: "hbl"
+      [ DOM.head
+        { children:
+          [ DOM.meta { charSet: "UTF-8" }
+          , DOM.meta
+            { name: "viewport",
+            , content: "width=device-width, initial-scale=1.0"
             }
-        ]
+          , DOM.link
+            { rel: "stylesheet"
+            , href: "/path/to/styleskit.css"
+            }
+          ]
+        }
+      , DOM.body
+        { children:
+          [ DOM.div
+            { className: "mosaico"
+            , children:
+              [ DOM.text "THIS IS AN ARTICLE"
+              , Article.article
+                { article: a
+                , brand: "hbl"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
