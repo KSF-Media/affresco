@@ -96,7 +96,7 @@ class App extends Component {
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
         localStorage.removeItem("token");
-        localStorage.removeItem("token");
+        localStorage.removeItem("uuid");
         localStorage.removeItem("cachedArticles");
         Cookies.set('LoginStatus', false);
     }    
