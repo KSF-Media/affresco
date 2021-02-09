@@ -99,8 +99,6 @@ class App extends Component {
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
-        localStorage.removeItem("token");
-        localStorage.removeItem("uuid");
         localStorage.removeItem("cachedArticles");
         Cookies.set('LoginStatus', false);
     }    
