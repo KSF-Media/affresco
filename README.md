@@ -65,7 +65,7 @@ $ ruby deploy.rb $APP_NAME
 
 #### Scripts
 
-For static scripts, the build command is defined in Netlify. In this case, we just want to minify all content under `scripts/`.
+For static scripts, the build command is defined in CI. In this case, we just want to minify all content under `scripts/`.
 ```
 # A simple one-liner to minify all js files
 ruby -e 'Dir.glob("scripts/**/*.js").each { |f| `uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }'
