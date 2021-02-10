@@ -4,8 +4,15 @@ import Prelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
+import Data.UUID (UUID)
+
+
+type ArticleStub =
+  { title    :: String
+  , uuid     :: UUID
+  , preamble :: String
+  }
 
 type Article =
   { title     :: String

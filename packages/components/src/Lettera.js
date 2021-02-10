@@ -10,3 +10,4 @@ Lettera.ApiClient.instance.timeout = {
 };
 
 exports.articlesApi = new Lettera.ArticlesApi(Lettera.ApiClient.instance);
+exports.listsApi = new Lettera.ListsApi(Lettera.ApiClient.instance);
