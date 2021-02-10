@@ -12,7 +12,9 @@
     "parcel-bundler": "^1.12.3"
   },
   "scripts": {
-    "start": "parcel index.html -p 8000",
-    "build": "spago build && parcel build index.html --no-cache && cp xd_receiver.html _redirects ./dist"
+    "prestart": "parcel build ../../less/mosaico.less",
+    "start": "spago run",
+    "prebuild": "parcel build ../../less/mosaico.less",
+    "build": "spago build && parcel build ../../less/mosaico.less"
   }
 }
