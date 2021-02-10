@@ -236,7 +236,7 @@ render self@{ props: { profile: user } } =
         currentAddress =
           DescriptionList.descriptionList
             { definitions:
-                [ { term: "Adress:"
+                [ { term: "Permanent adress:"
                   , description: map DOM.text $ fromMaybe [] $ addressArray <$> toMaybe user.address
                   }
                 ]
