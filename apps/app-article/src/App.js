@@ -19,7 +19,6 @@ import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
 
-
 class App extends Component {
     constructor(props) {
         super(props);
@@ -81,6 +80,9 @@ class App extends Component {
 
             logout(this.onLogout);
         }
+        if(getUrlParam().has('logout')){
+            logout(this.onLogout, (err) => Android.onLogoutFailed());
+        }
         if(getUrlParam().has('login')){
             this.setState({forceLoginView: true});
         }else {
@@ -93,10 +95,12 @@ class App extends Component {
     componentWillUnmount() {
     }  
     onLogout() {
+        Android.onLogoutSuccess();
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
         localStorage.removeItem("cachedArticles");
+        Cookies.set('LoginStatus', false);
     }    
     getArticle() {
         let urlParams = getUrlParam();
@@ -458,16 +462,24 @@ if (window.ksfDfp) {
         // alert("register opn .");
     }
 
-    onUserFetchSuccess(user) {
-        //Cookie will expire after 7 days 
-        Cookies.set('LoginStatus', true, { expires: 7 });
+    onUserFetchSuccess(user) { 
+        Cookies.set('LoginStatus', true, { expires: 365 });
+        Cookies.set('token', localStorage.getItem('token'), { expires: 365 });
+        Cookies.set('uuid', localStorage.getItem('uuid'), { expires: 365 });
         //To get User data from Android side 
-        Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }));
+        Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 365}));
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
-        //Call Android bridge 
-        Android.isLoggedIn();        
+        const articleUuid = getUrlParam().get('uuid');
+        if (articleUuid) { 
+            this.fetchArticleFromApi(articleUuid);
+        }
+        // Call Android bridge 
+        try {
+            Android.isLoggedIn();
+        } catch (e) {
+            console.error('Android not defined');
+        }
     }
 
     onUserFetchFail(error){
