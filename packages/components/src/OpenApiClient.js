@@ -14,30 +14,39 @@ exports.callApi_ = function (api, methodName, params, opts) {
     var args = params.concat(opts);
     var req = api[methodName].apply(api, args.concat(function (err, data, res) {
       if (err) {
-        debugInfo.error = err;
-        // If we have an error message we decode it and attach it as the `data`
-        // so we can eventually read the error from there
-        if (res && res.text) {
-          try {
-            err.data = JSON.parse(res.text);
-          } catch (decodeErr) {
-            debugInfo.decodeError = decodeErr;
-            console.error("Failed to parse error response body", decodeErr)
-          }
-        }
-        const debugString = util.inspect(debugInfo, { depth: null });
-        console.error("Superagent error", err, debugInfo, debugString.replaceAll(/OAuth [0-9a-zA-Z]+/g, '<omitted>'));
-        onError(err);
+	debugInfo.error = err;
+	// If we have an error message we decode it and attach it as the `data`
+	// so we can eventually read the error from there
+	if (res && res.text) {
+	  try {
+	    err.data = JSON.parse(res.text);
+	  } catch (decodeErr) {
+	    debugInfo.decodeError = decodeErr;
+	    console.error("Failed to parse error response body", decodeErr)
+	  }
+	}
+	// HUGE NOTE: The OpenAPI JS generator does not play well with recursive types, such as `ArticleStub`,
+	// giving us a reference error when trying to parse the thing. However, we still seem to have the correct
+	// data from Lettera so... Just return that if it seems to be alright. What could go wrong!
+	// FIXME: We should not use OpenAPI generator anymore
+	if (typeof err.data === 'object' && err.data.length > 0) {
+	  onSuccess(err.data);
+	}
+	else {
+	  let debugString = util.inspect(debugInfo, { depth: null });
+	  console.error("Superagent error", err, debugInfo, debugString.replaceAll(/OAuth [0-9a-zA-Z]+/g, '<omitted>'));
+	  onError(err);
+	}
       } else {
-        onSuccess(data);
+	onSuccess(data);
       }
     }));
     return function (cancelError, onCancelerError, onCancelerSuccess) {
       try {
-        req.abort();
-        onCancelerSuccess();
+	req.abort();
+	onCancelerSuccess();
       } catch (e) {
-        onCancelerError(e);
+	onCancelerError(e);
       }
     };
   }

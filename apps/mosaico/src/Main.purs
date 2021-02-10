@@ -2,7 +2,6 @@ module Main where
 
 import Prelude
 
-import Mosaico.Article as Article
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID (UUID)
 import Data.UUID as UUID
@@ -11,7 +10,8 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Lettera as Lettera
-import Lettera.Models (Article)
+import Lettera.Models (Article, BodyElement(..))
+import Mosaico.Article as Article
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
@@ -21,19 +21,19 @@ import Payload.Server.Guards as Guards
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic (JSX)
-import React.Basic.DOM (html, head, meta, link, body ,div, text) as DOM
+import React.Basic.DOM as DOM
 import React.Basic.DOM.Server (renderToString) as DOM
 
 -- NOTE: We need to require dotenv in JS
 foreign import requireDotenv :: Unit
 
-newtype Html = Html String
+newtype TextHtml = TextHtml String
 
 type Credentials = { userId :: UUID, token :: String }
 
-instance encodeResponsePlainHtml :: EncodeResponse Html where
+instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
   encodeResponse r@(Response res) = do
-    let (Html b) = res.body
+    let (TextHtml b) = res.body
     pure $
       Response
         { status: res.status
@@ -46,10 +46,13 @@ spec ::
     { routes ::
          { getArticle ::
               GET "/artikel/<uuid>"
-                { response :: Html
+                { response :: TextHtml
                 , params :: { uuid :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , getMostRead ::
+              GET "/mostread"
+                { response :: TextHtml }
          }
     , guards :: { credentials :: Maybe Credentials }
     }
@@ -57,18 +60,18 @@ spec = Spec
 
 main :: Effect Unit
 main = do
-  let handlers = { getArticle }
+  let handlers = { getArticle, getMostRead }
       guards = { credentials: getCredentials }
   Aff.launchAff_ $ Payload.startGuarded_ spec { handlers, guards }
 
-getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe Credentials } } -> Aff Html
+getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe Credentials } } -> Aff TextHtml
 getArticle r@{ params: { uuid } } = do
   case r.guards.credentials of
     -- TODO: Pass credentials to Lettera
     Just _  -> Console.log "YES CREDS!"
     Nothing -> Console.log "NO CREDS!"
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid)
-  pure $ Html $ mosaicoString article
+  pure $ TextHtml $ mosaicoString article
 
 getCredentials :: HTTP.Request -> Aff (Maybe Credentials)
 getCredentials req = do
@@ -78,6 +81,27 @@ getCredentials req = do
         userId <- UUID.parseUUID =<< Headers.lookup "Auth-User" headers
         pure { token, userId }
   pure tokens
+
+getMostRead :: {} -> Aff TextHtml
+getMostRead _ = do
+  mostReadArticles <- Lettera.getMostRead
+  pure $ TextHtml $ DOM.renderToString $ mostRead mostReadArticles
+  where
+    mostRead articles =
+      DOM.ul
+        { className: "most-read-yo"
+        , children: map mkListItem articles
+        }
+
+    mkListItem a =
+      DOM.li
+        { children:
+          [ DOM.a
+            { href: "/artikel/" <> UUID.toString a.uuid
+            , children: [ DOM.text a.title ]
+            }
+          ]
+        }
 
 mosaicoString :: Article -> String
 mosaicoString = DOM.renderToString <<< mosaico
