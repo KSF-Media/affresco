@@ -28,6 +28,7 @@ import KSF.Sentry as Sentry
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.User (User, InvalidDateInput(..))
 import KSF.User as User
+import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -141,12 +142,12 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                             , description: [ DOM.text receiver ]
                             }) $ toMaybe props.subscription.receiver
     deliveryAddress =
-       if package.digitalOnly
-       then mempty
-       else Array.singleton
-              { term: "Leveransadress:"
-              , description: [ DOM.text currentDeliveryAddress ]
-              }
+      if package.digitalOnly
+      then mempty
+      else Array.singleton
+             { term: "Leveransadress:"
+             , description: [ DOM.text currentDeliveryAddress ]
+            }
 
     paymentMethod = Array.singleton
               { term: "Faktureringsmetoden:"
@@ -185,64 +186,33 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     subscriptionUpdates :: JSX
     subscriptionUpdates =
-        Grid.row_ [ asyncWrapper ]
-        where
-          asyncWrapper = AsyncWrapper.asyncWrapper
-            { wrapperState: self.state.wrapperProgress
-            , readyView: actionsContainer $ defaultActions
-            , editingView: identity
-            , successView: \msg -> actionsContainer $ defaultActions <> [successWrapper msg]
-            , errorView: \err -> actionsContainer $ defaultActions <> [errorWrapper err]
-            , loadingView: identity
-            }
+      Grid.row_ [ actionsWrapper ]
+      where
+        actionsWrapper = ActionsWrapper.actionsWrapper
+          { actions: defaultActions
+          , wrapperState: self.state.wrapperProgress
+          , onTryAgain: self.setState _ { wrapperProgress = updateProgress }
+          , containerClass: "subscription--actions-container flex"
+          }
 
-          defaultActions =
-            [ pauseIcon
-            , if maybe true Array.null self.state.pausedSubscriptions
+        defaultActions =
+          [ pauseIcon
+          , if maybe true Array.null self.state.pausedSubscriptions
               then mempty
               else removeSubscriptionPauses
-            , temporaryAddressChangeIcon
-            , case self.state.pendingAddressChanges of
-                   Just a -> removeTempAddressChanges a
-                   Nothing -> mempty
-            , deliveryReclamationIcon
-            ]
+          , temporaryAddressChangeIcon
+          , case self.state.pendingAddressChanges of
+                  Just a -> removeTempAddressChanges a
+                  Nothing -> mempty
+          , deliveryReclamationIcon
+          ]
 
-          successWrapper msg =
-            DOM.div { className: "subscription--action-item"
-                    , children: [ successContainer [ DOM.div { className: "subscription--update-success check-icon" }
-                                                   , foldMap successMessage msg
-                                                   ]
-                                ]
-                    }
-          errorWrapper err =
-            DOM.div { className: "subscription--action-item"
-                    , children: [ errorContainer [ errorMessage err, tryAgain ] ]
-                    }
-          successMessage msg =
-            DOM.div
-              { className: "success-text"
-              , children: [ DOM.text msg ]
-              }
-
-          errorMessage msg =
-            DOM.div
-              { className: "error-text"
-              , children: [ DOM.text msg ]
-              }
-          tryAgain =
-            DOM.span
-              { className: "subscription--try-update-again"
-              , children: [ DOM.text "Försök igen" ]
-              , onClick: handler_ $ self.setState _ { wrapperProgress = updateProgress }
-              }
-            where
-              updateProgress =
-                case self.state.updateAction of
-                  Just PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
-                  Just TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
-                  Just DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
-                  Nothing                     -> AsyncWrapper.Ready
+        updateProgress =
+          case self.state.updateAction of
+            Just PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
+            Just TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
+            Just DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
+            Nothing                     -> AsyncWrapper.Ready
 
     temporaryAddressChangeComponent =
       TemporaryAddressChange.temporaryAddressChange
@@ -336,18 +306,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
         }
 
-    actionsContainer children =
-      DOM.div { className: "subscription--actions-container flex", children }
-
-    successContainer children =
-      DOM.div { className: "subscription--success-container flex", children }
-
     successText = Just "Tack, åtgärden lyckades!"
-
-    errorContainer children =
-      DOM.div { className: "subscription--error-container flex", children }
-
-    loadingSpinner = [ DOM.div { className: "tiny-spinner" } ]
 
     pauseIcon =
       DOM.div
