@@ -4,17 +4,18 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
-    "less": "^3.8.1",
+    "bootstrap": "5.0.0-beta2",
+    "lettera": "https://github.com/KSF-Media/lettera-javascript-client.git#325aa782f03a0956744529e685c07c97437c77a0",
+    "parcel-bundler": "^1.12.3",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",
-    "lettera": "https://github.com/KSF-Media/lettera-javascript-client.git#325aa782f03a0956744529e685c07c97437c77a0",
-    "parcel-bundler": "^1.12.3"
+    "sass": "^1.32.7"
   },
   "scripts": {
-    "prestart": "parcel build ../../less/mosaico.less",
+    "prestart": "parcel build ../../less/mosaico.scss",
     "start": "spago run",
-    "prebuild": "parcel build ../../less/mosaico.less",
-    "build": "spago build && parcel build ../../less/mosaico.less"
+    "prebuild": "parcel build ../../less/mosaico.scss",
+    "build": "spago build"
   }
 }

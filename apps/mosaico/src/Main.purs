@@ -139,7 +139,7 @@ mosaico a =
       , DOM.body
         { children:
           [ DOM.div
-            { className: "mosaico"
+            { className: "mosaico container"
             , children:
               [ DOM.text "THIS IS AN ARTICLE"
               , Article.article
