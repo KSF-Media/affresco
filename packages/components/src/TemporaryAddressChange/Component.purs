@@ -54,6 +54,7 @@ type Props =
   { subsno        :: Int
   , cusno         :: String
   , pastAddresses :: Array AddressChange
+  , nextDelivery  :: Maybe DateTime
   , userUuid      :: User.UUID
   , onCancel      :: Effect Unit
   , onLoading     :: Effect Unit
@@ -114,7 +115,8 @@ didMount self = do
   -- We set the minimum start date two days ahead because of system issues.
   -- TODO: This could be set depending on the time of day
   let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
-  self.setState _ { minStartDate = dayAfterTomorrow }
+      byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
+  self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow }
 
 render :: Self -> JSX
 render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, isIndefinite }} =

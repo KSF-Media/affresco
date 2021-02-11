@@ -249,6 +249,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
         { subsno: props.subscription.subsno
         , cusno: props.user.cusno
         , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
+        , nextDelivery: toDateTime =<< toMaybe package.nextDelivery
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
