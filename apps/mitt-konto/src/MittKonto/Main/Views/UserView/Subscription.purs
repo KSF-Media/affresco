@@ -1,4 +1,4 @@
-module KSF.Subscription.Component where
+module MittKonto.Main.UserView.Subscription where
 
 import Prelude
 

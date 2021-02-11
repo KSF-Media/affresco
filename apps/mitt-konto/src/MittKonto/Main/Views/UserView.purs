@@ -10,10 +10,10 @@ import MittKonto.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
+import MittKonto.Main.UserView.Subscription (subscription) as Subscription
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
-import KSF.Subscription.Component (subscription) as Subscription
 import KSF.User (User)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
