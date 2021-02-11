@@ -509,7 +509,7 @@ if (window.ksfDfp) {
 
         // Call ios bridge 
         try {
-            window.webkit.messagehandlers.isLoggedIn.postMessage();
+            window.webkit.messagehandlers.isLoggedIn.postMessage("");
         } catch (e) {
             console.error('Ios not defined');
         }        
