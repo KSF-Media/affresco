@@ -69,18 +69,6 @@ class App extends Component {
         if (Cookies.get("fontSize")) {
             this.setState({fontSize: parseFloat(Cookies.get("fontSize"))});
         }
-
-        //Since we change the flow of login/logout, this part seems to be unecessary for the moment 
-
-        /*if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
-            //we remove it to avoid infinite loop
-            Cookies.remove('LoginStatus');
-            //TODO
-            // we need to have logout listener here, after success we can then remove the cookie, if for exemple an error happend while             
-            //LogOut;in localstorage will keep logged but for android is considered as logged out
-
-            logout(this.onLogout);
-        }*/
         if(getUrlParam().has('logout')){
             logout(this.onLogout, (err) => this.onLogoutFailed(err));
         }
