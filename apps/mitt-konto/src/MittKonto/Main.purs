@@ -106,12 +106,17 @@ render self@{ state, setState } logger searchView isPersonating =
                ]
        }
    updateCreditCardRoute =
-      Wrappers.routeWrapper
-        { content: creditCardUpdateInputs
-        , closeType: Wrappers.XButton
-        , route: "/kreditkort/uppdatera"
-        , routeFrom: "/"
-        }
+     Router.route
+       { exact: true
+       , path: Just "/kreditkort/uppdatera"
+       , render: const $
+           Wrappers.routeWrapper
+             { content: creditCardUpdateInputs
+             , closeType: Wrappers.XButton
+             , route: "/kreditkort/uppdatera"
+             , routeFrom: "/"
+             }
+       }
       where
         creditCardUpdateInputs = CreditCardUpdateView.RouteWrapperContentInputs
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
@@ -130,9 +135,10 @@ render self@{ state, setState } logger searchView isPersonating =
                  ]
        }
    noMatchRoute =
-     -- TODO: Use Redirect when supported!
-     Router.route
-       { exact: false
-       , path: Nothing
-       , render: const mittKontoView
+     Router.redirect
+       { to: { pathname: "/"
+             , state: {}
+             }
+       , from: "/*"
+       , push: true
        }
