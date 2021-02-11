@@ -10,17 +10,22 @@ let Actions = ./workflows.dhall
 
 let apps = ./apps.dhall
 
-let steps
+let deploySteps
   = Actions.setupSteps
   # [ Actions.checkCIStep ]
   # Actions.buildSteps apps
   # Actions.uploadSteps Actions.Env.Production apps
-  # Actions.refreshCDNSteps
+
+let refreshCDNJobs =
+  { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto"
+  , refresh_cdn_app-article = Actions.refreshCDNJob "app-article"
+  , refresh_cdn_frontends = Actions.refreshCDNJob "ksf-frontends-lb"
+  }
 
 in
   { name = "production"
   , on = { push = { branches = [ "master" ] } }
-  , jobs = { deploy = { runs-on = "ubuntu-latest", steps = steps } }
+  , jobs = { deploy = { runs-on = "ubuntu-latest", steps = deploySteps } } // refreshCDNJobs
   , env = {
     , PRODUCTION_FACEBOOK_APP_ID = "1742585382627694"
     , PRODUCTION_GOOGLE_CLIENT_ID = "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
