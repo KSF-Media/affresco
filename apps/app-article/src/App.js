@@ -81,7 +81,7 @@ class App extends Component {
             logout(this.onLogout);
         }
         if(getUrlParam().has('logout')){
-            logout(this.onLogout, (err) => Android.onLogoutFailed());
+            logout(this.onLogout, (err) => this.onLogoutFailed(err));
         }
         if(getUrlParam().has('login')){
             this.setState({forceLoginView: true});
@@ -95,12 +95,37 @@ class App extends Component {
     componentWillUnmount() {
     }  
     onLogout() {
-        Android.onLogoutSuccess();
+        //To avoid undefined error for ios webview
+        try {
+            Android.onLogoutSuccess();
+        } catch (e) {
+            console.log(e);
+        }
+
+        //To invoke native function in ios via onLogoutSuccess js bridge, webkit object is avaialble only for ios webview
+        try {
+            Window.webkit.messageHandlers.onLogoutSuccess.postMessage();
+        } catch (e) {
+            console.log(e);
+        }
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
         localStorage.removeItem("cachedArticles");
         Cookies.set('LoginStatus', false);
+    }
+    //To inform the native in case there's any issue while processing the logout operation
+    onLogoutFailed(err){
+        try {
+            Android.onLogoutFailed(err);
+        } catch (e) {
+            console.log(e);
+        }
+        try {
+            Window.webkit.messageHandlers.onLogoutFailed.postMessage(err);
+        } catch (e) {
+            console.log(e);
+        }         
     }    
     getArticle() {
         let urlParams = getUrlParam();
@@ -480,6 +505,13 @@ if (window.ksfDfp) {
         } catch (e) {
             console.error('Android not defined');
         }
+
+        // Call ios bridge 
+        try {
+            window.webkit.messagehandlers.isLoggedIn.postMessage();
+        } catch (e) {
+            console.error('Ios not defined');
+        }        
     }
 
     onUserFetchFail(error){
