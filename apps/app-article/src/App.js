@@ -70,8 +70,9 @@ class App extends Component {
             this.setState({fontSize: parseFloat(Cookies.get("fontSize"))});
         }
 
-        //In case User want to logout, the value should be false
-        if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
+        //Since we change the flow of login/logout, this part seems to be unecessary for the moment 
+
+        /*if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
             //we remove it to avoid infinite loop
             Cookies.remove('LoginStatus');
             //TODO
@@ -79,7 +80,7 @@ class App extends Component {
             //LogOut;in localstorage will keep logged but for android is considered as logged out
 
             logout(this.onLogout);
-        }
+        }*/
         if(getUrlParam().has('logout')){
             logout(this.onLogout, (err) => this.onLogoutFailed(err));
         }
@@ -104,7 +105,7 @@ class App extends Component {
 
         //To invoke native function in ios via onLogoutSuccess js bridge, webkit object is avaialble only for ios webview
         try {
-            Window.webkit.messageHandlers.onLogoutSuccess.postMessage();
+            Window.webkit.messageHandlers.onLogoutSuccess.postMessage("");
         } catch (e) {
             console.log(e);
         }
