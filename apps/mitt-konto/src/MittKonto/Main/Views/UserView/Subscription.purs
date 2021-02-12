@@ -7,9 +7,8 @@ import Data.Array as Array
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, for_)
-import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime)
-import Data.List (fromFoldable, intercalate)
+import Data.JSDate (toDateTime)
+import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
@@ -17,7 +16,6 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Now as Now
-import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -29,6 +27,7 @@ import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.User (User, InvalidDateInput(..))
 import KSF.User as User
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
+import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -64,18 +63,6 @@ type Subscription =
   , state :: String
   , dates :: User.SubscriptionDates
   }
-
-formatDate :: JSDate -> Maybe String
-formatDate date = format formatter <$> toDateTime date
-  where
-    dot = Placeholder "."
-    formatter = fromFoldable
-      [ DayOfMonthTwoDigits
-      , dot
-      , MonthTwoDigits
-      , dot
-      , YearFull
-      ]
 
 component :: React.Component Props
 component = React.createComponent "Subscription"
@@ -116,8 +103,8 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
                }
              , { term: "Status:"
                , description:
-                   [ DOM.text $ translateStatus props.subscription.state ]
-                   <> let pausedDates = foldMap (showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions
+                   [ DOM.text $ Helpers.translateStatus props.subscription.state ]
+                   <> let pausedDates = foldMap (Helpers.showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions
                           descriptionText = if Array.null pausedDates
                                             then mempty
                                             else pauseDescription
@@ -151,13 +138,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
 
     paymentMethod = Array.singleton
               { term: "Faktureringsmetoden:"
-              , description: [ DOM.text $ translatePaymentMethod props.subscription.paymentMethod ]
+              , description: [ DOM.text $ Helpers.translatePaymentMethod props.subscription.paymentMethod ]
               }
 
     pendingAddressChanges :: Array User.PendingAddressChange -> Array DescriptionList.Definition
     pendingAddressChanges pendingChanges = Array.singleton $
       { term: "Tillfällig adressändring:"
-      , description: map (DOM.text <<< showPendingAddressChange) (filterExpiredPendingChanges pendingChanges)
+      , description: map (DOM.text <<< Helpers.showPendingAddressChange) (filterExpiredPendingChanges pendingChanges)
       }
 
     billingDateTerm :: String -> Array DescriptionList.Definition
@@ -176,13 +163,13 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     filterExpiredPausePeriods pausedSubs =
       case self.state.now of
         Nothing  -> pausedSubs
-        Just now -> filter (not isPeriodExpired now <<< toMaybe <<< _.endDate) pausedSubs
+        Just now -> filter (not Helpers.isPeriodExpired now <<< toMaybe <<< _.endDate) pausedSubs
 
     filterExpiredPendingChanges :: Array User.PendingAddressChange -> Array User.PendingAddressChange
     filterExpiredPendingChanges pendingChanges =
       case self.state.now of
         Nothing  -> pendingChanges
-        Just now -> filter (not isPeriodExpired now <<< toMaybe <<< _.endDate) pendingChanges
+        Just now -> filter (not Helpers.isPeriodExpired now <<< toMaybe <<< _.endDate) pendingChanges
 
     subscriptionUpdates :: JSX
     subscriptionUpdates =
@@ -443,10 +430,10 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
               }
 
     billingPeriodEndDate =
-          map trim $ formatDate =<< toMaybe props.subscription.dates.end
+          map trim $ Helpers.formatDate =<< toMaybe props.subscription.dates.end
 
     subscriptionEndDate =
-          map trim $ formatDate =<< toMaybe props.subscription.dates.suspend
+          map trim $ Helpers.formatDate =<< toMaybe props.subscription.dates.suspend
 
     -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
     -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
@@ -459,7 +446,7 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
     currentDeliveryAddress :: String
     currentDeliveryAddress
       | Just address <- toMaybe props.subscription.deliveryAddress
-      = formatAddress address
+      = Helpers.formatAddress address
       | Just { streetAddress, zipCode, city } <- toMaybe props.user.address
       = intercalate ", "
           [ streetAddress
@@ -468,61 +455,4 @@ render self@{ props: props@{ subscription: sub@{ package } } } =
           ]
       | otherwise = "-"
 
-formatAddress :: User.DeliveryAddress -> String
-formatAddress { temporaryName, streetAddress, zipcode, city } =
-  (maybe "" (_ <> ", ") $ toMaybe temporaryName) <>
-  intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
 
--- | Translates English status to Swedish.
--- | Described in https://git.ksfmedia.fi/taco/faro/blob/master/kayak-api-details.md
-translateStatus :: User.SubscriptionState -> String
-translateStatus (User.SubscriptionState englishStatus) = do
-  case englishStatus of
-    "Upcoming"                  -> "Under behandling"
-    "Active"                    -> "Aktiv"
-    "Paused"                    -> "Uppehåll"
-    "Ended"                     -> "Avslutad"
-    "UnpaidAndCanceled"         -> "Obetald faktura, avslutad prenumeration."
-    "Canceled"                  -> "Avbeställd"
-    "CanceledWithLatePayment"   -> "Avslutad efter förfallen faktura."
-    "RestartedAfterLatePayment" -> "Aktiverad"
-    "DeactivatedRecently"       -> "Förnyad tillsvidare"
-    "Unknown"                   -> "Okänd"
-    _                           -> englishStatus
-
-translatePaymentMethod :: SubscriptionPaymentMethod -> String
-translatePaymentMethod paymentMethod =
-  case paymentMethod of
-    PaperInvoice         -> "Pappersfaktura"
-    CreditCard           -> "Kreditkort"
-    NetBank              -> "Netbank"
-    ElectronicInvoice    -> "Nätfaktura"
-    DirectPayment        -> "Direktbetalning"
-    UnknownPaymentMethod -> "Okänd"
-
-isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
-isPeriodExpired baseDate endDate =
-  case endDate of
-    -- If there's no end date, the period is ongoing
-    Nothing   -> false
-    Just date ->
-      let endDateTime = toDateTime date
-      in maybe true (_ < baseDate) endDateTime
-
-showPausedDates :: Array User.PausedSubscription -> Array String
-showPausedDates pausedSubs =
-  let formatDates { startDate, endDate } = formatDateString startDate $ toMaybe endDate
-  in map (((<>) "Uppehåll: ") <<< formatDates) pausedSubs
-
-showPendingAddressChange :: User.PendingAddressChange -> String
-showPendingAddressChange { address, startDate, endDate } =
-  let addressString = formatAddress address
-      pendingPeriod = formatDateString startDate (toMaybe endDate)
-  in addressString <> " (" <> pendingPeriod <> ")"
-
-formatDateString :: JSDate -> Maybe JSDate -> String
-formatDateString startDate endDate
-  | Just startString <- formatDate startDate =
-    let endString = fromMaybe "" $ formatDate =<< endDate
-    in startString <> " – " <> endString
-  | otherwise = mempty
