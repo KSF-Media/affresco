@@ -69,17 +69,6 @@ class App extends Component {
         if (Cookies.get("fontSize")) {
             this.setState({fontSize: parseFloat(Cookies.get("fontSize"))});
         }
-
-        //In case User want to logout, the value should be false
-        if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
-            //we remove it to avoid infinite loop
-            Cookies.remove('LoginStatus');
-            //TODO
-            // we need to have logout listener here, after success we can then remove the cookie, if for exemple an error happend while             
-            //LogOut;in localstorage will keep logged but for android is considered as logged out
-
-            logout(this.onLogout);
-        }
         if(getUrlParam().has('logout')){
             logout(this.onLogout, (err) => this.onLogoutFailed(err));
         }
@@ -104,7 +93,7 @@ class App extends Component {
 
         //To invoke native function in ios via onLogoutSuccess js bridge, webkit object is avaialble only for ios webview
         try {
-            Window.webkit.messageHandlers.onLogoutSuccess.postMessage();
+            Window.webkit.messageHandlers.onLogoutSuccess.postMessage("");
         } catch (e) {
             console.log(e);
         }
@@ -508,7 +497,7 @@ if (window.ksfDfp) {
 
         // Call ios bridge 
         try {
-            window.webkit.messagehandlers.isLoggedIn.postMessage();
+            window.webkit.messagehandlers.isLoggedIn.postMessage("");
         } catch (e) {
             console.error('Ios not defined');
         }        
