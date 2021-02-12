@@ -122,8 +122,10 @@ let linkPreviewsStep
     }
   }
 
-let refreshCDNSteps = [
-  , Step::{
+let refreshCDNSteps
+  = \(cdnName : Text)
+  ->
+  [ Step::{
     , name = Some "Install gcloud"
     , uses = Some "GoogleCloudPlatform/github-actions/setup-gcloud@master"
     , `with` = toMap {
@@ -133,14 +135,20 @@ let refreshCDNSteps = [
       }
     }
   , Step::{
-      , name = Some "Invalidate CDN cache"
+      , name = Some "Invalidate CDN cache for '${cdnName}'"
       , run = Some ''
-        gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
-        gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"
-        gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
+        gcloud compute url-maps invalidate-cdn-cache ${cdnName} --path "/*"
       ''
     }
   ]
+
+let refreshCDNJob
+  = \(cdnName : Text)
+  -> {
+    , runs-on = "ubuntu-latest"
+    , steps = refreshCDNSteps cdnName
+    , needs = "deploy"
+    }
 
 let uploadSteps
   = \(env : Env)
@@ -158,5 +166,5 @@ in
 , uploadSteps
 , checkCIStep
 , linkPreviewsStep
-, refreshCDNSteps
+, refreshCDNJob
 }

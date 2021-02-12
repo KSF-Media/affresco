@@ -19,7 +19,7 @@ Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautifu
 
 ## Developing
 
-To install all packages run `yarn install` in the root of the repo. As we are using git hooks, run `yarn copy-hooks` to set them up in your machine.
+To install all packages run `yarn install` in the root of the repo.
 
 You might also want to install the tools globally for more convenience: `npm install -g purescript spago parcel`
 
@@ -34,11 +34,11 @@ After this initial setup, running `yarn start` should give you a hot reloading l
 
 It's a monorepo, and there's a separation between **packages** and **apps**:
 - **packages** are actual npm packages (should be prefixed with `@affresco/`), and represent units of compilation to be included in apps.
-  
+
   Each package should include an entry point file. This is typically `index.js` in the root of the package directory.
-  
+
   The granularity here is important: JS packages might be as small as we wish, PureScript packages should be as big as possible - this is because their size is not really important for PureScript apps, but it should be so that we can easily include them into JS apps by just compiling a bundle (e.g. the `login` is a separate package. See the `package.json` in `apps/app-article` for how to compile it.
-  
+
   When making a new PureScript package, add it to the global `packages.dhall` - after that you'll be able to import it in your apps or in other packages (note that the compiler will prevent you from having circular dependencies anyways.
 - **apps** is where all the applications are. These are not supposed to be required in any other application, however a `package.json` should still exist for internal and external dependencies, and build scripts.
 
@@ -65,7 +65,7 @@ $ ruby deploy.rb $APP_NAME
 
 #### Scripts
 
-For static scripts, the build command is defined in Netlify. In this case, we just want to minify all content under `scripts/`.
+For static scripts, the build command is defined in CI. In this case, we just want to minify all content under `scripts/`.
 ```
 # A simple one-liner to minify all js files
 ruby -e 'Dir.glob("scripts/**/*.js").each { |f| `uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` }'

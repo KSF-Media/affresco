@@ -2,7 +2,6 @@ module MittKonto.Wrappers.RouteWrapper where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..))
 import React.Basic.Classic (JSX, make)
@@ -55,19 +54,14 @@ routeWrapper = make component
       instantiate content setState
 
     render :: React.Self (Props p) State -> JSX
-    render self@{ props: { closeType, route, routeFrom }, state: { closeable, closeAutomatically, titleText, onClose, renderedContent } } =
-      Router.route
-        { exact: true
-        , path: Just route
-        , render: \_ -> DOM.div
-            { className: "route-wrapper"
-            , children:
-                [ header
-                , renderedContent
-                , autoClose self.props closeAutomatically
-                ]
-            }
-        }
+    render self@{ props: { closeType, route, routeFrom }, state: { closeable, closeAutomatically, titleText, onClose, renderedContent } } = DOM.div
+         { className: "route-wrapper"
+         , children:
+             [ header
+             , renderedContent
+             , autoClose self.props closeAutomatically
+             ]
+         }
       where
         header :: JSX
         header = DOM.div $
