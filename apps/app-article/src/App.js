@@ -93,7 +93,7 @@ class App extends Component {
 
         //To invoke native function in ios via onLogoutSuccess js bridge, webkit object is avaialble only for ios webview
         try {
-            Window.webkit.messageHandlers.onLogoutSuccess.postMessage("");
+            window.webkit.messageHandlers.onLogoutSuccess.postMessage("");
         } catch (e) {
             console.log(e);
         }
@@ -111,7 +111,7 @@ class App extends Component {
             console.log(e);
         }
         try {
-            Window.webkit.messageHandlers.onLogoutFailed.postMessage(err);
+            window.webkit.messageHandlers.onLogoutFailed.postMessage(err);
         } catch (e) {
             console.log(e);
         }         
@@ -497,9 +497,9 @@ if (window.ksfDfp) {
 
         // Call ios bridge 
         try {
-            window.webkit.messagehandlers.isLoggedIn.postMessage("");
+            window.webkit.messageHandlers.isLoggedIn.postMessage("");
         } catch (e) {
-            console.error('Ios not defined');
+            console.error("Ios not defined");
         }        
     }
 
