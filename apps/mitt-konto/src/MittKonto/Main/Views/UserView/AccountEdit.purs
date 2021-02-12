@@ -1,6 +1,6 @@
-module MittKonto.AccountEdit where
+module MittKonto.Main.UserView.AccountEdit where
 
-import MittKonto.IconAction as IconAction
+import MittKonto.Main.UserView.IconAction as IconAction
 import React.Basic.Classic (JSX)
 import React.Basic.DOM as DOM
 

@@ -5,8 +5,8 @@ import Prelude
 import Data.Array (snoc, sortBy, (:))
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
-import MittKonto.AccountEdit as AccountEdit
-import MittKonto.IconAction as IconAction
+import MittKonto.Main.UserView.AccountEdit as AccountEdit
+import MittKonto.Main.UserView.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
