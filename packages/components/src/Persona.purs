@@ -513,6 +513,8 @@ type Payment =
   , type :: PaymentType
   , state :: PaymentState
   , discount :: Number
+  , invno :: Int
+  , reference :: String
   }
 
 type ApiSubscriptionPayments =
@@ -533,6 +535,8 @@ type ApiPayment =
   , type :: String
   , state :: String
   , discount :: Number
+  , invno :: Int
+  , reference :: String
   }
 
 getPayments :: UUID -> UserAuth -> Aff (Array SubscriptionPayments)
@@ -566,6 +570,8 @@ getPayments uuid auth =
              , type: t
              , state: s
              , discount: x.discount
+             , invno: x.invno
+             , reference: x.reference
              }
 
 type Forbidden = ServerError
