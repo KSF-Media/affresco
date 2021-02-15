@@ -4,7 +4,6 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
-    "bootstrap": "5.0.0-beta2",
     "lettera": "https://github.com/KSF-Media/lettera-javascript-client.git#325aa782f03a0956744529e685c07c97437c77a0",
     "parcel-bundler": "^1.12.3",
     "react": ">=16.12",
@@ -13,9 +12,9 @@
     "sass": "^1.32.7"
   },
   "scripts": {
-    "prestart": "parcel build ../../less/mosaico.scss",
+    "prestart": "parcel build ../../scss/mosaico.scss",
     "start": "spago run",
-    "prebuild": "parcel build ../../less/mosaico.scss",
+    "prebuild": "parcel build ../../scss/mosaico.scss",
     "build": "spago build"
   }
 }

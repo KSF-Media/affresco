@@ -1,0 +1,17 @@
+.mosaico--tag {
+    text-transform: uppercase;
+    background: transparent;
+    padding: 0;
+    display: inline-block;
+    font: 700 .75rem 'Roboto', sans-serif;
+    color: #000;
+    &.brand-hbl {
+        color: $hbl-orange;
+    }
+    &.brand-vn {
+        color: $vn-red;
+    }
+    &.brand-on {
+        color: $on-blue;
+    }
+}

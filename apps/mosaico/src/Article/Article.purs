@@ -38,7 +38,7 @@ article props = React.make
 renderImage :: Image -> JSX
 renderImage img =
   DOM.div
-    { className: "ksf-article--image"
+    { className: "mosaico--article--image"
     , children: [
       DOM.img
         { src: img.url
@@ -54,19 +54,19 @@ renderImage img =
 render :: Self -> JSX
 render { props, state } =
   DOM.div
-    { className: "ksf-article"
+    { className: "mosaico--article"
     , children: [
       DOM.div
-        { className: "articleTag brandColor-" <> props.brand
+        { className: "mosaico--tag brand-" <> props.brand
         , children: [ DOM.text $ fromMaybe "" (head props.article.tags) ]
         }
       , DOM.h1
-        { className: "ksf-article--title title"
+        { className: "mosaico--article--title title"
         , children: [ DOM.text props.article.title ]
         }
       , renderImage props.article.mainImage
       , DOM.div
-        { className: "ksf-article--body"
+        { className: "mosaico--article--body"
         , children: map renderElement state.body
         }
       ]
@@ -78,7 +78,7 @@ render { props, state } =
     renderElement = case _ of
       Left err -> mempty
       Right el -> case el of
-        Html content -> DOM.div
+        Html content -> DOM.p
           { dangerouslySetInnerHTML: { __html: content }
           , className: "html"
           }
