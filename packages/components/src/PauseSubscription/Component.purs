@@ -2,11 +2,12 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
+import Data.Array (catMaybes)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..))
-import Data.JSDate (fromDateTime)
+import Data.JSDate (fromDateTime, toDateTime)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (toNullable)
+import Data.Nullable (toNullable, toMaybe)
 import Data.Time.Duration as Time.Duration
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -15,6 +16,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
+import KSF.Ranges as Ranges
 import KSF.User as User
 import React.Basic (JSX)
 import React.Basic.Classic (make)
@@ -30,10 +32,25 @@ type Props =
   { subsno    :: Int
   , cusno     :: String
   , userUuid  :: User.UUID
+  , ranges    :: Ranges.MinMaxRanges
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: User.Subscription -> Effect Unit
   , onError   :: User.InvalidDateInput -> Effect Unit
+  }
+
+ranges :: Maybe (Array User.PausedSubscription) -> Ranges.MinMaxRanges
+ranges Nothing = ranges $ Just []
+ranges (Just paused) =
+-- Minimum pause period is one week
+  { minSpan: Time.Duration.Days 6.0
+-- Maximum pause period is three months
+  , maxSpan: Just $ Time.Duration.Days (3.0 * 30.0)
+  , spanBetween: Time.Duration.Days 7.0
+  , ranges: catMaybes $ (\ {startDate, endDate} -> do
+                            start <- toDateTime startDate
+                            let end = toDateTime =<< (toMaybe endDate)
+                            pure { rangeMin: start, rangeMax: end }) <$> paused
   }
 
 type State =
@@ -42,6 +59,7 @@ type State =
   , endDate      :: Maybe DateTime
   , minEndDate   :: Maybe DateTime
   , maxEndDate   :: Maybe DateTime
+  , invalidStartDate :: Boolean
   }
 
 pauseSubscription :: Props -> JSX
@@ -57,22 +75,8 @@ initialState =
   , endDate: Nothing
   , minEndDate: Nothing
   , maxEndDate: Nothing
+  , invalidStartDate: false
   }
-
--- | Minimum pause period is one week
-calcMinEndDate :: Maybe DateTime -> Maybe DateTime
-calcMinEndDate Nothing = Nothing
-calcMinEndDate (Just startDate) = do
-  -- 6 days added to the starting date = 7 (one week)
-  let week = Time.Duration.Days 6.0
-  adjust week startDate
-
--- | Maximum pause period is three months
-calcMaxEndDate :: Maybe DateTime -> Maybe DateTime
-calcMaxEndDate Nothing = Nothing
-calcMaxEndDate (Just startDate) = do
-  let threeMonths = Time.Duration.Days (30.0 * 3.0)
-  adjust threeMonths startDate
 
 didMount :: Self -> Effect Unit
 didMount self = do
@@ -100,6 +104,7 @@ render self =
             ]
         , pauseForm
         ]
+        <> (if self.state.invalidStartDate then [ invalidDateWarning ] else [])
     }
   where
     pauseForm =
@@ -133,7 +138,7 @@ render self =
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: self.state.maxEndDate
-        , disabled: isNothing self.state.startDate
+        , disabled: isNothing self.state.startDate || self.state.invalidStartDate
         , label: "Avslutas"
         }
 
@@ -143,13 +148,28 @@ render self =
           { type: "submit"
           , children: [ DOM.text "Skicka" ]
           , className: "button-green"
+          , disabled: self.state.invalidStartDate
           }
 
-    onStartDateChange newStartDate =
-      self.setState _
-        { startDate = newStartDate
-        , minEndDate = calcMinEndDate newStartDate
-        , maxEndDate = calcMaxEndDate newStartDate
+    onStartDateChange newStartDate = do
+      self.setState _ { startDate = newStartDate }
+      case Ranges.calcEndDates self.props.ranges newStartDate of
+        Nothing -> self.setState _ { invalidStartDate = true }
+        Just { minEndDate, maxEndDate } ->
+          self.setState _ { invalidStartDate = false
+                          , minEndDate = minEndDate
+                          , maxEndDate = maxEndDate
+                          }
+
+    invalidDateWarning =
+      DOM.div
+        { className: "subscription--error-container"
+        , children:
+            [ DOM.div
+                { className: "error-text"
+                , children: [ DOM.text "Vänligen välj ett annat datum. Det valda datumet går över eller är för nära ett tidigare uppehåll. Det måste vara minst en vecka mellan uppehållsperioderna." ]
+                }
+            ]
         }
 
 type DateInputField =
@@ -182,7 +202,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     $ Just { extraClasses: [ "mt2" ] }
 
 submitForm :: State -> Props -> Effect Unit
-submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
+submitForm { startDate: Just start, endDate: Just end, invalidStartDate: false } props@{ userUuid, subsno } = do
   props.onLoading
   Aff.launchAff_ $
     User.pauseSubscription userUuid subsno start end >>=
