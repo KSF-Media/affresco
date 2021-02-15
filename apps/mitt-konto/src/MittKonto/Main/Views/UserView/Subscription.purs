@@ -72,14 +72,14 @@ render self@{ props: { subscription: sub@{ package, paymentMethod, state } } } =
                                          , Elements.pendingAddressChanges
                                          , Elements.billingDateTerm
                                          , Elements.subscriptionEndTerm
-                                         , Elements.paymentMethod 
+                                         , Elements.paymentMethod
                                          ]
          })
       (if package.digitalOnly
        then mempty
        else Elements.subscriptionUpdates self)
       $ Just { extraClasses: [ "subscription--container" ] }
-  where  
+  where
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
       case self.state.now of
