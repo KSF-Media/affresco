@@ -30,6 +30,7 @@ import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
+import React.Basic.Router as Router
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
 receiverName self@{ props: { subscription: { receiver } } } =
@@ -39,7 +40,7 @@ receiverName self@{ props: { subscription: { receiver } } } =
               }) $ toMaybe receiver
 
 deliveryAddress :: Types.Self -> Array DescriptionList.Definition
-deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } = 
+deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
   if package.digitalOnly
   then mempty
   else Array.singleton
@@ -78,7 +79,7 @@ pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges
         Just date -> filter (not Helpers.isPeriodExpired date <<< toMaybe <<< _.endDate) changes
 
 billingDateTerm :: Types.Self -> Array DescriptionList.Definition
-billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap 
+billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
   (\e -> Array.singleton $
       { term: "Faktureringsperioden upphör:"
       , description: [ DOM.text $ e ]
@@ -86,7 +87,7 @@ billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
   ) $ trim <$> (Helpers.formatDate =<< toMaybe end)
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
-subscriptionEndTerm self@{ props: { subscription: { dates: { suspend } } } } = foldMap 
+subscriptionEndTerm self@{ props: { subscription: { dates: { suspend } } } } = foldMap
   (\s -> Array.singleton $
       { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text s ]
@@ -114,6 +115,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
               Just a -> removeTempAddressChanges a
               Nothing -> mempty
       , deliveryReclamationIcon
+      , creditCardUpdateIcon
       ]
 
     updateProgress =
@@ -137,7 +139,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
                             { pendingAddressChanges = toMaybe newPendingChanges
                             , wrapperProgress = AsyncWrapper.Success successText
                             }
-    
+
         , onError: \(err :: User.InvalidDateInput) -> do
             let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
                 startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
@@ -154,7 +156,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
               -- Other cases are not really errors we want notifications from
               _ -> self.props.logger.log (show err) Sentry.Info
             self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
-        }  
+        }
 
     readPastTemporaryAddress tmp =
       { streetAddress: Just tmp.street
@@ -214,9 +216,9 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
             self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
         }
-  
+
     successText = Just "Tack, åtgärden lyckades!"
-    
+
     pauseIcon =
       DOM.div
         { className: "subscription--action-item"
@@ -239,7 +241,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
             { updateAction = Just Types.PauseSubscription
             , wrapperProgress = AsyncWrapper.Editing pauseSubscriptionComponent
             }
-    
+
     removeSubscriptionPauses =
       DOM.div
         { className: "subscription--action-item"
@@ -270,7 +272,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
                     }
                   Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "success"
         }
-  
+
     temporaryAddressChangeIcon =
       DOM.div
         { className: "subscription--action-item"
@@ -293,7 +295,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
                 { updateAction = Just Types.TemporaryAddressChange
                 , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
                 }
-  
+
     removeTempAddressChanges tempAddressChanges =
       DOM.div
         { className: "subscription--action-item"
@@ -327,7 +329,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
                           Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
                     _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
         }
-  
+
     deliveryReclamationIcon =
       DOM.div
         { className: "subscription--action-item"
@@ -344,13 +346,38 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
                 }
             ]
         }
-        where
-            showDeliveryReclamation = handler_ $ do
-              self.setState _
-                { updateAction = Just Types.DeliveryReclamation
-                , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
-                }
-  
+      where
+        showDeliveryReclamation = handler_ $ do
+          self.setState _
+            { updateAction = Just Types.DeliveryReclamation
+            , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
+            }
+
+    creditCardUpdateIcon =
+      DOM.div
+        { className: "subscription--action-item"
+        , children: [ Router.link
+                        { to: { pathname: "/kreditkort/uppdatera"
+                              , state: {}
+                              }
+                        , children: [ DOM.div
+                                        { className: "subscription--action-item"
+                                        , children: [ DOM.div
+                                                        { className: "subscription--credit-card-update-icon circle"
+                                                        }
+                                                    , DOM.span
+                                                        { className: "subscription--update-action-text"
+                                                        , children:
+                                                            [ DOM.u_ [ DOM.text "Reklamation av utebliven tidning" ] ]
+                                                        }
+                                                    ]
+                                        }
+                                    ]
+                        , className: mempty
+                        }
+                    ]
+        }
+
 -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
 -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
 -- This is why we tell the customer to delete the pause and create a new one.
