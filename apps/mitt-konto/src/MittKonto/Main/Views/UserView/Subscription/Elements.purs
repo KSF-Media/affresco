@@ -30,6 +30,7 @@ import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
+import React.Basic.Router as Router
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
 receiverName self@{ props: { subscription: { receiver } } } =
@@ -114,6 +115,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
               Just a -> removeTempAddressChanges a
               Nothing -> mempty
       , deliveryReclamationIcon
+      , creditCardUpdateIcon
       ]
 
     updateProgress =
@@ -344,12 +346,37 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
                 }
             ]
         }
-        where
-            showDeliveryReclamation = handler_ $ do
-              self.setState _
-                { updateAction = Just Types.DeliveryReclamation
-                , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
-                }
+      where
+        showDeliveryReclamation = handler_ $ do
+          self.setState _
+            { updateAction = Just Types.DeliveryReclamation
+            , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
+            }
+
+    creditCardUpdateIcon =
+      DOM.div
+        { className: "subscription--action-item"
+        , children: [ Router.link
+                        { to: { pathname: "/kreditkort/uppdatera"
+                              , state: {}
+                              }
+                        , children: [ DOM.div
+                                        { className: "subscription--action-item"
+                                        , children: [ DOM.div
+                                                        { className: "subscription--credit-card-update-icon circle"
+                                                        }
+                                                    , DOM.span
+                                                        { className: "subscription--update-action-text"
+                                                        , children:
+                                                            [ DOM.u_ [ DOM.text "Reklamation av utebliven tidning" ] ]
+                                                        }
+                                                    ]
+                                        }
+                                    ]
+                        , className: mempty
+                        }
+                    ]
+        }
 
 -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
 -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
