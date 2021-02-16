@@ -139,13 +139,22 @@ mosaico a =
       , DOM.body
         { children:
           [ DOM.div
-            { className: "mosaico container"
+            { className: "mosaico grid"
             , children:
-              [ DOM.text "THIS IS AN ARTICLE"
+              [ DOM.header
+                { className: "mosaico--header"
+                , children: [ DOM.text "header" ]
+                }
               , Article.article
                 { article: a
                 , brand: "hbl"
                 }
+              , DOM.footer
+                { className: "mosaico--footer"
+                , children: [ DOM.text "footer" ]
+                }
+              , DOM.aside
+                { className: "mosaico--aside" }
               ]
             }
           ]

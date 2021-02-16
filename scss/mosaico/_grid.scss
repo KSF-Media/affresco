@@ -1,0 +1,63 @@
+.grid {
+    display: grid;
+    &.mosaico {
+        @media (min-width: $breakpoint-sm) {
+            margin: 0 auto;
+            max-width: calc(#{$breakpoint-sm} - #{$breakpoint-padding});
+        }
+        @media (min-width: $breakpoint-md) {
+            margin: 0 auto;
+            max-width: calc(#{$breakpoint-md} - #{$breakpoint-padding});
+        }
+        @media (min-width: $breakpoint-lg) {
+            margin: 0 auto;
+            max-width: calc(#{$breakpoint-lg} - #{$breakpoint-padding});
+        }
+        @media (min-width: $breakpoint-xl) {
+            margin: 0 auto;
+            max-width: calc(#{$breakpoint-xl} - #{$breakpoint-padding});
+        }
+        @media (min-width: $breakpoint-xxl) {
+            margin: 0 auto;
+            max-width: calc(#{$breakpoint-xxl} - #{$breakpoint-padding});
+        }
+        min-height: 100vh;
+        grid-template-rows: 150px 1fr 150px;
+        grid-template-columns: 1rf;
+        grid-row-gap: 15px;
+        grid-template-areas:
+            "head"
+            "main"
+            "aside"
+            "foot";
+        @media (min-width: $breakpoint-lg) {
+            grid-template-columns: 1fr 300px;
+            grid-column-gap: 15px;
+            grid-template-areas:
+            "head head"
+            "main aside"
+            "foot foot";
+        }    
+        @media (min-width: $breakpoint-xl) {
+            grid-column-gap: 30px;
+        }
+        @media (min-width: $breakpoint-xxl) {
+            grid-column-gap: 60px;
+        }
+        .mosaico--header {
+            grid-area: head;
+            background: $grey-light;
+        }
+        .mosaico--article {
+            grid-area: main;
+        }
+        .mosaico--footer {
+            grid-area: foot;
+            background: $grey-light;
+        }
+        .mosaico--aside {
+            grid-area: aside;
+            background: $grey-light;
+        }
+    }
+}
