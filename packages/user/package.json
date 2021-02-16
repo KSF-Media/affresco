@@ -12,7 +12,7 @@
     "react-dom": "^16.12"
   },
   "scripts": {
-    "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less ../../less/ksf-utils.less ../../less/InputField.less"
+    "build-npm": "spago build -u '--output ../../output' && cp -R ../../output output && spago bundle-module --no-build -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less ../../less/ksf-utils.less ../../less/InputField.less"
   },
   "files": [
     "build",

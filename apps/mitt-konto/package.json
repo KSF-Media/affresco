@@ -14,6 +14,6 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "spago build && parcel build index.html --no-cache --public-url ./ && cp xd_receiver.html _redirects ./dist"
+    "build": "spago build -u '--output ../../output' && cp -R ../../output output && parcel build index.html --no-cache --public-url ./ && cp xd_receiver.html _redirects ./dist"
   }
 }

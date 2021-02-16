@@ -4,7 +4,7 @@
   "description": "Vetrina, frontend for purchasing KSF Media products",
   "license": "MIT",
   "scripts": {
-    "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d build ../../less/Vetrina.less",
+    "build-npm": "spago builld -u '--output ../../output' && cp -R ../../output output && spago bundle-module --no-build -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d build ../../less/Vetrina.less",
     "prepublishOnly": "yarn --cwd ../../apps/vetrina-test test"
   },
   "dependencies": {
