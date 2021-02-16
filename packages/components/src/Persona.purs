@@ -133,6 +133,23 @@ pauseSubscription uuid subsno startDate endDate auth = do
     ]
     ( authHeaders uuid auth )
 
+editSubscriptionPause :: UUID -> Int -> DateTime -> DateTime -> DateTime -> DateTime -> UserAuth -> Aff Subscription
+editSubscriptionPause uuid subsno oldStartDate oldEndDate newStartDate newEndDate auth = do
+  let oldStartDateISO = formatDate oldStartDate
+      oldEndDateISO   = formatDate oldEndDate
+      newStartDateISO = formatDate newStartDate
+      newEndDateISO   = formatDate newEndDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoPausePatch"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { oldStartDate: oldStartDateISO
+                      , oldEndDate: oldEndDateISO
+                      , newStartDate: newStartDateISO
+                      , newEndDate: newEndDateISO
+                      }
+    ]
+    ( authHeaders uuid auth )
+
 unpauseSubscription :: UUID -> Int -> UserAuth -> Aff Subscription
 unpauseSubscription uuid subsno auth = do
   callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"

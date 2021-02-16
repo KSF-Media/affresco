@@ -17,6 +17,7 @@ module KSF.User
   , updateUser
   , updatePassword
   , pauseSubscription
+  , editSubscriptionPause
   , unpauseSubscription
   , temporaryAddressChange
   , deleteTemporaryAddressChange
@@ -449,6 +450,25 @@ pauseSubscription
   -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 pauseSubscription userUuid subsno startDate endDate = do
   pausedSub <- try $ Persona.pauseSubscription userUuid subsno startDate endDate =<< requireToken
+  case pausedSub of
+    Right sub -> pure $ Right sub
+    Left err
+      | Just (errData :: Persona.InvalidPauseDates) <- Api.Error.errorData err ->
+          pure $ Left $ Persona.pauseDateErrorToInvalidDateError errData.invalid_pause_dates.message
+      | otherwise -> do
+          Console.error "Unexpected error when pausing subscription."
+          pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
+
+editSubscriptionPause
+  :: Api.UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> DateTime
+  -> DateTime
+  -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEndDate = do
+  pausedSub <- try $ Persona.editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEndDate =<< requireToken
   case pausedSub of
     Right sub -> pure $ Right sub
     Left err

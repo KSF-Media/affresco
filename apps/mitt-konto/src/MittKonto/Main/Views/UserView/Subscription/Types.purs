@@ -27,6 +27,7 @@ type State =
 
 data SubscriptionUpdateAction
   = PauseSubscription
+  | EditSubscriptionPause User.PausedSubscription
   | TemporaryAddressChange
   | DeliveryReclamation
 
