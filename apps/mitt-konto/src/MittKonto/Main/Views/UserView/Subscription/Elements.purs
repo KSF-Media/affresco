@@ -13,6 +13,7 @@ import Data.Nullable (toMaybe)
 import Data.String (trim)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -30,6 +31,7 @@ import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
+import React.Basic.Router as Router
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
 receiverName self@{ props: { subscription: { receiver } } } =
@@ -98,7 +100,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
-      { actions: defaultActions
+      { actions: defaultActions <> extraActions
       , wrapperState: self.state.wrapperProgress
       , onTryAgain: self.setState _ { wrapperProgress = updateProgress }
       , containerClass: "subscription--actions-container flex"
@@ -116,8 +118,14 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
       , deliveryReclamationIcon
       ]
 
+    extraActions =
+      [ case sub.paymentMethod of
+          CreditCard -> creditCardUpdateIcon
+          _          -> mempty
+      ]
+
     updateProgress =
-      case self.state.updateAction of
+      case state.updateAction of
         Just Types.PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
         Just Types.TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
         Just Types.DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
@@ -344,12 +352,35 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
                 }
             ]
         }
-        where
-            showDeliveryReclamation = handler_ $ do
-              self.setState _
-                { updateAction = Just Types.DeliveryReclamation
-                , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
-                }
+      where
+        showDeliveryReclamation = handler_ $ do
+          self.setState _
+            { updateAction = Just Types.DeliveryReclamation
+            , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
+            }
+
+    creditCardUpdateIcon =
+      DOM.div_
+        [ Router.link
+            { to: { pathname: "/kreditkort/uppdatera"
+                  , state: {}
+                  }
+            , children: [ DOM.div
+                            { className: "subscription--action-item"
+                            , children: [ DOM.div
+                                            { className: "subscription--credit-card-update-icon circle"
+                                            }
+                                        , DOM.span
+                                            { className: "subscription--update-action-text"
+                                            , children:
+                                                [ DOM.u_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ] ]
+                                            }
+                                        ]
+                            }
+                        ]
+            , className: mempty
+            }
+        ]
 
 -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
 -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.

@@ -22,12 +22,6 @@ accountEdit = DOM.div
           , description: "Fakturor"
           , onClick: IconAction.Router "/fakturor"
           }
-      , IconAction.iconAction
-          { iconClassName: creditCardUpdateClass
-          , description: "Uppdatera ditt kredit- eller bankkort"
-          , onClick:
-              IconAction.Router "/kreditkort/uppdatera"
-          }
       ]
       where
         passwordChangeClass = "account-edit--password-change"

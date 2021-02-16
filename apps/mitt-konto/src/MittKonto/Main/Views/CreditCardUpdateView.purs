@@ -75,7 +75,7 @@ component = React.createComponent "CreditCardUpdateView"
 
 didMount :: Self -> Effect Unit
 didMount self@{ setState, props: { creditCards, logger, setWrapperState } } = do
-  setState _ { asyncWrapperState = AsyncWrapper.Ready }
+  setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
   Aff.launchAff_ do
     case creditCards of
       []       -> liftEffect $ do
