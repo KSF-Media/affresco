@@ -360,27 +360,29 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
             }
 
     creditCardUpdateIcon =
-      DOM.div_
-        [ Router.link
-            { to: { pathname: "/kreditkort/uppdatera"
-                  , state: {}
-                  }
-            , children: [ DOM.div
-                            { className: "subscription--action-item"
-                            , children: [ DOM.div
-                                            { className: "subscription--credit-card-update-icon circle"
-                                            }
-                                        , DOM.span
-                                            { className: "subscription--update-action-text"
-                                            , children:
-                                                [ DOM.u_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ] ]
-                                            }
-                                        ]
-                            }
-                        ]
-            , className: mempty
-            }
-        ]
+      DOM.div
+        { className: "subscription--action-item"
+        , children: [ Router.link
+                        { to: { pathname: "/kreditkort/uppdatera"
+                              , state: {}
+                              }
+                        , children: [ DOM.div
+                                        { className: "subscription--action-link"
+                                        , children: [ DOM.div
+                                                        { className: "subscription--credit-card-update-icon circle"
+                                                        }
+                                                    , DOM.span
+                                                        { className: "subscription--update-action-text"
+                                                        , children:
+                                                            [ DOM.u_ [ DOM.text "Uppdatera ditt kredit- eller bankkort" ] ]
+                                                        }
+                                                    ]
+                                        }
+                                    ]
+                        , className: mempty
+                        }
+                    ]
+        }
 
 -- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
 -- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
