@@ -6,9 +6,9 @@ import Control.Alt ((<|>))
 import Data.Array (length)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..))
-import Data.JSDate (fromDateTime)
-import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (toNullable)
+import Data.JSDate (fromDateTime, toDateTime)
+import Data.Maybe (Maybe(..), isNothing, isJust)
+import Data.Nullable (toNullable, toMaybe)
 import Data.Time.Duration as Time.Duration
 import Data.Validation.Semigroup (unV)
 import DatePicker.Component as DatePicker
@@ -55,6 +55,7 @@ type Props =
   , cusno         :: String
   , pastAddresses :: Array AddressChange
   , nextDelivery  :: Maybe DateTime
+  , editing       :: Maybe User.PendingAddressChange
   , userUuid      :: User.UUID
   , onCancel      :: Effect Unit
   , onLoading     :: Effect Unit
@@ -117,6 +118,17 @@ didMount self = do
   let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
       byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
   self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow }
+  case self.props.editing of
+    Just p -> do
+      self.setState _ { streetAddress = toMaybe p.address.streetAddress
+                      , zipCode = Just p.address.zipcode
+                      , cityName = toMaybe p.address.city
+                      , temporaryName = toMaybe p.address.temporaryName
+                      , startDate = toDateTime p.startDate
+                      , endDate = toDateTime =<< toMaybe p.endDate
+                      , isIndefinite = isNothing $ toMaybe p.endDate
+                      }
+    _ -> pure unit
 
 render :: Self -> JSX
 render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, isIndefinite }} =
@@ -126,7 +138,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         [ DOM.div
             { className: "temporary-address-change--header"
             , children:
-                [ DOM.div_ [ DOM.h3_ [ DOM.text "Gör tillfällig adressändring" ] ]
+                [ DOM.div_ [ DOM.h3_ [ DOM.text titleText ] ]
                 , DOM.div
                     { className: "temporary-address-change--close-icon"
                     , children: [ DOM.div { className: "close-icon" } ]
@@ -138,6 +150,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         ]
     }
   where
+    titleText =
+      case self.props.editing of
+        Just _ -> "Ändra datum för din adressändring"
+        Nothing -> "Gör tillfällig adressändring"
     pastTempSelection =
       pastTemporaryAddressDropDown
         self.props.pastAddresses
@@ -153,9 +169,9 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         )
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm startDate endDate { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm ((toDateTime <<< _.startDate) =<< self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
           , children:
-              (if length self.props.pastAddresses == 0
+              (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity
                  else ([ pastTempSelection ] <> _))
               [ DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
@@ -192,6 +208,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         { type_: InputCheckbox.Checkbox
         , name: "indefinite"
         , value: Nothing
+        , checked: self.state.isIndefinite
         , onChange: \checked -> self.setState _ { isIndefinite = checked }
         , label: Just "Tillsvidare"
         , required: false
@@ -210,7 +227,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     addressInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
         , placeholder: "Gatuadress"
         , name: "address"
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
@@ -221,7 +238,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     zipInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
         , placeholder: "Postnummer"
         , name: "zipCode"
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
@@ -232,7 +249,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     cityInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
         , placeholder: "Stad"
         , name: "city"
         , onChange: \newCity -> self.setState _ { cityName = newCity }
@@ -246,12 +263,13 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         [ { countryCode: "FI", countryName: "Finland" }
         , { countryCode: "AX", countryName: "Åland" }
         ]
+        (isJust self.props.editing)
         (\newCountryCode -> self.setState _ { countryCode = newCountryCode })
         self.state.countryCode
 
     temporaryNameInput =
       InputField.inputField
-        { type_: InputField.Text
+        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
         , placeholder: "Tillfällig namnändring eller C/O"
         , name: "temporaryName"
         , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
@@ -268,8 +286,8 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           , className: "button-green"
           }
 
-    submitForm :: Maybe DateTime -> Maybe DateTime -> AddressChange -> Effect Unit
-    submitForm (Just startDate') endDate' addressChangeFormValues = do
+    submitForm :: Maybe DateTime -> Maybe DateTime -> Maybe DateTime -> Maybe User.PendingAddressChange -> AddressChange -> Effect Unit
+    submitForm Nothing (Just startDate') endDate' Nothing addressChangeFormValues = do
       Aff.launchAff_ do
         unV
           -- Shows validation errors if submit button is pushed with uninitialized values
@@ -297,7 +315,17 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
                 self.props.onError invalidDateInput
                 Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "error: invalidDateInput"
         makeTemporaryAddressChange _ = Console.error "Form should be valid, however it looks like it's not"
-    submitForm _ _ _ = Console.error "Temporary address change dates were not defined."
+    submitForm (Just oldStartDate) (Just startDate') endDate' (Just _) _ = do
+      self.props.onLoading
+      Aff.launchAff_ $ User.editTemporaryAddressChange self.props.userUuid self.props.subsno oldStartDate startDate' endDate' >>=
+        case _ of
+          Right sub -> liftEffect do
+            self.props.onSuccess sub
+            Tracking.editTempAddressChange self.props.cusno (show self.props.subsno) oldStartDate startDate' endDate' "success"
+          Left invalidDateInput -> liftEffect do
+            self.props.onError invalidDateInput
+            Tracking.editTempAddressChange self.props.cusno (show self.props.subsno) oldStartDate startDate' endDate' "error: invalidDateInput"
+    submitForm _ _ _ _ _ = Console.error "Temporary address change dates were not defined."
 
 type DateInputField =
   { action   :: Maybe DateTime -> Effect Unit

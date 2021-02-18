@@ -29,6 +29,7 @@ data SubscriptionUpdateAction
   = PauseSubscription
   | EditSubscriptionPause User.PausedSubscription
   | TemporaryAddressChange
+  | EditTemporaryAddressChange User.PendingAddressChange
   | DeliveryReclamation
 
 type Subscription =

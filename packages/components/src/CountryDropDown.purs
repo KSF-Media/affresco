@@ -12,8 +12,8 @@ import React.Basic.Events (handler)
 
 
 
-countryDropDown :: Array DropDownCountry -> (Maybe String -> Effect Unit) -> Maybe String -> JSX
-countryDropDown countries onChange value =
+countryDropDown :: Array DropDownCountry -> Boolean -> (Maybe String -> Effect Unit) -> Maybe String -> JSX
+countryDropDown countries disabled onChange value =
   DOM.div
     { className: "input-field--container"
     , children:
@@ -30,11 +30,12 @@ countryDropDown countries onChange value =
       DOM.option
         { value: countryCode
         , children: [ DOM.text countryName ]
+        , disabled: disabled
         }
 
 defaultCountryDropDown :: (Maybe String -> Effect Unit) -> Maybe String -> JSX
 defaultCountryDropDown =
-  countryDropDown countries
+  countryDropDown countries false
   where
     countries =
       [ { countryCode: "FI", countryName: "Finland" }

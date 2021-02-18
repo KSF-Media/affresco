@@ -20,6 +20,7 @@ module KSF.User
   , editSubscriptionPause
   , unpauseSubscription
   , temporaryAddressChange
+  , editTemporaryAddressChange
   , deleteTemporaryAddressChange
   , createDeliveryReclamation
   , searchUsers
@@ -497,6 +498,21 @@ temporaryAddressChange
   -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode countryCode temporaryName = do
   addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode countryCode temporaryName =<< requireToken
+  handleAddressChangedSub addressChangedSub
+
+editTemporaryAddressChange
+  :: Api.UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Maybe DateTime
+  -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+editTemporaryAddressChange userUuid subsno oldStartDate startDate endDate = do
+  addressChangedSub <- try $ Persona.editTemporaryAddressChange userUuid subsno oldStartDate startDate endDate =<< requireToken
+  handleAddressChangedSub addressChangedSub
+
+handleAddressChangedSub :: forall m a. Applicative m => Bind m => MonadEffect m => Either Error a -> m (Either Persona.InvalidDateInput a)
+handleAddressChangedSub addressChangedSub =
   case addressChangedSub of
     Right sub -> pure $ Right sub
     Left err

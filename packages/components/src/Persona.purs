@@ -180,6 +180,26 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
     ]
     ( authHeaders uuid auth )
 
+editTemporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Maybe DateTime
+  -> UserAuth
+  -> Aff Subscription
+editTemporaryAddressChange uuid subsno oldStartDate startDate endDate auth = do
+  let oldStartDateISO = formatDate oldStartDate
+      startDateISO = formatDate startDate
+      endDateISO = formatDate <$> endDate
+
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { oldStartDate: oldStartDateISO, newStartDate: startDateISO, newEndDate: toNullable endDateISO }
+    ]
+    ( authHeaders uuid auth )
+
 deleteTemporaryAddressChange
   :: UUID
   -> Int
