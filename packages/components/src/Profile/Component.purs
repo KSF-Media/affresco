@@ -141,12 +141,19 @@ render self@{ props: { profile: user } } =
     , DescriptionList.descriptionList
         { definitions:
           visiblePendingAddressChanges <>
-            [ { term: "E-postadress:", description: [ DOM.text user.email ] }
+            [ { term: "E-postadress:", description: [ DOM.text user.email
+                                                    , emailChangeMessage
+                                                    ] }
             , { term: "Kundnummer:", description: [ DOM.text user.cusno ] }
             ]
         }
     ]
   where
+    emailChangeMessage =
+      DOM.div
+        { className: "mitt-konto--note"
+        , children: [ DOM.text "Om du vill ändra din e-postadress vänligen kontakta Kundservice." ]
+        }
     visiblePendingAddressChanges = showPendingAddressChanges self
     profileName =
       AsyncWrapper.asyncWrapper
