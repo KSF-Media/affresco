@@ -72,7 +72,7 @@ didMount self = do
   self.setState _ { maxPublicationDate = Just now }
 
 render :: Self -> JSX
-render self@{ state: { publicationDate, claim, maxPublicationDate }} =
+render self@{ props: { products }, setState, state: { publicationDate, claim, maxPublicationDate }} =
   DOM.div
     { className: "clearfix delivery-reclamation--container"
     , children:
@@ -95,35 +95,43 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm publicationDate claim)
           , children:
-              [ publicationDayInput
+              [ productChoice
+              , publicationDayInput
               , claimExtensionInput
               , claimNewDeliveryInput
-              ] `snoc`foldMap errorMessage self.state.validationError
+              ] `snoc` foldMap errorMessage self.state.validationError
                 `snoc` DOM.div
                         { children: [ submitFormButton ]
                         , className: "mt2 clearfix"
                         }
           }
 
+    productChoice =
+      DOM.div_
+        [ DOM.div_ [ DOM.label_ [ DOM.text "Choose product" ] ]
+        , DOM.div_ $
+            productInput <$> HashMap.toArrayBy (flip const) products
+        ]
+
     productInput product =
       InputField.inputField
         { type_: InputField.Radio
         , placeholder: "Extension"
         , name: "claim"
-        , onChange: onProductChange self
+        , onChange: onProductChange
         , value: Just product.id
         , label: Just product.name
         , validationError: Nothing
         }
 
-    publicationDayInput = dateInput self self.state.publicationDate "Utgivningsdatum"
+    publicationDayInput = dateInput self.state.publicationDate "Utgivningsdatum"
 
     claimExtensionInput =
       InputField.inputField
         { type_: InputField.Radio
         , placeholder: "Extension"
         , name: "claim"
-        , onChange: onClaimChange self
+        , onChange: onClaimChange
         , value: Just "Extension"
         , label: Just "Jag klarar mig utan den uteblivna tidningen, förläng i stället min prenumeration med en dag"
         , validationError: Nothing
@@ -134,7 +142,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         { type_: InputField.Radio
         , placeholder: "New delivery"
         , name: "claim"
-        , onChange: onClaimChange self
+        , onChange: onClaimChange
         , value: Just "NewDelivery"
         , label: Just "Jag vill att den uteblivna tidningen levereras till mig"
         , validationError: Nothing
@@ -170,34 +178,34 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
     submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
     submitForm _ _ = Console.error "The entered information is incomplete."
 
-onProductChange :: Self ->  Maybe String -> Effect Unit
-onProductChange self@{ setState, props: { products } } id = 
-  setState _ { product = flip HashMap.lookup products =<< id 
-             , validationError = Nothing
-             }
+    onProductChange :: Maybe String -> Effect Unit
+    onProductChange id = 
+      setState _ { product = flip HashMap.lookup products =<< id 
+                , validationError = Nothing
+                }
 
-onClaimChange :: Self ->  Maybe String -> Effect Unit
-onClaimChange self newClaim = self.setState _ { claim = read =<< newClaim
-                                              , validationError = Nothing
-                                              }
+    onClaimChange :: Maybe String -> Effect Unit
+    onClaimChange newClaim = self.setState _ { claim = read =<< newClaim
+                                                  , validationError = Nothing
+                                                  }
 
 
-dateInput :: Self -> Maybe DateTime -> String ->  JSX
-dateInput self value label =
-  Grid.row
-    [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
-    , Grid.row_
-        [ DatePicker.datePicker
-            { onChange: (_ >>= \newPublicationDate -> self.setState _ { publicationDate = newPublicationDate })
-            , className: "delivery-reclamation--date-picker"
-            , value: toNullable $ fromDateTime <$> value
-            , format: "d.M.yyyy"
-            , required: true
-            , minDate: toNullable $ Nothing
-            , maxDate: toNullable $ fromDateTime <$> self.state.maxPublicationDate
-            , disabled : false
-            , locale: "sv-FI"
-            }
+    dateInput :: Maybe DateTime -> String ->  JSX
+    dateInput value label =
+      Grid.row
+        [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
+        , Grid.row_
+            [ DatePicker.datePicker
+                { onChange: (_ >>= \newPublicationDate -> setState _ { publicationDate = newPublicationDate })
+                , className: "delivery-reclamation--date-picker"
+                , value: toNullable $ fromDateTime <$> value
+                , format: "d.M.yyyy"
+                , required: true
+                , minDate: toNullable $ Nothing
+                , maxDate: toNullable $ fromDateTime <$> maxPublicationDate
+                , disabled : false
+                , locale: "sv-FI"
+                }
+            ]
         ]
-    ]
-    $ Just { extraClasses: [ "mb2" ] }
+        $ Just { extraClasses: [ "mb2" ] }
