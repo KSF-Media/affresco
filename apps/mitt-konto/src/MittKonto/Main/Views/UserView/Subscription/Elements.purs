@@ -6,11 +6,13 @@ import Data.Array (filter)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldMap, for_)
+import Data.HashMap as HashMap
 import Data.JSDate (toDateTime)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
+import Data.Tuple.Nested ((/\))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
@@ -227,7 +229,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
         , onError: \err -> do
             self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
-        , products: package.products
+        , products: HashMap.fromArray ((\p -> p.id /\ p) <$> package.products)
         }
 
     successText = Just "Tack, åtgärden lyckades!"

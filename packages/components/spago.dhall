@@ -16,11 +16,13 @@
     , "foreign-generic"
     , "generics-rep"
     , "ordered-collections"
+    , "unordered-collections"
     , "simple-json"
     , "facebook"
     , "now"
     , "validation"
     , "read"
+    , "tuples"
     ]
 , packages =
     ../../packages.dhall

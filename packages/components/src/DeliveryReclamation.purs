@@ -1,9 +1,12 @@
 module KSF.DeliveryReclamation where
 
+import Prelude
+
 import Data.Array (snoc)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
+import Data.HashMap as HashMap
 import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
@@ -19,7 +22,6 @@ import KSF.Api.Package (Product)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.User as User
-import Prelude (Unit, bind, discard, show, ($), (<$>), (>>=), (=<<))
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -36,7 +38,7 @@ type Props =
   , onLoading :: Effect Unit
   , onSuccess :: User.DeliveryReclamation -> Effect Unit
   , onError   :: User.InvalidDateInput -> Effect Unit
-  , products  :: Array Product
+  , products  :: HashMap.HashMap String Product
   , subsno    :: Int
   , userUuid  :: User.UUID
   }
@@ -168,10 +170,11 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
     submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
     submitForm _ _ = Console.error "The entered information is incomplete."
 
-onProductChange :: Self ->  Maybe Product -> Effect Unit
-onProductChange self newProduct = self.setState _ { product = newProduct
-                                                  , validationError = Nothing
-                                                  }
+onProductChange :: Self ->  Maybe String -> Effect Unit
+onProductChange self@{ setState, props: { products } } id = 
+  setState _ { product = flip HashMap.lookup products =<< id 
+             , validationError = Nothing
+             }
 
 onClaimChange :: Self ->  Maybe String -> Effect Unit
 onClaimChange self newClaim = self.setState _ { claim = read =<< newClaim

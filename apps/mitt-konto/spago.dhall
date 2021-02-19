@@ -24,11 +24,13 @@ You can edit this file as you like.
     , "foreign-generic"
     , "generics-rep"
     , "ordered-collections"
+    , "unordered-collections"
     , "simple-json"
     , "facebook"
     , "now"
     , "web-html"
 	, "uuid"
+    , "tuples"
     ]
 , packages =
     ../../packages.dhall
