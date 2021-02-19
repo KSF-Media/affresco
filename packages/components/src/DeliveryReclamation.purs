@@ -15,6 +15,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Package (Product)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.User as User
@@ -27,24 +28,25 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
 import KSF.Tracking as Tracking
 
-
-type State =
-  { publicationDate    :: Maybe DateTime
-  , claim              :: Maybe User.DeliveryReclamationClaim
-  , maxPublicationDate :: Maybe DateTime
-  , validationError    :: Maybe String
-  }
-
 type Self = React.Self Props State
 
 type Props =
-  { subsno    :: Int
-  , cusno     :: String
-  , userUuid  :: User.UUID
+  { cusno     :: String
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: User.DeliveryReclamation -> Effect Unit
   , onError   :: User.InvalidDateInput -> Effect Unit
+  , products  :: Array Product
+  , subsno    :: Int
+  , userUuid  :: User.UUID
+  }
+
+type State =
+  { claim              :: Maybe User.DeliveryReclamationClaim
+  , maxPublicationDate :: Maybe DateTime
+  , product            :: Maybe Product
+  , publicationDate    :: Maybe DateTime
+  , validationError    :: Maybe String
   }
 
 deliveryReclamation :: Props -> JSX
@@ -52,9 +54,10 @@ deliveryReclamation = make component { initialState, render, didMount }
 
 initialState :: State
 initialState =
-  { publicationDate: Nothing
-  , claim: Nothing
+  { claim: Nothing
   , maxPublicationDate: Nothing
+  , product: Nothing
+  , publicationDate: Nothing
   , validationError: Nothing
   }
 
@@ -100,6 +103,17 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
                         }
           }
 
+    productInput product =
+      InputField.inputField
+        { type_: InputField.Radio
+        , placeholder: "Extension"
+        , name: "claim"
+        , onChange: onProductChange self
+        , value: Just product.id
+        , label: Just product.name
+        , validationError: Nothing
+        }
+
     publicationDayInput = dateInput self self.state.publicationDate "Utgivningsdatum"
 
     claimExtensionInput =
@@ -107,7 +121,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         { type_: InputField.Radio
         , placeholder: "Extension"
         , name: "claim"
-        , onChange: radioButtonOnChange self
+        , onChange: onClaimChange self
         , value: Just "Extension"
         , label: Just "Jag klarar mig utan den uteblivna tidningen, förläng i stället min prenumeration med en dag"
         , validationError: Nothing
@@ -118,7 +132,7 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
         { type_: InputField.Radio
         , placeholder: "New delivery"
         , name: "claim"
-        , onChange: radioButtonOnChange self
+        , onChange: onClaimChange self
         , value: Just "NewDelivery"
         , label: Just "Jag vill att den uteblivna tidningen levereras till mig"
         , validationError: Nothing
@@ -154,10 +168,15 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
     submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
     submitForm _ _ = Console.error "The entered information is incomplete."
 
-radioButtonOnChange :: Self ->  Maybe String -> Effect Unit
-radioButtonOnChange self newClaim = self.setState _ { claim = read =<< newClaim
-                                                    , validationError = Nothing
-                                                    }
+onProductChange :: Self ->  Maybe Product -> Effect Unit
+onProductChange self newProduct = self.setState _ { product = newProduct
+                                                  , validationError = Nothing
+                                                  }
+
+onClaimChange :: Self ->  Maybe String -> Effect Unit
+onClaimChange self newClaim = self.setState _ { claim = read =<< newClaim
+                                              , validationError = Nothing
+                                              }
 
 
 dateInput :: Self -> Maybe DateTime -> String ->  JSX

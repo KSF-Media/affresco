@@ -227,6 +227,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
         , onError: \err -> do
             self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+        , products: package.products
         }
 
     successText = Just "Tack, åtgärden lyckades!"
