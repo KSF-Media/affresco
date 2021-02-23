@@ -9,7 +9,8 @@
     "less": "^3.8.1",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
-    "react-dom": ">=16.12"
+    "react-dom": ">=16.12",
+    "react-router-dom": "^5.2.0"
   },
   "scripts": {
     "start": "parcel index.html -p 8000",

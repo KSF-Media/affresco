@@ -1,3 +1,4 @@
+@import (reference) '../less/ksf-colors';
 @import (reference) '../less/ksf-variables';
 
 .subscription--paper-name {
@@ -63,62 +64,43 @@
 }
 
 .subscription--pause-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/pause.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--update-icon('../images/pause.svg');
 }
 
 .subscription--unpause-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url('../images/start.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--update-icon('../images/start.svg');
 }
 
 .subscription--temporary-address-change-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/loc-point-map.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--update-icon('../images/loc-point-map.svg');
 }
 
 .subscription--delete-temporary-address-change-icon {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/loc-point-map-cancel.svg');
-    background-size: 20px;
-    cursor: pointer;
+    .subscription--update-icon('../images/loc-point-map-cancel.svg');
 }
 
 .subscription--delivery-reclamation-icon {
+    .subscription--update-icon('../images/delivery-reclamation.svg');
+}
+
+.subscription--credit-card-update-icon {
+    .subscription--update-icon('../images/fin-card-front-back.svg');
+}
+
+.subscription--update-icon(@url) {
     display: block;
     width: 30px;
     height: 30px;
     background-position: center;
     background-repeat: no-repeat;
-    background-image: url('../images/delivery-reclamation.svg');
+    background-image: url(@url);
     background-size: 20px;
     cursor: pointer;
 }
 
 .subscription--update-action-text {
     cursor: pointer;
+    color: @dark-text;
 }
 
 .subscription--update-success {
@@ -144,6 +126,13 @@
 }
 
 .subscription--action-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.subscription--action-link {
     display: flex;
     align-items: center;
     justify-content: flex-start;

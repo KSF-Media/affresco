@@ -2,7 +2,7 @@ module MittKonto.Main.Types where
 
 import Prelude
 
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(Nothing))
 import Effect (Effect)
 import KSF.Alert.Component (Alert)
 import KSF.Paper (Paper)
@@ -27,8 +27,11 @@ type Self =
 setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { loading = loading }
 
+-- Force reload of payments whenever user changes
 setActiveUser :: Maybe User -> State -> State
-setActiveUser activeUser = _ { activeUser = activeUser }
+setActiveUser activeUser = _ { activeUser = activeUser
+                             , payments = Nothing
+                             }
 
 setAlert :: Maybe Alert -> State -> State
 setAlert alert = _ { alert = alert }

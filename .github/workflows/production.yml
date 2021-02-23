@@ -106,17 +106,45 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/app-article
+  refresh_cdn_app-article:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
       - name: Install gcloud
         uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
-      - name: Invalidate CDN cache
+      - name: "Invalidate CDN cache for 'app-article'"
+        run: |2
+            gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
+  refresh_cdn_frontends:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install gcloud
+        uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
+      - name: "Invalidate CDN cache for 'ksf-frontends-lb'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
+  refresh_cdn_mitt-konto:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install gcloud
+        uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
+      - name: "Invalidate CDN cache for 'mitt-konto'"
+        run: |2
             gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"
-            gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
 name: production
 on:
   push:

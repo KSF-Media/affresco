@@ -3,6 +3,7 @@ module MittKonto.Main.Views
   , alertView
   , footerView
   , navbarView
+  , backwardLinkView
   )
   where
 
@@ -23,12 +24,13 @@ import KSF.User (logout) as User
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as Views
 import MittKonto.Main.LoginView (loginView) as Views
-import MittKonto.Main.PaymentView (paymentView) as Views
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView (userView) as Views
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
+import React.Basic.Hooks (Component, component)
+import React.Basic.Router as Router
 
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
@@ -54,3 +56,16 @@ alertView alert =
 
 footerView :: React.JSX
 footerView = Footer.footer {}
+
+backwardLinkView :: forall a. String -> String -> Component a -> Component a
+backwardLinkView name path subComponent = do
+  sub <- subComponent
+  component name \a -> React.do
+    pure $ DOM.div_
+      [ Router.link
+          { to: { pathname: path, state: {} }
+          , children: [ ]
+          , className: "mitt-konto--backwards"
+          }
+      , sub a
+      ]
