@@ -3,7 +3,7 @@ module MittKonto.Main.CreditCardUpdateView where
 import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
-import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterState(..))
+import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -17,6 +17,7 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
+import KSF.Tracking as Tracking
 import MittKonto.Wrappers (AutoClose(..), SetRouteWrapperState)
 import MittKonto.Wrappers.Elements as WrapperElements
 import React.Basic (JSX)
@@ -152,13 +153,20 @@ pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right re
           logger.log
             ("Server encountered the following error while trying to update credit card's subscriptions: " <> errMsg)
             Sentry.Error
+          track $ "error:" <> errMsg
           onError self
-        Right _  -> onSuccess self
-    CreditCardRegisterFailed _ -> liftEffect $ onError self
+        Right _  -> do
+          track "success"
+          onSuccess self
+    CreditCardRegisterFailed reason -> liftEffect $ do
+      track $ "error:" <> show reason
+      onError self
     CreditCardRegisterCanceled -> liftEffect $ do
+      track "cancel"
       onCancel self
     CreditCardRegisterCreated -> delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect $ do
+      track $ "error: unknown"
       logger.log "Server is in an unknown state" Sentry.Info
       onError self
   where
@@ -166,6 +174,13 @@ pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right re
     delayedPollRegister eitherRegister = do
       Aff.delay $ Aff.Milliseconds 1000.0
       pollRegister self oldCreditCard eitherRegister
+
+    track :: String -> Effect Unit
+    track = Tracking.updateCreditCard "" "" (Tracking.readBottegaCreditCard oldCreditCard) $ unRegisterNumber register.number
+
+    unRegisterNumber :: CreditCardRegisterNumber -> String
+    unRegisterNumber (CreditCardRegisterNumber number) = number
+
 pollRegister self@{ props: { logger } } _ (Left err) = liftEffect $ do
   logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
   onError self

@@ -18,7 +18,7 @@ type CreditCard =
   , expiryDate      :: String
   }
 
-newtype CreditCardRegisterNumber = CreditCardRegisterNumber String 
+newtype CreditCardRegisterNumber = CreditCardRegisterNumber String
 
 type CreditCardRegister =
   { number       :: CreditCardRegisterNumber
