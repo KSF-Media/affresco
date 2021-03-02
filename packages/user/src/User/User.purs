@@ -171,7 +171,7 @@ getUser maybeInvalidateCache uuid = do
           Console.error "Failed to fetch the user"
           throwError err
     Right user -> do
-      Console.info "User fetched successfully"
+      Console.info $ "User fetched successfully, cusno " <> user.cusno
       fromPersonaUserWithCards user
 
 isAdminUser :: Effect Boolean
@@ -398,7 +398,7 @@ finalizeLogin maybeInvalidateCache auth = do
           Console.error "Failed to fetch the user"
           pure $ Left $ UnexpectedError err
     Right user -> do
-      Console.info "User fetched successfully"
+      Console.info $ "User fetched successfully, cusno " <> user.cusno
       pure $ Right user
 
 loadToken :: forall m. MonadEffect m => m (Maybe UserAuth)
