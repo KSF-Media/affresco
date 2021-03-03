@@ -4,8 +4,10 @@ import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..))
+import Data.Array (index)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (Pattern(..), split)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -24,6 +26,10 @@ import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState, useEffectOnce, (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
+import Record as Record
+import Web.HTML (window)
+import Web.HTML.Window (location)
+import Web.HTML.Location (pathname)
 
 type BaseProps =
   ( creditCards :: Array CreditCard
@@ -177,7 +183,14 @@ pollRegister self@{ setState, props: { cusno, logger }, state } oldCreditCard (R
       pollRegister self oldCreditCard eitherRegister
 
     track :: String -> Effect Unit
-    track = Tracking.updateCreditCard cusno (Tracking.readBottegaCreditCard oldCreditCard) $ unRegisterNumber register.number
+    track result = do
+      subsno <- subsnoFromPathname
+      Tracking.updateCreditCard cusno subsno (Tracking.readBottegaCreditCard oldCreditCard) (unRegisterNumber register.number) result
+
+    subsnoFromPathname :: Effect String
+    subsnoFromPathname = do
+      maybeSubsno <- flip index 1 <<< split (Pattern "/") <$> (pathname =<< location =<< window)
+      pure $ fromMaybe mempty maybeSubsno
 
     unRegisterNumber :: CreditCardRegisterNumber -> String
     unRegisterNumber (CreditCardRegisterNumber number) = number
