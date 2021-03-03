@@ -8,7 +8,7 @@
     "prepublishOnly": "yarn --cwd ../../apps/vetrina-test test"
   },
   "dependencies": {
-    "@sentry/browser": "^5.13.2",
+    "@sentry/browser": "^6.2.1",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48",
     "create-react-class": "^15.6.3",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d5632ee769b0eb1cbe4b7d7beef785551e3b42b2",
