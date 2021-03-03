@@ -98,7 +98,7 @@ subscriptionEndTerm self@{ props: { subscription: { dates: { suspend } } } } = f
   ) $ trim <$> (Helpers.formatDate =<< toMaybe suspend)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state } =
+subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } }, state } =
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
@@ -369,7 +369,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
       DOM.div
         { className: "subscription--action-item"
         , children: [ Router.link
-                        { to: { pathname: "/kreditkort/uppdatera"
+                        { to: { pathname: "/prenumerationer/" <> show subsno <> "/kreditkort/uppdatera"
                               , state: {}
                               }
                         , children: [ DOM.div

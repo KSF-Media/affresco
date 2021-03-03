@@ -144,7 +144,7 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
    updateCreditCardRoute =
      Router.route
        { exact: true
-       , path: Just "/kreditkort/uppdatera"
+       , path: Just "/prenumerationer/:subsno/kreditkort/uppdatera"
        , render: const creditCardUpdateView
        }
    noMatchRoute =
