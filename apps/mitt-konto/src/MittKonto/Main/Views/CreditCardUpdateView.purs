@@ -27,6 +27,7 @@ import React.Basic.DOM as DOM
 
 type BaseProps =
   ( creditCards :: Array CreditCard
+  , cusno       :: String
   , logger      :: Sentry.Logger
   )
 
@@ -141,7 +142,7 @@ startRegisterPoller self@{ setState, state } oldCreditCard creditCardRegister = 
   liftEffect $ setState _ { poller = newPoller }
 
 pollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right register) = do
+pollRegister self@{ setState, props: { cusno, logger }, state } oldCreditCard (Right register) = do
   case register.status.state of
     CreditCardRegisterStarted ->
       delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
@@ -176,7 +177,7 @@ pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right re
       pollRegister self oldCreditCard eitherRegister
 
     track :: String -> Effect Unit
-    track = Tracking.updateCreditCard "" (Tracking.readBottegaCreditCard oldCreditCard) $ unRegisterNumber register.number
+    track = Tracking.updateCreditCard cusno (Tracking.readBottegaCreditCard oldCreditCard) $ unRegisterNumber register.number
 
     unRegisterNumber :: CreditCardRegisterNumber -> String
     unRegisterNumber (CreditCardRegisterNumber number) = number

@@ -93,6 +93,7 @@ app = do
             }
         creditCardUpdateInputs =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
+          , cusno: fromMaybe mempty $ state.activeUser <#> _.cusno
           , logger: logger
           }
         creditCardUpdateView =
