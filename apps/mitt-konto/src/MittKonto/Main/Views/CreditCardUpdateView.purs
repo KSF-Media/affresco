@@ -176,7 +176,7 @@ pollRegister self@{ setState, props: { logger }, state } oldCreditCard (Right re
       pollRegister self oldCreditCard eitherRegister
 
     track :: String -> Effect Unit
-    track = Tracking.updateCreditCard "" "" (Tracking.readBottegaCreditCard oldCreditCard) $ unRegisterNumber register.number
+    track = Tracking.updateCreditCard "" (Tracking.readBottegaCreditCard oldCreditCard) $ unRegisterNumber register.number
 
     unRegisterNumber :: CreditCardRegisterNumber -> String
     unRegisterNumber (CreditCardRegisterNumber number) = number
