@@ -100,13 +100,17 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
-      { actions: defaultActions <> extraActions
+      { actions: if package.digitalOnly then
+                   mempty
+                 else
+                   paperOnlyActions
+                 <> extraActions
       , wrapperState: self.state.wrapperProgress
       , onTryAgain: self.setState _ { wrapperProgress = updateProgress }
       , containerClass: "subscription--actions-container flex"
       }
 
-    defaultActions =
+    paperOnlyActions =
       [ pauseIcon
       , if maybe true Array.null self.state.pausedSubscriptions
           then mempty
