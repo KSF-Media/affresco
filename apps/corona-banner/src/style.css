@@ -17,6 +17,9 @@ a {
 }
 
 .corona-container {
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
   background-color: #eceae6;
   color: #3e3e3e;
   display: flex;
@@ -43,10 +46,11 @@ a {
 }
 
 .virus-image {
-  width: 25px;
+  width: 25%;
   margin-left: 10px;
 }
 
 .container-header {
   display: flex;
 }
+

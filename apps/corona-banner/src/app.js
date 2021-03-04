@@ -7,9 +7,9 @@ export default function App() {
     <div className="corona-container">
       <header className="container-header">
         <h1 className="banner-title text-sm">
-          Covid-19 <br /> i Finland
+          Covid-19 <br className="mobile-hidden" /> i Finland
         </h1>{" "}
-        <img src={CoronaSvg} alt="Coronavirus cell" />
+        <img className="virus-image" src={CoronaSvg} alt="Coronavirus cell" />
       </header>
       <div>
         <div className="stat-value">590</div>
