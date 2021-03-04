@@ -68,11 +68,13 @@ paymentMethod self@{ props: props@{ subscription: sub@{ paymentMethod: method } 
   }
 
 pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
-pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges } } = Array.singleton $
+pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges } } =
+  if Array.null filteredChanges then mempty else Array.singleton $
   { term: "Tillfällig adressändring:"
-  , description: map (DOM.text <<< Helpers.showPendingAddressChange) (foldMap filterExpiredPendingChanges pendingChanges)
+  , description: map (DOM.text <<< Helpers.showPendingAddressChange) filteredChanges
   }
   where
+    filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
     filterExpiredPendingChanges :: Array User.PendingAddressChange -> Array User.PendingAddressChange
     filterExpiredPendingChanges changes =
       case now of
