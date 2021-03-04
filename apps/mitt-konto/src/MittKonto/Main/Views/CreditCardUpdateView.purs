@@ -17,29 +17,28 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
-import MittKonto.Wrappers (class RouteWrapperContent, AutoClose(..), SetRouteWrapperState)
+import MittKonto.Wrappers (AutoClose(..), SetRouteWrapperState)
 import MittKonto.Wrappers.Elements as WrapperElements
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
+import React.Basic.Hooks (Component, component, useState, useEffectOnce, (/\))
+import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
-import Record as Record
 
 type BaseProps =
   ( creditCards :: Array CreditCard
   , logger      :: Sentry.Logger
   )
 
-type Inputs = Record BaseProps
-
-newtype RouteWrapperContentInputs = RouteWrapperContentInputs Inputs
-
 type Props =
   { setWrapperState :: SetRouteWrapperState
   | BaseProps
   }
 
-type Self = React.Self Props State
+type Self =
+  { state :: State
+  , setState :: SetState
+  , props :: Props
+  }
 
 type State =
   { asyncWrapperState :: AsyncWrapper.Progress JSX
@@ -53,15 +52,24 @@ data UpdateState
   = ChooseCreditCard
   | RegisterCreditCard PaymentTerminalUrl
 
-creditCardUpdateView :: Props -> JSX
-creditCardUpdateView = make component { initialState, render, didMount }
-
-instance viewWrapperContentCardUpdate :: RouteWrapperContent RouteWrapperContentInputs where
-  instantiate (RouteWrapperContentInputs inputs) setWrapperState = do
-    renderedContent <- pure $ creditCardUpdateView $ Record.merge inputs { setWrapperState }
-    setWrapperState \s -> s { titleText = "Uppdatera ditt kredit- eller bankkort"
-                            , renderedContent = renderedContent
-                            }
+creditCardUpdateView :: Component Props
+creditCardUpdateView = do
+  component "CreditCardUpdateView" \props@{ creditCards, logger } -> React.do
+    state /\ setState <- useState initialState
+    let self = { state, setState, props}
+    useEffectOnce $ do
+      props.setWrapperState \s -> s { titleText = "Uppdatera ditt kredit- eller bankkort" }
+      setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
+      Aff.launchAff_ do
+        case creditCards of
+          []       -> liftEffect $ do
+            logger.log "No credit cards found" Sentry.Error
+            onError self
+          [ card ] -> do
+            registerCreditCard self card
+          _        -> pure unit
+      pure mempty
+    pure $ render self
 
 initialState :: State
 initialState =
@@ -69,21 +77,6 @@ initialState =
   , poller: pure unit
   , updateState: ChooseCreditCard
   }
-
-component :: React.Component Props
-component = React.createComponent "CreditCardUpdateView"
-
-didMount :: Self -> Effect Unit
-didMount self@{ setState, props: { creditCards, logger, setWrapperState } } = do
-  setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
-  Aff.launchAff_ do
-    case creditCards of
-      []       -> liftEffect $ do
-        logger.log "No credit cards found" Sentry.Error
-        onError self
-      [ card ] -> do
-        registerCreditCard self card
-      _        -> pure unit
 
 render :: Self -> JSX
 render self@{ setState, state: { asyncWrapperState, updateState }, props: { creditCards } } =

@@ -12,7 +12,7 @@ import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.Views (alertView, backwardLinkView, footerView, loginView, navbarView, userView) as Views
-import MittKonto.Main.CreditCardUpdateView (RouteWrapperContentInputs (..)) as CreditCardUpdateView
+import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
 import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
 import KSF.Paper (Paper(..))
@@ -38,6 +38,7 @@ app = do
   search <- Search.search
   payments <- Views.backwardLinkView "PaymentView" "/" PaymentAccordion.paymentAccordion
   paymentDetail <- Views.backwardLinkView "PaymentDetailView" "/fakturor" PaymentDetail.paymentDetail
+  creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -78,13 +79,25 @@ app = do
                        }
         paymentView = payments paymentProps
         paymentDetailView = paymentDetail paymentProps
-    pure $ render self logger searchView paymentView paymentDetailView isPersonating
+        creditCardUpdateInputs =
+          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
+          , logger: logger
+          }
+        creditCardUpdateRoute =
+          creditCardUpdate
+            { contentProps: creditCardUpdateInputs
+            , closeType: Wrappers.XButton
+            , route: "/kreditkort/uppdatera"
+            , routeFrom: "/"
+            }
+
+    pure $ render self logger searchView paymentView paymentDetailView creditCardUpdateRoute isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> Boolean -> JSX
-render self@{ state, setState } logger searchView paymentView paymentDetailView isPersonating =
+render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> JSX -> Boolean -> JSX
+render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateRoute isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
@@ -119,19 +132,8 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
      Router.route
        { exact: true
        , path: Just "/kreditkort/uppdatera"
-       , render: const $
-           Wrappers.routeWrapper
-             { content: creditCardUpdateInputs
-             , closeType: Wrappers.XButton
-             , route: "/kreditkort/uppdatera"
-             , routeFrom: "/"
-             }
+       , render: const creditCardUpdateRoute
        }
-      where
-        creditCardUpdateInputs = CreditCardUpdateView.RouteWrapperContentInputs
-          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
-          , logger: logger
-          }
    noMatchRoute =
      Router.redirect
        { to: { pathname: "/"
