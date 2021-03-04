@@ -4,6 +4,7 @@ import Prelude
 
 import Effect (Effect)
 import MittKonto.Wrappers.Elements (AutoClose(..), CloseType(..))
+import Prim.Row (class Nub, class Union)
 import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState, (/\)) -- \)
 import React.Basic.Hooks as React
@@ -28,9 +29,9 @@ type State =
 
 type SetRouteWrapperState = (State -> State) -> Effect Unit
 
-type Wrapped p = { setWrapperState :: SetRouteWrapperState | p }
+type Setter = ( setWrapperState :: SetRouteWrapperState )
 
---routeWrapper :: forall p. Component (Wrapped p) -> Component (Props (Record p))
+routeWrapper :: forall b u p. Union b Setter u => Nub u p => Component (Record p) -> Component (Props (Record b))
 routeWrapper wrappedComponent = do
   content <- wrappedComponent
   component "RouteWrapper" \props -> React.do
