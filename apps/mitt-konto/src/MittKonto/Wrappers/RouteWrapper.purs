@@ -87,7 +87,7 @@ routeWrapper wrappedComponent = do
               }
 
         title :: JSX
-        title = DOM.h3_ [ DOM.text titleText ]
+        title = if titleText == "" then mempty else DOM.h3_ [ DOM.text titleText ]
 
         closeLink :: String -> JSX
         closeLink className =

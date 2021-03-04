@@ -11,7 +11,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, backwardLinkView, footerView, loginView, navbarView, userView) as Views
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
 import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
@@ -36,8 +36,8 @@ app = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   search <- Search.search
-  payments <- Views.backwardLinkView "PaymentView" "/" PaymentAccordion.paymentAccordion
-  paymentDetail <- Views.backwardLinkView "PaymentDetailView" "/fakturor" PaymentDetail.paymentDetail
+  payments <- Wrappers.routeWrapper PaymentAccordion.paymentAccordion
+  paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   let initialState =
         { paper: KSF
@@ -77,13 +77,25 @@ app = do
         paymentProps = { usePayments: usePayments
                        , subscriptionPayments: state.payments
                        }
-        paymentView = payments paymentProps
-        paymentDetailView = paymentDetail paymentProps
+        paymentView =
+          payments
+            { contentProps: paymentProps
+            , closeType: Wrappers.Back
+            , route: "/fakturor"
+            , routeFrom: "/"
+            }
+        paymentDetailView =
+          paymentDetail
+            { contentProps: paymentProps
+            , closeType: Wrappers.Back
+            , route: "/fakturor/:invno"
+            , routeFrom: "/fakturor"
+            }
         creditCardUpdateInputs =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
           , logger: logger
           }
-        creditCardUpdateRoute =
+        creditCardUpdateView =
           creditCardUpdate
             { contentProps: creditCardUpdateInputs
             , closeType: Wrappers.XButton
@@ -91,13 +103,13 @@ app = do
             , routeFrom: "/"
             }
 
-    pure $ render self logger searchView paymentView paymentDetailView creditCardUpdateRoute isPersonating
+    pure $ render self logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
 render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> JSX -> Boolean -> JSX
-render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateRoute isPersonating =
+render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
@@ -132,7 +144,7 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
      Router.route
        { exact: true
        , path: Just "/kreditkort/uppdatera"
-       , render: const creditCardUpdateRoute
+       , render: const creditCardUpdateView
        }
    noMatchRoute =
      Router.redirect
