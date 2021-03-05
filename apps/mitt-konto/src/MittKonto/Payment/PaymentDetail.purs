@@ -1,4 +1,4 @@
-module KSF.Payment.PaymentDetail where
+module MittKonto.Payment.PaymentDetail where
 
 import Prelude
 
@@ -8,8 +8,8 @@ import Data.Formatter.Number as FormatterN
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), isJust, fromMaybe)
 import Data.String as String
-import KSF.Payment.Types (Props, percentFormatter, formatDate, formatEuro)
 import KSF.User (Payment)
+import MittKonto.Payment.Types (Props, percentFormatter, formatDate, formatEuro)
 import React.Basic (JSX)
 import React.Basic.Hooks (type (/\), Component, component, unsafeRenderEffect, (/\))
 import React.Basic.Hooks as React

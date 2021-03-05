@@ -1,4 +1,4 @@
-module KSF.Payment.PaymentAccordion where
+module MittKonto.Payment.PaymentAccordion where
 
 import Prelude
 
@@ -8,8 +8,8 @@ import Data.Formatter.Number as FormatterN
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import KSF.Payment.Types (Props, stateString, typeString, formatDate, formatEuro, percentFormatter)
 import KSF.User (SubscriptionPayments)
+import MittKonto.Payment.Types (Props, stateString, typeString, formatDate, formatEuro, percentFormatter)
 import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState', (/\))
 import React.Basic.Hooks as React
