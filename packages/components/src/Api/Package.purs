@@ -1,5 +1,8 @@
 module KSF.Api.Package where
 
+import Prelude (not)
+
+import Data.Foldable (elem)
 import Data.JSDate (JSDate)
 import Data.Nullable (Nullable)
 import Data.String as String
@@ -96,3 +99,7 @@ type JSCampaign =
   , lengthUnit :: Nullable String
   , priceEur   :: Nullable Number
   }
+
+-- TODO: Set this as field in the API
+testPauseTemp :: Package -> Boolean
+testPauseTemp package = not (elem package.id [ "FORUM_P+D", "JUNIOR PD" ])

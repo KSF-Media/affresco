@@ -1,6 +1,6 @@
 module KSF.Api.Subscription where
 
-import Prelude (class Eq, class Ord, comparing, map, pure)
+import Prelude (class Eq, class Ord, comparing, map, pure, (<<<))
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
@@ -9,7 +9,7 @@ import Data.JSDate (JSDate)
 import Data.Nullable (Nullable)
 import Foreign (Foreign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
-import KSF.Api.Package (Package, Campaign)
+import KSF.Api.Package (Package, Campaign, testPauseTemp)
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 
@@ -100,3 +100,9 @@ isSubscriptionCanceled s = isSubscriptionStateCanceled s.state
 isSubscriptionStateCanceled :: SubscriptionState -> Boolean
 isSubscriptionStateCanceled (SubscriptionState "Canceled") = true
 isSubscriptionStateCanceled _ = false
+
+isSubscriptionPausable :: Subscription -> Boolean
+isSubscriptionPausable = testPauseTemp <<< _.package
+
+isSubscriptionTemporaryAddressChangable :: Subscription -> Boolean
+isSubscriptionTemporaryAddressChangable = testPauseTemp <<< _.package
