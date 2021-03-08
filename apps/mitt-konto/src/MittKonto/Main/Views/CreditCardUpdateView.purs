@@ -26,7 +26,6 @@ import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState, useEffectOnce, (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
-import Record as Record
 import Web.HTML (window)
 import Web.HTML.Window (location)
 import Web.HTML.Location (pathname)
