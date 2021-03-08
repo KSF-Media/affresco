@@ -93,6 +93,7 @@ app = do
             }
         creditCardUpdateInputs =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
+          , cusno: fromMaybe mempty $ state.activeUser <#> _.cusno
           , logger: logger
           }
         creditCardUpdateView =
@@ -143,7 +144,7 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
    updateCreditCardRoute =
      Router.route
        { exact: true
-       , path: Just "/kreditkort/uppdatera"
+       , path: Just "/prenumerationer/:subsno/kreditkort/uppdatera"
        , render: const creditCardUpdateView
        }
    noMatchRoute =
