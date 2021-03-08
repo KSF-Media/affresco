@@ -187,7 +187,7 @@ pollRegister self@{ setState, props: { cusno, logger }, state } oldCreditCard (R
 
     subsnoFromPathname :: Effect String
     subsnoFromPathname = do
-      maybeSubsno <- flip index 1 <<< split (Pattern "/") <$> (pathname =<< location =<< window)
+      maybeSubsno <- flip index 2 <<< split (Pattern "/") <$> (pathname =<< location =<< window)
       pure $ fromMaybe mempty maybeSubsno
 
     unRegisterNumber :: CreditCardRegisterNumber -> String
