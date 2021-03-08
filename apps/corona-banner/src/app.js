@@ -1,8 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import CoronaSvg from "./assets/covid-virus-icon.svg";
 import Chevron from "../../../images/chevron.svg";
 
 export default function App() {
+  const [ value1, setValue1] = useState(null)
+  const [ value2, setValue2] = useState(null)
+  const [ value3, setValue3] = useState(null)
+  const [ value4, setValue4] = useState(null)
+
+  useEffect(() => {
+    console.log('effect')
+    fetch("https://cat-fact.herokuapp.com/facts")
+    .then(res => console.log(res))
+    
+  }, [])
+
+  
   return (
     <div className="corona-container">
       <header className="container-header">
