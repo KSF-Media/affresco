@@ -102,10 +102,10 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
-      { actions: if package.digitalOnly then
+      { actions: (if package.digitalOnly then
                    mempty
                  else
-                   paperOnlyActions
+                   paperOnlyActions)
                  <> extraActions
       , wrapperState: self.state.wrapperProgress
       , onTryAgain: self.setState _ { wrapperProgress = updateProgress }
