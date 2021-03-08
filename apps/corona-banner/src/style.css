@@ -46,6 +46,17 @@ a {
 .stat-value {
   font-size: 0.875rem;
   font-weight: 700;
+  background-color: #eceae6;
+  color: #3e3e3e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.banner-title {
+  font-size: 1.2rem;
+  font-weight: normal;
 }
 
 .stat-label {
@@ -88,4 +99,3 @@ a {
   position: relative;
   top: 25%;
 }
-
