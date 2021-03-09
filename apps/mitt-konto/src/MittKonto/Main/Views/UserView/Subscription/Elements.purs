@@ -8,9 +8,10 @@ import Data.Either (Either(..))
 import Data.Foldable (foldMap, for_)
 import Data.JSDate (toDateTime)
 import Data.List (intercalate)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.String (trim)
+import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
@@ -71,7 +72,7 @@ pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
 pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges } } =
   if Array.null filteredChanges then mempty else Array.singleton $
   { term: "Tillfällig adressändring:"
-  , description: map (DOM.text <<< Helpers.showPendingAddressChange) filteredChanges
+  , description: map (showPendingAddressChange self) filteredChanges
   }
   where
     filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
@@ -80,6 +81,20 @@ pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges
       case now of
         Nothing  -> changes
         Just date -> filter (not Helpers.isPeriodExpired date <<< toMaybe <<< _.endDate) changes
+
+showPendingAddressChange :: Types.Self -> User.PendingAddressChange -> JSX
+showPendingAddressChange self change@{ address, startDate, endDate } =
+  let addressString = Helpers.formatAddress address
+      pendingPeriod = Helpers.formatDateString startDate (toMaybe endDate)
+  in DOM.span
+       { className: "subscription--edit-pending-address-change"
+       , children: [ DOM.text $ addressString <> " (" <> pendingPeriod <> ")" ]
+       , onClick: handler_ do
+           self.setState _
+             { updateAction = Just $ Types.EditTemporaryAddressChange change
+             , wrapperProgress = AsyncWrapper.Editing $ temporaryAddressChangeComponent self $ Just change
+             }
+       }
 
 billingDateTerm :: Types.Self -> Array DescriptionList.Definition
 billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
@@ -132,86 +147,14 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
 
     updateProgress =
       case state.updateAction of
-        Just Types.PauseSubscription      -> AsyncWrapper.Editing pauseSubscriptionComponent
-        Just Types.TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
+        Just Types.PauseSubscription      -> AsyncWrapper.Editing $ pauseSubscriptionComponent self Nothing
+        Just (Types.EditSubscriptionPause pause) ->
+          AsyncWrapper.Editing $ pauseSubscriptionComponent self $ Just pause
+        Just Types.TemporaryAddressChange -> AsyncWrapper.Editing $ temporaryAddressChangeComponent self Nothing
+        Just (Types.EditTemporaryAddressChange change) ->
+          AsyncWrapper.Editing $ temporaryAddressChangeComponent self $ Just change
         Just Types.DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
         Nothing                           -> AsyncWrapper.Ready
-
-    temporaryAddressChangeComponent =
-      TemporaryAddressChange.temporaryAddressChange
-        { subsno: props.subscription.subsno
-        , cusno: props.user.cusno
-        , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
-        , nextDelivery: toDateTime =<< toMaybe package.nextDelivery
-        , userUuid: props.user.uuid
-        , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
-        , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-        , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
-                        self.setState _
-                            { pendingAddressChanges = toMaybe newPendingChanges
-                            , wrapperProgress = AsyncWrapper.Success successText
-                            }
-
-        , onError: \(err :: User.InvalidDateInput) -> do
-            let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
-                startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
-                lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
-                errMsg = case err of
-                  InvalidStartDate   -> startDateError
-                  InvalidLength      -> lengthError
-                  _                  -> unexpectedError
-            case err of
-              InvalidUnexpected ->
-                self.props.logger.error
-                $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange
-                $ show err
-              -- Other cases are not really errors we want notifications from
-              _ -> self.props.logger.log (show err) Sentry.Info
-            self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
-        }
-
-    readPastTemporaryAddress tmp =
-      { streetAddress: Just tmp.street
-      , zipCode: Just tmp.zipcode
-      , cityName: toMaybe tmp.cityName
-      , countryCode: Just tmp.countryCode
-      , temporaryName: toMaybe tmp.temporaryName
-      }
-
-    pauseSubscriptionComponent =
-      PauseSubscription.pauseSubscription
-        { subsno: props.subscription.subsno
-        , cusno: props.user.cusno
-        , userUuid: props.user.uuid
-        , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
-        , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-        , onSuccess: \pausedSubscription ->
-                        self.setState _
-                        { pausedSubscriptions = toMaybe pausedSubscription.paused
-                        , wrapperProgress = AsyncWrapper.Success successText
-                        }
-
-        , onError: \err -> do
-            let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
-                startDateError = "Din begäran om uppehåll i beställningen misslyckades. Uppehåll kan endast påbörjas fr.o.m. följande dag."
-                lengthError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehålls perioden är för kort eller lång. Uppehållsperioden bör vara mellan 7 dagar och 3 månader långt."
-                overlappingError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet går över ett annat uppehåll. Det måste vara minst en vecka mellan uppehållsperioderna."
-                tooRecentError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet är för nära en annan uppehållsperiod. Det måste vara minst en vecka mellan uppehållsperioderna."
-                errMsg = case err of
-                  InvalidStartDate   -> startDateError
-                  InvalidLength      -> lengthError
-                  InvalidOverlapping -> overlappingError
-                  InvalidTooRecent   -> tooRecentError
-                  InvalidUnexpected  -> unexpectedError
-            case err of
-              InvalidUnexpected ->
-                  self.props.logger.error
-                  $ Error.subscriptionError Error.SubscriptionPause
-                  $ show err
-              -- Other cases are not really errors we want notifications from
-              _ -> self.props.logger.log (show err) Sentry.Info
-            self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
-        }
 
     deliveryReclamationComponent =
       DeliveryReclamation.deliveryReclamation
@@ -222,14 +165,12 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
         , onSuccess: \_ ->
                         self.setState _
-                            { wrapperProgress = AsyncWrapper.Success successText
+                            { wrapperProgress = AsyncWrapper.Success Helpers.successText
                             }
         , onError: \err -> do
             self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
             self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
         }
-
-    successText = Just "Tack, åtgärden lyckades!"
 
     pauseIcon =
       DOM.div
@@ -251,7 +192,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
           showPauseView = handler_ $
             self.setState _
             { updateAction = Just Types.PauseSubscription
-            , wrapperProgress = AsyncWrapper.Editing pauseSubscriptionComponent
+            , wrapperProgress = AsyncWrapper.Editing $ pauseSubscriptionComponent self Nothing
             }
 
     removeSubscriptionPauses =
@@ -305,7 +246,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
             showTemporaryAddressChange = handler_ $ do
               self.setState _
                 { updateAction = Just Types.TemporaryAddressChange
-                , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
+                , wrapperProgress = AsyncWrapper.Editing $ temporaryAddressChangeComponent self Nothing
                 }
 
     removeTempAddressChanges tempAddressChanges =
@@ -390,11 +331,115 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
                     ]
         }
 
--- NOTE: We have a rule in our company policy that states that subscription pauses should be 7 days apart.
--- Thus, if a customer wants to extend a pause, they can't do it by adding a new pause immediately after it.
--- This is why we tell the customer to delete the pause and create a new one.
+pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
+pauseSubscriptionComponent self@{props, state} editing =
+  PauseSubscription.pauseSubscription
+    { subsno: props.subscription.subsno
+    , cusno: props.user.cusno
+    , userUuid: props.user.uuid
+      -- Make sure that both exist if used
+    , oldStart: oldEnd *> oldStart
+    , oldEnd: oldStart *> oldEnd
+    , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+    , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+    , onSuccess: \pausedSubscription ->
+                    self.setState _
+                      { pausedSubscriptions = toMaybe pausedSubscription.paused
+                      , wrapperProgress = AsyncWrapper.Success Helpers.successText
+                      }
+
+    , onError: \err -> do
+        let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+            startDateError = "Din begäran om uppehåll i beställningen misslyckades. Uppehåll kan endast påbörjas fr.o.m. följande dag."
+            lengthError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehålls perioden är för kort eller lång. Uppehållsperioden bör vara mellan 7 dagar och 3 månader långt."
+            overlappingError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet går över ett annat uppehåll. Det måste vara minst en vecka mellan uppehållsperioderna."
+            tooRecentError = "Din begäran om uppehåll i beställningen misslyckades, eftersom uppehållet är för nära en annan uppehållsperiod. Det måste vara minst en vecka mellan uppehållsperioderna."
+            errMsg = case err of
+              InvalidStartDate   -> startDateError
+              InvalidLength      -> lengthError
+              InvalidOverlapping -> overlappingError
+              InvalidTooRecent   -> tooRecentError
+              InvalidUnexpected  -> unexpectedError
+        case err of
+          InvalidUnexpected ->
+            self.props.logger.error
+            $ Error.subscriptionError
+              (if isNothing (oldStart *> oldEnd)
+                 then Error.SubscriptionPause
+                 else Error.EditSubscriptionPause)
+            $ show err
+              -- Other cases are not really errors we want notifications from
+          _ -> self.props.logger.log (show err) Sentry.Info
+        self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+    }
+  where
+    oldStart = (toDateTime <<< _.startDate) =<< editing
+    oldEnd = ((toDateTime <=< toMaybe) <<< _.endDate) =<< editing
+
+temporaryAddressChangeComponent :: Types.Self -> Maybe User.PendingAddressChange -> JSX
+temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ package } } }  editing =
+  TemporaryAddressChange.temporaryAddressChange
+    { subsno: props.subscription.subsno
+    , cusno: props.user.cusno
+    , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
+    , nextDelivery: toDateTime =<< toMaybe package.nextDelivery
+    , editing: editing
+    , userUuid: props.user.uuid
+    , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+    , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+    , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
+                    self.setState _
+                        { pendingAddressChanges = toMaybe newPendingChanges
+                        , wrapperProgress = AsyncWrapper.Success Helpers.successText
+                        }
+
+    , onError: \(err :: User.InvalidDateInput) -> do
+        let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+            startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
+            lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
+            errMsg = case err of
+              InvalidStartDate   -> startDateError
+              InvalidLength      -> lengthError
+              _                  -> unexpectedError
+        case err of
+          InvalidUnexpected ->
+            self.props.logger.error
+            $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange
+            $ show err
+          -- Other cases are not really errors we want notifications from
+          _ -> self.props.logger.log (show err) Sentry.Info
+        self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+    }
+  where
+    readPastTemporaryAddress tmp =
+      { streetAddress: Just tmp.street
+      , zipCode: Just tmp.zipcode
+      , cityName: toMaybe tmp.cityName
+      , countryCode: Just tmp.countryCode
+      , temporaryName: toMaybe tmp.temporaryName
+      }
+
 pauseDescription :: JSX
 pauseDescription = DOM.div
                       { className: "mitt-konto--note"
-                      , children: [ DOM.text "Om du vill ändra på din tillfälliga adressändring eller ditt uppehåll, vänligen radera den gamla först och lägg sedan in den nya." ]
+                      , children: [ DOM.text "Klicka på uppehållet eller adressförändringen för att göra ändringar." ]
                       }
+
+showPausedDates :: Types.Self -> Array User.PausedSubscription -> Array JSX
+showPausedDates self =
+  let formatDates { startDate, endDate } = Helpers.formatDateString startDate $ toMaybe endDate
+      pauseLine pause =
+        let text = "Uppehåll: " <> formatDates pause
+        in case Tuple (toDateTime pause.startDate) (toDateTime =<< toMaybe pause.endDate) of
+          Tuple (Just startDate) (Just endDate) ->
+            DOM.span
+              { className: "subscription--edit-subscription-pause"
+              , children: [ DOM.text text ]
+              , onClick: handler_ do
+                  self.setState _
+                    { updateAction = Just $ Types.EditSubscriptionPause pause
+                    , wrapperProgress = AsyncWrapper.Editing $ pauseSubscriptionComponent self $ Just pause
+                    }
+              }
+          _ -> DOM.text text
+  in map pauseLine
