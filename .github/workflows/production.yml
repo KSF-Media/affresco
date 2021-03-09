@@ -65,7 +65,7 @@ jobs:
             ruby deploy.rb elections
             mv apps/elections/dist build/elections
       - env:
-          HIDE_LOGIN_LINKS: 'false'
+          HIDE_LOGIN_LINKS: 'true'
         name: Build App article
         run: |2
             ruby deploy.rb app-article
