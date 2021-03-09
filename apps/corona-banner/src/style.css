@@ -1,0 +1,101 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  font-family: "Roboto", sans-serif;
+  font-size: 16px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.corona-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  background-color: #eceae6;
+  color: #3e3e3e;
+}
+
+.container-header {
+  display: flex;
+  padding-top: 10px ;
+  padding-bottom: 10px;
+  padding-left: 10px;
+}
+
+.banner-title {
+  font-size: 0.875rem;
+  font-weight: normal;
+  margin: 0;
+}
+
+.stat {
+  padding: 10px 0;
+}
+.stat-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  background-color: #eceae6;
+  color: #3e3e3e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.banner-title {
+  font-size: 1.2rem;
+  font-weight: normal;
+}
+
+.stat-label {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.stat-percent {
+  font-size: 0.875rem;
+  font-weight: normal;
+}
+
+.virus-image {
+  width: 15px;
+  margin-left: 5px;
+}
+
+.mobile-hidden {
+  display: none;
+}
+
+.chevron-container {
+  padding: 0;
+  align-self: stretch;
+  width: 20px;
+  background-color: #f07e26;
+}
+
+.chevron-container > a {
+  display: inline-block;
+  background-color: #f07e26;
+  height: 100%;
+  width: 100%;
+  
+}
+
+.chevron-right {
+  filter: invert(92%) sepia(10%) saturate(494%) hue-rotate(316deg) brightness(109%) contrast(85%);
+  transform: rotate(270deg);
+  position: relative;
+  top: 25%;
+}

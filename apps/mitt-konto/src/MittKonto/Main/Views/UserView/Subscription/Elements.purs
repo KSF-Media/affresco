@@ -68,11 +68,13 @@ paymentMethod self@{ props: props@{ subscription: sub@{ paymentMethod: method } 
   }
 
 pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
-pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges } } = Array.singleton $
+pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges } } =
+  if Array.null filteredChanges then mempty else Array.singleton $
   { term: "Tillfällig adressändring:"
-  , description: map (DOM.text <<< Helpers.showPendingAddressChange) (foldMap filterExpiredPendingChanges pendingChanges)
+  , description: map (DOM.text <<< Helpers.showPendingAddressChange) filteredChanges
   }
   where
+    filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
     filterExpiredPendingChanges :: Array User.PendingAddressChange -> Array User.PendingAddressChange
     filterExpiredPendingChanges changes =
       case now of
@@ -96,17 +98,21 @@ subscriptionEndTerm self@{ props: { subscription: { dates: { suspend } } } } = f
   ) $ trim <$> (Helpers.formatDate =<< toMaybe suspend)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state } =
+subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } }, state } =
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
-      { actions: defaultActions <> extraActions
+      { actions: if package.digitalOnly then
+                   mempty
+                 else
+                   paperOnlyActions
+                 <> extraActions
       , wrapperState: self.state.wrapperProgress
       , onTryAgain: self.setState _ { wrapperProgress = updateProgress }
       , containerClass: "subscription--actions-container flex"
       }
 
-    defaultActions =
+    paperOnlyActions =
       [ pauseIcon
       , if maybe true Array.null self.state.pausedSubscriptions
           then mempty
@@ -363,7 +369,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ package } }, state
       DOM.div
         { className: "subscription--action-item"
         , children: [ Router.link
-                        { to: { pathname: "/kreditkort/uppdatera"
+                        { to: { pathname: "/prenumerationer/" <> show subsno <> "/kreditkort/uppdatera"
                               , state: {}
                               }
                         , children: [ DOM.div
