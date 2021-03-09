@@ -39,9 +39,16 @@ type PackageOffer =
 
 type Product =
   { id           :: String
-  , name         :: String
   , active       :: ActiveDays
+  , digital      :: Boolean
+  , name         :: String
   , nextDelivery :: Nullable JSDate
+  , paper        :: Paper
+  }
+
+type Paper =
+  { id   :: String
+  , name :: String
   }
 
 type ActiveDays =

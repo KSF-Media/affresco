@@ -2,7 +2,7 @@ module KSF.DeliveryReclamation where
 
 import Prelude
 
-import Data.Array (snoc)
+import Data.Array (filter, snoc, sort)
 import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
@@ -21,6 +21,7 @@ import Effect.Now as Now
 import KSF.Api.Package (Product)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
+import KSF.Paper as Paper
 import KSF.User as User
 import React.Basic (JSX)
 import React.Basic.Classic (make)
@@ -46,7 +47,7 @@ type Props =
 type State =
   { claim              :: Maybe User.DeliveryReclamationClaim
   , maxPublicationDate :: Maybe DateTime
-  , product            :: Maybe Product
+  , product            :: Maybe Paper.Paper
   , publicationDate    :: Maybe DateTime
   , validationError    :: Maybe String
   }
@@ -110,17 +111,17 @@ render self@{ props: { products }, setState, state: { publicationDate, claim, ma
       DOM.div_
         [ DOM.div_ [ DOM.label_ [ DOM.text "Choose product" ] ]
         , DOM.div_ $
-            productInput <$> HashMap.toArrayBy (flip const) products
+            productInput <$> (sort <<< filter (\p -> not p.digital) <<< HashMap.toArrayBy (flip const) $ products)
         ]
 
     productInput product =
       InputField.inputField
         { type_: InputField.Radio
-        , placeholder: "Extension"
-        , name: "claim"
+        , placeholder: "Product"
+        , name: "product"
         , onChange: onProductChange
-        , value: Just product.id
-        , label: Just product.name
+        , value: Just product.paper.id
+        , label: Just product.paper.name
         , validationError: Nothing
         }
 
@@ -159,8 +160,8 @@ render self@{ props: { products }, setState, state: { publicationDate, claim, ma
           , className: "button-green"
           }
 
-    submitForm :: Maybe DateTime -> Maybe User.DeliveryReclamationClaim -> Effect Unit
-    submitForm (Just date') (Just claim') = do
+    submitForm :: Maybe Paper.Paper -> Maybe DateTime -> Maybe User.DeliveryReclamationClaim -> Effect Unit
+    submitForm (Just paper') (Just date') (Just claim') = do
       Aff.launchAff_ do
         createDeliveryReclamation date' claim'
       where
@@ -175,19 +176,20 @@ render self@{ props: { products }, setState, state: { publicationDate, claim, ma
               Left invalidDateInput -> liftEffect do
                 self.props.onError invalidDateInput
                 Tracking.reclamation self.props.cusno (show self.props.subsno) date'' (show claim'') "error: invalidDateInput"
-    submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
-    submitForm _ _ = Console.error "The entered information is incomplete."
+    submitForm Nothing _ _ = self.setState _ { validationError = Just "Välj en produkt." }
+    submitForm _ _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
+    submitForm _ _ _ = Console.error "The entered information is incomplete."
 
     onProductChange :: Maybe String -> Effect Unit
-    onProductChange id = 
-      setState _ { product = flip HashMap.lookup products =<< id 
+    onProductChange id =
+      setState _ { product = read =<< _.id <$> _.paper <$> (flip HashMap.lookup products =<< id)
                 , validationError = Nothing
                 }
 
     onClaimChange :: Maybe String -> Effect Unit
     onClaimChange newClaim = self.setState _ { claim = read =<< newClaim
-                                                  , validationError = Nothing
-                                                  }
+                                             , validationError = Nothing
+                                             }
 
 
     dateInput :: Maybe DateTime -> String ->  JSX
