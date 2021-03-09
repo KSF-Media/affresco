@@ -9,6 +9,7 @@
     "build": "parcel build index.html"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "parcel": "1.12.3",
     "parcel-bundler": "1.12.3",
     "react": "^17.0.1",

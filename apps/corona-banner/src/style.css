@@ -1,3 +1,8 @@
+@font-face {
+  font-family: "Duplex-Sans-Regular";
+  src:local("Duplex-Sans-Regular"), url(../../../fonts/Duplex-Sans-Regular.otf) format("truetype");
+}
+
 html,
 body {
   padding: 0;
@@ -18,50 +23,51 @@ a {
 
 .corona-container {
   display: flex;
-  justify-content: space-between;
-  align-items: stretch;
   width: 100%;
   min-width: 320px;
   max-width: 768px;
-  background-color: #eceae6;
   color: #3e3e3e;
+}
+
+.content-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  flex-grow: 1;
+  background-color: #eceae6;
+  padding: 10px 5px;
 }
 
 .container-header {
   display: flex;
-  padding-top: 10px ;
-  padding-bottom: 10px;
-  padding-left: 10px;
 }
 
 .banner-title {
-  font-size: 0.875rem;
+  font-family: "Duplex-Sans-Regular";
+  font-size: 0.75rem;
   font-weight: normal;
   margin: 0;
 }
 
+.virus-image {
+  width: 22px;
+  margin-left: 5px;
+}
+
 .stat {
-  padding: 10px 0;
+  padding: 0;
 }
 .stat-value {
   font-size: 0.875rem;
   font-weight: 700;
   background-color: #eceae6;
   color: #3e3e3e;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-}
-
-.banner-title {
-  font-size: 1.2rem;
-  font-weight: normal;
 }
 
 .stat-label {
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.5rem;
+  line-height: 1.5;
 }
 
 .stat-percent {
@@ -69,33 +75,62 @@ a {
   font-weight: normal;
 }
 
-.virus-image {
-  width: 15px;
-  margin-left: 5px;
-}
-
 .mobile-hidden {
   display: none;
 }
 
 .chevron-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   align-self: stretch;
-  width: 20px;
+  width: 15px;
   background-color: #f07e26;
-}
-
-.chevron-container > a {
-  display: inline-block;
-  background-color: #f07e26;
-  height: 100%;
-  width: 100%;
-  
 }
 
 .chevron-right {
   filter: invert(92%) sepia(10%) saturate(494%) hue-rotate(316deg) brightness(109%) contrast(85%);
   transform: rotate(270deg);
-  position: relative;
-  top: 25%;
+  width: 15px;
+}
+
+@media (min-width: 768px) {
+  .content-container {
+    padding: 10px 15px 10px 15px;
+  }
+
+  .banner-title {
+    font-size: 1.2rem;
+  }
+
+  .mobile-hidden{
+    display: initial;
+  }
+
+  .stat {
+    align-self: center;
+  }
+
+  .stat-value, .stat-percent {
+    font-size: 1.2rem;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+  }
+
+  .virus-image {
+    width: 30px;
+    margin-left: 5px;
+  }
+
+  .chevron-container {
+    width: 20px;
+  }
+
+  .chevron-right {
+    width: 20px;
+  }
+
 }
