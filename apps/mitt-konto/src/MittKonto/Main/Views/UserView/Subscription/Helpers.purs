@@ -65,12 +65,6 @@ isPeriodExpired baseDate endDate =
       in maybe true (_ < baseDate) endDateTime
 
 
-showPendingAddressChange :: User.PendingAddressChange -> String
-showPendingAddressChange { address, startDate, endDate } =
-  let addressString = formatAddress address
-      pendingPeriod = formatDateString startDate (toMaybe endDate)
-  in addressString <> " (" <> pendingPeriod <> ")"
-
 formatDateString :: JSDate -> Maybe JSDate -> String
 formatDateString startDate endDate
   | Just startString <- formatDate startDate =

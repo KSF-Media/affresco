@@ -72,7 +72,7 @@ pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
 pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges } } =
   if Array.null filteredChanges then mempty else Array.singleton $
   { term: "Tillfällig adressändring:"
-  , description: map (DOM.text <<< Helpers.showPendingAddressChange) filteredChanges
+  , description: map (showPendingAddressChange self) filteredChanges
   }
   where
     filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
@@ -81,6 +81,20 @@ pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges
       case now of
         Nothing  -> changes
         Just date -> filter (not Helpers.isPeriodExpired date <<< toMaybe <<< _.endDate) changes
+
+showPendingAddressChange :: Types.Self -> User.PendingAddressChange -> JSX
+showPendingAddressChange self change@{ address, startDate, endDate } =
+  let addressString = Helpers.formatAddress address
+      pendingPeriod = Helpers.formatDateString startDate (toMaybe endDate)
+  in DOM.span
+       { className: "subscription--edit-pending-address-change"
+       , children: [ DOM.text $ addressString <> " (" <> pendingPeriod <> ")" ]
+       , onClick: handler_ do
+           self.setState _
+             { updateAction = Just $ Types.EditTemporaryAddressChange change
+             , wrapperProgress = AsyncWrapper.Editing $ temporaryAddressChangeComponent self $ Just change
+             }
+       }
 
 billingDateTerm :: Types.Self -> Array DescriptionList.Definition
 billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
@@ -136,50 +150,11 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
         Just Types.PauseSubscription      -> AsyncWrapper.Editing $ pauseSubscriptionComponent self Nothing
         Just (Types.EditSubscriptionPause pause) ->
           AsyncWrapper.Editing $ pauseSubscriptionComponent self $ Just pause
-        Just Types.TemporaryAddressChange -> AsyncWrapper.Editing temporaryAddressChangeComponent
+        Just Types.TemporaryAddressChange -> AsyncWrapper.Editing $ temporaryAddressChangeComponent self Nothing
+        Just (Types.EditTemporaryAddressChange change) ->
+          AsyncWrapper.Editing $ temporaryAddressChangeComponent self $ Just change
         Just Types.DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
         Nothing                           -> AsyncWrapper.Ready
-
-    temporaryAddressChangeComponent =
-      TemporaryAddressChange.temporaryAddressChange
-        { subsno: props.subscription.subsno
-        , cusno: props.user.cusno
-        , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
-        , nextDelivery: toDateTime =<< toMaybe package.nextDelivery
-        , userUuid: props.user.uuid
-        , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
-        , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-        , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
-                        self.setState _
-                            { pendingAddressChanges = toMaybe newPendingChanges
-                            , wrapperProgress = AsyncWrapper.Success Helpers.successText
-                            }
-
-        , onError: \(err :: User.InvalidDateInput) -> do
-            let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
-                startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
-                lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
-                errMsg = case err of
-                  InvalidStartDate   -> startDateError
-                  InvalidLength      -> lengthError
-                  _                  -> unexpectedError
-            case err of
-              InvalidUnexpected ->
-                self.props.logger.error
-                $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange
-                $ show err
-              -- Other cases are not really errors we want notifications from
-              _ -> self.props.logger.log (show err) Sentry.Info
-            self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
-        }
-
-    readPastTemporaryAddress tmp =
-      { streetAddress: Just tmp.street
-      , zipCode: Just tmp.zipcode
-      , cityName: toMaybe tmp.cityName
-      , countryCode: Just tmp.countryCode
-      , temporaryName: toMaybe tmp.temporaryName
-      }
 
     deliveryReclamationComponent =
       DeliveryReclamation.deliveryReclamation
@@ -271,7 +246,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
             showTemporaryAddressChange = handler_ $ do
               self.setState _
                 { updateAction = Just Types.TemporaryAddressChange
-                , wrapperProgress = AsyncWrapper.Editing temporaryAddressChangeComponent
+                , wrapperProgress = AsyncWrapper.Editing $ temporaryAddressChangeComponent self Nothing
                 }
 
     removeTempAddressChanges tempAddressChanges =
@@ -400,6 +375,49 @@ pauseSubscriptionComponent self@{props, state} editing =
   where
     oldStart = (toDateTime <<< _.startDate) =<< editing
     oldEnd = ((toDateTime <=< toMaybe) <<< _.endDate) =<< editing
+
+temporaryAddressChangeComponent :: Types.Self -> Maybe User.PendingAddressChange -> JSX
+temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ package } } }  editing =
+  TemporaryAddressChange.temporaryAddressChange
+    { subsno: props.subscription.subsno
+    , cusno: props.user.cusno
+    , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
+    , nextDelivery: toDateTime =<< toMaybe package.nextDelivery
+    , editing: editing
+    , userUuid: props.user.uuid
+    , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+    , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
+    , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
+                    self.setState _
+                        { pendingAddressChanges = toMaybe newPendingChanges
+                        , wrapperProgress = AsyncWrapper.Success Helpers.successText
+                        }
+
+    , onError: \(err :: User.InvalidDateInput) -> do
+        let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
+            startDateError = "Din begäran om tillfällig adressändring i beställningen misslyckades. Tillfällig adressändring kan endast påbörjas fr.o.m. följande dag."
+            lengthError = "Din begäran om tillfällig adressändring i beställningen misslyckades, eftersom tillfällig adressändring perioden är för kort. Adressändringperioden bör vara åtminstone 7 dagar långt."
+            errMsg = case err of
+              InvalidStartDate   -> startDateError
+              InvalidLength      -> lengthError
+              _                  -> unexpectedError
+        case err of
+          InvalidUnexpected ->
+            self.props.logger.error
+            $ Error.subscriptionError Error.SubscriptionTemporaryAddressChange
+            $ show err
+          -- Other cases are not really errors we want notifications from
+          _ -> self.props.logger.log (show err) Sentry.Info
+        self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
+    }
+  where
+    readPastTemporaryAddress tmp =
+      { streetAddress: Just tmp.street
+      , zipCode: Just tmp.zipcode
+      , cityName: toMaybe tmp.cityName
+      , countryCode: Just tmp.countryCode
+      , temporaryName: toMaybe tmp.temporaryName
+      }
 
 pauseDescription :: JSX
 pauseDescription = DOM.div

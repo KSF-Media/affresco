@@ -6,12 +6,13 @@ import Data.Maybe (Maybe(..), maybe)
 import Effect (Effect)
 import Foreign (Foreign)
 import Prelude (Unit)
-import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, EffectFn7, runEffectFn2, runEffectFn3, runEffectFn5, runEffectFn7)
+import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, EffectFn6, EffectFn7, runEffectFn2, runEffectFn3, runEffectFn5, runEffectFn6, runEffectFn7)
 import KSF.Helpers as Helpers
 
 foreign import login_ :: EffectFn3 Cusno LoginMethod Result Unit
 foreign import reclamation_ :: EffectFn5 Cusno Subsno DateString Claim Result Unit
 foreign import tempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
+foreign import editTempAddressChange_ :: EffectFn6 Cusno Subsno StartDateString StartDateString EndDateString Result Unit
 foreign import pauseSubscription_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import editSubscriptionPause_ :: EffectFn7 Cusno Subsno StartDateString EndDateString StartDateString EndDateString Result Unit
 foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
@@ -55,6 +56,11 @@ tempAddressChange :: Cusno -> Subsno -> StartDate -> Maybe EndDate -> Result -> 
 tempAddressChange cusno subsno startDate endDate result =
   let endDateString = maybe "indefinite" Helpers.formatDate endDate
   in runEffectFn5 tempAddressChange_ cusno subsno (Helpers.formatDate startDate) endDateString result
+
+editTempAddressChange :: Cusno -> Subsno -> StartDate -> StartDate -> Maybe EndDate -> Result -> Effect Unit
+editTempAddressChange cusno subsno oldStartDate startDate endDate result =
+  let endDateString = maybe "indefinite" Helpers.formatDate endDate
+  in runEffectFn6 editTempAddressChange_ cusno subsno (Helpers.formatDate oldStartDate) (Helpers.formatDate startDate) endDateString result
 
 pauseSubscription :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
 pauseSubscription cusno subsno startDate endDate result =
