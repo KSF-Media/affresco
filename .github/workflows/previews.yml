@@ -59,6 +59,10 @@ jobs:
         run: |2
             ruby deploy.rb app-article
             mv apps/app-article/dist build/app-article
+      - name: Build Corona banner
+        run: |2
+            ruby deploy.rb corona-banner
+            mv apps/corona-banner/dist build/corona-banner
       - name: Upload Scripts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -95,6 +99,12 @@ jobs:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/app-article
+      - name: Upload Corona banner
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/corona-banner
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
@@ -108,6 +118,7 @@ jobs:
             - [Elections (EU)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections-eu/index.html)
             - [Elections (Parliament)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections/index.html)
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
+            - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
 name: previews
 on:
   pull_request:
