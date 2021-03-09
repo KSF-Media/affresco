@@ -64,10 +64,6 @@ isPeriodExpired baseDate endDate =
       let endDateTime = toDateTime date
       in maybe true (_ < baseDate) endDateTime
 
-showPausedDates :: Array User.PausedSubscription -> Array String
-showPausedDates pausedSubs =
-  let formatDates { startDate, endDate } = formatDateString startDate $ toMaybe endDate
-  in map (((<>) "Uppehåll: ") <<< formatDates) pausedSubs
 
 showPendingAddressChange :: User.PendingAddressChange -> String
 showPendingAddressChange { address, startDate, endDate } =
@@ -81,3 +77,6 @@ formatDateString startDate endDate
     let endString = fromMaybe "" $ formatDate =<< endDate
     in startString <> " – " <> endString
   | otherwise = mempty
+
+successText :: Maybe String
+successText = Just "Tack, åtgärden lyckades!"

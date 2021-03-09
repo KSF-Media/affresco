@@ -60,11 +60,11 @@ render self@{ props: { subscription: sub@{ package, paymentMethod, state } } } =
              , { term: "Status:"
                , description:
                    [ DOM.text $ Helpers.translateStatus state ]
-                   <> let pausedDates = foldMap (Helpers.showPausedDates <<< filterExpiredPausePeriods) $ self.state.pausedSubscriptions
+                   <> let pausedDates = foldMap filterExpiredPausePeriods $ self.state.pausedSubscriptions
                           descriptionText = if Array.null pausedDates
                                             then mempty
                                             else Elements.pauseDescription
-                       in (map DOM.text pausedDates) <> [ descriptionText ]
+                       in (Elements.showPausedDates self pausedDates) <> [ descriptionText ]
                }
              ]
              <> concatMap (\f -> f self) [ Elements.receiverName

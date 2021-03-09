@@ -6,13 +6,14 @@ import Data.Maybe (Maybe(..), maybe)
 import Effect (Effect)
 import Foreign (Foreign)
 import Prelude (Unit)
-import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, runEffectFn2, runEffectFn3, runEffectFn5)
+import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, EffectFn7, runEffectFn2, runEffectFn3, runEffectFn5, runEffectFn7)
 import KSF.Helpers as Helpers
 
 foreign import login_ :: EffectFn3 Cusno LoginMethod Result Unit
 foreign import reclamation_ :: EffectFn5 Cusno Subsno DateString Claim Result Unit
 foreign import tempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import pauseSubscription_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
+foreign import editSubscriptionPause_ :: EffectFn7 Cusno Subsno StartDateString EndDateString StartDateString EndDateString Result Unit
 foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
 foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import updateCreditCard_ :: EffectFn5 Cusno Subsno CreditCard CreditCardRegisterNumber Result Unit
@@ -58,6 +59,10 @@ tempAddressChange cusno subsno startDate endDate result =
 pauseSubscription :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
 pauseSubscription cusno subsno startDate endDate result =
   runEffectFn5 pauseSubscription_ cusno subsno (Helpers.formatDate startDate) (Helpers.formatDate endDate) result
+
+editSubscriptionPause  :: Cusno -> Subsno -> StartDate -> EndDate -> StartDate -> EndDate -> Result -> Effect Unit
+editSubscriptionPause cusno subsno oldStartDate oldEndDate newStartDate newEndDate result =
+  runEffectFn7 editSubscriptionPause_ cusno subsno (Helpers.formatDate oldStartDate) (Helpers.formatDate oldEndDate) (Helpers.formatDate newStartDate) (Helpers.formatDate newEndDate) result
 
 unpauseSubscription :: Cusno -> Subsno -> Result -> Effect Unit
 unpauseSubscription = runEffectFn3 unpauseSubscription_
