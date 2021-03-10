@@ -11,6 +11,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
 import Foreign (unsafeFromForeign)
+import KSF.User (User)
 import KSF.User.Login as Login
 import Persona as Persona
 import Prenumerera.PaymentSelect as PaymentSelect
@@ -24,17 +25,17 @@ import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self Props State
 
-type Props = { match :: Match, location :: Location (Maybe LocationState), onUserLogin :: (Maybe Persona.User -> Effect Unit) }
+type Props = { match :: Match, location :: Location (Maybe LocationState), onUserLogin :: (Maybe User -> Effect Unit) }
 type State =
   { product :: Maybe Product
-  , loggedInUser :: Maybe Persona.User
+  , loggedInUser :: Maybe User
   }
 type PathParams =
   { product :: String }
 type JSProps =
   { match :: Match
   , location :: Location (Nullable LocationJsState)
-  , onUserLogin :: (Maybe Persona.User -> Effect Unit)
+  , onUserLogin :: (Maybe User -> Effect Unit)
   }
 
 type LocationState   = { product :: Maybe Product }
@@ -49,7 +50,7 @@ type AddressView =
 
 data Action =
   SetProduct Product
-  | SetUser Persona.User
+  | SetUser User
 
 fromJsProps :: JSProps -> Props
 fromJsProps { match, location: { key, pathname, search, hash, state }, onUserLogin } =

@@ -11,7 +11,7 @@ import KSF.Footer.Component as Footer
 import KSF.User as KSF.User
 import KSF.Paper (Paper(..))
 import KSF.Navbar.Component as Navbar
-import Persona as Persona
+import KSF.User (User)
 import Prenumerera.Confirm as Confirm
 import Prenumerera.PaymentSelect as PaymentSelect
 import Prenumerera.ProductSelect as ProductSelect
@@ -27,12 +27,12 @@ type Props = {}
 
 type State =
   { loading :: Maybe Loading
-  , loggedInUser :: Maybe Persona.User
+  , loggedInUser :: Maybe User
   , paper :: Paper
   }
 
 data Action =
-  SetUser (Maybe Persona.User)
+  SetUser (Maybe User)
 
 data Loading = Loading
 

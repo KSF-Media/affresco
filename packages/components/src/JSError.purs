@@ -15,6 +15,7 @@ foreign import userError          :: String -> Error
 data SubscriptionError
   = SubscriptionTemporaryAddressChange
   | SubscriptionPause
+  | EditSubscriptionPause
   | SubscriptionReclamation
 
 derive instance genericSubscriptionError :: Generic SubscriptionError _
