@@ -4,10 +4,11 @@ import CoronaSvg from './assets/covid-virus-icon.svg'
 import Chevron from '../../../images/chevron.svg'
 
 export default function App() {
-  const [value1, setValue1] = useState(null)
-  const [value2, setValue2] = useState(null)
-  const [value3, setValue3] = useState(null)
-  const [value4, setValue4] = useState(null)
+  const [newCases, setNewCases] = useState(590)
+  const [hospitalized, setHospitalized] = useState(186)
+  const [deaths, setDeaths] = useState(734)
+  const [vaccinated, setVaccinated] = useState(288476)
+  const [vaccinatedPercentage, setVaccinatedPercentage] = useState(5.2)
 
 
   useEffect(() => {
@@ -28,20 +29,20 @@ export default function App() {
           <img className='virus-image' src={CoronaSvg} alt='Coronavirus cell' />
         </header>
         <div className='stat'>
-          <div className='stat-value'>590</div>
-          <div className='stat-label'>smittade nu</div>
+          <div className='stat-value'>{newCases}</div>
+          <div className='stat-label'>nya fall</div>
         </div>
         <div className='stat mobile-hidden'>
-          <div className='stat-value'>186</div>
+          <div className='stat-value'>{hospitalized}</div>
           <div className='stat-label'>på sjukhus</div>
         </div>
         <div className='stat'>
-          <div className='stat-value'>734</div>
+          <div className='stat-value'>{deaths}</div>
           <div className='stat-label'>avlidna</div>
         </div>
         <div className='stat'>
           <div className='stat-value'>
-            288476 <span className='stat-percent'>(5,2%)</span>
+            {vaccinated} <span className='stat-percent'>({vaccinatedPercentage}%)</span>
           </div>
           <div className='stat-label'>vaccinerade</div>
         </div>
