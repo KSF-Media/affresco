@@ -49,6 +49,11 @@ let apps = [
     , HIDE_LOGIN_LINKS = "true"
     }
   }
+, Actions.App::{
+  , name = "Corona banner"
+  , buildDir = "corona-banner"
+  , deployDir = "corona-banner"
+  }
 {-
 , Actions.App::{
   , name = "Prenumerera PoC"
