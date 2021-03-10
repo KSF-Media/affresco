@@ -151,6 +151,7 @@ navbarView self  =
     , activeUser: self.state.loggedInUser
     , adminMode: false
     , isPersonating: false
+    , logoutWrapper: Nothing
     , logout: do
         Aff.launchAff_ do
           KSF.User.logout (const $ pure unit)
