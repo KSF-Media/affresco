@@ -14,7 +14,7 @@ import Data.String (trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
+import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -128,11 +128,11 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
       }
 
     paperOnlyActions =
-      [ pauseIcon
+      [ if isSubscriptionPausable sub then pauseIcon else mempty
       , if maybe true Array.null self.state.pausedSubscriptions
           then mempty
           else removeSubscriptionPauses
-      , temporaryAddressChangeIcon
+      , if isSubscriptionTemporaryAddressChangable sub then temporaryAddressChangeIcon else mempty
       , case self.state.pendingAddressChanges of
               Just a -> removeTempAddressChanges a
               Nothing -> mempty

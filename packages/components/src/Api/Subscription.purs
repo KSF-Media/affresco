@@ -1,6 +1,6 @@
 module KSF.Api.Subscription where
 
-import Prelude (class Eq, class Ord, comparing, map, pure)
+import Prelude
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
@@ -100,3 +100,9 @@ isSubscriptionCanceled s = isSubscriptionStateCanceled s.state
 isSubscriptionStateCanceled :: SubscriptionState -> Boolean
 isSubscriptionStateCanceled (SubscriptionState "Canceled") = true
 isSubscriptionStateCanceled _ = false
+
+isSubscriptionPausable :: Subscription -> Boolean
+isSubscriptionPausable = _.canPause <<< _.package
+
+isSubscriptionTemporaryAddressChangable :: Subscription -> Boolean
+isSubscriptionTemporaryAddressChangable = _.canTempAddr <<< _.package
