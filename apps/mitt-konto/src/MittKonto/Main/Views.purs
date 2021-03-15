@@ -27,6 +27,7 @@ import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView (userView) as Views
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Router as Router
 
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
@@ -37,6 +38,14 @@ navbarView self@{ state, setState } logger isPersonating =
       , adminMode: state.adminMode
       , isPersonating: isPersonating
       , activeUser: state.activeUser
+      , logoutWrapper: Just $
+          \x -> Router.link
+                  { to: { pathname: "/"
+                        , state: {}
+                        }
+                  , children: [ x ]
+                  , className: mempty
+                  }
       , logout: do
           Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"

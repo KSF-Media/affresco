@@ -133,6 +133,23 @@ pauseSubscription uuid subsno startDate endDate auth = do
     ]
     ( authHeaders uuid auth )
 
+editSubscriptionPause :: UUID -> Int -> DateTime -> DateTime -> DateTime -> DateTime -> UserAuth -> Aff Subscription
+editSubscriptionPause uuid subsno oldStartDate oldEndDate newStartDate newEndDate auth = do
+  let oldStartDateISO = formatDate oldStartDate
+      oldEndDateISO   = formatDate oldEndDate
+      newStartDateISO = formatDate newStartDate
+      newEndDateISO   = formatDate newEndDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoPausePatch"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { oldStartDate: oldStartDateISO
+                      , oldEndDate: oldEndDateISO
+                      , newStartDate: newStartDateISO
+                      , newEndDate: newEndDateISO
+                      }
+    ]
+    ( authHeaders uuid auth )
+
 unpauseSubscription :: UUID -> Int -> UserAuth -> Aff Subscription
 unpauseSubscription uuid subsno auth = do
   callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
@@ -160,6 +177,26 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
     , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+    ]
+    ( authHeaders uuid auth )
+
+editTemporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Maybe DateTime
+  -> UserAuth
+  -> Aff Subscription
+editTemporaryAddressChange uuid subsno oldStartDate startDate endDate auth = do
+  let oldStartDateISO = formatDate oldStartDate
+      startDateISO = formatDate startDate
+      endDateISO = formatDate <$> endDate
+
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { oldStartDate: oldStartDateISO, newStartDate: startDateISO, newEndDate: toNullable endDateISO }
     ]
     ( authHeaders uuid auth )
 

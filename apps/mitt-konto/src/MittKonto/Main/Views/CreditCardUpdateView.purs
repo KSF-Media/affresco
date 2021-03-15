@@ -72,9 +72,8 @@ creditCardUpdateView = do
           []       -> liftEffect $ do
             logger.log "No credit cards found" Sentry.Error
             onError self
-          [ card ] -> do
-            registerCreditCard self card
-          _        -> pure unit
+          [ card ] -> registerCreditCard self card
+          _        -> liftEffect $ setState _ { asyncWrapperState = AsyncWrapper.Ready }
       pure mempty
     pure $ render self
 
@@ -188,7 +187,7 @@ pollRegister self@{ setState, props: { cusno, logger }, state } oldCreditCard (R
 
     subsnoFromPathname :: Effect String
     subsnoFromPathname = do
-      maybeSubsno <- flip index 1 <<< split (Pattern "/") <$> (pathname =<< location =<< window)
+      maybeSubsno <- flip index 2 <<< split (Pattern "/") <$> (pathname =<< location =<< window)
       pure $ fromMaybe mempty maybeSubsno
 
     unRegisterNumber :: CreditCardRegisterNumber -> String

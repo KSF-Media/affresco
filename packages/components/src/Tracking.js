@@ -12,16 +12,24 @@ exports.tempAddressChange_ = function (cusno, subsno, startDate, endDate, result
     dataLayer.push({ 'event': 'tempAddressChange', 'cusno': cusno, 'subsno': subsno, 'startDate': startDate, 'endDate': endDate, 'result': result });
 }
 
-exports.deleteTempAddressChange_ = function (cusno, subsno, startDate, endDate, result) {
-    dataLayer.push({ 'event': 'deleteTempAdressChange', 'cusno': cusno, 'subsno': subsno, 'startDate': startDate, 'endDate': endDate, 'result': result });
+exports.editTempAddressChange_ = function(cusno, subsno, oldStartDate, startDate, endDate, result) {
+    dataLayer.push({'event': 'tempAddressChange', 'cusno': cusno, 'subsno': subsno, 'oldStartDate': oldStartDate, 'startDate': startDate, 'endDate': endDate, 'result': result });
+}
+
+exports.deleteTempAddressChange_ = function(cusno, subsno, startDate, endDate, result) {
+    dataLayer.push({'event': 'deleteTempAdressChange', 'cusno': cusno, 'subsno': subsno, 'startDate': startDate, 'endDate': endDate, 'result': result});
 }
 
 exports.pauseSubscription_ = function (cusno, subsno, startDate, endDate, result) {
     dataLayer.push({ 'event': 'pauseSubscription', 'cusno': cusno, 'subsno': subsno, 'startDate': startDate, 'endDate': endDate, 'result': result });
 }
 
-exports.unpauseSubscription_ = function (cusno, subsno, result) {
-    dataLayer.push({ 'event': 'unPauseSubscription', 'cusno': cusno, 'subsno': subsno, 'result': result })
+exports.editSubscriptionPause_ = function(cusno, subsno, oldStartDate, oldEndDate, oldStartDate, oldEndDate, result) {
+    dataLayer.push({'event': 'pauseSubscription', 'cusno': cusno, 'subsno': subsno, 'oldStartDate': startDate, 'oldEndDate': endDate, 'newStartDate': startDate, 'newEndDate': endDate, 'result': result});
+}
+
+exports.unpauseSubscription_ = function(cusno, subsno, result) {
+    dataLayer.push({'event': 'unPauseSubscription', 'cusno': cusno, 'subsno': subsno, 'result': result})
 }
 
 exports.changeName_ = function (cusno, result) {

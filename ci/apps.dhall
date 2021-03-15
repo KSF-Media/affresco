@@ -46,8 +46,13 @@ let apps = [
   , buildDir = "app-article"
   , deployDir = "app-article"
   , env = toMap {
-    , HIDE_LOGIN_LINKS = "false"
+    , HIDE_LOGIN_LINKS = "true"
     }
+  }
+, Actions.App::{
+  , name = "Corona banner"
+  , buildDir = "corona-banner"
+  , deployDir = "corona-banner"
   }
 {-
 , Actions.App::{

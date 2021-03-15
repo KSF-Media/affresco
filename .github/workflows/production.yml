@@ -65,11 +65,15 @@ jobs:
             ruby deploy.rb elections
             mv apps/elections/dist build/elections
       - env:
-          HIDE_LOGIN_LINKS: 'false'
+          HIDE_LOGIN_LINKS: 'true'
         name: Build App article
         run: |2
             ruby deploy.rb app-article
             mv apps/app-article/dist build/app-article
+      - name: Build Corona banner
+        run: |2
+            ruby deploy.rb corona-banner
+            mv apps/corona-banner/dist build/corona-banner
       - name: Upload Scripts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -106,6 +110,12 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/app-article
+      - name: Upload Corona banner
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/corona-banner
   refresh_cdn_app-article:
     needs: deploy
     runs-on: ubuntu-latest
