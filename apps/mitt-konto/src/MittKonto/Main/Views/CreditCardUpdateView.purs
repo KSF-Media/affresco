@@ -72,9 +72,8 @@ creditCardUpdateView = do
           []       -> liftEffect $ do
             logger.log "No credit cards found" Sentry.Error
             onError self
-          [ card ] -> do
-            registerCreditCard self card
-          _        -> pure unit
+          [ card ] -> registerCreditCard self card
+          _        -> liftEffect $ setState _ { asyncWrapperState = AsyncWrapper.Ready }
       pure mempty
     pure $ render self
 

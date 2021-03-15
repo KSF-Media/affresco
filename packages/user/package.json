@@ -6,7 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "basscss": "^8.1.0",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d5632ee769b0eb1cbe4b7d7beef785551e3b42b2",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#afaca2973b6b0aa7485fec85944cd60cc14876a0",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456",
     "react": "^16.12",
     "react-dom": "^16.12"

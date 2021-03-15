@@ -6,7 +6,7 @@
   "scripts": {
     "start": "parcel index.html",
     "prebuild": "yarn install",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html --no-cache --public-url ./"
   },
   "dependencies": {
     "parcel": "1.12.3",

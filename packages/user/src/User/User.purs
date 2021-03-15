@@ -17,8 +17,10 @@ module KSF.User
   , updateUser
   , updatePassword
   , pauseSubscription
+  , editSubscriptionPause
   , unpauseSubscription
   , temporaryAddressChange
+  , editTemporaryAddressChange
   , deleteTemporaryAddressChange
   , createDeliveryReclamation
   , searchUsers
@@ -458,6 +460,25 @@ pauseSubscription userUuid subsno startDate endDate = do
           Console.error "Unexpected error when pausing subscription."
           pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
 
+editSubscriptionPause
+  :: Api.UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> DateTime
+  -> DateTime
+  -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEndDate = do
+  pausedSub <- try $ Persona.editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEndDate =<< requireToken
+  case pausedSub of
+    Right sub -> pure $ Right sub
+    Left err
+      | Just (errData :: Persona.InvalidPauseDates) <- Api.Error.errorData err ->
+          pure $ Left $ Persona.pauseDateErrorToInvalidDateError errData.invalid_pause_dates.message
+      | otherwise -> do
+          Console.error "Unexpected error when pausing subscription."
+          pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
+
 unpauseSubscription
   :: Api.UUID
   -> Int
@@ -477,6 +498,21 @@ temporaryAddressChange
   -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode countryCode temporaryName = do
   addressChangedSub <- try $ Persona.temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode countryCode temporaryName =<< requireToken
+  handleAddressChangedSub addressChangedSub
+
+editTemporaryAddressChange
+  :: Api.UUID
+  -> Int
+  -> DateTime
+  -> DateTime
+  -> Maybe DateTime
+  -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+editTemporaryAddressChange userUuid subsno oldStartDate startDate endDate = do
+  addressChangedSub <- try $ Persona.editTemporaryAddressChange userUuid subsno oldStartDate startDate endDate =<< requireToken
+  handleAddressChangedSub addressChangedSub
+
+handleAddressChangedSub :: forall m a. Applicative m => Bind m => MonadEffect m => Either Error a -> m (Either Persona.InvalidDateInput a)
+handleAddressChangedSub addressChangedSub =
   case addressChangedSub of
     Right sub -> pure $ Right sub
     Left err
