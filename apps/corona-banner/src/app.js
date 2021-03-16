@@ -3,47 +3,57 @@ import axios from 'axios'
 import CoronaSvg from './assets/covid-virus-icon.svg'
 import Chevron from '../../../images/chevron.svg'
 
-const Banner = ({ newCases, hospitalised, deaths, vaccinated, vaccinatedPercentage }) => {
+const Banner = ({
+  newCases,
+  hospitalised,
+  deaths,
+  vaccinated,
+  vaccinatedPercentage,
+}) => {
+
   return (
-    <div className='corona-container'>
-      <div className='content-container'>
-        <header className='container-header'>
-          <h1 className='banner-title'>
-            Covid-19 <br /> i Finland
-          </h1>
-          <img className='virus-image' src={CoronaSvg} alt='' />
-        </header>
-        {newCases !== null && 
-          <div className='stat'>
-          <div className='stat-value'>{newCases}</div> 
-            <div className='stat-label'>nya fall</div>
-          </div>
-        }
-        { hospitalised !== null &&
-          <div className='stat mobile-hidden'>
-            <div className='stat-value'>{hospitalised}</div>
-            <div className='stat-label'>på sjukhus</div>
-          </div>
-        }
-        { deaths !== null &&
-        <div className='stat'>
-          <div className='stat-value'>{deaths}</div>
-          <div className='stat-label'>avlidna</div>
-        </div>
-        }
-        { vaccinated !== null &&
-          <div className='stat'>
-            <div className='stat-value'>
-              {vaccinated} <span className='stat-percent'>({vaccinatedPercentage}%)</span>
+    <a href='/tagg/coronaviruset/'>
+      <div className='corona-container'>
+        <div className='content-container'>
+          <header className='container-header'>
+            <h1 className='banner-title'>
+              Covid-19 <br /> i Finland
+            </h1>
+            <img className='virus-image' src={CoronaSvg} alt='' />
+          </header>
+          {newCases !== null && (
+            <div className='stat'>
+              <div className='stat-value'>{newCases}</div>
+              <div className='stat-label'>nya fall</div>
             </div>
-            <div className='stat-label'>vaccinerade</div>
-          </div>
-        }
+          )}
+          {hospitalised !== null && (
+            <div className='stat mobile-hidden'>
+              <div className='stat-value'>{hospitalised}</div>
+              <div className='stat-label'>på sjukhus</div>
+            </div>
+          )}
+          {deaths !== null && (
+            <div className='stat'>
+              <div className='stat-value'>{deaths}</div>
+              <div className='stat-label'>dödsfall</div>
+            </div>
+          )}
+          {vaccinated !== null && (
+            <div className='stat'>
+              <div className='stat-value'>
+                {vaccinated}{' '}
+                <span className='stat-percent'>({vaccinatedPercentage}%)</span>
+              </div>
+              <div className='stat-label'>vaccinerade</div>
+            </div>
+          )}
+        </div>
+        <div className='chevron-container'>
+          <img className='chevron-right' src={Chevron} alt='' />
+        </div>
       </div>
-      <div className='chevron-container'>
-        <img className='chevron-right' src={Chevron} alt='' />
-      </div>
-    </div>
+    </a>
   )
 }
 
@@ -55,7 +65,6 @@ export default function App() {
   const [vaccinatedPercentage, setVaccinatedPercentage] = useState(null)
   const [isLoaded, setIsLoaded] = useState(false)
 
-
   useEffect(() => {
     console.log('effect')
     axios
@@ -66,7 +75,7 @@ export default function App() {
         setNewCases(response.data.newCases)
         setHospitalised(response.data.hospitalised)
         setDeaths(response.data.deaths)
-        setVaccinated(response.data.vaccinated)
+        setVaccinated(response.data.vaccinatedAmount)
         setVaccinatedPercentage(response.data.vaccinatedPercentage)
       })
       .then(() => {
@@ -74,8 +83,6 @@ export default function App() {
       })
       .catch(error => console.log(error))
   }, [])
-
-  
 
   return isLoaded ? (
     <Banner
