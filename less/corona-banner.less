@@ -1,0 +1,193 @@
+@font-face {
+  font-family: 'Duplex-Sans-Regular';
+  src: local('Duplex-Sans-Regular'),
+    url(../fonts/Duplex-Sans-Regular.otf) format('truetype');
+}
+
+@import './ksf-colors.less';
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  height: 65px;
+}
+
+a {
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  height: 50px;
+}
+
+.corona-container {
+  display: flex;
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  height: 50px;
+  color: #3e3e3e;
+}
+
+.content-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  flex-grow: 1;
+  background-color: #eceae6;
+  padding: 10px 15px;
+}
+
+.container-header {
+  display: flex;
+}
+
+.banner-title {
+  font-family: 'Duplex-Sans-Regular';
+  font-size: 0.75rem;
+  font-weight: normal;
+  margin: 0;
+}
+
+.virus-image {
+  width: 22px;
+  margin-left: 5px;
+}
+
+.stat {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  background-color: #eceae6;
+  color: #3e3e3e;
+}
+
+.stat-label {
+  text-transform: uppercase;
+  font-size: 0.5rem;
+  line-height: 1.5;
+}
+
+.stat-percent {
+  font-size: 0.875rem;
+  font-weight: normal;
+}
+
+.mobile-hidden {
+  display: none;
+}
+
+.chevron-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  align-self: stretch;
+  width: 20px;
+  background-color: #b0aaa4;
+}
+
+.chevron-right {
+  filter: invert(92%) sepia(10%) saturate(494%) hue-rotate(316deg)
+    brightness(109%) contrast(85%);
+  transform: rotate(270deg);
+  width: 15px;
+  position: relative;
+  bottom: 2px;
+}
+
+.source {
+  text-align: end;
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  font-size: 0.5rem;
+  color: @grey-slightlylight;
+  padding-top: 2px;
+  padding-right: 7px;
+  height: 10px;
+}
+
+@media (min-width: 768px) {
+  .container-wrapper {
+    height: 85px;
+  }
+
+  a {
+    height: 67px;
+  }
+  .corona-container {
+    height: 67px;
+  }
+
+  .content-container {
+    padding: 10px 15px 10px 15px;
+  }
+
+  .banner-title {
+    font-size: 1.2rem;
+  }
+
+  .mobile-hidden {
+    display: initial;
+  }
+
+  .stat {
+    align-self: center;
+  }
+
+  .stat-value,
+  .stat-percent {
+    font-size: 1.2rem;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+  }
+
+  .virus-image {
+    width: 35px;
+    margin-left: 15px;
+  }
+
+  .chevron-container {
+    width: 20px;
+  }
+
+  .chevron-right {
+    width: 20px;
+  }
+
+  .source {
+    font-size: 0.75rem;
+    padding-top: 3px;
+    padding-right: 0;
+    height: 15px;
+  }
+}

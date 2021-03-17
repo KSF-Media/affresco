@@ -1,52 +1,115 @@
-import React, { useState, useEffect } from "react";
-import CoronaSvg from "./assets/covid-virus-icon.svg";
-import Chevron from "../../../images/chevron.svg";
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import CoronaSvg from './assets/covid-virus-icon.svg'
+import Chevron from '../../../images/chevron.svg'
 
-export default function App() {
-  const [ value1, setValue1] = useState(null)
-  const [ value2, setValue2] = useState(null)
-  const [ value3, setValue3] = useState(null)
-  const [ value4, setValue4] = useState(null)
-
-  useEffect(() => {
-    console.log('effect')
-    fetch("https://cat-fact.herokuapp.com/facts")
-    .then(res => console.log(res))
-    
-  }, [])
-
-  
+const Banner = ({
+  newCases,
+  hospitalised,
+  deaths,
+  vaccinated,
+  vaccinatedPercentage,
+  siteUrl,
+}) => {
   return (
-    <div className="corona-container">
-      <header className="container-header">
-        <h1 className="banner-title">
-          Covid-19 <br /> i Finland
-        </h1>
-        <img className="virus-image" src={CoronaSvg} alt="Coronavirus cell" />
-      </header>
-      <div className="stat">
-        <div className="stat-value">590</div>
-        <div className="stat-label">smittade nu</div>
-      </div>
-      <div className="stat mobile-hidden">
-        <div className="stat-value">186</div>
-        <div className="stat-label">på sjukhus</div>
-      </div>
-      <div className="stat">
-        <div className="stat-value">734</div>
-        <div className="stat-label">avlidna</div>
-      </div>
-      <div className="stat">
-        <div className="stat-value">
-          288476 <span className="stat-percent">(5,2%)</span>
+    <div className='container-wrapper'>
+      <a href={siteUrl} target='_parent'>
+        <div className='corona-container'>
+          <div className='content-container'>
+            <header className='container-header'>
+              <h1 className='banner-title'>
+                Covid-19 <br /> i Finland
+              </h1>
+              <img className='virus-image' src={CoronaSvg} alt='' />
+            </header>
+            {newCases !== null && (
+              <div className='stat'>
+                <div className='stat-value'>{newCases}</div>
+                <div className='stat-label'>nya fall</div>
+              </div>
+            )}
+            {hospitalised !== null && (
+              <div className='stat mobile-hidden'>
+                <div className='stat-value'>{hospitalised}</div>
+                <div className='stat-label'>på sjukhus</div>
+              </div>
+            )}
+            {deaths !== null && (
+              <div className='stat'>
+                <div className='stat-value'>{deaths}</div>
+                <div className='stat-label'>dödsfall</div>
+              </div>
+            )}
+            {vaccinated !== null && (
+              <div className='stat'>
+                <div className='stat-value'>
+                  {vaccinated}{' '}
+                  <span className='stat-percent'>
+                    ({vaccinatedPercentage}%)
+                  </span>
+                </div>
+                <div className='stat-label'>vaccinerade</div>
+              </div>
+            )}
+          </div>
+          <div className='chevron-container'>
+            <img className='chevron-right' src={Chevron} alt='' />
+          </div>
         </div>
-        <div className="stat-label">vaccinerade</div>
-      </div>
-      <div className="chevron-container">
-        <a>
-          <img className="chevron-right" src={Chevron} alt="" />
-        </a>
+      </a>
+      <div className='source'>
+        <em>Källa: THL och Helsingin Sanomat</em>
       </div>
     </div>
-  );
+  )
+}
+
+function getSiteUrl() {
+  const queryParameter = window.location.search
+  const siteRegEx = /site=(\w+)/
+  const siteArray = queryParameter.match(siteRegEx) || []
+
+  if (siteArray.includes('on')) {
+    return 'https://www.ostnyland.fi/tagg/coronaviruset/'
+  } else if (siteArray.includes('vn')) {
+    return 'https://www.vastranyland.fi/tagg/coronaviruset/'
+  } else {
+    return 'https://www.hbl.fi/tagg/coronaviruset/'
+  }
+}
+
+export default function App() {
+  const [newCases, setNewCases] = useState(null)
+  const [hospitalised, setHospitalised] = useState(null)
+  const [deaths, setDeaths] = useState(null)
+  const [vaccinated, setVaccinated] = useState(null)
+  const [vaccinatedPercentage, setVaccinatedPercentage] = useState(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    axios
+      .get(' https://cdn.ksfmedia.fi/corona-banner/stats.json')
+      .then(response => {
+        setNewCases(response.data.newCases)
+        setHospitalised(response.data.hospitalised)
+        setDeaths(response.data.deaths)
+        setVaccinated(response.data.vaccinatedAmount)
+        setVaccinatedPercentage(response.data.vaccinatedPercentage)
+      })
+      .then(() => {
+        setIsLoaded(true)
+      })
+      .catch(error => console.log(error))
+  }, [])
+
+  return isLoaded ? (
+    <Banner
+      newCases={newCases}
+      hospitalised={hospitalised}
+      deaths={deaths}
+      vaccinated={vaccinated}
+      vaccinatedPercentage={vaccinatedPercentage}
+      siteUrl={getSiteUrl()}
+    />
+  ) : null
 }
