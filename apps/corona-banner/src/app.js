@@ -67,7 +67,7 @@ const Banner = ({
 function getSiteUrl() {
   const queryParameter = window.location.search
   const siteRegEx = /site=(\w+)/
-  const siteArray = queryParameter.match(siteRegEx)
+  const siteArray = queryParameter.match(siteRegEx) || []
 
   if (siteArray.includes('on')) {
     return 'https://www.ostnyland.fi/tagg/coronaviruset/'
