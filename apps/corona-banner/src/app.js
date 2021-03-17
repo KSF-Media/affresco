@@ -9,9 +9,8 @@ const Banner = ({
   deaths,
   vaccinated,
   vaccinatedPercentage,
-  siteUrl
+  siteUrl,
 }) => {
-
   return (
     <div className='container-wrapper'>
       <a href={siteUrl} target='_parent'>
@@ -65,21 +64,19 @@ const Banner = ({
   )
 }
 
+function getSiteUrl() {
+  const queryParameter = window.location.search
+  const siteRegEx = /site=(\w+)/
+  const siteArray = queryParameter.match(siteRegEx)
 
-  function getSiteUrl() {
-    const queryParameter = window.location.search
-    const siteRegEx = /site=(\w+)/
-    const siteArray = queryParameter.match(siteRegEx)
-
-    if (siteArray.includes('on')) {
-      return 'https://www.ostnyland.fi/tagg/coronaviruset/'
-    } else if (siteArray.includes('vn')) {
-      return 'https://www.vastranyland.fi/tagg/coronaviruset/'
-    } else {
-      return 'https://www.hbl.fi/tagg/coronaviruset/'
-    }
-
+  if (siteArray.includes('on')) {
+    return 'https://www.ostnyland.fi/tagg/coronaviruset/'
+  } else if (siteArray.includes('vn')) {
+    return 'https://www.vastranyland.fi/tagg/coronaviruset/'
+  } else {
+    return 'https://www.hbl.fi/tagg/coronaviruset/'
   }
+}
 
 export default function App() {
   const [newCases, setNewCases] = useState(null)
@@ -88,9 +85,6 @@ export default function App() {
   const [vaccinated, setVaccinated] = useState(null)
   const [vaccinatedPercentage, setVaccinatedPercentage] = useState(null)
   const [isLoaded, setIsLoaded] = useState(false)
-  
-
-  
 
   useEffect(() => {
     axios
