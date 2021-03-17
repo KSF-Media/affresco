@@ -60,6 +60,7 @@ a {
 
 .container-header {
   display: flex;
+  align-items: center;
 }
 
 .banner-title {
@@ -140,7 +141,7 @@ a {
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 576px) {
   .container-wrapper {
     height: 85px;
   }
@@ -157,11 +158,46 @@ a {
   }
 
   .banner-title {
-    font-size: 1.2rem;
+    font-size: 1.0rem;
   }
 
   .stat {
     align-self: center;
+  }
+
+  .stat-value,
+  .stat-percent {
+    font-size: 1.0rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  .virus-image {
+    width: 30px;
+    margin-left: 15px;
+  }
+
+  .chevron-container {
+    width: 20px;
+  }
+
+  .chevron-right {
+    width: 20px;
+  }
+
+  .source {
+    font-size: 0.75rem;
+    padding-top: 3px;
+    padding-right: 10px;
+    height: 15px;
+  }
+}
+
+@media (min-width: 768px) {
+  .banner-title {
+    font-size: 1.2rem;
   }
 
   .stat-value,
@@ -178,18 +214,7 @@ a {
     margin-left: 15px;
   }
 
-  .chevron-container {
-    width: 20px;
-  }
-
-  .chevron-right {
-    width: 20px;
-  }
-
   .source {
-    font-size: 0.75rem;
-    padding-top: 3px;
     padding-right: 0;
-    height: 15px;
   }
 }
