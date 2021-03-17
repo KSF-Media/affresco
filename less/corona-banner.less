@@ -1,10 +1,10 @@
 @font-face {
   font-family: "Duplex-Sans-Regular";
   src: local("Duplex-Sans-Regular"),
-    url(../../../fonts/Duplex-Sans-Regular.otf) format("truetype");
+    url(../fonts/Duplex-Sans-Regular.otf) format("truetype");
 }
 
-@import "../../../less/ksf-colors.less";
+@import "./ksf-colors.less";
 
 html,
 body {
@@ -22,6 +22,22 @@ a {
 
 * {
   box-sizing: border-box;
+}
+
+.container-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  height: 65px;
+}
+
+a {
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  height: 50px;
 }
 
 .corona-container {
@@ -106,7 +122,26 @@ a {
   bottom: 2px;
 }
 
+.source {
+  text-align: end;
+  width: 100%;
+  min-width: 320px;
+  max-width: 768px;
+  font-size: 0.5rem;
+  color: @grey-slightlylight;
+  padding-top: 2px;
+  padding-right: 7px;
+  height: 10px;
+}
+
 @media (min-width: 768px) {
+  .container-wrapper {
+    height: 85px;
+  }
+
+  a {
+    height: 67px;
+  }
   .corona-container {
     height: 67px;
   }
@@ -147,5 +182,12 @@ a {
 
   .chevron-right {
     width: 20px;
+  }
+
+  .source {
+    font-size: 0.75rem;
+    padding-top: 3px;
+    padding-right: 0;
+    height: 15px;
   }
 }

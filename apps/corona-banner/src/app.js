@@ -9,53 +9,77 @@ const Banner = ({
   deaths,
   vaccinated,
   vaccinatedPercentage,
+  siteUrl
 }) => {
 
   return (
-    <a href='/tagg/coronaviruset/'>
-      <div className='corona-container'>
-        <div className='content-container'>
-          <header className='container-header'>
-            <h1 className='banner-title'>
-              Covid-19 <br /> i Finland
-            </h1>
-            <img className='virus-image' src={CoronaSvg} alt='' />
-          </header>
-          {newCases !== null && (
-            <div className='stat'>
-              <div className='stat-value'>{newCases}</div>
-              <div className='stat-label'>nya fall</div>
-            </div>
-          )}
-          {hospitalised !== null && (
-            <div className='stat mobile-hidden'>
-              <div className='stat-value'>{hospitalised}</div>
-              <div className='stat-label'>på sjukhus</div>
-            </div>
-          )}
-          {deaths !== null && (
-            <div className='stat'>
-              <div className='stat-value'>{deaths}</div>
-              <div className='stat-label'>dödsfall</div>
-            </div>
-          )}
-          {vaccinated !== null && (
-            <div className='stat'>
-              <div className='stat-value'>
-                {vaccinated}{' '}
-                <span className='stat-percent'>({vaccinatedPercentage}%)</span>
+    <div className='container-wrapper'>
+      <a href={siteUrl} target='_parent'>
+        <div className='corona-container'>
+          <div className='content-container'>
+            <header className='container-header'>
+              <h1 className='banner-title'>
+                Covid-19 <br /> i Finland
+              </h1>
+              <img className='virus-image' src={CoronaSvg} alt='' />
+            </header>
+            {newCases !== null && (
+              <div className='stat'>
+                <div className='stat-value'>{newCases}</div>
+                <div className='stat-label'>nya fall</div>
               </div>
-              <div className='stat-label'>vaccinerade</div>
-            </div>
-          )}
+            )}
+            {hospitalised !== null && (
+              <div className='stat mobile-hidden'>
+                <div className='stat-value'>{hospitalised}</div>
+                <div className='stat-label'>på sjukhus</div>
+              </div>
+            )}
+            {deaths !== null && (
+              <div className='stat'>
+                <div className='stat-value'>{deaths}</div>
+                <div className='stat-label'>dödsfall</div>
+              </div>
+            )}
+            {vaccinated !== null && (
+              <div className='stat'>
+                <div className='stat-value'>
+                  {vaccinated}{' '}
+                  <span className='stat-percent'>
+                    ({vaccinatedPercentage}%)
+                  </span>
+                </div>
+                <div className='stat-label'>vaccinerade</div>
+              </div>
+            )}
+          </div>
+          <div className='chevron-container'>
+            <img className='chevron-right' src={Chevron} alt='' />
+          </div>
         </div>
-        <div className='chevron-container'>
-          <img className='chevron-right' src={Chevron} alt='' />
-        </div>
+      </a>
+      <div className='source'>
+        <em>Källa: THL och Helsingin Sanomat</em>
       </div>
-    </a>
+    </div>
   )
 }
+
+
+  function getSiteUrl() {
+    const queryParameter = window.location.search
+    const siteRegEx = /site=(\w+)/
+    const siteArray = queryParameter.match(siteRegEx)
+
+    if (siteArray.includes('on')) {
+      return 'https://www.ostnyland.fi/tagg/coronaviruset/'
+    } else if (siteArray.includes('vn')) {
+      return 'https://www.vastranyland.fi/tagg/coronaviruset/'
+    } else {
+      return 'https://www.hbl.fi/tagg/coronaviruset/'
+    }
+
+  }
 
 export default function App() {
   const [newCases, setNewCases] = useState(null)
@@ -64,14 +88,14 @@ export default function App() {
   const [vaccinated, setVaccinated] = useState(null)
   const [vaccinatedPercentage, setVaccinatedPercentage] = useState(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  
+
+  
 
   useEffect(() => {
-    console.log('effect')
     axios
       .get(' https://cdn.ksfmedia.fi/corona-banner/stats.json')
       .then(response => {
-        console.log('promise fulfilled')
-        console.log(response.data)
         setNewCases(response.data.newCases)
         setHospitalised(response.data.hospitalised)
         setDeaths(response.data.deaths)
@@ -91,6 +115,7 @@ export default function App() {
       deaths={deaths}
       vaccinated={vaccinated}
       vaccinatedPercentage={vaccinatedPercentage}
+      siteUrl={getSiteUrl()}
     />
   ) : null
 }
