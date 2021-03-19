@@ -575,7 +575,12 @@ if (window.ksfDfp) {
         }
         
         if(this.state.forceLoginView){
-            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>;
+            return (
+                <>
+                    {this.state.isLoading && <Loading />}
+                    <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} onLoading={() => this.setState({ isLoading: true })} onLoadingEnd={() => this.setState({ isLoading: false })} />
+                </>
+            )
         }
 
         return (
