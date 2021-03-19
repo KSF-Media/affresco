@@ -65,7 +65,7 @@ const Banner = ({
           </a>{" "}
           och{" "}
           <a class="corona-banner-source-link" target="_blank" href="https://github.com/HS-Datadesk/koronavirus-avoindata">
-            Helsingin Sanomat
+            HS Open Data
           </a>
         </em>
       </div>
