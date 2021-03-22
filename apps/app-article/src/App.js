@@ -643,7 +643,7 @@ if (window.ksfDfp) {
                                 {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>
+                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} onLoading={() => this.setState({ isLoading: true })} onLoadingEnd={() => this.setState({ isLoading: false })}/>
                                         :
                                         ""
                                 }
