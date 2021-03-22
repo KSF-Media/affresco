@@ -101,6 +101,7 @@ data UserError =
   | MergeEmailInUse MergeInfo
   | SomethingWentWrong
   | ServiceUnavailable
+  | UniqueViolation
   | UnexpectedError Error
 derive instance genericUserError :: Generic UserError _
 instance showUserError :: Show UserError where
@@ -203,7 +204,10 @@ updateUser uuid update = do
   newUser <- try $ Persona.updateUser uuid update =<< requireToken
   case newUser of
     Right user -> Right <$> fromPersonaUserWithCards user
-    Left err   -> pure $ Left $ UnexpectedError err
+    Left err
+      | KSF.Error.resourceConflictError err -> do
+          pure $ Left UniqueViolation
+      | otherwise -> pure $ Left $ UnexpectedError err
 
 updatePassword :: Api.UUID -> Api.Password -> Api.Password -> Aff (Either UserError User)
 updatePassword uuid password confirmPassword = do

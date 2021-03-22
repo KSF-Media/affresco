@@ -36,6 +36,10 @@ exports.changeName_ = function (cusno, result) {
     dataLayer.push({ 'event': 'changeName', 'cusno': cusno, 'result': result })
 }
 
+exports.changeEmail_ = function(cusno, result) {
+    dataLayer.push({ 'event': 'changeEmail', 'cusno': cusno, 'result': result })
+}
+
 exports.changeAddress_ = function (cusno, result) {
     dataLayer.push({ 'event': 'changeAddress', 'cusno': cusno, 'result': result })
 }
