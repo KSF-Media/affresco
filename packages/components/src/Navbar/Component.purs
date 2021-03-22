@@ -150,7 +150,7 @@ needHelp paper =
     { className: "nav--logout-limpet"
     , children:
         [ DOM.strong_ [ DOM.text "Behöver du hjälp?" ]
-        , DOM.div_ [ formatMailtoAnchorTag $ paperEmail paper ]
+        , DOM.div_ [ formatMailtoAnchorTag "pren@ksfmedia.fi" ]
         ]
     }
     where
@@ -203,11 +203,3 @@ paperLogoUrl paper =
     ON   -> papers.on
     VN   -> papers.vn
     KSF  -> papers.ksf
-
-paperEmail :: Paper -> String
-paperEmail paper =
-  case paper of
-    HBL  -> "pren@hbl.fi"
-    ON   -> "pren@ostnyland.fi"
-    VN   -> "pren@vastranyland.fi"
-    KSF  -> paperEmail HBL
