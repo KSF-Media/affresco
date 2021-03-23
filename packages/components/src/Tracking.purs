@@ -19,6 +19,7 @@ foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
 foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import updateCreditCard_ :: EffectFn5 Cusno Subsno CreditCard CreditCardRegisterNumber Result Unit
 foreign import changeName_ :: EffectFn2 Cusno Result Unit
+foreign import changeEmail_ :: EffectFn2 Cusno Result Unit
 foreign import changeAddress_ :: EffectFn2 Cusno Result Unit
 foreign import deletePendingAddressChanges_ :: EffectFn2 Cusno Result Unit
 
@@ -84,6 +85,9 @@ updateCreditCard cusno subsno oldCreditCard registerNumber result =
 
 changeName :: Cusno -> Result -> Effect Unit
 changeName = runEffectFn2 changeName_
+
+changeEmail :: Cusno -> Result -> Effect Unit
+changeEmail = runEffectFn2 changeEmail_
 
 changeAddress :: Cusno -> Result -> Effect Unit
 changeAddress = runEffectFn2 changeAddress_

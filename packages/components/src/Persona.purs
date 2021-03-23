@@ -69,6 +69,7 @@ updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
   let body = case update of
         UpdateName names          -> unsafeToForeign names
+        UpdateEmail email -> unsafeToForeign email
         UpdateAddress { countryCode, zipCode, streetAddress, startDate } ->
           unsafeToForeign
             { address:
@@ -278,6 +279,7 @@ type LoginDataSso =
 
 data UserUpdate
   = UpdateName { firstName :: String, lastName :: String }
+  | UpdateEmail { email :: String }
   | UpdateAddress { countryCode :: String
                   , zipCode :: String
                   , streetAddress :: String
