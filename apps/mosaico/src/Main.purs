@@ -134,6 +134,10 @@ mosaico a =
             { rel: "stylesheet"
             , href: "/assets/mosaico.css"
             }
+          , DOM.script
+            { src: "/assets/apps/mosaico/index.js"
+            , defer: true
+            }
           ]
         }
       , DOM.body

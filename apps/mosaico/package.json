@@ -12,7 +12,7 @@
     "sass": "^1.32.7"
   },
   "scripts": {
-    "prestart": "parcel build ../../scss/mosaico.scss",
+    "prestart": "parcel build ../../scss/mosaico.scss ./index.js",
     "start": "spago run",
     "prebuild": "parcel build ../../scss/mosaico.scss",
     "build": "spago build"

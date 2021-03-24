@@ -87,10 +87,15 @@ render { props, state } =
           , children: [ DOM.text str ]
           }
         Image img -> renderImage img
-        Box boxData -> box
-          { headline: boxData.headline
-          , title: boxData.title
-          , content: boxData.content
-          , brand: props.brand
+        Box boxData -> DOM.div {
+          className: "factbox",
+          children:
+            [ box
+              { headline: boxData.headline
+              , title: boxData.title
+              , content: boxData.content
+              , brand: props.brand
+              }
+            ]
           }
         other -> DOM.p_ [ DOM.text $ show other ]
