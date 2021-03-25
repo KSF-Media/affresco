@@ -22,6 +22,7 @@ import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
+import KSF.User.Cusno (Cusno)
 import KSF.ValidatableForm as VF
 import KSF.CountryDropDown (countryDropDown)
 import KSF.TemporaryAddressChange.DropDown (pastTemporaryAddressDropDown)
@@ -52,7 +53,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno        :: Int
-  , cusno         :: String
+  , cusno         :: Cusno
   , pastAddresses :: Array AddressChange
   , nextDelivery  :: Maybe DateTime
   , editing       :: Maybe User.PendingAddressChange

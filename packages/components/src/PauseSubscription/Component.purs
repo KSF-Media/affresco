@@ -19,6 +19,7 @@ import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.User as User
+import KSF.User.Cusno (Cusno)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -31,7 +32,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , cusno     :: String
+  , cusno     :: Cusno
   , userUuid  :: User.UUID
   , oldStart  :: Maybe DateTime
   , oldEnd    :: Maybe DateTime

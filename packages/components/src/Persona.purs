@@ -25,6 +25,7 @@ import KSF.Api (InvalidateCache, Password, Token, UUID(..), UserAuth, invalidate
 import KSF.Api.Error (ServerError)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
 import KSF.Api.Subscription as Subscription
+import KSF.User.Cusno (Cusno)
 import OpenApiClient (Api, callApi)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
@@ -393,7 +394,7 @@ type BaseUser =
   , firstName :: Nullable String
   , lastName :: Nullable String
   , address :: Nullable Address
-  , cusno :: String
+  , cusno :: Cusno
   , subs :: Array Subscription
   , consent :: Array GdprConsent
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)

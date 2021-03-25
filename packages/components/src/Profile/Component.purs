@@ -36,6 +36,7 @@ import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.User (User, UserError(UniqueViolation))
 import KSF.User as User
+import KSF.User.Cusno as Cusno
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validateZipCode)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
@@ -155,7 +156,7 @@ render self@{ props: { profile: user } } =
     , DescriptionList.descriptionList
         { definitions:
           visiblePendingAddressChanges <>
-            [ { term: "Kundnummer:", description: [ DOM.text user.cusno ] }
+            [ { term: "Kundnummer:", description: [ DOM.text $ Cusno.toString user.cusno ] }
             ]
         }
     ]
