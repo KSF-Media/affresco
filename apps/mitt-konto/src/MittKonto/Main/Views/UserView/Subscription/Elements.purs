@@ -275,11 +275,11 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
                             pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
-                          Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
+                          Tracking.deleteTempAddressChange props.subscription.cusno (show props.subscription.subsno) startDate' endDate' "success"
                         Left _ -> liftEffect do
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                          Tracking.deleteTempAddressChange (show props.subscription.cusno) (show props.subscription.subsno) startDate' endDate' "success"
+                          Tracking.deleteTempAddressChange props.subscription.cusno (show props.subscription.subsno) startDate' endDate' "success"
                     _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
         }
 

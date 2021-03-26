@@ -2,14 +2,16 @@ module KSF.Tracking where
 
 import Bottega.Models as Bottega
 import Data.DateTime (DateTime)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe, maybe)
+import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
 import Foreign (Foreign)
 import Prelude (Unit)
 import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, EffectFn6, EffectFn7, runEffectFn2, runEffectFn3, runEffectFn5, runEffectFn6, runEffectFn7)
 import KSF.Helpers as Helpers
+import KSF.User.Cusno
 
-foreign import login_ :: EffectFn3 Cusno LoginMethod Result Unit
+foreign import login_ :: EffectFn3 (Nullable Cusno) LoginMethod Result Unit
 foreign import reclamation_ :: EffectFn5 Cusno Subsno DateString Claim Result Unit
 foreign import tempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import editTempAddressChange_ :: EffectFn6 Cusno Subsno StartDateString StartDateString EndDateString Result Unit
@@ -23,7 +25,6 @@ foreign import changeEmail_ :: EffectFn2 Cusno Result Unit
 foreign import changeAddress_ :: EffectFn2 Cusno Result Unit
 foreign import deletePendingAddressChanges_ :: EffectFn2 Cusno Result Unit
 
-type Cusno = String
 type Subsno = String
 type DateString = String
 type Claim = String
@@ -96,8 +97,7 @@ deletePendingAddressChanges :: Cusno -> Result -> Effect Unit
 deletePendingAddressChanges = runEffectFn2 deletePendingAddressChanges_
 
 login :: Maybe Cusno -> LoginMethod -> Result -> Effect Unit
-login (Just cusno) method result = runEffectFn3 login_ cusno method result
-login Nothing method result      = runEffectFn3 login_ "" method result
+login cusno method result = runEffectFn3 login_ (toNullable cusno) method result
 
 -- More about the data layer:
 -- https://developers.google.com/tag-manager/devguide

@@ -18,6 +18,7 @@ import Effect.Now as Now
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.User as User
+import KSF.User.Cusno (Cusno)
 import Prelude (Unit, bind, discard, show, ($), (<$>), (>>=), (=<<))
 import React.Basic (JSX)
 import React.Basic.Classic (make)
@@ -39,7 +40,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , cusno     :: String
+  , cusno     :: Cusno
   , userUuid  :: User.UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
