@@ -140,10 +140,9 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
       ]
 
     extraActions =
-      [ case sub.paymentMethod of
-          CreditCard -> creditCardUpdateIcon
-          _          -> mempty
-      ]
+      if sub.paymentMethod == CreditCard && sub.paycusno == props.user.cusno
+        then [ creditCardUpdateIcon ]
+        else mempty
 
     updateProgress =
       case state.updateAction of

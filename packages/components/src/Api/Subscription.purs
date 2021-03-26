@@ -68,6 +68,8 @@ parseSubscription sub@{ paymentMethod } =
 
 newtype SubscriptionState = SubscriptionState String
 
+derive instance eqSubscriptionPaymentMethod :: Eq SubscriptionPaymentMethod
+
 derive instance genericSubscriptionPaymentMethod :: Generic SubscriptionPaymentMethod _
 instance readSubscriptionPaymentMethod :: ReadForeign SubscriptionPaymentMethod where
   readImpl p = genericDecodeEnum defaultGenericEnumOptions p <|> pure UnknownPaymentMethod
