@@ -1,7 +1,7 @@
 module KSF.Tracking where
 
 import Bottega.Models as Bottega
-import Data.DateTime (DateTime)
+import Data.Date (Date)
 import Data.Maybe (Maybe, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
@@ -28,9 +28,9 @@ foreign import deletePendingAddressChanges_ :: EffectFn2 Cusno Result Unit
 type Subsno = String
 type DateString = String
 type Claim = String
-type StartDate = DateTime
+type StartDate = Date
 type StartDateString = String
-type EndDate = DateTime
+type EndDate = Date
 type EndDateString = String
 type Result = String
 type LoginMethod = String
@@ -50,7 +50,7 @@ readBottegaCreditCard { id: Bottega.CreditCardId id, expiryDate, paymentMethodId
   , paymentMethodId
   }
 
-reclamation :: Cusno -> Subsno -> DateTime -> Claim -> Result -> Effect Unit
+reclamation :: Cusno -> Subsno -> Date -> Claim -> Result -> Effect Unit
 reclamation cusno subsno date claim result =
   runEffectFn5 reclamation_ cusno subsno (Helpers.formatDate date) claim result
 

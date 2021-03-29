@@ -1,6 +1,6 @@
 module MittKonto.Main.UserView.Subscription.Types where
 
-import Data.DateTime (DateTime)
+import Data.Date (Date)
 import Data.Maybe (Maybe)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Sentry as Sentry
@@ -15,7 +15,7 @@ type Props =
   { subscription :: User.Subscription
   , user :: User
   , logger :: Sentry.Logger
-  , now :: DateTime
+  , now :: Date
   }
 
 type State =

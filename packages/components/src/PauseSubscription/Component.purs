@@ -2,13 +2,9 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
-import Data.DateTime (DateTime, adjust)
+import Data.Date (Date, adjust)
 import Data.Either (Either(..))
-import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (fromDateTime)
-import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
 import Data.Tuple (Tuple(..))
 import DatePicker.Component as DatePicker
@@ -17,6 +13,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Helpers (formatDateDots)
 import KSF.Grid as Grid
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
@@ -34,8 +31,8 @@ type Props =
   { subsno    :: Int
   , cusno     :: Cusno
   , userUuid  :: User.UUID
-  , oldStart  :: Maybe DateTime
-  , oldEnd    :: Maybe DateTime
+  , oldStart  :: Maybe Date
+  , oldEnd    :: Maybe Date
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: User.Subscription -> Effect Unit
@@ -43,11 +40,11 @@ type Props =
   }
 
 type State =
-  { startDate    :: Maybe DateTime
-  , minStartDate :: Maybe DateTime
-  , endDate      :: Maybe DateTime
-  , minEndDate   :: Maybe DateTime
-  , maxEndDate   :: Maybe DateTime
+  { startDate    :: Maybe Date
+  , minStartDate :: Maybe Date
+  , endDate      :: Maybe Date
+  , minEndDate   :: Maybe Date
+  , maxEndDate   :: Maybe Date
   , ongoing      :: Boolean
   }
 
@@ -68,7 +65,7 @@ initialState =
   }
 
 -- | Minimum pause period is one week
-calcMinEndDate :: Maybe DateTime -> Maybe DateTime
+calcMinEndDate :: Maybe Date -> Maybe Date
 calcMinEndDate Nothing = Nothing
 calcMinEndDate (Just startDate) = do
   -- 6 days added to the starting date = 7 (one week)
@@ -76,7 +73,7 @@ calcMinEndDate (Just startDate) = do
   adjust week startDate
 
 -- | Maximum pause period is three months
-calcMaxEndDate :: Maybe DateTime -> Maybe DateTime
+calcMaxEndDate :: Maybe Date -> Maybe Date
 calcMaxEndDate Nothing = Nothing
 calcMaxEndDate (Just startDate) = do
   let threeMonths = Time.Duration.Days (30.0 * 3.0)
@@ -84,7 +81,7 @@ calcMaxEndDate (Just startDate) = do
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDateTime
+  now <- Now.nowDate
   -- We set the minimum start date two days ahead because of system issues.
   -- TODO: This could be set depending on the time of day
   let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
@@ -122,7 +119,7 @@ render self =
           , children:
               (case Tuple self.props.oldStart self.props.oldEnd of
                   Tuple (Just start) (Just end) ->
-                    [ DOM.text $ "Ursprunglig: " <> formatDate start <> " – " <> formatDate end ]
+                    [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <> formatDateDots end ]
                   _ -> []) <>
               [ startDayInput
               , endDayInput
@@ -171,10 +168,10 @@ render self =
         }
 
 type DateInputField =
-  { action   :: Maybe DateTime -> Effect Unit
-  , value    :: Maybe DateTime
-  , minDate  :: Maybe DateTime
-  , maxDate  :: Maybe DateTime
+  { action   :: Maybe Date -> Effect Unit
+  , value    :: Maybe Date
+  , minDate  :: Maybe Date
+  , maxDate  :: Maybe Date
   , disabled :: Boolean
   , label    :: String
   }
@@ -187,11 +184,11 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
         [ DatePicker.datePicker
             { onChange: (action =<< _)
             , className: "pause-subscription--date-picker"
-            , value: toNullable $ fromDateTime <$> value
+            , value: value
             , format: "d.M.yyyy"
             , required: true
-            , minDate: toNullable $ fromDateTime <$> minDate
-            , maxDate: toNullable $ fromDateTime <$> maxDate
+            , minDate: minDate
+            , maxDate: maxDate
             , disabled
             , locale: "sv-FI"
             }
@@ -227,15 +224,3 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
           Tracking.pauseSubscription props.cusno (show subsno) start end "error: invalid date input"
 
 submitForm _ _ = Console.error "Pause subscription dates were not defined."
-
-formatDate :: DateTime -> String
-formatDate = format formatter
-  where
-    dot = Placeholder "."
-    formatter = fromFoldable
-      [ DayOfMonthTwoDigits
-      , dot
-      , MonthTwoDigits
-      , dot
-      , YearFull
-      ]

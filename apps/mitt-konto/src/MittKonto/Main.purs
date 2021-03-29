@@ -40,7 +40,7 @@ app = do
   payments <- Wrappers.routeWrapper PaymentAccordion.paymentAccordion
   paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
-  now <- Now.nowDateTime
+  now <- Now.nowDate
   let initialState =
         { paper: KSF
         , adminMode: false

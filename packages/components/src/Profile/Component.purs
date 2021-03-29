@@ -7,12 +7,10 @@ import Control.Monad.Error.Class (throwError)
 import Data.Array (any, catMaybes, filter, intercalate, length, mapMaybe, null, (:))
 import Data.Array as Array
 import Data.Date as Date
-import Data.DateTime (DateTime, modifyDate)
+import Data.Date (Date)
 import Data.Time.Duration (Days(..))
 import Data.Either (Either(..))
-import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime, fromDateTime)
-import Data.List (fromFoldable)
+import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Nullable as Nullable
@@ -31,6 +29,7 @@ import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
+import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
@@ -59,8 +58,8 @@ type State =
   { name :: Name
   , address :: Address
   , email :: Maybe String
-  , now :: Maybe DateTime
-  , changeDate :: Maybe DateTime
+  , now :: Maybe Date
+  , changeDate :: Maybe Date
   , editFields :: Set EditField
   , editName :: AsyncWrapper.Progress JSX
   , editEmail :: AsyncWrapper.Progress JSX
@@ -141,7 +140,7 @@ addressArray { streetAddress, zipCode, city } =
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDateTime
+  now <- Now.nowDate
   self.setState _ { now = Just now }
   resetFields self EditEmail
   resetFields self EditAddress
@@ -343,12 +342,11 @@ editAddress self =
                 [ DatePicker.datePicker
                     { onChange: (_ >>= \newDate -> self.setState _ { changeDate = newDate })
                     , className: "profile--edit-address--date-picker"
-                    , value: Nullable.toNullable $ fromDateTime <$> self.state.changeDate
+                    , value: self.state.changeDate
                     , format: "d.M.yyyy"
                     , required: true
-                    , minDate: Nullable.toNullable
-                        $ (fromDateTime <<< modifyDate (\x -> fromMaybe x $ Date.adjust (Days 1.0) x)) <$> self.state.now
-                    , maxDate: Nullable.null
+                    , minDate: Date.adjust (Days 1.0) =<< self.state.now
+                    , maxDate: Nothing
                     , disabled: false
                     , locale: "sv-FI"
                     }
@@ -641,10 +639,10 @@ switchEditProgress self EditName progress = self.setState _ { editName = progres
 switchEditProgress self EditEmail progress = self.setState _ { editEmail = progress }
 switchEditProgress self EditAddress progress = self.setState _ { editAddress = progress }
 
-isUpcomingPendingChange :: Maybe DateTime -> User.PendingAddressChange -> Boolean
+isUpcomingPendingChange :: Maybe Date -> User.PendingAddressChange -> Boolean
 isUpcomingPendingChange Nothing _ = true
 isUpcomingPendingChange (Just now) { startDate } =
-  maybe true (_ > now) $ toDateTime startDate
+  maybe true (_ > now) $ toDate startDate
 
 pendingAddressChangeText :: User.PendingAddressChange -> String
 pendingAddressChangeText { address, startDate, endDate } =
@@ -678,17 +676,5 @@ formatAddress { temporaryName, streetAddress, zipcode, city } =
 
 formatDateString :: JSDate -> String
 formatDateString startDate
-  | Just startString <- formatDate startDate = startString
+  | Just startString <- formatDateDots <$> toDate startDate = startString
   | otherwise = mempty
-
-formatDate :: JSDate -> Maybe String
-formatDate date = format formatter <$> toDateTime date
-  where
-    dot = Placeholder "."
-    formatter = fromFoldable
-      [ DayOfMonthTwoDigits
-      , dot
-      , MonthTwoDigits
-      , dot
-      , YearFull
-      ]

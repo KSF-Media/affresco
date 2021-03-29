@@ -1,16 +1,24 @@
 module KSF.Helpers where
 
-import           Prelude
+import Prelude
 
-import           Data.DateTime           (DateTime)
-import           Data.Formatter.DateTime (FormatterCommand (..), format)
-import           Data.Int                (toNumber)
-import           Data.List               (fromFoldable)
-import           Data.String             (Pattern (..))
-import           Data.String             as String
+import Data.Date               (Date)
+import Data.DateTime           (DateTime(..))
+import Data.Enum               (toEnum)
+import Data.Formatter.DateTime (FormatterCommand (..), format)
+import Data.Int                (toNumber)
+import Data.List               (fromFoldable)
+import Data.Maybe              (fromJust)
+import Data.String             (Pattern (..))
+import Data.String             as String
+import Data.Time               (Time(..))
+import Partial.Unsafe          (unsafePartial)
 
-formatDate :: DateTime -> String
-formatDate = format formatter
+midnight :: Time
+midnight = unsafePartial $ fromJust $ Time <$> toEnum 0 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
+
+formatDate :: Date -> String
+formatDate date = format formatter $ DateTime date midnight
   where
     dash = Placeholder "-"
     formatter = fromFoldable
@@ -19,6 +27,18 @@ formatDate = format formatter
       , MonthTwoDigits
       , dash
       , DayOfMonthTwoDigits
+      ]
+
+formatDateDots :: Date -> String
+formatDateDots date = format formatter $ DateTime date midnight
+  where
+    dot = Placeholder "."
+    formatter = fromFoldable
+      [ DayOfMonthTwoDigits
+      , dot
+      , MonthTwoDigits
+      , dot
+      , YearFull
       ]
 
 formatEur :: Int -> String

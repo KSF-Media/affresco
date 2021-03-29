@@ -51,7 +51,7 @@ import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
-import Data.DateTime (DateTime)
+import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_, traverse_)
 import Data.Generic.Rep (class Generic)
@@ -450,8 +450,8 @@ facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 pauseSubscription
   :: Api.UUID
   -> Int
-  -> DateTime
-  -> DateTime
+  -> Date
+  -> Date
   -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 pauseSubscription userUuid subsno startDate endDate = do
   pausedSub <- try $ Persona.pauseSubscription userUuid subsno startDate endDate =<< requireToken
@@ -467,10 +467,10 @@ pauseSubscription userUuid subsno startDate endDate = do
 editSubscriptionPause
   :: Api.UUID
   -> Int
-  -> DateTime
-  -> DateTime
-  -> DateTime
-  -> DateTime
+  -> Date
+  -> Date
+  -> Date
+  -> Date
   -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEndDate = do
   pausedSub <- try $ Persona.editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEndDate =<< requireToken
@@ -493,8 +493,8 @@ unpauseSubscription userUuid subsno = do
 temporaryAddressChange
   :: Api.UUID
   -> Int
-  -> DateTime
-  -> Maybe DateTime
+  -> Date
+  -> Maybe Date
   -> String
   -> String
   -> String
@@ -507,9 +507,9 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
 editTemporaryAddressChange
   :: Api.UUID
   -> Int
-  -> DateTime
-  -> DateTime
-  -> Maybe DateTime
+  -> Date
+  -> Date
+  -> Maybe Date
   -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 editTemporaryAddressChange userUuid subsno oldStartDate startDate endDate = do
   addressChangedSub <- try $ Persona.editTemporaryAddressChange userUuid subsno oldStartDate startDate endDate =<< requireToken
@@ -526,7 +526,7 @@ handleAddressChangedSub addressChangedSub =
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
 
-deleteTemporaryAddressChange :: Api.UUID -> Int -> DateTime -> Maybe DateTime -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+deleteTemporaryAddressChange :: Api.UUID -> Int -> Date -> Maybe Date -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 deleteTemporaryAddressChange userUuid subsno startDate endDate = do
   tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate =<< requireToken
   case tempAddressChangeDeletedSub of
@@ -536,7 +536,7 @@ deleteTemporaryAddressChange userUuid subsno startDate endDate = do
 createDeliveryReclamation
   :: Api.UUID
   -> Int
-  -> DateTime
+  -> Date
   -> PersonaReExport.DeliveryReclamationClaim
   -> Aff (Either Persona.InvalidDateInput Persona.DeliveryReclamation)
 createDeliveryReclamation uuid subsno date claim = do
