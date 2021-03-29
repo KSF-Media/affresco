@@ -2,11 +2,11 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
-import Data.Array (filter)
+import Data.Array (filter, mapMaybe)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (foldMap, for_)
-import Data.JSDate (toDateTime)
+import Data.Foldable (foldMap, for_, maximum)
+import Data.JSDate (toDate, toDateTime)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
@@ -383,6 +383,7 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ packag
     , cusno: props.user.cusno
     , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
     , nextDelivery: toDateTime =<< toMaybe package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
     , editing: editing
     , userUuid: props.user.uuid
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }

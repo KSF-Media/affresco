@@ -4,10 +4,13 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (length)
+import Data.Date (Date)
+import Data.Date as Date
 import Data.DateTime (DateTime, adjust)
+import Data.DateTime as DateTime
 import Data.Either (Either(..))
 import Data.JSDate (fromDateTime, toDateTime)
-import Data.Maybe (Maybe(..), isNothing, isJust)
+import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
 import Data.Nullable (toNullable, toMaybe)
 import Data.Time.Duration as Time.Duration
 import Data.Validation.Semigroup (unV)
@@ -56,6 +59,7 @@ type Props =
   , cusno         :: Cusno
   , pastAddresses :: Array AddressChange
   , nextDelivery  :: Maybe DateTime
+  , lastDelivery  :: Maybe Date
   , editing       :: Maybe User.PendingAddressChange
   , userUuid      :: User.UUID
   , onCancel      :: Effect Unit
@@ -104,12 +108,17 @@ component :: React.Component Props
 component = React.createComponent "TemporaryAddressChange"
 
 -- | Minimum temporary address change period is one week
-calcMinEndDate :: Maybe DateTime -> Maybe DateTime
-calcMinEndDate Nothing = Nothing
-calcMinEndDate (Just startDate) = do
+calcMinEndDate :: Maybe Date -> Maybe DateTime -> Maybe DateTime
+calcMinEndDate _ Nothing = Nothing
+calcMinEndDate lastDelivery (Just startDate) = do
   -- 6 days added to the starting date = 7 (one week)
   let week = Time.Duration.Days 6.0
-  adjust week startDate
+      diffToLastDelivery = maybe (Time.Duration.Days 0.0)
+                           (\x -> Date.diff x (DateTime.date startDate)) lastDelivery
+      -- Week from the delivery date of the last product in
+      -- subscription
+      span = if diffToLastDelivery > Time.Duration.Days 0.0 then week <> diffToLastDelivery else week
+  adjust span startDate
 
 didMount :: Self -> Effect Unit
 didMount self = do
@@ -195,7 +204,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         { action: \newStartDate ->
                     self.setState _
                       { startDate = newStartDate
-                      , minEndDate = calcMinEndDate newStartDate
+                      , minEndDate = calcMinEndDate self.props.lastDelivery newStartDate
                       }
         , value: self.state.startDate
         , minDate: self.state.minStartDate
