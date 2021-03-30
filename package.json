@@ -4,17 +4,17 @@
   "dependencies": {
     "parcel-bundler": "^1.12.4",
     "purescript": "^0.13.8",
+    "react-router-dom": "^5.2.0",
     "spago": "^0.15.2",
     "uglify-es": "^3.3.9",
-    "yarn": "^1.22.4"
+    "yarn": "^1.22.10"
   },
   "bootstrap": {
     "useWorkspaces": true,
     "npmClient": "yarn"
   },
   "scripts": {
-    "clean": "rm -rf .cache .psci_modules node_modules output dist",
-    "copy-hooks": "cp hooks/* .git/hooks"
+    "clean": "rm -rf .cache .psci_modules node_modules output dist"
   },
   "workspaces": [
     "packages/*",

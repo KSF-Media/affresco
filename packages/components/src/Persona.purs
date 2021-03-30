@@ -25,6 +25,7 @@ import KSF.Api (InvalidateCache, Password, Token, UUID(..), UserAuth, invalidate
 import KSF.Api.Error (ServerError)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
 import KSF.Api.Subscription as Subscription
+import KSF.User.Cusno (Cusno)
 import OpenApiClient (Api, callApi)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
@@ -69,6 +70,7 @@ updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
   let body = case update of
         UpdateName names          -> unsafeToForeign names
+        UpdateEmail email -> unsafeToForeign email
         UpdateAddress { countryCode, zipCode, streetAddress, startDate } ->
           unsafeToForeign
             { address:
@@ -89,6 +91,7 @@ updateUser uuid update auth = do
                 , city: userInfo.city
                 }
             }
+        DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth
   let parsedSubs = map Subscription.parseSubscription user.subs
@@ -132,6 +135,23 @@ pauseSubscription uuid subsno startDate endDate auth = do
     ]
     ( authHeaders uuid auth )
 
+editSubscriptionPause :: UUID -> Int -> DateTime -> DateTime -> DateTime -> DateTime -> UserAuth -> Aff Subscription
+editSubscriptionPause uuid subsno oldStartDate oldEndDate newStartDate newEndDate auth = do
+  let oldStartDateISO = formatDate oldStartDate
+      oldEndDateISO   = formatDate oldEndDate
+      newStartDateISO = formatDate newStartDate
+      newEndDateISO   = formatDate newEndDate
+  callApi usersApi "usersUuidSubscriptionsSubsnoPausePatch"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { oldStartDate: oldStartDateISO
+                      , oldEndDate: oldEndDateISO
+                      , newStartDate: newStartDateISO
+                      , newEndDate: newEndDateISO
+                      }
+    ]
+    ( authHeaders uuid auth )
+
 unpauseSubscription :: UUID -> Int -> UserAuth -> Aff Subscription
 unpauseSubscription uuid subsno auth = do
   callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
@@ -162,20 +182,40 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
     ]
     ( authHeaders uuid auth )
 
-deleteTemporaryAddressChange
+editTemporaryAddressChange
   :: UUID
   -> Int
   -> DateTime
   -> DateTime
+  -> Maybe DateTime
+  -> UserAuth
+  -> Aff Subscription
+editTemporaryAddressChange uuid subsno oldStartDate startDate endDate auth = do
+  let oldStartDateISO = formatDate oldStartDate
+      startDateISO = formatDate startDate
+      endDateISO = formatDate <$> endDate
+
+  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    , unsafeToForeign { oldStartDate: oldStartDateISO, newStartDate: startDateISO, newEndDate: toNullable endDateISO }
+    ]
+    ( authHeaders uuid auth )
+
+deleteTemporaryAddressChange
+  :: UUID
+  -> Int
+  -> DateTime
+  -> Maybe DateTime
   -> UserAuth
   -> Aff Subscription
 deleteTemporaryAddressChange uuid subsno startDate endDate auth = do
   let startDateISO = formatDate startDate
-      endDateISO   = formatDate endDate
+      endDateISO   = formatDate <$> endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO  }
+    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO  }
     ]
     ( authHeaders uuid auth )
 
@@ -240,6 +280,7 @@ type LoginDataSso =
 
 data UserUpdate
   = UpdateName { firstName :: String, lastName :: String }
+  | UpdateEmail { email :: String }
   | UpdateAddress { countryCode :: String
                   , zipCode :: String
                   , streetAddress :: String
@@ -253,6 +294,7 @@ data UserUpdate
                , streetAddress :: String
                , startDate :: Maybe DateTime
                }
+  | DeletePendingAddressChanges
 
 type EmailAddressInUse = ServerError
   ( email_address_in_use ::
@@ -344,19 +386,21 @@ derive newtype instance showMergeToken :: Show MergeToken
 derive newtype instance readMergeToken :: ReadForeign MergeToken
 derive newtype instance writeMergeToken :: WriteForeign MergeToken
 
-type User =
-  { uuid :: UUID
+type User = Record BaseUser
+
+type BaseUser =
+  ( uuid :: UUID
   , email :: String
   , firstName :: Nullable String
   , lastName :: Nullable String
   , address :: Nullable Address
-  , cusno :: String
+  , cusno :: Cusno
   , subs :: Array Subscription
   , consent :: Array GdprConsent
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
   , pastTemporaryAddresses :: Array TemporaryAddressChange
   , hasCompletedRegistration :: Boolean
-  }
+  )
 
 type NewUser =
   { firstName :: String
@@ -509,6 +553,8 @@ type Payment =
   , type :: PaymentType
   , state :: PaymentState
   , discount :: Number
+  , invno :: Int
+  , reference :: String
   }
 
 type ApiSubscriptionPayments =
@@ -529,6 +575,8 @@ type ApiPayment =
   , type :: String
   , state :: String
   , discount :: Number
+  , invno :: Int
+  , reference :: String
   }
 
 getPayments :: UUID -> UserAuth -> Aff (Array SubscriptionPayments)
@@ -562,6 +610,8 @@ getPayments uuid auth =
              , type: t
              , state: s
              , discount: x.discount
+             , invno: x.invno
+             , reference: x.reference
              }
 
 type Forbidden = ServerError

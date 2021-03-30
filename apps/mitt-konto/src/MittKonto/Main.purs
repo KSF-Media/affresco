@@ -4,14 +4,19 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, paymentView, userView) as Views
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
+import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
+import MittKonto.Payment.Types as Payments
+import MittKonto.Payment.PaymentAccordion as PaymentAccordion
+import MittKonto.Payment.PaymentDetail as PaymentDetail
+import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
 import KSF.Paper (Paper(..))
 import KSF.Search as Search
@@ -31,6 +36,9 @@ app = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   search <- Search.search
+  payments <- Wrappers.routeWrapper PaymentAccordion.paymentAccordion
+  paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
+  creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -39,7 +47,6 @@ app = do
         , showWelcome: true
         , alert: Nothing
         , payments: Nothing
-        , creditCards: []
         }
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
@@ -56,70 +63,89 @@ app = do
           Right user -> do
             setState $ Types.setActiveUser $ Just user
             setPersonating true
-        searchSelect user =
+        searchSelect uuid =
           Aff.runAff_
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
-              $ User.getUser Nothing user.uuid
+              $ User.getUser Nothing uuid
         searchView :: JSX
         searchView = search { setActiveUser: searchSelect }
-    pure $ render self logger searchView isPersonating
+        usePayments = Helpers.useLoadSpinner setState
+                        (isJust state.payments /\ (_.cusno <$> state.activeUser))
+                        (Payments.getPayments
+                         (if isJust state.payments then Nothing else (_.uuid <$> state.activeUser))
+                         (setState <<< Types.setPayments <<< Just))
+        paymentProps = { usePayments: usePayments
+                       , subscriptionPayments: state.payments
+                       }
+        paymentView =
+          payments
+            { contentProps: paymentProps
+            , closeType: Wrappers.Back
+            , route: "/fakturor"
+            , routeFrom: "/"
+            }
+        paymentDetailView =
+          paymentDetail
+            { contentProps: paymentProps
+            , closeType: Wrappers.Back
+            , route: "/fakturor/:invno"
+            , routeFrom: "/fakturor"
+            }
+        creditCardUpdateInputs user =
+          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
+          , cusno: user.cusno
+          , logger: logger
+          }
+        creditCardUpdateView user =
+          creditCardUpdate
+            { contentProps: creditCardUpdateInputs user
+            , closeType: Wrappers.XButton
+            , route: "/kreditkort/uppdatera"
+            , routeFrom: "/"
+            }
+
+    pure $ render self logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Types.Self -> Sentry.Logger -> JSX -> Boolean -> JSX
-render self@{ state, setState } logger searchView isPersonating =
+render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
+render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ Router.switch { children: [ paymentListRoute, search, mittKontoRoute, noMatchRoute ] } ]
+            [ Router.switch { children: routes } ]
         ]
     , Views.footerView
     ]
  where
-   mittKontoRoute =
+   routes =
+     [ defaultRouteElement "/fakturor/:invno" $ const paymentDetailView
+     , defaultRouteElement "/fakturor" $ const paymentView
+     , routeElement true false (Just "/sök") $ const searchView
+     , defaultRouteElement "/" $ Views.userView self logger
+     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" creditCardUpdateView
+     , noMatchRoute
+     ]
+   defaultRouteElement = routeElement true true <<< Just
+   routeElement exact allowAll path view =
      Router.route
-       { exact: true
-       , path: Just "/"
-       , render: const mittKontoView
-       }
-   mittKontoView =
-      Helpers.classy DOM.div "mitt-konto--container clearfix"
-        [ foldMap Elements.loadingIndicator state.loading
-        , case state.activeUser of
-            Just user -> Views.userView self logger user
-            Nothing   -> Views.loginView self logger
-        ]
-   paymentListRoute =
-     Router.route
-       { exact: true
-       , path: Just "/fakturor"
-       , render: const
-           $ Helpers.classy DOM.div "mitt-konto--container clearfix"
-               [ foldMap Elements.loadingIndicator state.loading
-               , case state.activeUser of
-                   Just user -> Views.paymentView self user
-                   Nothing   -> Views.loginView self logger
-               ]
-       }
-   search =
-     Router.route
-       { exact: true
-       , path: Just "/sök"
-       , render:
-         \_ -> Helpers.classy DOM.div "mitt-konto--container clearfix"
-                 [ foldMap Elements.loadingIndicator state.loading
-                 , case state.activeUser /\ state.adminMode of
-                     Just user /\ true -> searchView
-                     _ -> Views.loginView self logger
-                 ]
+       { exact: exact
+       , path: path
+       , render: const $ Helpers.classy DOM.div "mitt-konto--container clearfix"
+           [ foldMap Elements.loadingIndicator state.loading
+           , case state.activeUser /\ (state.adminMode || allowAll) of
+               Just user /\ true -> view user
+               _ -> Views.loginView self logger
+           ]
        }
    noMatchRoute =
-     -- TODO: Use Redirect when supported!
-     Router.route
-       { exact: false
-       , path: Nothing
-       , render: const mittKontoView
+     Router.redirect
+       { to: { pathname: "/"
+             , state: {}
+             }
+       , from: "/*"
+       , push: true
        }

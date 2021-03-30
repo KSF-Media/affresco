@@ -9,6 +9,7 @@ import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class.Console as Console
+import KSF.User (User)
 import Persona as Persona
 import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic.Classic as React
@@ -28,7 +29,7 @@ type State = LocationState
 
 data Action =
   SetProduct Product
-  | SetUser Persona.User
+  | SetUser User
   | SetPayment Payment
 
 type Payment =
@@ -45,8 +46,8 @@ type PaymentJS =
   , surcharge :: Nullable Number
   }
 
-type LocationState   = { product :: Maybe Product, user :: Maybe Persona.User, payment :: Maybe Payment }
-type LocationJsState = { product :: Nullable Product, user :: Nullable Persona.User, payment :: Nullable PaymentJS }
+type LocationState   = { product :: Maybe Product, user :: Maybe User, payment :: Maybe Payment }
+type LocationJsState = { product :: Nullable Product, user :: Nullable User, payment :: Nullable PaymentJS }
 
 fromJSProps :: JSProps -> Props
 fromJSProps { location: { key, pathname, search, hash, state } } =
@@ -158,7 +159,7 @@ render self =
     productName :: String
     productName = foldMap _.name self.state.product
 
-    customerName :: Persona.User -> String
+    customerName :: User -> String
     customerName { firstName, lastName } =
       fname <> " " <> lname
       where

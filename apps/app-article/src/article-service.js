@@ -1,9 +1,9 @@
 import config from "./config";
-import {isUserLoggedIn, getBrandValueParam} from "./helper";
+import { isUserLoggedIn, getBrandValueParam } from "./helper";
 
 const articleApi = {
     getArticle(uuid) {
-        return fetch(config.apiUrl + "article/" + uuid, {
+        return fetch(config.apiUrl + "/article/" + uuid, {
             method: 'GET',
             headers: attachHeaders()
         })
@@ -11,7 +11,7 @@ const articleApi = {
 
     },
     getLatestArticles() {
-        return fetch(config.apiUrl + "latest?start=0&limit=10&paper=" + getBrandValueParam(), {
+        return fetch(config.apiUrl + "/latest?start=0&limit=10&paper=" + getBrandValueParam(), {
             method: 'GET',
         })
             .then(response => response.json())
@@ -19,7 +19,7 @@ const articleApi = {
     getMostReadArticles() {
         const brand = getBrandValueParam();
         //We only want exclusively subscriber data for hbl, others can have all data
-        return fetch(`${config.apiUrl}mostread?start=0&limit=10&paper=${brand}&onlySubscribers=${brand==='hbl'}`, {
+        return fetch(`${config.apiUrl}/mostread?start=0&limit=10&paper=${brand}&onlySubscribers=${brand === 'hbl'}`, {
             method: 'GET',
         })
             .then(response => response.json())
@@ -27,7 +27,7 @@ const articleApi = {
 };
 
 function attachHeaders() {
-    let headers = {'Content-Type': 'application/json'};
+    let headers = { 'Content-Type': 'application/json' };
     if (isUserLoggedIn()) {
         headers = {
             'Content-Type': 'application/json',

@@ -1,98 +1,113 @@
 require 'open3'
+require 'json'
 
-# Common env variables groupped by their purpose
-env_variables = {
-  "social_login" => %w[
-    PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
-    PRODUCTION_JANRAIN_SSO_SERVER
-    PRODUCTION_JANRAIN_FLOW_VERSION
-    PRODUCTION_JANRAIN_XD_RECEIVER_PATH
-    PRODUCTION_GOOGLE_CLIENT_ID
-    PRODUCTION_FACEBOOK_APP_ID
-  ],
-  "bottega" => %w[
-    PRODUCTION_BOTTEGA_URL
-  ],
-  "persona" => %w[
-    PRODUCTION_PERSONA_URL
-  ],
-  "duellen" => %w[
-    PRODUCTION_DUELLEN_URL
-  ],
-  "sentry" => %w[
-    PRODUCTION_SENTRY_DSN
-  ]
-}
+def run_command(command)
+  puts "Running `#{command}`"
+  result = ""
+
+  # see: http://stackoverflow.com/a/1162850/83386
+  Open3.popen3(command) { |input ,out, err, wait_thread|
+    # Store stdout and print it
+    Thread.new do
+      while line=out.gets do
+        puts(line)
+        result += line + "\n"
+      end
+    end
+    # But only print stderr
+    Thread.new do
+      while line=err.gets do
+        puts(line)
+      end
+    end
+    # Then wait for da command to be done
+    wait_thread.join
+    if wait_thread.value.exitstatus != 0
+      abort("Command '#{command}' failed")
+    end
+  }
+  return result
+end
 
 # A hash of apps with their configuration
-apps = {
-  "mitt-konto" => {
-    "env_variables" =>
-    env_variables["social_login"] +
-    env_variables["bottega"] +
-    env_variables["persona"] +
-    env_variables["sentry"]
-  },
-  "prenumerera" => {
-    "env_variables" =>
-    env_variables["social_login"] +
-    env_variables["persona"]
-  },
-  "elections" => {
-    "env_variables" => %w[]
-  },
-  "duellen" => {
-    "env_variables" => env_variables["duellen"]
-  },
-  "app-article" => {
-    "env_variables" => env_variables["social_login"] + env_variables["persona"] + ["PRODUCTION_LETTERA_URL"]
-  }
-}
+# We read that from the deploy info that we use to generate the CI jobs
+apps_json = ""
+begin
+  apps_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'")
+rescue Exception => e
+  # FIXME: this is here because Netlify doesn't have nix-shell.
+  # This is terrible and should be removed ASAP. Really.
+  apps_json = file = File.read('./temp-apps-deprecate-me-asap.json')
+end
+
+apps_list = JSON.parse(apps_json)
+apps = apps_list.map{ |x| [x["deployDir"], x] }.to_h
 
 app_name = ARGV.first
 maintenance = ARGV[1]
 
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
-if ENV['HEAD'] == 'master'
-  apps[app_name]["env_variables"].each do |v|
-    abort("Did not find #{v} in the environment variables") if ENV[v].nil?
-  end
+app = apps[app_name]
+app["path"] = "./apps/#{app['deployDir']}"
 
-  File.open("apps/#{app_name}/.env.production", 'a') do |f|
-    apps[app_name]["env_variables"].each do |v|
-      # Strip 'PRODUCTION_' from the variable name
-      env_var_name = v.sub(/^PRODUCTION_/, '')
-      f.puts("#{env_var_name}=#{ENV[v]}")
+puts "Branch: #{ENV['GITHUB_REF']}"
+puts "Workflow: #{ENV['GITHUB_WORKFLOW']}"
+
+def setup_env(app)
+  # Common env variables
+  env_variables = %w[
+    PRODUCTION_JANRAIN_LOGIN_CLIENT_ID
+    PRODUCTION_JANRAIN_SSO_SERVER
+    PRODUCTION_JANRAIN_FLOW_VERSION
+    PRODUCTION_JANRAIN_XD_RECEIVER_PATH
+    PRODUCTION_GOOGLE_CLIENT_ID
+    PRODUCTION_FACEBOOK_APP_ID
+    PRODUCTION_BOTTEGA_URL
+    PRODUCTION_PERSONA_URL
+    PRODUCTION_DUELLEN_URL
+    PRODUCTION_LETTERA_URL
+  ]
+
+  if (ENV['HEAD'] == 'master' or ENV['GITHUB_REF'] == 'refs/heads/master' or ENV['GITHUB_WORKFLOW'] == 'production')
+    app_vars = env_variables + app['env'].keys
+    app_vars.each do |v|
+      abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
-  end
 
-  ENV['NODE_ENV'] = 'production'
-else
-  ENV['NODE_ENV'] = 'development'
+    File.open("#{app['path']}/.env.production", 'a') do |f|
+      app_vars.each do |v|
+        # Strip 'PRODUCTION_' from the variable name
+        env_var_name = v.sub(/^PRODUCTION_/, '')
+        f.puts("#{env_var_name}=#{ENV[v]}")
+      end
+    end
+
+    ENV['NODE_ENV'] = 'production'
+  else
+    ENV['NODE_ENV'] = 'development'
+  end
 end
 
-def run_command(command)
-  puts "Running '#{command}'"
-  stdout, stderr, status = Open3.capture3(command)
-  if status.exitstatus != 0
-    abort("'#{command}' failed: #{stderr}")
-  end
-end
 
 build_commands = [
-  "yarn run clean",
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd './apps/#{app_name}/' run build"
+  "yarn --cwd '#{app['path']}/' run build"
 ]
 
-def deploy_maintenance_page(app_name)
-  run_command("mkdir -p ./apps/#{app_name}/dist && cp ./static/maintenance.html ./apps/#{app_name}/dist/index.html")
+def deploy_maintenance_page(app_path)
+  run_command("mkdir -p #{app_path}/dist && cp ./static/maintenance.html #{app_path}/dist/index.html")
 end
 
 if maintenance == '--maintenance'
-  puts 'Depolying maintenance page'
-  deploy_maintenance_page(app_name)
+  puts 'Deploying maintenance page'
+  deploy_maintenance_page(app['path'])
+elsif app_name == 'scripts'
+  Dir.glob("scripts/**/*.js").each do |f|
+    `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` 
+  end
+  run_command("mkdir -p #{app['path']} && cp -R scripts #{app['path']}/dist")
 else
+  setup_env(app)
   build_commands.each { |c| run_command(c) }
 end

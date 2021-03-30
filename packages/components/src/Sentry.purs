@@ -13,12 +13,13 @@ import Effect.Class.Console as Console
 import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4, runEffectFn1, runEffectFn2, runEffectFn3, runEffectFn4)
 import KSF.User as User
+import KSF.User.Cusno (Cusno(..))
 
 foreign import initSentry_       :: EffectFn1 String Sentry
 foreign import captureMessage_   :: EffectFn4 Sentry String String String Unit
 foreign import captureException_ :: EffectFn3 Sentry String Error Unit
 foreign import setTag_           :: EffectFn3 Sentry String String Unit
-foreign import setUser_          :: EffectFn2 Sentry (Nullable String) Unit
+foreign import setUser_          :: EffectFn2 Sentry (Nullable Int) Unit
 foreign import data Sentry       :: Type
 
 data LogLevel
@@ -62,7 +63,7 @@ mkLogger sentryDsn maybeUser appNameTag = do
     }
 
 setUser :: Sentry -> Maybe User.User -> Effect Unit
-setUser sentry user = runEffectFn2 setUser_ sentry $ toNullable (_.cusno <$> user)
+setUser sentry user = runEffectFn2 setUser_ sentry $ toNullable (((\(Cusno c) -> c) <<< _.cusno) <$> user)
 
 log :: Sentry -> String -> String -> LogLevel -> Effect Unit
 log sentry appNameTag msg level = runEffectFn4 captureMessage_ sentry appNameTag msg $ show level

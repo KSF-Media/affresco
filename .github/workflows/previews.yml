@@ -1,0 +1,126 @@
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup node and yarn
+        uses: "actions/setup-node@v1"
+        with:
+          node-version: '12'
+      - name: Setup ruby
+        uses: "actions/setup-ruby@v1"
+        with:
+          ruby-version: '2.6'
+      - uses: "cachix/install-nix-action@v12"
+        with:
+          nix_path: nixpkgs=channel:nixos-20.09
+      - run: |2
+            yarn install --pure-lockfile
+            mkdir -p build
+      - name: Check CI script has been generated from Dhall
+        run: |2
+            make
+            git diff --exit-code
+      - name: Build Scripts
+        run: |2
+            ruby deploy.rb scripts
+            mv apps/scripts/dist build/scripts
+      - env:
+          PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+        name: Build Mitt Konto
+        run: |2
+            ruby deploy.rb mitt-konto
+            mv apps/mitt-konto/dist build/mitt-konto
+      - env:
+          NODE_ENV: development
+          SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
+        name: "Build Vetrina (for testing only)"
+        run: |2
+            ruby deploy.rb vetrina-test
+            mv apps/vetrina-test/dist build/vetrina-test
+      - env:
+          ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
+          ELECTION_TYPE: EU
+        name: "Build Elections (EU)"
+        run: |2
+            ruby deploy.rb elections
+            mv apps/elections/dist build/elections-eu
+      - env:
+          ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
+          ELECTION_TYPE: PARLIAMENT
+        name: "Build Elections (Parliament)"
+        run: |2
+            ruby deploy.rb elections
+            mv apps/elections/dist build/elections
+      - env:
+          HIDE_LOGIN_LINKS: 'true'
+        name: Build App article
+        run: |2
+            ruby deploy.rb app-article
+            mv apps/app-article/dist build/app-article
+      - name: Build Corona banner
+        run: |2
+            ruby deploy.rb corona-banner
+            mv apps/corona-banner/dist build/corona-banner
+      - name: Upload Scripts
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/scripts
+      - name: Upload Mitt Konto
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/mitt-konto
+      - name: "Upload Vetrina (for testing only)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/vetrina-test
+      - name: "Upload Elections (EU)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/elections-eu
+      - name: "Upload Elections (Parliament)"
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/elections
+      - name: Upload App article
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/app-article
+      - name: Upload Corona banner
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}"
+          path: build/corona-banner
+      - env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        name: Post preview links
+        uses: "unsplash/comment-on-pr@master"
+        with:
+          msg: |
+            Deploy previews are ready :sunglasses:
+            - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)
+            - [Mitt Konto](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mitt-konto/index.html)
+            - [Vetrina (for testing only)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-test/index.html)
+            - [Elections (EU)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections-eu/index.html)
+            - [Elections (Parliament)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections/index.html)
+            - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
+            - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
+name: previews
+on:
+  pull_request:
+    branches:
+      - master

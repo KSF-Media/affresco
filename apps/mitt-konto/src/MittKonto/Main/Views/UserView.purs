@@ -5,15 +5,15 @@ import Prelude
 import Data.Array (snoc, sortBy, (:))
 import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
-import MittKonto.AccountEdit as AccountEdit
-import MittKonto.IconAction as IconAction
+import MittKonto.Main.UserView.AccountEdit as AccountEdit
+import MittKonto.Main.UserView.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
+import MittKonto.Main.UserView.Subscription (subscription) as Subscription
 import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
-import KSF.Subscription.Component (subscription) as Subscription
 import KSF.User (User)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -23,7 +23,7 @@ foreign import images :: { subscribe :: String }
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: Types.Self -> Sentry.Logger -> User -> JSX
-userView { setState, state: { creditCards } } logger user = React.fragment
+userView { setState } logger user = React.fragment
   [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -51,10 +51,6 @@ userView { setState, state: { creditCards } } logger user = React.fragment
           , children:
               [ componentHeader "Mina inställningar:"
               , componentBlockContent $ AccountEdit.accountEdit
-                  { logger: logger
-                  , creditCards
-                  , setCreditCards: \cards -> setState _ { creditCards = cards }
-                  }
               ]
           }
 

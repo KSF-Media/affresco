@@ -19,7 +19,6 @@ import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
 
-
 class App extends Component {
     constructor(props) {
         super(props);
@@ -70,16 +69,8 @@ class App extends Component {
         if (Cookies.get("fontSize")) {
             this.setState({fontSize: parseFloat(Cookies.get("fontSize"))});
         }
-
-        //In case User want to logout, the value should be false
-        if(Cookies.get('LoginStatus') != undefined && Cookies.get('LoginStatus') === "false"){
-            //we remove it to avoid infinite loop
-            Cookies.remove('LoginStatus');
-            //TODO
-            // we need to have logout listener here, after success we can then remove the cookie, if for exemple an error happend while             
-            //LogOut;in localstorage will keep logged but for android is considered as logged out
-
-            logout(this.onLogout);
+        if(getUrlParam().has('logout')){
+            logout(this.onLogout, (err) => this.onLogoutFailed(err));
         }
         if(getUrlParam().has('login')){
             this.setState({forceLoginView: true});
@@ -93,10 +84,37 @@ class App extends Component {
     componentWillUnmount() {
     }  
     onLogout() {
+        //To avoid undefined error for ios webview
+        try {
+            Android.onLogoutSuccess();
+        } catch (e) {
+            console.log(e);
+        }
+
+        //To invoke native function in ios via onLogoutSuccess js bridge, webkit object is avaialble only for ios webview
+        try {
+            window.webkit.messageHandlers.onLogoutSuccess.postMessage("");
+        } catch (e) {
+            console.log(e);
+        }
         console.log("Logged out successfully!");
         //Remove the current user from localstorage 
         localStorage.removeItem("currentUser");
         localStorage.removeItem("cachedArticles");
+        Cookies.set('LoginStatus', false);
+    }
+    //To inform the native in case there's any issue while processing the logout operation
+    onLogoutFailed(err){
+        try {
+            Android.onLogoutFailed(err);
+        } catch (e) {
+            console.log(e);
+        }
+        try {
+            window.webkit.messageHandlers.onLogoutFailed.postMessage(err);
+        } catch (e) {
+            console.log(e);
+        }         
     }    
     getArticle() {
         let urlParams = getUrlParam();
@@ -458,17 +476,31 @@ if (window.ksfDfp) {
         // alert("register opn .");
     }
 
-    onUserFetchSuccess(user) {
-        //Cookie will expire after 7 days 
-        Cookies.set('LoginStatus', true, { expires: 7 });
+    onUserFetchSuccess(user) { 
+        Cookies.set('LoginStatus', true, { expires: 365 });
+        Cookies.set('token', localStorage.getItem('token'), { expires: 365 });
+        Cookies.set('uuid', localStorage.getItem('uuid'), { expires: 365 });
         //To get User data from Android side 
-        Cookies.set('currentUser', JSON.stringify({firstName:user.firstName,lastName:user.lastName,email:user.email}), { expires: 7 });
-
+        Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 365}));
         localStorage.setItem("currentUser", JSON.stringify(user));
         this.setState({user: user});
-        this.fetchArticleFromApi(getUrlParam().has('uuid')?getUrlParam().get('uuid'):"");
-        //Call Android bridge 
-        Android.isLoggedIn();        
+        const articleUuid = getUrlParam().get('uuid');
+        if (articleUuid) { 
+            this.fetchArticleFromApi(articleUuid);
+        }
+        // Call Android bridge 
+        try {
+            Android.isLoggedIn();
+        } catch (e) {
+            console.error('Android not defined');
+        }
+
+        // Call ios bridge 
+        try {
+            window.webkit.messageHandlers.isLoggedIn.postMessage("");
+        } catch (e) {
+            console.error("Ios not defined");
+        }        
     }
 
     onUserFetchFail(error){
@@ -543,12 +575,17 @@ if (window.ksfDfp) {
         }
         
         if(this.state.forceLoginView){
-            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>;
+            return (
+                <>
+                    {this.state.isLoading && <Loading />}
+                    <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} onLoading={() => this.setState({ isLoading: true })} onLoadingEnd={() => this.setState({ isLoading: false })} />
+                </>
+            )
         }
 
         return (
             <div className="App">
-                {this.state.isLoading ? <Loading/>:''}
+                {this.state.isLoading ? <Loading /> : ''}
                                 
                 {isImageModalOpen && (
                     <Lightbox
@@ -574,15 +611,19 @@ if (window.ksfDfp) {
                                 </div>
                             :   ''
                         }
-                        <Title title={this.state.title}/>
-                        <Header showHighResolutionImg={this.showHighResolutionImage} mainImage={this.state.mainImage}
-                                caption={caption} appendBylineLabel={appendBylineLabel} byline={byline}/>
-                        <Additional preamble={this.state.preamble} increaseFontSize={this.increaseFontSize}/>
-                        <ArticleDetails category={this.state.category} premium={this.state.premium}
-                                        authors={this.state.authors} publishingTime={this.state.publishingTime}
-                                        updateTime={this.state.updateTime} articleTypeDetails={this.state.articleTypeDetails}/>
+                        {!this.state.isLoading && <Title title={this.state.title} />}
+                        {!this.state.isLoading && (
+                            <Header showHighResolutionImg={this.showHighResolutionImage} mainImage={this.state.mainImage}
+                                caption={caption} appendBylineLabel={appendBylineLabel} byline={byline} />
+                        )}
+                        {!this.state.isLoading && <Additional preamble={this.state.preamble} increaseFontSize={this.increaseFontSize} />}
+                        {!this.state.isLoading && (
+                            <ArticleDetails category={this.state.category} premium={this.state.premium}
+                                authors={this.state.authors} publishingTime={this.state.publishingTime}
+                                updateTime={this.state.updateTime} articleTypeDetails={this.state.articleTypeDetails} />
+                        )}
                         <Content body={this.state.body}
-                                 showHighResolutionImage={this.showHighResolutionImage}/>
+                            showHighResolutionImage={this.showHighResolutionImage} />
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
                                 {
@@ -609,18 +650,17 @@ if (window.ksfDfp) {
                             </div>
                         </div>
                         {
-                            this.state.relatedArticles.length > 0 ?
-                                <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
+                            !this.state.isLoading && this.state.relatedArticles.length > 0 ?
+                                <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles} />
                                 :
                                 ''
                         }
                         <div id="MOBNER"></div>
-                        <RelatedArticles relatedArticles={this.state.mostReadArticles}/>
+                        {!this.state.isLoading && <RelatedArticles relatedArticles={this.state.mostReadArticles} />}
                     </React.Fragment>
                 </div>
                 {/*<div id="MOBMITT"></div>*/}
-
-                <Footer brandValueName={getBrandValueParam()}/>
+                {!this.state.isLoading && <Footer brandValueName={getBrandValueParam()} />}
             </div>
         );
     }

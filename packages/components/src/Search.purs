@@ -15,11 +15,11 @@ import Data.String.Common as String
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import KSF.Api (nullUuid)
+import KSF.Api (UUID, nullUuid, toUUID)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.InputField as InputField
-import KSF.User (User)
 import KSF.User as User
+import KSF.User.Cusno as Cusno
 import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState', (/\))
 import React.Basic.Hooks as React
@@ -28,7 +28,7 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events as Events
 
 type Props =
-  { setActiveUser :: User -> Effect Unit
+  { setActiveUser :: UUID -> Effect Unit
   }
 
 search :: Component Props
@@ -37,15 +37,29 @@ search = do
     query /\ setQuery <- useState' Nothing
     results /\ setResults <- useState' Nothing
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
+    let submitSearch = case query /\ (toUUID =<< query) of
+          Nothing /\ _ -> pure unit
+          _ /\ Just uuid -> setActiveUser uuid
+          Just q /\ _ -> do
+            setSearchWrapper $ AsyncWrapper.Loading mempty
+            Aff.launchAff_ do
+              queryResult <- User.searchUsers q
+              case queryResult of
+                Right r -> liftEffect do
+                  setResults $ Just r
+                  setSearchWrapper $ AsyncWrapper.Success Nothing
+                Left e -> liftEffect do
+                  setResults Nothing
+                  setSearchWrapper $ AsyncWrapper.Error e
     pure $ React.fragment
       [ DOM.div { className: "search--container"
-                , children: [ searchQuery query setQuery setResults setSearchWrapper
+                , children: [ searchQuery query setQuery submitSearch
                             , searchResults setActiveUser searchWrapper results
                             ]
                 }
       ]
   where
-    searchQuery query setQuery setResults setSearchWrapper =
+    searchQuery query setQuery submitSearch =
       DOM.div
         { className: "search--query mitt-konto--container clearfix"
         , children:
@@ -78,7 +92,7 @@ search = do
                         }
                     ]
                 , onSubmit: Events.handler preventDefault
-                    $ \_ -> submitSearch query setResults setSearchWrapper
+                    $ \_ -> submitSearch
                 }
             ]
         }
@@ -149,9 +163,9 @@ search = do
       [ DOM.tr
           { className: "search--item"
               <> if haveDetails then " selectable" else " unselectable"
-          , onClick: Events.handler_ $ when haveDetails $ setActiveUser user
+          , onClick: Events.handler_ $ when haveDetails $ setActiveUser user.uuid
           , children:
-              [ td [ DOM.text user.cusno ]
+              [ td [ DOM.text $ Cusno.toString user.cusno ]
               , td $ map DOM.text $ pure $ String.joinWith " " $
                   mapMaybe toMaybe [ user.firstName, user.lastName ]
               , td [ DOM.text user.email ]
@@ -186,20 +200,6 @@ search = do
           , DOM.td_ $ [ DOM.text $ sub.package.name ]
           , DOM.td_ $ [ DOM.text $ fromMaybe "ogiltig" $ formatDate $ sub.dates.start ]
           ]
-
-    submitSearch q setResults setSearchWrapper = case q of
-      Nothing -> pure unit
-      Just query -> do
-        setSearchWrapper $ AsyncWrapper.Loading mempty
-        Aff.launchAff_ do
-          queryResult <- User.searchUsers query
-          case queryResult of
-            Right r -> liftEffect do
-              setResults $ Just r
-              setSearchWrapper $ AsyncWrapper.Success Nothing
-            Left e -> liftEffect do
-              setResults Nothing
-              setSearchWrapper $ AsyncWrapper.Error e
 
 formatDate :: JSDate -> Maybe String
 formatDate date = format formatter <$> toDateTime date
