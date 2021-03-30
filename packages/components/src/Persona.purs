@@ -25,6 +25,7 @@ import KSF.Api (InvalidateCache, Password, Token, UUID(..), UserAuth, invalidate
 import KSF.Api.Error (ServerError)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
 import KSF.Api.Subscription as Subscription
+import KSF.User.Cusno (Cusno)
 import OpenApiClient (Api, callApi)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
@@ -69,6 +70,7 @@ updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
   let body = case update of
         UpdateName names          -> unsafeToForeign names
+        UpdateEmail email -> unsafeToForeign email
         UpdateAddress { countryCode, zipCode, streetAddress, startDate } ->
           unsafeToForeign
             { address:
@@ -278,6 +280,7 @@ type LoginDataSso =
 
 data UserUpdate
   = UpdateName { firstName :: String, lastName :: String }
+  | UpdateEmail { email :: String }
   | UpdateAddress { countryCode :: String
                   , zipCode :: String
                   , streetAddress :: String
@@ -391,7 +394,7 @@ type BaseUser =
   , firstName :: Nullable String
   , lastName :: Nullable String
   , address :: Nullable Address
-  , cusno :: String
+  , cusno :: Cusno
   , subs :: Array Subscription
   , consent :: Array GdprConsent
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)

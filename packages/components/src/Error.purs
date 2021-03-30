@@ -13,6 +13,11 @@ import Foreign.Index as Foreign
 import Simple.JSON (class ReadForeign)
 import Simple.JSON as JSON
 
+resourceConflictError :: Error -> Boolean
+resourceConflictError err = isJust $ do
+  status <- err # errorField "status"
+  guard $ status == 409
+
 -- | Matches internal server error produced by superagent.
 --   Checks that it has `status` field that's 5XX.
 internalServerError :: Error -> Maybe { status :: Int }

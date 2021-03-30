@@ -606,7 +606,7 @@ forgotEmail =
   DOM.div
     { className: "center mb1"
     , children:
-      [ DOM.text "Ändra eller glömt din e-post? "
+      [ DOM.text "Glömt din e-post? "
       , DOM.a
           { className: "underline center mb1"
           , href: "https://www.hbl.fi/kundservice/"

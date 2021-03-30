@@ -91,14 +91,14 @@ app = do
             , route: "/fakturor/:invno"
             , routeFrom: "/fakturor"
             }
-        creditCardUpdateInputs =
+        creditCardUpdateInputs user =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
-          , cusno: fromMaybe mempty $ state.activeUser <#> _.cusno
+          , cusno: user.cusno
           , logger: logger
           }
-        creditCardUpdateView =
+        creditCardUpdateView user =
           creditCardUpdate
-            { contentProps: creditCardUpdateInputs
+            { contentProps: creditCardUpdateInputs user
             , closeType: Wrappers.XButton
             , route: "/kreditkort/uppdatera"
             , routeFrom: "/"
@@ -109,7 +109,7 @@ app = do
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> JSX -> Boolean -> JSX
+render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
 render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
@@ -126,7 +126,7 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
      , defaultRouteElement "/fakturor" $ const paymentView
      , routeElement true false (Just "/sök") $ const searchView
      , defaultRouteElement "/" $ Views.userView self logger
-     , updateCreditCardRoute
+     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" creditCardUpdateView
      , noMatchRoute
      ]
    defaultRouteElement = routeElement true true <<< Just
@@ -140,12 +140,6 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
                Just user /\ true -> view user
                _ -> Views.loginView self logger
            ]
-       }
-   updateCreditCardRoute =
-     Router.route
-       { exact: true
-       , path: Just "/prenumerationer/:subsno/kreditkort/uppdatera"
-       , render: const creditCardUpdateView
        }
    noMatchRoute =
      Router.redirect

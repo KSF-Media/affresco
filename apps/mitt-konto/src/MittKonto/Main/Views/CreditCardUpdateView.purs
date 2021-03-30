@@ -19,6 +19,7 @@ import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
+import KSF.User.Cusno (Cusno)
 import KSF.Tracking as Tracking
 import MittKonto.Wrappers (AutoClose(..), SetRouteWrapperState)
 import MittKonto.Wrappers.Elements as WrapperElements
@@ -32,7 +33,7 @@ import Web.HTML.Location (pathname)
 
 type BaseProps =
   ( creditCards :: Array CreditCard
-  , cusno       :: String
+  , cusno       :: Cusno
   , logger      :: Sentry.Logger
   )
 
