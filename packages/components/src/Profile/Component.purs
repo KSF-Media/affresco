@@ -34,9 +34,10 @@ import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
-import KSF.User (User)
+import KSF.User (User, UserError(UniqueViolation))
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
+import KSF.User.Cusno as Cusno
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validateZipCode)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -57,10 +58,12 @@ type Props =
 type State =
   { name :: Name
   , address :: Address
+  , email :: Maybe String
   , now :: Maybe DateTime
   , changeDate :: Maybe DateTime
   , editFields :: Set EditField
   , editName :: AsyncWrapper.Progress JSX
+  , editEmail :: AsyncWrapper.Progress JSX
   , editAddress :: AsyncWrapper.Progress JSX
   }
 
@@ -76,7 +79,7 @@ type Address =
   , city          :: Maybe String
   }
 
-data EditField = EditAddress | EditName
+data EditField = EditAddress | EditEmail | EditName
 derive instance eqEditField :: Eq EditField
 derive instance ordEditField :: Ord EditField
 
@@ -100,6 +103,14 @@ instance validatableFieldAddressFormFields :: ValidatableField AddressFormFields
     Zip           -> validateZipCode field value
     CountryCode   -> validateEmptyField field "Land krävs." value
 
+data EmailFormFields
+  = Email
+instance validatableFieldEmailFormFields :: ValidatableField EmailFormFields where
+  validateField field value _serverErrors = case field of
+    Email -> validateEmailAddress field value
+
+derive instance eqEmailFormFields :: Eq EmailFormFields
+
 jsComponent :: React.Component Props
 jsComponent = component
 
@@ -110,11 +121,13 @@ profile :: Props -> JSX
 profile = make component
   { initialState:
       { name: { firstName: Nothing, lastName: Nothing }
+      , email: Nothing
       , address: { zipCode: Nothing, countryCode: Nothing, streetAddress: Nothing, city: Nothing }
       , now: Nothing
       , changeDate: Nothing
       , editFields: Set.empty
       , editName: Ready
+      , editEmail: Ready
       , editAddress: Ready
       }
   , render
@@ -130,6 +143,7 @@ didMount :: Self -> Effect Unit
 didMount self = do
   now <- Now.nowDateTime
   self.setState _ { now = Just now }
+  resetFields self EditEmail
   resetFields self EditAddress
   resetFields self EditName
 
@@ -138,23 +152,58 @@ render self@{ props: { profile: user } } =
   DOM.div_ $
     [ profileName
     , profileAddress
+    , profileEmail
     , DescriptionList.descriptionList
         { definitions:
           visiblePendingAddressChanges <>
-            [ { term: "E-postadress:", description: [ DOM.text user.email
-                                                    , emailChangeMessage
-                                                    ] }
-            , { term: "Kundnummer:", description: [ DOM.text user.cusno ] }
+            [ { term: "Kundnummer:", description: [ DOM.text $ Cusno.toString user.cusno ] }
             ]
         }
     ]
   where
-    emailChangeMessage =
-      DOM.div
-        { className: "mitt-konto--note"
-        , children: [ DOM.text "Om du vill ändra din e-postadress vänligen kontakta Kundservice." ]
-        }
     visiblePendingAddressChanges = showPendingAddressChanges self
+    profileEmail =
+      AsyncWrapper.asyncWrapper
+        { wrapperState: self.state.editEmail
+        , readyView: profileEmailReady
+        , editingView: \_ -> profileEmailEditing
+        , loadingView: profileEmailLoading
+        , successView: \_ -> profileEmailReady
+        , errorView: editingError self EditEmail
+        }
+      where
+        profileEmailReady = DOM.div
+          { className: "profile--profile-row"
+          , children:
+              [ currentEmail
+              , changeEmailButton self
+              ]
+          }
+        profileEmailEditing = DOM.div_
+          [ DescriptionList.descriptionList
+              { definitions:
+                  [ { term: "E-postadress:"
+                    , description: [ editEmail self ]
+                    }
+                  ]
+              }
+          ]
+        profileEmailLoading spinner = DOM.div
+          { className: "profile--profile-row"
+          , children:
+              [ currentEmail
+              , spinner
+              ]
+          }
+        currentEmail =
+          DescriptionList.descriptionList
+            { definitions:
+                [ { term: "E-postadress:"
+                  , description: [ DOM.text user.email ]
+                  }
+                ]
+            }
+
     profileName =
       AsyncWrapper.asyncWrapper
         { wrapperState: self.state.editName
@@ -261,6 +310,7 @@ editingError self fieldName errMessage =
              , onClick: handler_ $ case fieldName of
                EditAddress -> self.setState _ { editAddress = AsyncWrapper.Ready }
                EditName    -> self.setState _ { editName    = AsyncWrapper.Ready }
+               EditEmail   -> self.setState _ { editEmail   = AsyncWrapper.Ready }
              }
          ]
      }
@@ -378,6 +428,62 @@ editAddress self =
               self.setState _ { editAddress = AsyncWrapper.Error "Adressändringen misslyckades." }
               Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating address"
     updateAddress _ = pure unit
+
+editEmail :: Self -> JSX
+editEmail self =
+  DOM.form
+    { className: "profile--edit-email"
+    , children:
+        [ InputField.inputField
+            { type_: InputField.Email
+            , name: "email"
+            , "placeholder": self.props.profile.email
+            , value: self.state.email
+            , onChange: \newEmail -> case newEmail of
+                Just n -> self.setState _ { email = Just n }
+                _ -> pure unit
+            , label: Just "E-postadress"
+            , validationError: inputFieldErrorMessage $ validateField Email self.state.email []
+            }
+        , submitButton
+        , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditEmail ] }
+        ]
+    , onSubmit: Events.handler preventDefault $ \_ -> submitNewEmail $ validateEmailForm self.state.email
+    }
+  where
+    submitButton = iconSubmit $ isValid (validateEmailForm self.state.email)
+
+    validateEmailForm :: Maybe String -> ValidatedForm EmailFormFields (Maybe String)
+    validateEmailForm form =
+      validateField Email form []
+
+    submitNewEmail :: ValidatedForm EmailFormFields (Maybe String) -> Effect Unit
+    submitNewEmail = unV
+      (\errors -> Console.error "Could not submit email.")
+      updateEmail
+
+    updateEmail :: Maybe String -> Effect Unit
+    updateEmail (Just email) = do
+      self.setState _ { editEmail = Loading mempty }
+      if email == self.props.profile.email then
+        self.setState _ { editEmail = AsyncWrapper.Error "E-postadressen är den samma som den gamla." }
+        else Aff.launchAff_ do
+          newUser <- User.updateUser self.props.profile.uuid $ User.UpdateEmail { email: email }
+          case newUser of
+            Right u -> liftEffect do
+              self.props.onUpdate u
+              self.setState _ { editEmail = Success Nothing }
+              Tracking.changeEmail self.props.profile.cusno "success"
+            Left UniqueViolation -> do
+              liftEffect do
+                self.setState _ { editEmail = AsyncWrapper.Error "Den här e-postadressen används för ett annat konto. Vänligen ta kontakt med kundservice om du har frågor." }
+            Left err -> do
+              liftEffect do
+                self.props.logger.error $ Error.userError $ show err
+                self.setState _ { editEmail = AsyncWrapper.Error "Det gick inte att uppdatera e-postadressen. Vänligen ta kontakt med kundservice." }
+                Tracking.changeEmail self.props.profile.cusno "error: unexpected error when updating email"
+          throwError $ error "Unexpected error when updating email."
+    updateEmail _ = pure unit
 
 editName :: Self -> JSX
 editName self =
@@ -502,6 +608,9 @@ deletePendingAddressChanges self multiple =
              Tracking.deletePendingAddressChanges self.props.profile.cusno "error: unexpected error when updating address"
     }
 
+changeEmailButton :: Self -> JSX
+changeEmailButton self = changeAttributeButton self EditEmail
+
 changeNameButton :: Self -> JSX
 changeNameButton self = changeAttributeButton self EditName
 
@@ -529,6 +638,7 @@ editButton buttonText self field =
 
 switchEditProgress :: Self -> EditField -> AsyncWrapper.Progress JSX -> Effect Unit
 switchEditProgress self EditName progress = self.setState _ { editName = progress }
+switchEditProgress self EditEmail progress = self.setState _ { editEmail = progress }
 switchEditProgress self EditAddress progress = self.setState _ { editAddress = progress }
 
 isUpcomingPendingChange :: Maybe DateTime -> User.PendingAddressChange -> Boolean
@@ -558,6 +668,8 @@ resetFields self EditName =
                            , lastName:  toMaybe self.props.profile.lastName
                            }
                   }
+resetFields self EditEmail =
+  self.setState _ { email = Just self.props.profile.email }
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =

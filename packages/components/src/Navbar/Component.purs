@@ -14,6 +14,7 @@ import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Paper (Paper(..))
 import KSF.User (User)
+import KSF.User.Cusno as Cusno
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -150,7 +151,7 @@ needHelp paper =
     { className: "nav--logout-limpet"
     , children:
         [ DOM.strong_ [ DOM.text "Behöver du hjälp?" ]
-        , DOM.div_ [ formatMailtoAnchorTag $ paperEmail paper ]
+        , DOM.div_ [ formatMailtoAnchorTag "pren@ksfmedia.fi" ]
         ]
     }
     where
@@ -179,7 +180,7 @@ customerService isPersonating activeUser = do
       userLink user =
         Router.link
           { to: { pathname: "/", state: {} }
-          , children: [ DOM.text $ user.cusno <> " - " <>
+          , children: [ DOM.text $ Cusno.toString user.cusno <> " - " <>
                           ( String.joinWith " " $
                             mapMaybe toMaybe [ user.firstName, user.lastName ] )
                       ]
@@ -203,11 +204,3 @@ paperLogoUrl paper =
     ON   -> papers.on
     VN   -> papers.vn
     KSF  -> papers.ksf
-
-paperEmail :: Paper -> String
-paperEmail paper =
-  case paper of
-    HBL  -> "pren@hbl.fi"
-    ON   -> "pren@ostnyland.fi"
-    VN   -> "pren@vastranyland.fi"
-    KSF  -> paperEmail HBL

@@ -1,7 +1,7 @@
 window.dataLayer = window.dataLayer || [];
 
 exports.login_ = function (cusno, method, result) {
-    dataLayer.push({ 'event': 'login', 'cusno': cusno, 'method': method, 'result': result });
+    dataLayer.push({ 'event': 'login', 'cusno': cusno === null ? '' : cusno, 'method': method, 'result': result });
 }
 
 exports.reclamation_ = function (cusno, subsno, date, action, result) {
@@ -34,6 +34,10 @@ exports.unpauseSubscription_ = function(cusno, subsno, result) {
 
 exports.changeName_ = function (cusno, result) {
     dataLayer.push({ 'event': 'changeName', 'cusno': cusno, 'result': result })
+}
+
+exports.changeEmail_ = function(cusno, result) {
+    dataLayer.push({ 'event': 'changeEmail', 'cusno': cusno, 'result': result })
 }
 
 exports.changeAddress_ = function (cusno, result) {

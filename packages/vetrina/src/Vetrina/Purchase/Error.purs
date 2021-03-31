@@ -24,7 +24,7 @@ error props =
                { className: ""
                , children:
                    [ DOM.text "Klicka nedan för pröva på nytt eller ta kontakt med vår kundservice på "
-                   , DOM.b_ [ DOM.text "pren@hbl.fi" ]
+                   , DOM.b_ [ DOM.text "pren@ksfmedia.fi" ]
                    , DOM.text "."
                    ]
                }
