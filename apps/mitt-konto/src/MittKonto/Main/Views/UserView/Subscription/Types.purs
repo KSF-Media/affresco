@@ -15,13 +15,13 @@ type Props =
   { subscription :: User.Subscription
   , user :: User
   , logger :: Sentry.Logger
+  , now :: DateTime
   }
 
 type State =
   { wrapperProgress :: AsyncWrapper.Progress JSX
   , pausedSubscriptions :: Maybe (Array User.PausedSubscription)
   , pendingAddressChanges :: Maybe (Array User.PendingAddressChange)
-  , now :: Maybe DateTime
   , updateAction :: Maybe SubscriptionUpdateAction
   }
 

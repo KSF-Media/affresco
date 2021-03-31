@@ -7,7 +7,6 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Effect (Effect)
-import Effect.Now as Now
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -29,7 +28,6 @@ subscription = make component
       { wrapperProgress: AsyncWrapper.Ready
       , pausedSubscriptions: Nothing
       , pendingAddressChanges: Nothing
-      , now: Nothing
       , updateAction: Nothing
       }
   , render
@@ -38,16 +36,14 @@ subscription = make component
 
 didMount :: Types.Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDateTime
   self.setState _
-    { now = Just now
-    , pausedSubscriptions = toMaybe self.props.subscription.paused
+    { pausedSubscriptions = toMaybe self.props.subscription.paused
     , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
     }
   self.props.logger.setUser $ Just self.props.user
 
 render :: Types.Self -> JSX
-render self@{ props: { subscription: sub@{ package, paymentMethod, state } } } =
+render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } } } =
   Grid.row2
     (DescriptionList.descriptionList
          { definitions:
@@ -82,6 +78,4 @@ render self@{ props: { subscription: sub@{ package, paymentMethod, state } } } =
   where
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
-      case self.state.now of
-        Nothing  -> pausedSubs
-        Just now -> filter (not Helpers.isPeriodExpired now <<< toMaybe <<< _.endDate) pausedSubs
+      filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) pausedSubs

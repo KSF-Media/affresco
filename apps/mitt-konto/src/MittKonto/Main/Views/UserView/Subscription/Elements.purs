@@ -2,11 +2,11 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
-import Data.Array (filter)
+import Data.Array (filter, mapMaybe)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (foldMap, for_)
-import Data.JSDate (toDateTime)
+import Data.Foldable (foldMap, for_, null, maximum)
+import Data.JSDate (toDate, toDateTime)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
@@ -69,7 +69,7 @@ paymentMethod self@{ props: props@{ subscription: sub@{ paymentMethod: method } 
   }
 
 pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
-pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges } } =
+pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, props: { now } } =
   if Array.null filteredChanges then mempty else Array.singleton $
   { term: "Tillfällig adressändring:"
   , description: map (showPendingAddressChange self) filteredChanges
@@ -78,9 +78,7 @@ pendingAddressChanges self@{ state: { now, pendingAddressChanges: pendingChanges
     filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
     filterExpiredPendingChanges :: Array User.PendingAddressChange -> Array User.PendingAddressChange
     filterExpiredPendingChanges changes =
-      case now of
-        Nothing  -> changes
-        Just date -> filter (not Helpers.isPeriodExpired date <<< toMaybe <<< _.endDate) changes
+      filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate) changes
 
 showPendingAddressChange :: Types.Self -> User.PendingAddressChange -> JSX
 showPendingAddressChange self change@{ address, startDate, endDate } =
@@ -113,7 +111,7 @@ subscriptionEndTerm self@{ props: { subscription: { dates: { suspend } } } } = f
   ) $ trim <$> (Helpers.formatDate =<< toMaybe suspend)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } }, state } =
+subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, package } }, state } =
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
@@ -134,8 +132,9 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } 
           else removeSubscriptionPauses
       , if isSubscriptionTemporaryAddressChangable sub then temporaryAddressChangeIcon else mempty
       , case self.state.pendingAddressChanges of
-              Just a -> removeTempAddressChanges a
-              Nothing -> mempty
+              Just a | not $ null $ filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) a ->
+                removeTempAddressChanges a
+              _ -> mempty
       , deliveryReclamationIcon
       ]
 
@@ -382,6 +381,7 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ packag
     , cusno: props.user.cusno
     , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
     , nextDelivery: toDateTime =<< toMaybe package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
     , editing: editing
     , userUuid: props.user.uuid
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }

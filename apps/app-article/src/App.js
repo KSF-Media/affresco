@@ -41,6 +41,7 @@ class App extends Component {
             articleTypeDetails: null,
             relatedArticles: [],
             shareUrl: null,
+            listTitle: null,
             infogram: {
                 html: null
             },
@@ -206,6 +207,7 @@ class App extends Component {
                         publishingTime: article.publishingTime,
                         updateTime: article.updateTime,
                         shareUrl: article.shareUrl,
+                        listTitle: article.listTitle,
                         articleTypeDetails: article.articleTypeDetails
                     }, () => {
                         if (article.externalScripts != null) {
@@ -249,6 +251,7 @@ class App extends Component {
                         publishingTime: data.not_entitled.articlePreview.publishingTime,
                         updateTime: data.not_entitled.articlePreview.updateTime,
                         shareUrl: data.not_entitled.articlePreview.shareUrl,
+                        listTitle: data.not_entitled.articlePreview.listTitle,
                         articleTypeDetails: data.not_entitled.articlePreview.articleTypeDetails
                     }, () => {
                         this.resizeText(this.state.fontSize);
@@ -271,6 +274,7 @@ class App extends Component {
                         publishingTime: data.publishingTime,
                         updateTime: data.updateTime,
                         shareUrl: data.shareUrl,
+                        listTitle: data.listTitle,
                         articleTypeDetails:data.articleTypeDetails
                     }, () => {
                         if (data.externalScripts != null) {
@@ -382,6 +386,7 @@ class App extends Component {
             push_data.is_authenticated = isUserLoggedIn();
             push_data.is_premium = article.premium ? 'PREMIUM' : 'FREE';
             push_data.url = article.shareUrl;
+            push_data.teaser_headline = article.listTitle;
             push_data.analyticsCategory = article.analyticsCategory;
             push_data.analyticsSection = article.analyticsSection;
             push_data.app_os = navigator.userAgent.match(/Android/) ? "Android" : "iOS";
@@ -575,7 +580,11 @@ if (window.ksfDfp) {
         }
         
         if(this.state.forceLoginView){
-            return <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>;
+            return (
+                <div className={"col-sm-12"}>
+                    <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>
+                </div>
+            )
         }
 
         return (
