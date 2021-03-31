@@ -3,8 +3,9 @@ module MittKonto.Main.UserView.Subscription.Helpers where
 import Prelude
 
 import Data.DateTime (DateTime)
+import Data.DateTime as DateTime
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime)
+import Data.JSDate (JSDate, toDateTime, toDate)
 import Data.List (fromFoldable, intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
@@ -55,14 +56,16 @@ translatePaymentMethod paymentMethod =
     DirectPayment        -> "Direktbetalning"
     UnknownPaymentMethod -> "Okänd"
 
-isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
-isPeriodExpired baseDate endDate =
+isPeriodExpired :: Boolean -> DateTime -> Maybe JSDate -> Boolean
+isPeriodExpired excludeCurrentDay baseDateTime endDate =
   case endDate of
     -- If there's no end date, the period is ongoing
     Nothing   -> false
     Just date ->
-      let endDateTime = toDateTime date
-      in maybe true (_ < baseDate) endDateTime
+      let endDateTime = toDate date
+          baseDate = DateTime.date baseDateTime
+          op end = if excludeCurrentDay then end < baseDate else end <= baseDate
+      in maybe true op endDateTime
 
 
 formatDateString :: JSDate -> Maybe JSDate -> String

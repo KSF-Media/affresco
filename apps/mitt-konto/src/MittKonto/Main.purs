@@ -7,6 +7,7 @@ import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect (Effect)
 import Effect.Aff as Aff
+import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
@@ -39,6 +40,7 @@ app = do
   payments <- Wrappers.routeWrapper PaymentAccordion.paymentAccordion
   paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
+  now <- Now.nowDateTime
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -47,6 +49,7 @@ app = do
         , showWelcome: true
         , alert: Nothing
         , payments: Nothing
+        , now: now
         }
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
