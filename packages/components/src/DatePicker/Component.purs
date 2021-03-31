@@ -4,12 +4,15 @@ module DatePicker.Component where
 
 import Prelude
 
-import Data.DateTime (DateTime, adjust)
+import Data.Date (Date)
+import Data.DateTime (adjust)
+import Data.DateTime as DateTime
+import Data.DateTime.Instant as Instant
 import Data.Function.Uncurried (Fn0, runFn0)
-import Data.JSDate (JSDate, toDateTime)
+import Data.JSDate (JSDate, toDateTime, fromInstant)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toMaybe)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Time.Duration (Minutes(..))
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, mkEffectFn1)
@@ -21,13 +24,13 @@ import React.Basic.DOM as DOM
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
 
 type Props =
-  { onChange  :: Effect (Maybe DateTime) -> Effect Unit
+  { onChange  :: Effect (Maybe Date) -> Effect Unit
   , className :: String
-  , value     :: Nullable JSDate
+  , value     :: Maybe Date
   , format    :: String
   , required  :: Boolean
-  , minDate   :: Nullable JSDate
-  , maxDate   :: Nullable JSDate
+  , minDate   :: Maybe Date
+  , maxDate   :: Maybe Date
   , disabled  :: Boolean
   , locale    :: String
   }
@@ -55,11 +58,11 @@ datePicker props =
     datePickerProps :: DatePickerProps
     datePickerProps =
       { className: props.className
-      , value:     props.value
+      , value:     toNullable $ (fromInstant <<< Instant.fromDate) <$> props.value
       , format:    props.format
       , required:  props.required
-      , minDate:   props.minDate
-      , maxDate:   props.maxDate
+      , minDate:   toNullable $ (fromInstant <<< Instant.fromDate) <$> props.minDate
+      , maxDate:   toNullable $ (fromInstant <<< Instant.fromDate) <$> props.maxDate
       , disabled:  props.disabled
       , locale:    props.locale
       , onChange:  mkEffectFn1 $ adjustTimezone >>> props.onChange
@@ -71,12 +74,12 @@ datePicker props =
 --   in the calendar, and `Date​.prototype​.get​Time()` uses UTC for time representation.
 --   Apparently this is not a bug, but a feature, of the react-date-picker:
 --   https://github.com/wojtekmaj/react-calendar/issues/174#issuecomment-472108379
-adjustTimezone :: Nullable JSDate -> Effect (Maybe DateTime)
+adjustTimezone :: Nullable JSDate -> Effect (Maybe Date)
 adjustTimezone date
   | Just pickedDate <- toMaybe date
   , Just pickedDateTime <- toDateTime pickedDate
   = do
     offset <- JSDate.getTimezoneOffset pickedDate
     let offsetMinutes = Minutes (abs offset)
-    pure $ adjust offsetMinutes pickedDateTime
+    pure $ DateTime.date <$> adjust offsetMinutes pickedDateTime
   | otherwise = pure Nothing

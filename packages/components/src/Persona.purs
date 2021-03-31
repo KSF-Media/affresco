@@ -5,12 +5,9 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array (catMaybes)
 import Data.Date (Date)
-import Data.DateTime (DateTime)
-import Data.Formatter.DateTime (FormatterCommand(..), format)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.JSDate (JSDate, toDate)
-import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
@@ -25,6 +22,7 @@ import KSF.Api (InvalidateCache, Password, Token, UUID(..), UserAuth, invalidate
 import KSF.Api.Error (ServerError)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
 import KSF.Api.Subscription as Subscription
+import KSF.Helpers (formatDate)
 import KSF.User.Cusno (Cusno)
 import OpenApiClient (Api, callApi)
 import Record as Record
@@ -124,7 +122,7 @@ registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
   callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
 
-pauseSubscription :: UUID -> Int -> DateTime -> DateTime -> UserAuth -> Aff Subscription
+pauseSubscription :: UUID -> Int -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid subsno startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
@@ -135,7 +133,7 @@ pauseSubscription uuid subsno startDate endDate auth = do
     ]
     ( authHeaders uuid auth )
 
-editSubscriptionPause :: UUID -> Int -> DateTime -> DateTime -> DateTime -> DateTime -> UserAuth -> Aff Subscription
+editSubscriptionPause :: UUID -> Int -> Date -> Date -> Date -> Date -> UserAuth -> Aff Subscription
 editSubscriptionPause uuid subsno oldStartDate oldEndDate newStartDate newEndDate auth = do
   let oldStartDateISO = formatDate oldStartDate
       oldEndDateISO   = formatDate oldEndDate
@@ -163,8 +161,8 @@ unpauseSubscription uuid subsno auth = do
 temporaryAddressChange
   :: UUID
   -> Int
-  -> DateTime
-  -> Maybe DateTime
+  -> Date
+  -> Maybe Date
   -> String
   -> String
   -> String
@@ -185,9 +183,9 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
 editTemporaryAddressChange
   :: UUID
   -> Int
-  -> DateTime
-  -> DateTime
-  -> Maybe DateTime
+  -> Date
+  -> Date
+  -> Maybe Date
   -> UserAuth
   -> Aff Subscription
 editTemporaryAddressChange uuid subsno oldStartDate startDate endDate auth = do
@@ -205,8 +203,8 @@ editTemporaryAddressChange uuid subsno oldStartDate startDate endDate auth = do
 deleteTemporaryAddressChange
   :: UUID
   -> Int
-  -> DateTime
-  -> Maybe DateTime
+  -> Date
+  -> Maybe Date
   -> UserAuth
   -> Aff Subscription
 deleteTemporaryAddressChange uuid subsno startDate endDate auth = do
@@ -222,7 +220,7 @@ deleteTemporaryAddressChange uuid subsno startDate endDate auth = do
 createDeliveryReclamation
   :: UUID
   -> Int
-  -> DateTime
+  -> Date
   -> DeliveryReclamationClaim
   -> UserAuth
   -> Aff DeliveryReclamation
@@ -235,18 +233,6 @@ createDeliveryReclamation uuid subsno date claim auth = do
     , unsafeToForeign { publicationDate: dateISO, claim: claim' }
     ]
     ( authHeaders uuid auth )
-
-formatDate :: DateTime -> String
-formatDate = format formatter
-  where
-    dash = Placeholder "-"
-    formatter = fromFoldable
-      [ YearFull
-      , dash
-      , MonthTwoDigits
-      , dash
-      , DayOfMonthTwoDigits
-      ]
 
 newtype Email = Email String
 derive newtype instance showEmail :: Show Email
@@ -284,7 +270,7 @@ data UserUpdate
   | UpdateAddress { countryCode :: String
                   , zipCode :: String
                   , streetAddress :: String
-                  , startDate :: Maybe DateTime
+                  , startDate :: Maybe Date
                   }
   | UpdateFull { firstName :: String
                , lastName :: String
@@ -292,7 +278,7 @@ data UserUpdate
                , countryCode :: String
                , zipCode :: String
                , streetAddress :: String
-               , startDate :: Maybe DateTime
+               , startDate :: Maybe Date
                }
   | DeletePendingAddressChanges
 
