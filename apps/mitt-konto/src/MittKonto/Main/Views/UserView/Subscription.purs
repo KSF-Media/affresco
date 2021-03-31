@@ -68,7 +68,9 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
                                          , Elements.pendingAddressChanges
                                          , Elements.billingDateTerm
                                          , Elements.subscriptionEndTerm
-                                         , Elements.paymentMethod
+                                         , if self.props.user.cusno == sub.paycusno
+                                             then Elements.paymentMethod
+                                             else mempty
                                          ]
          })
       (Elements.subscriptionUpdates self)
