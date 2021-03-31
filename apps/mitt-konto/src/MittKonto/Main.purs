@@ -11,14 +11,14 @@ import Effect.Unsafe (unsafePerformEffect)
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, backwardLinkView, footerView, loginView, navbarView, userView) as Views
-import MittKonto.Main.CreditCardUpdateView (RouteWrapperContentInputs (..)) as CreditCardUpdateView
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
+import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
+import MittKonto.Payment.Types as Payments
+import MittKonto.Payment.PaymentAccordion as PaymentAccordion
+import MittKonto.Payment.PaymentDetail as PaymentDetail
 import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
 import KSF.Paper (Paper(..))
-import KSF.Payment.Types as Payments
-import KSF.Payment.PaymentAccordion as PaymentAccordion
-import KSF.Payment.PaymentDetail as PaymentDetail
 import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
@@ -36,8 +36,9 @@ app = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   search <- Search.search
-  payments <- Views.backwardLinkView "PaymentView" "/" PaymentAccordion.paymentAccordion
-  paymentDetail <- Views.backwardLinkView "PaymentDetailView" "/fakturor" PaymentDetail.paymentDetail
+  payments <- Wrappers.routeWrapper PaymentAccordion.paymentAccordion
+  paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
+  creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -76,15 +77,40 @@ app = do
         paymentProps = { usePayments: usePayments
                        , subscriptionPayments: state.payments
                        }
-        paymentView = payments paymentProps
-        paymentDetailView = paymentDetail paymentProps
-    pure $ render self logger searchView paymentView paymentDetailView isPersonating
+        paymentView =
+          payments
+            { contentProps: paymentProps
+            , closeType: Wrappers.Back
+            , route: "/fakturor"
+            , routeFrom: "/"
+            }
+        paymentDetailView =
+          paymentDetail
+            { contentProps: paymentProps
+            , closeType: Wrappers.Back
+            , route: "/fakturor/:invno"
+            , routeFrom: "/fakturor"
+            }
+        creditCardUpdateInputs user =
+          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
+          , cusno: user.cusno
+          , logger: logger
+          }
+        creditCardUpdateView user =
+          creditCardUpdate
+            { contentProps: creditCardUpdateInputs user
+            , closeType: Wrappers.XButton
+            , route: "/kreditkort/uppdatera"
+            , routeFrom: "/"
+            }
+
+    pure $ render self logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> Boolean -> JSX
-render self@{ state, setState } logger searchView paymentView paymentDetailView isPersonating =
+render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
+render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
@@ -100,7 +126,7 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
      , defaultRouteElement "/fakturor" $ const paymentView
      , routeElement true false (Just "/sök") $ const searchView
      , defaultRouteElement "/" $ Views.userView self logger
-     , updateCreditCardRoute
+     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" creditCardUpdateView
      , noMatchRoute
      ]
    defaultRouteElement = routeElement true true <<< Just
@@ -115,23 +141,6 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
                _ -> Views.loginView self logger
            ]
        }
-   updateCreditCardRoute =
-     Router.route
-       { exact: true
-       , path: Just "/kreditkort/uppdatera"
-       , render: const $
-           Wrappers.routeWrapper
-             { content: creditCardUpdateInputs
-             , closeType: Wrappers.XButton
-             , route: "/kreditkort/uppdatera"
-             , routeFrom: "/"
-             }
-       }
-      where
-        creditCardUpdateInputs = CreditCardUpdateView.RouteWrapperContentInputs
-          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
-          , logger: logger
-          }
    noMatchRoute =
      Router.redirect
        { to: { pathname: "/"

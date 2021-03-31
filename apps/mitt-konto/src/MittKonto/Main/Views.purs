@@ -3,7 +3,6 @@ module MittKonto.Main.Views
   , alertView
   , footerView
   , navbarView
-  , backwardLinkView
   )
   where
 
@@ -28,8 +27,6 @@ import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView (userView) as Views
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks as React
-import React.Basic.Hooks (Component, component)
 import React.Basic.Router as Router
 
 
@@ -41,6 +38,14 @@ navbarView self@{ state, setState } logger isPersonating =
       , adminMode: state.adminMode
       , isPersonating: isPersonating
       , activeUser: state.activeUser
+      , logoutWrapper: Just $
+          \x -> Router.link
+                  { to: { pathname: "/"
+                        , state: {}
+                        }
+                  , children: [ x ]
+                  , className: mempty
+                  }
       , logout: do
           Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
@@ -54,18 +59,5 @@ alertView alert =
   Helpers.classy DOM.div "col-4 mx-auto center"
     [ Alert.alert alert ]
 
-footerView :: React.JSX
+footerView :: JSX
 footerView = Footer.footer {}
-
-backwardLinkView :: forall a. String -> String -> Component a -> Component a
-backwardLinkView name path subComponent = do
-  sub <- subComponent
-  component name \a -> React.do
-    pure $ DOM.div_
-      [ Router.link
-          { to: { pathname: path, state: {} }
-          , children: [ ]
-          , className: "mitt-konto--backwards"
-          }
-      , sub a
-      ]

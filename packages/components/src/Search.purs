@@ -19,6 +19,7 @@ import KSF.Api (UUID, nullUuid, toUUID)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.InputField as InputField
 import KSF.User as User
+import KSF.User.Cusno as Cusno
 import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState', (/\))
 import React.Basic.Hooks as React
@@ -164,7 +165,7 @@ search = do
               <> if haveDetails then " selectable" else " unselectable"
           , onClick: Events.handler_ $ when haveDetails $ setActiveUser user.uuid
           , children:
-              [ td [ DOM.text user.cusno ]
+              [ td [ DOM.text $ Cusno.toString user.cusno ]
               , td $ map DOM.text $ pure $ String.joinWith " " $
                   mapMaybe toMaybe [ user.firstName, user.lastName ]
               , td [ DOM.text user.email ]

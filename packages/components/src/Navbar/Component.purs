@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Array (replicate, mapMaybe)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.String as String
@@ -14,6 +14,7 @@ import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Paper (Paper(..))
 import KSF.User (User)
+import KSF.User.Cusno as Cusno
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -32,6 +33,7 @@ type Props =
   , adminMode :: Boolean
   , isPersonating :: Boolean
   , activeUser :: Maybe User
+  , logoutWrapper :: Maybe (JSX -> JSX)
   , logout :: Effect Unit
   }
 
@@ -40,6 +42,7 @@ type JSProps =
   , adminMode :: Boolean
   , isPersonating :: Boolean
   , activeUser :: Nullable User
+  , logoutWrapper :: Nullable (JSX -> JSX)
   , onLogout :: Effect Unit
   }
 
@@ -49,6 +52,7 @@ fromJSProps jsProps =
   , adminMode: jsProps.adminMode
   , isPersonating: jsProps.isPersonating
   , activeUser: Nullable.toMaybe jsProps.activeUser
+  , logoutWrapper: Nullable.toMaybe jsProps.logoutWrapper
   , logout: jsProps.onLogout
   }
   where
@@ -101,18 +105,19 @@ fullNav self@{ props, state } =
     }
 
 logoutButton :: Self -> JSX
-logoutButton self@{ props: { logout, activeUser } } =
+logoutButton self@{ props: { logout, activeUser, logoutWrapper } } =
   foldMap button activeUser
   where
     button _user =
-      DOM.div
-        { className: "nav--logout-button"
-        , onClick: Event.handler_ onLogout
-        , children:
-            [ DOM.img { src: icons.signOut }
-            , DOM.div_ [ DOM.text "Logga ut" ]
-            ]
-        }
+      fromMaybe identity logoutWrapper $
+        DOM.div
+          { className: "nav--logout-button"
+          , onClick: Event.handler_ onLogout
+          , children:
+              [ DOM.img { src: icons.signOut }
+              , DOM.div_ [ DOM.text "Logga ut" ]
+              ]
+          }
     onLogout = do
       self.props.logout
       self.setState _ { collapsedNavVisibility = Hidden }
@@ -146,7 +151,7 @@ needHelp paper =
     { className: "nav--logout-limpet"
     , children:
         [ DOM.strong_ [ DOM.text "Behöver du hjälp?" ]
-        , DOM.div_ [ formatMailtoAnchorTag $ paperEmail paper ]
+        , DOM.div_ [ formatMailtoAnchorTag "pren@ksfmedia.fi" ]
         ]
     }
     where
@@ -175,7 +180,7 @@ customerService isPersonating activeUser = do
       userLink user =
         Router.link
           { to: { pathname: "/", state: {} }
-          , children: [ DOM.text $ user.cusno <> " - " <>
+          , children: [ DOM.text $ Cusno.toString user.cusno <> " - " <>
                           ( String.joinWith " " $
                             mapMaybe toMaybe [ user.firstName, user.lastName ] )
                       ]
@@ -199,11 +204,3 @@ paperLogoUrl paper =
     ON   -> papers.on
     VN   -> papers.vn
     KSF  -> papers.ksf
-
-paperEmail :: Paper -> String
-paperEmail paper =
-  case paper of
-    HBL  -> "pren@hbl.fi"
-    ON   -> "pren@ostnyland.fi"
-    VN   -> "pren@vastranyland.fi"
-    KSF  -> paperEmail HBL

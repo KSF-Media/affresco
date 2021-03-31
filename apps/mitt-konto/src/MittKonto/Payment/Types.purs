@@ -1,4 +1,4 @@
-module KSF.Payment.Types where
+module MittKonto.Payment.Types where
 
 import Prelude
 
@@ -16,11 +16,14 @@ import Effect.Class (liftEffect)
 import KSF.Api (UUID)
 import KSF.User (SubscriptionPayments, PaymentState(..), PaymentType(..))
 import KSF.User as User
+import KSF.User.Cusno (Cusno)
+import MittKonto.Wrappers (SetRouteWrapperState)
 import React.Basic.Hooks (type (/\), Render, UseEffect)
 
 type Props =
-  { usePayments :: Render Unit (UseEffect (Boolean /\ Maybe String) Unit) Unit
+  { usePayments :: Render Unit (UseEffect (Boolean /\ Maybe Cusno) Unit) Unit
   , subscriptionPayments :: Maybe (Array SubscriptionPayments)
+  , setWrapperState :: SetRouteWrapperState
   }
 
 getPayments :: Maybe UUID -> (Array SubscriptionPayments -> Effect Unit) -> (Aff Boolean -> Effect Unit) -> Effect Unit

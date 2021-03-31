@@ -41,6 +41,7 @@ class App extends Component {
             articleTypeDetails: null,
             relatedArticles: [],
             shareUrl: null,
+            listTitle: null,
             infogram: {
                 html: null
             },
@@ -206,6 +207,7 @@ class App extends Component {
                         publishingTime: article.publishingTime,
                         updateTime: article.updateTime,
                         shareUrl: article.shareUrl,
+                        listTitle: article.listTitle,
                         articleTypeDetails: article.articleTypeDetails
                     }, () => {
                         if (article.externalScripts != null) {
@@ -249,6 +251,7 @@ class App extends Component {
                         publishingTime: data.not_entitled.articlePreview.publishingTime,
                         updateTime: data.not_entitled.articlePreview.updateTime,
                         shareUrl: data.not_entitled.articlePreview.shareUrl,
+                        listTitle: data.not_entitled.articlePreview.listTitle,
                         articleTypeDetails: data.not_entitled.articlePreview.articleTypeDetails
                     }, () => {
                         this.resizeText(this.state.fontSize);
@@ -271,6 +274,7 @@ class App extends Component {
                         publishingTime: data.publishingTime,
                         updateTime: data.updateTime,
                         shareUrl: data.shareUrl,
+                        listTitle: data.listTitle,
                         articleTypeDetails:data.articleTypeDetails
                     }, () => {
                         if (data.externalScripts != null) {
@@ -382,6 +386,7 @@ class App extends Component {
             push_data.is_authenticated = isUserLoggedIn();
             push_data.is_premium = article.premium ? 'PREMIUM' : 'FREE';
             push_data.url = article.shareUrl;
+            push_data.teaser_headline = article.listTitle;
             push_data.analyticsCategory = article.analyticsCategory;
             push_data.analyticsSection = article.analyticsSection;
             push_data.app_os = navigator.userAgent.match(/Android/) ? "Android" : "iOS";
@@ -584,7 +589,7 @@ if (window.ksfDfp) {
 
         return (
             <div className="App">
-                {this.state.isLoading ? <Loading/>:''}
+                {this.state.isLoading ? <Loading /> : ''}
                                 
                 {isImageModalOpen && (
                     <Lightbox
@@ -610,15 +615,19 @@ if (window.ksfDfp) {
                                 </div>
                             :   ''
                         }
-                        <Title title={this.state.title}/>
-                        <Header showHighResolutionImg={this.showHighResolutionImage} mainImage={this.state.mainImage}
-                                caption={caption} appendBylineLabel={appendBylineLabel} byline={byline}/>
-                        <Additional preamble={this.state.preamble} increaseFontSize={this.increaseFontSize}/>
-                        <ArticleDetails category={this.state.category} premium={this.state.premium}
-                                        authors={this.state.authors} publishingTime={this.state.publishingTime}
-                                        updateTime={this.state.updateTime} articleTypeDetails={this.state.articleTypeDetails}/>
+                        {!this.state.isLoading && <Title title={this.state.title} />}
+                        {!this.state.isLoading && (
+                            <Header showHighResolutionImg={this.showHighResolutionImage} mainImage={this.state.mainImage}
+                                caption={caption} appendBylineLabel={appendBylineLabel} byline={byline} />
+                        )}
+                        {!this.state.isLoading && <Additional preamble={this.state.preamble} increaseFontSize={this.increaseFontSize} />}
+                        {!this.state.isLoading && (
+                            <ArticleDetails category={this.state.category} premium={this.state.premium}
+                                authors={this.state.authors} publishingTime={this.state.publishingTime}
+                                updateTime={this.state.updateTime} articleTypeDetails={this.state.articleTypeDetails} />
+                        )}
                         <Content body={this.state.body}
-                                 showHighResolutionImage={this.showHighResolutionImage}/>
+                            showHighResolutionImage={this.showHighResolutionImage} />
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
                                 {
@@ -645,18 +654,17 @@ if (window.ksfDfp) {
                             </div>
                         </div>
                         {
-                            this.state.relatedArticles.length > 0 ?
-                                <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles}/>
+                            !this.state.isLoading && this.state.relatedArticles.length > 0 ?
+                                <ManuallyRelatedArticles manuallyRelatedArticles={this.state.relatedArticles} />
                                 :
                                 ''
                         }
                         <div id="MOBNER"></div>
-                        <RelatedArticles relatedArticles={this.state.mostReadArticles}/>
+                        {!this.state.isLoading && <RelatedArticles relatedArticles={this.state.mostReadArticles} />}
                     </React.Fragment>
                 </div>
                 {/*<div id="MOBMITT"></div>*/}
-
-                <Footer brandValueName={getBrandValueParam()}/>
+                {!this.state.isLoading && <Footer brandValueName={getBrandValueParam()} />}
             </div>
         );
     }

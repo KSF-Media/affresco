@@ -17,6 +17,8 @@ type Package =
   , nextDelivery :: Nullable JSDate
   , description  :: Nullable PackageDescription
   , digitalOnly  :: Boolean
+  , canPause     :: Boolean
+  , canTempAddr  :: Boolean
   }
 
 type PackageDescription =
