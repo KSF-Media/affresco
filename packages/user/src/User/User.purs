@@ -61,6 +61,8 @@ import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
+import Data.UUID (UUID)
+import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -73,7 +75,7 @@ import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, UserAuth)
-import KSF.Api (Token(..), UUID(..), UserAuth, oauthToken, Password) as Api
+import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
@@ -160,7 +162,7 @@ createUserWithEmail newTemporaryUser = do
     Right user -> finalizeLogin Nothing =<< saveToken user
 
 
-getUser :: Maybe InvalidateCache -> Api.UUID -> Aff User
+getUser :: Maybe InvalidateCache -> UUID -> Aff User
 getUser maybeInvalidateCache uuid = do
   userResponse <- try do
     Persona.getUser maybeInvalidateCache uuid =<< requireToken
@@ -199,7 +201,7 @@ getUserEntitlements auth = do
       | otherwise ->
         pure $ Left $ UnexpectedError err
 
-updateUser :: Api.UUID -> Persona.UserUpdate -> Aff (Either UserError User)
+updateUser :: UUID -> Persona.UserUpdate -> Aff (Either UserError User)
 updateUser uuid update = do
   newUser <- try $ Persona.updateUser uuid update =<< requireToken
   case newUser of
@@ -209,7 +211,7 @@ updateUser uuid update = do
           pure $ Left UniqueViolation
       | otherwise -> pure $ Left $ UnexpectedError err
 
-updatePassword :: Api.UUID -> Api.Password -> Api.Password -> Aff (Either UserError User)
+updatePassword :: UUID -> Api.Password -> Api.Password -> Aff (Either UserError User)
 updatePassword uuid password confirmPassword = do
   eitherUser <- try $ Persona.updatePassword uuid password confirmPassword =<< requireToken
   case eitherUser of
@@ -410,7 +412,7 @@ finalizeLogin maybeInvalidateCache auth = do
 loadToken :: forall m. MonadEffect m => m (Maybe UserAuth)
 loadToken = liftEffect $ runMaybeT do
   authToken <- map Api.Token $ MaybeT $ LocalStorage.getItem "token"
-  userId <- map Api.UUID $ MaybeT $ LocalStorage.getItem "uuid"
+  userId <- MaybeT $ (UUID.parseUUID =<< _) <$> LocalStorage.getItem "uuid"
   pure { userId, authToken }
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m UserAuth
@@ -419,7 +421,7 @@ saveToken { token, ssoCode, uuid, isAdmin } = liftEffect do
     config <- JanrainSSO.loadConfig
     for_ (Nullable.toMaybe config) \conf -> JanrainSSO.setSession conf code
   LocalStorage.setItem "token" case token of Api.Token a -> a
-  LocalStorage.setItem "uuid" case uuid of Api.UUID a -> a
+  LocalStorage.setItem "uuid" $ UUID.toString uuid
   -- This isn't returned by loadToken.
   if isAdmin
     then LocalStorage.setItem "isAdmin" "1"
@@ -436,7 +438,7 @@ requireToken =
     Just loginResponse -> pure loginResponse
 
 jsUpdateGdprConsent
-  :: Api.UUID
+  :: UUID
   -> Api.Token
   -> Array Persona.GdprConsent
   -> Effect Unit
@@ -448,7 +450,7 @@ facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
 pauseSubscription
-  :: Api.UUID
+  :: UUID
   -> Int
   -> Date
   -> Date
@@ -465,7 +467,7 @@ pauseSubscription userUuid subsno startDate endDate = do
           pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
 
 editSubscriptionPause
-  :: Api.UUID
+  :: UUID
   -> Int
   -> Date
   -> Date
@@ -484,14 +486,14 @@ editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEn
           pure $ Left $ Persona.pauseDateErrorToInvalidDateError Persona.PauseInvalidUnexpected
 
 unpauseSubscription
-  :: Api.UUID
+  :: UUID
   -> Int
   -> Aff Subscription.Subscription
 unpauseSubscription userUuid subsno = do
   Persona.unpauseSubscription userUuid subsno =<< requireToken
 
 temporaryAddressChange
-  :: Api.UUID
+  :: UUID
   -> Int
   -> Date
   -> Maybe Date
@@ -505,7 +507,7 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
   handleAddressChangedSub addressChangedSub
 
 editTemporaryAddressChange
-  :: Api.UUID
+  :: UUID
   -> Int
   -> Date
   -> Date
@@ -526,7 +528,7 @@ handleAddressChangedSub addressChangedSub =
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
 
-deleteTemporaryAddressChange :: Api.UUID -> Int -> Date -> Maybe Date -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+deleteTemporaryAddressChange :: UUID -> Int -> Date -> Maybe Date -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 deleteTemporaryAddressChange userUuid subsno startDate endDate = do
   tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate =<< requireToken
   case tempAddressChangeDeletedSub of
@@ -534,7 +536,7 @@ deleteTemporaryAddressChange userUuid subsno startDate endDate = do
     Left err  -> pure $ Left Persona.InvalidUnexpected
 
 createDeliveryReclamation
-  :: Api.UUID
+  :: UUID
   -> Int
   -> Date
   -> PersonaReExport.DeliveryReclamationClaim
@@ -561,7 +563,7 @@ searchUsers query = do
           Console.error "Unexpected error when searching users"
           pure $ Left "unexpected"
 
-getPayments :: Api.UUID -> Aff (Either String (Array Persona.SubscriptionPayments))
+getPayments :: UUID -> Aff (Either String (Array Persona.SubscriptionPayments))
 getPayments uuid = do
   payments <- try $ Persona.getPayments uuid =<< requireToken
   case payments of
