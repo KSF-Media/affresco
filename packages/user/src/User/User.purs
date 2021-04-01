@@ -55,12 +55,12 @@ import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_, traverse_)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff

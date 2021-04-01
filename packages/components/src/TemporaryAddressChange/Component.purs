@@ -11,7 +11,7 @@ import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
 import Data.Nullable (toMaybe)
 import Data.Time.Duration as Time.Duration
-import Data.Validation.Semigroup (unV)
+import Data.Validation.Semigroup (validation)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -297,7 +297,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
     submitForm :: Maybe Date -> Maybe Date -> Maybe Date -> Maybe User.PendingAddressChange -> AddressChange -> Effect Unit
     submitForm Nothing (Just startDate') endDate' Nothing addressChangeFormValues = do
       Aff.launchAff_ do
-        unV
+        validation
           -- Shows validation errors if submit button is pushed with uninitialized values
           (\_ -> liftEffect $ self.setState _
                     { streetAddress = self.state.streetAddress <|> Just ""

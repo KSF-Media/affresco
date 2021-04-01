@@ -2,14 +2,15 @@ module KSF.ValidatableForm where
 
 import Prelude
 
-import Data.Array (all, filter, find)
+import Data.Array (filter, find)
 import Data.Either (Either(..))
+import Data.Foldable (all)
 import Data.List.NonEmpty (NonEmptyList, head)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.String (length, null)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex.Flags
-import Data.Validation.Semigroup (V, andThen, invalid, toEither, unV)
+import Data.Validation.Semigroup (V, andThen, invalid, toEither, validation)
 import Effect (Effect)
 
 class ValidatableField a where
@@ -62,12 +63,12 @@ emptyCommonContactInformation =
   }
 
 validateForm :: forall a b. ValidatedForm a b -> (Either (NonEmptyList (ValidationError a)) b -> Effect Unit) -> Effect Unit
-validateForm form callback = unV (callback <<< Left) (callback <<< Right) form
+validateForm form callback = validation (callback <<< Left) (callback <<< Right) form
 
 isFormInvalid :: forall a b. ValidatedForm a b -> Boolean
 isFormInvalid form
   | Left errs <- toEither form
-  = not $ all isNotInitialized errs
+  = not $ all isNotInitialized $ errs
   | otherwise = false
 
 noValidation :: forall a. Maybe String -> ValidatedForm a (Maybe String)
@@ -175,7 +176,7 @@ validationInputFieldOf e = case e of
   InvalidNotInitialized f   -> f
 
 inputFieldErrorMessage :: forall a. ValidatedForm a (Maybe String) -> Maybe String
-inputFieldErrorMessage = unV handleInvalidField (\_ -> Nothing)
+inputFieldErrorMessage = validation handleInvalidField (\_ -> Nothing)
   where
     handleInvalidField errs
       -- If field is not initialized, it's considered to be valid

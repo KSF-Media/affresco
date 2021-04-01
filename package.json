@@ -3,9 +3,9 @@
   "name": "affresco",
   "dependencies": {
     "parcel-bundler": "^1.12.4",
-    "purescript": "^0.13.8",
+    "purescript": "^0.14.0",
     "react-router-dom": "^5.2.0",
-    "spago": "^0.15.2",
+    "spago": "^0.19.1",
     "uglify-es": "^3.3.9",
     "yarn": "^1.22.10"
   },

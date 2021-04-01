@@ -959,7 +959,7 @@
   dependencies:
     basscss "^8.1.0"
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456"
-    persona "https://github.com/KSF-Media/persona-javascript-client.git#afaca2973b6b0aa7485fec85944cd60cc14876a0"
+    persona "https://github.com/KSF-Media/persona-javascript-client.git#5808dffca6cfd7c6e55c8394a2e9780aeebd9f57"
     react "^16.12"
     react-dom "^16.12"
 
@@ -6158,6 +6158,11 @@ node-fetch@^2.6.1:
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
   integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
+node-forge@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-0.10.0.tgz#32dea2afb3e9926f02ee5ce8794902691a676bf3"
+  integrity sha512-PPmu8eEeG9saEUvI97fm4OYxXVB6bFvyNTyiUOBichBpFG8A1Ljw3bY62+5oOjDEMHRnd0Y7HQ+x7uzxOzC6JA==
+
 node-forge@^0.7.1:
   version "0.7.6"
   resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-0.7.6.tgz#fdf3b418aee1f94f0ef642cd63486c77ca9724ac"
@@ -6501,7 +6506,7 @@ param-case@^1.1.1:
   dependencies:
     sentence-case "^1.1.2"
 
-parcel-bundler@^1.12.3, parcel-bundler@^1.12.4:
+parcel-bundler@^1.12.3:
   version "1.12.4"
   resolved "https://registry.yarnpkg.com/parcel-bundler/-/parcel-bundler-1.12.4.tgz#31223f4ab4d00323a109fce28d5e46775409a9ee"
   integrity sha512-G+iZGGiPEXcRzw0fiRxWYCKxdt/F7l9a0xkiU4XbcVRJCSlBnioWEwJMutOCCpoQmaQtjB4RBHDGIHN85AIhLQ==
@@ -6550,6 +6555,71 @@ parcel-bundler@^1.12.3, parcel-bundler@^1.12.4:
     micromatch "^3.0.4"
     mkdirp "^0.5.1"
     node-forge "^0.7.1"
+    node-libs-browser "^2.0.0"
+    opn "^5.1.0"
+    postcss "^7.0.11"
+    postcss-value-parser "^3.3.1"
+    posthtml "^0.11.2"
+    posthtml-parser "^0.4.0"
+    posthtml-render "^1.1.3"
+    resolve "^1.4.0"
+    semver "^5.4.1"
+    serialize-to-js "^3.0.0"
+    serve-static "^1.12.4"
+    source-map "0.6.1"
+    terser "^3.7.3"
+    v8-compile-cache "^2.0.0"
+    ws "^5.1.1"
+
+parcel-bundler@^1.12.4:
+  version "1.12.5"
+  resolved "https://registry.yarnpkg.com/parcel-bundler/-/parcel-bundler-1.12.5.tgz#91f7de1c1fbfe5111616d3211c749c85c4d8acf0"
+  integrity sha512-hpku8mW67U6PXQIenW6NBbphBOMb8XzW6B9r093DUhYj5GN2FUB/CXCiz5hKoPYUsusZ35BpProH8AUF9bh5IQ==
+  dependencies:
+    "@babel/code-frame" "^7.0.0"
+    "@babel/core" "^7.4.4"
+    "@babel/generator" "^7.4.4"
+    "@babel/parser" "^7.4.4"
+    "@babel/plugin-transform-flow-strip-types" "^7.4.4"
+    "@babel/plugin-transform-modules-commonjs" "^7.4.4"
+    "@babel/plugin-transform-react-jsx" "^7.0.0"
+    "@babel/preset-env" "^7.4.4"
+    "@babel/runtime" "^7.4.4"
+    "@babel/template" "^7.4.4"
+    "@babel/traverse" "^7.4.4"
+    "@babel/types" "^7.4.4"
+    "@iarna/toml" "^2.2.0"
+    "@parcel/fs" "^1.11.0"
+    "@parcel/logger" "^1.11.1"
+    "@parcel/utils" "^1.11.0"
+    "@parcel/watcher" "^1.12.1"
+    "@parcel/workers" "^1.11.0"
+    ansi-to-html "^0.6.4"
+    babylon-walk "^1.0.2"
+    browserslist "^4.1.0"
+    chalk "^2.1.0"
+    clone "^2.1.1"
+    command-exists "^1.2.6"
+    commander "^2.11.0"
+    core-js "^2.6.5"
+    cross-spawn "^6.0.4"
+    css-modules-loader-core "^1.1.0"
+    cssnano "^4.0.0"
+    deasync "^0.1.14"
+    dotenv "^5.0.0"
+    dotenv-expand "^5.1.0"
+    envinfo "^7.3.1"
+    fast-glob "^2.2.2"
+    filesize "^3.6.0"
+    get-port "^3.2.0"
+    htmlnano "^0.2.2"
+    is-glob "^4.0.0"
+    is-url "^1.2.2"
+    js-yaml "^3.10.0"
+    json5 "^1.0.1"
+    micromatch "^3.0.4"
+    mkdirp "^0.5.1"
+    node-forge "^0.10.0"
     node-libs-browser "^2.0.0"
     opn "^5.1.0"
     postcss "^7.0.11"
@@ -6712,15 +6782,15 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#5808dffca6cfd7c6e55c8394a2e9780aeebd9f57":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#5808dffca6cfd7c6e55c8394a2e9780aeebd9f57"
   dependencies:
     superagent "3.7.0"
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#afaca2973b6b0aa7485fec85944cd60cc14876a0":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#afaca2973b6b0aa7485fec85944cd60cc14876a0"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
   dependencies:
     superagent "3.7.0"
 
@@ -7336,10 +7406,10 @@ purescript-installer@^0.2.0:
     which "^1.3.1"
     zen-observable "^0.8.14"
 
-purescript@^0.13.8:
-  version "0.13.8"
-  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.13.8.tgz#acab6f3008d75b8046478c8c1d6124079dc96f7e"
-  integrity sha512-1ZyVEVFLgcEcjPXxJYeVEyYn66DF2DnOLTWzo/K/MrQUF2chdLSyZ8sJpcarWyrz2HxXaubYceYbo5KexKzynA==
+purescript@^0.14.0:
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.14.0.tgz#0fd260d526159c7a15d74c0e6fb52294ae531c15"
+  integrity sha512-iTA1k8mwxHqrJp/K296g6omVfve5RCjnB5D6Up93PVtZdP66mCIqlOYC4hrLBHg2hgkk27xePDt5NUXKvH4ApQ==
   dependencies:
     purescript-installer "^0.2.0"
 
@@ -8440,10 +8510,10 @@ source-map@^0.7.2:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
-spago@^0.15.2:
-  version "0.15.3"
-  resolved "https://registry.yarnpkg.com/spago/-/spago-0.15.3.tgz#348de88f2aa499abaee9289b7d66e1e049807f0c"
-  integrity sha512-CNpbJiI+6MPpttbCtGIGFUroegXze4I7joXCTfiiTRzOUKcMV925fm7dxyAa3AVUUUvGi3D55k65aniGR1cVMA==
+spago@^0.19.1:
+  version "0.19.2"
+  resolved "https://registry.yarnpkg.com/spago/-/spago-0.19.2.tgz#2dfe3952ea282bd239084c934b0e0eaca7aaddd3"
+  integrity sha512-/u4ofPqWkK1JKRlDU8ZpuLVEOqOpD7/F9zIms4jaPxrXDNhddvhZkbYXrFF/Pe4ZpawysrkhQxhKKt+FJfOfuw==
   dependencies:
     request "^2.88.0"
     tar "^4.4.8"

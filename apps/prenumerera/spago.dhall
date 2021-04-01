@@ -18,7 +18,6 @@
     , "prelude"
     , "js-date"
     , "foreign-generic"
-    , "generics-rep"
     , "ordered-collections"
     , "simple-json"
     , "facebook"

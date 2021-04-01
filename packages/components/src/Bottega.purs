@@ -4,9 +4,9 @@ import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Show.Generic (genericShow)
 import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)

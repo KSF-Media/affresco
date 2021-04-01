@@ -2,8 +2,9 @@ module MittKonto.Main.UserView.Subscription where
 
 import Prelude
 
-import Data.Array (concatMap, foldMap, filter)
+import Data.Array (concatMap, filter)
 import Data.Array as Array
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Effect (Effect)

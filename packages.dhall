@@ -1,5 +1,5 @@
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20201021/packages.dhall sha256:55ebdbda1bd6ede4d5307fbc1ef19988c80271b4225d833c8d6fb9b6fb1aa6d8
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210331/packages.dhall sha256:fe3b63fe4b0cd1518c0ee506751b5b16d2c47210df94b5beb48be6570fe7f78a
       with toppokki.repo
            = "https://github.com/KSF-Media/purescript-toppokki.git"
       with toppokki.version = "81e63299d0765e4b54cb0e26a5edc9d7b6cc5036"
@@ -16,7 +16,7 @@ let additions =
           , "effect"
           ]
         , repo = "https://github.com/KSF-Media/purescript-facebook.git"
-        , version = "e765b3fb5585b2d774cc6a12c412891be51ca5ed"
+        , version = "f3fb7727fa5d0ddc9f102e6970df669a9d3e3c36"
         }
       , react-basic-router =
         { dependencies = [ "react-basic", "foreign-generic", "prelude" ]
