@@ -11,6 +11,7 @@ import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
 import Data.Nullable (toMaybe)
 import Data.Time.Duration as Time.Duration
+import Data.UUID (UUID)
 import Data.Validation.Semigroup (validation)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -59,7 +60,7 @@ type Props =
   , nextDelivery  :: Maybe Date
   , lastDelivery  :: Maybe Date
   , editing       :: Maybe User.PendingAddressChange
-  , userUuid      :: User.UUID
+  , userUuid      :: UUID
   , onCancel      :: Effect Unit
   , onLoading     :: Effect Unit
   , onSuccess     :: User.Subscription -> Effect Unit

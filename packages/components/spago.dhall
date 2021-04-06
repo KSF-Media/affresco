@@ -20,6 +20,7 @@
     , "now"
     , "validation"
     , "read"
+    , "uuid"
     ]
 , packages =
     ../../packages.dhall
