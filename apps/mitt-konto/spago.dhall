@@ -22,7 +22,6 @@ You can edit this file as you like.
     , "prelude"
     , "js-date"
     , "foreign-generic"
-    , "generics-rep"
     , "ordered-collections"
     , "simple-json"
     , "facebook"

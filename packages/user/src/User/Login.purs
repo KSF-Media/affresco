@@ -4,9 +4,8 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
-import Data.Array (foldMap)
 import Data.Either (Either(..), either)
-import Data.Foldable (surround)
+import Data.Foldable (foldMap, surround)
 import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
@@ -16,7 +15,7 @@ import Data.Set as Set
 import Data.String (Pattern(..), contains)
 import Data.String as String
 import Data.Time.Duration (Milliseconds(..))
-import Data.Validation.Semigroup (unV)
+import Data.Validation.Semigroup (validation)
 import Effect (Effect)
 import Effect.Aff (Aff, error, delay)
 import Effect.Aff as Aff
@@ -216,7 +215,7 @@ loginWithRetry action handleSuccess handleError handleFinish = do
         _ -> pure user
 
 onLogin :: Self -> Form.ValidatedForm LoginField LoginForm -> Effect Unit
-onLogin self@{ props, state } = unV
+onLogin self@{ props, state } = validation
   (\errors -> do
       self.setState _
         { formEmail    = state.formEmail    <|> Just ""
@@ -339,7 +338,7 @@ renderLoginForm self =
                 { className: "button-green"
                 -- Disable login button only when true errors are found.
                 -- This is to prevent it from being disabled (grey) when opening the front page
-                , disabled: unV (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
+                , disabled: validation (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
                 , value: "Logga in"
                 , type: "submit"
                 }

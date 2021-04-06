@@ -3,16 +3,16 @@ module Vetrina.Purchase.NewPurchase where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (all, find, head, length, snoc)
+import Data.Array (find, head, length, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Foldable (all, foldMap)
 import Data.Int as Int
 import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Tuple as Tuple
-import Data.Validation.Semigroup (toEither, unV, invalid)
+import Data.Validation.Semigroup (toEither, invalid, validation)
 import Effect (Effect)
 import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
@@ -232,7 +232,7 @@ form self = DOM.form $
 
     onSubmit = handler preventDefault $ case self.state.accountStatus of
       NewAccount ->
-        (\_ -> unV
+        (\_ -> validation
           (\errors ->
             self.setState _
               { newAccountForm
@@ -240,7 +240,7 @@ form self = DOM.form $
           self.props.mkPurchaseWithNewAccount
           $ newAccountFormValidations self)
       ExistingAccount _ ->
-        (\_ -> unV
+        (\_ -> validation
           (\errors ->
             self.setState _
               { existingAccountForm
@@ -250,7 +250,7 @@ form self = DOM.form $
           self.props.mkPurchaseWithExistingAccount
           $ existingAccountFormValidations self)
       LoggedInAccount user ->
-        (\_ -> unV
+        (\_ -> validation
           (\errors -> pure unit)
           (\validForm -> self.props.mkPurchaseWithLoggedInAccount user validForm)
           $ loggedInAccountFormValidations self)

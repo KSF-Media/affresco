@@ -16,7 +16,7 @@ import Data.Nullable (toMaybe)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Validation.Semigroup (isValid, unV)
+import Data.Validation.Semigroup (isValid, validation)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -403,7 +403,7 @@ editAddress self =
       <*> validateField CountryCode form.countryCode []
 
     submitNewAddress :: ValidatedForm AddressFormFields Address -> Effect Unit
-    submitNewAddress = unV
+    submitNewAddress = validation
       (\errors -> Console.error "Could not submit address.")
       updateAddress
 
@@ -456,7 +456,7 @@ editEmail self =
       validateField Email form []
 
     submitNewEmail :: ValidatedForm EmailFormFields (Maybe String) -> Effect Unit
-    submitNewEmail = unV
+    submitNewEmail = validation
       (\errors -> Console.error "Could not submit email.")
       updateEmail
 
@@ -523,7 +523,7 @@ editName self =
         <*> validateField LastName form.lastName []
 
       submitNewName :: ValidatedForm NameFormFields Name -> Effect Unit
-      submitNewName = unV
+      submitNewName = validation
         (\errors -> Console.error "Could not submit name.")
         updateName
 
