@@ -12,10 +12,10 @@ import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
+import Data.UUID (UUID, parseUUID, emptyUUID)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import KSF.Api (UUID, nullUuid, toUUID)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.InputField as InputField
 import KSF.User as User
@@ -37,7 +37,7 @@ search = do
     query /\ setQuery <- useState' Nothing
     results /\ setResults <- useState' Nothing
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
-    let submitSearch = case query /\ (toUUID =<< query) of
+    let submitSearch = case query /\ (parseUUID =<< query) of
           Nothing /\ _ -> pure unit
           _ /\ Just uuid -> setActiveUser uuid
           Just q /\ _ -> do
@@ -189,7 +189,7 @@ search = do
       ] <> (DOM.tr_ <<< subscriptionRow <$> drop 1 user.subs)
 
       where
-        haveDetails = user.uuid /= nullUuid
+        haveDetails = user.uuid /= emptyUUID
         td children = DOM.td { rowSpan: rowSpan, children: children }
         rowSpan = if Array.null user.subs then 1 else length user.subs
         subscriptionRow sub =

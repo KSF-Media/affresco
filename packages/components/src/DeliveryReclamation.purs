@@ -8,6 +8,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.String.Read (read)
+import Data.UUID (UUID)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -40,7 +41,7 @@ type Self = React.Self Props State
 type Props =
   { subsno    :: Int
   , cusno     :: Cusno
-  , userUuid  :: User.UUID
+  , userUuid  :: UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: User.DeliveryReclamation -> Effect Unit

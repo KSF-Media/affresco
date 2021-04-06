@@ -14,11 +14,13 @@ import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
 import Data.Traversable (sequence)
+import Data.UUID (UUID)
+import Data.UUID as UUID
 import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
-import KSF.Api (InvalidateCache, Password, Token, UUID(..), UserAuth, invalidateCacheHeader, oauthToken)
+import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Subscription (Subscription, PendingAddressChange)
 import KSF.Api.Subscription as Subscription
@@ -46,7 +48,7 @@ authHeaders uuid { userId, authToken } =
   { authorization: oauthToken authToken
   , authUser: if uuid == userId
                 then Nullable.null
-                else Nullable.notNull $ (\(UUID u) -> u) userId
+                else Nullable.notNull $ UUID.toString userId
   }
 
 getUser :: Maybe InvalidateCache -> UUID -> UserAuth -> Aff User
@@ -607,4 +609,4 @@ type Forbidden = ServerError
 searchUsers :: String -> UserAuth -> Aff (Array User)
 searchUsers query auth = do
   callApi usersApi "usersSearchGet" [ unsafeToForeign query ]
-    ( authHeaders (UUID "dummy") auth )
+    ( authHeaders UUID.emptyUUID auth )

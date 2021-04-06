@@ -7,6 +7,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Time.Duration as Time.Duration
 import Data.Tuple (Tuple(..))
+import Data.UUID (UUID)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -30,7 +31,7 @@ type Self = React.Self Props State
 type Props =
   { subsno    :: Int
   , cusno     :: Cusno
-  , userUuid  :: User.UUID
+  , userUuid  :: UUID
   , oldStart  :: Maybe Date
   , oldEnd    :: Maybe Date
   , onCancel  :: Effect Unit
