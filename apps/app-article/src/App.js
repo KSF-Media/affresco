@@ -1,11 +1,11 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import Lightbox from 'react-image-lightbox';
-import {Login, logout} from '@ksf-media/user';
+import { Login, logout } from '@ksf-media/user';
 import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import {isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn} from "./helper";
+import { isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn } from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -18,6 +18,7 @@ import Footer from "./components/footer";
 import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
+import { Sentry } from './sentry'
 
 class App extends Component {
     constructor(props) {
@@ -65,17 +66,17 @@ class App extends Component {
     }
     componentDidMount() {
         if (localStorage.getItem("currentUser") !== null) {
-            this.setState({user: JSON.parse(localStorage.getItem("currentUser"))});
+            this.setState({ user: JSON.parse(localStorage.getItem("currentUser")) });
         }
         if (Cookies.get("fontSize")) {
-            this.setState({fontSize: parseFloat(Cookies.get("fontSize"))});
+            this.setState({ fontSize: parseFloat(Cookies.get("fontSize")) });
         }
-        if(getUrlParam().has('logout')){
+        if (getUrlParam().has('logout')) {
             logout(this.onLogout, (err) => this.onLogoutFailed(err));
         }
-        if(getUrlParam().has('login')){
-            this.setState({forceLoginView: true});
-        }else {
+        if (getUrlParam().has('login')) {
+            this.setState({ forceLoginView: true });
+        } else {
             this.getArticle();
             this.getMostReadArticles();
         }
@@ -83,7 +84,7 @@ class App extends Component {
     componentDidUpdate() {
     }
     componentWillUnmount() {
-    }  
+    }
     onLogout() {
         //To avoid undefined error for ios webview
         try {
@@ -99,13 +100,13 @@ class App extends Component {
             console.log(e);
         }
         console.log("Logged out successfully!");
-        //Remove the current user from localstorage 
+        //Remove the current user from localstorage
         localStorage.removeItem("currentUser");
         localStorage.removeItem("cachedArticles");
         Cookies.set('LoginStatus', false);
     }
     //To inform the native in case there's any issue while processing the logout operation
-    onLogoutFailed(err){
+    onLogoutFailed(err) {
         try {
             Android.onLogoutFailed(err);
         } catch (e) {
@@ -115,49 +116,49 @@ class App extends Component {
             window.webkit.messageHandlers.onLogoutFailed.postMessage(err);
         } catch (e) {
             console.log(e);
-        }         
-    }    
+        }
+    }
     getArticle() {
         let urlParams = getUrlParam();
         if (JSON.parse(localStorage.getItem('cachedArticles')) != null) {
-            this.setState({cachedArticles: JSON.parse(localStorage.getItem('cachedArticles'))});
-        }        
+            this.setState({ cachedArticles: JSON.parse(localStorage.getItem('cachedArticles')) });
+        }
         if (urlParams.has('uuid')) {
             if (this.checkCache(urlParams.get('uuid'))) {
                 this.fetchArticleFromCache(urlParams.get('uuid'));
             } else {
                 this.fetchArticleFromApi(urlParams.get('uuid'));
             }
-        }else {
+        } else {
             console.log("no uuid found!")
             // TODO:: handle this part
         }
     }
 
-    getLatestArticles(){
+    getLatestArticles() {
         articleApi.getLatestArticles()
             .then(data => {
-                this.setState({latestArticles: data})
+                this.setState({ latestArticles: data })
             })
             .catch(error => {
-                this.setState({isLoading: false});
-                this.setState({isLoading: false, errorFetchingLatestArticles: true});
+                this.setState({ isLoading: false });
+                this.setState({ isLoading: false, errorFetchingLatestArticles: true });
             });
     }
 
-    getMostReadArticles(){
+    getMostReadArticles() {
         articleApi.getMostReadArticles()
             .then(data => {
-                this.setState({mostReadArticles: data})
+                this.setState({ mostReadArticles: data })
             })
             .catch(error => {
-                this.setState({isLoading: false});
-                this.setState({isLoading: false, errorFetchingLatestArticles: true});
+                this.setState({ isLoading: false });
+                this.setState({ isLoading: false, errorFetchingLatestArticles: true });
             });
     }
 
     checkCache(uuid) {
-        if(!isUserLoggedIn()){
+        if (!isUserLoggedIn()) {
             try {
                 let cachedArticles = localStorage.getItem('cachedArticles');
                 if (cachedArticles != null) {
@@ -228,11 +229,11 @@ class App extends Component {
     }
 
     fetchArticleFromApi(uuid) {
-        this.setState({isLoading: true});
+        this.setState({ isLoading: true });
         articleApi.getArticle(uuid)
             .then(data => {
                 if (data.http_code === 400) {
-                    this.setState({isLoading: false, showBuyOption: true});
+                    this.setState({ isLoading: false, showBuyOption: true });
                 } else if (data.http_code === 403) {
                     this.setState({
                         isLoading: false,
@@ -275,7 +276,7 @@ class App extends Component {
                         updateTime: data.updateTime,
                         shareUrl: data.shareUrl,
                         listTitle: data.listTitle,
-                        articleTypeDetails:data.articleTypeDetails
+                        articleTypeDetails: data.articleTypeDetails
                     }, () => {
                         if (data.externalScripts != null) {
                             this.appendThirdPartyScript(data.externalScripts);
@@ -284,9 +285,9 @@ class App extends Component {
                         this.pushLoadingArticleToGoogleTagManager(data);
                         this.positionAdsWithinArticle();
                     });
-                    this.setState({isLoading: false, showBuyOption: false, appearLogin: false});
+                    this.setState({ isLoading: false, showBuyOption: false, appearLogin: false });
                     data.timestamp = new Date().getTime();
-                    this.setState({cachedArticles: this.state.cachedArticles.concat(data)}, () => {
+                    this.setState({ cachedArticles: this.state.cachedArticles.concat(data) }, () => {
                         if (!this.checkCache(data.uuid)) {
                             localStorage.setItem('cachedArticles', JSON.stringify(this.state.cachedArticles));
                         }
@@ -296,16 +297,16 @@ class App extends Component {
                 this.resizeText(this.state.fontSize);
             })
             .catch(error => {
-                this.setState({isLoading: false, errorFetching: true});
+                this.setState({ isLoading: false, errorFetching: true });
             });
     };
 
     loadScriptError(oError) {
-         console.log('error: ', oError);
+        console.log('error: ', oError);
     }
 
     loadScriptSuccess(res) {
-         console.log('success: ', res);
+        console.log('success: ', res);
     }
 
     // not the best solution but seems is working for now, delay the appending of script for each element in array
@@ -352,7 +353,7 @@ class App extends Component {
     }
 
     pushLoadingArticleToGoogleTagManager(article) {
-        let push_data = {'event': 'page_data'};
+        let push_data = { 'event': 'page_data' };
 
         if (this.state.user && typeof this.state.user.uuid != 'undefined') {
             push_data.userid = this.state.user.uuid;
@@ -372,7 +373,7 @@ class App extends Component {
         if (typeof article == 'object') {
 
             let authors = [];
-            article.authors.map(author =>{
+            article.authors.map(author => {
                 authors.push(author.byline);
             });
 
@@ -396,7 +397,7 @@ class App extends Component {
         window.dataLayer.push(push_data);
     }
 
-    /* The purpose of this function is to place ad slots in page text. It will try to space them out avoiding images, news graphics, iframes etc. 
+    /* The purpose of this function is to place ad slots in page text. It will try to space them out avoiding images, news graphics, iframes etc.
     It will not place slots in articles with less than 4 paragraphs. If no good paragraphs are found, the slots are placed after the text. It will allow <b>, <a href> and <i> within paragraphs. Other tags will disqualify that paragraph. Note that this function will call the main ads script on completion. This should prevent timing issues, no ads are loaded till all paragraphs are rolled out and inspected.
     The script depends on the article text residing in an element with the id 'content'. */
     positionAdsWithinArticle() {
@@ -411,121 +412,121 @@ class App extends Component {
         if (contentDiv != null) {
             contentDiv.childNodes.forEach(node => {
 
-                    if (node.className === 'html') {
-                        var OK = true;
-                        let approvedTags = ['B', 'A', 'I'];
-                        let tt = node.getElementsByTagName("*");
-                        // try to support iPads from 2013. They cannot iterate browser objects only js arrays.
-                        var t = Array.prototype.slice.call(tt);
-                        // check for non-text content
-                        if (t.length > 0) {
-                            for (let item of t) {
-                                let upperCased = item.nodeName;
-                                upperCased = upperCased.toUpperCase();
+                if (node.className === 'html') {
+                    var OK = true;
+                    let approvedTags = ['B', 'A', 'I'];
+                    let tt = node.getElementsByTagName("*");
+                    // try to support iPads from 2013. They cannot iterate browser objects only js arrays.
+                    var t = Array.prototype.slice.call(tt);
+                    // check for non-text content
+                    if (t.length > 0) {
+                        for (let item of t) {
+                            let upperCased = item.nodeName;
+                            upperCased = upperCased.toUpperCase();
 
-                                if (approvedTags.indexOf(upperCased) > -1) {} else {
-                                    OK = false;
-                                }
+                            if (approvedTags.indexOf(upperCased) > -1) { } else {
+                                OK = false;
                             }
                         }
-                                        textParagraphNum++;
-                                        if (OK && textParagraphNum > 3) {
-                                            // We are far enough from the beginning and the previous para was text, as is this and text is long enough. Good! We approve the paragraph for ads 
-                                            textParagraphsOK[textParagraphCount].push(textParagraphNum);
-                                        } else {
-                                            textParagraphCount++;
-                                            textParagraphsOK.push([]);
-                                        }
-                                        } else {
-                                            textParagraphCount++;
-                                            textParagraphsOK.push([]);
-                                        }
-                                        });
+                    }
+                    textParagraphNum++;
+                    if (OK && textParagraphNum > 3) {
+                        // We are far enough from the beginning and the previous para was text, as is this and text is long enough. Good! We approve the paragraph for ads
+                        textParagraphsOK[textParagraphCount].push(textParagraphNum);
+                    } else {
+                        textParagraphCount++;
+                        textParagraphsOK.push([]);
+                    }
+                } else {
+                    textParagraphCount++;
+                    textParagraphsOK.push([]);
+                }
+            });
 
-                                        }
-textParagraphsOK = textParagraphsOK.filter(set => set.length > 0);
-var digiHelPick = 0;
-var digiHelGood = false;
-var mobMittPick = 0;
-var mobMittGood = false;
-var AllParas = contentDiv.getElementsByClassName('html');
-if (AllParas && textParagraphsOK.length > 0) {
-    digiHelPick = textParagraphsOK[0][0];
-    if (digiHelPick > 3) {
-        digiHelGood = true;
-        AllParas[digiHelPick - 1].insertAdjacentHTML('beforebegin', slotOne);
-    }
-    let mMittSet = Math.ceil(textParagraphsOK.length / 2);
-    if (mMittSet > 1 || textParagraphsOK[mMittSet - 1].length > 5) {
-        mobMittPick = textParagraphsOK[mMittSet - 1][Math.floor(textParagraphsOK[mMittSet - 1].length / 2)];
-        mobMittGood = true;
-        AllParas[mobMittPick - 1].insertAdjacentHTML('beforebegin', slotTwo);
-    }
-    // Place slots after text in case we could not place them in text.
-    if (!digiHelGood) {
-        let endPlace = AllParas.length - 1;
-        AllParas[endPlace].insertAdjacentHTML('afterend', slotOne);
-    }
-    if (!mobMittGood) {
-        let endPlace = AllParas.length - 1;
-        AllParas[endPlace].insertAdjacentHTML('afterend', slotTwo);
-    }
-}
+        }
+        textParagraphsOK = textParagraphsOK.filter(set => set.length > 0);
+        var digiHelPick = 0;
+        var digiHelGood = false;
+        var mobMittPick = 0;
+        var mobMittGood = false;
+        var AllParas = contentDiv.getElementsByClassName('html');
+        if (AllParas && textParagraphsOK.length > 0) {
+            digiHelPick = textParagraphsOK[0][0];
+            if (digiHelPick > 3) {
+                digiHelGood = true;
+                AllParas[digiHelPick - 1].insertAdjacentHTML('beforebegin', slotOne);
+            }
+            let mMittSet = Math.ceil(textParagraphsOK.length / 2);
+            if (mMittSet > 1 || textParagraphsOK[mMittSet - 1].length > 5) {
+                mobMittPick = textParagraphsOK[mMittSet - 1][Math.floor(textParagraphsOK[mMittSet - 1].length / 2)];
+                mobMittGood = true;
+                AllParas[mobMittPick - 1].insertAdjacentHTML('beforebegin', slotTwo);
+            }
+            // Place slots after text in case we could not place them in text.
+            if (!digiHelGood) {
+                let endPlace = AllParas.length - 1;
+                AllParas[endPlace].insertAdjacentHTML('afterend', slotOne);
+            }
+            if (!mobMittGood) {
+                let endPlace = AllParas.length - 1;
+                AllParas[endPlace].insertAdjacentHTML('afterend', slotTwo);
+            }
+        }
 
-if (window.ksfDfp) {
-    window.ksfDfp.startUp();
-}
-}
+        if (window.ksfDfp) {
+            window.ksfDfp.startUp();
+        }
+    }
 
     onRegisterOpen() {
         // alert("register opn .");
     }
 
-    onUserFetchSuccess(user) { 
+    onUserFetchSuccess(user) {
         Cookies.set('LoginStatus', true, { expires: 365 });
         Cookies.set('token', localStorage.getItem('token'), { expires: 365 });
         Cookies.set('uuid', localStorage.getItem('uuid'), { expires: 365 });
-        //To get User data from Android side 
-        Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, {expires: 365}));
+        //To get User data from Android side
+        Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, { expires: 365 }));
         localStorage.setItem("currentUser", JSON.stringify(user));
-        this.setState({user: user});
+        this.setState({ user: user });
         const articleUuid = getUrlParam().get('uuid');
-        if (articleUuid) { 
+        if (articleUuid) {
             this.fetchArticleFromApi(articleUuid);
         }
-        // Call Android bridge 
+        // Call Android bridge
         try {
             Android.isLoggedIn();
         } catch (e) {
             console.error('Android not defined');
         }
 
-        // Call ios bridge 
+        // Call ios bridge
         try {
             window.webkit.messageHandlers.isLoggedIn.postMessage("");
         } catch (e) {
             console.error("Ios not defined");
-        }        
+        }
     }
 
-    onUserFetchFail(error){
-
+    onUserFetchFail(error) {
+        Sentry.captureMessage("Error while fetching user! Error: " + error, "error");
     }
 
     showLogin = (e) => {
         e.preventDefault();
-        this.setState({appearLogin: true, showBuyOption: false}, () => {
+        this.setState({ appearLogin: true, showBuyOption: false }, () => {
             document.getElementById('loginForm').scrollIntoView();
         });
     };
 
     increaseFontSize = () => {
         let increaseTextSize = parseFloat(this.state.fontSize) + parseFloat(this.state.fontSizeIncrementalValue);
-        this.setState({fontSize: increaseTextSize}, () => {
+        this.setState({ fontSize: increaseTextSize }, () => {
             Cookies.set("fontSize", this.state.fontSize, { expires: 365 });
             if (this.state.fontSize > this.state.fontSizeThreshold) {
                 Cookies.set("fontSize", "1", { expires: 365 });
-                this.setState({fontSize: 1}, () => {
+                this.setState({ fontSize: 1 }, () => {
                     this.resizeText(1);
                 });
             }
@@ -542,7 +543,7 @@ if (window.ksfDfp) {
 
         if (document.getElementsByClassName('preamble').length > 0) {
             const articleTitle = document.getElementsByClassName('preamble')[0];
-            articleTitle.style.fontSize = newSize  + 0.05 + "rem";
+            articleTitle.style.fontSize = newSize + 0.05 + "rem";
             articleTitle.style.lineHeight = "120%";
         }
 
@@ -559,7 +560,7 @@ if (window.ksfDfp) {
     }
 
     showHighResolutionImage = (imgSrc, caption) => {
-        this.setState({isImageModalOpen: true, modalImage: imgSrc, modalCaption: caption})
+        this.setState({ isImageModalOpen: true, modalImage: imgSrc, modalCaption: caption })
     };
 
     render() {
@@ -573,16 +574,16 @@ if (window.ksfDfp) {
             byline = this.state.mainImage.byline === null ? '' : this.state.mainImage.byline;
         }
 
-        const {isImageModalOpen} = this.state;
+        const { isImageModalOpen } = this.state;
 
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Laddar..."}/>;
+            return <ErrorPage message={"Laddar..."} />;
         }
-        
-        if(this.state.forceLoginView){
+
+        if (this.state.forceLoginView) {
             return (
                 <div className={"col-sm-12"}>
-                    <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>
+                    <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} />
                 </div>
             )
         }
@@ -590,22 +591,22 @@ if (window.ksfDfp) {
         return (
             <div className="App">
                 {this.state.isLoading ? <Loading /> : ''}
-                                
+
                 {isImageModalOpen && (
                     <Lightbox
                         mainSrc={this.state.modalImage + '&width=1200'}
-                        onCloseRequest={() => this.setState({isImageModalOpen: false})}
+                        onCloseRequest={() => this.setState({ isImageModalOpen: false })}
                         // imageTitle={this.state.title}
                         imageCaption={this.state.modalCaption}
                         enableZoom={true}
                     />
                 )}
 
-                <div className={`container-fluid article ${isDarkModeOn() ? 'darkMode': ''} `}>
+                <div className={`container-fluid article ${isDarkModeOn() ? 'darkMode' : ''} `}>
                     <React.Fragment>
-                        <Tag tags={this.state.tags}/>
+                        <Tag tags={this.state.tags} />
                         {
-                            this.state.category === 'Advertorial' ? 
+                            this.state.category === 'Advertorial' ?
                                 <div>
                                     <div className={"row"}>
                                         <div class="advertorial-top-box">
@@ -613,7 +614,7 @@ if (window.ksfDfp) {
                                         </div>
                                     </div>
                                 </div>
-                            :   ''
+                                : ''
                         }
                         {!this.state.isLoading && <Title title={this.state.title} />}
                         {!this.state.isLoading && (
@@ -632,7 +633,7 @@ if (window.ksfDfp) {
                             <div className={"col-sm-12"}>
                                 {
                                     this.state.showBuyOption ?
-                                        <PremiumBox showLogin={this.showLogin}/>
+                                        <PremiumBox showLogin={this.showLogin} />
                                         :
                                         ""
                                 }
@@ -647,7 +648,7 @@ if (window.ksfDfp) {
                                 {
                                     this.state.appearLogin ?
                                         <Login onRegister={() => this.onRegisterOpen()}
-                                               onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]}/>
+                                            onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} />
                                         :
                                         ""
                                 }
@@ -673,7 +674,7 @@ if (window.ksfDfp) {
 const ErrorPage = (props) => {
     return (
         <div className={"row"}>
-            <div className={"col-12 mt-2 mt-5 text-center"} style={{wordWrap: 'break-word'}}>
+            <div className={"col-12 mt-2 mt-5 text-center"} style={{ wordWrap: 'break-word' }}>
                 <h2 className={"title"}>{props.message}</h2>
             </div>
         </div>
@@ -683,8 +684,8 @@ const ErrorPage = (props) => {
 const Title = (props) => {
     return (
         <div className={"row"}>
-            <div className={"col-12 mt-2 mb-3"} style={{wordWrap: 'break-word'}}>
-                <h2 className={`title ${isDarkModeOn() ? 'darkMode': ''}`}>{props.title}</h2>
+            <div className={"col-12 mt-2 mb-3"} style={{ wordWrap: 'break-word' }}>
+                <h2 className={`title ${isDarkModeOn() ? 'darkMode' : ''}`}>{props.title}</h2>
             </div>
         </div>
     )
