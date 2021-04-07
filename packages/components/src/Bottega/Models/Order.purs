@@ -4,7 +4,7 @@ import Prelude (($))
 
 import Bottega.Models.FailReason (FailReason(..), parseFailReason)
 import Data.Maybe (Maybe, maybe)
-import KSF.Api (UUID)
+import Data.UUID (UUID)
 
 newtype OrderNumber = OrderNumber String
 

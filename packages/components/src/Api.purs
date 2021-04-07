@@ -2,16 +2,8 @@ module KSF.Api where
 
 import Prelude
 
+import Data.UUID (UUID)
 import Simple.JSON (class ReadForeign, class WriteForeign)
-
-newtype UUID = UUID String
-derive newtype instance eqUUID :: Eq UUID
-derive newtype instance showUUID :: Show UUID
-derive newtype instance readforeignUUID :: ReadForeign UUID
-derive newtype instance writeforeignUUID :: WriteForeign UUID
-
-nullUuid :: UUID
-nullUuid = UUID "00000000-0000-0000-0000-000000000000"
 
 newtype Token = Token String
 derive newtype instance showToken :: Show Token

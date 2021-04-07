@@ -5,8 +5,8 @@ import Prelude
 import Data.Array (snoc)
 import Data.Foldable (foldMap)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
+import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
 import Effect.Unsafe (unsafePerformEffect)
@@ -33,11 +33,13 @@ type Props =
 type State =
   { inputValue :: String }
 
-data InputType = Text | Password | Email | Radio
+data InputType = Text | Password | Email | Radio | DisabledText
 
 derive instance genericInputType :: Generic InputType _
 instance showInputType :: Show InputType where
   show = toLower <<< genericShow
+
+derive instance eqInputField :: Eq InputType
 
 component :: React.Component Props
 component = React.createComponent "InputField"
@@ -63,7 +65,9 @@ render self@{ props, state } =
              Just label -> inputLabel { label, nameFor: id }
              _          -> mempty
         , DOM.input
-            { type: show props.type_
+            { type: case props.type_ of
+                      DisabledText -> "text"
+                      _ -> show props.type_
             , id: id
             , placeholder: props.placeholder
             , name: props.name
@@ -75,6 +79,7 @@ render self@{ props, state } =
                 if isJust props.validationError
                 then "input-field--invalid-field"
                 else mempty
+            , disabled: props.type_ == DisabledText
             }
         ] `snoc` foldMap errorMessage props.validationError
     }

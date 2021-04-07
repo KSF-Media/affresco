@@ -4,21 +4,19 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
-import Data.Array (any, catMaybes, filter, intercalate, mapMaybe, null, (:))
+import Data.Array (any, catMaybes, filter, intercalate, length, mapMaybe, null, (:))
 import Data.Array as Array
 import Data.Date as Date
-import Data.DateTime (DateTime, modifyDate)
+import Data.Date (Date)
 import Data.Time.Duration (Days(..))
 import Data.Either (Either(..))
-import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime, fromDateTime)
-import Data.List (fromFoldable)
+import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Validation.Semigroup (isValid, unV)
+import Data.Validation.Semigroup (isValid, validation)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -31,12 +29,14 @@ import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
+import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
-import KSF.User (User)
+import KSF.User (User, UserError(UniqueViolation))
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmptyField, validateField, validateZipCode)
+import KSF.User.Cusno as Cusno
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validateZipCode)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -57,10 +57,12 @@ type Props =
 type State =
   { name :: Name
   , address :: Address
-  , now :: Maybe DateTime
-  , changeDate :: Maybe DateTime
+  , email :: Maybe String
+  , now :: Maybe Date
+  , changeDate :: Maybe Date
   , editFields :: Set EditField
   , editName :: AsyncWrapper.Progress JSX
+  , editEmail :: AsyncWrapper.Progress JSX
   , editAddress :: AsyncWrapper.Progress JSX
   }
 
@@ -76,7 +78,7 @@ type Address =
   , city          :: Maybe String
   }
 
-data EditField = EditAddress | EditName
+data EditField = EditAddress | EditEmail | EditName
 derive instance eqEditField :: Eq EditField
 derive instance ordEditField :: Ord EditField
 
@@ -100,6 +102,14 @@ instance validatableFieldAddressFormFields :: ValidatableField AddressFormFields
     Zip           -> validateZipCode field value
     CountryCode   -> validateEmptyField field "Land krävs." value
 
+data EmailFormFields
+  = Email
+instance validatableFieldEmailFormFields :: ValidatableField EmailFormFields where
+  validateField field value _serverErrors = case field of
+    Email -> validateEmailAddress field value
+
+derive instance eqEmailFormFields :: Eq EmailFormFields
+
 jsComponent :: React.Component Props
 jsComponent = component
 
@@ -110,11 +120,13 @@ profile :: Props -> JSX
 profile = make component
   { initialState:
       { name: { firstName: Nothing, lastName: Nothing }
+      , email: Nothing
       , address: { zipCode: Nothing, countryCode: Nothing, streetAddress: Nothing, city: Nothing }
       , now: Nothing
       , changeDate: Nothing
       , editFields: Set.empty
       , editName: Ready
+      , editEmail: Ready
       , editAddress: Ready
       }
   , render
@@ -128,8 +140,9 @@ addressArray { streetAddress, zipCode, city } =
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDateTime
+  now <- Now.nowDate
   self.setState _ { now = Just now }
+  resetFields self EditEmail
   resetFields self EditAddress
   resetFields self EditName
 
@@ -138,15 +151,58 @@ render self@{ props: { profile: user } } =
   DOM.div_ $
     [ profileName
     , profileAddress
+    , profileEmail
     , DescriptionList.descriptionList
         { definitions:
-          showPendingAddressChanges self <>
-            [ { term: "E-postadress:", description: [ DOM.text user.email ] }
-            , { term: "Kundnummer:", description: [ DOM.text user.cusno ] }
+          visiblePendingAddressChanges <>
+            [ { term: "Kundnummer:", description: [ DOM.text $ Cusno.toString user.cusno ] }
             ]
         }
     ]
   where
+    visiblePendingAddressChanges = showPendingAddressChanges self
+    profileEmail =
+      AsyncWrapper.asyncWrapper
+        { wrapperState: self.state.editEmail
+        , readyView: profileEmailReady
+        , editingView: \_ -> profileEmailEditing
+        , loadingView: profileEmailLoading
+        , successView: \_ -> profileEmailReady
+        , errorView: editingError self EditEmail
+        }
+      where
+        profileEmailReady = DOM.div
+          { className: "profile--profile-row"
+          , children:
+              [ currentEmail
+              , changeEmailButton self
+              ]
+          }
+        profileEmailEditing = DOM.div_
+          [ DescriptionList.descriptionList
+              { definitions:
+                  [ { term: "E-postadress:"
+                    , description: [ editEmail self ]
+                    }
+                  ]
+              }
+          ]
+        profileEmailLoading spinner = DOM.div
+          { className: "profile--profile-row"
+          , children:
+              [ currentEmail
+              , spinner
+              ]
+          }
+        currentEmail =
+          DescriptionList.descriptionList
+            { definitions:
+                [ { term: "E-postadress:"
+                  , description: [ DOM.text user.email ]
+                  }
+                ]
+            }
+
     profileName =
       AsyncWrapper.asyncWrapper
         { wrapperState: self.state.editName
@@ -209,7 +265,7 @@ render self@{ props: { profile: user } } =
                     false
                       | isNothing $ toMaybe user.address -> addAddressButton self
                       | otherwise -> changeAddressButton self
-                    true -> mempty
+                    true -> deletePendingAddressChanges self $ length visiblePendingAddressChanges /= 1
                 ]
             }
           where
@@ -235,7 +291,7 @@ render self@{ props: { profile: user } } =
         currentAddress =
           DescriptionList.descriptionList
             { definitions:
-                [ { term: "Adress:"
+                [ { term: "Permanent adress:"
                   , description: map DOM.text $ fromMaybe [] $ addressArray <$> toMaybe user.address
                   }
                 ]
@@ -253,6 +309,7 @@ editingError self fieldName errMessage =
              , onClick: handler_ $ case fieldName of
                EditAddress -> self.setState _ { editAddress = AsyncWrapper.Ready }
                EditName    -> self.setState _ { editName    = AsyncWrapper.Ready }
+               EditEmail   -> self.setState _ { editEmail   = AsyncWrapper.Ready }
              }
          ]
      }
@@ -285,12 +342,11 @@ editAddress self =
                 [ DatePicker.datePicker
                     { onChange: (_ >>= \newDate -> self.setState _ { changeDate = newDate })
                     , className: "profile--edit-address--date-picker"
-                    , value: Nullable.toNullable $ fromDateTime <$> self.state.changeDate
+                    , value: self.state.changeDate
                     , format: "d.M.yyyy"
                     , required: true
-                    , minDate: Nullable.toNullable
-                        $ (fromDateTime <<< modifyDate (\x -> fromMaybe x $ Date.adjust (Days 1.0) x)) <$> self.state.now
-                    , maxDate: Nullable.null
+                    , minDate: Date.adjust (Days 1.0) =<< self.state.now
+                    , maxDate: Nothing
                     , disabled: false
                     , locale: "sv-FI"
                     }
@@ -347,7 +403,7 @@ editAddress self =
       <*> validateField CountryCode form.countryCode []
 
     submitNewAddress :: ValidatedForm AddressFormFields Address -> Effect Unit
-    submitNewAddress = unV
+    submitNewAddress = validation
       (\errors -> Console.error "Could not submit address.")
       updateAddress
 
@@ -370,6 +426,62 @@ editAddress self =
               self.setState _ { editAddress = AsyncWrapper.Error "Adressändringen misslyckades." }
               Tracking.changeAddress self.props.profile.cusno "error: unexpected error when updating address"
     updateAddress _ = pure unit
+
+editEmail :: Self -> JSX
+editEmail self =
+  DOM.form
+    { className: "profile--edit-email"
+    , children:
+        [ InputField.inputField
+            { type_: InputField.Email
+            , name: "email"
+            , "placeholder": self.props.profile.email
+            , value: self.state.email
+            , onChange: \newEmail -> case newEmail of
+                Just n -> self.setState _ { email = Just n }
+                _ -> pure unit
+            , label: Just "E-postadress"
+            , validationError: inputFieldErrorMessage $ validateField Email self.state.email []
+            }
+        , submitButton
+        , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditEmail ] }
+        ]
+    , onSubmit: Events.handler preventDefault $ \_ -> submitNewEmail $ validateEmailForm self.state.email
+    }
+  where
+    submitButton = iconSubmit $ isValid (validateEmailForm self.state.email)
+
+    validateEmailForm :: Maybe String -> ValidatedForm EmailFormFields (Maybe String)
+    validateEmailForm form =
+      validateField Email form []
+
+    submitNewEmail :: ValidatedForm EmailFormFields (Maybe String) -> Effect Unit
+    submitNewEmail = validation
+      (\errors -> Console.error "Could not submit email.")
+      updateEmail
+
+    updateEmail :: Maybe String -> Effect Unit
+    updateEmail (Just email) = do
+      self.setState _ { editEmail = Loading mempty }
+      if email == self.props.profile.email then
+        self.setState _ { editEmail = AsyncWrapper.Error "E-postadressen är den samma som den gamla." }
+        else Aff.launchAff_ do
+          newUser <- User.updateUser self.props.profile.uuid $ User.UpdateEmail { email: email }
+          case newUser of
+            Right u -> liftEffect do
+              self.props.onUpdate u
+              self.setState _ { editEmail = Success Nothing }
+              Tracking.changeEmail self.props.profile.cusno "success"
+            Left UniqueViolation -> do
+              liftEffect do
+                self.setState _ { editEmail = AsyncWrapper.Error "Den här e-postadressen används för ett annat konto. Vänligen ta kontakt med kundservice om du har frågor." }
+            Left err -> do
+              liftEffect do
+                self.props.logger.error $ Error.userError $ show err
+                self.setState _ { editEmail = AsyncWrapper.Error "Det gick inte att uppdatera e-postadressen. Vänligen ta kontakt med kundservice." }
+                Tracking.changeEmail self.props.profile.cusno "error: unexpected error when updating email"
+          throwError $ error "Unexpected error when updating email."
+    updateEmail _ = pure unit
 
 editName :: Self -> JSX
 editName self =
@@ -411,7 +523,7 @@ editName self =
         <*> validateField LastName form.lastName []
 
       submitNewName :: ValidatedForm NameFormFields Name -> Effect Unit
-      submitNewName = unV
+      submitNewName = validation
         (\errors -> Console.error "Could not submit name.")
         updateName
 
@@ -464,6 +576,39 @@ addAddressButton self = editButton "Lägg till adress" self EditAddress
 changeAddressButton :: Self -> JSX
 changeAddressButton self = changeAttributeButton self EditAddress
 
+deletePendingAddressChanges :: Self -> Boolean -> JSX
+deletePendingAddressChanges self multiple =
+  DOM.div
+    { className: "profile--edit-attribute-button"
+    , children:
+        [ DOM.div
+            { className: "profile--delete-pending-address-change-icon circle" }
+        , DOM.span
+            { className: "profile--edit-text"
+            , children:
+                [ DOM.u_ [ DOM.text $ if multiple then "Avbryt adressändringar" else "Avbryt adressändringen" ] ]
+            }
+        ]
+    , onClick: handler_ do
+       self.setState _ { editAddress = Loading mempty }
+       Aff.launchAff_ do
+         deleted <- User.updateUser self.props.profile.uuid $ User.DeletePendingAddressChanges
+         case deleted of
+           Right _ -> liftEffect do
+             self.setState _
+               { editAddress = Success Nothing }
+             self.props.onUpdate $ self.props.profile { pendingAddressChanges = Nullable.null }
+             Tracking.deletePendingAddressChanges self.props.profile.cusno "success"
+           Left err -> liftEffect do
+             self.props.logger.error $ Error.userError $ show err
+             self.setState _
+               { editAddress = AsyncWrapper.Error "Begäran misslyckades." }
+             Tracking.deletePendingAddressChanges self.props.profile.cusno "error: unexpected error when updating address"
+    }
+
+changeEmailButton :: Self -> JSX
+changeEmailButton self = changeAttributeButton self EditEmail
+
 changeNameButton :: Self -> JSX
 changeNameButton self = changeAttributeButton self EditName
 
@@ -491,12 +636,13 @@ editButton buttonText self field =
 
 switchEditProgress :: Self -> EditField -> AsyncWrapper.Progress JSX -> Effect Unit
 switchEditProgress self EditName progress = self.setState _ { editName = progress }
+switchEditProgress self EditEmail progress = self.setState _ { editEmail = progress }
 switchEditProgress self EditAddress progress = self.setState _ { editAddress = progress }
 
-isUpcomingPendingChange :: Maybe DateTime -> User.PendingAddressChange -> Boolean
+isUpcomingPendingChange :: Maybe Date -> User.PendingAddressChange -> Boolean
 isUpcomingPendingChange Nothing _ = true
 isUpcomingPendingChange (Just now) { startDate } =
-  maybe true (_ > now) $ toDateTime startDate
+  maybe true (_ > now) $ toDate startDate
 
 pendingAddressChangeText :: User.PendingAddressChange -> String
 pendingAddressChangeText { address, startDate, endDate } =
@@ -520,6 +666,8 @@ resetFields self EditName =
                            , lastName:  toMaybe self.props.profile.lastName
                            }
                   }
+resetFields self EditEmail =
+  self.setState _ { email = Just self.props.profile.email }
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =
@@ -528,17 +676,5 @@ formatAddress { temporaryName, streetAddress, zipcode, city } =
 
 formatDateString :: JSDate -> String
 formatDateString startDate
-  | Just startString <- formatDate startDate = startString
+  | Just startString <- formatDateDots <$> toDate startDate = startString
   | otherwise = mempty
-
-formatDate :: JSDate -> Maybe String
-formatDate date = format formatter <$> toDateTime date
-  where
-    dot = Placeholder "."
-    formatter = fromFoldable
-      [ DayOfMonthTwoDigits
-      , dot
-      , MonthTwoDigits
-      , dot
-      , YearFull
-      ]

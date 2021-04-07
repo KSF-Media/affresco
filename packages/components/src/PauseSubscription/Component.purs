@@ -2,20 +2,22 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
-import Data.DateTime (DateTime, adjust)
+import Data.Date (Date, adjust)
 import Data.Either (Either(..))
-import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (toNullable)
 import Data.Time.Duration as Time.Duration
+import Data.Tuple (Tuple(..))
+import Data.UUID (UUID)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Helpers (formatDateDots)
 import KSF.Grid as Grid
 import KSF.User as User
+import KSF.User.Cusno (Cusno)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -28,8 +30,10 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Int
-  , cusno     :: String
-  , userUuid  :: User.UUID
+  , cusno     :: Cusno
+  , userUuid  :: UUID
+  , oldStart  :: Maybe Date
+  , oldEnd    :: Maybe Date
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: User.Subscription -> Effect Unit
@@ -37,11 +41,12 @@ type Props =
   }
 
 type State =
-  { startDate    :: Maybe DateTime
-  , minStartDate :: Maybe DateTime
-  , endDate      :: Maybe DateTime
-  , minEndDate   :: Maybe DateTime
-  , maxEndDate   :: Maybe DateTime
+  { startDate    :: Maybe Date
+  , minStartDate :: Maybe Date
+  , endDate      :: Maybe Date
+  , minEndDate   :: Maybe Date
+  , maxEndDate   :: Maybe Date
+  , ongoing      :: Boolean
   }
 
 pauseSubscription :: Props -> JSX
@@ -57,10 +62,11 @@ initialState =
   , endDate: Nothing
   , minEndDate: Nothing
   , maxEndDate: Nothing
+  , ongoing: false
   }
 
 -- | Minimum pause period is one week
-calcMinEndDate :: Maybe DateTime -> Maybe DateTime
+calcMinEndDate :: Maybe Date -> Maybe Date
 calcMinEndDate Nothing = Nothing
 calcMinEndDate (Just startDate) = do
   -- 6 days added to the starting date = 7 (one week)
@@ -68,7 +74,7 @@ calcMinEndDate (Just startDate) = do
   adjust week startDate
 
 -- | Maximum pause period is three months
-calcMaxEndDate :: Maybe DateTime -> Maybe DateTime
+calcMaxEndDate :: Maybe Date -> Maybe Date
 calcMaxEndDate Nothing = Nothing
 calcMaxEndDate (Just startDate) = do
   let threeMonths = Time.Duration.Days (30.0 * 3.0)
@@ -76,11 +82,17 @@ calcMaxEndDate (Just startDate) = do
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDateTime
+  now <- Now.nowDate
   -- We set the minimum start date two days ahead because of system issues.
   -- TODO: This could be set depending on the time of day
   let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
-  self.setState _ { minStartDate = dayAfterTomorrow }
+      ongoing = case self.props.oldStart of
+        Nothing -> false
+        Just date -> date <= now
+  self.setState _ { minStartDate = dayAfterTomorrow
+                  , startDate = self.props.oldStart
+                  , ongoing = ongoing
+                  }
 
 render :: Self -> JSX
 render self =
@@ -106,6 +118,10 @@ render self =
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm self.state self.props)
           , children:
+              (case Tuple self.props.oldStart self.props.oldEnd of
+                  Tuple (Just start) (Just end) ->
+                    [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <> formatDateDots end ]
+                  _ -> []) <>
               [ startDayInput
               , endDayInput
               , DOM.div
@@ -119,10 +135,10 @@ render self =
       dateInput
         self
         { action: onStartDateChange
-        , value: self.state.startDate
-        , minDate: self.state.minStartDate
+        , value: if self.state.ongoing then self.props.oldStart else self.state.startDate
+        , minDate: if self.state.ongoing then self.props.oldStart else self.state.minStartDate
         , maxDate: Nothing
-        , disabled: false
+        , disabled: self.state.ongoing
         , label: "Börjar från"
         }
 
@@ -153,10 +169,10 @@ render self =
         }
 
 type DateInputField =
-  { action   :: Maybe DateTime -> Effect Unit
-  , value    :: Maybe DateTime
-  , minDate  :: Maybe DateTime
-  , maxDate  :: Maybe DateTime
+  { action   :: Maybe Date -> Effect Unit
+  , value    :: Maybe Date
+  , minDate  :: Maybe Date
+  , maxDate  :: Maybe Date
   , disabled :: Boolean
   , label    :: String
   }
@@ -169,11 +185,11 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
         [ DatePicker.datePicker
             { onChange: (action =<< _)
             , className: "pause-subscription--date-picker"
-            , value: toNullable $ fromDateTime <$> value
+            , value: value
             , format: "d.M.yyyy"
             , required: true
-            , minDate: toNullable $ fromDateTime <$> minDate
-            , maxDate: toNullable $ fromDateTime <$> maxDate
+            , minDate: minDate
+            , maxDate: maxDate
             , disabled
             , locale: "sv-FI"
             }
@@ -182,6 +198,20 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
     $ Just { extraClasses: [ "mt2" ] }
 
 submitForm :: State -> Props -> Effect Unit
+
+submitForm { startDate: Just start, endDate: Just end, ongoing } props@{ userUuid, subsno, oldStart: Just oldStart, oldEnd: Just oldEnd} = do
+  props.onLoading
+  let newStart = if ongoing then oldStart else start
+  Aff.launchAff_ $
+    User.editSubscriptionPause userUuid subsno oldStart oldEnd newStart end >>=
+      case _ of
+        Right sub -> liftEffect do
+          props.onSuccess sub
+          Tracking.editSubscriptionPause props.cusno (show subsno) oldStart oldEnd start end "success"
+        Left invalidDateInput -> liftEffect do
+          props.onError invalidDateInput
+          Tracking.editSubscriptionPause props.cusno (show subsno) oldStart oldEnd start end "error: invalid date input"
+
 submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
   props.onLoading
   Aff.launchAff_ $

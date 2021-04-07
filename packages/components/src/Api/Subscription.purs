@@ -1,6 +1,6 @@
 module KSF.Api.Subscription where
 
-import Prelude (class Eq, class Ord, comparing, map, pure)
+import Prelude
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
@@ -10,6 +10,7 @@ import Data.Nullable (Nullable)
 import Foreign (Foreign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
 import KSF.Api.Package (Package, Campaign)
+import KSF.User.Cusno (Cusno)
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 
@@ -23,14 +24,14 @@ type DeliveryAddress =
 type PendingAddressChange =
   { address   :: DeliveryAddress
   , startDate :: JSDate
-  , endDate   :: JSDate
+  , endDate   :: Nullable JSDate
   }
 
 type Subscription =
   { subsno                :: Int
   , extno                 :: Int
-  , cusno                 :: Int
-  , paycusno              :: Int
+  , cusno                 :: Cusno
+  , paycusno              :: Cusno
   , kind                  :: String
   , state                 :: SubscriptionState
   , pricegroup            :: String
@@ -39,6 +40,7 @@ type Subscription =
   , campaign              :: Campaign
   , paused                :: Nullable (Array PausedSubscription)
   , deliveryAddress       :: Nullable DeliveryAddress
+  , receiver              :: Nullable String
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
   , paymentMethod         :: SubscriptionPaymentMethod
   }
@@ -65,6 +67,8 @@ parseSubscription sub@{ paymentMethod } =
   in sub { paymentMethod = parsedPaymentMethod }
 
 newtype SubscriptionState = SubscriptionState String
+
+derive instance eqSubscriptionPaymentMethod :: Eq SubscriptionPaymentMethod
 
 derive instance genericSubscriptionPaymentMethod :: Generic SubscriptionPaymentMethod _
 instance readSubscriptionPaymentMethod :: ReadForeign SubscriptionPaymentMethod where
@@ -99,3 +103,9 @@ isSubscriptionCanceled s = isSubscriptionStateCanceled s.state
 isSubscriptionStateCanceled :: SubscriptionState -> Boolean
 isSubscriptionStateCanceled (SubscriptionState "Canceled") = true
 isSubscriptionStateCanceled _ = false
+
+isSubscriptionPausable :: Subscription -> Boolean
+isSubscriptionPausable = _.canPause <<< _.package
+
+isSubscriptionTemporaryAddressChangable :: Subscription -> Boolean
+isSubscriptionTemporaryAddressChangable = _.canTempAddr <<< _.package

@@ -6,7 +6,7 @@ import Bottega.Models.FailReason (FailReason(..), parseFailReason)
 import Bottega.Models.PaymentMethod (PaymentMethodId)
 import Bottega.Models.PaymentTerminalUrl (PaymentTerminalUrl)
 import Data.Maybe (Maybe, maybe)
-import KSF.Api (UUID)
+import Data.UUID (UUID)
 
 newtype CreditCardId = CreditCardId Int
 
@@ -18,7 +18,7 @@ type CreditCard =
   , expiryDate      :: String
   }
 
-newtype CreditCardRegisterNumber = CreditCardRegisterNumber String 
+newtype CreditCardRegisterNumber = CreditCardRegisterNumber String
 
 type CreditCardRegister =
   { number       :: CreditCardRegisterNumber

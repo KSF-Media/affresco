@@ -14,13 +14,13 @@
     , "prelude"
     , "js-date"
     , "foreign-generic"
-    , "generics-rep"
     , "ordered-collections"
     , "simple-json"
     , "facebook"
     , "now"
     , "validation"
     , "read"
+    , "uuid"
     ]
 , packages =
     ../../packages.dhall

@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
-import Data.Validation.Semigroup (unV)
+import Data.Validation.Semigroup (validation)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -155,7 +155,7 @@ render props self@{ state: { contactForm } } = fragment
       <*> Form.validateField Zip self.state.contactForm.zipCode mempty
       <*> Form.validateField Country self.state.contactForm.countryCode mempty
 
-    submitForm = unV
+    submitForm = validation
       (\errors -> do
           let form = self.state.contactForm
           self.setState _

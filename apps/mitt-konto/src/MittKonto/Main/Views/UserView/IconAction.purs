@@ -1,4 +1,4 @@
-module MittKonto.IconAction where
+module MittKonto.Main.UserView.IconAction where
 
 import Prelude
 

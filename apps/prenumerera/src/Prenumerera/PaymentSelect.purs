@@ -8,7 +8,7 @@ import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (Foreign)
-import Persona as Persona
+import KSF.User (User)
 import Prenumerera.Confirm as Confirm
 import Prenumerera.Prenumerera (Product)
 import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
@@ -23,7 +23,7 @@ import Unsafe.Coerce (unsafeCoerce)
 type Self = React.Self Props State
 type Props = { match :: Maybe Match, location :: Location (Maybe LocationState) }
 type State =
-  { user :: Maybe Persona.User
+  { user :: Maybe User
   , product :: Maybe Product
   , termsAccepted :: Boolean
   , payment :: Payment
@@ -34,12 +34,12 @@ type Payment =
   , surcharge :: Maybe Number
   }
 
-type LocationState   = { product :: Maybe Product, user :: Maybe Persona.User }
-type LocationJsState = { product :: Nullable Product, user :: Nullable Persona.User }
+type LocationState   = { product :: Maybe Product, user :: Maybe User }
+type LocationJsState = { product :: Nullable Product, user :: Nullable User }
 
 data Action =
   AcceptTerms
-  | SetUser Persona.User
+  | SetUser User
   | SetProduct Product
   | PaymentMethod String
 

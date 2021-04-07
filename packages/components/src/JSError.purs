@@ -3,7 +3,7 @@ module KSF.JSError where
 import Prelude
 
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Effect.Exception (Error)
 
 foreign import packageError       :: String -> Error
@@ -15,6 +15,7 @@ foreign import userError          :: String -> Error
 data SubscriptionError
   = SubscriptionTemporaryAddressChange
   | SubscriptionPause
+  | EditSubscriptionPause
   | SubscriptionReclamation
 
 derive instance genericSubscriptionError :: Generic SubscriptionError _

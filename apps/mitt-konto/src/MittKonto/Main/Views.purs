@@ -21,13 +21,13 @@ import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (logout) as User
 import MittKonto.Main.Helpers as Helpers
+import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as Views
 import MittKonto.Main.LoginView (loginView) as Views
-import MittKonto.Main.PaymentView (paymentView) as Views
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView (userView) as Views
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks as React
+import React.Basic.Router as Router
 
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
@@ -38,6 +38,14 @@ navbarView self@{ state, setState } logger isPersonating =
       , adminMode: state.adminMode
       , isPersonating: isPersonating
       , activeUser: state.activeUser
+      , logoutWrapper: Just $
+          \x -> Router.link
+                  { to: { pathname: "/"
+                        , state: {}
+                        }
+                  , children: [ x ]
+                  , className: mempty
+                  }
       , logout: do
           Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
@@ -51,5 +59,5 @@ alertView alert =
   Helpers.classy DOM.div "col-4 mx-auto center"
     [ Alert.alert alert ]
 
-footerView :: React.JSX
+footerView :: JSX
 footerView = Footer.footer {}
