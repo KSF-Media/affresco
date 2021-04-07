@@ -18,6 +18,28 @@ let additions =
         , repo = "https://github.com/KSF-Media/purescript-facebook.git"
         , version = "f3fb7727fa5d0ddc9f102e6970df669a9d3e3c36"
         }
+      , payload =
+        { dependencies =
+          [ "aff"
+            , "affjax"
+            , "console"
+            , "debug"
+            , "effect"
+            , "foreign-generic"
+            , "node-fs"
+            , "node-fs-aff"
+            , "node-http"
+            , "prelude"
+            , "psci-support"
+            , "record"
+            , "simple-json"
+            , "stringutils"
+            , "test-unit"
+            , "typelevel-prelude"
+          ]
+        , repo = "https://github.com/KSF-Media/purescript-payload.git"
+        , version = "31c1f71c4531282e34fc35bdbc0902ddf1d32733"
+        }
       , react-basic-router =
 	{ dependencies = [ "react-basic", "foreign-generic", "prelude" ]
 	, repo =
