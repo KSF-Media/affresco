@@ -23,7 +23,7 @@ foreign import images :: { subscribe :: String }
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: Types.Self -> Sentry.Logger -> User -> JSX
-userView { setState } logger user = React.fragment
+userView { state: { now }, setState } logger user = React.fragment
   [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
   , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -64,7 +64,7 @@ userView { setState } logger user = React.fragment
             subs -> do
               map subscriptionComponentBlockContent subs `snoc` cancelSubscription
               where
-                subscriptionView subscription = Subscription.subscription { subscription, user, logger }
+                subscriptionView subscription = Subscription.subscription { subscription, user, logger, now }
                 subscriptionComponentBlockContent subscription
                   -- If the subscription has a canceled state, we want to add extra css to it.
                   | Subscription.isSubscriptionCanceled subscription =

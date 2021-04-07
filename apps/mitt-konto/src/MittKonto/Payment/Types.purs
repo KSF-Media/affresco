@@ -10,10 +10,10 @@ import Data.Formatter.DateTime (FormatterCommand(..))
 import Data.Formatter.DateTime as FormatterD
 import Data.Formatter.Number as FormatterN
 import Data.Maybe (Maybe(..))
+import Data.UUID (UUID)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
-import KSF.Api (UUID)
 import KSF.User (SubscriptionPayments, PaymentState(..), PaymentType(..))
 import KSF.User as User
 import KSF.User.Cusno (Cusno)

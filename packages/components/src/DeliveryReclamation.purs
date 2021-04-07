@@ -1,13 +1,14 @@
 module KSF.DeliveryReclamation where
 
+import Prelude
+
 import Data.Array (snoc)
-import Data.DateTime (DateTime)
+import Data.Date (Date)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.JSDate (fromDateTime)
 import Data.Maybe (Maybe(..))
-import Data.Nullable (toNullable)
 import Data.String.Read (read)
+import Data.UUID (UUID)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -19,7 +20,6 @@ import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
-import Prelude (Unit, bind, discard, show, ($), (<$>), (>>=), (=<<))
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -30,9 +30,9 @@ import KSF.Tracking as Tracking
 
 
 type State =
-  { publicationDate    :: Maybe DateTime
+  { publicationDate    :: Maybe Date
   , claim              :: Maybe User.DeliveryReclamationClaim
-  , maxPublicationDate :: Maybe DateTime
+  , maxPublicationDate :: Maybe Date
   , validationError    :: Maybe String
   }
 
@@ -41,7 +41,7 @@ type Self = React.Self Props State
 type Props =
   { subsno    :: Int
   , cusno     :: Cusno
-  , userUuid  :: User.UUID
+  , userUuid  :: UUID
   , onCancel  :: Effect Unit
   , onLoading :: Effect Unit
   , onSuccess :: User.DeliveryReclamation -> Effect Unit
@@ -64,7 +64,7 @@ component = React.createComponent "DeliveryReclamation"
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDateTime
+  now <- Now.nowDate
   self.setState _ { maxPublicationDate = Just now }
 
 render :: Self -> JSX
@@ -136,12 +136,12 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
           , className: "button-green"
           }
 
-    submitForm :: Maybe DateTime -> Maybe User.DeliveryReclamationClaim -> Effect Unit
+    submitForm :: Maybe Date -> Maybe User.DeliveryReclamationClaim -> Effect Unit
     submitForm (Just date') (Just claim') = do
       Aff.launchAff_ do
         createDeliveryReclamation date' claim'
       where
-        createDeliveryReclamation :: DateTime -> User.DeliveryReclamationClaim -> Aff Unit
+        createDeliveryReclamation :: Date -> User.DeliveryReclamationClaim -> Aff Unit
         createDeliveryReclamation date'' claim'' = do
           liftEffect $ self.props.onLoading
           User.createDeliveryReclamation self.props.userUuid self.props.subsno date'' claim'' >>=
@@ -161,7 +161,7 @@ radioButtonOnChange self newClaim = self.setState _ { claim = read =<< newClaim
                                                     }
 
 
-dateInput :: Self -> Maybe DateTime -> String ->  JSX
+dateInput :: Self -> Maybe Date -> String ->  JSX
 dateInput self value label =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
@@ -169,11 +169,11 @@ dateInput self value label =
         [ DatePicker.datePicker
             { onChange: (_ >>= \newPublicationDate -> self.setState _ { publicationDate = newPublicationDate })
             , className: "delivery-reclamation--date-picker"
-            , value: toNullable $ fromDateTime <$> value
+            , value: value
             , format: "d.M.yyyy"
             , required: true
-            , minDate: toNullable $ Nothing
-            , maxDate: toNullable $ fromDateTime <$> self.state.maxPublicationDate
+            , minDate: Nothing
+            , maxDate: self.state.maxPublicationDate
             , disabled : false
             , locale: "sv-FI"
             }

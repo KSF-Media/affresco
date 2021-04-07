@@ -4,12 +4,13 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
-import Data.Array (all, cons)
+import Data.Array (cons)
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
+import Data.List.NonEmpty (all)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..))
-import Data.Validation.Semigroup (toEither, unV)
+import Data.Validation.Semigroup (toEither, validation)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -306,7 +307,7 @@ confirm self =
       | otherwise = false
 
 submitForm :: Self -> ValidatedForm RegistrationInputField FormData -> Effect Unit
-submitForm self@{ state: { formData } } = unV
+submitForm self@{ state: { formData } } = validation
   (\errors   -> do
       -- Show validation errors to user (if not shown):
       -- As we don't show error messages when an input field is InvalidNotinitialized (when the value is Nothing),

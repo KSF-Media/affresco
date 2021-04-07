@@ -3,8 +3,8 @@ module KSF.InputField.Checkbox where
 import Prelude
 
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
 import React.Basic (JSX)

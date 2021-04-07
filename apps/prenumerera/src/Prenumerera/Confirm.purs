@@ -10,6 +10,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Class.Console as Console
 import KSF.User (User)
+import KSF.User.Cusno as Cusno
 import Persona as Persona
 import React.Basic.Classic (JSX, StateUpdate(..), make, runUpdate)
 import React.Basic.Classic as React
@@ -132,7 +133,7 @@ render self =
                       [ Tuple "Namn" $ DOM.text $ foldMap customerName self.state.user
                       , Tuple "E-post" $ DOM.text $ foldMap _.email self.state.user
                       , Tuple "Adress" $ foldMap customerAddress $ self.state.user >>= (toMaybe <<< _.address)
-                      , Tuple "Kundnummer" $ DOM.text $ foldMap _.cusno self.state.user
+                      , Tuple "Kundnummer" $ DOM.text $ foldMap (Cusno.toString <<< _.cusno) self.state.user
                       ]
                 , foldMap payment self.state.payment
                 ]

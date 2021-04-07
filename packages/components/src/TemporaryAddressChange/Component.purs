@@ -4,16 +4,15 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (length)
-import Data.Date (Date)
+import Data.Date (Date, adjust)
 import Data.Date as Date
-import Data.DateTime (DateTime, adjust)
-import Data.DateTime as DateTime
 import Data.Either (Either(..))
-import Data.JSDate (fromDateTime, toDateTime)
+import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
-import Data.Nullable (toNullable, toMaybe)
+import Data.Nullable (toMaybe)
 import Data.Time.Duration as Time.Duration
-import Data.Validation.Semigroup (unV)
+import Data.UUID (UUID)
+import Data.Validation.Semigroup (validation)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -39,10 +38,10 @@ import React.Basic.Events (handler, handler_)
 import KSF.Tracking as Tracking
 
 type State =
-  { startDate      :: Maybe DateTime
-  , minStartDate   :: Maybe DateTime
-  , endDate        :: Maybe DateTime
-  , minEndDate     :: Maybe DateTime
+  { startDate      :: Maybe Date
+  , minStartDate   :: Maybe Date
+  , endDate        :: Maybe Date
+  , minEndDate     :: Maybe Date
   , streetAddress  :: Maybe String
   , zipCode        :: Maybe String
   -- | Ignored on save and inferred from zipCode
@@ -58,10 +57,10 @@ type Props =
   { subsno        :: Int
   , cusno         :: Cusno
   , pastAddresses :: Array AddressChange
-  , nextDelivery  :: Maybe DateTime
+  , nextDelivery  :: Maybe Date
   , lastDelivery  :: Maybe Date
   , editing       :: Maybe User.PendingAddressChange
-  , userUuid      :: User.UUID
+  , userUuid      :: UUID
   , onCancel      :: Effect Unit
   , onLoading     :: Effect Unit
   , onSuccess     :: User.Subscription -> Effect Unit
@@ -69,9 +68,9 @@ type Props =
   }
 
 data Action
-  = SetStartDate (Maybe DateTime)
-  | SetMinStartDate (Maybe DateTime)
-  | SetEndDate (Maybe DateTime)
+  = SetStartDate (Maybe Date)
+  | SetMinStartDate (Maybe Date)
+  | SetEndDate (Maybe Date)
 
 data AddressChangeFields
   = StreetAddress
@@ -108,13 +107,13 @@ component :: React.Component Props
 component = React.createComponent "TemporaryAddressChange"
 
 -- | Minimum temporary address change period is one week
-calcMinEndDate :: Maybe Date -> Maybe DateTime -> Maybe DateTime
+calcMinEndDate :: Maybe Date -> Maybe Date -> Maybe Date
 calcMinEndDate _ Nothing = Nothing
 calcMinEndDate lastDelivery (Just startDate) = do
   -- 6 days added to the starting date = 7 (one week)
   let week = Time.Duration.Days 6.0
       diffToLastDelivery = maybe (Time.Duration.Days 0.0)
-                           (\x -> Date.diff x (DateTime.date startDate)) lastDelivery
+                           (\x -> Date.diff x startDate) lastDelivery
       -- Week from the delivery date of the last product in
       -- subscription
       span = if diffToLastDelivery > Time.Duration.Days 0.0 then week <> diffToLastDelivery else week
@@ -122,7 +121,7 @@ calcMinEndDate lastDelivery (Just startDate) = do
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDateTime
+  now <- Now.nowDate
   -- We set the minimum start date two days ahead because of system issues.
   -- TODO: This could be set depending on the time of day
   let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
@@ -134,8 +133,8 @@ didMount self = do
                       , zipCode = Just p.address.zipcode
                       , cityName = toMaybe p.address.city
                       , temporaryName = toMaybe p.address.temporaryName
-                      , startDate = toDateTime p.startDate
-                      , endDate = toDateTime =<< toMaybe p.endDate
+                      , startDate = toDate p.startDate
+                      , endDate = toDate =<< toMaybe p.endDate
                       , isIndefinite = isNothing $ toMaybe p.endDate
                       }
     _ -> pure unit
@@ -179,7 +178,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         )
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm ((toDateTime <<< _.startDate) =<< self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm ((toDate <<< _.startDate) =<< self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
           , children:
               (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity
@@ -296,10 +295,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           , className: "button-green"
           }
 
-    submitForm :: Maybe DateTime -> Maybe DateTime -> Maybe DateTime -> Maybe User.PendingAddressChange -> AddressChange -> Effect Unit
+    submitForm :: Maybe Date -> Maybe Date -> Maybe Date -> Maybe User.PendingAddressChange -> AddressChange -> Effect Unit
     submitForm Nothing (Just startDate') endDate' Nothing addressChangeFormValues = do
       Aff.launchAff_ do
-        unV
+        validation
           -- Shows validation errors if submit button is pushed with uninitialized values
           (\_ -> liftEffect $ self.setState _
                     { streetAddress = self.state.streetAddress <|> Just ""
@@ -338,10 +337,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
     submitForm _ _ _ _ _ = Console.error "Temporary address change dates were not defined."
 
 type DateInputField =
-  { action   :: Maybe DateTime -> Effect Unit
-  , value    :: Maybe DateTime
-  , minDate  :: Maybe DateTime
-  , maxDate  :: Maybe DateTime
+  { action   :: Maybe Date -> Effect Unit
+  , value    :: Maybe Date
+  , minDate  :: Maybe Date
+  , maxDate  :: Maybe Date
   , disabled :: Boolean
   , label    :: String
   }
@@ -354,11 +353,11 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
         [ DatePicker.datePicker
             { onChange: (action =<< _)
             , className: "temporary-address-change--date-picker"
-            , value: toNullable $ fromDateTime <$> value
+            , value: value
             , format: "d.M.yyyy"
             , required: true
-            , minDate: toNullable $ fromDateTime <$> minDate
-            , maxDate: toNullable $ fromDateTime <$> maxDate
+            , minDate: minDate
+            , maxDate: maxDate
             , disabled
             , locale: "sv-FI"
             }

@@ -2,26 +2,14 @@ module MittKonto.Main.UserView.Subscription.Helpers where
 
 import Prelude
 
-import Data.DateTime (DateTime)
-import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime)
-import Data.List (fromFoldable, intercalate)
+import Data.Date (Date)
+import Data.JSDate (JSDate, toDate)
+import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
+import KSF.Helpers (formatDateDots)
 import KSF.User as User
-
-formatDate :: JSDate -> Maybe String
-formatDate date = format formatter <$> toDateTime date
-  where
-    dot = Placeholder "."
-    formatter = fromFoldable
-      [ DayOfMonthTwoDigits
-      , dot
-      , MonthTwoDigits
-      , dot
-      , YearFull
-      ]
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =
@@ -55,20 +43,20 @@ translatePaymentMethod paymentMethod =
     DirectPayment        -> "Direktbetalning"
     UnknownPaymentMethod -> "Okänd"
 
-isPeriodExpired :: DateTime -> Maybe JSDate -> Boolean
-isPeriodExpired baseDate endDate =
+isPeriodExpired :: Boolean -> Date -> Maybe JSDate -> Boolean
+isPeriodExpired excludeCurrentDay baseDate endDate =
   case endDate of
     -- If there's no end date, the period is ongoing
     Nothing   -> false
     Just date ->
-      let endDateTime = toDateTime date
-      in maybe true (_ < baseDate) endDateTime
-
+      let endDateTime = toDate date
+          op end = if excludeCurrentDay then end < baseDate else end <= baseDate
+      in maybe true op endDateTime
 
 formatDateString :: JSDate -> Maybe JSDate -> String
 formatDateString startDate endDate
-  | Just startString <- formatDate startDate =
-    let endString = fromMaybe "" $ formatDate =<< endDate
+  | Just startString <- formatDateDots <$> toDate startDate =
+    let endString = maybe "" formatDateDots $ toDate =<< endDate
     in startString <> " – " <> endString
   | otherwise = mempty
 

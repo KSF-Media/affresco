@@ -959,7 +959,7 @@
   dependencies:
     basscss "^8.1.0"
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456"
-    persona "https://github.com/KSF-Media/persona-javascript-client.git#afaca2973b6b0aa7485fec85944cd60cc14876a0"
+    persona "https://github.com/KSF-Media/persona-javascript-client.git#5808dffca6cfd7c6e55c8394a2e9780aeebd9f57"
     react "^16.12"
     react-dom "^16.12"
 
@@ -1090,6 +1090,16 @@
     "@parcel/utils" "^1.11.0"
     physical-cpu-count "^2.0.0"
 
+"@sentry/browser@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@sentry/browser/-/browser-6.2.5.tgz#35e259e16521d26f348a06b31eb495e0033111d6"
+  integrity sha512-nlvaE+D7oaj4MxoY9ikw+krQDOjftnDYJQnOwOraXPk7KYM6YwmkakLuE+x/AkaH3FQVTQF330VAa9d6SWETlA==
+  dependencies:
+    "@sentry/core" "6.2.5"
+    "@sentry/types" "6.2.5"
+    "@sentry/utils" "6.2.5"
+    tslib "^1.9.3"
+
 "@sentry/browser@^6.2.1":
   version "6.2.1"
   resolved "https://registry.yarnpkg.com/@sentry/browser/-/browser-6.2.1.tgz#f9f277e6f8cad0c7efd1a01726095d63a47a1c16"
@@ -1111,6 +1121,17 @@
     "@sentry/utils" "6.2.1"
     tslib "^1.9.3"
 
+"@sentry/core@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@sentry/core/-/core-6.2.5.tgz#e75093f8598becc0a4a0be927f32f7ac49e8588f"
+  integrity sha512-I+AkgIFO6sDUoHQticP6I27TT3L+i6TUS03in3IEtpBcSeP2jyhlxI8l/wdA7gsBqUPdQ4GHOOaNgtFIcr8qag==
+  dependencies:
+    "@sentry/hub" "6.2.5"
+    "@sentry/minimal" "6.2.5"
+    "@sentry/types" "6.2.5"
+    "@sentry/utils" "6.2.5"
+    tslib "^1.9.3"
+
 "@sentry/hub@6.2.1":
   version "6.2.1"
   resolved "https://registry.yarnpkg.com/@sentry/hub/-/hub-6.2.1.tgz#35bc6bf841a93f4354b3a17592c938b3dba20b73"
@@ -1118,6 +1139,15 @@
   dependencies:
     "@sentry/types" "6.2.1"
     "@sentry/utils" "6.2.1"
+    tslib "^1.9.3"
+
+"@sentry/hub@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@sentry/hub/-/hub-6.2.5.tgz#324cae0c90d736cd1032e94104bf3f18becec4d6"
+  integrity sha512-YlEFdEhcfqpl2HC+/dWXBsBJEljyMzFS7LRRjCk8QANcOdp9PhwQjwebUB4/ulOBjHPP2WZk7fBBd/IKDasTUg==
+  dependencies:
+    "@sentry/types" "6.2.5"
+    "@sentry/utils" "6.2.5"
     tslib "^1.9.3"
 
 "@sentry/minimal@6.2.1":
@@ -1129,10 +1159,35 @@
     "@sentry/types" "6.2.1"
     tslib "^1.9.3"
 
+"@sentry/minimal@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@sentry/minimal/-/minimal-6.2.5.tgz#3e963e868bfa68e97581403521fd4e09a8965b02"
+  integrity sha512-RKP4Qx3p7Cv0oX1cPKAkNVFYM7p2k1t32cNk1+rrVQS4hwlJ7Eg6m6fsqsO+85jd6Ne/FnyYsfo9cDD3ImTlWQ==
+  dependencies:
+    "@sentry/hub" "6.2.5"
+    "@sentry/types" "6.2.5"
+    tslib "^1.9.3"
+
+"@sentry/tracing@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@sentry/tracing/-/tracing-6.2.5.tgz#3f5dadfdccdb5c1fb2eef68458c7c34329b0a34a"
+  integrity sha512-j/hM0BoHxfrNLxPeEJ5Vq4R34hO/TOHMEpLR3FdnunBXbsmjoKMMygIkPxnpML5XWtvukAehbwpDXldwMYz83w==
+  dependencies:
+    "@sentry/hub" "6.2.5"
+    "@sentry/minimal" "6.2.5"
+    "@sentry/types" "6.2.5"
+    "@sentry/utils" "6.2.5"
+    tslib "^1.9.3"
+
 "@sentry/types@6.2.1":
   version "6.2.1"
   resolved "https://registry.yarnpkg.com/@sentry/types/-/types-6.2.1.tgz#28c946230b2023f72307b65606d32052ad9e5353"
   integrity sha512-h0OV1QT+fv5ojfK5/+iEXClu33HirmvbjcQC2jf05IHj9yXIOWy6EB10S8nBjuLiiFqQiAQYj3FN9Ip4eN8NJA==
+
+"@sentry/types@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@sentry/types/-/types-6.2.5.tgz#34b75285b149e0b9bc5fd54fcc2c445d978c7f2e"
+  integrity sha512-1Sux6CLYrV9bETMsGP/HuLFLouwKoX93CWzG8BjMueW+Di0OGxZphYjXrGuDs8xO8bAKEVGCHgVQdcB2jevS0w==
 
 "@sentry/utils@6.2.1":
   version "6.2.1"
@@ -1140,6 +1195,14 @@
   integrity sha512-6kQgM/yBPdXu+3qbJnI6HBcWztN9QfiMkH++ZiKk4ERhg9d2LYWlze478uTU5Fyo/JQYcp+McpjtjpR9QIrr0g==
   dependencies:
     "@sentry/types" "6.2.1"
+    tslib "^1.9.3"
+
+"@sentry/utils@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@sentry/utils/-/utils-6.2.5.tgz#be90d056b09ed1216097d7a29e3e81ba39238e1b"
+  integrity sha512-fJoLUZHrd5MPylV1dT4qL74yNFDl1Ur/dab+pKNSyvnHPnbZ/LRM7aJ8VaRY/A7ZdpRowU+E14e/Yeem2c6gtQ==
+  dependencies:
+    "@sentry/types" "6.2.5"
     tslib "^1.9.3"
 
 "@types/glob@^7.1.1":
@@ -6169,6 +6232,11 @@ node-fetch@^2.6.1:
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
   integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
+node-forge@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-0.10.0.tgz#32dea2afb3e9926f02ee5ce8794902691a676bf3"
+  integrity sha512-PPmu8eEeG9saEUvI97fm4OYxXVB6bFvyNTyiUOBichBpFG8A1Ljw3bY62+5oOjDEMHRnd0Y7HQ+x7uzxOzC6JA==
+
 node-forge@^0.7.1:
   version "0.7.6"
   resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-0.7.6.tgz#fdf3b418aee1f94f0ef642cd63486c77ca9724ac"
@@ -6512,7 +6580,7 @@ param-case@^1.1.1:
   dependencies:
     sentence-case "^1.1.2"
 
-parcel-bundler@^1.12.3, parcel-bundler@^1.12.4:
+parcel-bundler@^1.12.3:
   version "1.12.4"
   resolved "https://registry.yarnpkg.com/parcel-bundler/-/parcel-bundler-1.12.4.tgz#31223f4ab4d00323a109fce28d5e46775409a9ee"
   integrity sha512-G+iZGGiPEXcRzw0fiRxWYCKxdt/F7l9a0xkiU4XbcVRJCSlBnioWEwJMutOCCpoQmaQtjB4RBHDGIHN85AIhLQ==
@@ -6561,6 +6629,71 @@ parcel-bundler@^1.12.3, parcel-bundler@^1.12.4:
     micromatch "^3.0.4"
     mkdirp "^0.5.1"
     node-forge "^0.7.1"
+    node-libs-browser "^2.0.0"
+    opn "^5.1.0"
+    postcss "^7.0.11"
+    postcss-value-parser "^3.3.1"
+    posthtml "^0.11.2"
+    posthtml-parser "^0.4.0"
+    posthtml-render "^1.1.3"
+    resolve "^1.4.0"
+    semver "^5.4.1"
+    serialize-to-js "^3.0.0"
+    serve-static "^1.12.4"
+    source-map "0.6.1"
+    terser "^3.7.3"
+    v8-compile-cache "^2.0.0"
+    ws "^5.1.1"
+
+parcel-bundler@^1.12.4:
+  version "1.12.5"
+  resolved "https://registry.yarnpkg.com/parcel-bundler/-/parcel-bundler-1.12.5.tgz#91f7de1c1fbfe5111616d3211c749c85c4d8acf0"
+  integrity sha512-hpku8mW67U6PXQIenW6NBbphBOMb8XzW6B9r093DUhYj5GN2FUB/CXCiz5hKoPYUsusZ35BpProH8AUF9bh5IQ==
+  dependencies:
+    "@babel/code-frame" "^7.0.0"
+    "@babel/core" "^7.4.4"
+    "@babel/generator" "^7.4.4"
+    "@babel/parser" "^7.4.4"
+    "@babel/plugin-transform-flow-strip-types" "^7.4.4"
+    "@babel/plugin-transform-modules-commonjs" "^7.4.4"
+    "@babel/plugin-transform-react-jsx" "^7.0.0"
+    "@babel/preset-env" "^7.4.4"
+    "@babel/runtime" "^7.4.4"
+    "@babel/template" "^7.4.4"
+    "@babel/traverse" "^7.4.4"
+    "@babel/types" "^7.4.4"
+    "@iarna/toml" "^2.2.0"
+    "@parcel/fs" "^1.11.0"
+    "@parcel/logger" "^1.11.1"
+    "@parcel/utils" "^1.11.0"
+    "@parcel/watcher" "^1.12.1"
+    "@parcel/workers" "^1.11.0"
+    ansi-to-html "^0.6.4"
+    babylon-walk "^1.0.2"
+    browserslist "^4.1.0"
+    chalk "^2.1.0"
+    clone "^2.1.1"
+    command-exists "^1.2.6"
+    commander "^2.11.0"
+    core-js "^2.6.5"
+    cross-spawn "^6.0.4"
+    css-modules-loader-core "^1.1.0"
+    cssnano "^4.0.0"
+    deasync "^0.1.14"
+    dotenv "^5.0.0"
+    dotenv-expand "^5.1.0"
+    envinfo "^7.3.1"
+    fast-glob "^2.2.2"
+    filesize "^3.6.0"
+    get-port "^3.2.0"
+    htmlnano "^0.2.2"
+    is-glob "^4.0.0"
+    is-url "^1.2.2"
+    js-yaml "^3.10.0"
+    json5 "^1.0.1"
+    micromatch "^3.0.4"
+    mkdirp "^0.5.1"
+    node-forge "^0.10.0"
     node-libs-browser "^2.0.0"
     opn "^5.1.0"
     postcss "^7.0.11"
@@ -6723,15 +6856,15 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#5808dffca6cfd7c6e55c8394a2e9780aeebd9f57":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#5808dffca6cfd7c6e55c8394a2e9780aeebd9f57"
   dependencies:
     superagent "3.7.0"
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#afaca2973b6b0aa7485fec85944cd60cc14876a0":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#afaca2973b6b0aa7485fec85944cd60cc14876a0"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#72a5ee779d5a9052b3cd274db9d5358ddd27839b"
   dependencies:
     superagent "3.7.0"
 
@@ -7347,10 +7480,10 @@ purescript-installer@^0.2.0:
     which "^1.3.1"
     zen-observable "^0.8.14"
 
-purescript@^0.13.8:
-  version "0.13.8"
-  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.13.8.tgz#acab6f3008d75b8046478c8c1d6124079dc96f7e"
-  integrity sha512-1ZyVEVFLgcEcjPXxJYeVEyYn66DF2DnOLTWzo/K/MrQUF2chdLSyZ8sJpcarWyrz2HxXaubYceYbo5KexKzynA==
+purescript@^0.14.0:
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.14.0.tgz#0fd260d526159c7a15d74c0e6fb52294ae531c15"
+  integrity sha512-iTA1k8mwxHqrJp/K296g6omVfve5RCjnB5D6Up93PVtZdP66mCIqlOYC4hrLBHg2hgkk27xePDt5NUXKvH4ApQ==
   dependencies:
     purescript-installer "^0.2.0"
 
@@ -8458,10 +8591,10 @@ source-map@^0.7.2:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
-spago@^0.15.2:
-  version "0.15.3"
-  resolved "https://registry.yarnpkg.com/spago/-/spago-0.15.3.tgz#348de88f2aa499abaee9289b7d66e1e049807f0c"
-  integrity sha512-CNpbJiI+6MPpttbCtGIGFUroegXze4I7joXCTfiiTRzOUKcMV925fm7dxyAa3AVUUUvGi3D55k65aniGR1cVMA==
+spago@^0.19.1:
+  version "0.19.2"
+  resolved "https://registry.yarnpkg.com/spago/-/spago-0.19.2.tgz#2dfe3952ea282bd239084c934b0e0eaca7aaddd3"
+  integrity sha512-/u4ofPqWkK1JKRlDU8ZpuLVEOqOpD7/F9zIms4jaPxrXDNhddvhZkbYXrFF/Pe4ZpawysrkhQxhKKt+FJfOfuw==
   dependencies:
     request "^2.88.0"
     tar "^4.4.8"

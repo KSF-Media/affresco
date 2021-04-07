@@ -2,6 +2,7 @@ module MittKonto.Main.Types where
 
 import Prelude
 
+import Data.Date (Date)
 import Data.Maybe (Maybe(Nothing))
 import Effect (Effect)
 import KSF.Alert.Component (Alert)
@@ -17,6 +18,7 @@ type State =
   , showWelcome :: Boolean
   , alert :: Maybe Alert
   , payments :: Maybe (Array SubscriptionPayments)
+  , now :: Date
   }
 
 type Self =

@@ -11,7 +11,6 @@
   , "facebook"
   , "foreign-generic"
   , "formatters"
-  , "generics-rep"
   , "js-date"
   , "now"
   , "ordered-collections"
