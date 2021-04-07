@@ -5,12 +5,11 @@ import Prelude
 import Data.Array (head)
 import Data.Either (Either(..))
 import Data.Foldable (fold)
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.RecordToSum as Record
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Data.Maybe (fromMaybe)
 import Data.Nullable (Nullable, toMaybe)
 import Lettera.Models (Article, BodyElement(..), BoxInfo, Image)
+import Data.Generic.Rep.RecordToSum as Record
 import React.Basic (JSX)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM

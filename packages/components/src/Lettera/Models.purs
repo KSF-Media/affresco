@@ -3,7 +3,7 @@ module Lettera.Models where
 import Prelude
 
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Data.Nullable (Nullable)
 import Data.UUID (UUID)
 

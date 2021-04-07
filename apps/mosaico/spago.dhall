@@ -15,7 +15,6 @@ You can edit this file as you like.
   , "facebook"
   , "foreign-generic"
   , "formatters"
-  , "generics-rep"
   , "js-date"
   , "now"
   , "ordered-collections"
