@@ -15,6 +15,6 @@
     "prestart": "parcel build ../../scss/mosaico.scss",
     "start": "spago run",
     "prebuild": "parcel build ../../scss/mosaico.scss",
-    "build": "spago build"
+    "build": "spago build && parcel build web/index.html --no-cache --public-url ./"
   }
 }

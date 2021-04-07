@@ -55,6 +55,11 @@ let apps = [
   , buildDir = "corona-banner"
   , deployDir = "corona-banner"
   }
+, Actions.App::{
+  , name = "Mosaico SPA"
+  , buildDir = "mosaico"
+  , deployDir = "mosaico"
+  }
 {-
 , Actions.App::{
   , name = "Prenumerera PoC"
