@@ -8,6 +8,8 @@ This is a test deployment for Vetrina (the fast buying path), for:
 
 Run:
 
+Running tests doesn't start the app so do a `yarn start` as well.
+
 ```bash
 $ yarn install
 $ export PERSONA_URL=https://persona.staging.ksfmedia.fi/v1

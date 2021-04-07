@@ -30,6 +30,7 @@ let additions =
         , version = "572191b9f8053bc618c325289be9d6464865b12c"
         }
       , affresco-components = ./packages/components/spago.dhall as Location
+      , affresco-test = ./packages/test/spago.dhall as Location
       , affresco-user = ./packages/user/spago.dhall as Location
       , affresco-vetrina = ./packages/vetrina/spago.dhall as Location
       }
