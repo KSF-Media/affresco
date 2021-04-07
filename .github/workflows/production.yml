@@ -66,6 +66,7 @@ jobs:
             mv apps/elections/dist build/elections
       - env:
           HIDE_LOGIN_LINKS: 'true'
+          PRODUCTION_SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
         name: Build App article
         run: |2
             ruby deploy.rb app-article

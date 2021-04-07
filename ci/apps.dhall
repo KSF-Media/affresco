@@ -47,7 +47,7 @@ let apps = [
   , deployDir = "app-article"
   , env = toMap {
     , HIDE_LOGIN_LINKS = "true"
-    , SENTRY_DSN = "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
+    , PRODUCTION_SENTRY_DSN = "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
     }
   }
 , Actions.App::{
