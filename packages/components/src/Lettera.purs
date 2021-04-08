@@ -1,18 +1,99 @@
 module Lettera where
 
-import Data.UUID (UUID, parseUUID, toString)
+import Prelude
+
+import Affjax as AX
+import Affjax.ResponseFormat as ResponseFormat
+import Affjax.StatusCode (StatusCode (..))
+import Data.Argonaut.Core (stringify, toArray, toObject)
+import Data.Array (foldM, snoc)
+import Data.Either (Either(..), note)
+import Data.Maybe (Maybe(..))
+import Data.Traversable (traverse_)
+import Data.UUID (UUID, toString)
+import Effect (Effect)
 import Effect.Aff (Aff)
-import Foreign (unsafeToForeign)
-import Lettera.Models (Article, ArticleStub)
+import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
+import Foreign (MultipleErrors, renderForeignError, unsafeToForeign)
+import Foreign.Object (lookup)
+import KSF.Paper (Paper)
+import KSF.Paper as Paper
+import Lettera.Models (Article, ArticleStub, FullArticle(..))
 import OpenApiClient (Api, callApi)
+import Simple.JSON as JSON
 
 foreign import articlesApi :: Api
 foreign import listsApi :: Api
+
+letteraArticleUrl :: String
+letteraArticleUrl = "https://lettera.api.ksfmedia.fi/v3/article/"
+
+letteraFrontPageUrl :: String
+letteraFrontPageUrl = "https://lettera.api.ksfmedia.fi/v3/frontpage"
+
+-- TODO: Instead of String, use some sort of LetteraError or something
+getArticle' :: UUID -> Aff (Either String FullArticle)
+getArticle' articleId = do
+  -- TODO: Add authentication
+  articleResponse <- AX.get ResponseFormat.json (letteraArticleUrl <> (toString articleId))
+  case articleResponse of
+    Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
+    Right response
+      | (StatusCode 200) <- response.status -> do
+        response.body
+          # stringify
+          # map FullArticle <<< parseArticle
+          # note "Article parsing error"
+          # pure
+      | (StatusCode 403) <- response.status ->
+          {- If we get a Forbidden response, that means the user is not entitled to read the article.
+             However in this case, we have the article preview in the response,
+             we just need to dig it out.
+
+             The response JSON looks something like:
+
+                { "http_status":"Forbidden",
+                  "http_code":403,
+                  "not_entitled": {
+                    "description": "Not entitled to article.",
+                    "articlePreview":
+                      { "body": [ .. ] }
+                 }
+          -}
+          (toObject response.body)
+            >>= lookup "not_entitled"
+            >>= toObject
+            >>= lookup "articlePreview"
+            >>= (stringify >>> parseArticle)
+            # map PreviewArticle
+            # note "preview article parsing error" >>> pure
+      | otherwise -> pure $ Left "Unexpected HTTP status"
 
 getArticle :: UUID -> Aff Article
 getArticle articleId =
   callApi articlesApi "articleUuidGet" [ unsafeToForeign articleId ] {}
 
-getMostRead :: Aff (Array ArticleStub)
-getMostRead =
-  callApi listsApi "mostreadGet" [] {}
+parseArticle :: String -> (Maybe Article)
+parseArticle a =
+  case JSON.readJSON a of
+    Right (r :: Article) -> Just r
+    Left e -> Nothing
+
+getFrontpage :: Paper -> Aff (Either String (Array ArticleStub))
+getFrontpage paper = do
+  frontpageResponse <- AX.get ResponseFormat.json (letteraFrontPageUrl <> "?paper=" <> Paper.toString paper)
+  case frontpageResponse of
+    Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
+    Right response
+      | Just responseArray <- toArray response.body -> do
+        map (JSON.readJSON <<< stringify) responseArray
+          # (liftEffect <<< foldM logParsingErrors [])
+          >>= (Right >>> pure)
+        where
+          logParsingErrors :: Array ArticleStub -> Either MultipleErrors ArticleStub -> Effect (Array ArticleStub)
+          logParsingErrors acc (Left err) = do
+            traverse_ (Console.log <<< renderForeignError) err
+            pure acc
+          logParsingErrors acc (Right articleStub) = pure $ acc `snoc` articleStub
+      | otherwise -> pure $ Left "Got weird response"

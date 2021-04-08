@@ -2,6 +2,7 @@ module Mosaico where
 
 import Prelude
 
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (Pattern(..))
 import Data.String as String
@@ -11,9 +12,11 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Exception (error)
 import Effect.Unsafe (unsafePerformEffect)
+import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub)
+import Lettera.Models (Article, ArticleStub, FullArticle(..))
 import Mosaico.Article as Article
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -26,7 +29,7 @@ import Web.HTML.Location (search, setSearch) as Web
 import Web.HTML.Window (location) as Web
 
 type State =
-  { article :: Maybe Article
+  { article :: Maybe FullArticle
   , articleId ::Maybe String
   , setSearch :: String -> Effect Unit
   , articleList :: Array ArticleStub
@@ -50,8 +53,10 @@ app = do
     state /\ setState <- useState initialState
     useEffectOnce $ do
       Aff.launchAff_ do
-        mostReadArticles <- Lettera.getMostRead
-        liftEffect $ setState \oldState -> oldState { articleList = mostReadArticles }
+        frontPage <- Lettera.getFrontpage HBL
+        case frontPage of
+          Right fp -> liftEffect $ setState \oldState -> oldState { articleList = fp }
+          Left err -> Aff.throwError $ error err
       pure mempty
 
     useAff state.articleId $ fetchArticle setState articleId
@@ -59,8 +64,10 @@ app = do
   where
     fetchArticle :: ((State -> State) -> Effect Unit) -> Maybe String -> Aff Unit
     fetchArticle setState (Just articleId) = do
-      article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-      liftEffect $ setState \s -> s { article = Just article, articleId = Just articleId }
+      article <- Lettera.getArticle' (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+      case article of
+        Right a -> liftEffect $ setState \s -> s { article = Just a, articleId = Just articleId }
+        Left e -> liftEffect $ Console.log $ "NO ARTICLE WHAT" <> e
     fetchArticle _ Nothing = pure unit
 
 jsApp :: {} -> JSX
@@ -76,12 +83,19 @@ render state =
       , children: [ DOM.text "header" ]
       }
       , case state.article of
-          Just article ->
-            Article.article
-              { article
-              , brand: "hbl"
-              }
-          Nothing -> articleList state
+          Just article
+            | FullArticle a <- article ->
+              Article.article
+                { article: a
+                , brand: "hbl"
+                }
+            -- TODO: Add paywall text etc.
+            | PreviewArticle a <- article ->
+              Article.article
+                { article: a
+                , brand: "hbl"
+                }
+          _ -> articleList state
     , DOM.footer
       { className: "mosaico--footer"
       , children: [ DOM.text "footer" ]
@@ -105,7 +119,7 @@ articleList state =
         , children:
             [ DOM.div
                 -- NOTE: will invoke page reload
-                { onClick: handler_ $ state.setSearch $ "?article=" <> UUID.toString a.uuid
+                { onClick: handler_ $ state.setSearch $ "?article=" <> a.uuid
                 , children: [ DOM.text a.title ]
                 }
             ]

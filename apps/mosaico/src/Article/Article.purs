@@ -47,8 +47,8 @@ renderImage img =
         , DOM.span { className: "byline", children: [ DOM.text byline ] } ] }
     ] }
       where
-        caption = fold $ toMaybe img.caption
-        byline = fold $ toMaybe img.byline
+        caption = fold $ img.caption
+        byline = fold $ img.byline
 
 render :: Self -> JSX
 render { props, state } =
