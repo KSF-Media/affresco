@@ -49,9 +49,9 @@ isPeriodExpired excludeCurrentDay baseDate endDate =
     -- If there's no end date, the period is ongoing
     Nothing   -> false
     Just date ->
-      let endDateTime = toDate date
+      let endDate = toDate date
           op end = if excludeCurrentDay then end < baseDate else end <= baseDate
-      in maybe true op endDateTime
+      in maybe true op endDate
 
 formatDateString :: JSDate -> Maybe JSDate -> String
 formatDateString startDate endDate

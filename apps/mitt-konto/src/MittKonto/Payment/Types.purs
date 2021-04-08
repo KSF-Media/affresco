@@ -2,12 +2,7 @@ module MittKonto.Payment.Types where
 
 import Prelude
 
-import Data.Date (Date)
-import Data.DateTime (DateTime(..))
 import Data.Either (Either(..))
-import Data.List as List
-import Data.Formatter.DateTime (FormatterCommand(..))
-import Data.Formatter.DateTime as FormatterD
 import Data.Formatter.Number as FormatterN
 import Data.Maybe (Maybe(..))
 import Data.UUID (UUID)
@@ -55,18 +50,6 @@ typeString x = case x of
   Reminder2     -> "2. påminnelse"
   Nonpayment    -> "Avslutad utan betalning, fakturerad"
   Reimbursement -> "Kreditfaktura"
-
-formatDate :: Date -> String
-formatDate = FormatterD.format formatter <<< \x -> DateTime x bottom
-  where
-    dot = Placeholder "."
-    formatter = List.fromFoldable
-      [ DayOfMonthTwoDigits
-      , dot
-      , MonthTwoDigits
-      , dot
-      , YearFull
-      ]
 
 formatEuro :: Number -> String
 formatEuro = FormatterN.format formatter
