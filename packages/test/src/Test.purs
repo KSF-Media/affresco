@@ -2,11 +2,13 @@ module KSF.Test where
 
 import Prelude
 
-import Data.DateTime (DateTime)
+import Data.Date (Date)
+import Data.DateTime (DateTime(..))
 import Data.Formatter.DateTime as Format
 import Data.List as List
 import Effect (Effect)
 import Effect.Now as Now
+import KSF.Helpers as Helpers
 
 getTimeStamp :: Effect String
 getTimeStamp = formatDate <$> Now.nowDateTime
@@ -20,3 +22,13 @@ formatDate = Format.format $ List.fromFoldable
   , Format.MinutesTwoDigits
   , Format.SecondsTwoDigits
   ]
+
+-- For input to date component
+formatDateSolid :: Date -> String
+formatDateSolid date = Format.format formatter $ DateTime date Helpers.midnight
+  where
+    formatter = List.fromFoldable
+      [ Format.DayOfMonthTwoDigits
+      , Format.MonthTwoDigits
+      , Format.YearFull
+      ]

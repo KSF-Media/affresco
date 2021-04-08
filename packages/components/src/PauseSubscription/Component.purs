@@ -15,6 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Api.Subscription (Subsno)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.Helpers (formatDateDots)
 import KSF.Grid as Grid
 import KSF.User as User
@@ -118,13 +119,20 @@ render self =
     pauseForm =
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm self.state self.props)
+          , className: "pause-subscription--form"
           , children:
               (case Tuple self.props.oldStart self.props.oldEnd of
                   Tuple (Just start) (Just end) ->
                     [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <> formatDateDots end ]
                   _ -> []) <>
-              [ startDayInput
-              , endDayInput
+              [ DOM.div
+                  { className: "pause-subscription--start"
+                  , children: [ startDayInput ]
+                  }
+              , DOM.div
+                  { className: "pause-subscription--end"
+                  , children: [ endDayInput ]
+                  }
               , DOM.div
                   { children: [ submitFormButton ]
                   , className: "mt2 clearfix"
@@ -141,6 +149,7 @@ render self =
         , maxDate: Nothing
         , disabled: self.state.ongoing
         , label: "Börjar från"
+        , id: "pause-start"
         }
 
     endDayInput =
@@ -152,6 +161,7 @@ render self =
         , maxDate: self.state.maxEndDate
         , disabled: isNothing self.state.startDate
         , label: "Avslutas"
+        , id: "pause-end"
         }
 
     submitFormButton =
@@ -176,10 +186,11 @@ type DateInputField =
   , maxDate  :: Maybe Date
   , disabled :: Boolean
   , label    :: String
+  , id       :: String
   }
 
 dateInput :: Self -> DateInputField -> JSX
-dateInput self { action, value, minDate, maxDate, disabled, label } =
+dateInput self { action, value, minDate, maxDate, disabled, label, id } =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
@@ -196,7 +207,9 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             }
         ]
     ]
-    $ Just { extraClasses: [ "mt2" ] }
+    { extraClasses: [ "mt2" ]
+    , id: id <> "--" <> Subsno.toString self.props.subsno
+    }
 
 submitForm :: State -> Props -> Effect Unit
 

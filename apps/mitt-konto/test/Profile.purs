@@ -2,15 +2,14 @@ module MittKonto.Test.Profile where
 
 import Prelude
 
-import Data.Date (adjust, month, year)
-import Data.Enum (fromEnum) 
+import Data.Date (adjust)
 import Data.Time.Duration (Days(..))
 import Data.Maybe (maybe)
-import Data.String as String
 import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
 import Effect.Now as Now
 import KSF.Helpers as Helpers
-import KSF.Test (getTimeStamp)
+import KSF.Test (getTimeStamp, formatDateSolid)
 import MittKonto.Test (Test)
 import Puppeteer as Chrome
 
@@ -28,15 +27,9 @@ testNameChange page = do
 
 testAddressChange :: Test
 testAddressChange page = do
-  -- This should be close enough to succeed
-  changeDate <- liftEffect $ adjust (Days 40.0) <$> Now.nowDate
-  
-  let changeDateString = maybe "fail" (("01." <> _) <<< String.drop 3 <<< Helpers.formatDateDots)
-                         changeDate
-      -- Date component is rather picky about text input, this should
-      -- be safe
-      dateFieldText = maybe "fail" (\d -> "1." <> (show $ fromEnum $ month d) <> "." <>
-                                          (show $ fromEnum $ year d)) changeDate
+  changeDate <- liftEffect $ adjust (Days 3.0) <$> Now.nowDate
+  let changeDateString = maybe "fail" Helpers.formatDateDots changeDate
+      dateFieldText = maybe "fail" formatDateSolid changeDate
       editAddressLink = Chrome.Selector ".profile--profile-row:nth-child(2) .profile--edit-text"
       dateField = Chrome.Selector ".profile--edit-address .react-date-picker__inputGroup"
       streetAddressField = Chrome.Selector ".profile--edit-address input[name='streetAddress']"
@@ -67,6 +60,8 @@ testAddressChange page = do
   Chrome.assertContent (Chrome.Selector "#profile--display dt:nth-child(1)") "Kundnummer:" page
   Chrome.assertContent editAddressLink "Ändra" page
 
+-- Note that this test isn't idempotent.  If you're reusing an account
+-- to develope tests, you may want to disable this.
 testEmailChange :: Test
 testEmailChange page = do
   dateTimeStr <- liftEffect getTimeStamp
@@ -77,5 +72,6 @@ testEmailChange page = do
   Chrome.typeDelete_ emailField 50 page
   Chrome.type_ emailField email page
   Chrome.click (Chrome.Selector ".profile--edit-email button[type='submit']") page
+  log $ "email changed to " <> show email
   Chrome.waitFor_ editEmailLink page
   Chrome.assertContent (Chrome.Selector "#profile--email dd:nth-child(2)") email page

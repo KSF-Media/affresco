@@ -180,4 +180,4 @@ dateInput self value label =
             }
         ]
     ]
-    $ Just { extraClasses: [ "mb2" ] }
+    { extraClasses: [ "mb2" ] }
