@@ -5674,12 +5674,6 @@ less@^3.8.1:
     native-request "^1.0.5"
     source-map "~0.6.0"
 
-"lettera@https://github.com/KSF-Media/lettera-javascript-client.git#325aa782f03a0956744529e685c07c97437c77a0":
-  version "3.0.0"
-  resolved "https://github.com/KSF-Media/lettera-javascript-client.git#325aa782f03a0956744529e685c07c97437c77a0"
-  dependencies:
-    superagent "3.7.0"
-
 levn@~0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/levn/-/levn-0.3.0.tgz#3b09924edf9f083c0490fdd4c0bc4421e04764ee"

@@ -4,7 +4,6 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
-    "lettera": "https://github.com/KSF-Media/lettera-javascript-client.git#325aa782f03a0956744529e685c07c97437c77a0",
     "parcel-bundler": "^1.12.3",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",

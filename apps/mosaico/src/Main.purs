@@ -2,26 +2,28 @@ module Main where
 
 import Prelude
 
+import Data.Either (Either(..))
+import Data.List (List)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID (UUID)
 import Data.UUID as UUID
-import Data.List (List)
-import Data.Either (Either)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
+import Effect.Exception (error)
+import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (Article, BodyElement(..))
+import Lettera.Models (Article, BodyElement(..), FullArticle(..))
 import Mosaico.Article as Article
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
-import Payload.Server.Handlers (File)
-import Payload.Server.Handlers as Handlers
 import Payload.ResponseTypes (Failure, Response(..), ResponseBody(..))
 import Payload.Server as Payload
 import Payload.Server.Guards as Guards
+import Payload.Server.Handlers (File)
+import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic (JSX)
@@ -74,7 +76,7 @@ main = do
   Aff.launchAff_ $ Payload.startGuarded_ spec { handlers, guards }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: {path} } = Handlers.directory "dist" path 
+assets { params: {path} } = Handlers.directory "dist" path
 
 getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe Credentials } } -> Aff TextHtml
 getArticle r@{ params: { uuid } } = do
@@ -83,7 +85,10 @@ getArticle r@{ params: { uuid } } = do
     Just _  -> Console.log "YES CREDS!"
     Nothing -> Console.log "NO CREDS!"
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid)
-  pure $ TextHtml $ mosaicoString article
+  case article of
+    Right (FullArticle a) -> pure $ TextHtml $ mosaicoString a
+    Right (PreviewArticle a) -> pure $ TextHtml $ mosaicoString a
+    Left _ -> pure $ TextHtml mempty
 
 getCredentials :: HTTP.Request -> Aff (Maybe Credentials)
 getCredentials req = do
@@ -96,8 +101,10 @@ getCredentials req = do
 
 getMostRead :: {} -> Aff TextHtml
 getMostRead _ = do
-  mostReadArticles <- Lettera.getMostRead
-  pure $ TextHtml $ DOM.renderToString $ mostRead mostReadArticles
+  frontpage <- Lettera.getFrontpage HBL
+  case frontpage of
+    Right fp -> pure $ TextHtml $ DOM.renderToString $ mostRead fp
+    Left err -> Aff.throwError $ error err
   where
     mostRead articles =
       DOM.ul
@@ -109,7 +116,7 @@ getMostRead _ = do
       DOM.li
         { children:
           [ DOM.a
-            { href: "/artikel/" <> UUID.toString a.uuid
+            { href: "/artikel/" <> a.uuid
             , children: [ DOM.text a.title ]
             }
           ]

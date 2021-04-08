@@ -2,9 +2,10 @@ module Mosaico.Article.Box where
 
 import Prelude
 
-import Effect.Console (log)
 import Data.Foldable (fold)
+import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
+import Effect.Console (log)
 import React.Basic.Classic (Component, JSX, createComponent, make, readState)
 import React.Basic.DOM as R
 import React.Basic.DOM.Events (capture_)
@@ -13,8 +14,8 @@ component :: Component Props
 component = createComponent "Box"
 
 type Props =
-  { title :: Nullable String
-  , headline :: Nullable String
+  { title :: Maybe String
+  , headline :: Maybe String
   , content :: Array String
   , brand :: String
   }
@@ -26,8 +27,8 @@ box = make component
       R.div
       { className: "ksf-article--boxinfo genericBox genericBox-border-" <> self.props.brand
       , children:
-        [ R.h3_ [ R.text (fold $ toMaybe self.props.headline) ]
-        , R.h2_ [ R.text (fold $ toMaybe self.props.title) ]
+        [ R.h3_ [ R.text (fold  self.props.headline) ]
+        , R.h2_ [ R.text (fold  self.props.title) ]
         , R.div
           { className: "boxinfo--body"
           , children: map (\p -> R.p { dangerouslySetInnerHTML: { __html: p } }) self.props.content
@@ -43,6 +44,6 @@ box = make component
               , children: [ R.span_ [ R.text "Vik ut" ] ]
               }
             ]
-          }  
+          }
       ] }
   }
