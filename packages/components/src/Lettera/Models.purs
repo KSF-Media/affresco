@@ -3,14 +3,18 @@ module Lettera.Models where
 import Prelude
 
 import Data.Generic.Rep (class Generic)
-import Data.Show.Generic (genericShow)
+import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
+import Data.Show.Generic (genericShow)
 import Data.UUID (UUID)
 
+data FullArticle
+  = FullArticle Article
+  | PreviewArticle Article
 
 type ArticleStub =
   { title    :: String
-  , uuid     :: UUID
+  , uuid     :: String
   , preamble :: String
   }
 
@@ -22,13 +26,13 @@ type Article =
   }
 
 type BodyElementJS =
-  { html     :: Nullable String
-  , image    :: Nullable Image
-  , box      :: Nullable BoxInfo
-  , headline :: Nullable String
-  , footnote :: Nullable String
-  , question :: Nullable String
-  , quote    :: Nullable String
+  { html     :: Maybe String
+  , image    :: Maybe Image
+  , box      :: Maybe BoxInfo
+  , headline :: Maybe String
+  , footnote :: Maybe String
+  , question :: Maybe String
+  , quote    :: Maybe String
   }
 
 data BodyElement
@@ -44,15 +48,15 @@ instance bodyElementShow :: Show BodyElement where show = genericShow
 
 
 type BoxInfo =
-  { title :: Nullable String
-  , headline :: Nullable String
+  { title :: Maybe String
+  , headline :: Maybe String
   , content :: Array String
   }
 
 type Image =
   { url       :: String
-  , caption   :: Nullable String
-  , thumb     :: Nullable String
-  , alignment :: Nullable String
-  , byline    :: Nullable String
+  , caption   :: Maybe String
+  , thumb     :: Maybe String
+  , alignment :: Maybe String
+  , byline    :: Maybe String
   }

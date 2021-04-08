@@ -53,16 +53,16 @@ instance recordToSumConstructor ::
   ( IsSymbol name
   , IsSymbol nameLower
   , SymbolFirstToLower name nameLower
-  , Row.Cons nameLower (Nullable a) tail row
+  , Row.Cons nameLower (Maybe a) tail row
   )
   => RecordToSum row (Constructor name (Argument a)) where
-  recordToSum x = case toMaybe field of
+  recordToSum x = case  field of
     Nothing -> Left ("Did not find field " <> show ctorLower <> " in the record")
     Just val -> Right (Constructor $ Argument val)
     where
       ctorLower = reflectSymbol (SProxy :: SProxy nameLower)
 
-      field :: Nullable a
+      field :: Maybe a
       field = Record.get (SProxy :: SProxy nameLower) x
 
 -- | A simple Sum with two leaf constructors
