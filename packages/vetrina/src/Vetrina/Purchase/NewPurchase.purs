@@ -65,7 +65,6 @@ type Props =
   , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
   , paymentMethods                :: Array PaymentMethod
   , onPaymentMethodChange         :: Maybe PaymentMethod -> Effect Unit
-  , minimalLayout                 :: Boolean
   }
 
 data FormInputField
@@ -161,8 +160,7 @@ render self =
        _ -> description self
   <> form self
   <> links self
-  -- Do not show product details if minimalLayout
-  <> if not self.props.minimalLayout && length self.props.products == 1
+  <> if length self.props.products == 1
      then productInformation self
      else mempty
 
@@ -172,10 +170,7 @@ title self =
         case self.state.accountStatus of
           ExistingAccount _    -> Just $ DOM.text "Du har redan ett KSF Media-konto"
           LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
-          NewAccount ->
-            if self.props.minimalLayout
-            then Nothing
-            else self.props.headline
+          NewAccount           -> self.props.headline
   in foldMap headline headlineText
   where
     headline child =
@@ -186,21 +181,14 @@ title self =
 
 description :: Self -> JSX
 description self =
-  -- Do not show logged in text if minimal layout activated
-  if self.props.minimalLayout && isLoggedInAccount self.state.accountStatus
-  then mempty
-  else
-    DOM.p
-      { className: "vetrina--description-text"
-      , children: Array.singleton $
-        case self.state.accountStatus of
-          NewAccount        -> mempty
-          ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
-          LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
-      }
-  where
-    isLoggedInAccount (LoggedInAccount _) = true
-    isLoggedInAccount _ = false
+  DOM.p
+    { className: "vetrina--description-text"
+    , children: Array.singleton $
+      case self.state.accountStatus of
+        NewAccount        -> mempty
+        ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+        LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
+    }
 
 form :: Self -> JSX
 form self = DOM.form $
@@ -210,15 +198,13 @@ form self = DOM.form $
     -- as we don't want to re-render it when `accountStatus` changes.
     -- This will keep cursor focus in the input field.
   , children:
-      -- Show dropdown if more than one product OR in any case if minimalLayout is enabled
-      [ if length self.props.products > 1 || self.props.minimalLayout
+      -- Show dropdown if more than one product
+      [ if length self.props.products > 1
         then productDropdown self.props.products
         else mempty
       , renderPaymentMethods self.props.paymentMethods
        -- Don't show the product selection if we are asking the user to login
-       -- or if on minimalLayout
-      , if not self.props.minimalLayout
-           && not isExistingAccount self.state.accountStatus
+      , if not isExistingAccount self.state.accountStatus
            || isNothing self.state.productSelection
         then foldMap _.description self.state.productSelection
         else mempty
@@ -348,13 +334,10 @@ newPurchaseLinks self =
 
 links :: Self -> JSX
 links self =
-  if self.props.minimalLayout
-  then mempty
-  else
-    case self.state.accountStatus of
-      NewAccount        -> mempty -- Login link shown elsewhere
-      ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
-      LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
+  case self.state.accountStatus of
+    NewAccount        -> mempty -- Login link shown elsewhere
+    ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
+    LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
   where
     linksDiv linksJsx =
       DOM.div
@@ -372,19 +355,17 @@ faqLink =
 
 loginLink :: Self -> JSX
 loginLink self =
-  if self.props.minimalLayout
-  then mempty
-  else DOM.span
-         { className: "vetrina--login-link"
-         , children:
-             [ DOM.text "Redan prenumerant? "
-             , DOM.span
-                 { className:"vetrina--login-callback"
-                 , children: [ DOM.text "Logga in för att fortsätta läsa" ]
-                 , onClick: handler_ self.props.onLogin
-                 }
-             ]
-         }
+  DOM.span
+    { className: "vetrina--login-link"
+    , children:
+      [ DOM.text "Redan prenumerant? "
+      , DOM.span
+        { className:"vetrina--login-callback"
+        , children: [ DOM.text "Logga in för att fortsätta läsa" ]
+        , onClick: handler_ self.props.onLogin
+        }
+      ]
+    }
 
 subscribePagesLink :: Array JSX
 subscribePagesLink =
@@ -436,7 +417,7 @@ emailInput self accountStatus =
   in DOM.div
      { className: "vetrina--input-wrapper vetrina--with-label"
      , children:
-         [ if accountStatus == NewAccount && not self.props.minimalLayout
+         [ if accountStatus == NewAccount
            then DOM.div
                   { className: "vetrina--step vetrina--create-account"
                   , children:

@@ -21,7 +21,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
@@ -38,7 +37,6 @@ import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Tracking as Tracking
-import Unsafe.Coerce (unsafeCoerce)
 import Vetrina.Purchase.AccountForm (mkAccountForm)
 import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.Completed as Purchase.Completed
@@ -61,7 +59,6 @@ type JSProps =
   , headline           :: Nullable JSX
   , paper              :: Nullable String
   , paymentMethods     :: Nullable (Array String)
-  , minimalLayout      :: Nullable Boolean
   }
 
 type Props =
@@ -74,9 +71,6 @@ type Props =
   , headline           :: Maybe JSX
   , paper              :: Maybe Paper
   , paymentMethods     :: Array User.PaymentMethod
-  -- If true, will show texts, links etc.
-  -- FIXME: This is nothing but a band-aid and the entire thing should be redesigned
-  , minimalLayout      :: Boolean
   }
 
 fromJSProps :: JSProps -> Props
@@ -98,7 +92,6 @@ fromJSProps jsProps =
   , headline: toMaybe jsProps.headline
   , paper: Paper.fromString =<< toMaybe jsProps.paper
   , paymentMethods: foldMap (mapMaybe toPaymentMethod) $ toMaybe jsProps.paymentMethods
-  , minimalLayout: fromMaybe false $ toMaybe jsProps.minimalLayout
   }
 
 type State =
@@ -306,7 +299,6 @@ render self = vetrinaContainer self $
         , paymentMethod: self.state.paymentMethod
         , paymentMethods: self.state.paymentMethods
         , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
-        , minimalLayout: self.props.minimalLayout
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
@@ -329,7 +321,6 @@ render self = vetrinaContainer self $
                      -- The user is logged in the current session though, so it's recoverable.
                      self.state.logger.error $ Error.orderError $ "Failed to update user: " <> show userError
                      self.setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
-                , minimalLayout: self.props.minimalLayout
                 }
             -- Can't do much without a user
             Nothing -> self.props.unexpectedError
@@ -348,7 +339,6 @@ render self = vetrinaContainer self $
             , paper: self.props.paper
             , paymentMethods: self.state.paymentMethods
             , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
-            , minimalLayout: self.props.minimalLayout
             }
         ServerError         -> Purchase.Error.error { onRetry }
         UnexpectedError _   -> Purchase.Error.error { onRetry }
@@ -384,7 +374,6 @@ vetrinaContainer self@{ state: { purchaseState } } child =
                            PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
                            otherwise                          -> mempty
-      minimalClass = if self.props.minimalLayout then "vetrina--minimal-layout" else mempty
   in
     DOM.div
       { className:
@@ -393,7 +382,7 @@ vetrinaContainer self@{ state: { purchaseState } } child =
           -- Yeah this is not that good...
           -- TODO: Make a saner way of `minimalLayout`
           $ take 2
-          $ filter (not String.null) [ "vetrina--container", errorClass, minimalClass ]
+          $ filter (not String.null) [ "vetrina--container", errorClass ]
       , children: [ child ]
       }
 
