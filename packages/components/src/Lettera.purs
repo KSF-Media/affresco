@@ -23,9 +23,6 @@ import Lettera.Models (Article, ArticleStub, FullArticle(..))
 import OpenApiClient (Api, callApi)
 import Simple.JSON as JSON
 
-foreign import articlesApi :: Api
-foreign import listsApi :: Api
-
 letteraArticleUrl :: String
 letteraArticleUrl = "https://lettera.api.ksfmedia.fi/v3/article/"
 
@@ -33,8 +30,8 @@ letteraFrontPageUrl :: String
 letteraFrontPageUrl = "https://lettera.api.ksfmedia.fi/v3/frontpage"
 
 -- TODO: Instead of String, use some sort of LetteraError or something
-getArticle' :: UUID -> Aff (Either String FullArticle)
-getArticle' articleId = do
+getArticle :: UUID -> Aff (Either String FullArticle)
+getArticle articleId = do
   -- TODO: Add authentication
   articleResponse <- AX.get ResponseFormat.json (letteraArticleUrl <> (toString articleId))
   case articleResponse of
@@ -69,10 +66,6 @@ getArticle' articleId = do
             # map PreviewArticle
             # note "preview article parsing error" >>> pure
       | otherwise -> pure $ Left "Unexpected HTTP status"
-
-getArticle :: UUID -> Aff Article
-getArticle articleId =
-  callApi articlesApi "articleUuidGet" [ unsafeToForeign articleId ] {}
 
 parseArticle :: String -> (Maybe Article)
 parseArticle a =

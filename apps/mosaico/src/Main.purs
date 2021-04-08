@@ -14,7 +14,7 @@ import Effect.Class.Console as Console
 import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (Article, BodyElement(..))
+import Lettera.Models (Article, BodyElement(..), FullArticle(..))
 import Mosaico.Article as Article
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
@@ -85,7 +85,10 @@ getArticle r@{ params: { uuid } } = do
     Just _  -> Console.log "YES CREDS!"
     Nothing -> Console.log "NO CREDS!"
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid)
-  pure $ TextHtml $ mosaicoString article
+  case article of
+    Right (FullArticle a) -> pure $ TextHtml $ mosaicoString a
+    Right (PreviewArticle a) -> pure $ TextHtml $ mosaicoString a
+    Left _ -> pure $ TextHtml mempty
 
 getCredentials :: HTTP.Request -> Aff (Maybe Credentials)
 getCredentials req = do

@@ -64,7 +64,7 @@ app = do
   where
     fetchArticle :: ((State -> State) -> Effect Unit) -> Maybe String -> Aff Unit
     fetchArticle setState (Just articleId) = do
-      article <- Lettera.getArticle' (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+      article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
       case article of
         Right a -> liftEffect $ setState \s -> s { article = Just a, articleId = Just articleId }
         Left e -> liftEffect $ Console.log $ "NO ARTICLE WHAT" <> e
