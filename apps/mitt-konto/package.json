@@ -12,6 +12,9 @@
     "react-dom": ">=16.12",
     "react-router-dom": "^5.2.0"
   },
+  "devDependencies": {
+    "puppeteer": "^8.0.0"
+  },
   "scripts": {
     "start": "parcel index.html -p 8000",
     "build": "spago build && parcel build index.html --no-cache --public-url ./ && cp xd_receiver.html _redirects ./dist"

@@ -3,6 +3,7 @@
   [ "aff"
   , "aff-promise"
   , "affresco-components"
+  , "affresco-test"
   , "affresco-user"
   , "affresco-vetrina"
   , "console"

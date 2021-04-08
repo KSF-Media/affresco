@@ -5,6 +5,8 @@ module Puppeteer
 
 import Prelude
 
+import Data.Array (replicate)
+import Data.Foldable (sequence_)
 import Foreign (unsafeFromForeign)
 import Toppokki (class HasFrame, Browser, ElementHandle, Page, URL(..), Selector(..), goto, newPage, waitForNavigation, networkIdle2, close, click, contentFrame, select)
 import Toppokki as Chrome
@@ -25,6 +27,11 @@ waitFor selector frame = Chrome.waitForSelector selector { visible: true } frame
 
 type_ :: forall page. HasFrame page => Selector -> String -> page -> Aff Unit
 type_ selector text page = Chrome.keyboardType selector text { delay: 10.0 } page
+
+typeDelete_ :: Selector -> Int -> Page -> Aff Unit
+typeDelete_ selector n page = do
+  Chrome.focus selector page
+  sequence_ $ replicate n $ (Chrome.keyboardPress (Chrome.KeyboardKey "Backspace") { delay: 10 } page)
 
 getContent :: Selector -> Page -> Aff String
 getContent selector page = do
