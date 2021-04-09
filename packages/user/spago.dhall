@@ -21,6 +21,7 @@
     , "now"
     , "affresco-components"
     , "uuid"
+    , "affjax"
     ]
 , packages =
     ../../packages.dhall
