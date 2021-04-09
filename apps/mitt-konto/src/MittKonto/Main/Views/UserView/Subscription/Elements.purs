@@ -128,7 +128,8 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
 
     paperOnlyActions =
       [ if isSubscriptionPausable sub then pauseIcon else mempty
-      , if maybe true Array.null self.state.pausedSubscriptions
+      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate))
+           self.state.pausedSubscriptions
           then mempty
           else removeSubscriptionPauses
       , if isSubscriptionTemporaryAddressChangable sub then temporaryAddressChangeIcon else mempty
