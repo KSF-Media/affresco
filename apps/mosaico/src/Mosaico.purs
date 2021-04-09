@@ -2,13 +2,13 @@ module Mosaico where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Routing (match)
+import Control.Alt ((<|>))
+import Data.Array (null)
+import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String (Pattern(..))
-import Data.String as String
 import Data.UUID as UUID
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -16,86 +16,102 @@ import Effect.Exception (error)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..))
+import Lettera.Models (ArticleStub, FullArticle(..))
 import Mosaico.Article as Article
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
-import React.Basic.Hooks.Aff (useAff)
-import Web.HTML (window) as Web
-import Web.HTML.Location (search, setSearch) as Web
-import Web.HTML.Window (location) as Web
+import Routing.Match (Match, lit, root, str)
+import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
+import Simple.JSON (write)
+
+data MosaicoPage
+  = Frontpage -- Should take Paper as parameter
+  | ArticlePage String
+derive instance eqR :: Eq MosaicoPage
 
 type State =
   { article :: Maybe FullArticle
-  , articleId ::Maybe String
-  , setSearch :: String -> Effect Unit
   , articleList :: Array ArticleStub
+  , route :: MosaicoPage
   }
+
+frontpageRoute :: Match MosaicoPage
+frontpageRoute = Frontpage <$ root
+
+articleRoute :: Match MosaicoPage
+articleRoute = ArticlePage <$> (lit "" *> lit "artikel" *> str)
+
+routes :: Match MosaicoPage
+routes =
+  articleRoute <|> frontpageRoute
 
 app :: Component {}
 app = do
-  location <- Web.location =<< Web.window
-  queryString <- Web.search location
-  let articleId =
-        case String.split (Pattern "?article=") queryString of
-          ["", articleId'] -> Just articleId'
-          _ -> Nothing
+  nav <- makeInterface
+  locationState <- nav.locationState
+  let initialRoute = either (const $ Frontpage) identity $ match routes locationState.path
+
+  let routeListener :: ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
+      routeListener setState _oldLoc location = do
+        case match routes location.pathname of
+          Right path -> setState \s -> s { route = path }
+          Left err   -> pure unit
+
   component "Mosaico" \_ -> React.do
     let initialState =
           { article: Nothing
-          , articleId
-          , setSearch: \newQueryString -> Web.setSearch newQueryString location
           , articleList: []
+          , route: initialRoute
           }
     state /\ setState <- useState initialState
-    useEffectOnce $ do
-      Aff.launchAff_ do
-        frontPage <- Lettera.getFrontpage HBL
-        case frontPage of
-          Right fp -> liftEffect $ setState \oldState -> oldState { articleList = fp }
-          Left err -> Aff.throwError $ error err
+
+    -- Listen for route changes and set state accordingly
+    useEffectOnce $ locations (routeListener setState) nav
+    useEffect state.route do
+      case state.route of
+        Frontpage -> do
+          Console.log "front page change"
+          if null state.articleList
+          then Aff.launchAff_ do
+            frontPage <- Lettera.getFrontpage HBL
+            case frontPage of
+              Right fp -> liftEffect $ setState \s -> s { articleList = fp, article = Nothing }
+              Left err -> Aff.throwError $ error err
+          -- Set article to Nothing to prevent flickering of old article
+          else liftEffect $ setState \s -> s { article = Nothing }
+        ArticlePage articleId ->
+          Aff.launchAff_ do
+            article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+            liftEffect case article of
+              Right a -> setState \s -> s { article = Just a }
+              Left e  -> Console.log $ "errer"
       pure mempty
 
-    useAff state.articleId $ fetchArticle setState articleId
-    pure $ render state
-  where
-    fetchArticle :: ((State -> State) -> Effect Unit) -> Maybe String -> Aff Unit
-    fetchArticle setState (Just articleId) = do
-      article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-      case article of
-        Right a -> liftEffect $ setState \s -> s { article = Just a, articleId = Just articleId }
-        Left e -> liftEffect $ Console.log $ "NO ARTICLE WHAT" <> e
-    fetchArticle _ Nothing = pure unit
+    pure $ render state nav
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: State -> JSX
-render state =
+render :: State -> PushStateInterface -> JSX
+render state router =
   DOM.div
   { className: "mosaico grid"
   , children:
     [ DOM.header
       { className: "mosaico--header"
       , children: [ DOM.text "header" ]
+      , onClick: handler_ $ router.pushState (write {}) "/"
       }
-      , case state.article of
-          Just article
-            | FullArticle a <- article ->
-              Article.article
-                { article: a
-                , brand: "hbl"
-                }
-            -- TODO: Add paywall text etc.
-            | PreviewArticle a <- article ->
-              Article.article
-                { article: a
-                , brand: "hbl"
-                }
-          _ -> articleList state
+      , case state.route of
+          ArticlePage _
+            | Just article <- state.article
+            -> renderArticle article
+            | otherwise
+            -> articleList state router
+          Frontpage -> articleList state router
     , DOM.footer
       { className: "mosaico--footer"
       , children: [ DOM.text "footer" ]
@@ -105,8 +121,13 @@ render state =
     ]
   }
 
-articleList :: State -> JSX
-articleList state =
+-- TODO: Add paywall etc.
+renderArticle :: FullArticle -> JSX
+renderArticle (FullArticle a)    = Article.article { article: a, brand: "hbl" }
+renderArticle (PreviewArticle a) = Article.article { article: a, brand: "hbl" }
+
+articleList :: State -> PushStateInterface -> JSX
+articleList state router =
   DOM.div
     { className: "mosaico--article-list"
     , children: map renderListArticle state.articleList
@@ -118,8 +139,7 @@ articleList state =
         { className: "mosaico--list-article"
         , children:
             [ DOM.div
-                -- NOTE: will invoke page reload
-                { onClick: handler_ $ state.setSearch $ "?article=" <> a.uuid
+                { onClick: handler_ $ router.pushState (write {}) $ "/artikel/" <> a.uuid
                 , children: [ DOM.text a.title ]
                 }
             ]

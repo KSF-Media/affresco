@@ -25,6 +25,7 @@ You can edit this file as you like.
   , "react-basic-dom"
   , "simple-json"
   , "uuid"
+  , "routing"
   ]
 , packages = ../../packages.dhall
 , sources = [ "src/**/*.purs" ]
