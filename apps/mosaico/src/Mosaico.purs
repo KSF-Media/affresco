@@ -73,7 +73,6 @@ app = do
     useEffect state.route do
       case state.route of
         Frontpage -> do
-          Console.log "front page change"
           if null state.articleList
           then Aff.launchAff_ do
             frontPage <- Lettera.getFrontpage HBL
