@@ -4,13 +4,12 @@
         right: 15px;
     }
     border: {
-        top: solid 5px #000;
-        bottom: solid 2px #000;
+        top-style: solid;
+        top-width: 5px;
+        bottom-style: solid;
+        bottom-width: 2px;
     }
     background: $grey-light;
-    &.brand-hbl { border-color: $hbl-orange }
-    &.brand-vn { border-color: $vn-red }
-    &.brand-on { border-color: $on-blue }
     header {
         padding: 15px;
         border-bottom: solid 1px $hairline-color;

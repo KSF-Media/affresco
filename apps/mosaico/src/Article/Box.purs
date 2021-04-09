@@ -25,7 +25,7 @@ box = make component
   { initialState: { expanded: false }
   , render: \self ->
       R.div
-      { className: "ksf-article--boxinfo genericBox genericBox-border-" <> self.props.brand
+      { className: "mosaico--article--boxinfo border-color-" <> self.props.brand
       , children:
         [ R.h3_ [ R.text (fold  self.props.headline) ]
         , R.h2_ [ R.text (fold  self.props.title) ]
@@ -37,10 +37,8 @@ box = make component
           -- { onClick: self.setState { expanded: not self.state.expanded }
           { className: "expand"
           , children:
-            [ R.div { className: "expandOpacity" }
-            , R.div { className: "expandOpacity2" }
-            , R.div
-              { className: "brandColor-" <> self.props.brand
+            [ R.div
+              { className: "color-" <> self.props.brand
               , children: [ R.span_ [ R.text "Vik ut" ] ]
               }
             ]

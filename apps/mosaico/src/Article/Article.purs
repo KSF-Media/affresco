@@ -56,7 +56,7 @@ render { props, state } =
     { className: "mosaico--article"
     , children: [
       DOM.div
-        { className: "mosaico--tag brand-" <> props.brand
+        { className: "mosaico--tag color-" <> props.brand
         , children: [ DOM.text $ fromMaybe "" (head props.article.tags) ]
         }
       , DOM.h1
