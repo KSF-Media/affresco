@@ -236,35 +236,38 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     addressInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Gatuadress"
         , name: "address"
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
         , value: self.state.streetAddress
         , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
+        , disabled: isJust self.props.editing
         }
 
     zipInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Postnummer"
         , name: "zipCode"
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
         , value: self.state.zipCode
         , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
+        , disabled: isJust self.props.editing
         }
 
     cityInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Stad"
         , name: "city"
         , onChange: \newCity -> self.setState _ { cityName = newCity }
         , value: self.state.cityName
         , validationError: Nothing
         , label: Just "Stad"
+        , disabled: isJust self.props.editing
         }
 
     countryInput =
@@ -278,13 +281,14 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     temporaryNameInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Tillfällig namnändring eller C/O"
         , name: "temporaryName"
         , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
         , value: self.state.temporaryName
         , validationError: Nothing
         , label: Just "Tillfällig namnändring eller C/O"
+        , disabled: isJust self.props.editing
         }
 
     submitFormButton =
