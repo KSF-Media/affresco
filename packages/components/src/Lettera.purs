@@ -15,12 +15,11 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Foreign (MultipleErrors, renderForeignError, unsafeToForeign)
+import Foreign (MultipleErrors, renderForeignError)
 import Foreign.Object (lookup)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Models (Article, ArticleStub, FullArticle(..))
-import OpenApiClient (Api, callApi)
 import Simple.JSON as JSON
 
 letteraArticleUrl :: String
