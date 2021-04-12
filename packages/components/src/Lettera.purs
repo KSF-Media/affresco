@@ -4,7 +4,7 @@ import Prelude
 
 import Affjax as AX
 import Affjax.ResponseFormat as ResponseFormat
-import Affjax.StatusCode (StatusCode (..))
+import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (stringify, toArray, toObject)
 import Data.Array (foldM, snoc)
 import Data.Either (Either(..), note)
@@ -12,9 +12,10 @@ import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse_)
 import Data.UUID (UUID, toString)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, throwError)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Exception (error)
 import Foreign (MultipleErrors, renderForeignError)
 import Foreign.Object (lookup)
 import KSF.Paper (Paper)
@@ -27,6 +28,14 @@ letteraArticleUrl = "https://lettera.api.ksfmedia.fi/v3/article/"
 
 letteraFrontPageUrl :: String
 letteraFrontPageUrl = "https://lettera.api.ksfmedia.fi/v3/frontpage"
+
+getArticle' :: UUID -> Aff Article
+getArticle' u = do
+  getArticle u >>= \a ->
+    case a of
+      Right (FullArticle a') -> pure  a'
+      Right (PreviewArticle a') -> pure a'
+      Left err -> throwError $ error $ "Failed to get article: " <> err
 
 -- TODO: Instead of String, use some sort of LetteraError or something
 getArticle :: UUID -> Aff (Either String FullArticle)

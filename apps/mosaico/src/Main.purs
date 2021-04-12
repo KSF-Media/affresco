@@ -156,10 +156,10 @@ mosaico a =
                 { className: "mosaico--header"
                 , children: [ DOM.text "header" ]
                 }
-              , Article.article
-                { article: a
-                , brand: "hbl"
-                }
+              -- , Article.article
+              --   { article: a
+              --   , brand: "hbl"
+              --   }
               , DOM.footer
                 { className: "mosaico--footer"
                 , children: [ DOM.text "footer" ]

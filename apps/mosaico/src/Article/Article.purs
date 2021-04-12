@@ -2,28 +2,36 @@ module Mosaico.Article where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Array (head)
 import Data.Either (Either(..))
 import Data.Foldable (fold)
-import Data.Show.Generic (genericShow)
-import Data.Maybe (fromMaybe)
-import Data.Nullable (Nullable, toMaybe)
-import Lettera.Models (Article, BodyElement(..), BoxInfo, Image)
 import Data.Generic.Rep.RecordToSum as Record
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Nullable (Nullable, toMaybe)
+import Data.Show.Generic (genericShow)
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Lettera.Models (Article, BodyElement(..), BoxInfo, Image, ArticleStub)
+import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import Mosaico.Article.Box (box)
 
 type Self = React.Self Props State
 
 type Props =
-  { article :: Article
-  , brand :: String
+  { brand :: String
+  , affArticle :: Aff Article
+  , articleStub :: Maybe ArticleStub
   }
 
 type State =
-  { body :: Array (Either String BodyElement) }
+  { body :: Array (Either String BodyElement)
+  , article :: Maybe Article
+  }
 
 component :: React.Component Props
 component = React.createComponent "Article"
@@ -31,39 +39,58 @@ component = React.createComponent "Article"
 article :: Props -> JSX
 article props = React.make
   component
-  { initialState: { body: map Record.toSum props.article.body }, render }
+--  { initialState: { body: map Record.toSum props.article.body }, render }
+  { initialState: { body: [], article: Nothing }, render, didMount }
   props
+
+didMount :: Self -> Effect Unit
+didMount self = do
+  Aff.launchAff_ do
+    a <- self.props.affArticle
+    liftEffect $ self.setState \s -> s { article = Just a,  body = map Record.toSum a.body }
 
 renderImage :: Image -> JSX
 renderImage img =
   DOM.div
     { className: "mosaico--article--image"
-    , children: [
-      DOM.img
-        { src: img.url
-        , title: caption }
-      , DOM.div { className: "caption", children:
-        [ DOM.text caption
-        , DOM.span { className: "byline", children: [ DOM.text byline ] } ] }
-    ] }
-      where
-        caption = fold $ img.caption
-        byline = fold $ img.byline
+    , children:
+        [ DOM.img
+            { src: img.url
+            , title: caption
+            }
+        , DOM.div
+            { className: "caption"
+            , children:
+                [ DOM.text caption
+                , DOM.span
+                    { className: "byline"
+                    , children: [ DOM.text byline ]
+                    }
+                ]
+            }
+      ]
+    }
+  where
+    caption = fold $ img.caption
+    byline = fold $ img.byline
 
 render :: Self -> JSX
 render { props, state } =
-  DOM.div
+  let title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title state.article
+      tags = fromMaybe mempty $  map _.tags props.articleStub <|> map _.tags state.article
+      mainImage = fromMaybe mempty $ (_.listImage =<< props.articleStub) <|> map _.mainImage state.article
+  in DOM.div
     { className: "mosaico--article"
     , children: [
       DOM.div
         { className: "mosaico--tag color-" <> props.brand
-        , children: [ DOM.text $ fromMaybe "" (head props.article.tags) ]
+        , children: [ DOM.text $ fromMaybe "" (head tags) ]
         }
       , DOM.h1
         { className: "mosaico--article--title title"
-        , children: [ DOM.text props.article.title ]
+        , children: [ DOM.text title ]
         }
-      , renderImage props.article.mainImage
+      , renderImage mainImage
       , DOM.div
         { className: "mosaico--article--body"
         , children: map renderElement state.body

@@ -2,13 +2,13 @@ module Mosaico where
 
 import Prelude
 
-import Routing (match)
 import Control.Alt ((<|>))
 import Data.Array (null)
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID as UUID
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -16,16 +16,19 @@ import Effect.Exception (error)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, FullArticle(..))
+import Lettera.Models (ArticleStub, FullArticle(..), Article)
 import Mosaico.Article as Article
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
+import Routing (match)
 import Routing.Match (Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
+import Web.HTML as Web
+import Web.HTML.Window as Web
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -35,8 +38,12 @@ derive instance eqR :: Eq MosaicoPage
 type State =
   { article :: Maybe FullArticle
   , articleList :: Array ArticleStub
+  , affArticle :: Maybe (Aff Article)
   , route :: MosaicoPage
+  , clickedArticle :: Maybe ArticleStub
   }
+
+type SetState = (State -> State) -> Effect Unit
 
 frontpageRoute :: Match MosaicoPage
 frontpageRoute = Frontpage <$ root
@@ -64,7 +71,9 @@ app = do
     let initialState =
           { article: Nothing
           , articleList: []
+          , affArticle: Nothing
           , route: initialRoute
+          , clickedArticle: Nothing
           }
     state /\ setState <- useState initialState
 
@@ -81,21 +90,18 @@ app = do
               Left err -> Aff.throwError $ error err
           -- Set article to Nothing to prevent flickering of old article
           else liftEffect $ setState \s -> s { article = Nothing }
-        ArticlePage articleId ->
-          Aff.launchAff_ do
-            article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-            liftEffect case article of
-              Right a -> setState \s -> s { article = Just a }
-              Left e  -> Console.log $ "errer"
+        ArticlePage articleId -> do
+          let a = Lettera.getArticle' (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+          setState \s -> s { affArticle = Just a }
       pure mempty
 
-    pure $ render state nav
+    pure $ render setState state nav
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: State -> PushStateInterface -> JSX
-render state router =
+render :: SetState -> State -> PushStateInterface -> JSX
+render setState state router =
   DOM.div
   { className: "mosaico grid"
   , children:
@@ -106,11 +112,11 @@ render state router =
       }
       , case state.route of
           ArticlePage _
-            | Just article <- state.article
-            -> renderArticle article
+            | Just affArticle <- state.affArticle
+            -> renderArticle affArticle state.clickedArticle
             | otherwise
-            -> articleList state router
-          Frontpage -> articleList state router
+            -> articleList state setState router
+          Frontpage -> articleList state setState router
     , DOM.footer
       { className: "mosaico--footer"
       , children: [ DOM.text "footer" ]
@@ -120,13 +126,10 @@ render state router =
     ]
   }
 
--- TODO: Add paywall etc.
-renderArticle :: FullArticle -> JSX
-renderArticle (FullArticle a)    = Article.article { article: a, brand: "hbl" }
-renderArticle (PreviewArticle a) = Article.article { article: a, brand: "hbl" }
+renderArticle affA aStub = Article.article {affArticle: affA, brand: "hbl", articleStub: aStub}
 
-articleList :: State -> PushStateInterface -> JSX
-articleList state router =
+articleList :: State -> SetState -> PushStateInterface -> JSX
+articleList state setState router =
   DOM.div
     { className: "mosaico--article-list"
     , children: map renderListArticle state.articleList
@@ -138,8 +141,14 @@ articleList state router =
         { className: "mosaico--list-article"
         , children:
             [ DOM.div
-                { onClick: handler_ $ router.pushState (write {}) $ "/artikel/" <> a.uuid
-                , children: [ DOM.text a.title ]
+                { onClick: handler_ do
+                     setState \s -> s { clickedArticle = Just a }
+                     window <- Web.window
+                     _ <- Web.scroll 0 0 window
+                     router.pushState (write {}) $ "/artikel/" <> a.uuid
+                , children:
+                    [ DOM.img { src: fromMaybe "" $ map _.url a.listImage }
+                      , DOM.text a.title ]
                 }
             ]
         }

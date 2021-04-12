@@ -16,6 +16,8 @@ type ArticleStub =
   { title    :: String
   , uuid     :: String
   , preamble :: String
+  , listImage :: Maybe Image
+  , tags :: Array String
   }
 
 type Article =
