@@ -8,6 +8,7 @@ import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Effect (Effect)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -52,7 +53,7 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
                , description: [ DOM.text package.name ]
                }
              , { term: "Pren.nr:"
-               , description: [ DOM.text $ show sub.subsno ]
+               , description: [ DOM.text $ Subsno.toString sub.subsno ]
                }
              , { term: "Status:"
                , description:

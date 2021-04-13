@@ -20,6 +20,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Subscription (Subsno)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
@@ -54,7 +55,7 @@ type State =
 type Self = React.Self Props State
 
 type Props =
-  { subsno        :: Int
+  { subsno        :: Subsno
   , cusno         :: Cusno
   , pastAddresses :: Array AddressChange
   , nextDelivery  :: Maybe Date
@@ -323,10 +324,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
             case _ of
               Right sub -> liftEffect do
                 self.props.onSuccess sub
-                Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "success"
+                Tracking.tempAddressChange self.props.cusno self.props.subsno startDate' endDate' "success"
               Left invalidDateInput -> liftEffect do
                 self.props.onError invalidDateInput
-                Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "error: invalidDateInput"
+                Tracking.tempAddressChange self.props.cusno self.props.subsno startDate' endDate' "error: invalidDateInput"
         makeTemporaryAddressChange _ = Console.error "Form should be valid, however it looks like it's not"
     submitForm (Just oldStartDate) (Just startDate') endDate' (Just _) _ = do
       self.props.onLoading
@@ -334,10 +335,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         case _ of
           Right sub -> liftEffect do
             self.props.onSuccess sub
-            Tracking.editTempAddressChange self.props.cusno (show self.props.subsno) oldStartDate startDate' endDate' "success"
+            Tracking.editTempAddressChange self.props.cusno self.props.subsno oldStartDate startDate' endDate' "success"
           Left invalidDateInput -> liftEffect do
             self.props.onError invalidDateInput
-            Tracking.editTempAddressChange self.props.cusno (show self.props.subsno) oldStartDate startDate' endDate' "error: invalidDateInput"
+            Tracking.editTempAddressChange self.props.cusno self.props.subsno oldStartDate startDate' endDate' "error: invalidDateInput"
     submitForm _ _ _ _ _ = Console.error "Temporary address change dates were not defined."
 
 type DateInputField =

@@ -9,6 +9,7 @@ import Foreign (Foreign)
 import Prelude (Unit)
 import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, EffectFn6, EffectFn7, runEffectFn2, runEffectFn3, runEffectFn5, runEffectFn6, runEffectFn7)
 import KSF.Helpers as Helpers
+import KSF.Api.Subscription (Subsno)
 import KSF.User.Cusno
 
 foreign import login_ :: EffectFn3 (Nullable Cusno) LoginMethod Result Unit
@@ -19,13 +20,12 @@ foreign import pauseSubscription_ :: EffectFn5 Cusno Subsno StartDateString EndD
 foreign import editSubscriptionPause_ :: EffectFn7 Cusno Subsno StartDateString EndDateString StartDateString EndDateString Result Unit
 foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
 foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
-foreign import updateCreditCard_ :: EffectFn5 Cusno Subsno CreditCard CreditCardRegisterNumber Result Unit
+foreign import updateCreditCard_ :: EffectFn5 Cusno (Nullable Subsno) CreditCard CreditCardRegisterNumber Result Unit
 foreign import changeName_ :: EffectFn2 Cusno Result Unit
 foreign import changeEmail_ :: EffectFn2 Cusno Result Unit
 foreign import changeAddress_ :: EffectFn2 Cusno Result Unit
 foreign import deletePendingAddressChanges_ :: EffectFn2 Cusno Result Unit
 
-type Subsno = String
 type DateString = String
 type Claim = String
 type StartDate = Date
@@ -80,9 +80,9 @@ deleteTempAddressChange cusno subsno startDate endDate result =
   let endDateString = maybe "indefinite" Helpers.formatDate endDate
   in runEffectFn5 deleteTempAddressChange_ cusno subsno (Helpers.formatDate startDate) endDateString result
 
-updateCreditCard :: Cusno -> Subsno -> CreditCard -> CreditCardRegisterNumber -> Result -> Effect Unit
+updateCreditCard :: Cusno -> Maybe Subsno -> CreditCard -> CreditCardRegisterNumber -> Result -> Effect Unit
 updateCreditCard cusno subsno oldCreditCard registerNumber result =
-  runEffectFn5 updateCreditCard_ cusno subsno oldCreditCard registerNumber result
+  runEffectFn5 updateCreditCard_ cusno (toNullable subsno) oldCreditCard registerNumber result
 
 changeName :: Cusno -> Result -> Effect Unit
 changeName = runEffectFn2 changeName_

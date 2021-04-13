@@ -5,7 +5,9 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
+import Data.Int as Int
 import Data.JSDate (JSDate)
+import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
 import Foreign (Foreign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
@@ -13,6 +15,17 @@ import KSF.Api.Package (Package, Campaign)
 import KSF.User.Cusno (Cusno)
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
+
+newtype Subsno = Subsno Int
+
+instance eqSubsno :: Eq Subsno where
+  eq (Subsno s1) (Subsno s2) = s1 == s2
+
+toString :: Subsno -> String
+toString (Subsno s) = show s
+
+fromString :: String -> Maybe Subsno
+fromString str = Subsno <$> Int.fromString str
 
 type DeliveryAddress =
   { streetAddress :: Nullable String
@@ -28,7 +41,7 @@ type PendingAddressChange =
   }
 
 type Subscription =
-  { subsno                :: Int
+  { subsno                :: Subsno
   , extno                 :: Int
   , cusno                 :: Cusno
   , paycusno              :: Cusno

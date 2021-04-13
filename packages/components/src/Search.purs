@@ -14,6 +14,7 @@ import Data.UUID (UUID, parseUUID, emptyUUID)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
@@ -194,7 +195,7 @@ search = do
         subscriptionRow sub =
           [ DOM.td
               { className: "search--result-subsno-column"
-              , children: [ DOM.text $ show sub.subsno ]
+              , children: [ DOM.text $ Subsno.toString sub.subsno ]
               }
           , DOM.td_ $ [ DOM.text $ sub.package.name ]
           , DOM.td_ $ [ DOM.text $ fromMaybe "ogiltig" $ formatDateDots <$> (toDate sub.dates.start) ]
