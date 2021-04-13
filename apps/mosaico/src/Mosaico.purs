@@ -148,7 +148,8 @@ articleList state setState router =
                      router.pushState (write {}) $ "/artikel/" <> a.uuid
                 , children:
                     [ DOM.img { src: fromMaybe "" $ map _.url a.listImage }
-                      , DOM.text a.title ]
+                    , DOM.text a.title
+                    ]
                 }
             ]
         }
