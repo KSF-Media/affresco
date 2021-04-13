@@ -15,6 +15,7 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -217,13 +218,13 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                 Left err -> liftEffect do
                   self.setState _
                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                  Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "error"
+                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
                 Right newSubscription -> liftEffect do
                   self.setState _
                     { pausedSubscriptions = toMaybe newSubscription.paused
                     , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
                     }
-                  Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "success"
+                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
         }
 
     temporaryAddressChangeIcon =
@@ -275,11 +276,11 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
                             pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
-                          Tracking.deleteTempAddressChange props.subscription.cusno (show props.subscription.subsno) startDate' endDate' "success"
+                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
                         Left _ -> liftEffect do
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                          Tracking.deleteTempAddressChange props.subscription.cusno (show props.subscription.subsno) startDate' endDate' "success"
+                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
                     _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
         }
 
@@ -310,7 +311,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
       DOM.div
         { className: "subscription--action-item"
         , children: [ Router.link
-                        { to: { pathname: "/prenumerationer/" <> show subsno <> "/kreditkort/uppdatera"
+                        { to: { pathname: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
                               , state: {}
                               }
                         , children: [ DOM.div

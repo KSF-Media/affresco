@@ -6,13 +6,15 @@ import Bottega (BottegaError, bottegaErrorMessage)
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..))
 import Data.Array (index)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
+import KSF.Api.Subscription (Subsno)
+import KSF.Api.Subscription (fromString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Choice (choice) as Choice
 import KSF.CreditCard.Register (register) as Register
@@ -186,10 +188,9 @@ pollRegister self@{ setState, props: { cusno, logger }, state } oldCreditCard (R
       subsno <- subsnoFromPathname
       Tracking.updateCreditCard cusno subsno (Tracking.readBottegaCreditCard oldCreditCard) (unRegisterNumber register.number) result
 
-    subsnoFromPathname :: Effect String
+    subsnoFromPathname :: Effect (Maybe Subsno)
     subsnoFromPathname = do
-      maybeSubsno <- flip index 2 <<< split (Pattern "/") <$> (pathname =<< location =<< window)
-      pure $ fromMaybe mempty maybeSubsno
+      (Subsno.fromString <=< flip index 2 <<< split (Pattern "/")) <$> (pathname =<< location =<< window)
 
     unRegisterNumber :: CreditCardRegisterNumber -> String
     unRegisterNumber (CreditCardRegisterNumber number) = number

@@ -14,6 +14,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Subscription (Subsno)
 import KSF.Helpers (formatDateDots)
 import KSF.Grid as Grid
 import KSF.User as User
@@ -29,7 +30,7 @@ import KSF.Tracking as Tracking
 type Self = React.Self Props State
 
 type Props =
-  { subsno    :: Int
+  { subsno    :: Subsno
   , cusno     :: Cusno
   , userUuid  :: UUID
   , oldStart  :: Maybe Date
@@ -207,10 +208,10 @@ submitForm { startDate: Just start, endDate: Just end, ongoing } props@{ userUui
       case _ of
         Right sub -> liftEffect do
           props.onSuccess sub
-          Tracking.editSubscriptionPause props.cusno (show subsno) oldStart oldEnd start end "success"
+          Tracking.editSubscriptionPause props.cusno subsno oldStart oldEnd start end "success"
         Left invalidDateInput -> liftEffect do
           props.onError invalidDateInput
-          Tracking.editSubscriptionPause props.cusno (show subsno) oldStart oldEnd start end "error: invalid date input"
+          Tracking.editSubscriptionPause props.cusno subsno oldStart oldEnd start end "error: invalid date input"
 
 submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
   props.onLoading
@@ -219,9 +220,9 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
       case _ of
         Right sub -> liftEffect do
           props.onSuccess sub
-          Tracking.pauseSubscription props.cusno (show subsno) start end "success"
+          Tracking.pauseSubscription props.cusno subsno start end "success"
         Left invalidDateInput -> liftEffect do
           props.onError invalidDateInput
-          Tracking.pauseSubscription props.cusno (show subsno) start end "error: invalid date input"
+          Tracking.pauseSubscription props.cusno subsno start end "error: invalid date input"
 
 submitForm _ _ = Console.error "Pause subscription dates were not defined."

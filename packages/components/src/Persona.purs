@@ -22,7 +22,7 @@ import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnu
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Error (ServerError)
-import KSF.Api.Subscription (Subscription, PendingAddressChange)
+import KSF.Api.Subscription (Subscription, PendingAddressChange, Subsno(..))
 import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
 import KSF.User.Cusno (Cusno)
@@ -124,8 +124,8 @@ registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
   callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
 
-pauseSubscription :: UUID -> Int -> Date -> Date -> UserAuth -> Aff Subscription
-pauseSubscription uuid subsno startDate endDate auth = do
+pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
+pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoPausePost"
@@ -135,8 +135,8 @@ pauseSubscription uuid subsno startDate endDate auth = do
     ]
     ( authHeaders uuid auth )
 
-editSubscriptionPause :: UUID -> Int -> Date -> Date -> Date -> Date -> UserAuth -> Aff Subscription
-editSubscriptionPause uuid subsno oldStartDate oldEndDate newStartDate newEndDate auth = do
+editSubscriptionPause :: UUID -> Subsno -> Date -> Date -> Date -> Date -> UserAuth -> Aff Subscription
+editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate newEndDate auth = do
   let oldStartDateISO = formatDate oldStartDate
       oldEndDateISO   = formatDate oldEndDate
       newStartDateISO = formatDate newStartDate
@@ -152,8 +152,8 @@ editSubscriptionPause uuid subsno oldStartDate oldEndDate newStartDate newEndDat
     ]
     ( authHeaders uuid auth )
 
-unpauseSubscription :: UUID -> Int -> UserAuth -> Aff Subscription
-unpauseSubscription uuid subsno auth = do
+unpauseSubscription :: UUID -> Subsno -> UserAuth -> Aff Subscription
+unpauseSubscription uuid (Subsno subsno) auth = do
   callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
     ([ unsafeToForeign uuid
      , unsafeToForeign subsno
@@ -162,7 +162,7 @@ unpauseSubscription uuid subsno auth = do
 
 temporaryAddressChange
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> Maybe Date
   -> String
@@ -171,7 +171,7 @@ temporaryAddressChange
   -> Maybe String
   -> UserAuth
   -> Aff Subscription
-temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode countryCode temporaryName auth = do
+temporaryAddressChange uuid (Subsno subsno) startDate endDate streetAddress zipCode countryCode temporaryName auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate <$> endDate
 
@@ -184,13 +184,13 @@ temporaryAddressChange uuid subsno startDate endDate streetAddress zipCode count
 
 editTemporaryAddressChange
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> Date
   -> Maybe Date
   -> UserAuth
   -> Aff Subscription
-editTemporaryAddressChange uuid subsno oldStartDate startDate endDate auth = do
+editTemporaryAddressChange uuid (Subsno subsno) oldStartDate startDate endDate auth = do
   let oldStartDateISO = formatDate oldStartDate
       startDateISO = formatDate startDate
       endDateISO = formatDate <$> endDate
@@ -204,12 +204,12 @@ editTemporaryAddressChange uuid subsno oldStartDate startDate endDate auth = do
 
 deleteTemporaryAddressChange
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> Maybe Date
   -> UserAuth
   -> Aff Subscription
-deleteTemporaryAddressChange uuid subsno startDate endDate auth = do
+deleteTemporaryAddressChange uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate <$> endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
@@ -221,12 +221,12 @@ deleteTemporaryAddressChange uuid subsno startDate endDate auth = do
 
 createDeliveryReclamation
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> DeliveryReclamationClaim
   -> UserAuth
   -> Aff DeliveryReclamation
-createDeliveryReclamation uuid subsno date claim auth = do
+createDeliveryReclamation uuid (Subsno subsno) date claim auth = do
   let dateISO = formatDate date
   let claim'  = show claim
   callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"

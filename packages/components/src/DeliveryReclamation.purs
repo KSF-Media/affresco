@@ -16,6 +16,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Subscription (Subsno)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.User as User
@@ -39,7 +40,7 @@ type State =
 type Self = React.Self Props State
 
 type Props =
-  { subsno    :: Int
+  { subsno    :: Subsno
   , cusno     :: Cusno
   , userUuid  :: UUID
   , onCancel  :: Effect Unit
@@ -148,10 +149,10 @@ render self@{ state: { publicationDate, claim, maxPublicationDate }} =
             case _ of
               Right recl -> liftEffect do
                 self.props.onSuccess recl
-                Tracking.reclamation self.props.cusno (show self.props.subsno) date'' (show claim'') "success"
+                Tracking.reclamation self.props.cusno self.props.subsno date'' (show claim'') "success"
               Left invalidDateInput -> liftEffect do
                 self.props.onError invalidDateInput
-                Tracking.reclamation self.props.cusno (show self.props.subsno) date'' (show claim'') "error: invalidDateInput"
+                Tracking.reclamation self.props.cusno self.props.subsno date'' (show claim'') "error: invalidDateInput"
     submitForm _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
     submitForm _ _ = Console.error "The entered information is incomplete."
 
