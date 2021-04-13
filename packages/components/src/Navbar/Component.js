@@ -1,4 +1,4 @@
 exports.icons = {
-  signOut: require('../../../../images/fa-sign-out.svg'),
-  phone: require('../../../../images/phone-symbol.svg')
+  signOut: require('url:../../../../images/fa-sign-out.svg'),
+  phone: require('url:../../../../images/phone-symbol.svg')
 };
