@@ -3,7 +3,7 @@ module Mosaico where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (null)
+import Data.Array (null, head)
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID as UUID
@@ -138,17 +138,30 @@ articleList state setState router =
     renderListArticle :: ArticleStub -> JSX
     renderListArticle a =
       DOM.div
-        { className: "mosaico--list-article"
+        { className: "mosaico--list-article list-article-default"
         , children:
-            [ DOM.div
+            [ DOM.a
                 { onClick: handler_ do
                      setState \s -> s { clickedArticle = Just a }
                      window <- Web.window
                      _ <- Web.scroll 0 0 window
                      router.pushState (write {}) $ "/artikel/" <> a.uuid
                 , children:
-                    [ DOM.img { src: fromMaybe "" $ map _.url a.listImage }
-                      , DOM.text a.title ]
+                    [ DOM.div
+                      { className: "list-article-image"
+                      , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
+                      }
+                    , DOM.div
+                      { className: "list-article-liftup"
+                      , children:
+                        [ DOM.div
+                          { className: "mosaico--tag color-hbl"
+                          , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
+                          }
+                        , DOM.h2_ [ DOM.text a.title ]
+                        ]
+                      }
+                    ]
                 }
             ]
         }
