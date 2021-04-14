@@ -23,7 +23,7 @@ type ArticleStub =
 type Article =
   { title     :: String
   , body      :: Array BodyElementJS
-  , mainImage :: Image
+  , mainImage :: Maybe Image
   , tags      :: Array String
   }
 

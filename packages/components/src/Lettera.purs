@@ -46,11 +46,12 @@ getArticle articleId = do
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
       | (StatusCode 200) <- response.status -> do
-        response.body
-          # stringify
-          # map FullArticle <<< parseArticle
-          # note "Article parsing error"
-          # pure
+        let s = stringify response.body
+        case JSON.readJSON s of
+          Right r -> pure $ Right $ FullArticle r
+          Left err -> do
+            liftEffect $ traverse_ (Console.log <<< show) err
+            pure $ Left "parsing error"
       | (StatusCode 403) <- response.status ->
           {- If we get a Forbidden response, that means the user is not entitled to read the article.
              However in this case, we have the article preview in the response,

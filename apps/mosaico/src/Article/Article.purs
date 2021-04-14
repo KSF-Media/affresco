@@ -5,16 +5,14 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array (head)
 import Data.Either (Either(..))
-import Data.Foldable (fold)
+import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Nullable (Nullable, toMaybe)
-import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Lettera.Models (Article, BodyElement(..), BoxInfo, Image, ArticleStub)
+import Lettera.Models (Article, BodyElement(..), Image, ArticleStub)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.Classic as React
@@ -39,7 +37,6 @@ component = React.createComponent "Article"
 article :: Props -> JSX
 article props = React.make
   component
---  { initialState: { body: map Record.toSum props.article.body }, render }
   { initialState: { body: [], article: Nothing }, render, didMount }
   props
 
@@ -78,7 +75,7 @@ render :: Self -> JSX
 render { props, state } =
   let title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title state.article
       tags = fromMaybe mempty $  map _.tags props.articleStub <|> map _.tags state.article
-      mainImage = fromMaybe mempty $ (_.listImage =<< props.articleStub) <|> map _.mainImage state.article
+      mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< state.article)
   in DOM.div
     { className: "mosaico--article"
     , children: [
@@ -90,7 +87,7 @@ render { props, state } =
         { className: "mosaico--article--title title"
         , children: [ DOM.text title ]
         }
-      , renderImage mainImage
+      , foldMap renderImage mainImage
       , DOM.div
         { className: "mosaico--article--body"
         , children: map renderElement state.body

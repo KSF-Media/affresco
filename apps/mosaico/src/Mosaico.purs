@@ -11,12 +11,11 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, FullArticle(..), Article)
+import Lettera.Models (ArticleStub, FullArticle, Article)
 import Mosaico.Article as Article
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -27,8 +26,8 @@ import Routing (match)
 import Routing.Match (Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
-import Web.HTML as Web
-import Web.HTML.Window as Web
+import Web.HTML (window) as Web
+import Web.HTML.Window (scroll) as Web
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -90,9 +89,7 @@ app = do
               Left err -> Aff.throwError $ error err
           -- Set article to Nothing to prevent flickering of old article
           else liftEffect $ setState \s -> s { article = Nothing }
-        ArticlePage articleId -> do
-          let a = Lettera.getArticle' (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-          setState \s -> s { affArticle = Just a }
+        ArticlePage articleId -> pure unit
       pure mempty
 
     pure $ render setState state nav
@@ -111,11 +108,9 @@ render setState state router =
       , onClick: handler_ $ router.pushState (write {}) "/"
       }
       , case state.route of
-          ArticlePage _
-            | Just affArticle <- state.affArticle
-            -> renderArticle affArticle state.clickedArticle
-            | otherwise
-            -> articleList state setState router
+          ArticlePage articleId ->
+            let affArticle = Lettera.getArticle' (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+            in renderArticle affArticle state.clickedArticle
           Frontpage -> articleList state setState router
     , DOM.footer
       { className: "mosaico--footer"
@@ -126,7 +121,8 @@ render setState state router =
     ]
   }
 
-renderArticle affA aStub = Article.article {affArticle: affA, brand: "hbl", articleStub: aStub}
+renderArticle :: Aff Article -> Maybe ArticleStub -> JSX
+renderArticle affA aStub = Article.article { affArticle: affA, brand: "hbl", articleStub: aStub }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX
 articleList state setState router =
