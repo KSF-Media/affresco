@@ -368,7 +368,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             }
         ]
     ]
-    $ Just { extraClasses: [ "mb2" ] }
+    { extraClasses: [ "mb2" ] }
 
 validateTemporaryAddressChangeForm :: AddressChange -> VF.ValidatedForm AddressChangeFields AddressChange
 validateTemporaryAddressChangeForm form =

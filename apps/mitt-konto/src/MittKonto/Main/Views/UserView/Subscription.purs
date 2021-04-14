@@ -76,7 +76,9 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
                                          ]
          })
       (Elements.subscriptionUpdates self)
-      $ Just { extraClasses: [ "subscription--container" ] }
+      { extraClasses: [ "subscription--container" ]
+      , id: "subscription-" <> Subsno.toString sub.subsno
+      }
   where
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =

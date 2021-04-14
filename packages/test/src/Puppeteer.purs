@@ -6,13 +6,18 @@ module Puppeteer
 import Prelude
 
 import Data.Array (replicate)
+import Data.Either (Either(..))
+import Data.String as String
 import Data.Foldable (sequence_)
 import Foreign (unsafeFromForeign)
 import Toppokki (class HasFrame, Browser, ElementHandle, Page, URL(..), Selector(..), goto, newPage, waitForNavigation, networkIdle2, close, click, contentFrame, select)
 import Toppokki as Chrome
+import Test.Unit as Test
 import Test.Unit.Assert as Assert
 import Effect.Aff as Aff
 import Effect.Aff (Aff, Milliseconds(..))
+import Effect.Class (liftEffect)
+import Effect.Exception (throwException)
 
 -- | We need to pass this flag, otherwise iframes don't work properly.
 -- | See: https://github.com/puppeteer/puppeteer/issues/5123
@@ -45,3 +50,13 @@ assertContent selector expected page = do
   waitFor_ selector page
   content <- getContent selector page
   Assert.equal content expected
+
+assertNotFound :: Selector -> Page -> Aff Unit
+assertNotFound selector@(Selector sel) page =
+  Aff.attempt (Chrome.unsafePageEval selector "e => e" page) >>= \res -> case res of
+    Right _ -> Test.failure $ "selector was expected to not match `" <> sel <> "`"
+    Left err -> do
+      -- I don't know why this gets duplicated.  This check will need
+      -- to be updated if this changes.
+      let expected = "Error: Error: failed to find element matching selector"
+      if String.take (String.length expected) (show err) == expected then pure unit else liftEffect $ throwException err

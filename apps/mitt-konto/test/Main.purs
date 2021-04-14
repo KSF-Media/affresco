@@ -2,12 +2,18 @@ module Test.Main where
 
 import Prelude
 
+import Bottega (createOrder, payOrder) as Bottega
+import Bottega.Models (PaymentMethod(..)) as Bottega
+import Data.Maybe (Maybe(..))
+import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
+import KSF.Api (UserAuth)
 import KSF.Test (getTimeStamp)
 import MittKonto.Test.Profile as Profile
+import MittKonto.Test.Subscription as Subscription
 import Persona as Persona
 import Puppeteer as Chrome
 
@@ -20,11 +26,16 @@ main = launchAff_ do
     let password = "myvoiceismypassword"
     page <- Chrome.newPage browser
     Chrome.goto (Chrome.URL "http://localhost:8000/") page
-    log $ ">>> Log in"
-    login page customer1 password
+    log $ ">>> Log in" <> customer1
+    auth <- createAccountAndLogin page customer1 password
+    createSubscription auth
     runTest "change name" Profile.testNameChange page
     runTest "change address" Profile.testAddressChange page
     runTest "change email" Profile.testEmailChange page
+    -- The first page load may not have had the subscription on the
+    -- page yet.  Force a reload.
+    Chrome.goto (Chrome.URL "http://localhost:8000/?") page
+    runTest "pause subscription" Subscription.testPause page
   where
     mkEmail :: String -> String
     mkEmail dateTimeStr = "mittkonto+test." <> dateTimeStr <> "@ksfmedia.fi"
@@ -38,6 +49,16 @@ main = launchAff_ do
 
 login :: Chrome.Page -> String -> String -> Aff Unit
 login page email password = do
+  let emailField = Chrome.Selector ".login-form .input-field--container input[name='accountEmail']"
+      passwordField = Chrome.Selector ".login-form .input-field--container input[name='accountPassword']"
+  Chrome.waitFor_ emailField page
+  Chrome.type_ emailField email page
+  Chrome.type_ passwordField password page
+  Chrome.click (Chrome.Selector ".login-form input[type='submit']") page
+  Chrome.waitFor_ (Chrome.Selector ".profile--profile-row") page
+
+createAccountAndLogin :: Chrome.Page -> String -> String -> Aff UserAuth
+createAccountAndLogin page email password = do
   logShow =<< Persona.register
     { firstName: "Test"
     , lastName: "Testtest"
@@ -55,11 +76,17 @@ login page email password = do
         screenName: "legalAcceptanceScreen"
       }]
     }
-  log "Log in with the created account"
-  let emailField = Chrome.Selector ".login-form .input-field--container input[name='accountEmail']"
-      passwordField = Chrome.Selector ".login-form .input-field--container input[name='accountPassword']"
-  Chrome.waitFor_ emailField page
-  Chrome.type_ emailField email page
-  Chrome.type_ passwordField password page
-  Chrome.click (Chrome.Selector ".login-form input[type='submit']") page
-  Chrome.waitFor_ (Chrome.Selector ".profile--profile-row") page
+  login page email password
+  loginData <- Persona.login { username: email, password: password, mergeToken: Nullable.null }
+  pure { userId: loginData.uuid, authToken: loginData.token }
+
+createSubscription :: UserAuth -> Aff Unit
+createSubscription auth = do
+  order <- Bottega.createOrder auth
+             { packageId: "HBL_P+D"
+             , period: 1
+             , payAmountCents: 3990
+             , campaignNo: Nothing
+             }
+  _ <- Bottega.payOrder auth order.number Bottega.PaperInvoice
+  pure unit
