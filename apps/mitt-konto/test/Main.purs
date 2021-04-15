@@ -12,6 +12,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import KSF.Api (UserAuth)
 import KSF.Test (getTimeStamp, typeCreditCard)
+import MittKonto.Test.Payment as Payment
 import MittKonto.Test.Profile as Profile
 import MittKonto.Test.Subscription as Subscription
 import Persona as Persona
@@ -41,6 +42,7 @@ main = launchAff_ do
     runTest "change name" Profile.testNameChange page
     runTest "change address" Profile.testAddressChange page
     runTest "change email" Profile.testEmailChange page
+    runTest "invoice test" Payment.testInvoice page
     -- The first page load may not have had the subscription on the
     -- page yet.  Force a reload.
     Chrome.goto (Chrome.URL "http://localhost:8000/?") page
