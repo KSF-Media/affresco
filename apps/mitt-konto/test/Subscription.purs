@@ -3,8 +3,9 @@ module MittKonto.Test.Subscription where
 import Prelude
 
 import Data.Date (adjust)
-import Data.Time.Duration (Days(..))
+import Data.Time.Duration (Days(..), Milliseconds(..))
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Now as Now
 import KSF.Helpers (formatDateDots)
@@ -23,6 +24,7 @@ testPause page = do
   -- Create pause
   Chrome.waitFor_ pauseLink page
   Chrome.click pauseLink page
+  Aff.delay $ Milliseconds 50.0
   let startDate = adjust (Days 3.0) now
       endDate = adjust (Days 14.0) now
       startDateFieldText = maybe "fail" formatDateSolid startDate

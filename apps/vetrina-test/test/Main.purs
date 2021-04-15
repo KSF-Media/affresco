@@ -6,7 +6,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
-import KSF.Test (getTimeStamp)
+import KSF.Test (getTimeStamp, typeCreditCard)
 import Persona as Persona
 import Puppeteer as Chrome
 
@@ -199,13 +199,7 @@ payWithNets page = do
   iframe <- Chrome.contentFrame frameHandle
 
   log "Waiting for credit card fields and typing credit card details"
-  let creditCardNumber = "4925000000000004"
-  let creditCardField = Chrome.Selector "#cardNumber"
-  Chrome.waitFor_ creditCardField iframe
-  Chrome.type_ creditCardField creditCardNumber iframe
-  Chrome.select (Chrome.Selector "#year") "30" iframe -- Year 2030
-  Chrome.type_ (Chrome.Selector "#securityCode") "666" iframe
-  Chrome.click (Chrome.Selector "#okButton") iframe
+  typeCreditCard iframe
 
 fillAddress :: forall page. Chrome.HasFrame page => page -> Aff Unit
 fillAddress page = do
