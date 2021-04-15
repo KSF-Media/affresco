@@ -1,9 +1,11 @@
 module Bottega.Models.Order where
 
-import Prelude (($))
+import Prelude (($), class Show)
 
 import Bottega.Models.FailReason (FailReason(..), parseFailReason)
+import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe, maybe)
+import Data.Show.Generic (genericShow)
 import Data.UUID (UUID)
 
 newtype OrderNumber = OrderNumber String
@@ -26,6 +28,14 @@ data OrderState
   | OrderFailed FailReason
   | OrderCanceled
   | OrderUnknownState
+
+derive instance genericOrderNumber :: Generic OrderNumber _
+instance showOrderNumber :: Show OrderNumber where
+  show = genericShow
+
+derive instance genericOrderState :: Generic OrderState _
+instance showOrderState :: Show OrderState where
+  show = genericShow
 
 parseOrderState :: String -> Maybe String -> OrderState
 parseOrderState state maybeFailReason =
