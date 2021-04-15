@@ -21,6 +21,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import KSF.Api.Subscription (Subsno)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
@@ -211,17 +212,17 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , maxDate: Nothing
         , disabled: false
         , label: "Börjar från"
+        , id: "edit-start"
         }
 
     isIndefiniteCheckbox =
       InputCheckbox.inputCheckbox
         { type_: InputCheckbox.Checkbox
         , name: "indefinite"
-        , value: Nothing
         , checked: self.state.isIndefinite
         , onChange: \checked -> self.setState _ { isIndefinite = checked }
         , label: Just "Tillsvidare"
-        , required: false
+        , id: "edit-indefinite--" <> Subsno.toString self.props.subsno
         }
 
     endDayInput =
@@ -233,6 +234,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , maxDate: Nothing
         , disabled: isNothing self.state.startDate || self.state.isIndefinite
         , label: "Avslutas"
+        , id: "edit-end"
         }
 
     addressInput =
@@ -348,10 +350,11 @@ type DateInputField =
   , maxDate  :: Maybe Date
   , disabled :: Boolean
   , label    :: String
+  , id       :: String
   }
 
 dateInput :: Self -> DateInputField -> JSX
-dateInput self { action, value, minDate, maxDate, disabled, label } =
+dateInput self { action, value, minDate, maxDate, disabled, label, id } =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
@@ -368,7 +371,9 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             }
         ]
     ]
-    { extraClasses: [ "mb2" ] }
+    { extraClasses: [ "mb2" ]
+    , id: id <> "--" <> Subsno.toString self.props.subsno
+    }
 
 validateTemporaryAddressChangeForm :: AddressChange -> VF.ValidatedForm AddressChangeFields AddressChange
 validateTemporaryAddressChangeForm form =

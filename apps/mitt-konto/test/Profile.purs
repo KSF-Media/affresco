@@ -10,7 +10,7 @@ import Effect.Class.Console (log)
 import Effect.Now as Now
 import KSF.Helpers as Helpers
 import KSF.Test (getTimeStamp, formatDateSolid)
-import MittKonto.Test (Test)
+import MittKonto.Test (Test, typeTestAddress)
 import Puppeteer as Chrome
 
 testNameChange :: Test
@@ -32,20 +32,12 @@ testAddressChange page = do
       dateFieldText = maybe "fail" formatDateSolid changeDate
       editAddressLink = Chrome.Selector ".profile--profile-row:nth-child(2) .profile--edit-text"
       dateField = Chrome.Selector ".profile--edit-address .react-date-picker__inputGroup"
-      streetAddressField = Chrome.Selector ".profile--edit-address input[name='streetAddress']"
-      zipcodeField = Chrome.Selector ".profile--edit-address input[name='zipCode']"
-      cityField = Chrome.Selector ".profile--edit-address input[name='city']"
   -- Start edit
   Chrome.click editAddressLink page
-  Chrome.waitFor_ streetAddressField page
+  Chrome.waitFor_ dateField page
   Chrome.click dateField page
   Chrome.type_ dateField dateFieldText page
-  Chrome.typeDelete_ streetAddressField 25 page
-  Chrome.type_ streetAddressField "Genvägen 8" page
-  Chrome.typeDelete_ zipcodeField 5 page
-  Chrome.type_ zipcodeField "10650" page
-  Chrome.typeDelete_ cityField 20 page
-  Chrome.type_ cityField "Ekenäs" page
+  typeTestAddress ".profile--edit-address" "streetAddress" page
   -- Submit edit
   Chrome.click (Chrome.Selector ".profile--edit-address button[type='submit']") page
   Chrome.waitFor_ editAddressLink page

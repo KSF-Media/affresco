@@ -5,6 +5,7 @@ import Prelude
 import Data.Array (filter, mapMaybe)
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Enum (enumFromTo)
 import Data.Foldable (foldMap, for_, null, maximum)
 import Data.JSDate (toDate)
 import Data.List (intercalate)
@@ -74,7 +75,8 @@ pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
 pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, props: { now } } =
   if Array.null filteredChanges then mempty else Array.singleton $
   { term: "Tillfällig adressändring:"
-  , description: map (showPendingAddressChange self) filteredChanges
+  , description: map (showPendingAddressChange self) $
+      Array.zip (enumFromTo 1 $ Array.length filteredChanges) filteredChanges
   }
   where
     filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
@@ -82,13 +84,14 @@ pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, p
     filterExpiredPendingChanges changes =
       filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate) changes
 
-showPendingAddressChange :: Types.Self -> User.PendingAddressChange -> JSX
-showPendingAddressChange self change@{ address, startDate, endDate } =
+showPendingAddressChange :: Types.Self -> (Tuple Int User.PendingAddressChange) -> JSX
+showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
   let addressString = Helpers.formatAddress address
       pendingPeriod = Helpers.formatDateString startDate (toMaybe endDate)
   in DOM.span
        { className: "subscription--edit-pending-address-change"
        , children: [ DOM.text $ addressString <> " (" <> pendingPeriod <> ")" ]
+       , id: "subscription-" <> Subsno.toString self.props.subscription.subsno <> "-edit-pending-address-change-" <> show n
        , onClick: handler_ do
            self.setState _
              { updateAction = Just $ Types.EditTemporaryAddressChange change

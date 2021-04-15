@@ -26,7 +26,7 @@ main = launchAff_ do
     let password = "myvoiceismypassword"
     page <- Chrome.newPage browser
     Chrome.goto (Chrome.URL "http://localhost:8000/") page
-    log $ ">>> Log in" <> customer1
+    log $ ">>> Log in " <> customer1
     auth <- createAccountAndLogin page customer1 password
     createSubscription auth
     runTest "change name" Profile.testNameChange page
@@ -36,6 +36,7 @@ main = launchAff_ do
     -- page yet.  Force a reload.
     Chrome.goto (Chrome.URL "http://localhost:8000/?") page
     runTest "pause subscription" Subscription.testPause page
+    runTest "temporary address change" Subscription.testTemporaryAddressChange page
   where
     mkEmail :: String -> String
     mkEmail dateTimeStr = "mittkonto+test." <> dateTimeStr <> "@ksfmedia.fi"
@@ -88,5 +89,5 @@ createSubscription auth = do
              , payAmountCents: 3990
              , campaignNo: Nothing
              }
-  _ <- Bottega.payOrder auth order.number Bottega.PaperInvoice
+  logShow =<< Bottega.payOrder auth order.number Bottega.PaperInvoice
   pure unit
