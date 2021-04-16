@@ -632,7 +632,7 @@ class App extends Component {
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
                                 {
-                                    this.state.showBuyOption ?
+                                    !isUserLoggedIn() ?
                                         <PremiumBox showLogin={this.showLogin} />
                                         :
                                         ""
@@ -640,15 +640,16 @@ class App extends Component {
 
                                 {
                                     this.state.appearLogin ?
-                                        <div id={"loginForm"}><strong>Logga in: </strong></div>
-                                        :
-                                        ""
-                                }
-
-                                {
-                                    this.state.appearLogin ?
-                                        <Login onRegister={() => this.onRegisterOpen()}
-                                            onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} />
+                                        <div>
+                                            <div id={"loginForm"}><strong>Logga in: </strong></div>
+                                            <div>
+                                                <Login
+                                                    onRegister={() => this.onRegisterOpen()}
+                                                    onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
+                                                    onUserFetchFail={(error) => this.onUserFetchFail(error)}
+                                                    disableSocialLogins={["Facebook", "Google"]} />
+                                            </div>
+                                        </div>
                                         :
                                         ""
                                 }

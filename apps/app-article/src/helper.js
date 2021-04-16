@@ -1,5 +1,7 @@
+import Cookies from 'js-cookie';
+
 export const isUserLoggedIn = () => {
-    return !(localStorage.getItem("uuid") === null && localStorage.getItem("token") === null);
+    return !!Cookies.get('LoginStatus');
 };
 
 export const shareArticle = (title, url, description) => {
