@@ -9,6 +9,7 @@ You can edit this file as you like.
   , "affjax"
   , "affresco-components"
   , "affresco-user"
+  , "affresco-vetrina"
   , "console"
   , "datetime"
   , "effect"

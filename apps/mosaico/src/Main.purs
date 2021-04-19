@@ -84,7 +84,7 @@ getArticle r@{ params: { uuid } } = do
     -- TODO: Pass credentials to Lettera
     Just _  -> Console.log "YES CREDS!"
     Nothing -> Console.log "NO CREDS!"
-  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid)
+  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) Nothing
   case article of
     Right (FullArticle a) -> pure $ TextHtml $ mosaicoString a
     Right (PreviewArticle a) -> pure $ TextHtml $ mosaicoString a

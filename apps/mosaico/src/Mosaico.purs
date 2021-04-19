@@ -11,8 +11,10 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Effect.Unsafe (unsafePerformEffect)
+import KSF.Auth as Auth
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, FullArticle, Article)
@@ -109,7 +111,11 @@ render setState state router =
       }
       , case state.route of
           ArticlePage articleId ->
-            let affArticle = Lettera.getArticle' (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+            let affArticle = do
+                  a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+                  case a of
+                    Right article -> pure article
+                    Left err -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
             in renderArticle affArticle state.clickedArticle
           Frontpage -> articleList state setState router
     , DOM.footer
@@ -121,8 +127,13 @@ render setState state router =
     ]
   }
 
-renderArticle :: Aff Article -> Maybe ArticleStub -> JSX
-renderArticle affA aStub = Article.article { affArticle: affA, brand: "hbl", articleStub: aStub }
+renderArticle :: Aff FullArticle -> Maybe ArticleStub -> JSX
+renderArticle affA aStub =
+  Article.article
+    { affArticle: affA
+    , brand: "hbl"
+    , articleStub: aStub
+    }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX
 articleList state setState router =
@@ -144,19 +155,19 @@ articleList state setState router =
                      router.pushState (write {}) $ "/artikel/" <> a.uuid
                 , children:
                     [ DOM.div
-                      { className: "list-article-image"
-                      , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
-                      }
+                        { className: "list-article-image"
+                        , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
+                        }
                     , DOM.div
-                      { className: "list-article-liftup"
-                      , children:
-                        [ DOM.div
-                          { className: "mosaico--tag color-hbl"
-                          , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
-                          }
-                        , DOM.h2_ [ DOM.text a.title ]
-                        ]
-                      }
+                        { className: "list-article-liftup"
+                        , children:
+                            [ DOM.div
+                                { className: "mosaico--tag color-hbl"
+                                , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
+                                }
+                            , DOM.h2_ [ DOM.text a.title ]
+                            ]
+                        }
                     ]
                 }
             ]

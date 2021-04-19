@@ -3,14 +3,18 @@ module Lettera where
 import Prelude
 
 import Affjax as AX
+import Affjax.RequestHeader as AX
+import Affjax.ResponseFormat as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (stringify, toArray, toObject)
 import Data.Array (foldM, snoc)
 import Data.Either (Either(..), note)
+import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse_)
 import Data.UUID (UUID, toString)
+import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff, throwError)
 import Effect.Class (liftEffect)
@@ -18,30 +22,50 @@ import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Foreign (MultipleErrors, renderForeignError)
 import Foreign.Object (lookup)
+import KSF.Api (Token(..), UserAuth)
+import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Models (Article, ArticleStub, FullArticle(..))
 import Simple.JSON as JSON
 
+foreign import letteraBaseUrl :: String
+
 letteraArticleUrl :: String
-letteraArticleUrl = "https://lettera.api.ksfmedia.fi/v3/article/"
+letteraArticleUrl = letteraBaseUrl <>  "/article/"
 
 letteraFrontPageUrl :: String
-letteraFrontPageUrl = "https://lettera.api.ksfmedia.fi/v3/frontpage"
+letteraFrontPageUrl = letteraBaseUrl <> "/frontpage"
 
 getArticle' :: UUID -> Aff Article
 getArticle' u = do
-  getArticle u >>= \a ->
+  getArticle u Nothing >>= \a ->
     case a of
-      Right (FullArticle a') -> pure  a'
+      Right (FullArticle a') -> pure a'
       Right (PreviewArticle a') -> pure a'
       Left err -> throwError $ error $ "Failed to get article: " <> err
 
+getArticleAuth :: UUID -> Aff (Either String FullArticle)
+getArticleAuth articleId = do
+  tokens <- Auth.loadToken
+  getArticle articleId tokens
+
 -- TODO: Instead of String, use some sort of LetteraError or something
-getArticle :: UUID -> Aff (Either String FullArticle)
-getArticle articleId = do
-  -- TODO: Add authentication
-  articleResponse <- AX.get ResponseFormat.json (letteraArticleUrl <> (toString articleId))
+getArticle :: UUID -> Maybe UserAuth -> Aff (Either String FullArticle)
+getArticle articleId auth = do
+  let request = AX.defaultRequest
+        { url = letteraArticleUrl <> (toString articleId)
+        , method = Left GET
+        , responseFormat = AX.json
+        , headers =
+            case auth of
+              Just { userId, authToken: Token authToken } ->
+                [ AX.RequestHeader "AuthUser" $ UUID.toString userId
+                , AX.RequestHeader "Authorization" ("OAuth " <> authToken)
+                ]
+              _ -> mempty
+        }
+  articleResponse <- AX.request request
   case articleResponse of
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response

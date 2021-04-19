@@ -3,16 +3,22 @@ module Mosaico.Article where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (head)
+import Data.Array (cons, head, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Monoid (guard)
+import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Lettera.Models (Article, BodyElement(..), Image, ArticleStub)
+import Effect.Class.Console as Console
+import KSF.Api.Package (CampaignLengthUnit(..))
+import KSF.Paper (Paper(..))
+import KSF.Vetrina as Vetrina
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, fromFullArticle, isPreviewArticle)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.Classic as React
@@ -22,13 +28,13 @@ type Self = React.Self Props State
 
 type Props =
   { brand :: String
-  , affArticle :: Aff Article
+  , affArticle :: Aff FullArticle
   , articleStub :: Maybe ArticleStub
   }
 
 type State =
   { body :: Array (Either String BodyElement)
-  , article :: Maybe Article
+  , article :: Maybe FullArticle
   }
 
 component :: React.Component Props
@@ -41,10 +47,13 @@ article props = React.make
   props
 
 didMount :: Self -> Effect Unit
-didMount self = do
+didMount self = loadArticle self.setState self.props.affArticle
+
+loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
+loadArticle setState affArticle =
   Aff.launchAff_ do
-    a <- self.props.affArticle
-    liftEffect $ self.setState \s -> s { article = Just a,  body = map Record.toSum a.body }
+    a <- affArticle
+    liftEffect $ setState \s -> s { article = Just a,  body = map Record.toSum $ _.body $ fromFullArticle a }
 
 renderImage :: Image -> JSX
 renderImage img =
@@ -72,29 +81,86 @@ renderImage img =
     byline = fold $ img.byline
 
 render :: Self -> JSX
-render { props, state } =
-  let title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title state.article
-      tags = fromMaybe mempty $  map _.tags props.articleStub <|> map _.tags state.article
-      mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< state.article)
-  in DOM.div
-    { className: "mosaico--article"
-    , children: [
-      DOM.div
-        { className: "mosaico--tag color-" <> props.brand
-        , children: [ DOM.text $ fromMaybe "" (head tags) ]
-        }
-      , DOM.h1
-        { className: "mosaico--article--title title"
-        , children: [ DOM.text title ]
-        }
-      , foldMap renderImage mainImage
-      , DOM.div
-        { className: "mosaico--article--body"
-        , children: map renderElement state.body
-        }
-      ]
-    }
+render { props, state, setState } =
+    let letteraArticle = map fromFullArticle state.article
+        title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
+        tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
+        mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+    in DOM.div
+      { className: "mosaico--article"
+      , children:
+        [ DOM.div
+            { className: "mosaico--tag color-" <> props.brand
+            , children: [ DOM.text $ fromMaybe "" (head tags) ]
+            }
+        , DOM.h1
+            { className: "mosaico--article--title title"
+            , children: [ DOM.text title ]
+            }
+        , foldMap renderImage mainImage
+        , DOM.div
+            { className: "mosaico--article--body "
+            , children:
+                paywallFade
+                `cons` map renderElement state.body
+                `snoc` vetrina
+            }
+        ]
+      }
   where
+    paywallFade =
+      guard (maybe false isPreviewArticle state.article)
+        DOM.div { className: "mosaico--article-fading-body" }
+
+    vetrina = guard (maybe false isPreviewArticle state.article)
+      Vetrina.vetrina
+        { onClose: Just $ loadArticle setState props.affArticle
+        , onLogin: pure unit -- show login modal
+        , products: Right [hblPremium]
+        , unexpectedError: mempty
+        , headline: Just
+          $ DOM.div_
+              [ DOM.text "Läs HBL digitalt för "
+              , DOM.span { className: "vetrina--price-headline", children: [ DOM.text "Endast 1€" ] }
+              ]
+        , paper: Just HBL
+        , paymentMethods: []
+        , minimalLayout: false
+        , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
+        }
+      where
+        hblPremium =
+          { id: "HBL WEBB"
+          , name: "Hufvudstadsbladet Premium"
+          , priceCents: 999
+          , description:
+              DOM.div_
+                [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
+                , DOM.br {}
+                , DOM.text "Läs Hufvudstadsbladet för 1€ i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
+                ]
+          , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
+          , campaign: Just
+              { no: 4701
+              , id: "1MÅN1 EURO"
+              , name: "FÖRSTA MÅNADEN FÖR 1 EURO"
+              , length: 1
+              , lengthUnit: Month
+              , priceEur: 1.0
+              }
+          , contents:
+              [ { title: "Premium"
+                , description: "Alla artiklar på hbl.fi"
+                }
+              , { title: "Nyhetsappen HBL Nyheter"
+                , description: "Nyheter på mobilen och surfplattan, pushnotiser"
+                }
+              , { title: "Digitalt månadsbrev"
+                , description: "Nyheter & förmåner"
+                }
+              ]
+          }
+
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?
     renderElement :: Either String BodyElement -> JSX

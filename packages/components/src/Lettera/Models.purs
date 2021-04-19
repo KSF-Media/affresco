@@ -4,13 +4,19 @@ import Prelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
-import Data.Nullable (Nullable)
 import Data.Show.Generic (genericShow)
-import Data.UUID (UUID)
 
 data FullArticle
   = FullArticle Article
   | PreviewArticle Article
+
+fromFullArticle :: FullArticle -> Article
+fromFullArticle (FullArticle a) = a
+fromFullArticle (PreviewArticle a) = a
+
+isPreviewArticle :: FullArticle -> Boolean
+isPreviewArticle (PreviewArticle _) = true
+isPreviewArticle _ = false
 
 type ArticleStub =
   { title    :: String
