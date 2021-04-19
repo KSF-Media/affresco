@@ -585,7 +585,6 @@ class App extends Component {
                 <div className={"col-sm-12"}>
                     <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} />
                 </div>
-
             )
         }
 
