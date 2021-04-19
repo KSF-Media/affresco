@@ -11,7 +11,7 @@ import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import KSF.Api (UserAuth)
-import KSF.Test (getTimeStamp, typeCreditCard)
+import KSF.Test (getTestCard, getTimeStamp, typeCreditCard)
 import MittKonto.Test.Payment as Payment
 import MittKonto.Test.Profile as Profile
 import MittKonto.Test.Subscription as Subscription
@@ -32,7 +32,7 @@ main = launchAff_ do
       Just url -> do
         page <- Chrome.newPage browser
         Chrome.goto (Chrome.URL $ url.paymentTerminalUrl) page
-        typeCreditCard page
+        liftEffect (getTestCard 0) >>= typeCreditCard page
         Chrome.waitForNavigation {} page
       _ -> pure unit
     page <- Chrome.newPage browser
@@ -43,6 +43,7 @@ main = launchAff_ do
     runTest "change address" Profile.testAddressChange page
     runTest "change email" Profile.testEmailChange page
     runTest "invoice test" Payment.testInvoice page
+    runTest "credit card change test" (Payment.testCreditCardChange auth) page
     -- The first page load may not have had the subscription on the
     -- page yet.  Force a reload.
     Chrome.goto (Chrome.URL "http://localhost:8000/?") page

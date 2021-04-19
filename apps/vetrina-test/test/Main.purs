@@ -6,7 +6,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
-import KSF.Test (getTimeStamp, typeCreditCard)
+import KSF.Test (getTestCard, getTimeStamp, typeCreditCard)
 import Persona as Persona
 import Puppeteer as Chrome
 
@@ -199,7 +199,7 @@ payWithNets page = do
   iframe <- Chrome.contentFrame frameHandle
 
   log "Waiting for credit card fields and typing credit card details"
-  typeCreditCard iframe
+  typeCreditCard iframe =<< liftEffect (getTestCard 0)
 
 fillAddress :: forall page. Chrome.HasFrame page => page -> Aff Unit
 fillAddress page = do
