@@ -79,6 +79,7 @@ import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
+import KSF.Api.Subscription (Subsno)
 import KSF.Error as KSF.Error
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
@@ -451,7 +452,7 @@ facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
 pauseSubscription
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> Date
   -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
@@ -468,7 +469,7 @@ pauseSubscription userUuid subsno startDate endDate = do
 
 editSubscriptionPause
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> Date
   -> Date
@@ -487,14 +488,14 @@ editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEn
 
 unpauseSubscription
   :: UUID
-  -> Int
+  -> Subsno
   -> Aff Subscription.Subscription
 unpauseSubscription userUuid subsno = do
   Persona.unpauseSubscription userUuid subsno =<< requireToken
 
 temporaryAddressChange
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> Maybe Date
   -> String
@@ -508,7 +509,7 @@ temporaryAddressChange userUuid subsno startDate endDate streetAddress zipCode c
 
 editTemporaryAddressChange
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> Date
   -> Maybe Date
@@ -528,7 +529,7 @@ handleAddressChangedSub addressChangedSub =
           Console.error "Unexpected error when making temporary address change."
           pure $ Left Persona.InvalidUnexpected
 
-deleteTemporaryAddressChange :: UUID -> Int -> Date -> Maybe Date -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+deleteTemporaryAddressChange :: UUID -> Subsno -> Date -> Maybe Date -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
 deleteTemporaryAddressChange userUuid subsno startDate endDate = do
   tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate =<< requireToken
   case tempAddressChangeDeletedSub of
@@ -537,7 +538,7 @@ deleteTemporaryAddressChange userUuid subsno startDate endDate = do
 
 createDeliveryReclamation
   :: UUID
-  -> Int
+  -> Subsno
   -> Date
   -> PersonaReExport.DeliveryReclamationClaim
   -> Aff (Either Persona.InvalidDateInput Persona.DeliveryReclamation)

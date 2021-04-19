@@ -152,10 +152,15 @@ render self@{ props: { profile: user } } =
     [ profileName
     , profileAddress
     , profileEmail
-    , DescriptionList.descriptionList
-        { definitions:
-          visiblePendingAddressChanges <>
-            [ { term: "Kundnummer:", description: [ DOM.text $ Cusno.toString user.cusno ] }
+    , DOM.div
+        { id: "profile--display"
+        , children:
+            [ DescriptionList.descriptionList
+                { definitions:
+                  visiblePendingAddressChanges <>
+                    [ { term: "Kundnummer:", description: [ DOM.text $ Cusno.toString user.cusno ] }
+                    ]
+                }
             ]
         }
     ]
@@ -173,6 +178,7 @@ render self@{ props: { profile: user } } =
       where
         profileEmailReady = DOM.div
           { className: "profile--profile-row"
+          , id: "profile--email"
           , children:
               [ currentEmail
               , changeEmailButton self
@@ -215,6 +221,7 @@ render self@{ props: { profile: user } } =
       where
         profileNameReady = DOM.div
           { className: "profile--profile-row"
+          , id: "profile--name"
           , children:
               [ currentName
               , changeNameButton self
@@ -258,6 +265,7 @@ render self@{ props: { profile: user } } =
         profileAddressReady =
           DOM.div
             { className: "profile--profile-row"
+            , id: "profile--address"
             , children:
                 [ currentAddress
                   -- Don't allow to edit address if already pending for a change
@@ -322,7 +330,7 @@ showPendingAddressChanges self =
       -- These should not be shown to the user.
       | upcomingChanges <- filter (isUpcomingPendingChange self.state.now) pendingChanges
       , not $ null upcomingChanges -> Array.singleton
-        { term: "Addressändrig:"
+        { term: "Adressändring:"
         , description: map (DOM.text <<< pendingAddressChangeText) upcomingChanges
         }
     _ -> mempty

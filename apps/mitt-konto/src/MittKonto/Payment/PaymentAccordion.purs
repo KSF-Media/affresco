@@ -8,8 +8,9 @@ import Data.Formatter.Number as FormatterN
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
+import KSF.Helpers (formatDateDots)
 import KSF.User (SubscriptionPayments)
-import MittKonto.Payment.Types (Props, stateString, typeString, formatDate, formatEuro, percentFormatter)
+import MittKonto.Payment.Types (Props, stateString, typeString, formatEuro, percentFormatter)
 import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState', (/\))
 import React.Basic.Hooks as React
@@ -44,8 +45,8 @@ render payments focus setFocus =
                     <> (if focus == Just i then " focus" else " nofocus")
                 , children:
                     [ DOM.span_ [ DOM.text subscription.name ]
-                    , DOM.span_ [ DOM.text $ (formatDate subscription.startDate)
-                                    <> " - " <> (formatDate subscription.lastDate) ]
+                    , DOM.span_ [ DOM.text $ (formatDateDots subscription.startDate)
+                                    <> " - " <> (formatDateDots subscription.lastDate) ]
                     , DOM.div_ [ ]
                     ]
                 , onClick: handler_ $ setFocus $ Just i
@@ -87,7 +88,7 @@ render payments focus setFocus =
                              , children: x
                              , className: mempty
                              })
-            [ \f -> DOM.td_ [ f [ DOM.text $ formatDate payment.date ] ]
+            [ \f -> DOM.td_ [ f [ DOM.text $ formatDateDots payment.date ] ]
             , \f -> DOM.td_ [ f [ DOM.text $ typeString payment.type ] ]
             , \f -> DOM.td_ [ f [ DOM.text $ stateString payment.state ] ]
             , \f -> percent f $ if payment.amount > 0.01

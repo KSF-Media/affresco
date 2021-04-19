@@ -10,30 +10,37 @@ import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
 import Effect.Unsafe (unsafePerformEffect)
+import Prim.Row (class Nub, class Union)
 import React.Basic (JSX)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
+import Record as Record
 
 foreign import generateIdNumber :: Effect Int
 
-type Self = React.Self Props State
+type Self = React.Self (Record Props) State
 
 type Props =
-  { type_           :: InputType
+  ( type_           :: InputType
   , placeholder     :: String
   , name            :: String
   , value           :: Maybe String
   , onChange        :: Maybe String -> Effect Unit
   , label           :: Maybe String
   , validationError :: Maybe String
-  }
+  , disabled        :: Boolean
+  )
+
+type DefaultProps =
+  ( disabled        :: Boolean
+  )
 
 type State =
   { inputValue :: String }
 
-data InputType = Text | Password | Email | Radio | DisabledText
+data InputType = Text | Password | Email | Radio
 
 derive instance genericInputType :: Generic InputType _
 instance showInputType :: Show InputType where
@@ -41,13 +48,18 @@ instance showInputType :: Show InputType where
 
 derive instance eqInputField :: Eq InputType
 
-component :: React.Component Props
+component :: React.Component (Record Props)
 component = React.createComponent "InputField"
 
-inputField :: Props -> JSX
-inputField = React.make component
-  { render, didMount, initialState }
+inputField :: forall attrs attrs_ . Union attrs DefaultProps attrs_ => Nub attrs_ Props => Record attrs -> JSX
+inputField userProps = React.make component
+  { render, didMount, initialState } $ Record.merge userProps defaultProps
   where
+    defaultProps :: Record DefaultProps
+    defaultProps =
+      { disabled: false
+      }
+
     didMount { props, setState } = when (isJust props.value) $
       setState \s -> s { inputValue = fromMaybe "" props.value }
 
@@ -65,9 +77,7 @@ render self@{ props, state } =
              Just label -> inputLabel { label, nameFor: id }
              _          -> mempty
         , DOM.input
-            { type: case props.type_ of
-                      DisabledText -> "text"
-                      _ -> show props.type_
+            { type: show props.type_
             , id: id
             , placeholder: props.placeholder
             , name: props.name
@@ -79,7 +89,7 @@ render self@{ props, state } =
                 if isJust props.validationError
                 then "input-field--invalid-field"
                 else mempty
-            , disabled: props.type_ == DisabledText
+            , disabled: props.disabled
             }
         ] `snoc` foldMap errorMessage props.validationError
     }

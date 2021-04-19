@@ -2,14 +2,11 @@ module Test.Main where
 
 import Prelude
 
-import Data.DateTime (DateTime)
-import Data.Formatter.DateTime as Format
-import Data.List as List
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
+import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
-import Effect.Now as Now
+import KSF.Test (getTestCard, getTimeStamp, typeCreditCard)
 import Persona as Persona
 import Puppeteer as Chrome
 
@@ -25,7 +22,7 @@ data ProductType
 main :: Effect Unit
 main = launchAff_ do
   -- Setup
-  dateTimeStr <- liftEffect $ formatDate <$> Now.nowDateTime
+  dateTimeStr <- liftEffect getTimeStamp
   let customer1 = mkEmail dateTimeStr
       customer2 = mkEmail (dateTimeStr <> "-2")
       customer3 = mkEmail (dateTimeStr <> "-3")
@@ -72,10 +69,7 @@ main = launchAff_ do
       test page email password
       log $ ">>> Test successful."
 
-    withBrowser action = do
-      browser <- Chrome.launch
-      action browser
-      Chrome.close browser
+    withBrowser = bracket Chrome.launch Chrome.close
 
 subscribePaperProductNewCustomer :: Test
 subscribePaperProductNewCustomer page email password = do
@@ -175,16 +169,6 @@ loginWithEntitledCustomer page email password = do
 
 type Test = Chrome.Page -> String -> String -> Aff Unit
 
-formatDate :: DateTime -> String
-formatDate = Format.format $ List.fromFoldable
-  [ Format.YearFull
-  , Format.MonthTwoDigits
-  , Format.DayOfMonthTwoDigits
-  , Format.Hours24
-  , Format.MinutesTwoDigits
-  , Format.SecondsTwoDigits
-  ]
-
 fillEmail :: forall page. Chrome.HasFrame page => String -> page -> Aff Unit
 fillEmail email page = do
   let emailField = Chrome.Selector ".input-field--container > input[type=\"email\"]"
@@ -215,13 +199,7 @@ payWithNets page = do
   iframe <- Chrome.contentFrame frameHandle
 
   log "Waiting for credit card fields and typing credit card details"
-  let creditCardNumber = "4925000000000004"
-  let creditCardField = Chrome.Selector "#cardNumber"
-  Chrome.waitFor_ creditCardField iframe
-  Chrome.type_ creditCardField creditCardNumber iframe
-  Chrome.select (Chrome.Selector "#year") "30" iframe -- Year 2030
-  Chrome.type_ (Chrome.Selector "#securityCode") "666" iframe
-  Chrome.click (Chrome.Selector "#okButton") iframe
+  typeCreditCard iframe =<< liftEffect (getTestCard 0)
 
 fillAddress :: forall page. Chrome.HasFrame page => page -> Aff Unit
 fillAddress page = do

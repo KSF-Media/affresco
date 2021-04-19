@@ -20,6 +20,8 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Subscription (Subsno)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.Grid as Grid
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
@@ -54,7 +56,7 @@ type State =
 type Self = React.Self Props State
 
 type Props =
-  { subsno        :: Int
+  { subsno        :: Subsno
   , cusno         :: Cusno
   , pastAddresses :: Array AddressChange
   , nextDelivery  :: Maybe Date
@@ -210,17 +212,17 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , maxDate: Nothing
         , disabled: false
         , label: "Börjar från"
+        , id: "edit-start"
         }
 
     isIndefiniteCheckbox =
       InputCheckbox.inputCheckbox
         { type_: InputCheckbox.Checkbox
         , name: "indefinite"
-        , value: Nothing
         , checked: self.state.isIndefinite
         , onChange: \checked -> self.setState _ { isIndefinite = checked }
         , label: Just "Tillsvidare"
-        , required: false
+        , id: "edit-indefinite--" <> Subsno.toString self.props.subsno
         }
 
     endDayInput =
@@ -232,39 +234,43 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , maxDate: Nothing
         , disabled: isNothing self.state.startDate || self.state.isIndefinite
         , label: "Avslutas"
+        , id: "edit-end"
         }
 
     addressInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Gatuadress"
         , name: "address"
         , onChange: \newAddress -> self.setState _ { streetAddress = newAddress }
         , value: self.state.streetAddress
         , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
+        , disabled: isJust self.props.editing
         }
 
     zipInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Postnummer"
         , name: "zipCode"
         , onChange: \newZip -> self.setState _ { zipCode = newZip }
         , value: self.state.zipCode
         , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
+        , disabled: isJust self.props.editing
         }
 
     cityInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Stad"
         , name: "city"
         , onChange: \newCity -> self.setState _ { cityName = newCity }
         , value: self.state.cityName
         , validationError: Nothing
         , label: Just "Stad"
+        , disabled: isJust self.props.editing
         }
 
     countryInput =
@@ -278,13 +284,14 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     temporaryNameInput =
       InputField.inputField
-        { type_: if isJust self.props.editing then InputField.DisabledText else InputField.Text
+        { type_: InputField.Text
         , placeholder: "Tillfällig namnändring eller C/O"
         , name: "temporaryName"
         , onChange: \newTemporaryName -> self.setState _ { temporaryName = newTemporaryName }
         , value: self.state.temporaryName
         , validationError: Nothing
         , label: Just "Tillfällig namnändring eller C/O"
+        , disabled: isJust self.props.editing
         }
 
     submitFormButton =
@@ -319,10 +326,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
             case _ of
               Right sub -> liftEffect do
                 self.props.onSuccess sub
-                Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "success"
+                Tracking.tempAddressChange self.props.cusno self.props.subsno startDate' endDate' "success"
               Left invalidDateInput -> liftEffect do
                 self.props.onError invalidDateInput
-                Tracking.tempAddressChange self.props.cusno (show self.props.subsno) startDate' endDate' "error: invalidDateInput"
+                Tracking.tempAddressChange self.props.cusno self.props.subsno startDate' endDate' "error: invalidDateInput"
         makeTemporaryAddressChange _ = Console.error "Form should be valid, however it looks like it's not"
     submitForm (Just oldStartDate) (Just startDate') endDate' (Just _) _ = do
       self.props.onLoading
@@ -330,10 +337,10 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         case _ of
           Right sub -> liftEffect do
             self.props.onSuccess sub
-            Tracking.editTempAddressChange self.props.cusno (show self.props.subsno) oldStartDate startDate' endDate' "success"
+            Tracking.editTempAddressChange self.props.cusno self.props.subsno oldStartDate startDate' endDate' "success"
           Left invalidDateInput -> liftEffect do
             self.props.onError invalidDateInput
-            Tracking.editTempAddressChange self.props.cusno (show self.props.subsno) oldStartDate startDate' endDate' "error: invalidDateInput"
+            Tracking.editTempAddressChange self.props.cusno self.props.subsno oldStartDate startDate' endDate' "error: invalidDateInput"
     submitForm _ _ _ _ _ = Console.error "Temporary address change dates were not defined."
 
 type DateInputField =
@@ -343,10 +350,11 @@ type DateInputField =
   , maxDate  :: Maybe Date
   , disabled :: Boolean
   , label    :: String
+  , id       :: String
   }
 
 dateInput :: Self -> DateInputField -> JSX
-dateInput self { action, value, minDate, maxDate, disabled, label } =
+dateInput self { action, value, minDate, maxDate, disabled, label, id } =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
@@ -363,7 +371,9 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             }
         ]
     ]
-    $ Just { extraClasses: [ "mb2" ] }
+    { extraClasses: [ "mb2" ]
+    , id: id <> "--" <> Subsno.toString self.props.subsno
+    }
 
 validateTemporaryAddressChangeForm :: AddressChange -> VF.ValidatedForm AddressChangeFields AddressChange
 validateTemporaryAddressChangeForm form =

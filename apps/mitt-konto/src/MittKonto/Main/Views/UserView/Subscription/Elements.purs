@@ -5,6 +5,7 @@ import Prelude
 import Data.Array (filter, mapMaybe)
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Enum (enumFromTo)
 import Data.Foldable (foldMap, for_, null, maximum)
 import Data.JSDate (toDate)
 import Data.List (intercalate)
@@ -15,6 +16,7 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -73,7 +75,8 @@ pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
 pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, props: { now } } =
   if Array.null filteredChanges then mempty else Array.singleton $
   { term: "Tillfällig adressändring:"
-  , description: map (showPendingAddressChange self) filteredChanges
+  , description: map (showPendingAddressChange self) $
+      Array.zip (enumFromTo 1 $ Array.length filteredChanges) filteredChanges
   }
   where
     filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
@@ -81,13 +84,14 @@ pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, p
     filterExpiredPendingChanges changes =
       filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate) changes
 
-showPendingAddressChange :: Types.Self -> User.PendingAddressChange -> JSX
-showPendingAddressChange self change@{ address, startDate, endDate } =
+showPendingAddressChange :: Types.Self -> (Tuple Int User.PendingAddressChange) -> JSX
+showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
   let addressString = Helpers.formatAddress address
       pendingPeriod = Helpers.formatDateString startDate (toMaybe endDate)
   in DOM.span
        { className: "subscription--edit-pending-address-change"
        , children: [ DOM.text $ addressString <> " (" <> pendingPeriod <> ")" ]
+       , id: "subscription-" <> Subsno.toString self.props.subscription.subsno <> "-edit-pending-address-change-" <> show n
        , onClick: handler_ do
            self.setState _
              { updateAction = Just $ Types.EditTemporaryAddressChange change
@@ -128,7 +132,8 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
 
     paperOnlyActions =
       [ if isSubscriptionPausable sub then pauseIcon else mempty
-      , if maybe true Array.null self.state.pausedSubscriptions
+      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate))
+           self.state.pausedSubscriptions
           then mempty
           else removeSubscriptionPauses
       , if isSubscriptionTemporaryAddressChangable sub then temporaryAddressChangeIcon else mempty
@@ -216,13 +221,13 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                 Left err -> liftEffect do
                   self.setState _
                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                  Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "error"
+                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
                 Right newSubscription -> liftEffect do
                   self.setState _
                     { pausedSubscriptions = toMaybe newSubscription.paused
                     , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
                     }
-                  Tracking.unpauseSubscription props.user.cusno (show props.subscription.subsno) "success"
+                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
         }
 
     temporaryAddressChangeIcon =
@@ -274,11 +279,11 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
                             pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
-                          Tracking.deleteTempAddressChange props.subscription.cusno (show props.subscription.subsno) startDate' endDate' "success"
+                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
                         Left _ -> liftEffect do
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                          Tracking.deleteTempAddressChange props.subscription.cusno (show props.subscription.subsno) startDate' endDate' "success"
+                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
                     _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
         }
 
@@ -309,7 +314,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
       DOM.div
         { className: "subscription--action-item"
         , children: [ Router.link
-                        { to: { pathname: "/prenumerationer/" <> show subsno <> "/kreditkort/uppdatera"
+                        { to: { pathname: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
                               , state: {}
                               }
                         , children: [ DOM.div

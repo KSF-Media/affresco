@@ -6,9 +6,7 @@ import Data.Array (mapMaybe, drop, take)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (intercalate, length)
-import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.JSDate (JSDate, toDateTime)
-import Data.List (fromFoldable)
+import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
@@ -16,7 +14,9 @@ import Data.UUID (UUID, parseUUID, emptyUUID)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
+import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.User as User
 import KSF.User.Cusno as Cusno
@@ -195,21 +195,8 @@ search = do
         subscriptionRow sub =
           [ DOM.td
               { className: "search--result-subsno-column"
-              , children: [ DOM.text $ show sub.subsno ]
+              , children: [ DOM.text $ Subsno.toString sub.subsno ]
               }
           , DOM.td_ $ [ DOM.text $ sub.package.name ]
-          , DOM.td_ $ [ DOM.text $ fromMaybe "ogiltig" $ formatDate $ sub.dates.start ]
+          , DOM.td_ $ [ DOM.text $ fromMaybe "ogiltig" $ formatDateDots <$> (toDate sub.dates.start) ]
           ]
-
-formatDate :: JSDate -> Maybe String
-formatDate date = format formatter <$> toDateTime date
-  where
-    dot = Placeholder "."
-    formatter = fromFoldable
-      [ DayOfMonthTwoDigits
-      , dot
-      , MonthTwoDigits
-      , dot
-      , YearFull
-      ]
-

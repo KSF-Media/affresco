@@ -8,8 +8,9 @@ import Data.Formatter.Number as FormatterN
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), isJust, fromMaybe)
 import Data.String as String
+import KSF.Helpers (formatDateDots)
 import KSF.User (Payment)
-import MittKonto.Payment.Types (Props, percentFormatter, formatDate, formatEuro)
+import MittKonto.Payment.Types (Props, percentFormatter, formatEuro)
 import React.Basic (JSX)
 import React.Basic.Hooks (type (/\), Component, component, unsafeRenderEffect, (/\))
 import React.Basic.Hooks as React
@@ -47,7 +48,7 @@ render name payment =
             { className: "payment-detail--table"
             , children:
                 [ DOM.tbody_ $ map renderRow
-                    [ "Betaldatum" /\ formatDate payment.date
+                    [ "Betaldatum" /\ formatDateDots payment.date
                     , "Mottagare" /\ "KSF Media Ab"
                     , "Adress" /\ "Mannerheimvägen 18, 00100 HELSINGFORS"
                     , "Momsnummer" /\ "FI21372401"

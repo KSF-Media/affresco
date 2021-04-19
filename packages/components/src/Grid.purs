@@ -2,36 +2,46 @@ module KSF.Grid where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Nullable as Nullable
 import Data.String (joinWith)
+import Prim.Row (class Nub, class Union)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import Record as Record
+import Unsafe.Coerce (unsafeCoerce)
 
 type RowOptions =
-  { extraClasses :: Array String }
+  ( extraClasses :: Array String
+  , id :: String
+  )
 
 -- | Row with two columns
-row2 :: JSX -> JSX -> Maybe RowOptions -> JSX
+row2 :: forall a b. Union a RowOptions b => Nub b RowOptions => JSX -> JSX -> Record a -> JSX
 row2 leftElem rightElem opts =
   row [ columnHalf leftElem, columnHalf rightElem ] opts
 
-row :: Array JSX -> Maybe RowOptions -> JSX
-row children opts =
+row :: forall a b. Union a RowOptions b => Nub b RowOptions => Array JSX -> Record a -> JSX
+row children userOpts =
   DOM.div
     { className: classes
     , children: children
+    , id: unsafeCoerce $ if opts.id == "" then Nullable.null else Nullable.notNull opts.id
     }
   where
+    defaultOpts :: Record RowOptions
+    defaultOpts =
+      { extraClasses: []
+      , id: ""
+      }
+    opts :: Record RowOptions
+    opts = Record.merge userOpts defaultOpts
     classes =
       let baseClasses = [ "clearfix", "grid--row" ]
-      in joinWith " "
-         case opts of
-           Just o  -> baseClasses <> o.extraClasses
-           Nothing -> baseClasses
+      in joinWith " " $ baseClasses <> opts.extraClasses
 
 -- | Row without options
 row_ :: Array JSX -> JSX
-row_ children = row children Nothing
+row_ children = row children { }
 
 columnHalf :: JSX -> JSX
 columnHalf = col6

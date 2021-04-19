@@ -14,6 +14,8 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import KSF.Api.Subscription (Subsno)
+import KSF.Api.Subscription (toString) as Subsno
 import KSF.Helpers (formatDateDots)
 import KSF.Grid as Grid
 import KSF.User as User
@@ -29,7 +31,7 @@ import KSF.Tracking as Tracking
 type Self = React.Self Props State
 
 type Props =
-  { subsno    :: Int
+  { subsno    :: Subsno
   , cusno     :: Cusno
   , userUuid  :: UUID
   , oldStart  :: Maybe Date
@@ -117,13 +119,20 @@ render self =
     pauseForm =
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm self.state self.props)
+          , className: "pause-subscription--form"
           , children:
               (case Tuple self.props.oldStart self.props.oldEnd of
                   Tuple (Just start) (Just end) ->
                     [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <> formatDateDots end ]
                   _ -> []) <>
-              [ startDayInput
-              , endDayInput
+              [ DOM.div
+                  { className: "pause-subscription--start"
+                  , children: [ startDayInput ]
+                  }
+              , DOM.div
+                  { className: "pause-subscription--end"
+                  , children: [ endDayInput ]
+                  }
               , DOM.div
                   { children: [ submitFormButton ]
                   , className: "mt2 clearfix"
@@ -140,6 +149,7 @@ render self =
         , maxDate: Nothing
         , disabled: self.state.ongoing
         , label: "Börjar från"
+        , id: "pause-start"
         }
 
     endDayInput =
@@ -151,6 +161,7 @@ render self =
         , maxDate: self.state.maxEndDate
         , disabled: isNothing self.state.startDate
         , label: "Avslutas"
+        , id: "pause-end"
         }
 
     submitFormButton =
@@ -175,10 +186,11 @@ type DateInputField =
   , maxDate  :: Maybe Date
   , disabled :: Boolean
   , label    :: String
+  , id       :: String
   }
 
 dateInput :: Self -> DateInputField -> JSX
-dateInput self { action, value, minDate, maxDate, disabled, label } =
+dateInput self { action, value, minDate, maxDate, disabled, label, id } =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
@@ -195,7 +207,9 @@ dateInput self { action, value, minDate, maxDate, disabled, label } =
             }
         ]
     ]
-    $ Just { extraClasses: [ "mt2" ] }
+    { extraClasses: [ "mt2" ]
+    , id: id <> "--" <> Subsno.toString self.props.subsno
+    }
 
 submitForm :: State -> Props -> Effect Unit
 
@@ -207,10 +221,10 @@ submitForm { startDate: Just start, endDate: Just end, ongoing } props@{ userUui
       case _ of
         Right sub -> liftEffect do
           props.onSuccess sub
-          Tracking.editSubscriptionPause props.cusno (show subsno) oldStart oldEnd start end "success"
+          Tracking.editSubscriptionPause props.cusno subsno oldStart oldEnd start end "success"
         Left invalidDateInput -> liftEffect do
           props.onError invalidDateInput
-          Tracking.editSubscriptionPause props.cusno (show subsno) oldStart oldEnd start end "error: invalid date input"
+          Tracking.editSubscriptionPause props.cusno subsno oldStart oldEnd start end "error: invalid date input"
 
 submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
   props.onLoading
@@ -219,9 +233,9 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
       case _ of
         Right sub -> liftEffect do
           props.onSuccess sub
-          Tracking.pauseSubscription props.cusno (show subsno) start end "success"
+          Tracking.pauseSubscription props.cusno subsno start end "success"
         Left invalidDateInput -> liftEffect do
           props.onError invalidDateInput
-          Tracking.pauseSubscription props.cusno (show subsno) start end "error: invalid date input"
+          Tracking.pauseSubscription props.cusno subsno start end "error: invalid date input"
 
 submitForm _ _ = Console.error "Pause subscription dates were not defined."
