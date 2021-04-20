@@ -6,6 +6,7 @@
   "dependencies": {
     "parcel-bundler": "^1.12.3",
     "parcel": "1.12.3",
+    "basscss": "^8.1.0",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",

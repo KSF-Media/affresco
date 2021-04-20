@@ -30,6 +30,7 @@ type Props =
   { brand :: String
   , affArticle :: Aff FullArticle
   , articleStub :: Maybe ArticleStub
+  , onLogin :: Effect Unit
   }
 
 type State =
@@ -115,8 +116,8 @@ render { props, state, setState } =
     vetrina = guard (maybe false isPreviewArticle state.article)
       Vetrina.vetrina
         { onClose: Just $ loadArticle setState props.affArticle
-        , onLogin: pure unit -- show login modal
-        , products: Right [hblPremium]
+        , onLogin: props.onLogin
+        , products: Right [ hblPremium ]
         , unexpectedError: mempty
         , headline: Just
           $ DOM.div_
