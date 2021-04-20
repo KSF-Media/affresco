@@ -29,6 +29,7 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.Router as Router
+import KSF.News as News
 
 foreign import sentryDsn_ :: Effect String
 
@@ -50,9 +51,11 @@ app = do
         , alert: Nothing
         , payments: Nothing
         , now: now
+        , news: News.render Nothing
         }
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
+    _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
     let self = { state, setState }
         -- The user data in the search results isn't quite complete.
