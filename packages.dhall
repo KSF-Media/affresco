@@ -18,6 +18,11 @@ let additions =
         , repo = "https://github.com/KSF-Media/purescript-facebook.git"
         , version = "f3fb7727fa5d0ddc9f102e6970df669a9d3e3c36"
         }
+      , simple-ajax =
+        { repo = "https://github.com/dariooddenino/purescript-simple-ajax.git"
+	, version = "a8c6925db0463385a465a269c894f770b405460c"
+	, dependencies = [ "affjax", "simple-json", "variant" ]
+	}
       , react-basic-router =
         { dependencies = [ "react-basic", "foreign-generic", "prelude" ]
         , repo =

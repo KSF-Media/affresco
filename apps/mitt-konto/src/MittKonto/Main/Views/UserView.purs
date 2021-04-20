@@ -23,8 +23,8 @@ foreign import images :: { subscribe :: String }
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: Types.Self -> Sentry.Logger -> User -> JSX
-userView { state: { now }, setState } logger user = React.fragment
-  [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ profileView ]
+userView { state: { now, news }, setState } logger user = React.fragment
+  [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ newsView news, profileView ]
   , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
   where
@@ -131,6 +131,10 @@ userView { state: { now }, setState } logger user = React.fragment
             , href
             , target: "_blank"
             }
+
+    newsView Nothing = mempty
+    newsView (Just n) =
+      componentBlock "Nyheter:" [ componentBlockContent n, Elements.break ]
 
     componentBlock headerText content =
       DOM.div
