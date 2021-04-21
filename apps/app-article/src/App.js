@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import { isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn } from "./helper";
+import { isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn, updateURLParameter, checkIfUserIsLoggedInfromUrl } from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -104,6 +104,12 @@ class App extends Component {
         localStorage.removeItem("currentUser");
         localStorage.removeItem("cachedArticles");
         Cookies.set('LoginStatus', false);
+        
+        //Update the state of query param in URL
+        var newURL = updateURLParameter(window.location.href, 'locId', 'newLoc');
+        newURL = updateURLParameter(newURL, 'resId', 'newResId');
+
+        window.history.replaceState('', '', updateURLParameter(window.location.href, "islogged", 'false'));
     }
     //To inform the native in case there's any issue while processing the logout operation
     onLogoutFailed(err) {
@@ -501,6 +507,12 @@ class App extends Component {
             console.error('Android not defined');
         }
 
+        //Update the state of query param in URL
+        var newURL = updateURLParameter(window.location.href, 'locId', 'newLoc');
+        newURL = updateURLParameter(newURL, 'resId', 'newResId');
+
+        window.history.replaceState('', '', updateURLParameter(window.location.href, "islogged", 'true'));
+
         // Call ios bridge
         try {
             window.webkit.messageHandlers.isLoggedIn.postMessage("");
@@ -632,7 +644,7 @@ class App extends Component {
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
                                 {
-                                    !isUserLoggedIn() ?
+                                    !checkIfUserIsLoggedInfromUrl() && this.state.showBuyOption?
                                         <PremiumBox showLogin={this.showLogin} />
                                         :
                                         ""
