@@ -27,7 +27,8 @@ You can edit this file as you like.
     , "facebook"
     , "now"
     , "web-html"
-	, "uuid"
+    , "uuid"
+    , "affjax"
     ]
 , packages =
     ../../packages.dhall

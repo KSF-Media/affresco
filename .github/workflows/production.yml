@@ -75,6 +75,10 @@ jobs:
         run: |2
             ruby deploy.rb corona-banner
             mv apps/corona-banner/dist build/corona-banner
+      - name: Build Mosaico SPA
+        run: |2
+            ruby deploy.rb mosaico
+            mv apps/mosaico/dist build/mosaico
       - name: Upload Scripts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -117,6 +121,12 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/corona-banner
+      - name: Upload Mosaico SPA
+        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/mosaico
   refresh_cdn_app-article:
     needs: deploy
     runs-on: ubuntu-latest

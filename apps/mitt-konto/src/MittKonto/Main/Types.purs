@@ -9,6 +9,7 @@ import KSF.Alert.Component (Alert)
 import KSF.Paper (Paper)
 import KSF.Spinner as Spinner
 import KSF.User (User, SubscriptionPayments)
+import React.Basic (JSX)
 
 type State =
   { paper :: Paper
@@ -19,6 +20,7 @@ type State =
   , alert :: Maybe Alert
   , payments :: Maybe (Array SubscriptionPayments)
   , now :: Date
+  , news :: Maybe JSX
   }
 
 type Self =

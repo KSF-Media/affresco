@@ -1,0 +1,74 @@
+/**
+* Define site-wide colors
+*
+**/
+$dark-text: #141414;
+
+$grey-deepdark:      #0f1011;
+$grey-dark:          #333;
+$grey-warm-mid:      #535251;
+$grey-mediumdark:    #575d5c;
+$grey-medium:        #6d7573;
+$grey-mediumlight:   #999;
+$grey-slightlylight: #cbcaca;
+$grey-almostlight:   #dcd9d7;
+$grey-light:         #f7f5f3;
+
+$hairline-color:        #e0e0e0;
+
+$primary-accent:  #f07e26;
+$link:            #00698e;
+
+/* Product page colors */
+$bubble-green:    #00a0ac;
+
+/* Brand color utility classes */
+$brandColors: (
+  "hbl": #f07e26,
+  "on": #518196,
+  "vn": #c90c0f
+);
+@each $brand, $color in $brandColors {
+  .color-#{$brand} {
+    color: $color;
+  }
+  .border-color-#{$brand} {
+    border-color: $color;
+  }
+  .fill-#{$brand} {
+    fill: $color;
+  }
+}
+
+$button-color-primary: #00810a;
+$button-color-primary-hover: #249c25;
+$button-color-secondary: #f5922f;
+$button-color-tertiary: white;
+
+$color-facebook: #3b5999;
+$color-facebook-hover: #5b616e;
+$color-googleplus: #d64a2a;
+$color-googleplus-hover: #c14225;
+
+
+/* Advertial colors */
+$advertial-black: #222222;
+$advertial-grey:  #ebebeb;
+
+$link-color: #337ab7;
+$link-color-footer: #252525;
+$footer-background: #eceae6;
+
+$nude: #eceae6;
+$white: white;
+
+/* Alert colors */
+
+$alert-success: #268729;
+$alert-info: #00698e;
+$alert-warning: #ffd429;
+$alert-danger: #e6492e;
+
+$color-input-border: #aab2bd;
+
+$brand-neutral: #00A1AB;

@@ -1,0 +1,16 @@
+.mosaico--article--image {
+    img {
+        width: 100%;
+        height: auto;
+    }
+    .caption {
+        color: $grey-medium;
+        margin: 15px 0;
+        font: 400 .875rem 'Roboto', sans-serif;
+        .byline {
+            color: $grey-deepdark;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+    }
+}

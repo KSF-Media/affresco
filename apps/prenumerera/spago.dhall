@@ -23,7 +23,8 @@
     , "facebook"
     , "now"
     , "react-basic-router"
-	, "uuid"
+    , "uuid"
+    , "affjax"
     ]
 , packages =
     ../../packages.dhall

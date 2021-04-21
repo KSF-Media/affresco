@@ -1,11 +1,14 @@
-{ name = "vetrina-test"
+{-
+Welcome to a Spago project!
+You can edit this file as you like.
+-}
+{ name = "mosaico"
 , dependencies =
   [ "aff"
   , "aff-promise"
+  , "affjax"
   , "affresco-components"
-  , "affresco-test"
   , "affresco-user"
-  , "affresco-vetrina"
   , "console"
   , "datetime"
   , "effect"
@@ -15,18 +18,15 @@
   , "js-date"
   , "now"
   , "ordered-collections"
+  , "payload"
   , "prelude"
   , "psci-support"
   , "react-basic"
-  , "react-basic-classic"
   , "react-basic-dom"
-  , "react-basic-router"
   , "simple-json"
-  , "test-unit"
-  , "toppokki"
   , "uuid"
-  , "affjax"
+  , "routing"
   ]
 , packages = ../../packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs" ]
 }

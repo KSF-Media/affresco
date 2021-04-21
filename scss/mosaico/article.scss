@@ -1,0 +1,8 @@
+.mosaico--article {
+    p {
+        @include roboto(1rem, 300, 1.5rem)
+    }
+    h4 {
+        @include roboto(1rem, 700);
+    }
+}
