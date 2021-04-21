@@ -20,7 +20,6 @@ import Effect (Effect)
 import Effect.Aff (Aff, error, delay)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
@@ -34,8 +33,6 @@ import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
 import KSF.ValidatableForm as Form
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.Classic as React.Classic
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -94,11 +91,11 @@ type JSProps =
   , disableSocialLogins :: Nullable (Array String)
   }
 
-type JSSelf = React.Self Props State
+type JSSelf = React.Classic.Self Props State
 
 jsComponent :: React.ReactComponent JSProps
 jsComponent =
-  React.toReactComponent
+  React.Classic.toReactComponent
     fromJSProps
     (React.Classic.createComponent "Login")
     { initialState, render: jsRender, didMount: jsDidMount }
