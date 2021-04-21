@@ -55,3 +55,7 @@ In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
     - path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
 3. Create a new SSL certificate for the new host on this load balancer, and point a DNS A record to the IP of the load balancer
 4. Edit the `refreshCDNSteps` [source](./workflows.dhall) to include a `gcloud` command to clear the CDN cache on new deployments
+
+### Maintenance Mode
+
+Change the `MAINTENANCE_MODE` env var to `true` for the desired app in `apps.dhall`
