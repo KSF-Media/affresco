@@ -39,6 +39,17 @@ let additions =
           ]
         , repo = "https://github.com/KSF-Media/purescript-payload.git"
         , version = "31c1f71c4531282e34fc35bdbc0902ddf1d32733"
+      }
+      , simple-ajax =
+        { repo = "https://github.com/dariooddenino/purescript-simple-ajax.git"
+	      , version = "a8c6925db0463385a465a269c894f770b405460c"
+	      , dependencies = [ "affjax", "simple-json", "variant" ]
+	      }
+      , react-basic-router =
+        { dependencies = [ "react-basic", "foreign-generic", "prelude" ]
+        , repo =
+            "https://github.com/KSF-Media/purescript-react-basic-router.git"
+        , version = "65ae7ae9dfd89213d11ce6679594ccf4dea8576e"
         }
       , react-basic-router =
 	{ dependencies = [ "react-basic", "foreign-generic", "prelude" ]

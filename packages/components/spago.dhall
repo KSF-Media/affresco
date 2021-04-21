@@ -5,6 +5,7 @@
     , "console"
     , "aff"
     , "aff-promise"
+    , "simple-ajax"
     , "formatters"
     , "datetime"
     , "react-basic"
