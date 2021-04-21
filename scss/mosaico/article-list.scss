@@ -1,0 +1,45 @@
+.mosaico--article-list {
+  grid-area: main;
+  .list-article-image {
+    img {
+      width: 100%;
+      height: auto;
+    }
+  }
+  .mosaico--tag {
+    margin-bottom: 5px;
+  }
+  .mosaico--list-article {
+    &.list-article-default {
+      h2 {
+        @media (min-width: $breakpoint-md) {
+          margin-top: 0;
+        }
+      }
+      > a {
+        cursor: pointer;
+        display: grid;
+        $grid-template-columns: 1fr;
+        grid-template-areas:
+        "left"
+        "right";
+        @media (min-width: $breakpoint-md) {
+          grid-template-columns: 1fr 1fr;
+          grid-column-gap: 30px;
+          grid-template-areas:
+          "left right";
+        }
+        .list-article-image {
+          grid-area: left;
+        }
+        .list-article-liftup {
+          grid-area: right;
+        }
+        transition: all .2s;
+      }
+      > a:hover {
+        filter: contrast(120%);
+      }
+    }
+  }
+}
