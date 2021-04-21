@@ -20,12 +20,14 @@ import Effect (Effect)
 import Effect.Aff (Aff, error, delay)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField as InputField
 import KSF.Registration.Component as Registration
+import KSF.Tracking as Tracking
 import KSF.User (User, UserError(..))
 import KSF.User as User
 import KSF.User.Login.Facebook.Success as Facebook.Success
@@ -34,11 +36,14 @@ import KSF.ValidatableForm as Form
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
+import React.Basic.Classic as React.Classic
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import KSF.Tracking as Tracking
+import React.Basic.Hooks (Component, component, useEffectOnce, useState, (/\))
+import React.Basic.Hooks as React
+
 
 foreign import hideLoginLinks :: Boolean
 
@@ -74,8 +79,6 @@ type LoginForm =
 
 data LoginStep = Login | Registration
 
-type Self = React.Self Props State
-
 type JSProps =
   { onMerge             :: Nullable (Effect Unit)
   , onMergeCancelled    :: Nullable (Effect Unit)
@@ -91,8 +94,20 @@ type JSProps =
   , disableSocialLogins :: Nullable (Array String)
   }
 
+type JSSelf = React.Self Props State
+
 jsComponent :: React.ReactComponent JSProps
-jsComponent = React.toReactComponent fromJSProps component { initialState, render, didMount }
+jsComponent =
+  React.toReactComponent
+    fromJSProps
+    (React.Classic.createComponent "Login")
+    { initialState, render: jsRender, didMount: jsDidMount }
+
+jsRender :: JSSelf -> JSX
+jsRender { props, state, setState } = render { props, state, setState }
+
+jsDidMount :: JSSelf -> Effect Unit
+jsDidMount { props, setState } = attemptMagicLogin props setState
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
@@ -147,6 +162,8 @@ type State =
   , socialLoginVisibility :: Visibility
   }
 
+type Self = { state :: State, setState :: (State -> State) -> Effect Unit, props :: Props }
+
 data Visibility = Visible | Hidden
 derive instance eqVisibility :: Eq Visibility
 
@@ -160,24 +177,21 @@ initialState =
   , socialLoginVisibility: Hidden
   }
 
-component :: React.Component Props
-component = React.createComponent "Login"
+login :: Component Props
+login = do
+  component "Login" \props -> React.do
+    state /\ setState <- useState initialState
+    useEffectOnce do
+      attemptMagicLogin props setState
+      pure mempty
+    pure $ render { state, setState, props }
 
-login :: Props -> JSX
-login = make component
-  { initialState
-  , render
-  , didMount
-  }
-
-didMount :: Self -> Effect Unit
-didMount self@{ props, state } = do
+attemptMagicLogin :: Props -> ((State -> State) -> Effect Unit) -> Effect Unit
+attemptMagicLogin props setState = do
   props.launchAff_ $ User.magicLogin Nothing \user -> do
     case user of
-      Left _ -> do
-        self.setState _ { errors { login = Just SomethingWentWrong } }
-      Right user' -> do
-        Tracking.login (Just user'.cusno) "magic login" "success"
+      Left _      -> setState _ { errors { login = Just SomethingWentWrong } }
+      Right user' -> Tracking.login (Just user'.cusno) "magic login" "success"
     props.onUserFetch user
 
 render :: Self -> JSX
