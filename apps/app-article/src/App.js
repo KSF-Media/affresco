@@ -637,6 +637,12 @@ class App extends Component {
                             `Should show Login:  ${this.state.appearLogin} `
                         }
                          </div>
+                         <div>
+                        {
+                            `localstorage token:  ${localStorage.getItem('token')} `
+                        }
+                       
+                         </div>
                         <Tag tags={this.state.tags} />
                         {
                             this.state.category === 'Advertorial' ?
