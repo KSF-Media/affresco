@@ -671,7 +671,7 @@ class App extends Component {
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
                                 {
-                                    !checkIfUserIsLoggedInfromUrl() && this.state.showBuyOption?
+                                    this.state.showBuyOption?
                                         <PremiumBox showLogin={this.showLogin} />
                                         :
                                         ""
