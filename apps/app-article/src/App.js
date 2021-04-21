@@ -641,6 +641,18 @@ class App extends Component {
                         {
                             `localstorage token:  ${localStorage.getItem('token')} `
                         }
+
+                        <div>
+                            {
+                                `LoginStatus cookie:  ${Cookies.get('LoginStatus')} `
+                            }
+                        </div>
+
+                        <div>
+                            {
+                                `token cookie:  ${Cookies.get('token')} `
+                            }
+                        </div>
                        
                          </div>
                         <Tag tags={this.state.tags} />
