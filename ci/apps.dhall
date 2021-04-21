@@ -64,6 +64,32 @@ let apps =
           , buildDir = "mosaico"
           , deployDir = "mosaico"
           }
+        {-
+        , Actions.App::{
+          , name = "Prenumerera PoC"
+          , buildDir = "prenumerera"
+          , deployDir = "prenumerera"
+          }
+        , Actions.App::{
+          , name = "Duellen"
+          , buildDir = "duellen"
+          , deployDir = "duellen"
+          }
+        , Actions.App::{
+          , name = "Podcasts"
+          , buildDir = "podcasts"
+          , deployDir = "podcasts"
+          , env = toMap {
+            , PODCAST_IDS = "694513583,705599305,630339678,542583531"
+            }
+          }
+        , Actions.App::{
+          , name = "Podcasts (VN)"
+          , buildDir = "podcasts"
+          , deployDir = "podcasts-vn"
+          , env = toMap { PODCAST_IDS = "806886790" }
+          }
+        -}
         ]
       : List Actions.App.Type
 
