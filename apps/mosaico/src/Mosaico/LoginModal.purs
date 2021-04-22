@@ -29,12 +29,15 @@ type Props =
   , onClose :: Effect Unit
   }
 
-type State = { eventListener :: Effect Unit }
+type State =
+  { loginComponent :: Login.Props -> JSX
+  }
 
 loginModal :: Component Props
 loginModal = do
+  loginComponent <- Login.login
   component "LoginModal" \props -> React.do
-    state /\ setState <- useState {}
+    state /\ setState <- useState { loginComponent }
 
     -- Add eventListener for ESC key, which closes the modal
     -- Remove the listener when the LoginModal is unmounted
@@ -47,10 +50,10 @@ loginModal = do
       document <- Web.document =<< Web.window
       addEventListener (EventType "keydown") e false (toEventTarget document)
       pure $ removeEventListener (EventType "keydown") e false (toEventTarget document)
-    pure $ render props
+    pure $ render props state
 
-render :: Props -> JSX
-render props =
+render :: Props -> State -> JSX
+render props state =
   DOM.div
     { className: "mosaico--login-modal-container"
     , children:
@@ -63,12 +66,11 @@ render props =
                         [ DOM.h1_ [ DOM.text "Logga in" ]
                         , DOM.span
                             { className: "mosaico--login-modal_close"
-                            , onClick: handler_ do
-                                props.onClose
+                            , onClick: handler_ props.onClose
                             }
                         ]
                     }
-                , Login.login
+                , state.loginComponent
                     { onMerge: pure unit
                     , onMergeCancelled: pure unit
                     , onRegister: pure unit
