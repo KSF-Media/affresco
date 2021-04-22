@@ -136,28 +136,39 @@ articleList state setState router =
       DOM.div
         { className: "mosaico--list-article list-article-default"
         , children:
-            [ DOM.a
-                { onClick: handler_ do
-                     setState \s -> s { clickedArticle = Just a }
-                     window <- Web.window
-                     _ <- Web.scroll 0 0 window
-                     router.pushState (write {}) $ "/artikel/" <> a.uuid
-                , children:
-                    [ DOM.div
-                      { className: "list-article-image"
-                      , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
-                      }
-                    , DOM.div
-                      { className: "list-article-liftup"
-                      , children:
-                        [ DOM.div
-                          { className: "mosaico--tag color-hbl"
-                          , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
-                          }
-                        , DOM.h2_ [ DOM.text a.title ]
-                        ]
-                      }
-                    ]
+          [ DOM.a
+            { onClick: handler_ do
+                  setState \s -> s { clickedArticle = Just a }
+                  window <- Web.window
+                  _ <- Web.scroll 0 0 window
+                  router.pushState (write {}) $ "/artikel/" <> a.uuid
+            , children:
+              [ DOM.div
+                { className: "list-article-image"
+                , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
                 }
-            ]
+              , DOM.div
+                { className: "list-article-liftup"
+                , children:
+                  [ DOM.div
+                    { className: "mosaico--tag color-hbl"
+                    , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
+                    }
+                  , DOM.h2_ [ DOM.text a.title ]
+                  , DOM.div
+                    { className: "mosaico--article--meta"
+                    , children:
+                      [ case a.premium of
+                        true -> DOM.div
+                            { className: "mosaico--article--premium background-hbl"
+                            , children: [ DOM.text "premium" ]
+                            }
+                        _ -> mempty
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
