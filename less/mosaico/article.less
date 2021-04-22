@@ -1,8 +1,21 @@
 .mosaico--article {
+    h1 {
+        font: 700 1.92rem 'Duplex Serif Web', serif;
+        color: #333;
+        margin-top: 0.9375rem;
+        margin-bottom: 10px;
+        letter-spacing: -0.015em;
+        @media (min-width: @breakpoint-md) {
+            font-size: 2.75rem;
+        }
+        @media (min-width: @breakpoint-xl) {
+            font-size: 3.75rem;
+        }
+    }
     p {
-        @include roboto(1rem, 300, 1.5rem);
+        font: 300 1rem/1.5rem "Roboto", sans-serif;
     }
     h4 {
-        @include roboto(1rem, 700);
+        font: 600 1rem/1.5rem "Roboto", sans-serif;
     }
 }
