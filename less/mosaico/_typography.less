@@ -1,0 +1,64 @@
+@path-fonts: 'https://cdn.ksfmedia.fi/assets/fonts';
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap');
+
+@font-face {
+    font-family: 'Duplex Sans';
+    src: url('#{@path-fonts}/Duplex-Sans-Light.otf') format('opentype');
+    font-weight: 300;
+}
+@font-face {
+    font-family: 'Duplex Sans';
+    src: url('#{@path-fonts}/Duplex-Sans-Regular.otf') format('opentype');
+    font-weight: normal;
+}
+@font-face {
+    font-family: 'Duplex Sans';
+    src: url('#{@path-fonts}/Duplex-Sans-Semibold.otf') format('opentype');
+    font-weight: 500;
+}
+@font-face {
+    font-family: 'Duplex Serif Web';
+    src: url('#{@path-fonts}/Duplex-Serif-Web-Bold.eot');
+    src: url('#{@path-fonts}/Duplex-Serif-Web-Bold.eot?#iefix') format('embedded-opentype'),
+    url('#{@path-fonts}/Duplex-Serif-Web-Bold.woff2') format('woff2'),
+    url('#{@path-fonts}/Duplex-Serif-Web-Bold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-stretch: normal;
+}
+@font-face {
+    font-family: 'Duplex Sans Web';
+    src: url('#{@path-fonts}/Duplex-Sans-Web-Bold.eot');
+    src: url('#{@path-fonts}/Duplex-Sans-Web-Bold.eot?#iefix') format('embedded-opentype'),
+    url('#{@path-fonts}/Duplex-Sans-Web-Bold.woff2') format('woff2'),
+    url('#{@path-fonts}/Duplex-Sans-Web-Bold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-stretch: normal;
+}
+@font-face {
+    font-family: 'Roboto';
+    src: url('#{@path-fonts}/Roboto-Regular.ttf') format('truetype');
+    font-weight: normal;
+}
+@font-face {
+    font-family: 'Roboto Bold';
+    src: url('#{@path-fonts}/Roboto-Bold.ttf') format('truetype');
+    font-weight: 700;
+}
+
+@mixin roboto(@font-size: 1rem, @font-weight: 400, @line-height: 1.5rem) {
+    font-family: "Roboto", sans-serif;
+    font-size: @font-size;
+    font-weight: @font-weight;
+    line-height: @line-height;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Duplex Serif Web", serif;
+    font-weight: 700;
+}
+p {
+    @include roboto;
+}

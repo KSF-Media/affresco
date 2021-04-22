@@ -9,27 +9,28 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
-import MittKonto.Main.Elements as Elements
-import MittKonto.Main.Helpers as Helpers
-import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
-import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
-import MittKonto.Payment.Types as Payments
-import MittKonto.Payment.PaymentAccordion as PaymentAccordion
-import MittKonto.Payment.PaymentDetail as PaymentDetail
-import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
+import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User as User
+import KSF.User.Login as Login
+import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
+import MittKonto.Main.Elements as Elements
+import MittKonto.Main.Helpers as Helpers
+import MittKonto.Main.Types as Types
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
+import MittKonto.Payment.PaymentAccordion as PaymentAccordion
+import MittKonto.Payment.PaymentDetail as PaymentDetail
+import MittKonto.Payment.Types as Payments
+import MittKonto.Wrappers as Wrappers
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.Router as Router
-import KSF.News as News
 
 foreign import sentryDsn_ :: Effect String
 
@@ -42,6 +43,7 @@ app = do
   paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
+  loginComponent <- Login.login
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -52,6 +54,7 @@ app = do
         , payments: Nothing
         , now: now
         , news: News.render Nothing
+        , loginComponent
         }
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
