@@ -1,6 +1,6 @@
 module Bottega.Models.Order where
 
-import Prelude (($), class Show)
+import Prelude
 
 import Bottega.Models.FailReason (FailReason(..), parseFailReason)
 import Data.Generic.Rep (class Generic)

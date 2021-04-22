@@ -2,9 +2,9 @@ module Lettera where
 
 import Prelude
 
-import Affjax as AX
-import Affjax.RequestHeader as AX
-import Affjax.ResponseFormat as AX
+import Affjax (defaultRequest, request, printError, get) as AX
+import Affjax.RequestHeader (RequestHeader(..)) as AX
+import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (stringify, toArray, toObject)

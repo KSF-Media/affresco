@@ -14,8 +14,8 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
 import Effect.Unsafe (unsafePerformEffect)
-import KSF.Auth as Auth
 import KSF.Paper (Paper(..))
+import KSF.User (User)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, FullArticle, Article)
 import Mosaico.Article as Article
@@ -46,7 +46,9 @@ type State =
   , route :: MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
+  , articleComponent :: Article.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
+  , user :: Maybe User
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -73,6 +75,7 @@ app = do
           Right path -> setState \s -> s { route = path }
           Left err   -> pure unit
 
+  articleComponent    <- Article.article
   loginModalComponent <- LoginModal.loginModal
   component "Mosaico" \_ -> React.do
     let initialState =
@@ -82,7 +85,9 @@ app = do
           , route: initialRoute
           , clickedArticle: Nothing
           , modalView: Nothing
+          , articleComponent
           , loginModalComponent
+          , user: Nothing
           }
     state /\ setState <- useState initialState
 
@@ -112,7 +117,12 @@ render setState state router =
   case state.modalView of
     Just LoginModal ->
       state.loginModalComponent
-        { onUserFetch: \_ -> setState \s -> s { modalView = Nothing }
+        { onUserFetch: \user ->
+           case user of
+             Right u -> setState \s -> s { modalView = Nothing, user = Just u }
+             Left _err ->
+               -- TODO: Handle properly
+               Console.error $ "Login error " <> show _err
         , onClose: setState \s -> s { modalView = Nothing }
         }
     _ -> mempty
@@ -131,7 +141,7 @@ render setState state router =
                   case a of
                     Right article -> pure article
                     Left err -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
-            in renderArticle setState affArticle state.clickedArticle
+            in renderArticle state setState affArticle state.clickedArticle
           Frontpage -> articleList state setState router
     , DOM.footer
       { className: "mosaico--footer"
@@ -142,13 +152,14 @@ render setState state router =
     ]
   }
 
-renderArticle :: SetState -> Aff FullArticle -> Maybe ArticleStub -> JSX
-renderArticle setState affA aStub =
-  Article.article
+renderArticle :: State -> SetState -> Aff FullArticle -> Maybe ArticleStub -> JSX
+renderArticle state setState affA aStub =
+  state.articleComponent
     { affArticle: affA
     , brand: "hbl"
     , articleStub: aStub
     , onLogin: setState \s -> s { modalView = Just LoginModal }
+    , user: state.user
     }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX

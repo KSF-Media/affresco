@@ -14,23 +14,29 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Paper (Paper(..))
+import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, fromFullArticle, isPreviewArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, fromFullArticle, isPreviewArticle)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
+import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
+import React.Basic.Hooks as React
 
-type Self = React.Self Props State
+type Self =
+  { state :: State
+  , setState :: (State -> State) -> Effect Unit
+  , props :: Props
+  }
 
 type Props =
   { brand :: String
   , affArticle :: Aff FullArticle
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
+  , user :: Maybe User
   }
 
 type State =
@@ -38,17 +44,27 @@ type State =
   , article :: Maybe FullArticle
   }
 
-component :: React.Component Props
-component = React.createComponent "Article"
+article :: Component Props
+article = do
+  component "Article" \props -> React.do
+    let initialState =
+          { body: []
+          , article: Nothing
+          }
+    state /\ setState <- useState initialState
 
-article :: Props -> JSX
-article props = React.make
-  component
-  { initialState: { body: [], article: Nothing }, render, didMount }
-  props
+    useEffectOnce do
+      loadArticle setState props.affArticle
+      pure mempty
 
-didMount :: Self -> Effect Unit
-didMount self = loadArticle self.setState self.props.affArticle
+    -- If user logs in / logs out, reload the article.
+    -- NOTE: We simply compare the email attribute of `User`
+    -- as not every attribute of `User` implements `Eq`
+    useEffect (_.email <$> props.user) do
+      loadArticle setState props.affArticle
+      pure mempty
+
+    pure $ render { state, setState, props }
 
 loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
 loadArticle setState affArticle =
@@ -78,8 +94,8 @@ renderImage img =
       ]
     }
   where
-    caption = fold $ img.caption
-    byline = fold $ img.byline
+    caption = fold img.caption
+    byline  = fold img.byline
 
 render :: Self -> JSX
 render { props, state, setState } =
@@ -177,15 +193,16 @@ render { props, state, setState } =
           , children: [ DOM.text str ]
           }
         Image img -> renderImage img
-        Box boxData -> DOM.div {
-          className: "factbox",
-          children:
-            [ box
-              { headline: boxData.headline
-              , title: boxData.title
-              , content: boxData.content
-              , brand: props.brand
-              }
-            ]
-          }
+        Box boxData ->
+          DOM.div
+            { className: "factbox"
+            , children:
+                [ box
+                    { headline: boxData.headline
+                    , title: boxData.title
+                    , content: boxData.content
+                    , brand: props.brand
+                    }
+                ]
+            }
         other -> DOM.p_ [ DOM.text $ show other ]

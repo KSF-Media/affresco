@@ -14,8 +14,7 @@ import Effect.Class.Console as Console
 import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (Article, BodyElement(..), FullArticle(..))
-import Mosaico.Article as Article
+import Lettera.Models (Article, FullArticle(..))
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
@@ -28,7 +27,7 @@ import Payload.Server.Response (class EncodeResponse)
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Server (renderToString) as DOM
+import React.Basic.DOM.Server (renderToString)
 
 -- NOTE: We need to require dotenv in JS
 foreign import requireDotenv :: Unit
@@ -103,7 +102,7 @@ getMostRead :: {} -> Aff TextHtml
 getMostRead _ = do
   frontpage <- Lettera.getFrontpage HBL
   case frontpage of
-    Right fp -> pure $ TextHtml $ DOM.renderToString $ mostRead fp
+    Right fp -> pure $ TextHtml $ renderToString $ mostRead fp
     Left err -> Aff.throwError $ error err
   where
     mostRead articles =
@@ -123,7 +122,7 @@ getMostRead _ = do
         }
 
 mosaicoString :: Article -> String
-mosaicoString = DOM.renderToString <<< mosaico
+mosaicoString = renderToString <<< mosaico
 
 mosaico :: Article -> JSX
 mosaico a =
