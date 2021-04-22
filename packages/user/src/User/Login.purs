@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
+import Data.Array as Array
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, surround)
 import Data.List.NonEmpty (all)
@@ -17,9 +18,10 @@ import Data.String as String
 import Data.Time.Duration (Milliseconds(..))
 import Data.Validation.Semigroup (validation)
 import Effect (Effect)
-import Effect.Aff (Aff, error, delay)
+import Effect.Aff (Aff, Milliseconds(..), delay, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
@@ -40,6 +42,7 @@ import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
+import React.Basic.Hooks.Aff (useAff)
 
 
 foreign import hideLoginLinks :: Boolean
@@ -157,12 +160,19 @@ type State =
   , merge :: Maybe User.MergeInfo
   , loginViewStep :: LoginStep
   , socialLoginVisibility :: Visibility
+  , loginCounter :: Int
   }
 
-type Self = { state :: State, setState :: (State -> State) -> Effect Unit, props :: Props }
+type Self =
+  { state :: State
+  , setState :: (State -> State) -> Effect Unit
+  , props :: Props
+  }
 
 data Visibility = Visible | Hidden
 derive instance eqVisibility :: Eq Visibility
+
+data LoggingIn = LoggingIn
 
 initialState :: State
 initialState =
@@ -172,15 +182,27 @@ initialState =
   , merge: Nothing
   , loginViewStep: Login
   , socialLoginVisibility: Hidden
+  , loginCounter: 0
   }
 
 login :: Component Props
 login = do
   component "Login" \props -> React.do
     state /\ setState <- useState initialState
+
+    useAff state.loginCounter do
+      if state.loginCounter == 0
+      then pure unit
+      else do
+        Aff.delay $ Milliseconds 500.0
+        liftEffect do
+          let newCounterValue = if state.loginCounter == 4 then 1 else state.loginCounter + 1
+          setState \oldState -> oldState { loginCounter = newCounterValue }
+
     useEffectOnce do
       attemptMagicLogin props setState
       pure mempty
+
     pure $ render { state, setState, props }
 
 attemptMagicLogin :: Props -> ((State -> State) -> Effect Unit) -> Effect Unit
@@ -226,14 +248,17 @@ loginWithRetry action handleSuccess handleError handleFinish = do
         _ -> pure user
 
 onLogin :: Self -> Form.ValidatedForm LoginField LoginForm -> Effect Unit
-onLogin self@{ props, state } = validation
-  (\errors -> do
-      self.setState _
-        { formEmail    = state.formEmail    <|> Just ""
-        , formPassword = state.formPassword <|> Just ""
-        })
-  (\validForm -> props.launchAff_
-                   $ loginWithRetry (logUserIn validForm) handleSuccess handleError handleFinish)
+onLogin self@{ state, props } =
+  validation
+    (\errors -> do
+        self.setState _
+          { formEmail    = state.formEmail    <|> Just ""
+          , formPassword = state.formPassword <|> Just ""
+          })
+    (\validForm -> self.props.launchAff_ do
+        liftEffect $ self.setState \s -> s { loginCounter = s.loginCounter + 1 }
+       -- Aff.delay $ Milliseconds 5000.0 TODO: REMOVE, FOR DEMO PURPOSES ONLY
+        loginWithRetry (logUserIn validForm) handleSuccess handleError handleFinish)
   where
     logUserIn validForm
       | Just validUsername <- validForm.username
@@ -316,6 +341,7 @@ renderLoginForm self =
           Hidden  -> mempty
         allSocialLoginsDisabled =
           all (\loginProvider -> Set.member loginProvider self.props.disableSocialLogins) [ Facebook, Google ]
+
     loginForm :: JSX
     loginForm =
       DOM.form
@@ -349,12 +375,22 @@ renderLoginForm self =
                 { className: "button-green"
                 -- Disable login button only when true errors are found.
                 -- This is to prevent it from being disabled (grey) when opening the front page
-                , disabled: validation (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
-                , value: "Logga in"
+                , disabled:
+                    self.state.loginCounter > 0
+                    || validation (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
+                , value: loginValue
                 , type: "submit"
                 }
             ]
         }
+      where
+        loginValue :: String
+        loginValue =
+          let dots = Array.replicate (self.state.loginCounter - 1) "."
+          in case self.state.loginCounter of
+            0 -> "Logga in"
+            _ -> "Loggar in " <> String.joinWith "" dots
+
 
 renderMerge :: Self -> User.MergeInfo -> JSX
 renderMerge self@{ props } mergeInfo =
