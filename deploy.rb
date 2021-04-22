@@ -44,7 +44,7 @@ apps_list = JSON.parse(apps_json)
 apps = apps_list.map{ |x| [x["deployDir"], x] }.to_h
 
 app_name = ARGV.first
-maintenance = ARGV[1]
+maintenance = ENV['MAINTENANCE_MODE']
 
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
@@ -99,7 +99,7 @@ def deploy_maintenance_page(app_path)
   run_command("mkdir -p #{app_path}/dist && cp ./static/maintenance.html #{app_path}/dist/index.html")
 end
 
-if maintenance == '--maintenance'
+if maintenance == 'true'
   puts 'Deploying maintenance page'
   deploy_maintenance_page(app['path'])
 elsif app_name == 'scripts'

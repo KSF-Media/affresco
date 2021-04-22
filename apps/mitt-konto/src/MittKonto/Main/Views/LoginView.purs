@@ -11,7 +11,6 @@ import KSF.JSError as Error
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User (UserError(..), isAdminUser)
-import KSF.User.Login (login) as Login
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import React.Basic (JSX)
@@ -38,7 +37,7 @@ loginView self@{ state, setState } logger =
     <> [ Helpers.classy DOM.div "form" [ loginForm ] ]
   where
     loginForm =
-        Login.login
+        state.loginComponent
           { onMerge:             setState \s -> s { showWelcome = false }
           , onMergeCancelled:    setState \s -> s { showWelcome = true }
           , onRegister:          setState \s -> s { showWelcome = false }
