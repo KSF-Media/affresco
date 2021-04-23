@@ -177,6 +177,7 @@ getUser maybeInvalidateCache uuid = do
           Console.error "Failed to fetch the user"
           throwError err
     Right user -> do
+      -- TODO: No need to fetch cards always! E.g. in Mosaico
       Console.info "User fetched successfully"
       fromPersonaUserWithCards user
 
