@@ -4,11 +4,8 @@ import Prelude
 
 import Data.Foldable (fold)
 import Data.Maybe (Maybe)
-import Data.Nullable (Nullable, toMaybe)
-import Effect.Console (log)
-import React.Basic.Classic (Component, JSX, createComponent, make, readState)
+import React.Basic.Classic (Component, JSX, createComponent, make)
 import React.Basic.DOM as R
-import React.Basic.DOM.Events (capture_)
 
 component :: Component Props
 component = createComponent "Box"

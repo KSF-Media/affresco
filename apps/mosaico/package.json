@@ -5,6 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "parcel": "1.12.3",
+    "basscss": "^8.1.0",
     "parcel-bundler": "^1.12.3",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",

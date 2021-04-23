@@ -9,6 +9,7 @@ You can edit this file as you like.
   , "affjax"
   , "affresco-components"
   , "affresco-user"
+  , "affresco-vetrina"
   , "console"
   , "datetime"
   , "effect"
@@ -26,6 +27,7 @@ You can edit this file as you like.
   , "simple-json"
   , "uuid"
   , "routing"
+  , "web-uievents"
   ]
 , packages = ../../packages.dhall
 , sources = [ "src/**/*.purs" ]
