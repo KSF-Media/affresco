@@ -1,32 +1,49 @@
-**Some brief documentation for the script**
-Requirements:
-**The gpt.js from Google**
-`<script async='async' src='https://www.googletagservices.com/tag/js/gpt.js'></script>`
+# Documentation
 
+The GPT file from Google.
 
-**The script itself from where ever it is hosted**
-`<script async='async' src='gamAppAds.js'></script>`
+```html
+<script
+  async="async"
+  src="https://www.googletagservices.com/tag/js/gpt.js"
+></script>
+```
 
-DIV tags in the HTML that correspond to the once known by the script:
-The script is looking for div:s in the HTML based on id like these:
-**MOBPARAD
-MOBNER
-DIGIHELMOB**
-These names are not final. The expected HTML is this:
-`<div id = "string"></div>`
+The script itself from wherever it is hosted.
 
-/Requirements
+```html
+<script async="async" src="gamAppAds.js"></script>
+```
+
+Div tags in the HTML should(???) correspond to the ones known by the script.
+
+The script is looking for divs in the HTML based on ids like these:
+
+- MOBPARAD
+- MOBNER
+- DIGIHELMOB
+
+These names are not final(???). The expected HTML is this:
+
+```html
+<div id="string"></div>
+```
+
+## GDPR
 
 GPDR consent is hard-coded as using the app will require consent.
 
-The code listens for ads marked 
-newspaper > app
-and there is an order set up in Google Ad Manager to populate the app during testing.
+The code listens for ads marked `newspaper > app` and there is an order set up in Google Ad Manager to populate the app during testing.
 
 In production there will presumably be three values for newspaper, one for each paper.
 
-The div tags above all currently support these sizes: 
-300*100, 300*250, 300*300, 300*600
+The div tags above currently all support these sizes:
+
+- 300 x 100
+- 300 x 250
+- 300 x 300
+- 300 x 600
+
 The sizes are also not final.
 
-OnSwitch is hard-coded as true at the moment. Should probably be set according to something it can listen for. There is a requirement for this functionality but it cannot be provided by Google Ad Manager. So it has to be set here.
+`onSwitch` is hard-coded as true at the moment. Should probably be set according to something it can listen for. There is a requirement for this functionality but it cannot be provided by Google Ad Manager. So it has to be set here.
