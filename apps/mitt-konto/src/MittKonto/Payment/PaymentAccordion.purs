@@ -69,7 +69,7 @@ render payments focus setFocus =
             )
         }
     headerRow =
-      DOM.tr_ [ DOM.th_ [ DOM.text "Betaldatum" ]
+      DOM.tr_ [ DOM.th_ [ DOM.text "Utskrivningsdatum" ]
               , DOM.th_ [ DOM.text "Typ" ]
               , DOM.th_ [ DOM.text "Status" ]
               , DOM.th_ [ DOM.text "Moms %" ]
