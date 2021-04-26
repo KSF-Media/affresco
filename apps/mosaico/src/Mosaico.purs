@@ -7,6 +7,7 @@ import Data.Array (null, head)
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID as UUID
+import Data.Monoid (guard)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -174,39 +175,38 @@ articleList state setState router =
       DOM.div
         { className: "mosaico--list-article list-article-default"
         , children:
-          [ DOM.a
-            { onClick: handler_ do
-                  setState \s -> s { clickedArticle = Just a }
-                  window <- Web.window
-                  _ <- Web.scroll 0 0 window
-                  router.pushState (write {}) $ "/artikel/" <> a.uuid
-            , children:
-              [ DOM.div
-                { className: "list-article-image"
-                , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
-                }
-              , DOM.div
-                { className: "list-article-liftup"
-                , children:
+            [ DOM.a
+              { onClick: handler_ do
+                    setState \s -> s { clickedArticle = Just a }
+                    window <- Web.window
+                    _ <- Web.scroll 0 0 window
+                    router.pushState (write {}) $ "/artikel/" <> a.uuid
+              , children:
                   [ DOM.div
-                    { className: "mosaico--tag color-hbl"
-                    , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
+                    { className: "list-article-image"
+                    , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
                     }
-                  , DOM.h2_ [ DOM.text a.title ]
                   , DOM.div
-                    { className: "mosaico--article--meta"
+                    { className: "list-article-liftup"
                     , children:
-                      [ case a.premium of
-                        true -> DOM.div
-                            { className: "mosaico--article--premium background-hbl"
-                            , children: [ DOM.text "premium" ]
-                            }
-                        _ -> mempty
-                      ]
+                        [ DOM.div
+                          { className: "mosaico--tag color-hbl"
+                          , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
+                          }
+                        , DOM.h2_ [ DOM.text a.title ]
+                        , DOM.div
+                          { className: "mosaico--article--meta"
+                          , children:
+                              [ guard a.premium $
+                                  DOM.div
+                                    { className: "mosaico--article--premium background-hbl"
+                                    , children: [ DOM.text "premium" ]
+                                    }
+                              ]
+                          }
+                        ]
                     }
                   ]
-                }
-              ]
-            }
-          ]
+              }
+            ]
         }
