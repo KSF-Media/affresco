@@ -24,6 +24,7 @@ type ArticleStub =
   , preamble :: String
   , listImage :: Maybe Image
   , tags :: Array String
+  , premium :: Boolean
   }
 
 type Article =
