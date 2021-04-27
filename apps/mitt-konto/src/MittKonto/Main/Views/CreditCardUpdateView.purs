@@ -20,7 +20,7 @@ import KSF.CreditCard.Choice (choice) as Choice
 import KSF.CreditCard.Register (register) as Register
 import KSF.Sentry as Sentry
 import KSF.User (PaymentTerminalUrl)
-import KSF.User (getCreditCardRegister, registerCreditCard, updateCreditCardSubscriptions) as User
+import KSF.User (getCreditCardRegister, registerCreditCardFromExisting) as User
 import KSF.User.Cusno (Cusno)
 import KSF.Tracking as Tracking
 import MittKonto.Wrappers (AutoClose(..), SetRouteWrapperState)
@@ -119,8 +119,8 @@ render self@{ setState, state: { asyncWrapperState, updateState }, props: { cred
     onTryAgain = setState \s -> s { asyncWrapperState = AsyncWrapper.Ready }
 
 registerCreditCard :: Self -> CreditCard -> Aff Unit
-registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } oldCreditCard = do
-  creditCardRegister <- User.registerCreditCard
+registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } oldCreditCard@{ id } = do
+  creditCardRegister <- User.registerCreditCardFromExisting id
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
       let newState = state { updateState = RegisterCreditCard url }
@@ -153,19 +153,9 @@ pollRegister self@{ setState, props: { cusno, logger }, state } oldCreditCard (R
   case register.status.state of
     CreditCardRegisterStarted ->
       delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
-    CreditCardRegisterCompleted -> do
-      result <- User.updateCreditCardSubscriptions oldCreditCard.id register.creditCardId
-      liftEffect $ case result of
-        Left err -> do
-          let errMsg = bottegaErrorMessage err
-          logger.log
-            ("Server encountered the following error while trying to update credit card's subscriptions: " <> errMsg)
-            Sentry.Error
-          track $ "error:" <> errMsg
-          onError self
-        Right _  -> do
-          track "success"
-          onSuccess self
+    CreditCardRegisterCompleted -> liftEffect $ do
+      track "success"
+      onSuccess self
     CreditCardRegisterFailed reason -> liftEffect $ do
       track $ "error:" <> show reason
       onError self
