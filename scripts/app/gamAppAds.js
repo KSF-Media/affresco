@@ -13,7 +13,7 @@ var ksfDfp = {};
 
   ksfDfp.getBannerWidth = function (banner) {
     var bannerWidth;
-    // banners sometimes has several heights and because of that we need to check how deep an array we are dealing with
+    // Banners sometimes have several heights, so we need to check how deep an array we are dealing with
     if (!Array.isArray(banner[1][0])) {
       // handle slots with only one height
       bannerWidth = banner[1][0];
@@ -23,14 +23,16 @@ var ksfDfp = {};
     }
     return bannerWidth;
   };
-  ksfDfp.onSwitch = true;
-  if (window.disableAds === true) {
-    // if the backend main settings kill switch is activated we show no ads. The onSwitch will silently leave all banners unloaded
-    ksfDfp.onSwitch = false;
+
+  ksfDfp.bannersAreShown = true;
+  if (window.disableAds) {
+    ksfDfp.bannersAreShown = false;
     console.log("We will not show ads on this page load!");
   }
-  if (ksfDfp.onSwitch) {
+
+  if (ksfDfp.bannersAreShown) {
     ksfDfp.activated = false;
+
     ksfDfp.startUp = function () {
       if (!ksfDfp.activated) {
         ksfDfp.activated = true;
@@ -40,7 +42,7 @@ var ksfDfp = {};
         var slotW = [];
         var slotOK = [];
         while (n > -1) {
-          // avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop only list. Should be reworked.
+          // Avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop-only list. Should be reworked.
           slotId[n] = ksfDfp.slots[n][0];
           slotW[n] = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
           slotOK[n] = false;
@@ -57,11 +59,14 @@ var ksfDfp = {};
         console.log("Already activated. Not running again!");
       }
     };
+
     ksfDfp.account = "/21664538223/";
+
     ksfDfp.w = Math.max(
       document.documentElement.clientWidth,
       window.innerWidth || 0
     );
+
     ksfDfp.mobile = true; // app is all mobile
 
     // this var is available in KSF sites
@@ -70,8 +75,8 @@ var ksfDfp = {};
     googletag.pubads().setTargeting("consent", 1);
 
     ksfDfp.allPageSlots = [];
-    // the order of sizes should be the same as in dfp:s ad unit definition
-    // this array is used to block publication unless the display size is mobile
+
+    // The order of sizes should be the same as in dfp:s ad unit definition. This array is used to block publication unless the display size is mobile.
     ksfDfp.mobileOnlySlots = [
       [
         "MOBPARAD",
@@ -122,15 +127,16 @@ var ksfDfp = {};
 
     ksfDfp.slots = [];
     ksfDfp.slots = ksfDfp.allPageSlots;
-
     ksfDfp.numberOfSlots = ksfDfp.slots.length;
     ksfDfp.slotObjects = [];
+
     googletag.cmd.push(function () {
       var n = ksfDfp.numberOfSlots - 1;
       var bannerWidthInstance;
       var bannerSizeList;
       // flat array of slots for quick checkup later
       ksfDfp.activeSlotsFlatArray = [];
+
       while (n >= 0) {
         // Check that the banner is smaller than the size of the screen. Also make sure that the slot is allowed on mobile, if the page load is mobile.
         bannerWidthInstance = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
@@ -149,6 +155,7 @@ var ksfDfp = {};
         } // slot size to screen comparison end of if
         n -= 1;
       }
+
       // Send the users tracking banner consent choice to DFP
       googletag.pubads().setRequestNonPersonalizedAds(1); // hard coded to no consent as we do not yet ask 20191029. 0 means consent, 1 means no tracking ads should be shown.This is used for Google ads.
       googletag.pubads().collapseEmptyDivs();
@@ -168,6 +175,7 @@ var ksfDfp = {};
           // show ad headline fitting to the ad format. Out of page slots should have a headline that allows viewers to close the ad
           // only show ad headline for ads that are actually supposed to render
           headerToShow = document.getElementById(contentUnitDiv);
+
           // show ad header or a special ad header for ads that require a close button
           if (ksfDfp.closableAdSlots.indexOf(contentUnitDiv) === -1) {
             headerToShow.insertAdjacentHTML(
@@ -204,6 +212,7 @@ var ksfDfp = {};
       divToClose.style.display = "none";
       return false;
     };
+
     ksfDfp.closeSlotAfterCallback = function (slot) {
       // this is used to close third party ad calls that has been abandoned and returned using a callback
       var divToClose = document.getElementById(slot);

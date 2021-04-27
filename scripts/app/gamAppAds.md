@@ -46,4 +46,4 @@ The div tags above currently all support these sizes:
 
 The sizes are also not final.
 
-`onSwitch` is hard-coded as true at the moment. Should probably be set according to something it can listen for. There is a requirement for this functionality but it cannot be provided by Google Ad Manager. So it has to be set here.
+`bannersAreShown` is hard-coded as true at the moment. Should probably be set according to something it can listen for. There is a requirement for this functionality but it cannot be provided by Google Ad Manager. So it has to be set here.
