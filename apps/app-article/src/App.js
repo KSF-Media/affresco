@@ -604,6 +604,47 @@ class App extends Component {
 
                 <div className={`container-fluid article ${isDarkModeOn() ? 'darkMode' : ''} `}>
                     <React.Fragment>
+                       
+                    <div>
+                            {
+                                `Current URL:  ${window.location.href} `
+                            }
+                        </div>
+                        <div>
+                            {
+                                `User logged cookie:  ${Cookies.get('LoginStatus')} `
+                            }
+                        </div>
+
+
+                        <div>
+                            {
+                                `premium box active:  ${this.state.showBuyOption} `
+                            }
+                        </div>
+                        <div>
+                            {
+                                `Should show Login:  ${this.state.appearLogin} `
+                            }
+                        </div>
+                        <div>
+                            {
+                                `localstorage token:  ${localStorage.getItem('token')} `
+                            }
+                            </div>
+
+                            <div>
+                                {
+                                    `LoginStatus cookie:  ${Cookies.get('LoginStatus')} `
+                                }
+                            </div>
+
+                            <div>
+                                {
+                                    `token cookie:  ${Cookies.get('token')} `
+                                }
+                            </div>
+
                         <Tag tags={this.state.tags} />
                         {
                             this.state.category === 'Advertorial' ?
