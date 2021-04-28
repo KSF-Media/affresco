@@ -8,7 +8,7 @@ import Data.Array as Array
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, surround)
 import Data.List.NonEmpty (all)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
@@ -40,7 +40,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import React.Basic.Hooks (Component, component, useEffectOnce, useState, (/\))
+import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import React.Basic.Hooks.Aff (useAff)
 
@@ -160,8 +160,13 @@ type State =
   , merge :: Maybe User.MergeInfo
   , loginViewStep :: LoginStep
   , socialLoginVisibility :: Visibility
-  , loginCounter :: Int
+  , loggingIn :: Maybe LoggingIn
   }
+
+data LoggingIn = LoggingIn Int
+
+instance eqLoggingIn :: Eq LoggingIn where
+  eq (LoggingIn counterA) (LoggingIn counterB) = counterA == counterB
 
 type Self =
   { state :: State
@@ -172,8 +177,6 @@ type Self =
 data Visibility = Visible | Hidden
 derive instance eqVisibility :: Eq Visibility
 
-data LoggingIn = LoggingIn
-
 initialState :: State
 initialState =
   { formEmail: Nothing
@@ -182,7 +185,7 @@ initialState =
   , merge: Nothing
   , loginViewStep: Login
   , socialLoginVisibility: Hidden
-  , loginCounter: 0
+  , loggingIn: Nothing
   }
 
 login :: Component Props
@@ -190,14 +193,14 @@ login = do
   component "Login" \props -> React.do
     state /\ setState <- useState initialState
 
-    useAff state.loginCounter do
-      if state.loginCounter == 0
-      then pure unit
-      else do
-        Aff.delay $ Milliseconds 500.0
-        liftEffect do
-          let newCounterValue = if state.loginCounter == 4 then 1 else state.loginCounter + 1
-          setState \oldState -> oldState { loginCounter = newCounterValue }
+    useAff state.loggingIn do
+      case state.loggingIn of
+        Just (LoggingIn counter) -> do
+          Aff.delay $ Milliseconds 500.0
+          liftEffect do
+            let newCounterValue = if counter == 3 then 0 else counter + 1
+            setState \oldState -> oldState { loggingIn = Just $ LoggingIn newCounterValue }
+        Nothing -> pure unit
 
     useEffectOnce do
       attemptMagicLogin props setState
@@ -209,7 +212,7 @@ attemptMagicLogin :: Props -> ((State -> State) -> Effect Unit) -> Effect Unit
 attemptMagicLogin props setState = do
   props.launchAff_ $ User.magicLogin Nothing \user -> do
     case user of
-      Left _      -> setState _ { errors { login = Just SomethingWentWrong } }
+      Left _      -> setState _ { errors { login = Just SomethingWentWrong }, loggingIn = Nothing }
       Right user' -> Tracking.login (Just user'.cusno) "magic login" "success"
     props.onUserFetch user
 
@@ -256,8 +259,7 @@ onLogin self@{ state, props } =
           , formPassword = state.formPassword <|> Just ""
           })
     (\validForm -> self.props.launchAff_ do
-        liftEffect $ self.setState \s -> s { loginCounter = s.loginCounter + 1 }
-       -- Aff.delay $ Milliseconds 5000.0 TODO: REMOVE, FOR DEMO PURPOSES ONLY
+        liftEffect $ self.setState \s -> s { loggingIn = Just $ LoggingIn 0 }
         loginWithRetry (logUserIn validForm) handleSuccess handleError handleFinish)
   where
     logUserIn validForm
@@ -280,7 +282,9 @@ onLogin self@{ state, props } =
     handleFinish user =
       -- This call needs to be last, as it will unmount the login component.
       -- (We cannot set state of an unmounted component)
-      liftEffect $ props.onUserFetch user
+      liftEffect do
+        self.setState \s -> s { loggingIn = Nothing }
+        props.onUserFetch user
 
     handleError err = liftEffect do
       self.setState _ { errors { login = Just err } }
@@ -376,7 +380,7 @@ renderLoginForm self =
                 -- Disable login button only when true errors are found.
                 -- This is to prevent it from being disabled (grey) when opening the front page
                 , disabled:
-                    self.state.loginCounter > 0
+                    isJust self.state.loggingIn
                     || validation (all (not <<< Form.isNotInitialized)) (const false) (loginFormValidations self)
                 , value: loginValue
                 , type: "submit"
@@ -386,10 +390,9 @@ renderLoginForm self =
       where
         loginValue :: String
         loginValue =
-          let dots = Array.replicate (self.state.loginCounter - 1) "."
-          in case self.state.loginCounter of
-            0 -> "Logga in"
-            _ -> "Loggar in " <> String.joinWith "" dots
+          case self.state.loggingIn of
+            Just (LoggingIn counterValue) -> "Loggar in " <> (String.joinWith "" $ Array.replicate counterValue ".")
+            Nothing -> "Logga in"
 
 
 renderMerge :: Self -> User.MergeInfo -> JSX
