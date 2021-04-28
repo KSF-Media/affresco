@@ -1,4 +1,6 @@
 import React from 'react'
+import CoronaSvg from '../../../../images/covid-virus-icon.svg'
+import Chevron from '../../../../images/chevron.svg'
 
 const CoronaBanner = ({
   newCases,
@@ -6,8 +8,6 @@ const CoronaBanner = ({
   deaths,
   vaccinated,
   vaccinatedPercentage,
-  coronaSvg,
-  chevron
 }) => {
   
   function getSiteUrl() {
@@ -33,7 +33,7 @@ const CoronaBanner = ({
               <h1 className='banner-title'>
                 Covid-19 <br /> i Finland
               </h1>
-              <img className='virus-image' src={coronaSvg} alt='' />
+              <img className='virus-image' src={CoronaSvg} alt='' />
             </header>
             {newCases !== null && (
               <div className='stat'>
@@ -66,7 +66,7 @@ const CoronaBanner = ({
             )}
           </div>
           <div className='chevron-container'>
-            <img className='chevron-right' src={chevron} alt='' />
+            <img className='chevron-right' src={Chevron} alt='' />
           </div>
         </div>
       </a>

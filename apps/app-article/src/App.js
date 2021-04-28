@@ -19,6 +19,8 @@ import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
 import { Sentry } from './sentry'
+import CoronaBanner from '../../../packages/components/src/CoronaBanner/banner'
+
 
 class App extends Component {
     constructor(props) {
@@ -61,7 +63,15 @@ class App extends Component {
             mostReadArticles: [],
             errorFetching: false,
             errorFetchingLatestArticles: false,
-            forceLoginView: false
+            forceLoginView: false,
+            isBannerLoaded: false,
+            banner: {
+                newCases: null,
+                hospitalised: null,
+                deaths: null,
+                vaccinated: null,
+                vaccinatedPercentage: null
+            }
         };
     }
     componentDidMount() {
@@ -79,6 +89,7 @@ class App extends Component {
         } else {
             this.getArticle();
             this.getMostReadArticles();
+            this.getBannerStats();
         }
     }
     componentDidUpdate() {
@@ -155,6 +166,27 @@ class App extends Component {
                 this.setState({ isLoading: false });
                 this.setState({ isLoading: false, errorFetchingLatestArticles: true });
             });
+    }
+
+    getBannerStats() {
+        fetch('https://cdn.ksfmedia.fi/corona-banner/stats.json')
+        .then(res => res.json())
+        .then(data => {
+            console.log('data:', data)
+            this.setState({ banner: {
+                newCases: data.newCases,
+                hospitalised: data.hospitalised,
+                deaths: data.deaths,
+                vaccinated: data.vaccinatedAmount,
+                vaccinatedPercentage: data.vaccinatedPercentage
+            }
+            })
+        })
+        .then(() => {
+            console.log(this.state.banner)
+            this.setState({ isBannerLoaded: true })
+            console.log('isBannerLoaded?: ', this.state.isBannerLoaded)
+        })
     }
 
     checkCache(uuid) {
@@ -629,6 +661,11 @@ class App extends Component {
                         )}
                         <Content body={this.state.body}
                             showHighResolutionImage={this.showHighResolutionImage} />
+                        {this.state.isBannerLoaded && (
+                            <CoronaBanner newCases={this.state.banner.newCases} hospitalised={this.state.banner.hospitalised}
+                                deaths={this.state.banner.deaths} vaccinated={this.state.banner.vaccinated} 
+                                vaccinatedPercentage={this.state.banner.vaccinatedPercentage}/> 
+                        )}
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
                                 {

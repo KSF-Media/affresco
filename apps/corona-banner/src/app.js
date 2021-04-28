@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import CoronaSvg from './assets/covid-virus-icon.svg'
-import Chevron from '../../../images/chevron.svg'
 import CoronaBanner from '../../../packages/components/src/CoronaBanner/banner'
 
 export default function App() {
@@ -19,8 +17,6 @@ export default function App() {
             deaths={response.data.deaths}
             vaccinated={response.data.vaccinated}
             vaccinatedPercentage={response.data.vaccinatedPercentage}
-            coronaSvg={CoronaSvg}
-            chevron={Chevron}
           />
         )
       })
