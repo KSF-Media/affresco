@@ -1,5 +1,6 @@
 import config from "./config";
 import { isUserLoggedIn, getBrandValueParam } from "./helper";
+import Cookies from 'js-cookie';
 
 const articleApi = {
     getArticle(uuid) {
@@ -28,11 +29,13 @@ const articleApi = {
 
 function attachHeaders() {
     let headers = { 'Content-Type': 'application/json' };
+    const uuid = localStorage.getItem('uuid') || Cookies.get('uuid');
+    const token = localStorage.getItem('token') || Cookies.get('token');
     if (isUserLoggedIn()) {
         headers = {
             'Content-Type': 'application/json',
-            'AuthUser': localStorage.getItem('uuid'),
-            'Authorization': 'OAuth ' + localStorage.getItem('token'),
+            'AuthUser': uuid,
+            'Authorization': 'OAuth ' + token,
         };
     }
     return headers;
