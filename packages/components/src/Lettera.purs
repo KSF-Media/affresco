@@ -7,7 +7,7 @@ import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
-import Data.Argonaut.Core (stringify, toArray, toObject)
+import Data.Argonaut.Core (Json, stringify, toArray, toObject)
 import Data.Array (foldM, snoc)
 import Data.Either (Either(..), note)
 import Data.HTTP.Method (Method(..))
@@ -26,7 +26,8 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (Article, ArticleStub, FullArticle(..))
+import Lettera.Models (Article, ArticleStub, FullArticle(..), JSArticleStub, fromJSArticleStub)
+import Simple.JSON (E)
 import Simple.JSON as JSON
 
 foreign import letteraBaseUrl :: String
@@ -112,12 +113,24 @@ getFrontpage paper = do
   case frontpageResponse of
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
-      | Just responseArray <- toArray response.body -> do
-        map (JSON.readJSON <<< stringify) responseArray
-          # (liftEffect <<< foldM logParsingErrors [])
-          >>= (Right >>> pure)
+      | Just (responseArray :: Array Json) <- toArray response.body -> do
+        let (s :: Array (E JSArticleStub)) = map (JSON.readJSON <<< stringify) responseArray
+        articleStubs <- liftEffect $ foldM parseArticleStub [] s
+        pure $ Right articleStubs
         where
-          logParsingErrors :: Array ArticleStub -> Either MultipleErrors ArticleStub -> Effect (Array ArticleStub)
+          parseArticleStub :: Array ArticleStub -> Either MultipleErrors JSArticleStub -> Effect (Array ArticleStub)
+          parseArticleStub acc (Left err) = do
+            traverse_ (Console.log <<< renderForeignError) err
+            pure acc
+          parseArticleStub acc (Right jsArticleStub)
+            | Just articleStub <- fromJSArticleStub jsArticleStub = pure $ acc `snoc` articleStub
+            | otherwise = do
+              let articleId = jsArticleStub.uuid
+              -- TODO: Sentry etc.
+              Console.log $ "Could not parse Lettera response to ArticleStub. Article id: " <> articleId
+              pure acc
+
+          logParsingErrors :: Array JSArticleStub -> Either MultipleErrors JSArticleStub -> Effect (Array JSArticleStub)
           logParsingErrors acc (Left err) = do
             traverse_ (Console.log <<< renderForeignError) err
             pure acc

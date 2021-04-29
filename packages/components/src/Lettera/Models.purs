@@ -1,10 +1,18 @@
 module Lettera.Models where
 
+import Data.Formatter.DateTime
 import Prelude
 
+import Control.Monad.Except (runExcept, runExceptT)
+import Data.DateTime (DateTime(..))
+import Data.Either (Either(..), hush)
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe)
+import Data.JSDate (JSDate, toDateTime)
+import Data.JSDate as JSDate
+import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
+import Foreign (Foreign)
+import KSF.Helpers (dateTimeFormatter)
 
 data FullArticle
   = FullArticle Article
@@ -18,13 +26,23 @@ isPreviewArticle :: FullArticle -> Boolean
 isPreviewArticle (PreviewArticle _) = true
 isPreviewArticle _ = false
 
-type ArticleStub =
-  { title    :: String
-  , uuid     :: String
-  , preamble :: String
+type ArticleStubCommon =
+  ( title     :: String
+  , uuid      :: String
+  , preamble  :: String
   , listImage :: Maybe Image
-  , tags :: Array String
-  , premium :: Boolean
+  , tags      :: Array String
+  , premium   :: Boolean
+  )
+
+type JSArticleStub =
+  { publishingTime :: String
+  | ArticleStubCommon
+  }
+
+type ArticleStub =
+  { publishingTime :: DateTime
+  | ArticleStubCommon
   }
 
 type Article =
@@ -33,6 +51,11 @@ type Article =
   , mainImage :: Maybe Image
   , tags      :: Array String
   }
+
+fromJSArticleStub :: JSArticleStub -> Maybe ArticleStub
+fromJSArticleStub jsStub@{ publishingTime } = do
+  pubTime <- hush $ unformat dateTimeFormatter publishingTime
+  pure $ jsStub { publishingTime = pubTime }
 
 type BodyElementJS =
   { html     :: Maybe String
