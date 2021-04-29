@@ -2,7 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect (Effect)
@@ -15,6 +15,7 @@ import KSF.Paper (Paper(..))
 import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
+import KSF.Tracking as Tracking
 import KSF.User as User
 import KSF.User.Login as Login
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
@@ -28,7 +29,7 @@ import MittKonto.Payment.Types as Payments
 import MittKonto.Wrappers as Wrappers
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, component, useState, useState', (/\))
+import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.Router as Router
 
@@ -48,7 +49,8 @@ app = do
         { paper: KSF
         , adminMode: false
         , activeUser: Nothing
-        , loading: Nothing
+        -- Let's show the spinner while we try to magically login the user
+        , loading: Just Spinner.Loading
         , showWelcome: true
         , alert: Nothing
         , payments: Nothing
@@ -60,6 +62,19 @@ app = do
     state /\ setState <- useState initialState
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
+
+    useEffectOnce do
+      let attemptMagicLogin =
+            User.magicLogin Nothing \userResponse ->
+              case userResponse of
+                Right user -> do
+                  Tracking.login (Just user.cusno) "magic login" "success"
+                  setState \s -> s { activeUser = Just user }
+                _ -> pure unit
+      Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
+                $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
+      pure mempty
+
     let self = { state, setState }
         -- The user data in the search results isn't quite complete.
         -- We do another fetch to get it all.
@@ -72,6 +87,7 @@ app = do
           Right user -> do
             setState $ Types.setActiveUser $ Just user
             setPersonating true
+
         searchSelect uuid =
           Aff.runAff_
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
