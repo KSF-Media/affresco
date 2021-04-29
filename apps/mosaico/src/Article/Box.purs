@@ -5,6 +5,7 @@ import Prelude
 import Data.Foldable (fold)
 import Data.Maybe (Maybe)
 import Data.Monoid (guard)
+import Data.String (joinWith, length)
 import React.Basic.Classic (Component, JSX, createComponent, make)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
@@ -20,9 +21,14 @@ type Props =
   , brand :: String
   }
 
+autoExpand :: Array String -> Boolean
+autoExpand a = (length $ joinWith mempty a) < 600
+
 box :: Props -> JSX
 box = make component
   { initialState: { expanded: false }
+  , didMount: \self ->
+      self.setState \_ -> { expanded: autoExpand self.props.content }
   , render: \self ->
       DOM.div
         { className: "mosaico--article--boxinfo border-" <> self.props.brand
