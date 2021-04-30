@@ -7,7 +7,7 @@ const Header = (props) => {
                 {props.mainImage != null ?
                     <img className={"header headerImage"}
                          onClick={() => props.showHighResolutionImg(props.mainImage.url, props.caption + " " + props.appendBylineLabel + " " + props.byline)}
-                         src={props.mainImage.url + "&width=1400"}
+                         src={props.mainImage.url + "?width=1400"}
                          alt=""/>
                     :
                     ''
