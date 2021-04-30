@@ -38,7 +38,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import React.Basic.Hooks (Component, component, useEffectOnce, useState, (/\))
+import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
 
 
@@ -98,13 +98,10 @@ jsComponent =
   React.Classic.toReactComponent
     fromJSProps
     (React.Classic.createComponent "Login")
-    { initialState, render: jsRender, didMount: jsDidMount }
+    { initialState, render: jsRender }
 
 jsRender :: JSSelf -> JSX
 jsRender { props, state, setState } = render { props, state, setState }
-
-jsDidMount :: JSSelf -> Effect Unit
-jsDidMount { props, setState } = attemptMagicLogin props setState
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
@@ -117,7 +114,7 @@ fromJSProps jsProps =
       either
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchFail)
         (maybe (const $ pure unit) runEffectFn1 $ Nullable.toMaybe jsProps.onUserFetchSuccess)
-  , launchAff_: \aff -> do
+  , onLogin: \aff -> do
       Aff.launchAff_ do
         Aff.bracket
           (maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoading)
@@ -144,7 +141,7 @@ type Props =
 -- TODO:
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
   , onUserFetch :: Either UserError User -> Effect Unit
-  , launchAff_ :: Aff Unit -> Effect Unit
+  , onLogin :: Aff Unit -> Effect Unit
   , disableSocialLogins :: Set SocialLoginProvider
   }
 
@@ -178,18 +175,7 @@ login :: Component Props
 login = do
   component "Login" \props -> React.do
     state /\ setState <- useState initialState
-    useEffectOnce do
-      attemptMagicLogin props setState
-      pure mempty
     pure $ render { state, setState, props }
-
-attemptMagicLogin :: Props -> ((State -> State) -> Effect Unit) -> Effect Unit
-attemptMagicLogin props setState = do
-  props.launchAff_ $ User.magicLogin Nothing \user -> do
-    case user of
-      Left _      -> setState _ { errors { login = Just SomethingWentWrong } }
-      Right user' -> Tracking.login (Just user'.cusno) "magic login" "success"
-    props.onUserFetch user
 
 render :: Self -> JSX
 render self@{ props, state } =
@@ -232,7 +218,7 @@ onLogin self@{ props, state } = validation
         { formEmail    = state.formEmail    <|> Just ""
         , formPassword = state.formPassword <|> Just ""
         })
-  (\validForm -> props.launchAff_
+  (\validForm -> props.onLogin
                    $ loginWithRetry (logUserIn validForm) handleSuccess handleError handleFinish)
   where
     logUserIn validForm
@@ -276,7 +262,7 @@ renderLogin self =
     Login        -> renderLoginForm self
     Registration ->
       Registration.registration
-       { onRegister: \affUser -> self.props.launchAff_ do
+       { onRegister: \affUser -> self.props.onLogin do
             user <- affUser
             liftEffect $ self.props.onUserFetch $ Right user
        , onCancelRegistration: do
@@ -458,7 +444,7 @@ googleLogin self =
     else mempty
   where
     onGoogleLogin :: Google.AuthResponse -> Effect Unit
-    onGoogleLogin { accessToken, email: (Google.Email email) } = self.props.launchAff_ do
+    onGoogleLogin { accessToken, email: (Google.Email email) } = self.props.onLogin do
       failOnEmailMismatch self email
       -- setting the email in the state to eventually have it in the merge view
       liftEffect $ self.setState _ { formEmail = Just email }
@@ -504,7 +490,7 @@ facebookLogin self =
     else mempty
   where
     onFacebookLogin :: Effect Unit
-    onFacebookLogin = self.props.launchAff_ do
+    onFacebookLogin = self.props.onLogin do
       sdk <- User.facebookSdk
       FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
       case authResponse of

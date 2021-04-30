@@ -55,7 +55,7 @@ loginView self@{ state, setState } logger =
                 admin <- isAdminUser
                 setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
                 logger.setUser $ Just user
-          , launchAff_:
+          , onLogin:
               Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
                 <<< Spinner.withSpinner (setState <<< Types.setLoading)
           , disableSocialLogins: Set.empty
