@@ -1,9 +1,8 @@
 import Cookies from 'js-cookie';
 
 export const isUserLoggedIn = () => {
-    let urlParams = getUrlParam();
     let loginStatusUrl = false;
-    if (urlParams.has('isLogged') && urlParams.get('isLogged') === 'true') {
+    if (getIsLoggedFromUrl() === 'true') {
         loginStatusUrl = true;
     }
     
