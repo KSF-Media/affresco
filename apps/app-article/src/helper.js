@@ -1,7 +1,13 @@
 import Cookies from 'js-cookie';
 
 export const isUserLoggedIn = () => {
-    return !!Cookies.get('LoginStatus');
+    let urlParams = getUrlParam();
+    let loginStatusUrl = false;
+    if (urlParams.has('isLogged') && urlParams.get('isLogged') === 'true') {
+        loginStatusUrl = true;
+    }
+    
+    return !!Cookies.get('LoginStatus') || loginStatusUrl;
 };
 
 export const shareArticle = (title, url, description) => {
