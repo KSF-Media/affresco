@@ -1,5 +1,5 @@
 import config from "./config";
-import { isUserLoggedIn, getBrandValueParam } from "./helper";
+import { isUserLoggedIn, getBrandValueParam, getUrlParam } from "./helper";
 import Cookies from 'js-cookie';
 
 const articleApi = {
@@ -29,8 +29,21 @@ const articleApi = {
 
 function attachHeaders() {
     let headers = { 'Content-Type': 'application/json' };
-    const uuid = localStorage.getItem('uuid') || Cookies.get('uuid');
-    const token = localStorage.getItem('token') || Cookies.get('token');
+    let urlParams = getUrlParam();
+
+    let urlToken = '';
+    if (urlParams.has('token')) {
+        urlToken = urlParams.get('token');
+    }
+
+    let urlUserId = '';
+    if (urlParams.has('userId')) {
+        urlUserId = urlParams.get('userId');
+    }
+
+    const uuid = localStorage.getItem('uuid') || Cookies.get('uuid') || urlUserId;
+    const token = localStorage.getItem('token') || Cookies.get('token') || urlToken;
+
     if (isUserLoggedIn()) {
         headers = {
             'Content-Type': 'application/json',
