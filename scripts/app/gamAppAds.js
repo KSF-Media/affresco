@@ -24,57 +24,49 @@ var ksfDfp = {};
     return bannerWidth;
   };
 
-  ksfDfp.bannersAreShown = true;
+  ksfDfp.adsAreShown = true;
   if (window.disableAds) {
-    ksfDfp.bannersAreShown = false;
+    ksfDfp.adsAreShown = false;
     console.log("We will not show ads on this page load!");
   }
 
-  if (ksfDfp.bannersAreShown) {
-    ksfDfp.activated = false;
-
-    ksfDfp.startUp = function () {
-      if (!ksfDfp.activated) {
-        ksfDfp.activated = true;
-        // activate display for all slots
-        var n = ksfDfp.numberOfSlots - 1;
-        var slotId = [];
-        var slotW = [];
-        var slotOK = [];
-        while (n > -1) {
-          // Avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop-only list. Should be reworked.
-          slotId[n] = ksfDfp.slots[n][0];
-          slotW[n] = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
-          slotOK[n] = false;
-
-          if (slotW[n] <= ksfDfp.w) {
-            slotOK[n] = true;
-          }
-          if (window.document.getElementById(slotId[n]) && slotOK[n]) {
-            ksfDfp.displayBanner(slotId[n]);
-          }
-          n = n - 1;
-        }
-      } else {
-        console.log("Already activated. Not running again!");
-      }
-    };
-
+  if (ksfDfp.adsAreShown) {
     ksfDfp.account = "/21664538223/";
-
-    ksfDfp.w = Math.max(
+    ksfDfp.activated = false;
+    ksfDfp.mobile = true; // app is all mobile
+    ksfDfp.width = Math.max(
       document.documentElement.clientWidth,
       window.innerWidth || 0
     );
-
-    ksfDfp.mobile = true; // app is all mobile
 
     // this var is available in KSF sites
     ksfDfp.site = "app"; // there is only one site in the app
     googletag.pubads().setTargeting("newspaper", ksfDfp.site);
     googletag.pubads().setTargeting("consent", 1);
 
-    ksfDfp.allPageSlots = [];
+    ksfDfp.startUp = function () {
+      if (!ksfDfp.activated) {
+        ksfDfp.activated = true;
+        // activate display for all slots
+        var slotIds = [];
+        var slotWidths = [];
+        var slotsAreOkay = [];
+        for (var i = 0; i < ksfDfp.numberOfSlots; i++) {
+          // Avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop-only list. Should be reworked.
+          slotIds[i] = ksfDfp.slots[i][0];
+          slotWidths[i] = ksfDfp.getBannerWidth(ksfDfp.slots[i]);
+          slotsAreOkay[i] = false;
+          if (slotWidths[i] <= ksfDfp.width) {
+            slotsAreOkay[i] = true;
+          }
+          if (window.document.getElementById(slotIds[i]) && slotsAreOkay[i]) {
+            ksfDfp.displayBanner(slotIds[i]);
+          }
+        }
+      } else {
+        console.log("Already activated. Not running again!");
+      }
+    };
 
     // The order of sizes should be the same as in dfp:s ad unit definition. This array is used to block publication unless the display size is mobile.
     ksfDfp.mobileOnlySlots = [
@@ -96,7 +88,6 @@ var ksfDfp = {};
           [300, 600],
         ],
       ],
-
       [
         "MOBNER",
         [
@@ -118,9 +109,11 @@ var ksfDfp = {};
       ],
     ];
 
+    ksfDfp.allPageSlots = [];
+
     // Slots that are not interstitials but need a header with a close button should be listed here. These guys need an enveloping extra div to be closed correctly.
     ksfDfp.closableAdSlots = [];
-    // load mobile only slot if the page load is mobile
+    // load mobile-only slot if the page load is mobile
     if (ksfDfp.mobile) {
       ksfDfp.allPageSlots = ksfDfp.mobileOnlySlots;
     }
@@ -131,33 +124,32 @@ var ksfDfp = {};
     ksfDfp.slotObjects = [];
 
     googletag.cmd.push(function () {
-      var n = ksfDfp.numberOfSlots - 1;
       var bannerWidthInstance;
       var bannerSizeList;
       // flat array of slots for quick checkup later
       ksfDfp.activeSlotsFlatArray = [];
 
-      while (n >= 0) {
+      // stuck to decrementing i here, just in case the array created in this loop needs to stay in the same order. (I don't know yet if it does.)
+      for (var i = ksfDfp.numberOfSlots - 1; i >= 0; i--) {
         // Check that the banner is smaller than the size of the screen. Also make sure that the slot is allowed on mobile, if the page load is mobile.
-        bannerWidthInstance = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
+        bannerWidthInstance = ksfDfp.getBannerWidth(ksfDfp.slots[i]);
 
-        if (bannerWidthInstance <= ksfDfp.w) {
-          ksfDfp.activeSlotsFlatArray.push(ksfDfp.slots[n][0]);
+        if (bannerWidthInstance <= ksfDfp.width) {
+          ksfDfp.activeSlotsFlatArray.push(ksfDfp.slots[i][0]);
           // Array of banner heights, as some slots have several
-          bannerSizeList = ksfDfp.slots[n][1];
-          ksfDfp.slotObjects[ksfDfp.slots[n][0]] = googletag
+          bannerSizeList = ksfDfp.slots[i][1];
+          ksfDfp.slotObjects[ksfDfp.slots[i][0]] = googletag
             .defineSlot(
-              ksfDfp.account + ksfDfp.slots[n][0],
+              ksfDfp.account + ksfDfp.slots[i][0],
               bannerSizeList,
-              ksfDfp.slots[n][0]
+              ksfDfp.slots[i][0]
             )
             .addService(googletag.pubads());
         } // slot size to screen comparison end of if
-        n -= 1;
       }
 
       // Send the users tracking banner consent choice to DFP
-      googletag.pubads().setRequestNonPersonalizedAds(1); // hard coded to no consent as we do not yet ask 20191029. 0 means consent, 1 means no tracking ads should be shown.This is used for Google ads.
+      googletag.pubads().setRequestNonPersonalizedAds(1); // Latest 2021-04-30. This is hard coded to no consent for now. This does get asked in the app already, but we are not yet making use of this by allowing personalised ads. 0 means consent, 1 means no tracking ads should be shown.
       googletag.pubads().collapseEmptyDivs();
       googletag.pubads().enableLazyLoad({
         fetchMarginPercent: 0.85, // Fetch slots within 0.5 viewports.
