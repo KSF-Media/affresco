@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import { isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn } from "./helper";
+import { isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn, getTokenFromUrl, getUserUuidFromUrl, getIsLoggedFromUrl } from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -61,7 +61,8 @@ class App extends Component {
             mostReadArticles: [],
             errorFetching: false,
             errorFetchingLatestArticles: false,
-            forceLoginView: false
+            forceLoginView: false,
+            errorFetchingArticleMsg: ''
         };
     }
     componentDidMount() {
@@ -235,6 +236,7 @@ class App extends Component {
                 if (data.http_code === 400) {
                     this.setState({ isLoading: false, showBuyOption: true });
                 } else if (data.http_code === 403) {
+                    this.setState({ errorFetchingArticleMsg: '403' });
                     this.setState({
                         isLoading: false,
                         showBuyOption: true,
@@ -297,7 +299,7 @@ class App extends Component {
                 this.resizeText(this.state.fontSize);
             })
             .catch(error => {
-                this.setState({ isLoading: false, errorFetching: true });
+                this.setState({ isLoading: false, errorFetching: false, errorFetchingArticleMsg: 'error fetching article entering catch() stm'});
             });
     };
 
@@ -604,6 +606,62 @@ class App extends Component {
 
                 <div className={`container-fluid article ${isDarkModeOn() ? 'darkMode' : ''} `}>
                     <React.Fragment>
+                    <div> 
+                            {
+                            `Current URL:  ${window.location.href} `
+                            }
+                        </div>
+                    
+                         <div>
+                            {
+                                `premium box active:  ${this.state.showBuyOption} `
+                            }
+                         </div>
+                         <div>
+                            {
+                                `Should show Login:  ${this.state.appearLogin} `
+                            }
+                         </div>
+                         <div>
+                            {
+                                `localstorage token:  ${localStorage.getItem('token')} `
+                            }
+                        </div>
+                        <div>
+                            {
+                                `LoginStatus cookie:  ${Cookies.get('LoginStatus')} `
+                            }
+                        </div>
+
+                        <div>
+                            {
+                                `token cookie:  ${Cookies.get('token')} `
+                            }
+                        </div>
+
+                        <div>
+                            {
+                                `token url:  ${getTokenFromUrl()} `
+                            }
+                        </div>
+                         <div>
+                            {
+                                `uuid url:  ${getUserUuidFromUrl()} `
+                            }
+                        </div>
+
+                        <div>
+                            {
+                                `is user logged in from url:  ${getIsLoggedFromUrl()} `
+                            }
+                        </div> 
+                        
+                        <div>
+                            {
+                                `error:  ${this.state.errorFetchingArticleMsg} `
+                            }
+                        </div>
+
                         <Tag tags={this.state.tags} />
                         {
                             this.state.category === 'Advertorial' ?
