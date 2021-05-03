@@ -8,7 +8,7 @@ import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Monoid (guard)
+import Data.Monoid (guard, mempty)
 import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -116,7 +116,7 @@ render { props, state, setState } =
             , children: [ DOM.text title ]
             }
         , foldMap renderImage mainImage
-        , foldMap publishingTime $ _.publishingTime <$> letteraArticle
+        , foldMap (publishingTime (_.updateTime =<< letteraArticle)) $ _.publishingTime <$> letteraArticle
         , DOM.div
             { className: "mosaico--article--body "
             , children:
@@ -127,8 +127,17 @@ render { props, state, setState } =
         ]
       }
   where
-    publishingTime (LocalDateTime pubTime) =
-      DOM.text $ formatArticleTime pubTime
+    publishingTime maybeUpdateTime (LocalDateTime pubTime) =
+      DOM.div
+        { className: "mosaico--article-date"
+        , children:
+            [ DOM.text $ formatArticleTime pubTime
+            , case maybeUpdateTime of
+                Just (LocalDateTime updateTime) -> DOM.text $ " Uppdaterad " <> formatArticleTime updateTime
+                _ -> mempty
+            ]
+        }
+
     paywallFade =
       guard (maybe false isPreviewArticle state.article)
         DOM.div { className: "mosaico--article-fading-body" }
