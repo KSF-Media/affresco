@@ -1227,7 +1227,7 @@
   version "0.2.5"
   dependencies:
     basscss "^8.1.0"
-    bottega "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456"
+    bottega "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#5808dffca6cfd7c6e55c8394a2e9780aeebd9f57"
     react "^16.12"
     react-dom "^16.12"
@@ -2922,15 +2922,9 @@ bootstrap@^4.3.1:
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.6.0.tgz#97b9f29ac98f98dfa43bf7468262d84392552fd7"
   integrity sha512-Io55IuQY3kydzHtbGvQya3H+KorS/M9rSNyfCGCg9WZ4pyT/lCxIlpJgG1GXW/PswzC84Tr2fBYi+7+jFVQQBw==
 
-"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456":
+"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff":
   version "1.0.0"
-  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#9172de9399aaf8fbe10b1ceae2a3b8a5d77a8456"
-  dependencies:
-    superagent "3.7.0"
-
-"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48":
-  version "1.0.0"
-  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#97c364fb00908818d02b54a8fe418cccdeaffc48"
+  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff"
   dependencies:
     superagent "3.7.0"
 
@@ -3288,21 +3282,6 @@ change-emitter@^0.1.2:
   resolved "https://registry.yarnpkg.com/change-emitter/-/change-emitter-0.1.6.tgz#e8b2fe3d7f1ab7d69a32199aff91ea6931409515"
   integrity sha1-6LL+PX8at9aaMhma/5HqaTFAlRU=
 
-"chokidar@>=2.0.0 <4.0.0", chokidar@^3.4.1:
-  version "3.5.1"
-  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.5.1.tgz#ee9ce7bbebd2b79f49f304799d5468e31e14e68a"
-  integrity sha512-9+s+Od+W0VJJzawDma/gvBNQqkTiqYTWLuZoyAsivsI4AaWTCzHG06/TMjsf1cYe9Cb97UCEhjz7HvnPk2p/tw==
-  dependencies:
-    anymatch "~3.1.1"
-    braces "~3.0.2"
-    glob-parent "~5.1.0"
-    is-binary-path "~2.1.0"
-    is-glob "~4.0.1"
-    normalize-path "~3.0.0"
-    readdirp "~3.5.0"
-  optionalDependencies:
-    fsevents "~2.3.1"
-
 chokidar@^2.1.5, chokidar@^2.1.8:
   version "2.1.8"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-2.1.8.tgz#804b3a7b6a99358c3c5c61e71d8728f041cff917"
@@ -3321,6 +3300,21 @@ chokidar@^2.1.5, chokidar@^2.1.8:
     upath "^1.1.1"
   optionalDependencies:
     fsevents "^1.2.7"
+
+chokidar@^3.4.1:
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.5.1.tgz#ee9ce7bbebd2b79f49f304799d5468e31e14e68a"
+  integrity sha512-9+s+Od+W0VJJzawDma/gvBNQqkTiqYTWLuZoyAsivsI4AaWTCzHG06/TMjsf1cYe9Cb97UCEhjz7HvnPk2p/tw==
+  dependencies:
+    anymatch "~3.1.1"
+    braces "~3.0.2"
+    glob-parent "~5.1.0"
+    is-binary-path "~2.1.0"
+    is-glob "~4.0.1"
+    normalize-path "~3.0.0"
+    readdirp "~3.5.0"
+  optionalDependencies:
+    fsevents "~2.3.1"
 
 chownr@^1.1.1:
   version "1.1.4"
@@ -8643,13 +8637,6 @@ sainte-lague@^2.1.1:
   integrity sha512-DJNpGOBgdt0JYNhAifnxU3PC4WAWnc5UiZKuenZep6z7uOkCUHO9LgiM90XNwzvpUKUcM9XfFkFoYVwqaatUAA==
   dependencies:
     lodash "^4.17.11"
-
-sass@^1.32.7:
-  version "1.32.7"
-  resolved "https://registry.yarnpkg.com/sass/-/sass-1.32.7.tgz#632a9df2b85dc4b346977fcaf2d5e6f2b7039fd8"
-  integrity sha512-C8Z4bjqGWnsYa11o8hpKAuoyFdRhrSHcYjCr+XAWVPSIQqC8mp2f5Dx4em0dKYehPzg5XSekmCjqJnEZbIls9A==
-  dependencies:
-    chokidar ">=2.0.0 <4.0.0"
 
 sax@^1.2.4, sax@~1.2.4:
   version "1.2.4"

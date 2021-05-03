@@ -55,7 +55,7 @@ loginView self@{ state, setState } logger =
                 admin <- isAdminUser
                 setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
                 logger.setUser $ Just user
-          , launchAff_: Aff.launchAff_
+          , onLogin_: Aff.launchAff_
           , disableSocialLogins: Set.empty
           }
 

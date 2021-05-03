@@ -32,6 +32,7 @@ module KSF.User
   , getCreditCard
   , deleteCreditCard
   , registerCreditCard
+  , registerCreditCardFromExisting
   , getCreditCardRegister
   , updateCreditCardSubscriptions
   , getPackages
@@ -44,7 +45,7 @@ where
 import Prelude
 
 import Bottega (BottegaError(..))
-import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, getCreditCardRegister, updateCreditCardSubscriptions, InsufficientAccount) as Bottega
+import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, registerCreditCardFromExisting, getCreditCardRegister, updateCreditCardSubscriptions, InsufficientAccount) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
@@ -177,6 +178,7 @@ getUser maybeInvalidateCache uuid = do
           Console.error "Failed to fetch the user"
           throwError err
     Right user -> do
+      -- TODO: No need to fetch cards always! E.g. in Mosaico
       Console.info "User fetched successfully"
       fromPersonaUserWithCards user
 
@@ -595,6 +597,9 @@ deleteCreditCard creditCardId = callBottega $ \tokens -> Bottega.deleteCreditCar
 
 registerCreditCard :: Aff (Either BottegaError Bottega.CreditCardRegister)
 registerCreditCard = callBottega Bottega.registerCreditCard
+
+registerCreditCardFromExisting :: Bottega.CreditCardId -> Aff (Either BottegaError Bottega.CreditCardRegister)
+registerCreditCardFromExisting creditCardId = callBottega $ \tokens -> Bottega.registerCreditCardFromExisting tokens creditCardId
 
 getCreditCardRegister :: Bottega.CreditCardId -> Bottega.CreditCardRegisterNumber ->  Aff (Either BottegaError Bottega.CreditCardRegister)
 getCreditCardRegister creditCardId creditCardRegisterNumber = callBottega $ \tokens -> Bottega.getCreditCardRegister tokens creditCardId creditCardRegisterNumber

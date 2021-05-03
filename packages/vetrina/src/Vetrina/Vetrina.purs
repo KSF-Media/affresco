@@ -21,7 +21,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (Package, PackageId)
@@ -38,7 +37,6 @@ import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import Record (merge)
 import Tracking as Tracking
-import Unsafe.Coerce (unsafeCoerce)
 import Vetrina.Purchase.AccountForm (mkAccountForm)
 import Vetrina.Purchase.AccountForm as AccountForm
 import Vetrina.Purchase.Completed as Purchase.Completed
