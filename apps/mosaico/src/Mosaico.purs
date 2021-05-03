@@ -99,10 +99,8 @@ app = do
         Frontpage -> do
           if null state.articleList
           then Aff.launchAff_ do
-            frontPage <- Lettera.getFrontpage HBL
-            case frontPage of
-              Right fp -> liftEffect $ setState \s -> s { articleList = fp, article = Nothing }
-              Left err -> Aff.throwError $ error err
+            frontpage <- Lettera.getFrontpage HBL
+            liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
           -- Set article to Nothing to prevent flickering of old article
           else liftEffect $ setState \s -> s { article = Nothing }
         ArticlePage articleId -> pure unit

@@ -101,9 +101,7 @@ getCredentials req = do
 getMostRead :: {} -> Aff TextHtml
 getMostRead _ = do
   frontpage <- Lettera.getFrontpage HBL
-  case frontpage of
-    Right fp -> pure $ TextHtml $ renderToString $ mostRead fp
-    Left err -> Aff.throwError $ error err
+  pure $ TextHtml $ renderToString $ mostRead frontpage
   where
     mostRead articles =
       DOM.ul

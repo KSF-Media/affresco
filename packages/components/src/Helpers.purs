@@ -3,16 +3,19 @@ module KSF.Helpers where
 import           Prelude
 
 import           Data.Date               (Date)
-import           Data.DateTime           (DateTime (..))
+import           Data.DateTime           (DateTime (..), adjust)
 import           Data.Enum               (toEnum)
 import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
                                           format)
 import           Data.Int                (toNumber)
+import           Data.JSDate             as JSDate
 import           Data.List               (fromFoldable)
 import           Data.Maybe              (fromJust)
 import           Data.String             (Pattern (..))
 import           Data.String             as String
 import           Data.Time               (Time (..))
+import           Data.Time.Duration      (Minutes (..))
+import           Data.Time.Duration      as Duration
 import           Partial.Unsafe          (unsafePartial)
 
 midnight :: Time
@@ -48,7 +51,7 @@ dateTimeFormatter =
   fromFoldable
     [ YearFull
     , Placeholder "-"
-    , DayOfMonthTwoDigits
+    , MonthTwoDigits
     , Placeholder "-"
     , DayOfMonth
     , Placeholder "T"
@@ -59,6 +62,22 @@ dateTimeFormatter =
     , SecondsTwoDigits
     , Placeholder "Z"
     ]
+
+formatArticleTime :: DateTime -> String
+formatArticleTime = format formatter
+  where
+    formatter =
+      fromFoldable
+      [ DayOfMonth
+      , Placeholder "."
+      , MonthTwoDigits
+      , Placeholder "."
+      , YearFull
+      , Placeholder " "
+      , Hours24
+      , Placeholder ":"
+      , MinutesTwoDigits
+      ]
 
 formatEur :: Int -> String
 formatEur amountCent =

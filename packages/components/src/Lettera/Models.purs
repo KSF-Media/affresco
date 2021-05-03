@@ -4,15 +4,28 @@ import Data.Formatter.DateTime
 import Prelude
 
 import Control.Monad.Except (runExcept, runExceptT)
-import Data.DateTime (DateTime(..))
+import Control.Monad.Maybe.Trans (MaybeT(..), lift, runMaybeT)
+import Data.Argonaut.Core (Json, stringify)
+import Data.Array (fromFoldable)
+import Data.DateTime (DateTime(..), adjust)
 import Data.Either (Either(..), hush)
+import Data.Foldable (foldMap)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDateTime)
 import Data.JSDate as JSDate
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Show.Generic (genericShow)
-import Foreign (Foreign)
+import Data.String (joinWith)
+import Data.Symbol (class IsSymbol, SProxy(..))
+import Data.Time.Duration as Duration
+import Effect (Effect)
+import Effect.Class.Console as Console
+import Foreign (Foreign, renderForeignError)
 import KSF.Helpers (dateTimeFormatter)
+import Prim.Row (class Cons)
+import Simple.JSON (class ReadForeign)
+import Simple.JSON as JSON
+import Type.Proxy (Proxy(..))
 
 data FullArticle
   = FullArticle Article
@@ -25,6 +38,14 @@ fromFullArticle (PreviewArticle a) = a
 isPreviewArticle :: FullArticle -> Boolean
 isPreviewArticle (PreviewArticle _) = true
 isPreviewArticle _ = false
+
+newtype LocalDateTime = LocalDateTime DateTime
+
+fromUTCTime :: DateTime -> Effect (Maybe LocalDateTime)
+fromUTCTime utcTime = do
+  let jsDate = JSDate.fromDateTime utcTime
+  offset <- (_ * -1.0) <$> JSDate.getTimezoneOffset jsDate
+  pure $ (LocalDateTime <$> adjust (Duration.Minutes offset) utcTime)
 
 type ArticleStubCommon =
   ( title     :: String
@@ -41,21 +62,70 @@ type JSArticleStub =
   }
 
 type ArticleStub =
-  { publishingTime :: DateTime
+  { publishingTime :: LocalDateTime
   | ArticleStubCommon
   }
 
-type Article =
-  { title     :: String
+type ArticleCommon =
+  ( title     :: String
   , body      :: Array BodyElementJS
   , mainImage :: Maybe Image
   , tags      :: Array String
+  , uuid      :: String
+  )
+
+type JSArticle =
+  { publishingTime :: String
+  , updateTime     :: Maybe String
+  | ArticleCommon
   }
 
-fromJSArticleStub :: JSArticleStub -> Maybe ArticleStub
-fromJSArticleStub jsStub@{ publishingTime } = do
-  pubTime <- hush $ unformat dateTimeFormatter publishingTime
-  pure $ jsStub { publishingTime = pubTime }
+type Article =
+  { publishingTime :: LocalDateTime
+  , updateTime     :: Maybe LocalDateTime
+  | ArticleCommon
+  }
+
+parseArticleWith :: forall a b. ReadForeign b => (b -> Effect (Maybe a)) -> Json -> Effect (Either String a)
+parseArticleWith parseFn articleResponse = do
+  case JSON.readJSON $ stringify articleResponse of
+    Right jsArticle -> do
+      maybeParsedArticle <- parseFn jsArticle
+      case maybeParsedArticle of
+        Just article -> pure $ Right article
+        _            -> do
+          Console.warn $ "Could not parse API article into article"
+          pure $ Left "Parsing error"
+    Left err -> do
+      let parsingErrors = joinWith " " $ fromFoldable $ map renderForeignError err
+      -- TODO: Sentry and whatnot
+      Console.warn $ "Could not parse article JSON, errors: " <> parsingErrors
+      pure $ Left $ "Parsing error: " <> parsingErrors
+
+parseArticle :: Json -> Effect (Either String Article)
+parseArticle = parseArticleWith fromJSArticle
+
+parseArticleStub :: Json -> Effect (Either String ArticleStub)
+parseArticleStub = parseArticleWith fromJSArticleStub
+
+parseDateTime :: String -> Maybe DateTime
+parseDateTime = hush <<< unformat dateTimeFormatter
+
+fromJSArticleStub :: JSArticleStub -> Effect (Maybe ArticleStub)
+fromJSArticleStub jsStub@{ publishingTime } = runMaybeT do
+  pubTime      <- MaybeT (pure $ parseDateTime publishingTime)
+  localPubTime <- MaybeT $ fromUTCTime pubTime
+  pure $ jsStub { publishingTime = localPubTime }
+
+fromJSArticle :: JSArticle -> Effect (Maybe Article)
+fromJSArticle jsArticle@{ publishingTime, updateTime } = runMaybeT do
+  publishingDateTime <- MaybeT (pure $ parseDateTime publishingTime)
+  localPubTime <- MaybeT $ fromUTCTime publishingDateTime
+  localUpdateTime <-
+    lift case parseDateTime =<< updateTime of
+      Just updTime -> fromUTCTime updTime
+      _ -> pure Nothing
+  pure $ jsArticle { publishingTime = localPubTime, updateTime = localUpdateTime }
 
 type BodyElementJS =
   { html     :: Maybe String

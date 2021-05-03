@@ -7,12 +7,16 @@ import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
+import Control.Monad.Except (runExcept)
+import Control.Monad.Except.Trans (except, runExceptT)
 import Data.Argonaut.Core (Json, stringify, toArray, toObject)
-import Data.Array (foldM, snoc)
-import Data.Either (Either(..), note)
+import Data.Array (foldM, foldl, fromFoldable, partition, snoc)
+import Data.Either (Either(..), either, hush, isLeft, note)
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..))
-import Data.Traversable (traverse_)
+import Data.List.NonEmpty (toList)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (joinWith)
+import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -24,9 +28,10 @@ import Foreign (MultipleErrors, renderForeignError)
 import Foreign.Object (lookup)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
+import KSF.Helpers as Helpers
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (Article, ArticleStub, FullArticle(..), JSArticleStub, fromJSArticleStub)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), JSArticle, JSArticleStub, fromJSArticle, fromJSArticleStub, parseArticle, parseArticleStub)
 import Simple.JSON (E)
 import Simple.JSON as JSON
 
@@ -70,14 +75,9 @@ getArticle articleId auth = do
   case articleResponse of
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
-      | (StatusCode 200) <- response.status -> do
-        let s = stringify response.body
-        case JSON.readJSON s of
-          Right r -> pure $ Right $ FullArticle r
-          Left err -> do
-            liftEffect $ traverse_ (Console.log <<< show) err
-            pure $ Left "parsing error"
-      | (StatusCode 403) <- response.status ->
+      | (StatusCode 200) <- response.status ->
+        either Left (Right <<< FullArticle) <$> (liftEffect $ parseArticle response.body)
+      | (StatusCode 403) <- response.status -> do
           {- If we get a Forbidden response, that means the user is not entitled to read the article.
              However in this case, we have the article preview in the response,
              we just need to dig it out.
@@ -92,47 +92,38 @@ getArticle articleId auth = do
                       { "body": [ .. ] }
                  }
           -}
-          (toObject response.body)
-            >>= lookup "not_entitled"
-            >>= toObject
-            >>= lookup "articlePreview"
-            >>= (stringify >>> parseArticle)
-            # map PreviewArticle
-            # note "preview article parsing error" >>> pure
+        let articlePreviewJson =
+              (toObject response.body)
+                 >>= lookup "not_entitled"
+                 >>= toObject
+                 >>= lookup "articlePreview"
+
+        case articlePreviewJson of
+          Just articlePreview -> do
+            either Left (Right <<< PreviewArticle) <$> (liftEffect $ parseArticle articlePreview)
+          Nothing -> do
+            -- TODO: Sentry and whatnot
+            Console.warn "Did not find article preview from response!"
+            pure $ Left "Parsing error"
+
       | otherwise -> pure $ Left "Unexpected HTTP status"
 
-parseArticle :: String -> (Maybe Article)
-parseArticle a =
-  case JSON.readJSON a of
-    Right (r :: Article) -> Just r
-    Left e -> Nothing
-
-getFrontpage :: Paper -> Aff (Either String (Array ArticleStub))
+getFrontpage :: Paper -> Aff (Array ArticleStub)
 getFrontpage paper = do
   frontpageResponse <- AX.get ResponseFormat.json (letteraFrontPageUrl <> "?paper=" <> Paper.toString paper)
   case frontpageResponse of
-    Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
+    Left err -> do
+      Console.warn $ "Frontpage response failed to decode: " <> AX.printError err
+      pure mempty
     Right response
       | Just (responseArray :: Array Json) <- toArray response.body -> do
-        let (s :: Array (E JSArticleStub)) = map (JSON.readJSON <<< stringify) responseArray
-        articleStubs <- liftEffect $ foldM parseArticleStub [] s
-        pure $ Right articleStubs
+        a <- liftEffect $ traverse parseArticleStub responseArray
+        pure $ foldl takeRights [] a
         where
-          parseArticleStub :: Array ArticleStub -> Either MultipleErrors JSArticleStub -> Effect (Array ArticleStub)
-          parseArticleStub acc (Left err) = do
-            traverse_ (Console.log <<< renderForeignError) err
-            pure acc
-          parseArticleStub acc (Right jsArticleStub)
-            | Just articleStub <- fromJSArticleStub jsArticleStub = pure $ acc `snoc` articleStub
-            | otherwise = do
-              let articleId = jsArticleStub.uuid
-              -- TODO: Sentry etc.
-              Console.log $ "Could not parse Lettera response to ArticleStub. Article id: " <> articleId
-              pure acc
+          takeRights acc eitherArticle
+            | Right article <- eitherArticle = acc `snoc` article
+            | otherwise = acc
 
-          logParsingErrors :: Array JSArticleStub -> Either MultipleErrors JSArticleStub -> Effect (Array JSArticleStub)
-          logParsingErrors acc (Left err) = do
-            traverse_ (Console.log <<< renderForeignError) err
-            pure acc
-          logParsingErrors acc (Right articleStub) = pure $ acc `snoc` articleStub
-      | otherwise -> pure $ Left "Got weird response"
+      | otherwise -> do
+        Console.warn "Failed to read API response!"
+        pure mempty

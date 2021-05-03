@@ -15,10 +15,11 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Package (CampaignLengthUnit(..))
+import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, fromFullArticle, isPreviewArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -115,6 +116,7 @@ render { props, state, setState } =
             , children: [ DOM.text title ]
             }
         , foldMap renderImage mainImage
+        , foldMap publishingTime $ _.publishingTime <$> letteraArticle
         , DOM.div
             { className: "mosaico--article--body "
             , children:
@@ -125,6 +127,8 @@ render { props, state, setState } =
         ]
       }
   where
+    publishingTime (LocalDateTime pubTime) =
+      DOM.text $ formatArticleTime pubTime
     paywallFade =
       guard (maybe false isPreviewArticle state.article)
         DOM.div { className: "mosaico--article-fading-body" }
