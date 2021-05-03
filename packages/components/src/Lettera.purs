@@ -111,10 +111,7 @@ getFrontpage paper = do
         a <- liftEffect $ traverse parseArticleStub responseArray
         pure $ foldl takeRights [] a
         where
-          takeRights acc eitherArticle
-            | Right article <- eitherArticle = acc `snoc` article
-            | otherwise = acc
-
+          takeRights acc = either (const acc) (acc `snoc` _)
       | otherwise -> do
         Console.warn "Failed to read API response!"
         pure mempty

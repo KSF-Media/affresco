@@ -116,7 +116,13 @@ render { props, state, setState } =
             , children: [ DOM.text title ]
             }
         , foldMap renderImage mainImage
-        , foldMap (publishingTime (_.updateTime =<< letteraArticle)) $ _.publishingTime <$> letteraArticle
+        , DOM.div
+            { className: "mosaico--article-times-and-author"
+            , children:
+                [ foldMap renderAuthors $ _.authors <$> letteraArticle
+                , foldMap (articleTimestamps (_.updateTime =<< letteraArticle)) $ _.publishingTime <$> letteraArticle
+                ]
+            }
         , DOM.div
             { className: "mosaico--article--body "
             , children:
@@ -127,16 +133,31 @@ render { props, state, setState } =
         ]
       }
   where
-    publishingTime maybeUpdateTime (LocalDateTime pubTime) =
+    renderAuthors authors =
       DOM.div
-        { className: "mosaico--article-date"
+        { className: "mosaico--article-authors"
+        , children: map (\author -> DOM.span_ $ [ DOM.text author.byline ]) $ authors
+        }
+    -- TODO: Show only times (no dates) if article is published today!
+    articleTimestamps maybeUpdateTime (LocalDateTime pubTime) =
+      DOM.div
+        { className: "mosaico--article-timestamps"
         , children:
-            [ DOM.text $ formatArticleTime pubTime
-            , case maybeUpdateTime of
-                Just (LocalDateTime updateTime) -> DOM.text $ " Uppdaterad " <> formatArticleTime updateTime
-                _ -> mempty
+            [ publishingTime pubTime
+            , foldMap updateTime maybeUpdateTime
             ]
         }
+      where
+        publishingTime time =
+          DOM.div
+            { className: "mosaico--article-published-timestamp"
+            , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
+            }
+        updateTime (LocalDateTime time) =
+          DOM.div
+            { className: "mosaico--article-updated-timestamp"
+            , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
+            }
 
     paywallFade =
       guard (maybe false isPreviewArticle state.article)

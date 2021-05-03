@@ -66,6 +66,7 @@ type ArticleCommon =
   , mainImage :: Maybe Image
   , tags      :: Array String
   , uuid      :: String
+  , authors   :: Array Author
   )
 
 type JSArticle =
@@ -78,6 +79,11 @@ type Article =
   { publishingTime :: LocalDateTime
   , updateTime     :: Maybe LocalDateTime
   | ArticleCommon
+  }
+
+type Author =
+  { byline :: String
+  , image  :: Maybe String
   }
 
 parseArticleWith :: forall a b. ReadForeign b => (b -> Effect (Maybe a)) -> Json -> Effect (Either String a)
