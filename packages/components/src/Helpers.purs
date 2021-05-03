@@ -3,19 +3,16 @@ module KSF.Helpers where
 import           Prelude
 
 import           Data.Date               (Date)
-import           Data.DateTime           (DateTime (..), adjust)
+import           Data.DateTime           (DateTime (..))
 import           Data.Enum               (toEnum)
 import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
                                           format)
 import           Data.Int                (toNumber)
-import           Data.JSDate             as JSDate
 import           Data.List               (fromFoldable)
 import           Data.Maybe              (fromJust)
 import           Data.String             (Pattern (..))
 import           Data.String             as String
 import           Data.Time               (Time (..))
-import           Data.Time.Duration      (Minutes (..))
-import           Data.Time.Duration      as Duration
 import           Partial.Unsafe          (unsafePartial)
 
 midnight :: Time

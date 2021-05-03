@@ -11,7 +11,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
-import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (Article, FullArticle(..))

@@ -8,7 +8,7 @@ import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Monoid (guard, mempty)
+import Data.Monoid (guard)
 import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)

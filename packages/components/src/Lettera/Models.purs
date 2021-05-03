@@ -1,31 +1,25 @@
 module Lettera.Models where
 
-import Data.Formatter.DateTime
 import Prelude
 
-import Control.Monad.Except (runExcept, runExceptT)
 import Control.Monad.Maybe.Trans (MaybeT(..), lift, runMaybeT)
 import Data.Argonaut.Core (Json, stringify)
 import Data.Array (fromFoldable)
-import Data.DateTime (DateTime(..), adjust)
+import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
-import Data.Foldable (foldMap)
+import Data.Formatter.DateTime (unformat)
 import Data.Generic.Rep (class Generic)
-import Data.JSDate (JSDate, toDateTime)
 import Data.JSDate as JSDate
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
-import Data.Symbol (class IsSymbol, SProxy(..))
 import Data.Time.Duration as Duration
 import Effect (Effect)
 import Effect.Class.Console as Console
-import Foreign (Foreign, renderForeignError)
+import Foreign (renderForeignError)
 import KSF.Helpers (dateTimeFormatter)
-import Prim.Row (class Cons)
 import Simple.JSON (class ReadForeign)
 import Simple.JSON as JSON
-import Type.Proxy (Proxy(..))
 
 data FullArticle
   = FullArticle Article

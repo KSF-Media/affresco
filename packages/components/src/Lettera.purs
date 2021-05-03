@@ -7,33 +7,24 @@ import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
-import Control.Monad.Except (runExcept)
-import Control.Monad.Except.Trans (except, runExceptT)
-import Data.Argonaut.Core (Json, stringify, toArray, toObject)
-import Data.Array (foldM, foldl, fromFoldable, partition, snoc)
-import Data.Either (Either(..), either, hush, isLeft, note)
+import Data.Argonaut.Core (Json, toArray, toObject)
+import Data.Array (foldl, snoc)
+import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
-import Data.List.NonEmpty (toList)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String (joinWith)
-import Data.Traversable (traverse, traverse_)
+import Data.Maybe (Maybe(..))
+import Data.Traversable (traverse)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
-import Effect (Effect)
 import Effect.Aff (Aff, throwError)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
-import Foreign (MultipleErrors, renderForeignError)
 import Foreign.Object (lookup)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
-import KSF.Helpers as Helpers
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (Article, ArticleStub, FullArticle(..), JSArticle, JSArticleStub, fromJSArticle, fromJSArticleStub, parseArticle, parseArticleStub)
-import Simple.JSON (E)
-import Simple.JSON as JSON
+import Lettera.Models (Article, ArticleStub, FullArticle(..), parseArticle, parseArticleStub)
 
 foreign import letteraBaseUrl :: String
 
