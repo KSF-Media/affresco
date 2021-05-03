@@ -2,14 +2,13 @@ module MittKonto.Main.LoginView where
 
 import Prelude
 
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
 import Effect.Aff as Aff
 import Effect.Exception (message)
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
-import KSF.Spinner as Spinner
 import KSF.User (UserError(..), isAdminUser)
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
@@ -55,7 +54,7 @@ loginView self@{ state, setState } logger =
                 admin <- isAdminUser
                 setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
                 logger.setUser $ Just user
-          , onLogin_: Aff.launchAff_
+          , onLogin: Aff.launchAff_
           , disableSocialLogins: Set.empty
           }
 
