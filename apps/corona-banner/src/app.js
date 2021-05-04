@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import CoronaBanner from '../../../packages/components/src/CoronaBanner/banner'
 
+function getSiteUrl() {
+    const queryParameter = window.location.search
+    const siteRegEx = /site=(\w+)/
+    const siteArray = queryParameter.match(siteRegEx) || []
+    console.log('siteURL is', queryParameter)
+    if (siteArray.includes('on')) {
+      return 'https://www.ostnyland.fi/tagg/coronaviruset/'
+    } else if (siteArray.includes('vn')) {
+      return 'https://www.vastranyland.fi/tagg/coronaviruset/'
+    } else {
+      return 'https://www.hbl.fi/tagg/coronaviruset/'
+    }
+  }
+
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [banner, setBanner] = useState(null)
@@ -17,6 +31,8 @@ export default function App() {
             deaths={response.data.deaths}
             vaccinated={response.data.vaccinated}
             vaccinatedPercentage={response.data.vaccinatedPercentage}
+            siteUrl={getSiteUrl()}
+            showLinks={true}
           />
         )
       })

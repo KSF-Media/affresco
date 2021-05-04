@@ -64,13 +64,14 @@ class App extends Component {
             errorFetching: false,
             errorFetchingLatestArticles: false,
             forceLoginView: false,
-            isBannerLoaded: false,
+            showBanner: false,
             banner: {
                 newCases: null,
                 hospitalised: null,
                 deaths: null,
                 vaccinated: null,
-                vaccinatedPercentage: null
+                vaccinatedPercentage: null,
+                showLinks: false
             }
         };
     }
@@ -87,12 +88,18 @@ class App extends Component {
         if (getUrlParam().has('login')) {
             this.setState({ forceLoginView: true });
         } else {
-            this.getArticle();
-            this.getMostReadArticles();
-            this.getBannerStats();
+            this.getArticle(),
+            this.getMostReadArticles() 
         }
     }
-    componentDidUpdate() {
+    componentDidUpdate(prevProps, prevState) {
+        const hasCoronaTag = this.state.tags.map(tag => tag.toLowerCase()).includes('coronaviruset')
+        const hadCoronaTag = prevState.tags.map(tag => tag.toLowerCase()).includes('coronaviruset')
+        console.log('hasCoronatag: ', hasCoronaTag)
+        console.log('hadCoronaTag', hadCoronaTag)
+        if (hasCoronaTag && !hadCoronaTag) {
+            this.getCoronaBannerStats();
+        }       
     }
     componentWillUnmount() {
     }
@@ -168,25 +175,25 @@ class App extends Component {
             });
     }
 
-    getBannerStats() {
-        fetch('https://cdn.ksfmedia.fi/corona-banner/stats.json')
-        .then(res => res.json())
-        .then(data => {
-            console.log('data:', data)
-            this.setState({ banner: {
-                newCases: data.newCases,
-                hospitalised: data.hospitalised,
-                deaths: data.deaths,
-                vaccinated: data.vaccinatedAmount,
-                vaccinatedPercentage: data.vaccinatedPercentage
-            }
-            })
-        })
-        .then(() => {
-            console.log(this.state.banner)
-            this.setState({ isBannerLoaded: true })
-            console.log('isBannerLoaded?: ', this.state.isBannerLoaded)
-        })
+    getCoronaBannerStats() {
+            fetch('https://cdn.ksfmedia.fi/corona-banner/stats.json')
+                .then(res => res.json())
+                .then(data => {
+                    console.log('data:', data)
+                    this.setState({ banner: {
+                        newCases: data.newCases,
+                        hospitalised: data.hospitalised,
+                        deaths: data.deaths,
+                        vaccinated: data.vaccinatedAmount,
+                        vaccinatedPercentage: data.vaccinatedPercentage
+                    }
+                    })
+                })
+                .then(() => {
+                    console.log('this.state.banner', this.state.banner)
+                    this.setState({ showBanner: true })
+                    console.log('showBanner?: ', this.state.showBanner)
+                })
     }
 
     checkCache(uuid) {
@@ -620,6 +627,8 @@ class App extends Component {
             )
         }
 
+        console.log('showBanner?', this.state.showBanner)
+
         return (
             <div className="App">
                 {this.state.isLoading ? <Loading /> : ''}
@@ -661,10 +670,10 @@ class App extends Component {
                         )}
                         <Content body={this.state.body}
                             showHighResolutionImage={this.showHighResolutionImage} />
-                        {this.state.isBannerLoaded && (
+                        {this.state.showBanner && (
                             <CoronaBanner newCases={this.state.banner.newCases} hospitalised={this.state.banner.hospitalised}
                                 deaths={this.state.banner.deaths} vaccinated={this.state.banner.vaccinated} 
-                                vaccinatedPercentage={this.state.banner.vaccinatedPercentage}/> 
+                                vaccinatedPercentage={this.state.banner.vaccinatedPercentage} showLinks={this.state.banner.showLinks}/> 
                         )}
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
