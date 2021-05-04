@@ -5,6 +5,7 @@ module KSF.User
   , ValidationServerError
   , module PersonaReExport
   , module BottegaReExport
+  , module Address
   , loginTraditional
   , magicLogin
   , logout
@@ -77,8 +78,11 @@ import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, UserAuth)
 import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
+import KSF.Api.Address (Address) as Address
+import KSF.Api.Consent (GdprConsent)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
+import KSF.Api.Search (SearchQuery, SearchResult)
 import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
 import KSF.Api.Subscription (Subsno)
 import KSF.Error as KSF.Error
@@ -86,7 +90,7 @@ import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -443,7 +447,7 @@ requireToken =
 jsUpdateGdprConsent
   :: UUID
   -> Api.Token
-  -> Array Persona.GdprConsent
+  -> Array GdprConsent
   -> Effect Unit
   -> Effect Unit
 jsUpdateGdprConsent uuid token consents callback
@@ -553,12 +557,12 @@ createDeliveryReclamation uuid subsno date claim = do
       pure $ Left Persona.InvalidUnexpected
 
 searchUsers
-  :: String
-  -> Aff (Either String (Array User))
+  :: SearchQuery
+  -> Aff (Either String (Array SearchResult))
 searchUsers query = do
   users <- try $ Persona.searchUsers query =<< requireToken
   case users of
-    Right xs -> pure $ Right $ fromPersonaUser <$> xs
+    Right xs -> pure $ Right xs
     Left err
       | Just (errData :: Persona.Forbidden) <- Api.Error.errorData err ->
           pure $ Left $ errData.forbidden.description
