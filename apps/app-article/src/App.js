@@ -20,6 +20,7 @@ import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
 import { Sentry } from './sentry'
 import CoronaBanner from '../../../packages/components/src/CoronaBanner/banner'
+import { someAuth } from '@ksf-media/user/build';
 
 
 class App extends Component {
@@ -93,11 +94,12 @@ class App extends Component {
         }
     }
     componentDidUpdate(prevProps, prevState) {
-        const hasCoronaTag = this.state.tags.map(tag => tag.toLowerCase()).includes('coronaviruset')
-        const hadCoronaTag = prevState.tags.map(tag => tag.toLowerCase()).includes('coronaviruset')
+        const hasCoronaTag = this.state.tags.some(tag => tag.match(/coronavirus/i))
+        const hadCoronaTag = prevState.tags.some(tag => tag.match(/coronavirus/i))
         console.log('hasCoronatag: ', hasCoronaTag)
         console.log('hadCoronaTag', hadCoronaTag)
         if (hasCoronaTag && !hadCoronaTag) {
+            console.log('getting stats')
             this.getCoronaBannerStats();
         }       
     }
