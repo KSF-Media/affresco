@@ -15,13 +15,11 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.String (Pattern(..), contains)
 import Data.String as String
-import Data.Time.Duration (Milliseconds(..))
 import Data.Validation.Semigroup (validation)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, error)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Facebook.Sdk as FB
@@ -40,9 +38,9 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler_)
 import React.Basic.Events as Events
-import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
+import React.Basic.Hooks (Component, UseState, component, useState, (/\))
 import React.Basic.Hooks as React
-import React.Basic.Hooks.Aff (useAff)
+import React.Basic.Hooks.Aff (UseAff, useAff)
 
 
 foreign import hideLoginLinks :: Boolean
@@ -96,12 +94,8 @@ type JSProps =
 
 type JSSelf = React.Classic.Self Props State
 
-jsComponent :: React.ReactComponent JSProps
-jsComponent =
-  React.Classic.toReactComponent
-    fromJSProps
-    (React.Classic.createComponent "Login")
-    { initialState, render: jsRender }
+jsComponent :: Effect (React.ReactComponent JSProps)
+jsComponent = React.reactComponent "Login" jsLoginComponent
 
 jsRender :: JSSelf -> JSX
 jsRender { props, state, setState } = render { props, state, setState }
@@ -121,8 +115,8 @@ fromJSProps jsProps =
       Aff.launchAff_ do
         Aff.bracket
           (maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoading)
-          (\loading -> maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoadingEnd)
-          (\loading -> aff)
+          (\_loading -> maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoadingEnd)
+          (\_loading -> aff)
   , disableSocialLogins: maybe Set.empty (Set.mapMaybe readSocialLoginProvider <<< Set.fromFoldable) $ Nullable.toMaybe jsProps.disableSocialLogins
   }
   where
@@ -185,22 +179,29 @@ initialState =
   , loggingIn: Nothing
   }
 
+type LoginHook = React.Render Unit (UseAff (Maybe LoggingIn) Unit (UseState State Unit)) JSX
+
+loginComponent :: Props -> LoginHook
+loginComponent props = React.do
+  state /\ setState <- useState initialState
+  useAff state.loggingIn do
+    case state.loggingIn of
+      Just (LoggingIn counter) -> do
+        Aff.delay $ Milliseconds 500.0
+        liftEffect do
+          let newCounterValue = if counter == 3 then 0 else counter + 1
+          setState \oldState -> oldState { loggingIn = Just $ LoggingIn newCounterValue }
+      Nothing -> pure unit
+  pure $ render { state, setState, props }
+
+jsLoginComponent :: JSProps -> LoginHook
+jsLoginComponent props = loginComponent $ fromJSProps props
+
 login :: Component Props
-login = do
-  component "Login" \props -> React.do
-    state /\ setState <- useState initialState
-    useAff state.loggingIn do
-      case state.loggingIn of
-        Just (LoggingIn counter) -> do
-          Aff.delay $ Milliseconds 500.0
-          liftEffect do
-            let newCounterValue = if counter == 3 then 0 else counter + 1
-            setState \oldState -> oldState { loggingIn = Just $ LoggingIn newCounterValue }
-        Nothing -> pure unit
-    pure $ render { state, setState, props }
+login = component "Login" loginComponent
 
 render :: Self -> JSX
-render self@{ props, state } =
+render self@{ state } =
   case state.merge of
     Nothing        -> renderLogin self
     Just mergeInfo -> renderMerge self mergeInfo
@@ -236,7 +237,7 @@ loginWithRetry action handleSuccess handleError handleFinish = do
 onLogin :: Self -> Form.ValidatedForm LoginField LoginForm -> Effect Unit
 onLogin self@{ state, props } =
   validation
-    (\errors -> do
+    (\_errors -> do
         self.setState _
           { formEmail    = state.formEmail    <|> Just ""
           , formPassword = state.formPassword <|> Just ""
@@ -463,7 +464,7 @@ renderMerge self@{ props } mergeInfo =
             ]
         }
       where
-        onSubmit = Events.handler preventDefault $ \event -> onLogin self $ loginFormValidations self
+        onSubmit = Events.handler preventDefault $ \_event -> onLogin self $ loginFormValidations self
 
 isSocialLoginEnabled :: Set SocialLoginProvider -> SocialLoginProvider -> Boolean
 isSocialLoginEnabled disabledProviders provider = not $ Set.member provider disabledProviders
@@ -488,7 +489,7 @@ googleLogin self =
 
     logUserIn email accessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
     handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "google login" "success"
-    handleError err = liftEffect $ Tracking.login Nothing "google login" "error"
+    handleError _err = liftEffect $ Tracking.login Nothing "google login" "error"
     handleFinish user = do
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
@@ -501,7 +502,7 @@ googleLogin self =
     -- | 3) Every other auth failure.
     -- |    TODO: At least some of these should be displayed to the user.
     onGoogleFailure :: Google.Error -> Effect Unit
-    onGoogleFailure err@{ error: "idpiframe_initialization_failed", details }
+    onGoogleFailure { error: "idpiframe_initialization_failed", details }
       -- In addition to failing because of third party cookies, the initialization may
       -- fail e.g. for the reason, that the domain is not allowed to perform any google actions.
       -- This case is just to let the developers know what's going on.
@@ -561,7 +562,7 @@ facebookLogin self =
 
     logUserIn email fbAccessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
     handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "facebook login" "success"
-    handleError err = liftEffect $ Tracking.login Nothing "facebook login" "error: could not fetch user"
+    handleError _err = liftEffect $ Tracking.login Nothing "facebook login" "error: could not fetch user"
     handleFinish user = do
       finalizeSomeAuth self user
       liftEffect $ self.props.onUserFetch user
