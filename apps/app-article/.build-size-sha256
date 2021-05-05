@@ -1,3 +1,0 @@
-# SHA256 of the content of the build directory.
-# This is used for triggering project deployment when there are updated dependecies.
-1096b5ff97142b2d7700af780036605287d26660fa494f38c7645fe33024e7aa
