@@ -6,7 +6,7 @@ function getSiteUrl() {
     const queryParameter = window.location.search
     const siteRegEx = /site=(\w+)/
     const siteArray = queryParameter.match(siteRegEx) || []
-    console.log('siteURL is', queryParameter)
+    
     if (siteArray.includes('on')) {
       return 'https://www.ostnyland.fi/tagg/coronaviruset/'
     } else if (siteArray.includes('vn')) {

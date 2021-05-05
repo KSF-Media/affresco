@@ -44,7 +44,7 @@ const CoronaBanner = ({
                 </div>
               )}
               {deaths !== null && (
-                <div className='stat'>
+                <div className='stat smallest-screens-hidden'>
                   <div className='stat-value'>{deaths}</div>
                   <div className='stat-label'>dödsfall</div>
                 </div>

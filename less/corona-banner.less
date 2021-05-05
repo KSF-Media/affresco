@@ -108,6 +108,10 @@ a {
   display: none;
 }
 
+.smallest-screens-hidden {
+  display: initial;
+}
+
 .chevron-container {
   display: flex;
   align-items: center;
@@ -137,6 +141,28 @@ a {
   padding-top: 2px;
   padding-right: 7px;
   height: 10px;
+}
+
+@media (max-width: 350px) {
+  .corona-banner-wrapper {
+    min-width: unset;
+  }
+  
+  a {
+    min-width: unset;
+  }
+  
+  .corona-container {
+    min-width: unset;
+  }
+
+  .smallest-screens-hidden {
+    display: none;
+  }
+
+  .source {
+    min-width: unset;
+  }
 }
 
 @media (min-width: 480px) {
