@@ -135,7 +135,7 @@ jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
 render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
-render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
+render self@{ state } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
