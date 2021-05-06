@@ -48,7 +48,7 @@ render name payment =
             { className: "payment-detail--table"
             , children:
                 [ DOM.tbody_ $ map renderRow
-                    [ "Betaldatum" /\ formatDateDots payment.date
+                    [ "Utskrivningsdatum" /\ formatDateDots payment.date
                     , "Mottagare" /\ "KSF Media Ab"
                     , "Adress" /\ "Mannerheimvägen 18, 00100 HELSINGFORS"
                     , "Momsnummer" /\ "FI21372401"

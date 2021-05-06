@@ -22,7 +22,7 @@ import React.Basic.Hooks (Hook, UseEffect, useEffect)
 
 errorAlert :: Error -> Maybe Alert
 errorAlert err = oneOf
-  [ do { method, url } <- KSF.Error.networkError err
+  [ do _ <- KSF.Error.networkError err
        pure
          { level: Alert.danger
          , title: "Anslutningen misslyckades."
