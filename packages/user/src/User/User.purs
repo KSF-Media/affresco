@@ -5,6 +5,7 @@ module KSF.User
   , ValidationServerError
   , module PersonaReExport
   , module BottegaReExport
+  , module Address
   , loginTraditional
   , magicLogin
   , logout
@@ -12,6 +13,7 @@ module KSF.User
   , facebookSdk
   , createUser
   , createUserWithEmail
+  , createCusnoUser
   , getUser
   , isAdminUser
   , updateUser
@@ -32,6 +34,7 @@ module KSF.User
   , getCreditCard
   , deleteCreditCard
   , registerCreditCard
+  , registerCreditCardFromExisting
   , getCreditCardRegister
   , updateCreditCardSubscriptions
   , getPackages
@@ -44,13 +47,14 @@ where
 import Prelude
 
 import Bottega (BottegaError(..))
-import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, getCreditCardRegister, updateCreditCardSubscriptions, InsufficientAccount) as Bottega
+import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, registerCreditCardFromExisting, getCreditCardRegister, updateCreditCardSubscriptions, InsufficientAccount) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
+import Data.Array as Array
 import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_, traverse_)
@@ -76,16 +80,20 @@ import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, UserAuth)
 import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
+import KSF.Api.Address (Address) as Address
+import KSF.Api.Consent (GdprConsent)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
+import KSF.Api.Search (SearchQuery, SearchResult)
 import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
 import KSF.Api.Subscription (Subsno)
 import KSF.Error as KSF.Error
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
+import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), Address, DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -101,6 +109,7 @@ data UserError =
   | LoginTokenInvalid
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
+  | RegistrationCusnoInUse
   | MergeEmailInUse MergeInfo
   | SomethingWentWrong
   | ServiceUnavailable
@@ -162,6 +171,38 @@ createUserWithEmail newTemporaryUser = do
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin Nothing =<< saveToken user
 
+createCusnoUser :: Persona.NewCusnoUser -> Aff (Either UserError SearchResult)
+createCusnoUser newCusnoUser = do
+  newUser <- try $ Persona.registerCusno newCusnoUser =<< requireToken
+  case newUser of
+    Left err
+      | Just (errData :: Persona.EmailAddressInUseRegistration) <- Api.Error.errorData err -> do
+          Console.error errData.email_address_in_use_registration.description
+          pure $ Left RegistrationEmailInUse
+      | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
+          Console.error errData.unique_cusno_violation.description
+          pure $ Left RegistrationCusnoInUse
+      | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
+          Console.error errData.invalid_form_fields.description
+          pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
+      | otherwise -> do
+          Console.error "An unexpected error occurred during registration"
+          pure $ Left $ UnexpectedError err
+    Right user -> do
+      searchResult <- searchUsers { faroLimit: 1, query: Cusno.toString newCusnoUser.cusno }
+      case searchResult of
+        Left err -> do
+          Console.error "Cusno user created successfully but searching it failed"
+          pure $ Left SomethingWentWrong
+        Right res -> case Array.head res of
+          Nothing -> do
+            Console.error "No results from search after cusno account creation"
+            pure $ Left SomethingWentWrong
+          Just r ->
+            if Array.null r.faro then do
+              Console.error "No faro results in search after cusno account creation"
+              pure $ Left SomethingWentWrong
+            else pure $ Right r
 
 getUser :: Maybe InvalidateCache -> UUID -> Aff User
 getUser maybeInvalidateCache uuid = do
@@ -442,7 +483,7 @@ requireToken =
 jsUpdateGdprConsent
   :: UUID
   -> Api.Token
-  -> Array Persona.GdprConsent
+  -> Array GdprConsent
   -> Effect Unit
   -> Effect Unit
 jsUpdateGdprConsent uuid token consents callback
@@ -552,12 +593,12 @@ createDeliveryReclamation uuid subsno date claim = do
       pure $ Left Persona.InvalidUnexpected
 
 searchUsers
-  :: String
-  -> Aff (Either String (Array User))
+  :: SearchQuery
+  -> Aff (Either String (Array SearchResult))
 searchUsers query = do
   users <- try $ Persona.searchUsers query =<< requireToken
   case users of
-    Right xs -> pure $ Right $ fromPersonaUser <$> xs
+    Right xs -> pure $ Right xs
     Left err
       | Just (errData :: Persona.Forbidden) <- Api.Error.errorData err ->
           pure $ Left $ errData.forbidden.description
@@ -596,6 +637,9 @@ deleteCreditCard creditCardId = callBottega $ \tokens -> Bottega.deleteCreditCar
 
 registerCreditCard :: Aff (Either BottegaError Bottega.CreditCardRegister)
 registerCreditCard = callBottega Bottega.registerCreditCard
+
+registerCreditCardFromExisting :: Bottega.CreditCardId -> Aff (Either BottegaError Bottega.CreditCardRegister)
+registerCreditCardFromExisting creditCardId = callBottega $ \tokens -> Bottega.registerCreditCardFromExisting tokens creditCardId
 
 getCreditCardRegister :: Bottega.CreditCardId -> Bottega.CreditCardRegisterNumber ->  Aff (Either BottegaError Bottega.CreditCardRegister)
 getCreditCardRegister creditCardId creditCardRegisterNumber = callBottega $ \tokens -> Bottega.getCreditCardRegister tokens creditCardId creditCardRegisterNumber

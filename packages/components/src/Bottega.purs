@@ -147,6 +147,13 @@ registerCreditCard { userId, authToken } =
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
+registerCreditCardFromExisting :: UserAuth -> CreditCardId -> Aff CreditCardRegister
+registerCreditCardFromExisting { userId, authToken } creditCardId =
+  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterPost" [ unsafeToForeign creditCardId ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
+
 getCreditCardRegister :: UserAuth -> CreditCardId -> CreditCardRegisterNumber -> Aff CreditCardRegister
 getCreditCardRegister { userId, authToken } creditCardId creditCardRegisterNumber = do
   readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterNumberGet" [ unsafeToForeign creditCardId, unsafeToForeign creditCardRegisterNumber ] { authorization, authUser }

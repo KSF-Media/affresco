@@ -8,9 +8,10 @@ import Data.Date (Date)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toNullable)
+import Data.Nullable (Nullable, toNullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.Show.Generic (genericShow)
+import Data.String as String
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
 import Data.Traversable (sequence)
@@ -21,7 +22,10 @@ import Foreign (unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
+import KSF.Api.Address (Address)
+import KSF.Api.Consent (GdprConsent, LegalConsent)
 import KSF.Api.Error (ServerError)
+import KSF.Api.Search (SearchQuery, SearchResult, JanrainUser, FaroUser)
 import KSF.Api.Subscription (Subscription, PendingAddressChange, Subsno(..))
 import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
@@ -30,6 +34,7 @@ import OpenApiClient (Api, callApi)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
 
+foreign import adminApi :: Api
 foreign import loginApi :: Api
 foreign import usersApi :: Api
 
@@ -123,6 +128,34 @@ type NewTemporaryUser =
 registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
   callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
+
+type NewCusnoUser =
+  { cusno     :: Cusno
+  , email     :: String
+  , firstName :: String
+  , lastName  :: String
+  , password  :: String
+  , consents  :: Array LegalConsent
+  }
+
+registerCusno :: NewCusnoUser -> UserAuth -> Aff LoginResponse
+registerCusno newUser@{ cusno } auth = do
+  let user =
+        { cusno
+        , user: { firstName: if String.null $ String.trim newUser.firstName
+                               then Nullable.null
+                               else Nullable.notNull newUser.firstName
+                , lastName : if String.null $ String.trim newUser.lastName
+                               then Nullable.null
+                               else Nullable.notNull newUser.lastName
+                , emailAddress: newUser.email
+                , password: newUser.password
+                , confirmPassword: newUser.password
+                , legalConsents: newUser.consents
+                }
+        }
+  callApi adminApi "adminUserPost" [ unsafeToForeign user ]
+    ( authHeaders UUID.emptyUUID auth )
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
@@ -356,6 +389,9 @@ pauseDateErrorToInvalidDateError = case _ of
 type EmailAddressInUseRegistration = ServerError
   ( email_address_in_use_registration :: { description :: String } )
 
+type CusnoInUseRegistration = ServerError
+  ( unique_cusno_violation :: { description :: String } )
+
 data Provider
   = Facebook
   | GooglePlus
@@ -404,35 +440,12 @@ type NewUser =
   , legalConsents :: Array LegalConsent
   }
 
-type Address =
-  { countryCode   :: String
-  , zipCode       :: Nullable String
-  , city          :: Nullable String
-  , streetAddress :: String
-  , streetName    :: Nullable String
-  , houseNo       :: Nullable String
-  , staircase     :: Nullable String
-  , apartment     :: Nullable String
-  }
-
 type TemporaryAddressChange =
   { street        :: String
   , zipcode       :: String
   , cityName      :: Nullable String
   , countryCode   :: String
   , temporaryName :: Nullable String
-  }
-
-type GdprConsent =
-  { brand      :: String
-  , consentKey :: String
-  , value      :: Boolean
-  }
-
-type LegalConsent =
-  { consentId :: String
-  , screenName :: String
-  , dateAccepted :: String
   }
 
 type DeliveryReclamation =
@@ -605,8 +618,61 @@ getPayments uuid auth =
 type Forbidden = ServerError
   ( forbidden :: { description :: String } )
 
+type ApiJanrainUser =
+  { uuid        :: UUID
+  , email       :: Nullable String
+  , firstName   :: Nullable String
+  , lastName    :: Nullable String
+  , consent     :: Array GdprConsent
+  , legal       :: Array LegalConsent
+  , cusno       :: Nullable String
+  , otherCusnos :: Nullable (Array String)
+  }
+
+type ApiFaroUser =
+  { cusno         :: Cusno
+  , name          :: String
+  , address       :: Nullable Address
+  , email         :: Nullable String
+  , subscriptions :: Nullable (Array Subscription)
+  }
+
+type ApiSearchResult =
+  { janrain     :: Nullable ApiJanrainUser
+  , faro        :: Array ApiFaroUser
+  }
+
 -- Pass dummy uuid to force authUser field generation.
-searchUsers :: String -> UserAuth -> Aff (Array User)
+searchUsers :: SearchQuery -> UserAuth -> Aff (Array SearchResult)
 searchUsers query auth = do
-  callApi usersApi "usersSearchGet" [ unsafeToForeign query ]
+  catMaybes <<< map nativeSearchResults <$>
+    callApi adminApi "adminSearchPost" [ unsafeToForeign query ]
     ( authHeaders UUID.emptyUUID auth )
+  where
+    nativeSearchResults :: ApiSearchResult -> Maybe SearchResult
+    nativeSearchResults x = do
+      janrain <- nativeJanrain x.janrain
+      faro <- sequence $ map nativeFaro x.faro
+      pure { janrain, faro }
+    nativeJanrain :: Nullable ApiJanrainUser -> Maybe (Maybe JanrainUser)
+    nativeJanrain x = do
+      pure $ case toMaybe x of
+        Nothing -> Nothing
+        Just j -> Just
+          { uuid:        j.uuid
+          , email:       toMaybe j.email
+          , firstName:   toMaybe j.firstName
+          , lastName:    toMaybe j.lastName
+          , consent:     j.consent
+          , legal:       j.legal
+          , cusno:       toMaybe j.cusno
+          , otherCusnos: toMaybe j.otherCusnos
+          }
+    nativeFaro :: ApiFaroUser -> Maybe FaroUser
+    nativeFaro x = do
+      pure $ { cusno:   x.cusno
+             , name:    x.name
+             , address: toMaybe x.address
+             , email:   toMaybe x.email
+             , subs:    toMaybe x.subscriptions
+             }

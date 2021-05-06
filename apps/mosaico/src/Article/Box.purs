@@ -4,8 +4,12 @@ import Prelude
 
 import Data.Foldable (fold)
 import Data.Maybe (Maybe)
+import Data.Monoid (guard)
+import Data.String (joinWith, length)
 import React.Basic.Classic (Component, JSX, createComponent, make)
-import React.Basic.DOM as R
+import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
+
 
 component :: Component Props
 component = createComponent "Box"
@@ -17,28 +21,45 @@ type Props =
   , brand :: String
   }
 
+autoExpand :: Array String -> Boolean
+autoExpand a = (length $ joinWith mempty a) < 600
+
 box :: Props -> JSX
 box = make component
   { initialState: { expanded: false }
+  , didMount: \self ->
+      self.setState \_ -> { expanded: autoExpand self.props.content }
   , render: \self ->
-      R.div
-      { className: "mosaico--article--boxinfo border-color-" <> self.props.brand
-      , children:
-        [ R.h3_ [ R.text (fold  self.props.headline) ]
-        , R.h2_ [ R.text (fold  self.props.title) ]
-        , R.div
-          { className: "boxinfo--body"
-          , children: map (\p -> R.p { dangerouslySetInnerHTML: { __html: p } }) self.props.content
-          }
-        , R.div
-          -- { onClick: self.setState { expanded: not self.state.expanded }
-          { className: "expand"
-          , children:
-            [ R.div
-              { className: "color-" <> self.props.brand
-              , children: [ R.span_ [ R.text "Vik ut" ] ]
+      DOM.div
+        { className: "mosaico--article--boxinfo border-" <> self.props.brand
+        , children:
+            [ DOM.div
+              { className: "boxinfo-header"
+              , children:
+                  [ DOM.h3_ [ DOM.text $ fold self.props.headline ]
+                  , DOM.h2_ [ DOM.text $ fold self.props.title ]
+                  ]
+              }
+            , DOM.div
+              { className: "boxinfo--body" <> guard self.state.expanded " expanded"
+              , children:
+                  [ DOM.div
+                    { className: "content"
+                    , children: map (\p -> DOM.p { dangerouslySetInnerHTML: { __html: p } }) self.props.content
+                    }
+                  , DOM.div { className: "fader" }
+                  ]
+              }
+            , DOM.div
+              { onClick: capture_ $ self.setState \_ -> { expanded: not self.state.expanded }
+              , className: "boxinfo-toggle"
+              , children: guard (not self.state.expanded) $
+                  [ DOM.a
+                    { className: "color-" <> self.props.brand
+                    , children: [ DOM.text "Vik ut ▼" ]
+                    }
+                  ]
               }
             ]
-          }
-      ] }
+        }
   }
