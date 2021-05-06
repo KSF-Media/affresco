@@ -61,10 +61,10 @@ dateTimeFormatter =
     ]
 
 formatArticleTime :: DateTime -> String
-formatArticleTime = format formatter
-  where
-    formatter =
-      fromFoldable
+formatArticleTime = format articleFormatter
+ where
+   articleFormatter =
+    fromFoldable
       [ DayOfMonth
       , Placeholder "."
       , MonthTwoDigits

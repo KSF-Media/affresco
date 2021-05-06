@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (cons, head, snoc)
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
@@ -136,9 +137,17 @@ render { props, state, setState } =
     renderAuthors authors =
       DOM.div
         { className: "mosaico--article-authors"
-        , children: map (\author -> DOM.span_ $ [ DOM.text author.byline ]) $ authors
+        , children:
+            map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
+            `snoc` premiumBadge
         }
-    -- TODO: Show only times (no dates) if article is published today!
+      where
+        premiumBadge =
+          DOM.div
+            { className: "mosaico--article--premium background-hbl"
+            , children: [ DOM.text "premium" ]
+            }
+
     articleTimestamps maybeUpdateTime (LocalDateTime pubTime) =
       DOM.div
         { className: "mosaico--article-timestamps"
