@@ -11,6 +11,7 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.Show.Generic (genericShow)
+import Data.String as String
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
 import Data.Traversable (sequence)
@@ -127,6 +128,34 @@ type NewTemporaryUser =
 registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
   callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
+
+type NewCusnoUser =
+  { cusno     :: Cusno
+  , email     :: String
+  , firstName :: String
+  , lastName  :: String
+  , password  :: String
+  , consents  :: Array LegalConsent
+  }
+
+registerCusno :: NewCusnoUser -> UserAuth -> Aff LoginResponse
+registerCusno newUser@{ cusno } auth = do
+  let user =
+        { cusno
+        , user: { firstName: if String.null $ String.trim newUser.firstName
+                               then Nullable.null
+                               else Nullable.notNull newUser.firstName
+                , lastName : if String.null $ String.trim newUser.lastName
+                               then Nullable.null
+                               else Nullable.notNull newUser.lastName
+                , emailAddress: newUser.email
+                , password: newUser.password
+                , confirmPassword: newUser.password
+                , legalConsents: newUser.consents
+                }
+        }
+  callApi adminApi "adminUserPost" [ unsafeToForeign user ]
+    ( authHeaders UUID.emptyUUID auth )
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
@@ -359,6 +388,9 @@ pauseDateErrorToInvalidDateError = case _ of
 
 type EmailAddressInUseRegistration = ServerError
   ( email_address_in_use_registration :: { description :: String } )
+
+type CusnoInUseRegistration = ServerError
+  ( unique_cusno_violation :: { description :: String } )
 
 data Provider
   = Facebook
