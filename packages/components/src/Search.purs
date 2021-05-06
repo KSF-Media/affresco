@@ -7,26 +7,33 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (intercalate, length, foldMap, sum, sequence_)
 import Data.JSDate (toDate)
+import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
+import Data.Tuple (Tuple(..), fst, snd)
 import Data.UUID (UUID, parseUUID)
+import Data.Validation.Semigroup (invalid, isValid, validation)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import KSF.Api.Search (FaroUser, JanrainUser, SearchResult)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
+import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
+import KSF.Random (randomString)
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, validateEmailAddress, validateField, validatePassword)
 import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events as Events
 
 type Props =
@@ -34,8 +41,11 @@ type Props =
   }
 
 type SearchActions =
-  { setActiveUser :: UUID -> Effect Unit
-  , loadSubs      :: Cusno -> Effect Unit
+  { setActiveUser      :: UUID -> Effect Unit
+  , loadSubs           :: Cusno -> Effect Unit
+  , startCreateAccount :: FaroUser -> Effect Unit
+  , createAccountForm  :: Maybe (Tuple Cusno JSX)
+  , isEditingAccount   :: Boolean
   }
 
 search :: Component Props
@@ -44,6 +54,8 @@ search = do
     query /\ setQuery <- useState' Nothing
     results /\ setResults <- useState Nothing
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
+    (accountData :: Maybe (Tuple Cusno (AsyncWrapper.Progress User.NewCusnoUser))) /\ setAccountData <-
+      useState Nothing
     let submitSearch = case query /\ (parseUUID =<< query) of
           Nothing /\ _ -> pure unit
           _ /\ Just uuid -> setActiveUser uuid
@@ -68,9 +80,53 @@ search = do
                              Array.concatMap (_.faro) res
               Left _ -> pure unit
             liftEffect $ setSearchWrapper $ AsyncWrapper.Success Nothing
+        startCreateAccount usr@{ cusno, email } = do
+          pw <- randomString 10
+          nowISO <- JSDate.toISOString =<< JSDate.now
+          let legalConsent =
+                { consentId: "legal_acceptance_v1"
+                , screenName: "legalAcceptanceScreen"
+                , dateAccepted: nowISO
+                }
+          setAccountData $ const $ Just $ Tuple cusno $ AsyncWrapper.Editing
+            { cusno: cusno
+            , email: fromMaybe "" email
+            , firstName: ""
+            , lastName: ""
+            , password: pw
+            , consents: [legalConsent]
+            }
+        submitCreateAccount newUser = Aff.launchAff_ do
+          result <- User.createCusnoUser newUser
+          let setError err = setAccountData $ (map <<< map) (const $ AsyncWrapper.Error err)
+          liftEffect $ case result of
+            Left User.RegistrationEmailInUse ->
+              setError "E-postadressen är redan i bruk."
+            Left User.RegistrationCusnoInUse ->
+              setError "Kundnummer är redan i bruk."
+            Left _ ->
+              setError "Något gick fel."
+            Right res -> do
+              let faroCusno x = map _.cusno $ Array.head x.faro
+                  updateWithJanrain :: SearchResult -> SearchResult -> SearchResult
+                  updateWithJanrain x state =
+                    if isNothing state.janrain && faroCusno state == faroCusno x
+                      then x
+                      else state
+              setResults $ (map <<< map) $ updateWithJanrain res
+              setAccountData $ const Nothing
+        createAccountForm = (map <<< map)
+                            (renderEditNewUser submitCreateAccount (setAccountData (const Nothing)) $
+                             setAccountData <<< map <<< map <<< map) accountData
+        isEditingAccount = case accountData of
+          Just (Tuple _ (AsyncWrapper.Editing _)) -> true
+          _ -> false
         actions =
           { setActiveUser
           , loadSubs
+          , startCreateAccount
+          , createAccountForm
+          , isEditingAccount
           }
     pure $ React.fragment
       [ DOM.div { className: "search--container"
@@ -198,9 +254,24 @@ search = do
                        }
               ]
 
-    renderResult { setActiveUser, loadSubs } { janrain, faro } =
-      foldMap (renderJanrain setActiveUser faro) janrain <>
-      (Array.concatMap (renderFaro loadSubs $ isNothing janrain) faro)
+    renderResult actions { janrain, faro } =
+      foldMap (renderJanrain actions.setActiveUser faro) janrain <>
+      (Array.concatMap (\usr@{ cusno } ->
+                         renderFaro
+                           (actions.loadSubs cusno)
+                           (actions.startCreateAccount usr)
+                           (isNothing janrain)
+                           (actions.isEditingAccount &&
+                            (fst <$> actions.createAccountForm) == Just cusno)
+                           usr) faro) <>
+      (if isNothing janrain && (fst <$> actions.createAccountForm) == (_.cusno <$> Array.head faro)
+         then pure $ DOM.tr_
+                [ DOM.td
+                    { colSpan: 9
+                    , children: maybe mempty (pure <<< snd) actions.createAccountForm
+                    }
+                ]
+         else mempty)
 
     renderJanrain :: (UUID -> Effect Unit) -> Array FaroUser -> JanrainUser -> Array JSX
     renderJanrain setActiveUser faroResults user = pure $
@@ -233,12 +304,20 @@ search = do
       where
         faroLength x = maybe 1 (\s -> if Array.null s then 1 else length s) x.subs
 
-    renderFaro :: (Cusno -> Effect Unit) -> Boolean -> FaroUser -> Array JSX
-    renderFaro loadSubs standalone user =
+    renderFaro :: Effect Unit -> Effect Unit -> Boolean -> Boolean -> FaroUser -> Array JSX
+    renderFaro loadSubs startCreateAccount standalone isEditingThis user =
       [ DOM.tr
           { className: if standalone then "search--standalone-cusno" else "search--sub-cusno"
           , children:
-              (if standalone then [ td [] ] else mempty) <>
+              (if standalone
+                 then [ td [ DOM.button
+                               { onClick: Events.handler_ startCreateAccount
+                               , children: [ DOM.text "Skapa konto" ]
+                               , disabled: isEditingThis
+                               }
+                           ]
+                      ]
+                 else mempty) <>
               [ td [ DOM.text $ Cusno.toString user.cusno ]
               , td [ DOM.text $ fromMaybe "vet ej" user.email ]
               , DOM.td
@@ -283,7 +362,123 @@ search = do
                       [ DOM.i
                           { className: "selectable"
                           , children: [ DOM.text "Inte laddad" ]
-                          , onClick: Events.handler_ $ loadSubs cusno
+                          , onClick: Events.handler_ loadSubs
                           }
                       ]
                   }
+
+data NewUserFields
+  = EmailField
+  | PasswordField
+derive instance eqNewUserFields :: Eq NewUserFields
+
+instance validatableFieldNewUserFormFields :: ValidatableField NewUserFields where
+  validateField field value _serverErrors = case field of
+    EmailField -> validateEmailAddress field value
+    PasswordField -> validatePassword field value
+
+renderEditNewUser
+  :: (User.NewCusnoUser -> Effect Unit)
+  -> Effect Unit
+  -> ((User.NewCusnoUser -> User.NewCusnoUser) -> Effect Unit)
+  -> AsyncWrapper.Progress User.NewCusnoUser
+  -> JSX
+renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
+  AsyncWrapper.asyncWrapper
+    { wrapperState
+    , readyView: mempty
+    , editingView: render
+    , loadingView: const $ DOM.div { className: "tiny-spinner" }
+    , successView: const mempty
+    , errorView: editError
+    }
+  where
+    render account =
+      DOM.form
+        { className: "search--create-account"
+        , onSubmit: Events.handler preventDefault $ const $ submit validatedForm
+        , children:
+            [ Grid.row_
+                [ DOM.text $ "Kundnummer: " <> Cusno.toString account.cusno ]
+            , Grid.row_
+                [ InputField.inputField
+                    { type_: InputField.Email
+                    , name: "email"
+                    , placeholder: "E-post"
+                    , value: Just account.email
+                    , onChange: \newEmail -> setAccountData _ { email = fromMaybe "" newEmail }
+                    , label: Just "E-post"
+                    , validationError: inputFieldErrorMessage $ validateField EmailField (Just account.email) []
+                    }
+                ]
+            , Grid.row2
+              (InputField.inputField
+                 { type_: InputField.Text
+                 , name: "firstName"
+                 , placeholder: "Förnamn"
+                 , value: Just account.firstName
+                 , onChange: \newName -> setAccountData _ { firstName = fromMaybe "" newName }
+                 , label: Just "Förnamn"
+                 , validationError: Nothing
+                 })
+              (InputField.inputField
+                 { type_: InputField.Text
+                 , name: "lastName"
+                 , placeholder: "Efternamn"
+                 , value: Just account.lastName
+                 , onChange: \newName -> setAccountData _ { lastName = fromMaybe "" newName }
+                 , label: Just "Efternamn"
+                 , validationError: Nothing
+                 }) {}
+            , Grid.row_
+                [ InputField.inputField
+                    { type_: InputField.Text
+                    , name: "password"
+                    , placeholder: "Lösenord"
+                    , value: Just account.password
+                    , onChange: \newpw -> setAccountData _ { password = fromMaybe "" newpw }
+                    , label: Just "Lösenord"
+                    , validationError: inputFieldErrorMessage $ validateField PasswordField (Just account.password) []
+                    }
+                ]
+            , DOM.div
+                { className: "search--create-account-submit"
+                , children:
+                    [ DOM.button
+                        { type: "submit"
+                        , className: "button-green"
+                        , disabled: not $ isValid validatedForm
+                        , children: [ DOM.text "Skapa konto" ]
+                        }
+                    ]
+                }
+            , DOM.div { className: "close-icon", onClick: capture_ cancel }
+            ]
+        }
+
+    validatedForm :: ValidatedForm NewUserFields User.NewCusnoUser
+    validatedForm = case wrapperState of
+      AsyncWrapper.Editing state ->
+        (\email password -> { cusno: state.cusno
+                            , firstName: state.firstName
+                            , lastName: state.lastName
+                            , email: fromMaybe "" email
+                            , password: fromMaybe "" password
+                            , consents: state.consents
+                            })
+        <$> validateField EmailField (Just state.email) []
+        <*> validateField PasswordField (Just state.password) []
+      _ -> invalid $ pure $ InvalidNotInitialized EmailField
+
+    submit :: ValidatedForm NewUserFields User.NewCusnoUser -> Effect Unit
+    submit =
+      validation (\errors -> Console.error "Could not create new cusno user.") submitNewAccount
+
+    editError err =
+      DOM.div
+        { className: "search--error"
+        , children:
+            [ DOM.div_ [ DOM.text "Något gick fel. Försök igen." ]
+            , DOM.div_ [ DOM.text err ]
+            ]
+        }
