@@ -47,6 +47,10 @@ loginView self@{ state, setState } logger =
                 case err of
                   SomethingWentWrong -> logger.error $ Error.loginError $ show err
                   UnexpectedError e  -> logger.error $ Error.loginError $ message e
+                  -- List of cases we aren't that interested of
+                  MergeEmailInUse _ -> pure unit
+                  LoginTokenInvalid -> pure unit
+                  LoginInvalidCredentials -> pure unit
                   -- If any other UserError occurs, only send an Info event of it
                   _ -> logger.log (show err) Sentry.Info
                 self.setState $ Types.setActiveUser Nothing
