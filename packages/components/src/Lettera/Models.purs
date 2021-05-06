@@ -67,6 +67,7 @@ type ArticleCommon =
   , tags      :: Array String
   , uuid      :: String
   , authors   :: Array Author
+  , premium   :: Boolean
   )
 
 type JSArticle =

@@ -143,6 +143,7 @@ render { props, state, setState } =
         }
       where
         premiumBadge =
+          guard (maybe false (_.premium <<< fromFullArticle) state.article)
           DOM.div
             { className: "mosaico--article--premium background-hbl"
             , children: [ DOM.text "premium" ]
