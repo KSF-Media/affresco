@@ -1,5 +1,5 @@
-var googletag = googletag || {};
-var ksfDfp = {};
+window.googletag = googletag || {};
+window.ksfDfp = {};
 
 (function () {
   "use strict";
