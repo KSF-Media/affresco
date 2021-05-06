@@ -20,7 +20,6 @@ import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
 import { Sentry } from './sentry'
 import CoronaBanner from '../../../packages/components/src/CoronaBanner/banner'
-import { someAuth } from '@ksf-media/user/build';
 
 
 class App extends Component {
@@ -89,17 +88,14 @@ class App extends Component {
         if (getUrlParam().has('login')) {
             this.setState({ forceLoginView: true });
         } else {
-            this.getArticle(),
-            this.getMostReadArticles() 
+            this.getArticle();
+            this.getMostReadArticles();
         }
     }
     componentDidUpdate(prevProps, prevState) {
         const hasCoronaTag = this.state.tags.some(tag => tag.match(/coronavirus/i))
         const hadCoronaTag = prevState.tags.some(tag => tag.match(/coronavirus/i))
-        console.log('hasCoronatag: ', hasCoronaTag)
-        console.log('hadCoronaTag', hadCoronaTag)
         if (hasCoronaTag && !hadCoronaTag) {
-            console.log('getting stats')
             this.getCoronaBannerStats();
         }       
     }
@@ -181,7 +177,6 @@ class App extends Component {
             fetch('https://cdn.ksfmedia.fi/corona-banner/stats.json')
                 .then(res => res.json())
                 .then(data => {
-                    console.log('data:', data)
                     this.setState({ banner: {
                         newCases: data.newCases,
                         hospitalised: data.hospitalised,
@@ -192,9 +187,7 @@ class App extends Component {
                     })
                 })
                 .then(() => {
-                    console.log('this.state.banner', this.state.banner)
                     this.setState({ showBanner: true })
-                    console.log('showBanner?: ', this.state.showBanner)
                 })
     }
 
@@ -628,8 +621,6 @@ class App extends Component {
                 </div>
             )
         }
-
-        console.log('showBanner?', this.state.showBanner)
 
         return (
             <div className="App">
