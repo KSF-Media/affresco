@@ -40,7 +40,7 @@ const Banner = ({
                 <div className="stat-label">dödsfall</div>
               </div>
             )}
-            {vaccinated !== null && (
+            {vaccinated !== null && vaccinatedPercentage && (
               <div className="stat">
                 <div className="stat-value">
                   {vaccinated}{" "}
@@ -48,6 +48,12 @@ const Banner = ({
                     ({vaccinatedPercentage}%)
                   </span>
                 </div>
+                <div className="stat-label">vaccinerade</div>
+              </div>
+            )}
+            {vaccinated !== null && !vaccinatedPercentage && (
+              <div className="stat">
+                <div className="stat-value">{vaccinated}</div>
                 <div className="stat-label">vaccinerade</div>
               </div>
             )}
