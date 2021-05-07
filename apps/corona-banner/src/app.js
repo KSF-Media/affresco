@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
-import axios from 'axios'
-import CoronaSvg from './assets/covid-virus-icon.svg'
-import Chevron from '../../../images/chevron.svg'
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import CoronaSvg from "./assets/covid-virus-icon.svg";
+import Chevron from "../../../images/chevron.svg";
 
 const Banner = ({
   newCases,
@@ -60,56 +60,64 @@ const Banner = ({
       <div className="source">
         <em>
           Källa:{" "}
-          <a class="corona-banner-source-link" target="_blank" href="https://thl.fi/sv/web/thlfi-sv/statistik-och-data/material-och-tjanster/oppna-data">
+          <a
+            class="corona-banner-source-link"
+            target="_blank"
+            href="https://thl.fi/sv/web/thlfi-sv/statistik-och-data/material-och-tjanster/oppna-data"
+          >
             THL
           </a>{" "}
           och{" "}
-          <a class="corona-banner-source-link" target="_blank" href="https://github.com/HS-Datadesk/koronavirus-avoindata">
+          <a
+            class="corona-banner-source-link"
+            target="_blank"
+            href="https://github.com/HS-Datadesk/koronavirus-avoindata"
+          >
             HS Open Data
           </a>
         </em>
       </div>
     </div>
   );
-}
+};
 
 function getSiteUrl() {
-  const queryParameter = window.location.search
-  const siteRegEx = /site=(\w+)/
-  const siteArray = queryParameter.match(siteRegEx) || []
+  const queryParameter = window.location.search;
+  const siteRegEx = /site=(\w+)/;
+  const siteArray = queryParameter.match(siteRegEx) || [];
 
-  if (siteArray.includes('on')) {
-    return 'https://www.ostnyland.fi/tagg/coronaviruset/'
-  } else if (siteArray.includes('vn')) {
-    return 'https://www.vastranyland.fi/tagg/coronaviruset/'
+  if (siteArray.includes("on")) {
+    return "https://www.ostnyland.fi/tagg/coronaviruset/";
+  } else if (siteArray.includes("vn")) {
+    return "https://www.vastranyland.fi/tagg/coronaviruset/";
   } else {
-    return 'https://www.hbl.fi/tagg/coronaviruset/'
+    return "https://www.hbl.fi/tagg/coronaviruset/";
   }
 }
 
 export default function App() {
-  const [newCases, setNewCases] = useState(null)
-  const [hospitalised, setHospitalised] = useState(null)
-  const [deaths, setDeaths] = useState(null)
-  const [vaccinated, setVaccinated] = useState(null)
-  const [vaccinatedPercentage, setVaccinatedPercentage] = useState(null)
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [newCases, setNewCases] = useState(null);
+  const [hospitalised, setHospitalised] = useState(null);
+  const [deaths, setDeaths] = useState(null);
+  const [vaccinated, setVaccinated] = useState(null);
+  const [vaccinatedPercentage, setVaccinatedPercentage] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     axios
-      .get(' https://cdn.ksfmedia.fi/corona-banner/stats.json')
-      .then(response => {
-        setNewCases(response.data.newCases)
-        setHospitalised(response.data.hospitalised)
-        setDeaths(response.data.deaths)
-        setVaccinated(response.data.vaccinatedAmount)
-        setVaccinatedPercentage(response.data.vaccinatedPercentage)
+      .get(" https://cdn.ksfmedia.fi/corona-banner/stats.json")
+      .then((response) => {
+        setNewCases(response.data.newCases);
+        setHospitalised(response.data.hospitalised);
+        setDeaths(response.data.deaths);
+        setVaccinated(response.data.vaccinatedAmount);
+        setVaccinatedPercentage(response.data.vaccinatedPercentage);
       })
       .then(() => {
-        setIsLoaded(true)
+        setIsLoaded(true);
       })
-      .catch(error => console.log(error))
-  }, [])
+      .catch((error) => console.log(error));
+  }, []);
 
   return isLoaded ? (
     <Banner
@@ -120,5 +128,5 @@ export default function App() {
       vaccinatedPercentage={vaccinatedPercentage}
       siteUrl={getSiteUrl()}
     />
-  ) : null
+  ) : null;
 }
