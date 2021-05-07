@@ -149,7 +149,6 @@ render { props, state, setState } =
             , children: [ DOM.text "premium" ]
             }
 
-    -- articleTimestamps maybeUpdateTime (LocalDateTime pubTime) =
     articleTimestamps { publishingTime, updateTime } =
       DOM.div
         { className: "mosaico--article-timestamps"
