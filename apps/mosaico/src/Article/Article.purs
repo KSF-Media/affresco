@@ -46,8 +46,8 @@ type State =
   , article :: Maybe FullArticle
   }
 
-article :: Component Props
-article = do
+articleComponent :: Component Props
+articleComponent = do
   component "Article" \props -> React.do
     let initialState =
           { body: []
@@ -121,7 +121,7 @@ render { props, state, setState } =
             { className: "mosaico--article-times-and-author"
             , children:
                 [ foldMap renderAuthors $ _.authors <$> letteraArticle
-                , foldMap (articleTimestamps (_.updateTime =<< letteraArticle)) $ _.publishingTime <$> letteraArticle
+                , foldMap articleTimestamps letteraArticle
                 ]
             }
         , DOM.div
@@ -149,21 +149,22 @@ render { props, state, setState } =
             , children: [ DOM.text "premium" ]
             }
 
-    articleTimestamps maybeUpdateTime (LocalDateTime pubTime) =
+    -- articleTimestamps maybeUpdateTime (LocalDateTime pubTime) =
+    articleTimestamps { publishingTime, updateTime } =
       DOM.div
         { className: "mosaico--article-timestamps"
         , children:
-            [ publishingTime pubTime
-            , foldMap updateTime maybeUpdateTime
+            [ foldMap renderPublishingTime publishingTime
+            , foldMap renderUpdateTime updateTime
             ]
         }
       where
-        publishingTime time =
+        renderPublishingTime (LocalDateTime time) =
           DOM.div
             { className: "mosaico--article-published-timestamp"
             , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
             }
-        updateTime (LocalDateTime time) =
+        renderUpdateTime (LocalDateTime time) =
           DOM.div
             { className: "mosaico--article-updated-timestamp"
             , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]

@@ -76,7 +76,7 @@ app = do
           Right path -> setState \s -> s { route = path }
           Left err   -> pure unit
 
-  articleComponent    <- Article.article
+  articleComponent    <- Article.articleComponent
   loginModalComponent <- LoginModal.loginModal
   component "Mosaico" \_ -> React.do
     let initialState =
