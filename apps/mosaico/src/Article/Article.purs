@@ -18,12 +18,13 @@ import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, fromFullArticle, isPreviewArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, fromFullArticle, isPreviewArticle)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
+import Web.HTML.Event.EventTypes (offline)
 
 type Self =
   { state :: State
@@ -42,6 +43,10 @@ type Props =
 type State =
   { body :: Array (Either String BodyElement)
   , article :: Maybe FullArticle
+  , title :: String
+  , mainImage :: Maybe Image
+  , tags :: Array String
+  , preamble :: Maybe String
   }
 
 article :: Component Props
@@ -50,8 +55,15 @@ article = do
     let initialState =
           { body: []
           , article: Nothing
+          , title: maybe mempty (\articleStub -> articleStub.title) props.articleStub
+          , mainImage: do
+              articleStub <- props.articleStub
+              articleStub.listImage
+          , tags: maybe mempty (\articleStub -> articleStub.tags) props.articleStub
+          -- , preamble: maybe Nothing (\articleStub -> articleStub.preamble) props.articleStub
+          , preamble: (\articleStub -> articleStub.preamble) =<< props.articleStub
           }
-    state /\ setState <- useState initialState
+    state /\ setState <- useState initialState 
 
     useEffectOnce do
       loadArticle setState props.affArticle
@@ -70,7 +82,15 @@ loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Un
 loadArticle setState affArticle =
   Aff.launchAff_ do
     a <- affArticle
-    liftEffect $ setState \s -> s { article = Just a,  body = map Record.toSum $ _.body $ fromFullArticle a }
+    let realArticle = fromFullArticle a
+    liftEffect $ setState \s -> s
+      { article = Just a
+      , body = map Record.toSum $ _.body $ fromFullArticle a
+      , mainImage = realArticle.mainImage
+      , title = realArticle.title
+      , tags = realArticle.tags
+      , preamble = realArticle.preamble
+      }
 
 renderImage :: Image -> JSX
 renderImage img =
@@ -98,38 +118,41 @@ renderImage img =
     byline  = fold img.byline
 
 render :: Self -> JSX
-render { props, state, setState } =
-    let letteraArticle = map fromFullArticle state.article
-        title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
-        tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
-        mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
-    in DOM.div
-      { className: "mosaico--article"
-      , children:
-        [ DOM.div
-            { className: "mosaico--tag color-" <> props.brand
-            , children: [ DOM.text $ fromMaybe "" (head tags) ]
-            }
-        , DOM.h1
-            { className: "mosaico--article--title title"
-            , children: [ DOM.text title ]
-            }
-        , foldMap renderImage mainImage
-        , DOM.div
-            { className: "mosaico--article--body "
-            , children:
+render { state, props, setState } =
+  DOM.div
+    { className: "mosaico--article"
+    , children:
+      [ DOM.div
+          { className: "mosaico--tag color-" <> props.brand
+          , children: [ DOM.text $ fromMaybe "" (head state.tags) ]
+          }
+      , DOM.h1
+          { className: "mosaico--article--title title"
+          , children: [ DOM.text state.title ]
+          }
+      , foldMap renderImage state.mainImage
+      , DOM.div
+        { className: "mosaico--article--preamble"
+        , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
+        }
+      , DOM.div
+          { className: "mosaico--article--body "
+          , children: case state.article of
+              (Just (PreviewArticle previewArticle)) ->
                 paywallFade
                 `cons` map renderElement state.body
                 `snoc` vetrina
-            }
-        ]
-      }
+              (Just (FullArticle fullArticle)) ->
+                map renderElement state.body
+              _ -> mempty
+          }
+      ]
+    }
   where
     paywallFade =
-      guard (maybe false isPreviewArticle state.article)
         DOM.div { className: "mosaico--article-fading-body" }
 
-    vetrina = guard (maybe false isPreviewArticle state.article)
+    vetrina =
       Vetrina.vetrina
         { onClose: Just $ loadArticle setState props.affArticle
         , onLogin: props.onLogin

@@ -21,7 +21,7 @@ isPreviewArticle _ = false
 type ArticleStub =
   { title    :: String
   , uuid     :: String
-  , preamble :: String
+  , preamble :: Maybe String
   , listImage :: Maybe Image
   , tags :: Array String
   , premium :: Boolean
@@ -29,6 +29,7 @@ type ArticleStub =
 
 type Article =
   { title     :: String
+  , preamble  :: Maybe String
   , body      :: Array BodyElementJS
   , mainImage :: Maybe Image
   , tags      :: Array String
