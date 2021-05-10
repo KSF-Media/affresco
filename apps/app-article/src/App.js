@@ -297,7 +297,7 @@ class App extends Component {
                 this.resizeText(this.state.fontSize);
             })
             .catch(error => {
-                this.setState({ isLoading: false, errorFetching: true});
+                this.setState({isLoading: false, errorFetching: true});
             });
     };
 
