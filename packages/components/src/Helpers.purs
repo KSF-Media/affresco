@@ -1,18 +1,19 @@
 module KSF.Helpers where
 
-import Prelude
+import           Prelude
 
-import Data.Date               (Date)
-import Data.DateTime           (DateTime(..))
-import Data.Enum               (toEnum)
-import Data.Formatter.DateTime (FormatterCommand (..), format)
-import Data.Int                (toNumber)
-import Data.List               (fromFoldable)
-import Data.Maybe              (fromJust)
-import Data.String             (Pattern (..))
-import Data.String             as String
-import Data.Time               (Time(..))
-import Partial.Unsafe          (unsafePartial)
+import           Data.Date               (Date)
+import           Data.DateTime           (DateTime (..))
+import           Data.Enum               (toEnum)
+import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
+                                          format)
+import           Data.Int                (toNumber)
+import           Data.List               (fromFoldable)
+import           Data.Maybe              (fromJust)
+import           Data.String             (Pattern (..))
+import           Data.String             as String
+import           Data.Time               (Time (..))
+import           Partial.Unsafe          (unsafePartial)
 
 midnight :: Time
 midnight = unsafePartial $ fromJust $ Time <$> toEnum 0 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
@@ -39,6 +40,40 @@ formatDateDots date = format formatter $ DateTime date midnight
       , MonthTwoDigits
       , dot
       , YearFull
+      ]
+
+-- "2021-04-29T08:45:00Z"
+dateTimeFormatter :: Formatter
+dateTimeFormatter =
+  fromFoldable
+    [ YearFull
+    , Placeholder "-"
+    , MonthTwoDigits
+    , Placeholder "-"
+    , DayOfMonth
+    , Placeholder "T"
+    , Hours24
+    , Placeholder ":"
+    , MinutesTwoDigits
+    , Placeholder ":"
+    , SecondsTwoDigits
+    , Placeholder "Z"
+    ]
+
+formatArticleTime :: DateTime -> String
+formatArticleTime = format articleFormatter
+ where
+   articleFormatter =
+    fromFoldable
+      [ DayOfMonth
+      , Placeholder "."
+      , MonthTwoDigits
+      , Placeholder "."
+      , YearFull
+      , Placeholder " "
+      , Hours24
+      , Placeholder ":"
+      , MinutesTwoDigits
       ]
 
 formatEur :: Int -> String

@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (cons, head, snoc)
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
@@ -15,10 +16,11 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Package (CampaignLengthUnit(..))
+import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, fromFullArticle, isPreviewArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -44,8 +46,8 @@ type State =
   , article :: Maybe FullArticle
   }
 
-article :: Component Props
-article = do
+articleComponent :: Component Props
+articleComponent = do
   component "Article" \props -> React.do
     let initialState =
           { body: []
@@ -116,6 +118,13 @@ render { props, state, setState } =
             }
         , foldMap renderImage mainImage
         , DOM.div
+            { className: "mosaico--article-times-and-author"
+            , children:
+                [ foldMap renderAuthors $ _.authors <$> letteraArticle
+                , foldMap articleTimestamps letteraArticle
+                ]
+            }
+        , DOM.div
             { className: "mosaico--article--body "
             , children:
                 paywallFade
@@ -125,6 +134,41 @@ render { props, state, setState } =
         ]
       }
   where
+    renderAuthors authors =
+      DOM.div
+        { className: "mosaico--article-authors"
+        , children:
+            map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
+            `snoc` premiumBadge
+        }
+      where
+        premiumBadge =
+          guard (maybe false (_.premium <<< fromFullArticle) state.article)
+          DOM.div
+            { className: "mosaico--article--premium background-hbl"
+            , children: [ DOM.text "premium" ]
+            }
+
+    articleTimestamps { publishingTime, updateTime } =
+      DOM.div
+        { className: "mosaico--article-timestamps"
+        , children:
+            [ foldMap renderPublishingTime publishingTime
+            , foldMap renderUpdateTime updateTime
+            ]
+        }
+      where
+        renderPublishingTime (LocalDateTime time) =
+          DOM.div
+            { className: "mosaico--article-published-timestamp"
+            , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
+            }
+        renderUpdateTime (LocalDateTime time) =
+          DOM.div
+            { className: "mosaico--article-updated-timestamp"
+            , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
+            }
+
     paywallFade =
       guard (maybe false isPreviewArticle state.article)
         DOM.div { className: "mosaico--article-fading-body" }
