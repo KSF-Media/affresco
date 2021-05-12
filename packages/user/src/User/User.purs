@@ -261,6 +261,13 @@ updatePassword uuid password confirmPassword = do
     Left err   -> pure $ Left $ UnexpectedError err
     Right user -> Right <$> fromPersonaUserWithCards user
 
+requestPasswordReset :: String -> Aff (Either String Unit)
+requestPasswordReset email = do
+  response <- try $ Persona.requestPasswordReset email
+  case response of
+    Left _  -> pure $ Left "error"
+    Right _ -> pure $ Right unit
+
 loginTraditional :: Persona.LoginData -> Aff (Either UserError User)
 loginTraditional loginData = do
   loginResponse <- try $ Persona.login loginData

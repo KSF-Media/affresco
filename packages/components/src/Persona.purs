@@ -34,6 +34,7 @@ import OpenApiClient (Api, callApi)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
 
+foreign import accountApi :: Api
 foreign import adminApi :: Api
 foreign import loginApi :: Api
 foreign import usersApi :: Api
@@ -116,6 +117,10 @@ logout auth =
   where
     authorization = oauthToken auth.authToken
 
+requestPasswordReset :: String -> Aff Unit
+requestPasswordReset email = do
+  callApi accountApi "accountPasswordForgotPost" [ unsafeToForeign { email } ] {}
+
 register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
@@ -136,6 +141,8 @@ type NewCusnoUser =
   , lastName  :: String
   , password  :: String
   , consents  :: Array LegalConsent
+    -- This one isn't sent to account creation endpoint
+  , sendReset :: Boolean
   }
 
 registerCusno :: NewCusnoUser -> UserAuth -> Aff LoginResponse
@@ -154,8 +161,10 @@ registerCusno newUser@{ cusno } auth = do
                 , legalConsents: newUser.consents
                 }
         }
-  callApi adminApi "adminUserPost" [ unsafeToForeign user ]
+  response <- callApi adminApi "adminUserPost" [ unsafeToForeign user ]
     ( authHeaders UUID.emptyUUID auth )
+  when newUser.sendReset $ requestPasswordReset newUser.email
+  pure response
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do

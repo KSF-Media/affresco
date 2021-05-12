@@ -24,6 +24,7 @@ import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
+import KSF.InputField.Checkbox as InputCheckbox
 import KSF.Random (randomString)
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
@@ -95,6 +96,7 @@ search = do
             , lastName: ""
             , password: pw
             , consents: [legalConsent]
+            , sendReset: true
             }
         submitCreateAccount newUser = Aff.launchAff_ do
           result <- User.createCusnoUser newUser
@@ -441,6 +443,13 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                     , validationError: inputFieldErrorMessage $ validateField PasswordField (Just account.password) []
                     }
                 ]
+            , InputCheckbox.inputCheckbox
+                { type_: InputCheckbox.Checkbox
+                , name: "sendReset"
+                , checked: account.sendReset
+                , onChange: \checked -> setAccountData _ { sendReset = checked }
+                , label: Just "skicka e-post för återställning av lösenord"
+                }
             , DOM.div
                 { className: "search--create-account-submit"
                 , children:
@@ -465,6 +474,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                             , email: fromMaybe "" email
                             , password: fromMaybe "" password
                             , consents: state.consents
+                            , sendReset: state.sendReset
                             })
         <$> validateField EmailField (Just state.email) []
         <*> validateField PasswordField (Just state.password) []
