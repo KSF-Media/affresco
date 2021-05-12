@@ -95,7 +95,8 @@ class App extends Component {
     componentDidUpdate(prevProps, prevState) {
         const hasCoronaTag = this.state.tags.some(tag => tag.match(/coronavirus/i))
         const hadCoronaTag = prevState.tags.some(tag => tag.match(/coronavirus/i))
-        if (hasCoronaTag && !hadCoronaTag) {
+        const articleHidden = this.state.showBuyOption
+        if (hasCoronaTag && !hadCoronaTag && !articleHidden) {
             this.getCoronaBannerStats();
         }       
     }
@@ -177,17 +178,15 @@ class App extends Component {
             fetch('https://cdn.ksfmedia.fi/corona-banner/stats.json')
                 .then(res => res.json())
                 .then(data => {
-                    this.setState({ banner: {
-                        newCases: data.newCases,
-                        hospitalised: data.hospitalised,
-                        deaths: data.deaths,
-                        vaccinated: data.vaccinatedAmount,
-                        vaccinatedPercentage: data.vaccinatedPercentage
+                    this.setState({showBanner: true, 
+                        banner: {
+                            newCases: data.newCases,
+                            hospitalised: data.hospitalised,
+                            deaths: data.deaths,
+                            vaccinated: data.vaccinatedAmount,
+                            vaccinatedPercentage: data.vaccinatedPercentage
                     }
                     })
-                })
-                .then(() => {
-                    this.setState({ showBanner: true })
                 })
     }
 
@@ -621,7 +620,7 @@ class App extends Component {
                 </div>
             )
         }
-
+        
         return (
             <div className="App">
                 {this.state.isLoading ? <Loading /> : ''}
