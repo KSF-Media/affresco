@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import {getBrandValueParam, getMode, isDarkModeOn} from "../helper";
+import {getBrandValueParam, getIsLoggedFromUrl, getMode, getTokenFromUrl, getUserUuidFromUrl, isDarkModeOn} from "../helper";
 
 
 const isArray = (value) => {
@@ -28,6 +28,7 @@ const formatTime = (date) => {
 };
 
 const MobileList = (props) => {
+    const urlParams = "&paper=" + getBrandValueParam() + "&mode=" + getMode() + "&token=" + getTokenFromUrl() + "&userId=" + getUserUuidFromUrl() + "&isLogged=" + getIsLoggedFromUrl();
     let relatedArticles = [];
     if (isArray(props.articles)) {
         relatedArticles = props.articles.map((item, index) => {
@@ -36,11 +37,11 @@ const MobileList = (props) => {
                     <div className={"articleItem mobileListItems"}>
                         <div className={"row"}>
                             <div className={"col-8"} onClick={() => {
-                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode();
+                                window.location.href = "?uuid=" + item.uuid + urlParams;
                             }}>
                                 <div>
                                     <a className={`relatedArticlesItem ${isDarkModeOn() ? 'darkMode': ''}`}
-                                       href={"?uuid=" + item.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode()}>
+                                       href={"?uuid=" + item.uuid + urlParams}>
                                         {
                                             item.title.length > 80 ?
                                                 item.title.substring(0, 80) + "..."
@@ -55,7 +56,7 @@ const MobileList = (props) => {
                                 </div>
                             </div>
                             <div className={"col-4 articleImage"} onClick={() => {
-                                window.location.href = "?uuid=" + item.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode();
+                                window.location.href = "?uuid=" + item.uuid + urlParams;
                             }}>
                                 {
                                     item.listImage === null ?
