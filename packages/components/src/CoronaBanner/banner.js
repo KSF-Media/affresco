@@ -15,6 +15,19 @@ const CoronaBanner = ({
   siteUrl,
   showLinks,
 }) => {
+  const showVaccinatedPercentage = () => {
+    return (
+      vaccinated 
+      ? <span className="stat-percent">
+        ({vaccinatedPercentage}%)
+        </span>
+      : <span className="stat-percent">
+        {vaccinatedPercentage}%
+        </span>
+    )
+
+  }
+
   return (
     <div className="corona-banner-wrapper">
       <LinkWrapper
@@ -52,20 +65,14 @@ const CoronaBanner = ({
                   <div className="stat-label">dödsfall</div>
                 </div>
               )}
-              {vaccinated !== null && vaccinatedPercentage && (
+              {(vaccinated !== null || vaccinatedPercentage) && (
                 <div className="stat">
                   <div className="stat-value">
                     {vaccinated}{" "}
-                    <span className="stat-percent">
-                      ({vaccinatedPercentage}%)
-                    </span>
+                    {vaccinatedPercentage && (
+                      showVaccinatedPercentage()
+                    )}
                   </div>
-                  <div className="stat-label">vaccinerade</div>
-                </div>
-              )}
-              {vaccinated !== null && !vaccinatedPercentage && (
-                <div className="stat">
-                  <div className="stat-value">{vaccinated}</div>
                   <div className="stat-label">vaccinerade</div>
                 </div>
               )}
@@ -117,3 +124,23 @@ const CoronaBanner = ({
 }
 
 export default CoronaBanner
+
+/*
+{vaccinated !== null && vaccinatedPercentage && (
+                <div className="stat">
+                  <div className="stat-value">
+                    {vaccinated}{" "}
+                    <span className="stat-percent">
+                      ({vaccinatedPercentage}%)
+                    </span>
+                  </div>
+                  <div className="stat-label">vaccinerade</div>
+                </div>
+              )}
+              {vaccinated !== null && !vaccinatedPercentage && (
+                <div className="stat">
+                  <div className="stat-value">{vaccinated}</div>
+                  <div className="stat-label">vaccinerade</div>
+                </div>
+              )}
+*/
