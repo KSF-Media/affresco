@@ -5,7 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#5fe29221f2de1e3abf63fb34be4f2ca4d271e250",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#4779eac540623e35e6c64bd9d8196ca4fff9e3a6",
     "basscss": "^8.1.0",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "react": "^16.12",
