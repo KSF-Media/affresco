@@ -29,7 +29,7 @@ export default function App() {
             newCases={response.data.newCases}
             hospitalised={response.data.hospitalised}
             deaths={response.data.deaths}
-            vaccinated={response.data.vaccinated}
+            vaccinated={response.data.vaccinatedAmount}
             vaccinatedPercentage={response.data.vaccinatedPercentage}
             siteUrl={getSiteUrl()}
             showLinks={true}
