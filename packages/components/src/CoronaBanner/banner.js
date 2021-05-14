@@ -16,16 +16,11 @@ const CoronaBanner = ({
   showLinks,
 }) => {
   const showVaccinatedPercentage = () => {
-    return (
-      vaccinated 
-      ? <span className="stat-percent">
-        ({vaccinatedPercentage}%)
-        </span>
-      : <span className="stat-percent">
-        {vaccinatedPercentage}%
-        </span>
+    return vaccinated ? (
+      <span className="stat-percent">({vaccinatedPercentage}%)</span>
+    ) : (
+      <span className="stat-percent">{vaccinatedPercentage}%</span>
     )
-
   }
 
   return (
@@ -69,9 +64,7 @@ const CoronaBanner = ({
                 <div className="stat">
                   <div className="stat-value">
                     {vaccinated}{" "}
-                    {vaccinatedPercentage && (
-                      showVaccinatedPercentage()
-                    )}
+                    {vaccinatedPercentage && showVaccinatedPercentage()}
                   </div>
                   <div className="stat-label">vaccinerade</div>
                 </div>
