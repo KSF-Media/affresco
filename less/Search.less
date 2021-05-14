@@ -19,10 +19,17 @@
     margin: 0 auto;
 }
 
-.search--item.unselectable {
-    color: @grey-medium;
-}
-
 .search--item.selectable {
     cursor: pointer;
+}
+
+.search--item-identity {
+    background: skyblue;
+}
+
+.search--create-account {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    grid-template-columns: 1fr .5fr;
+    grid-auto-flow: column;
 }

@@ -32,7 +32,7 @@ import React.Basic.Router as Router
 
 -- | Navbar with logo, contact info, logout button, language switch, etc.
 navbarView :: Types.Self -> Sentry.Logger -> Boolean -> JSX
-navbarView self@{ state, setState } logger isPersonating =
+navbarView { state, setState } logger isPersonating =
     Navbar.navbar
       { paper: state.paper
       , adminMode: state.adminMode

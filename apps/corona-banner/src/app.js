@@ -37,10 +37,10 @@ export default function App() {
         )
       })
       .then(() => {
-        setIsLoaded(true)
+        setIsLoaded(true);
       })
-      .catch(error => console.log(error))
-  }, [])
-
+      .catch((error) => console.log(error));
+  }, []);
   return isLoaded ? banner : null
+
 }

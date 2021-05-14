@@ -12,18 +12,19 @@
   .mosaico--list-article {
     &.list-article-default {
       h2 {
-        @media (min-width: $breakpoint-md) {
+        margin-bottom: 5px;
+        @media (min-width: @breakpoint-md) {
           margin-top: 0;
         }
       }
       > a {
         cursor: pointer;
         display: grid;
-        $grid-template-columns: 1fr;
+        @grid-template-columns: 1fr;
         grid-template-areas:
         "left"
         "right";
-        @media (min-width: $breakpoint-md) {
+        @media (min-width: @breakpoint-md) {
           grid-template-columns: 1fr 1fr;
           grid-column-gap: 30px;
           grid-template-areas:

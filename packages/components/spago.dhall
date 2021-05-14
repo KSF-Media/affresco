@@ -22,6 +22,7 @@
     , "validation"
     , "read"
     , "uuid"
+    , "quickcheck"
     ]
 , packages =
     ../../packages.dhall

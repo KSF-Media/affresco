@@ -2,34 +2,36 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
-import MittKonto.Main.Elements as Elements
-import MittKonto.Main.Helpers as Helpers
-import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
-import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
-import MittKonto.Payment.Types as Payments
-import MittKonto.Payment.PaymentAccordion as PaymentAccordion
-import MittKonto.Payment.PaymentDetail as PaymentDetail
-import MittKonto.Wrappers as Wrappers
 import KSF.Alert.Component as Alert
+import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
+import KSF.Tracking as Tracking
 import KSF.User as User
+import KSF.User.Login as Login
+import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
+import MittKonto.Main.Elements as Elements
+import MittKonto.Main.Helpers as Helpers
+import MittKonto.Main.Types as Types
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
+import MittKonto.Payment.PaymentAccordion as PaymentAccordion
+import MittKonto.Payment.PaymentDetail as PaymentDetail
+import MittKonto.Payment.Types as Payments
+import MittKonto.Wrappers as Wrappers
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, component, useState, useState', (/\))
+import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.Router as Router
-import KSF.News as News
 
 foreign import sentryDsn_ :: Effect String
 
@@ -42,21 +44,37 @@ app = do
   paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
+  loginComponent <- Login.login
   let initialState =
         { paper: KSF
         , adminMode: false
         , activeUser: Nothing
-        , loading: Nothing
+        -- Let's show the spinner while we try to magically login the user
+        , loading: Just Spinner.Loading
         , showWelcome: true
         , alert: Nothing
         , payments: Nothing
         , now: now
         , news: News.render Nothing
+        , loginComponent
         }
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
+
+    useEffectOnce do
+      let attemptMagicLogin =
+            User.magicLogin Nothing \userResponse ->
+              case userResponse of
+                Right user -> do
+                  Tracking.login (Just user.cusno) "magic login" "success"
+                  setUser { state, setState } logger user
+                _ -> pure unit
+      Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
+                $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
+      pure mempty
+
     let self = { state, setState }
         -- The user data in the search results isn't quite complete.
         -- We do another fetch to get it all.
@@ -69,6 +87,7 @@ app = do
           Right user -> do
             setState $ Types.setActiveUser $ Just user
             setPersonating true
+
         searchSelect uuid =
           Aff.runAff_
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
@@ -115,8 +134,14 @@ app = do
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
+setUser :: Types.Self -> Sentry.Logger -> User.User -> Effect Unit
+setUser self logger user = do
+  admin <- User.isAdminUser
+  self.setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
+  logger.setUser $ Just user
+
 render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
-render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
+render self@{ state } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
@@ -144,7 +169,7 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
            [ foldMap Elements.loadingIndicator state.loading
            , case state.activeUser /\ (state.adminMode || allowAll) of
                Just user /\ true -> view user
-               _ -> Views.loginView self logger
+               _ -> Views.loginView self (setUser self logger) logger
            ]
        }
    noMatchRoute =
