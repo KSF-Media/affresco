@@ -489,7 +489,7 @@ class App extends Component {
         //To get User data from Android side
         Cookies.set('currentUser', JSON.stringify({ firstName: user.firstName, lastName: user.lastName, email: user.email, token: localStorage.getItem('token'), uuid: localStorage.getItem('uuid') }, { expires: 365 }));
         localStorage.setItem("currentUser", JSON.stringify(user));
-        this.setState({ user: user });
+        this.setState({ user: user, forceLoginView: false });
         const articleUuid = getUrlParam().get('uuid');
         if (articleUuid) {
             this.fetchArticleFromApi(articleUuid);

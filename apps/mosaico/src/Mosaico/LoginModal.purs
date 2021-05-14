@@ -76,7 +76,7 @@ render props state =
                     , onRegister: pure unit
                     , onRegisterCancelled: pure unit
                     , onUserFetch: props.onUserFetch
-                    , launchAff_: \aff -> do
+                    , onLogin: \aff -> do
                         Console.log "LAUNCHING AFF"
                         -- TODO: spinners and things
                         Aff.launchAff_ aff

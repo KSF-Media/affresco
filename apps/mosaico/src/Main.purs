@@ -11,7 +11,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class.Console as Console
-import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (Article, FullArticle(..))
@@ -101,9 +100,7 @@ getCredentials req = do
 getMostRead :: {} -> Aff TextHtml
 getMostRead _ = do
   frontpage <- Lettera.getFrontpage HBL
-  case frontpage of
-    Right fp -> pure $ TextHtml $ renderToString $ mostRead fp
-    Left err -> Aff.throwError $ error err
+  pure $ TextHtml $ renderToString $ mostRead frontpage
   where
     mostRead articles =
       DOM.ul

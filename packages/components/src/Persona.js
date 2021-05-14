@@ -9,5 +9,7 @@ Persona.ApiClient.instance.timeout = {
   deadline: 20000 // but up to 20 seconds of overall data transfer
 };
 
+exports.accountApi = new Persona.AccountApi(Persona.ApiClient.instance);
+exports.adminApi = new Persona.AdminApi(Persona.ApiClient.instance);
 exports.loginApi = new Persona.LoginApi(Persona.ApiClient.instance);
 exports.usersApi = new Persona.UsersApi(Persona.ApiClient.instance);

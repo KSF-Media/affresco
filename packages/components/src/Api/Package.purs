@@ -15,22 +15,10 @@ type Package =
   , offers       :: Array PackageOffer
   , campaigns    :: Array Campaign
   , nextDelivery :: Nullable JSDate
-  , description  :: Nullable PackageDescription
   , digitalOnly  :: Boolean
   , canPause     :: Boolean
   , canTempAddr  :: Boolean
-  }
-
-type PackageDescription =
-  { brand     :: String
-  , brandLong :: String
-  , descShort :: String
-  , descLong  :: String
-  , url       :: String
-  , days      :: String
-  , weekdays  :: String
-  , frequency :: { amount :: Int, unit :: String }
-  , includes  :: Array String
+  , info         :: Array String
   }
 
 type PackageOffer =

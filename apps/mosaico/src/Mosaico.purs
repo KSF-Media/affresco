@@ -7,6 +7,7 @@ import Data.Array (null, head)
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID as UUID
+import Data.Monoid (guard)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -75,7 +76,7 @@ app = do
           Right path -> setState \s -> s { route = path }
           Left err   -> pure unit
 
-  articleComponent    <- Article.article
+  articleComponent    <- Article.articleComponent
   loginModalComponent <- LoginModal.loginModal
   component "Mosaico" \_ -> React.do
     let initialState =
@@ -98,10 +99,8 @@ app = do
         Frontpage -> do
           if null state.articleList
           then Aff.launchAff_ do
-            frontPage <- Lettera.getFrontpage HBL
-            case frontPage of
-              Right fp -> liftEffect $ setState \s -> s { articleList = fp, article = Nothing }
-              Left err -> Aff.throwError $ error err
+            frontpage <- Lettera.getFrontpage HBL
+            liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
           -- Set article to Nothing to prevent flickering of old article
           else liftEffect $ setState \s -> s { article = Nothing }
         ArticlePage articleId -> pure unit
@@ -175,27 +174,37 @@ articleList state setState router =
         { className: "mosaico--list-article list-article-default"
         , children:
             [ DOM.a
-                { onClick: handler_ do
-                     setState \s -> s { clickedArticle = Just a }
-                     window <- Web.window
-                     _ <- Web.scroll 0 0 window
-                     router.pushState (write {}) $ "/artikel/" <> a.uuid
-                , children:
-                    [ DOM.div
-                        { className: "list-article-image"
-                        , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
-                        }
-                    , DOM.div
-                        { className: "list-article-liftup"
-                        , children:
-                            [ DOM.div
-                                { className: "mosaico--tag color-hbl"
-                                , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
-                                }
-                            , DOM.h2_ [ DOM.text a.title ]
-                            ]
-                        }
-                    ]
-                }
+              { onClick: handler_ do
+                    setState \s -> s { clickedArticle = Just a }
+                    window <- Web.window
+                    _ <- Web.scroll 0 0 window
+                    router.pushState (write {}) $ "/artikel/" <> a.uuid
+              , children:
+                  [ DOM.div
+                    { className: "list-article-image"
+                    , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
+                    }
+                  , DOM.div
+                    { className: "list-article-liftup"
+                    , children:
+                        [ DOM.div
+                          { className: "mosaico--tag color-hbl"
+                          , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
+                          }
+                        , DOM.h2_ [ DOM.text a.title ]
+                        , DOM.div
+                          { className: "mosaico--article--meta"
+                          , children:
+                              [ guard a.premium $
+                                  DOM.div
+                                    { className: "mosaico--article--premium background-hbl"
+                                    , children: [ DOM.text "premium" ]
+                                    }
+                              ]
+                          }
+                        ]
+                    }
+                  ]
+              }
             ]
         }

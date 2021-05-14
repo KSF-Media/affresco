@@ -1,21 +1,77 @@
+@import (reference) '../ksf-colors';
+
 .mosaico--article {
     h1 {
-        font: 700 1.92rem 'Duplex Serif Web', serif;
-        color: #333;
-        margin-top: 0.9375rem;
-        margin-bottom: 10px;
-        letter-spacing: -0.015em;
-        @media (min-width: @breakpoint-md) {
-            font-size: 2.75rem;
-        }
-        @media (min-width: @breakpoint-xl) {
-            font-size: 3.75rem;
-        }
+	font: 700 1.92rem 'Duplex Serif Web', serif;
+	color: #333;
+	margin-top: 0.9375rem;
+	margin-bottom: 10px;
+	letter-spacing: -0.015em;
+	@media (min-width: @breakpoint-md) {
+	    font-size: 2.75rem;
+	}
+	@media (min-width: @breakpoint-xl) {
+	    font-size: 3.75rem;
+	}
     }
     p {
-        font: 300 1rem/1.5rem "Roboto", sans-serif;
+	font: 300 1rem/1.5rem "Roboto", sans-serif;
     }
     h4 {
-        font: 600 1rem/1.5rem "Roboto", sans-serif;
+	font: 600 1rem/1.5rem "Roboto", sans-serif;
     }
+    &--meta {
+    }
+    &--premium {
+	padding: 2px 5px;
+	color: #fff;
+	display: inline-block;
+	text-transform: uppercase;
+	font: 500 .75rem "Roboto", sans-serif;
+    }
+}
+
+.mosaico--article-date {
+    border-top:red;
+    border-top-style: none;
+    border-top-width: medium;
+    border-top-width: 1px;
+    border-style: solid;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 1px;
+}
+
+.mosaico--article-times-and-author {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    border-style: solid;
+    border-bottom-width: 1px;
+    border-top-width: 1px;
+    border-left-width: 0;
+    border-right-width: 0;
+    padding-top: .5em;
+    margin-top: 1.5em;
+    padding-bottom: .5em;
+    border-color: #dbd3d3;
+    color: @grey-mediumlight;
+    font-family: "Roboto";
+}
+
+.mosaico--article-authors {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    *:not(:last-child) {
+	margin-bottom: .5em;
+    }
+    .mosaico--article--premium {
+	display: table;
+    }
+}
+
+.mosaico--article-timestamps {
+    font-size: 12px;
+    text-align: right;
 }

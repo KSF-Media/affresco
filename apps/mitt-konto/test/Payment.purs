@@ -31,7 +31,7 @@ testInvoice page = do
   Chrome.assertContent (Chrome.Selector ".payment-accordion--item td") nowText page
   Chrome.click (Chrome.Selector ".payment-accordion--item td") page
   Chrome.waitFor_ (Chrome.Selector ".payment-detail--table") page
-  Chrome.assertContent (Chrome.Selector ".payment-detail--table tbody tr:first-child th:first-child") "Betaldatum" page
+  Chrome.assertContent (Chrome.Selector ".payment-detail--table tbody tr:first-child th:first-child") "Utskrivningsdatum" page
   Chrome.assertContent (Chrome.Selector ".payment-detail--table tbody tr:first-child td:nth-child(2)") nowText page
   Chrome.assertContent (Chrome.Selector ".payment-detail--table tbody tr:nth-child(3) td:nth-child(2)") "Mannerheimvägen 18, 00100 HELSINGFORS" page
   Chrome.click (Chrome.Selector ".mitt-konto--backwards") page
