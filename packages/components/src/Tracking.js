@@ -24,7 +24,7 @@ exports.pauseSubscription_ = function (cusno, subsno, startDate, endDate, result
     dataLayer.push({ 'event': 'pauseSubscription', 'cusno': cusno, 'subsno': subsno, 'startDate': startDate, 'endDate': endDate, 'result': result });
 }
 
-exports.editSubscriptionPause_ = function(cusno, subsno, oldStartDate, oldEndDate, oldStartDate, oldEndDate, result) {
+exports.editSubscriptionPause_ = function(cusno, subsno, oldStartDate, oldEndDate, startDate, endDate, result) {
     dataLayer.push({'event': 'pauseSubscription', 'cusno': cusno, 'subsno': subsno, 'oldStartDate': startDate, 'oldEndDate': endDate, 'newStartDate': startDate, 'newEndDate': endDate, 'result': result});
 }
 
