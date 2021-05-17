@@ -1,56 +1,57 @@
 @collapse-height: 160px;
 
 .mosaico--article--boxinfo {
-    margin-left: 15px;
-    margin-right: 15px;
-    border-top-style: solid;
-    border-top-width: 5px;
-    border-bottom-style: solid;
-    border-bottom-width: 2px;
-    background: @grey-light;
-    .boxinfo-header {
-        padding: 15px;
-        border-bottom: solid 1px @hairline-color;
-        h2 {
-            margin: 0;
-            font: 600 1.5rem "Duplex Sans";
-        }
-        h3 {
-            margin-top: 0;
-            margin-bottom: .5em;
-            font: 500 1rem "Duplex Sans";
-        }
+  margin-left: 15px;
+  margin-right: 15px;
+  border-top-style: solid;
+  border-top-width: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  background: @grey-light;
+  .boxinfo-header {
+    padding: 15px;
+    border-bottom: solid 1px @hairline-color;
+    h2 {
+      margin: 0;
+      font: 600 1.5rem 'Duplex Sans';
     }
-    .boxinfo--body {
-        &:not(.expanded) {
-            height: @collapse-height;
-            position: relative;
-            overflow: hidden;
-            .fader {
-                height: @collapse-height;
-                width: 100%;
-                background: linear-gradient(0deg,
-                    rgba(247,245,243,1) 0%,
-                    rgba(247,245,243,0.5) 40%,
-                    rgba(247,245,243,0) 100%
-                );
-                position: absolute;
-                z-index: 2;
-            }
-            .content {
-                position: absolute;
-                z-index: 1;
-            }
-        }
-        .content {
-            padding: 15px;
-        }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 0.5em;
+      font: 500 1rem 'Duplex Sans';
     }
-    .boxinfo-toggle {
-        text-align: center;
-        cursor: pointer;
-        a {
-            font: 600 1rem "Roboto";
-        }
+  }
+  .boxinfo--body {
+    &:not(.expanded) {
+      height: @collapse-height;
+      position: relative;
+      overflow: hidden;
+      .fader {
+        height: @collapse-height;
+        width: 100%;
+        background: linear-gradient(
+          0deg,
+          rgba(247, 245, 243, 1) 0%,
+          rgba(247, 245, 243, 0.5) 40%,
+          rgba(247, 245, 243, 0) 100%
+        );
+        position: absolute;
+        z-index: 2;
+      }
+      .content {
+        position: absolute;
+        z-index: 1;
+      }
     }
+    .content {
+      padding: 15px;
+    }
+  }
+  .boxinfo-toggle {
+    text-align: center;
+    cursor: pointer;
+    a {
+      font: 600 1rem 'Roboto';
+    }
+  }
 }

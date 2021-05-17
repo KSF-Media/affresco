@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import CoronaSvg from "./assets/covid-virus-icon.svg";
-import Chevron from "../../../images/chevron.svg";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import CoronaSvg from './assets/covid-virus-icon.svg';
+import Chevron from '../../../images/chevron.svg';
 
 const Banner = ({
   newCases,
@@ -43,7 +43,7 @@ const Banner = ({
             {vaccinated !== null && vaccinatedPercentage && (
               <div className="stat">
                 <div className="stat-value">
-                  {vaccinated}{" "}
+                  {vaccinated}{' '}
                   <span className="stat-percent">
                     ({vaccinatedPercentage}%)
                   </span>
@@ -65,15 +65,15 @@ const Banner = ({
       </a>
       <div className="source">
         <em>
-          Källa:{" "}
+          Källa:{' '}
           <a
             class="corona-banner-source-link"
             target="_blank"
             href="https://thl.fi/sv/web/thlfi-sv/statistik-och-data/material-och-tjanster/oppna-data"
           >
             THL
-          </a>{" "}
-          och{" "}
+          </a>{' '}
+          och{' '}
           <a
             class="corona-banner-source-link"
             target="_blank"
@@ -92,12 +92,12 @@ function getSiteUrl() {
   const siteRegEx = /site=(\w+)/;
   const siteArray = queryParameter.match(siteRegEx) || [];
 
-  if (siteArray.includes("on")) {
-    return "https://www.ostnyland.fi/tagg/coronaviruset/";
-  } else if (siteArray.includes("vn")) {
-    return "https://www.vastranyland.fi/tagg/coronaviruset/";
+  if (siteArray.includes('on')) {
+    return 'https://www.ostnyland.fi/tagg/coronaviruset/';
+  } else if (siteArray.includes('vn')) {
+    return 'https://www.vastranyland.fi/tagg/coronaviruset/';
   } else {
-    return "https://www.hbl.fi/tagg/coronaviruset/";
+    return 'https://www.hbl.fi/tagg/coronaviruset/';
   }
 }
 
@@ -111,7 +111,7 @@ export default function App() {
 
   useEffect(() => {
     axios
-      .get(" https://cdn.ksfmedia.fi/corona-banner/stats.json")
+      .get(' https://cdn.ksfmedia.fi/corona-banner/stats.json')
       .then((response) => {
         setNewCases(response.data.newCases);
         setHospitalised(response.data.hospitalised);
