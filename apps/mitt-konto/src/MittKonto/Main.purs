@@ -93,7 +93,9 @@ app = do
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
               $ User.getUser Nothing uuid
         searchView :: JSX
-        searchView = search { setActiveUser: searchSelect }
+        searchView = search { setActiveUser: searchSelect
+                            , now
+                            }
         usePayments = Helpers.useLoadSpinner setState
                         (isJust state.payments /\ (_.cusno <$> state.activeUser))
                         (Payments.getPayments
