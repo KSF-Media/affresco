@@ -33,7 +33,7 @@ function attachHeaders() {
     const uuid = localStorage.getItem('uuid') || Cookies.get('uuid') || getUserUuidFromUrl();
     const token = localStorage.getItem('token') || Cookies.get('token') || getTokenFromUrl();
 
-    if (isUserLoggedIn()) {
+    if (isUserLoggedIn() && uuid && token) {
         headers = {
             'Content-Type': 'application/json',
             'AuthUser': uuid,
