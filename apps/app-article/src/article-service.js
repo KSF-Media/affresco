@@ -2,6 +2,8 @@ import config from "./config";
 import { isUserLoggedIn, getBrandValueParam, getUrlParam, getTokenFromUrl, getUserUuidFromUrl } from "./helper";
 import Cookies from 'js-cookie';
 
+const UUID = require('uuid');
+
 const articleApi = {
     getArticle(uuid) {
         return fetch(config.apiUrl + "/article/" + uuid, {
@@ -33,7 +35,7 @@ function attachHeaders() {
     const uuid = localStorage.getItem('uuid') || Cookies.get('uuid') || getUserUuidFromUrl();
     const token = localStorage.getItem('token') || Cookies.get('token') || getTokenFromUrl();
 
-    if (isUserLoggedIn() && uuid && token) {
+    if (isUserLoggedIn() && uuid && UUID.validate(uuid) && token) {
         headers = {
             'Content-Type': 'application/json',
             'AuthUser': uuid,
