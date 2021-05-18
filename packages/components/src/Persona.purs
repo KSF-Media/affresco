@@ -652,13 +652,13 @@ type ApiSearchResult =
   }
 
 -- Pass dummy uuid to force authUser field generation.
-searchUsers :: SearchQuery -> UserAuth -> Aff (Array SearchResult)
+searchUsers :: SearchQuery -> UserAuth -> Aff (Array (SearchResult Subscription))
 searchUsers query auth = do
   catMaybes <<< map nativeSearchResults <$>
     callApi adminApi "adminSearchPost" [ unsafeToForeign query ]
     ( authHeaders UUID.emptyUUID auth )
   where
-    nativeSearchResults :: ApiSearchResult -> Maybe SearchResult
+    nativeSearchResults :: ApiSearchResult -> Maybe (SearchResult Subscription)
     nativeSearchResults x = do
       janrain <- nativeJanrain x.janrain
       faro <- sequence $ map nativeFaro x.faro
@@ -677,7 +677,7 @@ searchUsers query auth = do
           , cusno:       toMaybe j.cusno
           , otherCusnos: toMaybe j.otherCusnos
           }
-    nativeFaro :: ApiFaroUser -> Maybe FaroUser
+    nativeFaro :: ApiFaroUser -> Maybe (FaroUser Subscription)
     nativeFaro x = do
       pure $ { cusno:   x.cusno
              , name:    x.name
