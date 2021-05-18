@@ -11,6 +11,7 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.Show.Generic (genericShow)
+import Data.String as String
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
 import Data.Traversable (sequence)
@@ -33,6 +34,7 @@ import OpenApiClient (Api, callApi)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
 
+foreign import accountApi :: Api
 foreign import adminApi :: Api
 foreign import loginApi :: Api
 foreign import usersApi :: Api
@@ -115,6 +117,10 @@ logout auth =
   where
     authorization = oauthToken auth.authToken
 
+requestPasswordReset :: String -> Aff Unit
+requestPasswordReset email = do
+  callApi accountApi "accountPasswordForgotPost" [ unsafeToForeign { email } ] {}
+
 register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
@@ -127,6 +133,38 @@ type NewTemporaryUser =
 registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
   callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
+
+type NewCusnoUser =
+  { cusno     :: Cusno
+  , email     :: String
+  , firstName :: String
+  , lastName  :: String
+  , password  :: String
+  , consents  :: Array LegalConsent
+    -- This one isn't sent to account creation endpoint
+  , sendReset :: Boolean
+  }
+
+registerCusno :: NewCusnoUser -> UserAuth -> Aff LoginResponse
+registerCusno newUser@{ cusno } auth = do
+  let user =
+        { cusno
+        , user: { firstName: if String.null $ String.trim newUser.firstName
+                               then Nullable.null
+                               else Nullable.notNull newUser.firstName
+                , lastName : if String.null $ String.trim newUser.lastName
+                               then Nullable.null
+                               else Nullable.notNull newUser.lastName
+                , emailAddress: newUser.email
+                , password: newUser.password
+                , confirmPassword: newUser.password
+                , legalConsents: newUser.consents
+                }
+        }
+  response <- callApi adminApi "adminUserPost" [ unsafeToForeign user ]
+    ( authHeaders UUID.emptyUUID auth )
+  when newUser.sendReset $ requestPasswordReset newUser.email
+  pure response
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
@@ -359,6 +397,9 @@ pauseDateErrorToInvalidDateError = case _ of
 
 type EmailAddressInUseRegistration = ServerError
   ( email_address_in_use_registration :: { description :: String } )
+
+type CusnoInUseRegistration = ServerError
+  ( unique_cusno_violation :: { description :: String } )
 
 data Provider
   = Facebook
@@ -611,13 +652,13 @@ type ApiSearchResult =
   }
 
 -- Pass dummy uuid to force authUser field generation.
-searchUsers :: SearchQuery -> UserAuth -> Aff (Array SearchResult)
+searchUsers :: SearchQuery -> UserAuth -> Aff (Array (SearchResult Subscription))
 searchUsers query auth = do
   catMaybes <<< map nativeSearchResults <$>
     callApi adminApi "adminSearchPost" [ unsafeToForeign query ]
     ( authHeaders UUID.emptyUUID auth )
   where
-    nativeSearchResults :: ApiSearchResult -> Maybe SearchResult
+    nativeSearchResults :: ApiSearchResult -> Maybe (SearchResult Subscription)
     nativeSearchResults x = do
       janrain <- nativeJanrain x.janrain
       faro <- sequence $ map nativeFaro x.faro
@@ -636,7 +677,7 @@ searchUsers query auth = do
           , cusno:       toMaybe j.cusno
           , otherCusnos: toMaybe j.otherCusnos
           }
-    nativeFaro :: ApiFaroUser -> Maybe FaroUser
+    nativeFaro :: ApiFaroUser -> Maybe (FaroUser Subscription)
     nativeFaro x = do
       pure $ { cusno:   x.cusno
              , name:    x.name

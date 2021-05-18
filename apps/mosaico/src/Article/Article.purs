@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (cons, head, snoc)
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
@@ -15,10 +16,11 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Package (CampaignLengthUnit(..))
+import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, fromFullArticle, isPreviewArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -49,8 +51,8 @@ type State =
   , preamble :: Maybe String
   }
 
-article :: Component Props
-article = do
+articleComponent :: Component Props
+articleComponent = do
   component "Article" \props -> React.do
     let initialState =
           { body: []
@@ -118,27 +120,37 @@ renderImage img =
     byline  = fold img.byline
 
 render :: Self -> JSX
-render { state, props, setState } =
-  DOM.div
-    { className: "mosaico--article"
-    , children:
-      [ DOM.div
-          { className: "mosaico--tag color-" <> props.brand
-          , children: [ DOM.text $ fromMaybe "" (head state.tags) ]
+render { props, state, setState } =
+    let letteraArticle = map fromFullArticle state.article
+        title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
+        tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
+        mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+    in DOM.div
+      { className: "mosaico--article"
+      , children:
+        [ DOM.div
+            { className: "mosaico--tag color-" <> props.brand
+            , children: [ DOM.text $ fromMaybe "" (head tags) ]
+            }
+        , DOM.h1
+            { className: "mosaico--article--title title"
+            , children: [ DOM.text title ]
+            }
+        , foldMap renderImage mainImage
+        , DOM.div
+          { className: "mosaico--article--preamble"
+          , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
           }
-      , DOM.h1
-          { className: "mosaico--article--title title"
-          , children: [ DOM.text state.title ]
-          }
-      , foldMap renderImage state.mainImage
-      , DOM.div
-        { className: "mosaico--article--preamble"
-        , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
-        }
-      , DOM.div
-          { className: "mosaico--article--body "
-          , children: case state.article of
-              (Just (PreviewArticle previewArticle)) ->
+        , DOM.div
+            { className: "mosaico--article-times-and-author"
+            , children:
+                [ foldMap renderAuthors $ _.authors <$> letteraArticle
+                , foldMap articleTimestamps letteraArticle
+                ]
+            }
+        , DOM.div
+            { className: "mosaico--article--body "
+            , children:
                 paywallFade
                 `cons` map renderElement state.body
                 `snoc` vetrina
@@ -149,6 +161,41 @@ render { state, props, setState } =
       ]
     }
   where
+    renderAuthors authors =
+      DOM.div
+        { className: "mosaico--article-authors"
+        , children:
+            map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
+            `snoc` premiumBadge
+        }
+      where
+        premiumBadge =
+          guard (maybe false (_.premium <<< fromFullArticle) state.article)
+          DOM.div
+            { className: "mosaico--article--premium background-hbl"
+            , children: [ DOM.text "premium" ]
+            }
+
+    articleTimestamps { publishingTime, updateTime } =
+      DOM.div
+        { className: "mosaico--article-timestamps"
+        , children:
+            [ foldMap renderPublishingTime publishingTime
+            , foldMap renderUpdateTime updateTime
+            ]
+        }
+      where
+        renderPublishingTime (LocalDateTime time) =
+          DOM.div
+            { className: "mosaico--article-published-timestamp"
+            , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
+            }
+        renderUpdateTime (LocalDateTime time) =
+          DOM.div
+            { className: "mosaico--article-updated-timestamp"
+            , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
+            }
+
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
 

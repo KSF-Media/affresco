@@ -69,7 +69,7 @@ app = do
               case userResponse of
                 Right user -> do
                   Tracking.login (Just user.cusno) "magic login" "success"
-                  setState \s -> s { activeUser = Just user }
+                  setUser { state, setState } logger user
                 _ -> pure unit
       Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
                 $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
@@ -93,7 +93,9 @@ app = do
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
               $ User.getUser Nothing uuid
         searchView :: JSX
-        searchView = search { setActiveUser: searchSelect }
+        searchView = search { setActiveUser: searchSelect
+                            , now
+                            }
         usePayments = Helpers.useLoadSpinner setState
                         (isJust state.payments /\ (_.cusno <$> state.activeUser))
                         (Payments.getPayments
@@ -134,8 +136,14 @@ app = do
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
+setUser :: Types.Self -> Sentry.Logger -> User.User -> Effect Unit
+setUser self logger user = do
+  admin <- User.isAdminUser
+  self.setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
+  logger.setUser $ Just user
+
 render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
-render self@{ state, setState } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
+render self@{ state } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
@@ -163,7 +171,7 @@ render self@{ state, setState } logger searchView paymentView paymentDetailView 
            [ foldMap Elements.loadingIndicator state.loading
            , case state.activeUser /\ (state.adminMode || allowAll) of
                Just user /\ true -> view user
-               _ -> Views.loginView self logger
+               _ -> Views.loginView self (setUser self logger) logger
            ]
        }
    noMatchRoute =

@@ -2,7 +2,7 @@ module MittKonto.Main.UserView.Subscription where
 
 import Prelude
 
-import Data.Array (concatMap, filter)
+import Data.Array (concatMap, cons, filter)
 import Data.Array as Array
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
@@ -50,7 +50,9 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
     (DescriptionList.descriptionList
          { definitions:
              [ { term: "Produkt:"
-               , description: [ DOM.text package.name ]
+               , description: DOM.text package.name `cons`
+                              (pure <<< DOM.ul_ <<< map (DOM.li_ <<< pure <<< DOM.text))
+                              package.info
                }
              , { term: "Pren.nr:"
                , description: [ DOM.text $ Subsno.toString sub.subsno ]

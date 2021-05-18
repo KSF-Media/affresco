@@ -2,15 +2,15 @@ module MittKonto.Main.LoginView where
 
 import Prelude
 
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
+import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Exception (message)
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
-import KSF.Spinner as Spinner
-import KSF.User (UserError(..), isAdminUser)
+import KSF.User (UserError(..), User)
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import React.Basic (JSX)
@@ -23,8 +23,8 @@ foreign import logos ::
   }
 
 -- | Login page with welcoming header, description text and login form.
-loginView :: Types.Self-> Sentry.Logger -> JSX
-loginView self@{ state, setState } logger =
+loginView :: Types.Self-> (User -> Effect Unit) -> Sentry.Logger -> JSX
+loginView self@{ state, setState } setUser logger =
   Helpers.classy DOM.div "mitt-konto--frontpage" $
     case state.showWelcome of
         false -> []
@@ -48,16 +48,15 @@ loginView self@{ state, setState } logger =
                 case err of
                   SomethingWentWrong -> logger.error $ Error.loginError $ show err
                   UnexpectedError e  -> logger.error $ Error.loginError $ message e
+                  -- List of cases we aren't that interested of
+                  MergeEmailInUse _ -> pure unit
+                  LoginTokenInvalid -> pure unit
+                  LoginInvalidCredentials -> pure unit
                   -- If any other UserError occurs, only send an Info event of it
                   _ -> logger.log (show err) Sentry.Info
                 self.setState $ Types.setActiveUser Nothing
-              Right user -> do
-                admin <- isAdminUser
-                setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
-                logger.setUser $ Just user
-          , onLogin:
-              Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
-                <<< Spinner.withSpinner (setState <<< Types.setLoading)
+              Right user -> setUser user
+          , onLogin: Aff.launchAff_
           , disableSocialLogins: Set.empty
           }
 
