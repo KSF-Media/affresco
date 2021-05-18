@@ -9,6 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Effect (Effect)
 import KSF.Api.Subscription (toString) as Subsno
+import KSF.Api.Subscription (isSubscriptionExpired)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -77,7 +78,7 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
                                              else mempty
                                          ]
          })
-      (Elements.subscriptionUpdates self)
+      (if expired then mempty else Elements.subscriptionUpdates self)
       { extraClasses: [ "subscription--container" ]
       , id: "subscription-" <> Subsno.toString sub.subsno
       }
@@ -85,3 +86,4 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
       filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) pausedSubs
+    expired = isSubscriptionExpired sub now
