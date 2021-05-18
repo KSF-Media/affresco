@@ -3,12 +3,13 @@ module KSF.Api.Subscription where
 import Prelude
 
 import Control.Alt ((<|>))
+import Data.Date (Date)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Int as Int
-import Data.JSDate (JSDate)
-import Data.Maybe (Maybe)
-import Data.Nullable (Nullable)
+import Data.JSDate (JSDate, toDate)
+import Data.Maybe (Maybe, maybe)
+import Data.Nullable (Nullable, toMaybe)
 import Foreign (Foreign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
 import KSF.Api.Package (Package, Campaign)
@@ -122,3 +123,9 @@ isSubscriptionPausable = _.canPause <<< _.package
 
 isSubscriptionTemporaryAddressChangable :: Subscription -> Boolean
 isSubscriptionTemporaryAddressChangable = _.canTempAddr <<< _.package
+
+isSubscriptionExpired :: Subscription -> Date -> Boolean
+isSubscriptionExpired subs today =
+  let end = toDate =<< toMaybe subs.dates.end
+      suspend = toDate =<< toMaybe subs.dates.suspend
+  in maybe false (_ < today) end || maybe false (_ <= today) suspend

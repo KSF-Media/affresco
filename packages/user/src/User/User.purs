@@ -171,7 +171,7 @@ createUserWithEmail newTemporaryUser = do
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin Nothing =<< saveToken user
 
-createCusnoUser :: Persona.NewCusnoUser -> Aff (Either UserError SearchResult)
+createCusnoUser :: Persona.NewCusnoUser -> Aff (Either UserError (SearchResult Subscription.Subscription))
 createCusnoUser newCusnoUser = do
   newUser <- try $ Persona.registerCusno newCusnoUser =<< requireToken
   case newUser of
@@ -601,7 +601,7 @@ createDeliveryReclamation uuid subsno date claim = do
 
 searchUsers
   :: SearchQuery
-  -> Aff (Either String (Array SearchResult))
+  -> Aff (Either String (Array (SearchResult Subscription.Subscription)))
 searchUsers query = do
   users <- try $ Persona.searchUsers query =<< requireToken
   case users of
