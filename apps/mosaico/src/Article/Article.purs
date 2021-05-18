@@ -150,7 +150,8 @@ render { props, state, setState } =
             }
         , DOM.div
             { className: "mosaico--article--body "
-            , children:
+            , children: case state.article of
+              (Just (PreviewArticle previewArticle)) ->
                 paywallFade
                 `cons` map renderElement state.body
                 `snoc` vetrina
