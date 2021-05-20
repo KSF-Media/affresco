@@ -48,6 +48,10 @@ exports.deletePendingAddressChanges_ = function (cusno, result) {
     dataLayer.push({ 'event': 'deletePendingAddressChanges', 'cusno': cusno, 'result': result })
 }
 
+exports.updateResetPassword_ = function (result) {
+    dataLayer.push({ 'event': 'updateResetPassword', 'result': result });
+}
+
 exports.updateCreditCard_ = function (cusno, subsno, oldCreditCard, registerNumber, result) {
     dataLayer.push({ 'event': 'updateCreditCard', 'cusno': cusno, 'subsno': subsno === null ? '' : subsno, 'oldCreditCard': oldCreditCard, 'registerNumber': registerNumber, 'result': result })
 }

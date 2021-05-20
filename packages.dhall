@@ -56,6 +56,12 @@ let additions =
 	, repo = "https://github.com/spicydonuts/purescript-uuid.git"
 	, version = "572191b9f8053bc618c325289be9d6464865b12c"
 	}
+      , web-url =
+        { dependencies = [ "effect" ]
+	, repo =
+	    "https://github.com/mjepronk/purescript-web-url.git"
+        , version = "d654e3b550473874461b61013854350b4d944c11"
+	}
       , affresco-components = ./packages/components/spago.dhall as Location
       , affresco-test = ./packages/test/spago.dhall as Location
       , affresco-user = ./packages/user/spago.dhall as Location

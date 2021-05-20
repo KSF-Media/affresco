@@ -7,7 +7,7 @@ import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
 import Foreign (Foreign)
 import Prelude (Unit)
-import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, EffectFn6, EffectFn7, runEffectFn2, runEffectFn3, runEffectFn5, runEffectFn6, runEffectFn7)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn5, EffectFn6, EffectFn7, runEffectFn1, runEffectFn2, runEffectFn3, runEffectFn5, runEffectFn6, runEffectFn7)
 import KSF.Helpers as Helpers
 import KSF.Api.Subscription (Subsno)
 import KSF.User.Cusno
@@ -25,6 +25,7 @@ foreign import changeName_ :: EffectFn2 Cusno Result Unit
 foreign import changeEmail_ :: EffectFn2 Cusno Result Unit
 foreign import changeAddress_ :: EffectFn2 Cusno Result Unit
 foreign import deletePendingAddressChanges_ :: EffectFn2 Cusno Result Unit
+foreign import updateResetPassword_ :: EffectFn1 Result Unit
 
 type DateString = String
 type Claim = String
@@ -95,6 +96,9 @@ changeAddress = runEffectFn2 changeAddress_
 
 deletePendingAddressChanges :: Cusno -> Result -> Effect Unit
 deletePendingAddressChanges = runEffectFn2 deletePendingAddressChanges_
+
+updateResetPassword :: Result -> Effect Unit
+updateResetPassword = runEffectFn1 updateResetPassword_
 
 login :: Maybe Cusno -> LoginMethod -> Result -> Effect Unit
 login cusno method result = runEffectFn3 login_ (toNullable cusno) method result

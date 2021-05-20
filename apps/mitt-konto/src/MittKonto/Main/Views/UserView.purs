@@ -11,7 +11,7 @@ import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView.Subscription (subscription) as Subscription
-import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
+import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.User (User)
@@ -70,6 +70,11 @@ userView { state: { now, news }, setState } logger user = React.fragment
                   | Subscription.isSubscriptionCanceled subscription =
                       DOM.div
                         { className: "mitt-konto--canceled-subscription"
+                        , children: [ componentBlockContent $ subscriptionView subscription ]
+                        }
+                  | Subscription.isSubscriptionExpired subscription now =
+                      DOM.div
+                        { className: "mitt-konto--expired-subscription"
                         , children: [ componentBlockContent $ subscriptionView subscription ]
                         }
                   | otherwise = componentBlockContent $ subscriptionView subscription
