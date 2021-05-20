@@ -3,22 +3,26 @@ module Persona where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (catMaybes)
+import Data.Array (catMaybes, filter)
 import Data.Date (Date)
+import Data.Date as Date
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDate)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, toNullable, toMaybe)
 import Data.Nullable as Nullable
 import Data.Show.Generic (genericShow)
 import Data.String as String
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
+import Data.Time.Duration (Days(..))
 import Data.Traversable (sequence)
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect.Aff (Aff)
-import Foreign (unsafeToForeign)
+import Effect.Class (liftEffect)
+import Effect.Now as Now
+import Foreign (Foreign, unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
@@ -26,7 +30,7 @@ import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Search (SearchQuery, SearchResult, JanrainUser, FaroUser)
-import KSF.Api.Subscription (Subscription, PendingAddressChange, Subsno(..))
+import KSF.Api.Subscription (BaseSubscription, Subscription, PendingAddressChange, Subsno(..), isSubscriptionExpired)
 import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
 import KSF.User.Cusno (Cusno)
@@ -60,8 +64,7 @@ authHeaders uuid { userId, authToken } =
 getUser :: Maybe InvalidateCache -> UUID -> UserAuth -> Aff User
 getUser invalidateCache uuid auth = do
   user <- callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
-  let parsedSubs = map Subscription.parseSubscription user.subs
-  pure $ user { subs = parsedSubs }
+  user { subs = _ } <$> processSubs user.subs
   where
     headers = Record.merge (authHeaders uuid auth)
       { cacheControl: toNullable maybeCacheControl
@@ -100,8 +103,13 @@ updateUser uuid update auth = do
         DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth
-  let parsedSubs = map Subscription.parseSubscription user.subs
-  pure $ user { subs = parsedSubs }
+  user { subs = _ } <$> processSubs user.subs
+
+processSubs :: Array (BaseSubscription Foreign) -> Aff (Array Subscription)
+processSubs subs = do
+  now <- liftEffect Now.nowDate
+  let threshold = maybe (const true) (not <<< flip isSubscriptionExpired) $ Date.adjust (Days (-180.0)) now
+  pure $ filter threshold $ map Subscription.parseSubscription subs
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
