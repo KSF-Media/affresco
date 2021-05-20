@@ -121,6 +121,19 @@ requestPasswordReset :: String -> Aff Unit
 requestPasswordReset email = do
   callApi accountApi "accountPasswordForgotPost" [ unsafeToForeign { email } ] {}
 
+startPasswordReset :: String -> Aff Unit
+startPasswordReset token = do
+  callApi accountApi "accountPasswordResetPost" [ unsafeToForeign { token } ] {}
+
+updateForgottenPassword :: String -> Password -> Password -> Aff Unit
+updateForgottenPassword token password confirmPassword = do
+  let updatePasswordData =
+        { token
+        , password
+        , confirmPassword
+        }
+  callApi accountApi "accountPasswordResetPost" [ unsafeToForeign updatePasswordData ] {}
+
 register :: NewUser -> Aff LoginResponse
 register newUser =
   callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}

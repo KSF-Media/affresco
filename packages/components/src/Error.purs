@@ -13,6 +13,11 @@ import Foreign.Index as Foreign
 import Simple.JSON (class ReadForeign)
 import Simple.JSON as JSON
 
+badRequestError :: Error -> Boolean
+badRequestError err = isJust $ do
+  status <- err # errorField "status"
+  guard $ status == 400
+
 resourceConflictError :: Error -> Boolean
 resourceConflictError err = isJust $ do
   status <- err # errorField "status"
