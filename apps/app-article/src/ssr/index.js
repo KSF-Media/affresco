@@ -20,6 +20,7 @@ rehydrateMarks().then(() => {
       updateTime={window.article.updateTime}
       authors={window.article.authors}
       premium={window.article.premium}
+      isPreview={window.article.isPreview}
     />,
     document.getElementById("root")
   );

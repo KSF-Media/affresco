@@ -8,15 +8,17 @@ var middleware = require("./middleware");
 import generateHtml from "./generateHtml";
 import Article from "../src/components/article";
 const axios = require("axios");
-app.use("/dist", express.static(`${__dirname}/../client`));
+const _ = require("lodash");
 
+app.use("/dist", express.static(`${__dirname}/../client`));
+// 47b04f5b-b5b2-43c7-acb5-b95b24cf6784"
 app.get("/*", (req, res) => {
   axios
     .get(
-      "https://lettera.api.ksfmedia.fi/v3/article/47b04f5b-b5b2-43c7-acb5-b95b24cf6784"
+      "https://lettera.api.ksfmedia.fi/v3/article/d8f9668d-9f61-4486-9aca-cd845a5e1f28"
     )
     .then((response) => {
-      const article = (
+      const articleJSX = (
 	<Article
 	  title={response.data.title}
 	  mainImage={response.data.mainImage}
@@ -32,13 +34,42 @@ app.get("/*", (req, res) => {
 	  premium={response.data.premium}
 	/>
       );
-      const markup = ReactDOM.renderToString(article);
-
-      console.log(response);
-      const html = generateHtml(markup, response.data);
-      res.send(html);
+      sendArticleResponse(res, response.data, articleJSX);
+    })
+    .catch((err) => {
+      if (err.response.status === 403) {
+	const article = err.response.data.not_entitled.articlePreview;
+	const previewArticleJSX = (
+	  <Article
+	    title={article.title}
+	    mainImage={article.mainImage}
+	    body={article.body}
+	    tags={article.tags || []}
+	    relatedArticles={article.relatedArticles || []}
+	    preamble={article.preamble}
+	    articleType={article.articleType}
+	    articleTypeDetails={article.articleTypeDetails}
+	    publishingTime={article.publishingTime}
+	    updateTime={article.updateTime}
+	    authors={article.authors}
+	    premium={article.premium}
+	    isPreview={true}
+	  />
+	);
+	sendArticleResponse(
+	  res,
+	  _.set(article, "isPreview", true),
+	  previewArticleJSX
+	);
+      }
     });
 });
+
+function sendArticleResponse(res, article, articleJSX) {
+  const markup = ReactDOM.renderToString(articleJSX);
+  const html = generateHtml(markup, article);
+  res.send(html);
+}
 
 // respond with "hello world" when a GET request is made to the homepage
 // app.get("/article/:articleId", function (req, res) {
