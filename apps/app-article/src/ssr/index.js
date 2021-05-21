@@ -4,9 +4,25 @@ import { rehydrateMarks } from "react-imported-component";
 import ReactDOM from "react-dom";
 import "../index.css";
 import Article from "../components/article";
-// import * as serviceWorker from "./serviceWorker";
+import * as serviceWorker from "../serviceWorker";
 rehydrateMarks().then(() => {
-  ReactDOM.hydrate(<Article />, document.getElementById("root"));
+  ReactDOM.hydrate(
+    <Article
+      title={window.article.title}
+      mainImage={window.article.mainImage}
+      body={window.article.body}
+      tags={window.article.tags || []}
+      relatedArticles={window.article.relatedArticles || []}
+      preamble={window.article.preamble}
+      articleType={window.article.articleType}
+      articleTypeDetails={window.article.articleTypeDetails}
+      publishingTime={window.article.publishingTime}
+      updateTime={window.article.updateTime}
+      authors={window.article.authors}
+      premium={window.article.premium}
+    />,
+    document.getElementById("root")
+  );
 });
 
 // If you want your app to work offline and load faster, you can change

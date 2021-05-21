@@ -6,11 +6,13 @@ import cheerio from "cheerio";
 const templatePath = path.join(__dirname, "..", "client", "index.html");
 const HTML_TEMPLATE = fs.readFileSync(templatePath).toString();
 
-export default function generateHtml(markup) {
+export default function generateHtml(markup, article) {
   // Get the server-rendering values for the <head />
 
   const $template = cheerio.load(HTML_TEMPLATE);
-
+  $template("head").append(
+    `<script>window.article = ${JSON.stringify(article)}</script>`
+  );
   $template("#root").html(markup);
   console.log($template.html());
   console.log(markup);

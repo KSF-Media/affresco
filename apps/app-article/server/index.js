@@ -35,7 +35,7 @@ app.get("/*", (req, res) => {
       const markup = ReactDOM.renderToString(article);
 
       console.log(response);
-      const html = generateHtml(markup);
+      const html = generateHtml(markup, response.data);
       res.send(html);
     });
 });
