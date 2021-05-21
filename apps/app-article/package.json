@@ -6,11 +6,15 @@
     "@ksf-media/user": "file:../../packages/user",
     "@sentry/browser": "6.2.5",
     "@sentry/tracing": "6.2.5",
+    "axios": "^0.21.1",
     "bootstrap-css-only": "^4.3.1",
+    "cheerio": "^1.0.0-rc.9",
     "js-cookie": "^2.2.1",
+    "lodash": "^4.17.21",
     "react": "^16.8.3",
     "react-dom": "^16.8.3",
     "react-image-lightbox": "^5.1.0",
+    "react-imported-component": "^6.4.1",
     "uuid": "^8.3.2"
   },
   "scripts": {
