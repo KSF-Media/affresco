@@ -9,60 +9,67 @@ import generateHtml from "./generateHtml";
 import Article from "../src/components/article";
 const axios = require("axios");
 const _ = require("lodash");
+const https = require("https");
 
 app.use("/dist", express.static(`${__dirname}/../client`));
 // 47b04f5b-b5b2-43c7-acb5-b95b24cf6784"
-app.get("/*", (req, res) => {
-  axios
-    .get(
-      "https://lettera.api.ksfmedia.fi/v3/article/d8f9668d-9f61-4486-9aca-cd845a5e1f28"
-    )
-    .then((response) => {
-      const articleJSX = (
-	<Article
-	  title={response.data.title}
-	  mainImage={response.data.mainImage}
-	  body={response.data.body}
-	  tags={response.data.tags || []}
-	  relatedArticles={response.data.relatedArticles || []}
-	  preamble={response.data.preamble}
-	  articleType={response.data.articleType}
-	  articleTypeDetails={response.data.articleTypeDetails}
-	  publishingTime={response.data.publishingTime}
-	  updateTime={response.data.updateTime}
-	  authors={response.data.authors}
-	  premium={response.data.premium}
-	/>
-      );
-      sendArticleResponse(res, response.data, articleJSX);
-    })
-    .catch((err) => {
-      if (err.response.status === 403) {
-	const article = err.response.data.not_entitled.articlePreview;
-	const previewArticleJSX = (
-	  <Article
-	    title={article.title}
-	    mainImage={article.mainImage}
-	    body={article.body}
-	    tags={article.tags || []}
-	    relatedArticles={article.relatedArticles || []}
-	    preamble={article.preamble}
-	    articleType={article.articleType}
-	    articleTypeDetails={article.articleTypeDetails}
-	    publishingTime={article.publishingTime}
-	    updateTime={article.updateTime}
-	    authors={article.authors}
-	    premium={article.premium}
-	    isPreview={true}
-	  />
-	);
-	sendArticleResponse(
-	  res,
-	  _.set(article, "isPreview", true),
-	  previewArticleJSX
-	);
-      }
+app.get("/*", async (req, res) => {
+  const httpGet = (url) => {
+    return new Promise((resolve, reject) => {
+      https.get(url, (res) => {
+	res.setEncoding("utf8");
+	let body = "";
+	res.on("data", (chunk) => (body += chunk));
+	res.on("end", () => resolve(JSON.parse(body)));
+      });
     });
+  };
+
+  const articleResponse = await httpGet(
+    "https://lettera.api.ksfmedia.fi/v3/article/d8f9668d-9f61-4486-9aca-cd845a5e1f28"
+  );
+  const mostReadResponse = await httpGet(
+    "https://lettera.api.ksfmedia.fi/v3/mostread?paper=hbl"
+  );
+  console.log(articleResponse.http_code);
+
+  const isPreviewArticle =
+    articleResponse.http_code === 403 &&
+    _.has(articleResponse, "not_entitled.articlePreview");
+
+  const article = isPreviewArticle
+    ? articleResponse.not_entitled.articlePreview
+    : articleResponse;
+
+  const mostReadArticles =
+    typeof mostReadResponse === "array" ? mostReadResponse : [];
+
+  const articleJSX = (
+    <Article
+      title={article.title}
+      mainImage={article.mainImage}
+      body={article.body}
+      tags={article.tags || []}
+      relatedArticles={article.relatedArticles || []}
+      preamble={article.preamble}
+      articleType={article.articleType}
+      articleTypeDetails={article.articleTypeDetails}
+      publishingTime={article.publishingTime}
+      updateTime={article.updateTime}
+      authors={article.authors}
+      premium={article.premium}
+      isPreview={isPreviewArticle}
+      mostReadArticles={mostReadArticles}
+    />
+  );
+  sendArticleResponse(
+    res,
+    _.merge(article, {
+      mostReadArticles: mostReadArticles,
+      isPreview: isPreviewArticle,
+    }),
+    articleJSX
+  );
 });
 
 function sendArticleResponse(res, article, articleJSX) {
