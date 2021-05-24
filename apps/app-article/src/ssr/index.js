@@ -21,6 +21,8 @@ rehydrateMarks().then(() => {
       authors={window.article.authors}
       premium={window.article.premium}
       isPreview={window.article.isPreview}
+      mostReadArticles={window.article.mostReadArticles}
+      fontSize={window.article.fontSize}
     />,
     document.getElementById("root")
   );

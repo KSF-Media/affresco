@@ -6,29 +6,15 @@ import Additional from "./article-additional";
 import PremiumBox from "./premium";
 import ArticleDetails from "./article-details";
 import Content from "./article-content";
-import RelatedArticles from "./related-articles";
+import MostReadArticles from "./most-read-articles";
 import Footer from "./footer";
-import ManuallyRelatedArticles from "./manually-related-articles";
+import RelatedArticles from "./related-articles";
 var _ = require("lodash");
 
 class Article extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      title: props.title,
-      relatedArticles: props.relatedArticles,
-      tags: props.tags,
-      isPreview: props.isPreview,
-      mainImage: props.mainImage,
-      body: props.body,
-      preamble: props.preamble,
-      articleType: props.articleType,
-      articleTypeDetails: props.articleTypeDetails,
-      publishingTime: props.publishingTime,
-      updateTime: props.updateTime,
-      auhtors: props.authors,
-      premium: props.premium,
-    };
+    this.state = {};
   }
   render() {
     return (
@@ -45,12 +31,12 @@ class Article extends Component {
 
 	<div
 	  className={`container-fluid article ${
-	    this.state.mode === "dark" ? "darkMode" : ""
+	    this.props.mode === "dark" ? "darkMode" : ""
 	  }`}
 	>
 	  <div>
-	    <Tag tags={this.state.tags} />
-	    {this.state.articleType === "Advertorial" ? (
+	    <Tag tags={this.props.tags} />
+	    {this.props.articleType === "Advertorial" ? (
 	      <div>
 		<div className={"row"}>
 		  <div class="advertorial-top-box">
@@ -61,52 +47,53 @@ class Article extends Component {
 	    ) : (
 	      ""
 	    )}
-	    <Title title={this.state.title} />
+	    <Title title={this.props.title} />
 	    <Header
 	      showHighResolutionImg={this.showHighResolutionImage}
-	      mainImage={this.state.mainImage}
-	      caption={_.get(this.state.mainImage, "caption")}
+	      mainImage={this.props.mainImage}
+	      caption={_.get(this.props.mainImage, "caption")}
 	      appendBylineLabel={this.state.appendBylineLabel}
-	      byline={_.get(this.state.mainImage, "byline")}
+	      byline={_.get(this.props.mainImage, "byline")}
 	    />
 	    <Additional
-	      preamble={this.state.preamble}
+	      preamble={this.props.preamble}
 	      increaseFontSize={this.increaseFontSize}
+	      fontSize={this.props.fontSize}
 	    />
 	    <ArticleDetails
-	      category={this.state.articleType}
-	      premium={this.state.premium}
-	      authors={this.state.authors}
-	      publishingTime={this.state.publishingTime}
-	      updateTime={this.state.updateTime}
-	      articleTypeDetails={this.state.articleTypeDetails}
+	      category={this.props.articleType}
+	      premium={this.props.premium}
+	      authors={this.props.authors}
+	      publishingTime={this.props.publishingTime}
+	      updateTime={this.props.updateTime}
+	      articleTypeDetails={this.props.articleTypeDetails}
 	    />
 	    <Content
-	      body={this.state.body}
+	      body={this.props.body}
+	      paper={this.props.paper}
 	      showHighResolutionImage={this.showHighResolutionImage}
+	      fontSize={this.props.fontSize}
 	    />
 	    <div className={"row"}>
 	      <div className={"col-sm-12"}>
-		{this.state.showBuyOption ? (
-		  <PremiumBox showLogin={this.showLogin} />
-		) : (
-		  ""
-		)}
+		{this.props.isPreview ? <PremiumBox /> : ""}
 	      </div>
 	    </div>{" "}
-	    {this.state.relatedArticles.length > 0 ? (
-	      <ManuallyRelatedArticles
-		manuallyRelatedArticles={this.state.relatedArticles}
+	    {this.props.relatedArticles.length > 0 ? (
+	      <RelatedArticles relatedArticles={this.props.relatedArticles} />
+	    ) : (
+	      ""
+	    )}
+	    {this.props.mostReadArticles.length > 0 ? (
+	      <MostReadArticles
+		mostReadArticles={this.props.mostReadArticles}
 	      />
 	    ) : (
 	      ""
 	    )}
-	    {/*
-	      <RelatedArticles relatedArticles={this.state.mostReadArticles} />
-	     */}
 	  </div>
 	</div>
-	{!this.state.isLoading && <Footer brandValueName={this.state.brand} />}
+	<Footer brandValueName={this.props.paper} />
       </div>
     );
   }
@@ -126,10 +113,17 @@ const ErrorPage = (props) => {
 };
 
 const Title = (props, state) => {
+  const fontSizeStyle = () =>
+    props.fontSize
+      ? { fontSize: props.fontSize + 1 + "rem", lineHeight: "100%" }
+      : {};
   return (
     <div className={"row"}>
       <div className={"col-12 mt-2 mb-3"} style={{ wordWrap: "break-word" }}>
-	<h2 className={`title ${state.mode === "dark" ? "darkMode" : ""}`}>
+	<h2
+	  className={`title ${state.mode === "dark" ? "darkMode" : ""}`}
+	  style={fontSizeStyle()}
+	>
 	  {props.title}
 	</h2>
       </div>
@@ -146,7 +140,7 @@ const Tag = (props) => {
 
   return (
     <div className={"row"}>
-      <div className={`col-12 mt-2 mb-1 articleTag brandColor-${props.brand}`}>
+      <div className={`col-12 mt-2 mb-1 articleTag brandColor-${props.paper}`}>
 	{tag}
       </div>
     </div>

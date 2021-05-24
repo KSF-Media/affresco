@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import quoteIcon from "../assets/images/quotes-png-11.png";
+const _ = require("lodash");
 
 class Content extends Component {
   constructor(props) {
@@ -72,10 +73,17 @@ class Content extends Component {
       <h4
 	className={`headline ${isDarkModeOn(this.props) ? "darkMode" : ""}`}
 	key={key}
+	style={this.headlineFontSize()}
       >
 	{block.headline}
       </h4>
     );
+  }
+
+  headlineFontSize() {
+    return this.props.fontSize
+      ? { fontSize: this.props.fontSize + 0.4 + "rem" }
+      : {};
   }
 
   renderImage(block, key) {
@@ -239,7 +247,7 @@ class Content extends Component {
 	<div
 	  className={`col-sm-12 content text-left mt-2 ${this.state.paper}`}
 	  id={"content"}
-	  style={{ wordWrap: "break-word" }}
+	  style={_.merge({ wordWrap: "break-word" }, this.contentStyles())}
 	>
 	  <div id="MOBPARAD"></div>
 	  {this.props.body != null
@@ -250,6 +258,10 @@ class Content extends Component {
 	</div>
       </div>
     );
+  }
+
+  contentStyles() {
+    return this.props.fontSize ? { fontSize: this.props.fontSize + "em" } : {};
   }
 }
 
