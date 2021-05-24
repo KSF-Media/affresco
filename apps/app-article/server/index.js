@@ -13,9 +13,9 @@ const UUID = require("uuid");
 
 app.use("/dist", express.static(`${__dirname}/../client`));
 
-app.get("/*", async (req, res) => {
+app.get("/article/:id", async (req, res) => {
   // NOTE: The article id is in query params because some components rely on that
-  const articleId = req.query.uuid;
+  const articleId = req.params.id;
   if (articleId && UUID.validate(articleId)) {
     const authHeaders = () => {
       if (
@@ -29,14 +29,20 @@ app.get("/*", async (req, res) => {
 	};
       }
     };
-
-    renderArticle(articleId, res, authHeaders(), req.query);
+    const queryString = req._parsedUrl.search;
+    renderArticle(articleId, res, authHeaders(), req.query, queryString);
   } else {
     res.send("");
   }
 });
 
-async function renderArticle(articleId, res, authHeaders, queryParams) {
+async function renderArticle(
+  articleId,
+  res,
+  authHeaders,
+  queryParams,
+  queryString
+) {
   const httpGet = (url) => {
     const requestOptions = {
       method: "get",
@@ -89,6 +95,8 @@ async function renderArticle(articleId, res, authHeaders, queryParams) {
       isPreview={isPreviewArticle}
       mostReadArticles={mostReadArticles}
       fontSize={queryParams.fontSize}
+      darkModeEnabled={queryParams.mode === "dark"}
+      queryString={queryString}
     />
   );
   sendArticleResponse(
@@ -97,6 +105,8 @@ async function renderArticle(articleId, res, authHeaders, queryParams) {
       mostReadArticles: mostReadArticles,
       isPreview: isPreviewArticle,
       fontSize: queryParams.fontSize,
+      mode: queryParams.mode,
+      queryString: queryString,
     }),
     articleJSX
   );

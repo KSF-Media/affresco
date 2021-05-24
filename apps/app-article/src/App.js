@@ -229,7 +229,7 @@ class App extends Component {
 		  this.appendThirdPartyScript(article.externalScripts);
 		}
 		// this.positionAdsWithinArticle(); todo:: method needs to be fixed
-		this.resizeText(this.state.fontSize);
+
 		document.title = this.state.title;
 		this.pushLoadingArticleToGoogleTagManager(article);
 
@@ -275,7 +275,6 @@ class App extends Component {
 		data.not_entitled.articlePreview.articleTypeDetails,
 	    },
 	    () => {
-	      this.resizeText(this.state.fontSize);
 	      if (data.not_entitled.articlePreview.externalScripts != null) {
 		this.appendThirdPartyScript(
 		  data.not_entitled.articlePreview.externalScripts
@@ -330,7 +329,6 @@ class App extends Component {
 	  );
 	  this.cleanCache();
 	}
-	this.resizeText(this.state.fontSize);
       })
       .catch((error) => {
 	this.setState({ isLoading: false, errorFetching: true });
@@ -575,44 +573,6 @@ class App extends Component {
       document.getElementById("loginForm").scrollIntoView();
     });
   };
-
-  increaseFontSize = () => {
-    let increaseTextSize =
-      parseFloat(this.state.fontSize) +
-      parseFloat(this.state.fontSizeIncrementalValue);
-    this.setState({ fontSize: increaseTextSize }, () => {
-      Cookies.set("fontSize", this.state.fontSize, { expires: 365 });
-      if (this.state.fontSize > this.state.fontSizeThreshold) {
-	Cookies.set("fontSize", "1", { expires: 365 });
-	this.setState({ fontSize: 1 }, () => {
-	  this.resizeText(1);
-	});
-      }
-      this.resizeText(this.state.fontSize);
-    });
-  };
-
-  resizeText(newSize) {
-    // if (document.getElementsByClassName("title").length > 0) {
-    //   const articleTitle = document.getElementsByClassName("title")[0];
-    //   articleTitle.style.fontSize = newSize + 1 + "rem";
-    //   articleTitle.style.lineHeight = "100%";
-    // }
-    // if (document.getElementsByClassName('preamble').length > 0) {
-    //     const articleTitle = document.getElementsByClassName('preamble')[0];
-    //     articleTitle.style.fontSize = newSize + 0.05 + "rem";
-    //     articleTitle.style.lineHeight = "120%";
-    // }
-    // const nodes = document.querySelectorAll("#content");
-    // nodes.forEach((a) => {
-    //   a.style.fontSize = newSize + "em";
-    // });
-    // let articleHeadings = document.getElementsByClassName("headline");
-    // for (let i = 0; i < articleHeadings.length; i++) {
-    //   let heading = document.getElementsByClassName("headline")[i];
-    //   heading.style.fontSize = newSize + 0.4 + "rem";
-    // }
-  }
 
   showHighResolutionImage = (imgSrc, caption) => {
     this.setState({

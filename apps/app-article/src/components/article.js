@@ -31,7 +31,7 @@ class Article extends Component {
 
 	<div
 	  className={`container-fluid article ${
-	    this.props.mode === "dark" ? "darkMode" : ""
+	    this.props.darkModeEnabled ? "darkMode" : ""
 	  }`}
 	>
 	  <div>
@@ -59,6 +59,7 @@ class Article extends Component {
 	      preamble={this.props.preamble}
 	      increaseFontSize={this.increaseFontSize}
 	      fontSize={this.props.fontSize}
+	      darkModeEnabled={this.props.darkModeEnabled}
 	    />
 	    <ArticleDetails
 	      category={this.props.articleType}
@@ -73,6 +74,7 @@ class Article extends Component {
 	      paper={this.props.paper}
 	      showHighResolutionImage={this.showHighResolutionImage}
 	      fontSize={this.props.fontSize}
+	      darkModeEnabled={this.props.darkModeEnabled}
 	    />
 	    <div className={"row"}>
 	      <div className={"col-sm-12"}>
@@ -80,13 +82,19 @@ class Article extends Component {
 	      </div>
 	    </div>{" "}
 	    {this.props.relatedArticles.length > 0 ? (
-	      <RelatedArticles relatedArticles={this.props.relatedArticles} />
+	      <RelatedArticles
+		relatedArticles={this.props.relatedArticles}
+		queryString={this.props.queryString}
+		darkModeEnabled={this.props.darkModeEnabled}
+	      />
 	    ) : (
 	      ""
 	    )}
 	    {this.props.mostReadArticles.length > 0 ? (
 	      <MostReadArticles
 		mostReadArticles={this.props.mostReadArticles}
+		queryString={this.props.queryString}
+		darkModeEnabled={this.props.darkModeEnabled}
 	      />
 	    ) : (
 	      ""
@@ -121,7 +129,7 @@ const Title = (props, state) => {
     <div className={"row"}>
       <div className={"col-12 mt-2 mb-3"} style={{ wordWrap: "break-word" }}>
 	<h2
-	  className={`title ${state.mode === "dark" ? "darkMode" : ""}`}
+	  className={`title ${props.darkModeEnabled ? "darkMode" : ""}`}
 	  style={fontSizeStyle()}
 	>
 	  {props.title}

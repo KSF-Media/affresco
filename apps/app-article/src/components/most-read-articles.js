@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 import { isDarkModeOn } from "../helper";
-import Card from "./card";
 import MobileList from "./moble-article-list";
 import TabletList from "./tablet-article-list";
 
@@ -15,18 +14,30 @@ class MostReadArticles extends Component {
       <div className={"relatedArticles"}>
 	<div className={"row"}>
 	  <div className={"col-12"}>
-	    <h3 className={`latest ${isDarkModeOn() ? "darkMode" : ""}`}>
+	    <h3
+	      className={`latest ${
+		this.props.darkModeEnabled ? "darkMode" : ""
+	      }`}
+	    >
 	      Andra läser
 	    </h3>
 	  </div>
 	</div>
 	<div className={"mobileView"}>
-	  <MobileList articles={this.props.mostReadArticles} />
+	  <MobileList
+	    articles={this.props.mostReadArticles}
+	    darkModeEnabled={this.props.darkModeEnabled}
+	    queryString={this.props.queryString}
+	  />
 	</div>
 
 	<div className={"tabletView"}>
 	  <div className={"row articleItem"}>
-	    <TabletList articles={this.props.mostReadArticles} />
+	    <TabletList
+	      articles={this.props.mostReadArticles}
+	      darkModeEnabled={this.props.darkModeEnabled}
+	      queryString={this.props.queryString}
+	    />
 	  </div>
 	</div>
       </div>

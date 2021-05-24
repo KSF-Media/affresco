@@ -71,7 +71,7 @@ class Content extends Component {
   renderHeadline(block, key) {
     return (
       <h4
-	className={`headline ${isDarkModeOn(this.props) ? "darkMode" : ""}`}
+	className={`headline ${this.props.darkModeEnabled ? "darkMode" : ""}`}
 	key={key}
 	style={this.headlineFontSize()}
       >
@@ -126,7 +126,9 @@ class Content extends Component {
   renderGenericBox(block, key) {
     return (
       <div
-	className={`genericBox ${isDarkModeOn(this.props) ? "darkMode" : ""} ${
+	className={`genericBox ${
+	  this.props.darkModeEnabled ? "darkMode" : ""
+	} ${
 	  this.countBlockChatacters(block.box.content) > 400
 	    ? ""
 	    : "genericBoxAutoHeight"
@@ -137,7 +139,7 @@ class Content extends Component {
 	{block.box && block.box.headline ? (
 	  <div
 	    className={`genericBox-headline ${
-	      isDarkModeOn(this.props) ? "darkMode" : ""
+	      this.props.darkModeEnabled ? "darkMode" : ""
 	    }`}
 	  >
 	    {block.box.headline}
@@ -145,18 +147,18 @@ class Content extends Component {
 	) : (
 	  <div
 	    className={`genericBox-headline ${
-	      isDarkModeOn(this.props) ? "darkMode" : ""
+	      this.props.darkModeEnabled ? "darkMode" : ""
 	    }`}
 	  >
 	    {block.box.type === "fact" ? "FAKTA" : ""}
 	  </div>
 	)}
-	<h3 class={isDarkModeOn(this.props) ? "faktBoxdarkMode" : ""}>
+	<h3 class={this.props.darkModeEnabled ? "faktBoxdarkMode" : ""}>
 	  {block && block.box && block.box.title}
 	</h3>
 	<ul
 	  className={`factboxList ${
-	    isDarkModeOn(this.props) ? "darkMode" : ""
+	    this.props.darkModeEnabled ? "darkMode" : ""
 	  }`}
 	>
 	  {block.box &&
@@ -172,22 +174,23 @@ class Content extends Component {
 	  block.box.content &&
 	  this.countBlockChatacters(block.box.content) > 400 && (
 	    <div
-	      className={`expand ${isDarkModeOn(this.props) ? "darkMode" : ""}`}
+	      className={`expand ${
+		this.props.darkModeEnabled ? "darkMode" : ""
+	      }`}
 	      id={"expandFactBox-" + key}
 	      onClick={() => {
-		console.log("WÄT");
 		this.expandFactBox(key);
 	      }}
 	    >
 	      <div
 		className={`expandOpacity ${
-		  isDarkModeOn(this.props) ? "darkMode" : ""
+		  this.props.darkModeEnabled ? "darkMode" : ""
 		}`}
 		id={"expandOpacity"}
 	      ></div>
 	      <div
 		className={`expandOpacity2 ${
-		  isDarkModeOn(this.props) ? "darkMode" : ""
+		  this.props.darkModeEnabled ? "darkMode" : ""
 		}`}
 		id={"expandOpacity2"}
 	      ></div>
@@ -209,7 +212,7 @@ class Content extends Component {
   renderHtml(block, key) {
     return (
       <div
-	className={`html ${isDarkModeOn(this.props) ? "darkMode" : ""}`}
+	className={`html ${this.props.darkModeEnabled ? "darkMode" : ""}`}
 	key={key}
 	dangerouslySetInnerHTML={{ __html: block.html }}
       />
@@ -266,7 +269,3 @@ class Content extends Component {
 }
 
 export default Content;
-
-function isDarkModeOn(props) {
-  return props.mode === "dark";
-}

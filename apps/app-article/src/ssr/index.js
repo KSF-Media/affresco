@@ -23,6 +23,8 @@ rehydrateMarks().then(() => {
       isPreview={window.article.isPreview}
       mostReadArticles={window.article.mostReadArticles}
       fontSize={window.article.fontSize}
+      darkModeEnabled={window.article.darkModeEnabled}
+      queryString={window.article.queryString}
     />,
     document.getElementById("root")
   );

@@ -1,13 +1,6 @@
 import React, { Component } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import {
-  getBrandValueParam,
-  getIsLoggedFromUrl,
-  getMode,
-  getTokenFromUrl,
-  getUserUuidFromUrl,
-  isDarkModeOn,
-} from "../helper";
+const _ = require("lodash");
 
 const isArray = (value) => {
   return value && typeof value === "object" && value.constructor === Array;
@@ -50,17 +43,6 @@ const formatTime = (date) => {
 };
 
 const MobileList = (props) => {
-  const urlParams =
-    "&paper=" +
-    getBrandValueParam() +
-    "&mode=" +
-    getMode() +
-    "&token=" +
-    getTokenFromUrl() +
-    "&userId=" +
-    getUserUuidFromUrl() +
-    "&isLogged=" +
-    getIsLoggedFromUrl();
   let relatedArticles = [];
   if (isArray(props.articles)) {
     relatedArticles = props.articles.map((item, index) => {
@@ -68,54 +50,56 @@ const MobileList = (props) => {
 	<React.Fragment key={index}>
 	  <div className={"articleItem mobileListItems"}>
 	    <div className={"row"}>
-	      <div
-		className={"col-8"}
-		onClick={() => {
-		  window.location.href = "?uuid=" + item.uuid + urlParams;
-		}}
-	      >
-		<div>
-		  <a
-		    className={`relatedArticlesItem ${
-		      isDarkModeOn() ? "darkMode" : ""
-		    }`}
-		    href={"?uuid=" + item.uuid + urlParams}
-		  >
-		    {item.title.length > 80
-		      ? item.title.substring(0, 80) + "..."
-		      : item.title}
-		  </a>
-		</div>
-		<div className={"articleItemDetails"}>
-		  <div
-		    className={`category brandColor-${getBrandValueParam()}`}
-		  >
-		    {getTag(item.tags)}
+	      <a href={"/article/" + item.uuid + props.queryString}>
+		<div className={"col-8"}>
+		  <div>
+		    <span
+		      className={
+			"relatedArticlesItem" + props.darkModeEnabled
+			  ? "darkMode"
+			  : ""
+		      }
+		    >
+		      {item.title.length > 80
+			? item.title.substring(0, 80) + "..."
+			: item.title}
+		    </span>
 		  </div>
-		  <div className={"date"}>
-		    {formatTime(item.publishingTime)}
+		  <div className={"articleItemDetails"}>
+		    <div className={`category brandColor-${props.brand}`}>
+		      {getTag(item.tags)}
+		    </div>
+		    <div className={"date"}>
+		      {formatTime(item.publishingTime)}
+		    </div>
 		  </div>
 		</div>
-	      </div>
-	      <div
-		className={"col-4 articleImage"}
-		onClick={() => {
-		  window.location.href = "?uuid=" + item.uuid + urlParams;
-		}}
-	      >
-		{item.listImage === null ? (
-		  <img className="card-img-top" src={hblDefaultImage} alt="" />
-		) : (
-		  <img
-		    className="card-img-top"
-		    src={
-		      item.listImage.url +
-		      "&function=hardcrop&width=798&height=649&q=95"
-		    }
-		    alt=""
-		  />
-		)}
-	      </div>
+	      </a>
+	      <a href={"/article/" + item.uuid + ""}>
+		<div
+		  className={"col-4 articleImage"}
+		  onClick={() => {
+		    window.location.href = "?uuid=" + item.uuid + urlParams;
+		  }}
+		>
+		  {item.listImage === null ? (
+		    <img
+		      className="card-img-top"
+		      src={hblDefaultImage}
+		      alt=""
+		    />
+		  ) : (
+		    <img
+		      className="card-img-top"
+		      src={
+			item.listImage.url +
+			"&function=hardcrop&width=798&height=649&q=95"
+		      }
+		      alt=""
+		    />
+		  )}
+		</div>
+	      </a>
 	    </div>
 	  </div>
 	</React.Fragment>

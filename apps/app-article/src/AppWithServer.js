@@ -32,182 +32,17 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      uuid: null,
-      title: null,
-      mainImage: {
-	url: hblDefaultImage,
-	caption: null,
-	byline: null,
-      },
-      authors: null,
-      tags: [],
-      premium: null,
-      preamble: null,
-      body: [],
-      publishingTime: null,
-      updateTime: null,
-      category: null,
-      articleTypeDetails: null,
-      relatedArticles: [],
-      shareUrl: null,
-      listTitle: null,
       infogram: {
 	html: null,
       },
-      isLoading: false,
-      cachedArticles: [],
-      appearLogin: false,
       showBuyOption: false,
-      user: null,
       fontSize: 1.06, // in rem
       fontSizeThreshold: 3,
       fontSizeIncrementalValue: 0.5,
       isImageModalOpen: false,
       modalImage: null,
       modalCaption: "",
-      latestArticles: [],
-      mostReadArticles: [],
-      errorFetching: false,
-      errorFetchingLatestArticles: false,
-      forceLoginView: false,
     };
-  }
-  componentDidMount() {
-    if (localStorage.getItem("currentUser") !== null) {
-      this.setState({ user: JSON.parse(localStorage.getItem("currentUser")) });
-    }
-    if (Cookies.get("fontSize")) {
-      this.setState({ fontSize: parseFloat(Cookies.get("fontSize")) });
-    }
-    if (getUrlParam().has("logout")) {
-      logout(this.onLogout, (err) => this.onLogoutFailed(err));
-    }
-    if (getUrlParam().has("login")) {
-      this.setState({ forceLoginView: true });
-    } else {
-      this.getArticle();
-      this.getMostReadArticles();
-    }
-  }
-  componentDidUpdate() {}
-  componentWillUnmount() {}
-
-  getArticle() {
-    let urlParams = getUrlParam();
-    if (JSON.parse(localStorage.getItem("cachedArticles")) != null) {
-      this.setState({
-	cachedArticles: JSON.parse(localStorage.getItem("cachedArticles")),
-      });
-    }
-    if (urlParams.has("uuid")) {
-      if (this.checkCache(urlParams.get("uuid"))) {
-	this.fetchArticleFromCache(urlParams.get("uuid"));
-      } else {
-	this.fetchArticleFromApi(urlParams.get("uuid"));
-      }
-    } else {
-      console.log("no uuid found!");
-      // TODO:: handle this part
-    }
-  }
-
-  // getLatestArticles() {
-  //     articleApi.getLatestArticles()
-  //         .then(data => {
-  //             this.setState({ latestArticles: data })
-  //         })
-  //         .catch(error => {
-  //             this.setState({ isLoading: false });
-  //             this.setState({ isLoading: false, errorFetchingLatestArticles: true });
-  //         });
-  // }
-
-  // getMostReadArticles() {
-  //     articleApi.getMostReadArticles()
-  //         .then(data => {
-  //             this.setState({ mostReadArticles: data })
-  //         })
-  //         .catch(error => {
-  //             this.setState({ isLoading: false });
-  //             this.setState({ isLoading: false, errorFetchingLatestArticles: true });
-  //         });
-  // }
-
-  checkCache(uuid) {
-    if (!isUserLoggedIn()) {
-      try {
-	let cachedArticles = localStorage.getItem("cachedArticles");
-	if (cachedArticles != null) {
-	  let parsedArticles = JSON.parse(cachedArticles);
-	  return parsedArticles.find((article) => {
-	    return article.uuid === uuid;
-	  });
-	}
-      } catch (e) {
-	console.log(e);
-      }
-    }
-    return false;
-  }
-
-  cleanCache() {
-    if (JSON.parse(localStorage.getItem("cachedArticles")) != null) {
-      let newCache = [];
-      JSON.parse(localStorage.getItem("cachedArticles")).map((article) => {
-	let now = new Date();
-	let articleDate = new Date(article.timestamp);
-	let timeDiff = Math.abs(articleDate.getTime() - now.getTime());
-	let timeDiffInHour = (timeDiff / (1000 * 60 * 60)) % 24;
-	if (timeDiffInHour <= 0.1) {
-	  // clean cache if article is older than x hours
-	  newCache.push(article);
-	}
-      });
-      localStorage.setItem("cachedArticles", JSON.stringify(newCache));
-    }
-  }
-
-  fetchArticleFromCache(uuid) {
-    if (JSON.parse(localStorage.getItem("cachedArticles")) != null) {
-      JSON.parse(localStorage.getItem("cachedArticles")).map(
-	(article, index) => {
-	  if (article.uuid === uuid) {
-	    this.setState(
-	      {
-		mainImage: article.mainImage,
-		uuid: article.uuid,
-		title: article.title,
-		authors: article.authors,
-		tags: article.tags,
-		premium: article.premium,
-		category: article.articleType,
-		preamble: article.preamble,
-		body: article.body,
-		relatedArticles: article.relatedArticles,
-		publishingTime: article.publishingTime,
-		updateTime: article.updateTime,
-		shareUrl: article.shareUrl,
-		listTitle: article.listTitle,
-		articleTypeDetails: article.articleTypeDetails,
-	      },
-	      () => {
-		if (article.externalScripts != null) {
-		  this.appendThirdPartyScript(article.externalScripts);
-		}
-		// this.positionAdsWithinArticle(); todo:: method needs to be fixed
-		this.resizeText(this.state.fontSize);
-		document.title = this.state.title;
-		this.pushLoadingArticleToGoogleTagManager(article);
-
-		this.cleanCache();
-	      }
-	    );
-	  } else {
-	    console.log("article not found from cache");
-	  }
-	}
-      );
-    }
   }
 
   fetchArticleFromApi(uuid) {
@@ -282,19 +117,6 @@ class App extends Component {
 	    showBuyOption: false,
 	    appearLogin: false,
 	  });
-	  data.timestamp = new Date().getTime();
-	  this.setState(
-	    { cachedArticles: this.state.cachedArticles.concat(data) },
-	    () => {
-	      if (!this.checkCache(data.uuid)) {
-		localStorage.setItem(
-		  "cachedArticles",
-		  JSON.stringify(this.state.cachedArticles)
-		);
-	      }
-	    }
-	  );
-	  this.cleanCache();
 	}
 	this.resizeText(this.state.fontSize);
       })
@@ -485,62 +307,12 @@ class App extends Component {
     }
   }
 
-  onRegisterOpen() {
-    // alert("register opn .");
-  }
-
-  onUserFetchSuccess(user) {
-    Cookies.set("LoginStatus", true, { expires: 365 });
-    Cookies.set("token", localStorage.getItem("token"), { expires: 365 });
-    Cookies.set("uuid", localStorage.getItem("uuid"), { expires: 365 });
-    //To get User data from Android side
-    Cookies.set(
-      "currentUser",
-      JSON.stringify(
-	{
-	  firstName: user.firstName,
-	  lastName: user.lastName,
-	  email: user.email,
-	  token: localStorage.getItem("token"),
-	  uuid: localStorage.getItem("uuid"),
-	},
-	{ expires: 365 }
-      )
-    );
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    this.setState({ user: user, forceLoginView: false });
-    const articleUuid = getUrlParam().get("uuid");
-    if (articleUuid) {
-      this.fetchArticleFromApi(articleUuid);
-    }
-    // Call Android bridge
-    try {
-      Android.isLoggedIn();
-    } catch (e) {
-      console.error("Android not defined");
-    }
-
-    // Call ios bridge
-    try {
-      window.webkit.messageHandlers.isLoggedIn.postMessage("");
-    } catch (e) {
-      console.error("Ios not defined");
-    }
-  }
-
-  onUserFetchFail(error) {
-    Sentry.captureMessage(
-      "Error while fetching user! Error: " + error,
-      "error"
-    );
-  }
-
-  showLogin = (e) => {
-    e.preventDefault();
-    this.setState({ appearLogin: true, showBuyOption: false }, () => {
-      document.getElementById("loginForm").scrollIntoView();
-    });
-  };
+  // showLogin = (e) => {
+  //   e.preventDefault();
+  //   this.setState({ appearLogin: true, showBuyOption: false }, () => {
+  //     document.getElementById("loginForm").scrollIntoView();
+  //   });
+  // };
 
   increaseFontSize = () => {
     let increaseTextSize =
@@ -612,128 +384,7 @@ class App extends Component {
       return <ErrorPage message={"Artikeln kunde inte hämtas!"} />;
     }
 
-    if (this.state.forceLoginView) {
-      return (
-	<div className={"col-sm-12"}>
-	  <Login
-	    onRegister={() => this.onRegisterOpen()}
-	    onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
-	    onUserFetchFail={(error) => this.onUserFetchFail(error)}
-	    disableSocialLogins={["Facebook", "Google"]}
-	  />
-	</div>
-      );
-    }
-
-    return (
-      <div className="App">
-	{this.state.isLoading ? <Loading /> : ""}
-
-	{isImageModalOpen && (
-	  <Lightbox
-	    mainSrc={this.state.modalImage + "&width=1200"}
-	    onCloseRequest={() => this.setState({ isImageModalOpen: false })}
-	    // imageTitle={this.state.title}
-	    imageCaption={this.state.modalCaption}
-	    enableZoom={true}
-	  />
-	)}
-
-	<div
-	  className={`container-fluid article ${
-	    isDarkModeOn() ? "darkMode" : ""
-	  } `}
-	>
-	  <React.Fragment>
-	    <Tag tags={this.state.tags} />
-	    {this.state.category === "Advertorial" ? (
-	      <div>
-		<div className={"row"}>
-		  <div class="advertorial-top-box">
-		    <div class="advertorial-top-box-left">ANNONS</div>
-		  </div>
-		</div>
-	      </div>
-	    ) : (
-	      ""
-	    )}
-	    {!this.state.isLoading && <Title title={this.state.title} />}
-	    {!this.state.isLoading && (
-	      <Header
-		showHighResolutionImg={this.showHighResolutionImage}
-		mainImage={this.state.mainImage}
-		caption={caption}
-		appendBylineLabel={appendBylineLabel}
-		byline={byline}
-	      />
-	    )}
-	    {!this.state.isLoading && (
-	      <Additional
-		preamble={this.state.preamble}
-		increaseFontSize={this.increaseFontSize}
-	      />
-	    )}
-	    {!this.state.isLoading && (
-	      <ArticleDetails
-		category={this.state.category}
-		premium={this.state.premium}
-		authors={this.state.authors}
-		publishingTime={this.state.publishingTime}
-		updateTime={this.state.updateTime}
-		articleTypeDetails={this.state.articleTypeDetails}
-	      />
-	    )}
-	    <Content
-	      body={this.state.body}
-	      showHighResolutionImage={this.showHighResolutionImage}
-	    />
-	    <div className={"row"}>
-	      <div className={"col-sm-12"}>
-		{this.state.showBuyOption ? (
-		  <PremiumBox showLogin={this.showLogin} />
-		) : (
-		  ""
-		)}
-
-		{this.state.appearLogin ? (
-		  <div id={"loginForm"}>
-		    <strong>Logga in: </strong>
-		  </div>
-		) : (
-		  ""
-		)}
-
-		{this.state.appearLogin ? (
-		  <Login
-		    onRegister={() => this.onRegisterOpen()}
-		    onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
-		    onUserFetchFail={(error) => this.onUserFetchFail(error)}
-		    disableSocialLogins={["Facebook", "Google"]}
-		  />
-		) : (
-		  ""
-		)}
-	      </div>
-	    </div>
-	    {!this.state.isLoading && this.state.relatedArticles.length > 0 ? (
-	      <ManuallyRelatedArticles
-		manuallyRelatedArticles={this.state.relatedArticles}
-	      />
-	    ) : (
-	      ""
-	    )}
-	    <div id="MOBNER"></div>
-	    {!this.state.isLoading && (
-	      <RelatedArticles relatedArticles={this.state.mostReadArticles} />
-	    )}
-	  </React.Fragment>
-	</div>
-	{/*<div id="MOBMITT"></div>*/}
-	{!this.state.isLoading && (
-	  <Footer brandValueName={getBrandValueParam()} />
-	)}
-      </div>
-    );
+    return <div className="App"></div>;
   }
 }
 
@@ -745,36 +396,6 @@ const ErrorPage = (props) => {
 	style={{ wordWrap: "break-word" }}
       >
 	<h2 className={"title"}>{props.message}</h2>
-      </div>
-    </div>
-  );
-};
-
-const Title = (props) => {
-  return (
-    <div className={"row"}>
-      <div className={"col-12 mt-2 mb-3"} style={{ wordWrap: "break-word" }}>
-	<h2 className={`title ${isDarkModeOn() ? "darkMode" : ""}`}>
-	  {props.title}
-	</h2>
-      </div>
-    </div>
-  );
-};
-
-const Tag = (props) => {
-  let tags = props.tags;
-  let tag = "";
-  if (tags.length > 0) {
-    tag = tags[0];
-  }
-
-  return (
-    <div className={"row"}>
-      <div
-	className={`col-12 mt-2 mb-1 articleTag brandColor-${getBrandValueParam()}`}
-      >
-	{tag}
       </div>
     </div>
   );
