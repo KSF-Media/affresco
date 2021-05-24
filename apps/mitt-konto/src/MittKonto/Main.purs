@@ -45,6 +45,7 @@ type ViewComponents =
   , paymentDetailView :: JSX
   , creditCardUpdateView :: User.User -> JSX
   , passwordResetView :: JSX
+  , needRootRedirect :: Boolean
   }
 
 app :: Component {}
@@ -77,6 +78,7 @@ app = do
     state /\ setState <- useState initialState
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
+    needRootRedirect /\ setNeedRootRedirect <- useState' false
 
     useEffectOnce do
       let attemptMagicLogin =
@@ -100,7 +102,8 @@ app = do
                       , message: "Något gick fel."
                       }
           Right user -> do
-            setState $ Types.setActiveUser $ Just user
+            setState $ Types.setActiveUser (Just user) >>> Types.setAlert Nothing
+            setNeedRootRedirect true
             setPersonating true
 
         searchSelect uuid =
@@ -109,6 +112,7 @@ app = do
               $ User.getUser Nothing uuid
         searchView :: JSX
         searchView = search { setActiveUser: searchSelect
+                            , resetRedirect: setNeedRootRedirect false
                             , now
                             }
         usePayments = Helpers.useLoadSpinner setState
@@ -152,6 +156,7 @@ app = do
           , paymentDetailView
           , creditCardUpdateView
           , passwordResetView
+          , needRootRedirect
           }
 
     pure $ render self logger components initialHash isPersonating
@@ -167,7 +172,7 @@ setUser self logger user = do
 
 render :: Types.Self -> Sentry.Logger -> ViewComponents -> String -> Boolean -> JSX
 render self@{ state } logger components initialHash isPersonating =
-  Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
+  Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "") $
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
@@ -178,7 +183,18 @@ render self@{ state } logger components initialHash isPersonating =
             ]
         ]
     , Views.footerView
-    ]
+    ] <>
+    (if components.needRootRedirect
+       then  [ Router.redirect
+                 { to: { pathname: "/"
+                       , state: {}
+                       }
+                 , from: "/*"
+                 , push: true
+                 }
+             ]
+       else mempty
+    )
  where
    routes =
      [ defaultRouteElement "/fakturor/:invno" $ const components.paymentDetailView
