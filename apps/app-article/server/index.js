@@ -7,16 +7,44 @@ var middleware = require("./middleware");
 // var App = require("../src/App.jsx");
 import generateHtml from "./generateHtml";
 import Article from "../src/components/article";
-const axios = require("axios");
 const _ = require("lodash");
 const https = require("https");
+const UUID = require("uuid");
 
 app.use("/dist", express.static(`${__dirname}/../client`));
-// 47b04f5b-b5b2-43c7-acb5-b95b24cf6784"
+
 app.get("/*", async (req, res) => {
+  // NOTE: The article id is in query params because some components rely on that
+  const articleId = req.query.uuid;
+  if (articleId && UUID.validate(articleId)) {
+    const authHeaders = () => {
+      if (
+	req.headers.authuser &&
+	UUID.validate(req.headers.authuser) &&
+	req.headers.authorization
+      ) {
+	return {
+	  authuser: req.headers.authuser,
+	  authorization: req.headers.authorization,
+	};
+      }
+    };
+
+    renderArticle(articleId, res, authHeaders(), req.query);
+  } else {
+    res.send("");
+  }
+});
+
+async function renderArticle(articleId, res, authHeaders, queryParams) {
   const httpGet = (url) => {
+    const requestOptions = {
+      method: "get",
+      headers: authHeaders,
+    };
+    console.log(requestOptions);
     return new Promise((resolve, reject) => {
-      https.get(url, (res) => {
+      https.get(url, requestOptions, (res) => {
 	res.setEncoding("utf8");
 	let body = "";
 	res.on("data", (chunk) => (body += chunk));
@@ -26,12 +54,13 @@ app.get("/*", async (req, res) => {
   };
 
   const articleResponse = await httpGet(
-    "https://lettera.api.ksfmedia.fi/v3/article/d8f9668d-9f61-4486-9aca-cd845a5e1f28"
+    "https://lettera.api.ksfmedia.fi/v3/article/" + articleId
   );
+
+  const paper = queryParams.paper || "hbl";
   const mostReadResponse = await httpGet(
-    "https://lettera.api.ksfmedia.fi/v3/mostread?paper=hbl"
+    "https://lettera.api.ksfmedia.fi/v3/mostread?paper=" + paper
   );
-  console.log(articleResponse.http_code);
 
   const isPreviewArticle =
     articleResponse.http_code === 403 &&
@@ -41,8 +70,7 @@ app.get("/*", async (req, res) => {
     ? articleResponse.not_entitled.articlePreview
     : articleResponse;
 
-  const mostReadArticles =
-    typeof mostReadResponse === "array" ? mostReadResponse : [];
+  const mostReadArticles = _.isArray(mostReadResponse) ? mostReadResponse : [];
 
   const articleJSX = (
     <Article
@@ -60,6 +88,7 @@ app.get("/*", async (req, res) => {
       premium={article.premium}
       isPreview={isPreviewArticle}
       mostReadArticles={mostReadArticles}
+      fontSize={queryParams.fontSize}
     />
   );
   sendArticleResponse(
@@ -67,21 +96,17 @@ app.get("/*", async (req, res) => {
     _.merge(article, {
       mostReadArticles: mostReadArticles,
       isPreview: isPreviewArticle,
+      fontSize: queryParams.fontSize,
     }),
     articleJSX
   );
-});
+}
 
 function sendArticleResponse(res, article, articleJSX) {
   const markup = ReactDOM.renderToString(articleJSX);
   const html = generateHtml(markup, article);
   res.send(html);
 }
-
-// respond with "hello world" when a GET request is made to the homepage
-// app.get("/article/:articleId", function (req, res) {
-//   res.send(ReactDOMServer.renderToString(App.App()));
-// });
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
