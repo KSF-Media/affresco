@@ -35,7 +35,7 @@ class Article extends Component {
 	  }`}
 	>
 	  <div>
-	    <Tag tags={this.props.tags} />
+	    <Tag tags={this.props.tags} paper={this.props.paper} />
 	    {this.props.articleType === "Advertorial" ? (
 	      <div>
 		<div className={"row"}>
@@ -90,6 +90,7 @@ class Article extends Component {
 		relatedArticles={this.props.relatedArticles}
 		queryString={this.props.queryString}
 		darkModeEnabled={this.props.darkModeEnabled}
+		paper={this.props.paper}
 	      />
 	    ) : (
 	      ""
@@ -99,6 +100,7 @@ class Article extends Component {
 		mostReadArticles={this.props.mostReadArticles}
 		queryString={this.props.queryString}
 		darkModeEnabled={this.props.darkModeEnabled}
+		paper={this.props.paper}
 	      />
 	    ) : (
 	      ""

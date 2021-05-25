@@ -50,8 +50,11 @@ const MobileList = (props) => {
 	<React.Fragment key={index}>
 	  <div className={"articleItem mobileListItems"}>
 	    <div className={"row"}>
-	      <a href={"/article/" + item.uuid + props.queryString}>
-		<div className={"col-8"}>
+	      <a
+		href={"/article/" + item.uuid + props.queryString}
+		className={"col-8"}
+	      >
+		<div className={""}>
 		  <div>
 		    <span
 		      className={
@@ -66,7 +69,7 @@ const MobileList = (props) => {
 		    </span>
 		  </div>
 		  <div className={"articleItemDetails"}>
-		    <div className={`category brandColor-${props.brand}`}>
+		    <div className={`category brandColor-${props.paper}`}>
 		      {getTag(item.tags)}
 		    </div>
 		    <div className={"date"}>
@@ -75,13 +78,11 @@ const MobileList = (props) => {
 		  </div>
 		</div>
 	      </a>
-	      <a href={"/article/" + item.uuid + ""}>
-		<div
-		  className={"col-4 articleImage"}
-		  onClick={() => {
-		    window.location.href = "?uuid=" + item.uuid + urlParams;
-		  }}
-		>
+	      <a
+		href={"/article/" + item.uuid + props.queryString}
+		className={"col-4"}
+	      >
+		<div className={"articleImage"}>
 		  {item.listImage === null ? (
 		    <img
 		      className="card-img-top"

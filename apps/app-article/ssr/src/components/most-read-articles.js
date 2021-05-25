@@ -28,6 +28,7 @@ class MostReadArticles extends Component {
 	    articles={this.props.mostReadArticles}
 	    darkModeEnabled={this.props.darkModeEnabled}
 	    queryString={this.props.queryString}
+	    paper={this.props.paper}
 	  />
 	</div>
 
@@ -37,6 +38,7 @@ class MostReadArticles extends Component {
 	      articles={this.props.mostReadArticles}
 	      darkModeEnabled={this.props.darkModeEnabled}
 	      queryString={this.props.queryString}
+	      paper={this.props.paper}
 	    />
 	  </div>
 	</div>

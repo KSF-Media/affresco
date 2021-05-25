@@ -97,6 +97,7 @@ async function renderArticle(
       fontSize={queryParams.fontSize}
       darkModeEnabled={queryParams.mode === "dark"}
       queryString={queryString}
+      paper={paper}
     />
   );
   sendArticleResponse(
@@ -105,8 +106,9 @@ async function renderArticle(
       mostReadArticles: mostReadArticles,
       isPreview: isPreviewArticle,
       fontSize: queryParams.fontSize,
-      mode: queryParams.mode,
+      darkModeEnabled: queryParams.mode === "dark",
       queryString: queryString,
+      paper: paper,
     }),
     articleJSX
   );

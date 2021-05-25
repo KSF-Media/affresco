@@ -15,6 +15,7 @@ const TabletList = (props) => {
 	    article={item}
 	    darkModeEnabled={props.darkModeEnabled}
 	    queryString={props.queryString}
+	    paper={props.paper}
 	  />
 	</div>
       );

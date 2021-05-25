@@ -25,6 +25,7 @@ rehydrateMarks().then(() => {
       fontSize={window.article.fontSize}
       darkModeEnabled={window.article.darkModeEnabled}
       queryString={window.article.queryString}
+      paper={window.article.paper}
     />,
     document.getElementById("root")
   );
