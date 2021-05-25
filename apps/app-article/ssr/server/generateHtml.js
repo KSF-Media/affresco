@@ -14,6 +14,7 @@ export default function generateHtml(markup, article) {
     `<script>window.article = ${JSON.stringify(article)}</script>`
   );
   $template("#root").html(markup);
+  $template("title").text(article.title);
   console.log($template.html());
   console.log(markup);
   return $template.html();
