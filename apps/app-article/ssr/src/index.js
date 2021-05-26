@@ -3,6 +3,7 @@ import { rehydrateMarks } from "react-imported-component";
 
 import ReactDOM from "react-dom";
 import "./index.css";
+import App from "./App";
 import Article from "./components/article";
 import * as serviceWorker from "./serviceWorker";
 rehydrateMarks().then(() => {

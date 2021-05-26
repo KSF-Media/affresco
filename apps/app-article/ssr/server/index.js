@@ -3,7 +3,7 @@ var React = require("react");
 var ReactDOM = require("react-dom/server");
 var app = express();
 const port = 3000;
-// var App = require("../src/App.jsx");
+import App from "../src/App";
 import generateHtml from "./generateHtml";
 import Article from "../src/components/article";
 const _ = require("lodash");
@@ -65,6 +65,12 @@ async function renderArticle(
     "https://lettera.api.ksfmedia.fi/v3/mostread?paper=" + paper
   );
 
+  const user = _.get(authHeaders, "authuser")
+    ? await httpGet(
+	"https://persona.api.ksfmedia.fi/v1/users/" + authHeaders.authuser
+      )
+    : null;
+
   const isPreviewArticle =
     articleResponse.http_code === 403 &&
     _.has(articleResponse, "not_entitled.articlePreview");
@@ -108,7 +114,7 @@ async function renderArticle(
   });
 
   const markup = ReactDOM.renderToString(articleJSX);
-  const html = generateHtml(markup, updatedArticle);
+  const html = generateHtml(markup, updatedArticle, user);
   res.send(html);
 }
 

@@ -9,13 +9,27 @@ import Content from "./article-content";
 import MostReadArticles from "./most-read-articles";
 import Footer from "./footer";
 import RelatedArticles from "./related-articles";
+import Lightbox from "react-image-lightbox";
+
 var _ = require("lodash");
 
 class Article extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      modalCaption: "",
+      isImageModalOpen: false,
+    };
   }
+
+  showHighResolutionImage = (imgSrc, caption) => {
+    this.setState({
+      isImageModalOpen: true,
+      modalImage: imgSrc,
+      modalCaption: caption,
+    });
+  };
+
   render() {
     return (
       <div className="article">
@@ -55,9 +69,15 @@ class Article extends Component {
 	    <Header
 	      showHighResolutionImg={this.showHighResolutionImage}
 	      mainImage={this.props.mainImage}
-	      caption={_.get(this.props.mainImage, "caption")}
-	      appendBylineLabel={this.state.appendBylineLabel}
-	      byline={_.get(this.props.mainImage, "byline")}
+	      caption={_.get(this.props.mainImage, "caption") || ""}
+	      appendBylineLabel={
+		_.has(this.props.mainImage, "byline") &&
+		_.get(this.props.mainImage, "byline") !== null &&
+		_.get(this.props.mainImage, "byline") !== ""
+		  ? "BILD:"
+		  : ""
+	      }
+	      byline={_.get(this.props.mainImage, "byline") || ""}
 	    />
 	    <Additional
 	      preamble={this.props.preamble}
