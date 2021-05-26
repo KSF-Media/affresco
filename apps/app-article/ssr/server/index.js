@@ -3,7 +3,6 @@ var React = require("react");
 var ReactDOM = require("react-dom/server");
 var app = express();
 const port = 3000;
-var middleware = require("./middleware");
 // var App = require("../src/App.jsx");
 import generateHtml from "./generateHtml";
 import Article from "../src/components/article";
@@ -47,7 +46,6 @@ async function renderArticle(
       method: "get",
       headers: authHeaders,
     };
-    console.log(requestOptions);
     return new Promise((resolve, reject) => {
       https.get(url, requestOptions, (res) => {
 	res.setEncoding("utf8");

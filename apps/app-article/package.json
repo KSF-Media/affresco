@@ -21,7 +21,9 @@
     "start": "parcel src/index.html -p 8000",
     "build-user": "yarn --cwd '../../packages/user' build-npm",
     "build": "yarn build-user && yarn clean && yarn install && parcel build src/index.html --no-cache --public-url ./ && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
-    "clean": "rm -rf .cache dist node_modules"
+    "clean": "rm -rf .cache dist node_modules",
+    "build-server": "parcel build ssr/src/index.html -d dist/client --public-url /dist && parcel build ssr/server/index.js -d dist/server --public-url /dist --target=node --bundle-node-modules",
+    "start-server": "node dist/server"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-0",
