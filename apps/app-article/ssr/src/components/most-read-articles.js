@@ -1,6 +1,5 @@
 import React, { Component, Fragment } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import { isDarkModeOn } from "../helper";
 import MobileList from "./moble-article-list";
 import TabletList from "./tablet-article-list";
 

@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 import Header from "./header";
-import Loading from "./loading";
 import Additional from "./article-additional";
 import PremiumBox from "./premium";
 import ArticleDetails from "./article-details";
@@ -92,6 +91,7 @@ class Article extends Component {
 	      publishingTime={this.props.publishingTime}
 	      updateTime={this.props.updateTime}
 	      articleTypeDetails={this.props.articleTypeDetails}
+	      paper={this.props.paper}
 	    />
 	    <Content
 	      body={this.props.body}
@@ -102,7 +102,11 @@ class Article extends Component {
 	    />
 	    <div className={"row"}>
 	      <div className={"col-sm-12"}>
-		{this.props.isPreview ? <PremiumBox /> : ""}
+		{this.props.isPreview ? (
+		  <PremiumBox paper={this.props.paper} />
+		) : (
+		  ""
+		)}
 	      </div>
 	    </div>{" "}
 	    {this.props.relatedArticles.length > 0 ? (

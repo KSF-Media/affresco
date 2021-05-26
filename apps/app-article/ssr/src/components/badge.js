@@ -1,10 +1,7 @@
-import React from 'react';
-import {getBrandValueParam} from "../helper";
+import React from "react";
 
-const PremiumBadge = () => {
-    return(
-        <span className={`premiumBadge brandBg-${getBrandValueParam()}`}>PREMIUM</span>
-    )
+const PremiumBadge = (props) => {
+  return <span className={`premiumBadge brandBg-${props.paper}`}>PREMIUM</span>;
 };
 
-export default PremiumBadge
+export default PremiumBadge;

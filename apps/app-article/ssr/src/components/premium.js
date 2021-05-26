@@ -1,10 +1,9 @@
 import React, { Component } from "react";
-import { getBrandValueParam } from "../helper";
 
 const PremiumBox = (props) => {
   return (
     <div
-      className={`ksf-prenpuff content premiumBox articleteaser ${getBrandValueParam()}`}
+      className={`ksf-prenpuff content premiumBox articleteaser ${props.paper}`}
     >
       <h3>Fint att du är intresserad av artikeln!</h3>
       <br />
