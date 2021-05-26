@@ -153,7 +153,7 @@ class Content extends Component {
 	    {block.box.type === "fact" ? "FAKTA" : ""}
 	  </div>
 	)}
-	<h3 class={this.props.darkModeEnabled ? "faktBoxdarkMode" : ""}>
+	<h3 className={this.props.darkModeEnabled ? "faktBoxdarkMode" : ""}>
 	  {block && block.box && block.box.title}
 	</h3>
 	<ul
