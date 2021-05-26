@@ -3,9 +3,10 @@ var React = require("react");
 var ReactDOM = require("react-dom/server");
 var app = express();
 const port = 3000;
-import App from "../src/App";
+
 import generateHtml from "./generateHtml";
 import Article from "../src/components/article";
+import ErrorPage from "../src/components/error";
 const _ = require("lodash");
 const https = require("https");
 const UUID = require("uuid");
@@ -51,7 +52,14 @@ async function renderArticle(
 	res.setEncoding("utf8");
 	let body = "";
 	res.on("data", (chunk) => (body += chunk));
-	res.on("end", () => resolve(JSON.parse(body)));
+	res.on("end", () => {
+	  try {
+	    const parsedJson = JSON.parse(body);
+	    resolve(parsedJson);
+	  } catch {
+	    resolve(null);
+	  }
+	});
       });
     });
   };
@@ -59,6 +67,16 @@ async function renderArticle(
   const articleResponse = await httpGet(
     "https://lettera.api.ksfmedia.fi/v3/article/" + articleId
   );
+
+  // If we get some weird response or a 500, abort!
+  if (articleResponse === null || _.get(articleResponse, "http_code") === 500) {
+    const markup = ReactDOM.renderToString(
+      <ErrorPage message={"Artikeln kunde inte hämtas!"} />
+    );
+    const html = generateHtml(markup);
+    res.send(html);
+    return;
+  }
 
   const paper = queryParams.paper || "hbl";
   const mostReadResponse = await httpGet(
