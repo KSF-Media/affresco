@@ -782,3 +782,11 @@ body {
 .expandOpacity2.darkMode {
     display: none;
 }
+
+.login.darkMode {
+    background-color: #2B2B2B;
+}
+
+.login.darkMode .center {
+    color: white;
+}
