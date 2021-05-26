@@ -14,7 +14,6 @@ const UUID = require("uuid");
 app.use("/dist", express.static(`${__dirname}/../client`));
 
 app.get("/article/:id", async (req, res) => {
-  // NOTE: The article id is in query params because some components rely on that
   const articleId = req.params.id;
   if (articleId && UUID.validate(articleId)) {
     const authHeaders = () => {
@@ -100,26 +99,21 @@ async function renderArticle(
       paper={paper}
     />
   );
-  sendArticleResponse(
-    res,
-    _.merge(article, {
-      mostReadArticles: mostReadArticles,
-      isPreview: isPreviewArticle,
-      fontSize: queryParams.fontSize,
-      darkModeEnabled: queryParams.mode === "dark",
-      queryString: queryString,
-      paper: paper,
-    }),
-    articleJSX
-  );
-}
 
-function sendArticleResponse(res, article, articleJSX) {
+  const updatedArticle = _.merge(article, {
+    mostReadArticles: mostReadArticles,
+    isPreview: isPreviewArticle,
+    fontSize: queryParams.fontSize,
+    darkModeEnabled: queryParams.mode === "dark",
+    queryString: queryString,
+    paper: paper,
+  });
+
   const markup = ReactDOM.renderToString(articleJSX);
-  const html = generateHtml(markup, article);
+  const html = generateHtml(markup, updatedArticle);
   res.send(html);
 }
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`Up and running!`);
 });
