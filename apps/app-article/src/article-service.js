@@ -1,6 +1,5 @@
 import config from "./config";
-import { isUserLoggedIn, getBrandValueParam, getUrlParam, getTokenFromUrl, getUserUuidFromUrl } from "./helper";
-import Cookies from 'js-cookie';
+import { isUserLoggedIn, getBrandValueParam } from "./helper";
 
 const UUID = require('uuid');
 
@@ -32,14 +31,14 @@ const articleApi = {
 function attachHeaders() {
     let headers = { 'Content-Type': 'application/json' };
 
-    const uuid = localStorage.getItem('uuid') || Cookies.get('uuid') || getUserUuidFromUrl();
-    const token = localStorage.getItem('token') || Cookies.get('token') || getTokenFromUrl();
+    const uuid = localStorage.getItem('uuid');
+    const token = localStorage.getItem('token');
 
     if (isUserLoggedIn() && uuid && UUID.validate(uuid) && token) {
         headers = {
             'Content-Type': 'application/json',
-            'AuthUser': uuid,
-            'Authorization': 'OAuth ' + token,
+            'AuthUser': localStorage.getItem('uuid'),
+            'Authorization': 'OAuth ' + localStorage.getItem('token'),
         };
     }
     return headers;

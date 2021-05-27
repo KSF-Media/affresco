@@ -1,12 +1,5 @@
-import Cookies from 'js-cookie';
-
 export const isUserLoggedIn = () => {
-    let loginStatusUrl = false;
-    if (getIsLoggedFromUrl() === 'true') {
-        loginStatusUrl = true;
-    }
-    
-    return !!Cookies.get('LoginStatus') || loginStatusUrl;
+    return !(localStorage.getItem("uuid") === null && localStorage.getItem("token") === null);
 };
 
 export const shareArticle = (title, url, description) => {
@@ -65,31 +58,4 @@ async function AndroidNativeShare(Title, URL, Description) {
             return;
         }
     }
-}
-
-export const getTokenFromUrl = () => {
-    let urlParams = getUrlParam();
-    if (urlParams.has('token')) {
-        return urlParams.get('token')
-    }
-
-    return undefined;
-}
-
-export const getUserUuidFromUrl = () => {
-    let urlParams = getUrlParam();
-    if (urlParams.has('userId')) {
-        return urlParams.get('userId')
-    }
-
-    return undefined;
-}
-
-export const getIsLoggedFromUrl = () => {
-    let urlParams = getUrlParam();
-    if (urlParams.has('isLogged')) {
-        return urlParams.get('isLogged')
-    }
-
-    return undefined;
 }

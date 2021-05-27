@@ -5,7 +5,7 @@ import articleApi from './article-service';
 import 'react-image-lightbox/style.css';
 import 'bootstrap-css-only/css/bootstrap.min.css';
 import 'basscss/css/basscss-cp.css';
-import { isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn, getTokenFromUrl, getUserUuidFromUrl, getIsLoggedFromUrl } from "./helper";
+import { isUserLoggedIn, getUrlParam, getBrandValueParam, isDarkModeOn } from "./helper";
 import hblDefaultImage from './assets/images/hbl-fallback-img.png';
 import Header from "./components/header";
 import Loading from "./components/loading";
@@ -297,7 +297,7 @@ class App extends Component {
                 this.resizeText(this.state.fontSize);
             })
             .catch(error => {
-                this.setState({isLoading: false, errorFetching: true});
+                this.setState({ isLoading: false, errorFetching: true });
             });
     };
 
@@ -577,7 +577,7 @@ class App extends Component {
         const { isImageModalOpen } = this.state;
 
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Artikeln kunde inte hämtas!"} />;
+            return <ErrorPage message={"Laddar..."} />;
         }
 
         if (this.state.forceLoginView) {

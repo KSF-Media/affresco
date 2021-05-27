@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import PremiumBadge from "./badge";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import {getBrandValueParam, getIsLoggedFromUrl, getMode, getTokenFromUrl, getUserUuidFromUrl, isDarkModeOn} from "../helper";
+import {getBrandValueParam, getMode, isDarkModeOn} from "../helper";
 
 
 const getTag = (tags) => {
@@ -25,9 +25,8 @@ const formatTime = (date) => {
 };
 
 const Card = (props) => {
-    const urlParams = "&paper=" + getBrandValueParam() + "&mode=" + getMode() + "&token=" + getTokenFromUrl() + "&userId=" + getUserUuidFromUrl() + "&isLogged=" + getIsLoggedFromUrl();
     return(
-        <div className={`card ${isDarkModeOn() ? 'darkMode': ''}`} onClick={() => { window.location.href = "?uuid=" + props.article.uuid + urlParams }}>
+        <div className={`card ${isDarkModeOn() ? 'darkMode': ''}`} onClick={() => { window.location.href = "?uuid=" + props.article.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode(); }}>
             <div className={"article-main-image"} >
                 {
                     props.article.premium ?
@@ -46,7 +45,7 @@ const Card = (props) => {
                 <h5 className={`card-title ${isDarkModeOn() ? 'darkMode': ''}`}>
                     <strong>
                         <a className={`relatedArticlesItem ${isDarkModeOn() ? 'darkMode': ''}`}
-                           href={"?uuid=" + props.article.uuid + urlParams}>
+                           href={"?uuid=" + props.article.uuid + "&paper=" + getBrandValueParam() + "&mode=" + getMode()}>
                             {
                                 props.article.title.length > 50 ?
                                     props.article.title.substring(0, 50) + "..."
