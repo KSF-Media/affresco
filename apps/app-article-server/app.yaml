@@ -2,14 +2,6 @@ runtime: nodejs12
 service: app-article-server
 entrypoint: node dist/server
 env_variables:
-  JANRAIN_LOGIN_CLIENT_ID: "9unc22hrcac8zyec6ghudggvqpmctj77"
-  JANRAIN_SSO_SERVER: "https://ksf-media-dev.eu.janrainsso.com"
-  JANRAIN_FLOW_VERSION: "20160521000317549746"
-  JANRAIN_XD_RECEIVER_PATH: "/xd_receiver.html"
   PERSONA_URL: "https://persona.staging.ksfmedia.fi/v1"
-  GOOGLE_CLIENT_ID: "485787859358-slq0hnm3n8ps3catfi2q93s710ges3tj"
-  FACEBOOK_APP_ID: "842392522540268"
   LETTERA_URL: "https://lettera.staging.ksfmedia.fi/v1"
-  BOTTEGA_URL: "https://bottega.staging.ksfmedia.fi/v1"
   SHARE_URL: "https://app-article.ksfmedia.fi/index.html?uuid="
-  # SENTRY_DSN=
