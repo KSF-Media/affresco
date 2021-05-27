@@ -1,4 +1,8 @@
 .mosaico-header {
+
+    @logo-size: 68px;
+    @logo-size-mobile: 48px;
+
     grid-area: head;
     display: grid;
 
@@ -7,9 +11,17 @@
 
     font: 1000 12px 'Roboto', sans-serif;
 
+    @media screen and (min-width:320px) and (max-width:640px) {
+        grid-template-rows: @logo-size-mobile;
+    }
+
     &__left-links {
         grid-row-start: 1;
         grid-column: 1 / span 2;
+
+        @media screen and (min-width:320px) and (max-width:640px) {
+            display: none;
+        }
     }
 
     &__right-links {
@@ -22,6 +34,10 @@
             margin-top: 0px;
             list-style-type: none;
             text-align: right;
+        }
+
+        @media screen and (min-width:320px) and (max-width:640px) {
+            display: none;
         }
     }
 
@@ -41,11 +57,24 @@
         background-repeat: no-repeat;
         background-position: top;
         background-size: 68px;
+
+        @media screen and (min-width:320px) and (max-width:640px) {
+            grid-row-start: 1;
+
+            background-position: center;
+            background-size: @logo-size-mobile;
+        }
     }
 
     &__account {
         grid-row-start: 3;
         grid-column-start: 1;
+
+        @media screen and (min-width:320px) and (max-width:640px) {
+            grid-row-start: 1;
+
+            align-self: center;
+        }
     }
 
     &__menu-links {
@@ -54,12 +83,23 @@
 
         display: flex;
         justify-content: space-evenly;
+
+        @media screen and (min-width:320px) and (max-width:640px) {
+            display: none;
+        }
     }
 
     &__menu-button {
         grid-row-start: 3;
         grid-column-start: 3;
+
         justify-self: end;
+
+        @media screen and (min-width:320px) and (max-width:640px) {
+            grid-row-start: 1;
+
+            align-self: center;
+        }
 
     }
 }
