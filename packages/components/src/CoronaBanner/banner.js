@@ -53,19 +53,19 @@ const CoronaBanner = ({
                 </h1>
                 <img className="virus-image" src={CoronaSvg} alt="" />
               </header>
-              {newCases !== null && (
+              {newCases && (
                 <div className="stat">
                   <div className="stat-value">{newCases}</div>
                   <div className="stat-label">nya fall</div>
                 </div>
               )}
-              {hospitalised !== null && (
+              {hospitalised && (
                 <div className="stat mobile-hidden">
                   <div className="stat-value">{hospitalised}</div>
                   <div className="stat-label">på sjukhus</div>
                 </div>
               )}
-              {deaths !== null && (
+              {deaths && (
                 <div className="stat smallest-screens-hidden">
                   <div className="stat-value">{deaths}</div>
                   <div className="stat-label">dödsfall</div>
