@@ -20,9 +20,10 @@ let AppServer =
           , buildDir : Text
           , deployDir : Text
           , name : Text
+          , previewUrl : Text
           , env : Map Text Text
           }
-      , default.env = [] : Map Text Text
+      , default = { env = [] : Map Text Text, previewUrl = "" : Text }
       }
 
 let Step =
@@ -167,7 +168,7 @@ let linkPreviewsStep =
 
                 let renderAELink =
                       \(app : AppServer.Type) ->
-                        "- [${app.name}](\${{ steps.deploy-${app.id}.outputs.url }})"
+                        "- [${app.name}](\${{ steps.deploy-${app.id}.outputs.url }}/${app.previewUrl})"
 
                 in  ''
                     Deploy previews are ready :sunglasses:
