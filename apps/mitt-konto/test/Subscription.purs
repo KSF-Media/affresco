@@ -11,16 +11,15 @@ import Effect.Class (liftEffect)
 import Effect.Now as Now
 import KSF.Helpers (formatDateDots)
 import KSF.Test (formatDateSolid)
-import MittKonto.Test (Test, typeTestAddress)
+import MittKonto.Test (Test, getFirstSubsno, typeTestAddress)
 import Puppeteer as Chrome
 
 testPause :: Test
 testPause page = do
   now <- liftEffect Now.nowDate
   Chrome.waitFor_ (Chrome.Selector ".subscription--container") page
-  -- TODO: parametrize this.
-  subsno <- Chrome.getContent (Chrome.Selector ".subscription--container dl dd:nth-child(4)") page
-  let pauseDisplayField = Chrome.Selector $ "#subscription-" <> subsno <> " .subscription--edit-subscription-pause"
+  subsno <- getFirstSubsno page
+  let pauseDisplayField = Chrome.Selector $ "#subscription-" <> subsno <> " .subscription--subscription-pause"
       pauseLink = Chrome.Selector $ "#subscription-" <> subsno <> " .subscription--pause-icon"
       unpauseLink = Chrome.Selector $ "#subscription-" <> subsno <> " .subscription--unpause-icon"
       testPauseForm startDays endDays = do
@@ -41,7 +40,7 @@ testPause page = do
         Chrome.click (Chrome.Selector $ "#subscription-" <> subsno <> " form button[type='submit']") page
         -- Check that pause shows up correctly
         Chrome.waitFor_ unpauseLink page
-        Chrome.assertContent pauseDisplayField ("Uppehåll: " <> startDateText <> " – " <> endDateText) page
+        Chrome.assertContent pauseDisplayField ("ÄndraUppehåll: " <> startDateText <> " – " <> endDateText) page
         Chrome.assertNotFound (Chrome.Selector $ "#subscription-" <> subsno <> " .error-text") page
 
   -- Create pause
@@ -51,7 +50,8 @@ testPause page = do
   Aff.delay $ Milliseconds 500.0
   testPauseForm 3 14
   -- Edit pause
-  Chrome.click pauseDisplayField page
+  Chrome.click (Chrome.Selector $ "#subscription-" <> subsno <>
+                " .subscription--subscription-pause .edit-icon") page
   testPauseForm 5 16
   -- Remove pause
   Chrome.click unpauseLink page
@@ -63,7 +63,7 @@ testTemporaryAddressChange :: Test
 testTemporaryAddressChange page = do
   now <- liftEffect Now.nowDate
   Chrome.waitFor_ (Chrome.Selector ".subscription--container") page
-  subsno <- Chrome.getContent (Chrome.Selector ".subscription--container dl dd:nth-child(4)") page
+  subsno <- getFirstSubsno page
   let changeLink = Chrome.Selector $ "#subscription-" <> subsno <> " .subscription--temporary-address-change-icon"
       stopChangeLink = Chrome.Selector $ "#subscription-" <> subsno <> " .subscription--delete-temporary-address-change-icon"
   Chrome.waitFor_ changeLink page
@@ -83,13 +83,13 @@ testTemporaryAddressChange page = do
       endDateField = Chrome.Selector $ "#edit-end--" <> subsno <> " .react-date-picker"
       indefiniteCheckbox = Chrome.Selector $ "#edit-indefinite--" <> subsno
       temporaryNameField = Chrome.Selector $ "#subscription-" <> subsno <> " input[name='temporaryName']"
-      pendingAddressText = Chrome.Selector $ "#subscription-" <> subsno <> "-edit-pending-address-change-1"
+      pendingAddressText = Chrome.Selector $ "#subscription-" <> subsno <> "-pending-address-change-1"
       check start end = do
         Chrome.waitFor_ stopChangeLink page
         Chrome.waitFor_ (Chrome.Selector $ "#subscription-" <> subsno <> " .actions-wrapper--success") page
         Chrome.assertNotFound (Chrome.Selector $ "#subscription-" <> subsno <> " .error-text") page
         Chrome.assertContent pendingAddressText
-          ("KSF, GENVÄGEN 8, 10650, EKENÄS (" <> start <> " – " <> fromMaybe "" end <> ")") page
+          ("ÄndraKSF, GENVÄGEN 8, 10650, EKENÄS (" <> start <> " – " <> fromMaybe "" end <> ")") page
   Chrome.waitFor_ startDateField page
   Chrome.click startDateField page
   Chrome.type_ startDateField startDateFieldText page
@@ -100,7 +100,8 @@ testTemporaryAddressChange page = do
   -- Check that it shows correctly
   check startDateText Nothing
   -- Edit temporary pause
-  Chrome.click pendingAddressText page
+  Chrome.click (Chrome.Selector $ "#subscription-" <> subsno <>
+                "-pending-address-change-1 .edit-icon") page
   Chrome.waitFor_ startDateField page
   Chrome.click (Chrome.Selector $ "#edit-start--" <> subsno <> " .react-date-picker__clear-button") page
   Chrome.click startDateField page

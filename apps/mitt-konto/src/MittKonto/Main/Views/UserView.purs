@@ -123,12 +123,6 @@ userView { state: { now, news }, setState } logger user = React.fragment
               , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/fragor-och-svar/" ]
               , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/fragor-och-svar/" ]
               ]
-          ,  DOM.dl_
-              [ DOM.dt_ [ DOM.text "Ingen tidning?" ]
-              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/ingen-tidning/" ]
-              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/ingen-tidning/" ]
-              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/ingen-tidning/" ]
-              ]
           ]
         issueLink description href =
           DOM.a
