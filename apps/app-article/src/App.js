@@ -577,7 +577,7 @@ class App extends Component {
         const { isImageModalOpen } = this.state;
 
         if (this.state.errorFetching) {
-            return <ErrorPage message={"Laddar..."} />;
+            return <ErrorPage message={"Artikeln kunde inte hämtas!"} />;
         }
 
         if (this.state.forceLoginView) {
