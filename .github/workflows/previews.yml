@@ -69,6 +69,10 @@ jobs:
         run: |2
             ruby deploy.rb mosaico
             mv apps/mosaico/dist build/mosaico
+      - name: Build App article server
+        run: |2
+            ruby deploy.rb app-article-server
+            mv apps/app-article-server build/app-article-server
       - name: Upload Scripts
         uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
         with:
@@ -117,6 +121,14 @@ jobs:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/mosaico
+      - id: deploy-app-article-server
+        name: Deploy App article server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          promote: 'false'
+          working_directory: build/app-article-server
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
@@ -132,6 +144,7 @@ jobs:
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
             - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
             - [Mosaico SPA](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
+            - [App article server](${{ steps.deploy-app-article-server.outputs.url }})
 name: previews
 on:
   pull_request:
