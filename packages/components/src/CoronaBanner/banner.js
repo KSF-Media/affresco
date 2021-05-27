@@ -16,17 +16,19 @@ const CoronaBanner = ({
   showLinks,
 }) => {
   const showVaccinated = () => {
-    if (vaccinated !== null) {
+    if (vaccinated && !vaccinatedPercentage) {
+      return <div className="stat-value">{vaccinated} </div>
+    } else if (!vaccinated && vaccinatedPercentage) {
       return (
         <div className="stat-value">
-          {vaccinated}{" "}
-          <span className="stat-percent">({vaccinatedPercentage}%)</span>
+          <span className="stat-percent">{vaccinatedPercentage}%</span>
         </div>
       )
     } else {
       return (
         <div className="stat-value">
-          <span className="stat-percent">{vaccinatedPercentage}%</span>
+          {vaccinated}{" "}
+          <span className="stat-percent">({vaccinatedPercentage}%)</span>
         </div>
       )
     }
@@ -69,7 +71,7 @@ const CoronaBanner = ({
                   <div className="stat-label">dödsfall</div>
                 </div>
               )}
-              {(vaccinated !== null || vaccinatedPercentage !== null) && (
+              {(vaccinated || vaccinatedPercentage) && (
                 <div className="stat">
                   {showVaccinated()}
                   <div className="stat-label">vaccinerade</div>
@@ -123,23 +125,3 @@ const CoronaBanner = ({
 }
 
 export default CoronaBanner
-
-/*
-{vaccinated !== null && vaccinatedPercentage && (
-                <div className="stat">
-                  <div className="stat-value">
-                    {vaccinated}{" "}
-                    <span className="stat-percent">
-                      ({vaccinatedPercentage}%)
-                    </span>
-                  </div>
-                  <div className="stat-label">vaccinerade</div>
-                </div>
-              )}
-              {vaccinated !== null && !vaccinatedPercentage && (
-                <div className="stat">
-                  <div className="stat-value">{vaccinated}</div>
-                  <div className="stat-label">vaccinerade</div>
-                </div>
-              )}
-*/
