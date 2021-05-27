@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "^7.4.4",
-    "@ksf-media/user": "0.3.0",
     "@sentry/browser": "6.2.5",
     "@sentry/tracing": "6.2.5",
     "axios": "^0.21.1",
