@@ -99,7 +99,7 @@ let mkUploadStep =
       \(app : App.Type) ->
         Step::{
         , name = Some "Upload ${app.name}"
-        , uses = Some "google-github-actions/upload-cloud-storage@master"
+        , uses = Some "google-github-actions/upload-cloud-storage@main"
         , `with` = toMap
             { path = "build/${app.deployDir}"
             , destination =
