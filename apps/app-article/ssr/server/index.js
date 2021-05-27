@@ -28,7 +28,7 @@ app.get("/article/:id", async (req, res) => {
 	};
       }
     };
-    const queryString = req._parsedUrl.search;
+    const queryString = req._parsedUrl.search || "";
     renderArticle(articleId, res, authHeaders(), req.query, queryString);
   } else {
     res.send("");
