@@ -18,8 +18,20 @@ let App =
   , default = { env = [] : Map Text Text }
   }
 
+let AppServer =
+  { Type = {
+    , id : Text
+    , buildDir : Text
+    , deployDir : Text
+    , name : Text
+    , env : Map Text Text
+    }
+  , default = { env = [] : Map Text Text }
+  }
+
 let Step =
   { Type = {
+    , id : Optional Text
     , name : Optional Text
     , uses : Optional Text
     , run : Optional Text
@@ -27,6 +39,7 @@ let Step =
     , env : Map Text Text
     }
   , default = {
+    , id = None Text
     , name = None Text
     , uses = None Text
     , run = None Text
@@ -73,6 +86,17 @@ let mkBuildStep
     ''
   }
 
+let mkBuildServerStep
+  = \(app : AppServer.Type)
+  -> Step::{
+    , name = Some "Build ${app.name}"
+    , env = app.env
+    , run = Some ''
+      ruby deploy.rb ${app.buildDir}
+      mv apps/${app.buildDir} build/${app.deployDir}
+    ''
+  }
+
 let mkUploadStep
   = \(env : Env)
   -> \(app : App.Type)
@@ -96,6 +120,31 @@ let mkUploadStep
     }
   }
 
+let mkAppEngineStep
+  = \(env : Env)
+  -> \(app : AppServer.Type)
+  -> Step::{
+    , id = Some "deploy-${app.id}"
+    , name = Some "Deploy ${app.name}"
+    , uses = Some "google-github-actions/deploy-appengine@main"
+    , `with` = toMap {
+       , working_directory = "build/${app.deployDir}"
+       , promote = "false"
+       , project_id =
+         merge
+             { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
+             , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+             }
+             env
+       , credentials =
+         merge
+            { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
+            , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+            }
+            env
+    }
+  }
+
 let checkCIStep
   = Step::{
   , name = Some "Check CI script has been generated from Dhall"
@@ -107,6 +156,7 @@ let checkCIStep
 
 let linkPreviewsStep
   = \(apps : List App.Type)
+  -> \(appServers : List AppServer.Type)
   -> \(previewUrl : Text)
   -> Step::{
   , name = Some "Post preview links"
@@ -115,9 +165,11 @@ let linkPreviewsStep
   , `with` = toMap {
     , msg =
       let renderAppLink = \(app : App.Type) -> "- [${app.name}](${previewUrl}/${app.deployDir}/index.html)"
+      let renderAELink = \(app : AppServer.Type) -> "- [${app.name}](\${{ steps.deploy-${app.id}.outputs.url }})"
       in ''
       Deploy previews are ready :sunglasses:
       ${Prelude.Text.concatMapSep "\n" App.Type renderAppLink apps}
+      ${Prelude.Text.concatMapSep "\n" AppServer.Type renderAELink appServers}
       ''
     }
   }
@@ -154,16 +206,24 @@ let uploadSteps
   = \(env : Env)
   -> Prelude.List.map App.Type Step.Type (mkUploadStep env)
 
+let deployAppEngineSteps
+= \(env : Env)
+-> Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env)
+
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
+let buildServerSteps = Prelude.List.map AppServer.Type Step.Type mkBuildServerStep
 
 in
 { Step
 , Prelude
 , App
+, AppServer
 , Env
 , setupSteps
 , buildSteps
+, buildServerSteps
 , uploadSteps
+, deployAppEngineSteps
 , checkCIStep
 , linkPreviewsStep
 , refreshCDNJob
