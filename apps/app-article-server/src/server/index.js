@@ -2,7 +2,7 @@ var express = require("express");
 var React = require("react");
 var ReactDOM = require("react-dom/server");
 var app = express();
-const port = 3000;
+const port = 8080;
 
 import generateHtml from "./generateHtml";
 import Article from "../browser/components/article";
@@ -18,14 +18,14 @@ app.get("/article/:id", async (req, res) => {
   if (articleId && UUID.validate(articleId)) {
     const authHeaders = () => {
       if (
-	req.headers.authuser &&
-	UUID.validate(req.headers.authuser) &&
-	req.headers.authorization
+        req.headers.authuser &&
+        UUID.validate(req.headers.authuser) &&
+        req.headers.authorization
       ) {
-	return {
-	  authuser: req.headers.authuser,
-	  authorization: req.headers.authorization,
-	};
+        return {
+          authuser: req.headers.authuser,
+          authorization: req.headers.authorization,
+        };
       }
     };
     const queryString = req._parsedUrl.search || "";
@@ -49,17 +49,17 @@ async function renderArticle(
     };
     return new Promise((resolve, reject) => {
       https.get(url, requestOptions, (res) => {
-	res.setEncoding("utf8");
-	let body = "";
-	res.on("data", (chunk) => (body += chunk));
-	res.on("end", () => {
-	  try {
-	    const parsedJson = JSON.parse(body);
-	    resolve(parsedJson);
-	  } catch {
-	    resolve(null);
-	  }
-	});
+        res.setEncoding("utf8");
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          try {
+            const parsedJson = JSON.parse(body);
+            resolve(parsedJson);
+          } catch {
+            resolve(null);
+          }
+        });
       });
     });
   };
@@ -85,7 +85,7 @@ async function renderArticle(
 
   const user = _.get(authHeaders, "authuser")
     ? await httpGet(
-	"https://persona.api.ksfmedia.fi/v1/users/" + authHeaders.authuser
+        "https://persona.api.ksfmedia.fi/v1/users/" + authHeaders.authuser
       )
     : null;
 
