@@ -9,7 +9,7 @@ import Effect.Now as Now
 import KSF.Api (UserAuth)
 import KSF.Helpers as Helpers
 import KSF.Test (getTestCard, typeCreditCard)
-import MittKonto.Test (Test)
+import MittKonto.Test (Test, getFirstSubsno)
 import Puppeteer as Chrome
 import Test.Unit as Test
 import Test.Unit.Assert as Assert
@@ -42,7 +42,7 @@ testInvoice page = do
 
 testCreditCardChange :: UserAuth -> Test
 testCreditCardChange auth page = do
-  subsno <- Chrome.getContent (Chrome.Selector ".subscription--container dl dd:nth-child(4)") page
+  subsno <- getFirstSubsno page
   originalCard <- liftEffect $ getTestCard 0
   updatedCard <- liftEffect $ getTestCard 1
   let expectedPan card = (String.take 6 card.number) <> "******" <> (String.drop 12 card.number)

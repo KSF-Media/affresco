@@ -41,7 +41,9 @@ type PendingAddressChange =
   , endDate   :: Nullable JSDate
   }
 
-type Subscription =
+type Subscription = BaseSubscription SubscriptionPaymentMethod
+
+type BaseSubscription p =
   { subsno                :: Subsno
   , extno                 :: Int
   , cusno                 :: Cusno
@@ -56,7 +58,7 @@ type Subscription =
   , deliveryAddress       :: Nullable DeliveryAddress
   , receiver              :: Nullable String
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
-  , paymentMethod         :: SubscriptionPaymentMethod
+  , paymentMethod         :: p
   }
 
 data SubscriptionPaymentMethod
