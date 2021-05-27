@@ -5,8 +5,8 @@ var app = express();
 const port = 3000;
 
 import generateHtml from "./generateHtml";
-import Article from "../src/components/article";
-import ErrorPage from "../src/components/error";
+import Article from "../browser/components/article";
+import ErrorPage from "../browser/components/error";
 const _ = require("lodash");
 const https = require("https");
 const UUID = require("uuid");
