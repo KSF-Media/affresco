@@ -1,67 +1,65 @@
-.mosaico {
-    .header {
-        grid-area: head;
-        display: grid;
+.mosaico-header {
+    grid-area: head;
+    display: grid;
 
-        grid-template-rows: 0.1fr 65px 0.1fr;
-        grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 0.1fr 65px 0.1fr;
+    grid-template-columns: 1fr 1fr 1fr;
 
-        font: 1000 12px 'Roboto', sans-serif;
+    font: 1000 12px 'Roboto', sans-serif;
 
-        .left-links {
-            grid-row-start: 1;
-            grid-column: 1 / span 2;
+    &__left-links {
+        grid-row-start: 1;
+        grid-column: 1 / span 2;
+    }
+
+    &__right-links {
+        grid-row: 1 / span 2;
+        grid-column-start: 3;
+
+        color: #00a1ab;
+
+        ul {
+            margin-top: 0px;
+            list-style-type: none;
+            text-align: right;
         }
+    }
 
-        .right-links {
-            grid-row: 1 / span 2;
-            grid-column-start: 3;
+    &__prenumerera-link {
+        border-radius: 3px;
+        background-color: #00a1ab;
+        color: #fff;
+        text-align: center;
+        padding: 3px 3px 1px 3px;
+    }
 
-            color: #00a1ab;
+    &__logo {
+        grid-row-start: 2;
+        grid-column-start: 2;
 
-            ul {
-                margin-top: 0px;
-                list-style-type: none;
-                text-align: right;
-            }
+        background-image: url('../images/logo-hbl.svg');
+        background-repeat: no-repeat;
+        background-position: top;
+        background-size: 68px;
+    }
 
-            .prenumerera-link {
-                border-radius: 3px;
-                background-color: #00a1ab;
-                color: #fff;
-                text-align: center;
-                padding: 3px 3px 1px 3px;
-            }
-        }
+    &__account {
+        grid-row-start: 3;
+        grid-column-start: 1;
+    }
 
-        .logo {
-            grid-row-start: 2;
-            grid-column-start: 2;
+    &__menu-links {
+        grid-row-start: 3;
+        grid-column-start: 2;
 
-            background-image: url('../images/logo-hbl.svg');
-            background-repeat: no-repeat;
-            background-position: top;
-            background-size: 68px;
-        }
+        display: flex;
+        justify-content: space-evenly;
+    }
 
-        .account {
-            grid-row-start: 3;
-            grid-column-start: 1;
-        }
+    &__menu-button {
+        grid-row-start: 3;
+        grid-column-start: 3;
+        justify-self: end;
 
-        .menu-links {
-            grid-row-start: 3;
-            grid-column-start: 2;
-
-            display: flex;
-            justify-content: space-evenly;
-        }
-
-        .menu-button {
-            grid-row-start: 3;
-            grid-column-start: 3;
-            justify-self: end;
-
-        }
     }
 }

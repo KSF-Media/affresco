@@ -34,10 +34,10 @@ headerComponent = do
 render :: Self -> JSX
 render { props, state, setState } =
   DOM.header
-    { className: "header"
+    { className: block
     , children:
         [ DOM.div
-            { className: "left-links"
+            { className: block <> "__left-links"
             , children:
                 [ DOM.a_ [ DOM.text "KONTAKTA OSS" ]
                 , DOM.text " | "
@@ -45,7 +45,7 @@ render { props, state, setState } =
                 ]
             }
         , DOM.div
-            { className: "right-links"
+            { className: block <> "__right-links"
             , children:
                 [ DOM.ul_
                     [ DOM.li_
@@ -53,7 +53,7 @@ render { props, state, setState } =
                         ]
                     , DOM.li_
                         [ DOM.a
-                            { className: "prenumerera-link"
+                            { className: block <> "__prenumerera-link"
                             , children: [ DOM.text "PRENUMERERA" ]
                             }
                         ]
@@ -61,24 +61,26 @@ render { props, state, setState } =
                 ]
             }
         , DOM.div
-            { className: "logo"
+            { className: block <> "__logo"
             }
         , DOM.div
-            { className: "account"
+            { className: block <> "__account"
             , children: [ DOM.text "NAME"]
             }
         , DOM.div
-            { className: "menu-links"
+            { className: block <> "__menu-links"
             , children:
-                [ DOM.a_ [ DOM.text "OPINION"]
-                , DOM.a_ [ DOM.text "KULTUR"]
-                , DOM.a_ [ DOM.text "SPORT"]
-                , DOM.a_ [ DOM.text "ANNAT"]
+                [ DOM.a_ [ DOM.text "OPINION" ]
+                , DOM.a_ [ DOM.text "KULTUR" ]
+                , DOM.a_ [ DOM.text "SPORT" ]
+                , DOM.a_ [ DOM.text "ANNAT" ]
                 ]
             }
         , DOM.div
-            { className: "menu-button"
+            { className: block <> "__menu-button"
             , children: [ DOM.text "MENU"]
             }
         ]
     }
+  where
+    block = "mosaico-header"
