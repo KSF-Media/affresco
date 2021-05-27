@@ -18,3 +18,7 @@ typeTestAddress sel addressFieldName page = do
   Chrome.type_ zipcodeField "10650" page
   Chrome.typeDelete_ cityField 20 page
   Chrome.type_ cityField "Ekenäs" page
+
+getFirstSubsno :: Chrome.Page -> Aff String
+getFirstSubsno =
+  Chrome.getData (Chrome.Selector ".subscription--container") "subsno"
