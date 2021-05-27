@@ -84,7 +84,7 @@ let mkBuildStep =
 let mkBuildServerStep =
       \(app : AppServer.Type) ->
         Step::{
-        , name = Some "Build ${app.name}"
+        , name = Some "Build Server ${app.name}"
         , env = app.env
         , run = Some
             ''
