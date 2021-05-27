@@ -69,7 +69,7 @@ jobs:
         run: |2
             ruby deploy.rb mosaico
             mv apps/mosaico/dist build/mosaico
-      - name: Build App article server
+      - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
             mv apps/app-article-server build/app-article-server
@@ -127,7 +127,7 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
-          promote: 'false'
+          promote: 'true'
           working_directory: build/app-article-server
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

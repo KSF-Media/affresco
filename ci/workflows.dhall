@@ -125,7 +125,7 @@ let mkAppEngineStep =
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = "false"
+            , promote = "true"
             , project_id =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
