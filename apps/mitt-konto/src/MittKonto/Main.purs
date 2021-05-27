@@ -12,6 +12,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
 import KSF.News as News
 import KSF.Paper (Paper(..))
+import KSF.Password.Reset as Reset
 import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
@@ -32,8 +33,19 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.Router as Router
+import Web.HTML (window) as HTML
+import Web.HTML.Location (hash) as HTML
+import Web.HTML.Window (location) as HTML
 
 foreign import sentryDsn_ :: Effect String
+
+type ViewComponents =
+  { searchView :: JSX
+  , paymentView :: JSX
+  , paymentDetailView :: JSX
+  , creditCardUpdateView :: User.User -> JSX
+  , passwordResetView :: JSX
+  }
 
 app :: Component {}
 app = do
@@ -45,6 +57,8 @@ app = do
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
   loginComponent <- Login.login
+  location <- HTML.location =<< HTML.window
+  initialHash <- HTML.hash location
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -58,6 +72,7 @@ app = do
         , news: News.render Nothing
         , loginComponent
         }
+  passwordReset <- Reset.resetPassword location
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
@@ -93,7 +108,9 @@ app = do
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
               $ User.getUser Nothing uuid
         searchView :: JSX
-        searchView = search { setActiveUser: searchSelect }
+        searchView = search { setActiveUser: searchSelect
+                            , now
+                            }
         usePayments = Helpers.useLoadSpinner setState
                         (isJust state.payments /\ (_.cusno <$> state.activeUser))
                         (Payments.getPayments
@@ -128,8 +145,16 @@ app = do
             , route: "/kreditkort/uppdatera"
             , routeFrom: "/"
             }
+        passwordResetView = passwordReset { user: state.activeUser }
+        components =
+          { searchView
+          , paymentView
+          , paymentDetailView
+          , creditCardUpdateView
+          , passwordResetView
+          }
 
-    pure $ render self logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating
+    pure $ render self logger components initialHash isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
@@ -140,24 +165,28 @@ setUser self logger user = do
   self.setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
   logger.setUser $ Just user
 
-render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
-render self@{ state } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
+render :: Types.Self -> Sentry.Logger -> ViewComponents -> String -> Boolean -> JSX
+render self@{ state } logger components initialHash isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ Router.switch { children: routes } ]
+            [ case initialHash of
+                 "#l%C3%B6senord" -> components.passwordResetView
+                 _ -> Router.switch { children: routes }
+            ]
         ]
     , Views.footerView
     ]
  where
    routes =
-     [ defaultRouteElement "/fakturor/:invno" $ const paymentDetailView
-     , defaultRouteElement "/fakturor" $ const paymentView
-     , routeElement true false (Just "/sök") $ const searchView
+     [ defaultRouteElement "/fakturor/:invno" $ const components.paymentDetailView
+     , defaultRouteElement "/fakturor" $ const components.paymentView
+     , routeElement true false (Just "/sök") $ const components.searchView
+     , simpleRoute "/#lösenord" components.passwordResetView
      , defaultRouteElement "/" $ Views.userView self logger
-     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" creditCardUpdateView
+     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" components.creditCardUpdateView
      , noMatchRoute
      ]
    defaultRouteElement = routeElement true true <<< Just
@@ -171,6 +200,12 @@ render self@{ state } logger searchView paymentView paymentDetailView creditCard
                Just user /\ true -> view user
                _ -> Views.loginView self (setUser self logger) logger
            ]
+       }
+   simpleRoute path view =
+     Router.route
+       { exact: true
+       , path: Just path
+       , render: const view
        }
    noMatchRoute =
      Router.redirect

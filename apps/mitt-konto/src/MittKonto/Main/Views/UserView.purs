@@ -11,7 +11,7 @@ import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView.Subscription (subscription) as Subscription
-import KSF.Api.Subscription (isSubscriptionCanceled) as Subscription
+import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.User (User)
@@ -72,6 +72,11 @@ userView { state: { now, news }, setState } logger user = React.fragment
                         { className: "mitt-konto--canceled-subscription"
                         , children: [ componentBlockContent $ subscriptionView subscription ]
                         }
+                  | Subscription.isSubscriptionExpired subscription now =
+                      DOM.div
+                        { className: "mitt-konto--expired-subscription"
+                        , children: [ componentBlockContent $ subscriptionView subscription ]
+                        }
                   | otherwise = componentBlockContent $ subscriptionView subscription
 
     cancelSubscription =
@@ -117,12 +122,6 @@ userView { state: { now, news }, setState } logger user = React.fragment
               , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/fragor-och-svar/" ]
               , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/fragor-och-svar/" ]
               , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/fragor-och-svar/" ]
-              ]
-          ,  DOM.dl_
-              [ DOM.dt_ [ DOM.text "Ingen tidning?" ]
-              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/ingen-tidning/" ]
-              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/ingen-tidning/" ]
-              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/ingen-tidning/" ]
               ]
           ]
         issueLink description href =

@@ -24,7 +24,7 @@ exports.pauseSubscription_ = function (cusno, subsno, startDate, endDate, result
     dataLayer.push({ 'event': 'pauseSubscription', 'cusno': cusno, 'subsno': subsno, 'startDate': startDate, 'endDate': endDate, 'result': result });
 }
 
-exports.editSubscriptionPause_ = function(cusno, subsno, oldStartDate, oldEndDate, oldStartDate, oldEndDate, result) {
+exports.editSubscriptionPause_ = function(cusno, subsno, oldStartDate, oldEndDate, startDate, endDate, result) {
     dataLayer.push({'event': 'pauseSubscription', 'cusno': cusno, 'subsno': subsno, 'oldStartDate': startDate, 'oldEndDate': endDate, 'newStartDate': startDate, 'newEndDate': endDate, 'result': result});
 }
 
@@ -46,6 +46,10 @@ exports.changeAddress_ = function (cusno, result) {
 
 exports.deletePendingAddressChanges_ = function (cusno, result) {
     dataLayer.push({ 'event': 'deletePendingAddressChanges', 'cusno': cusno, 'result': result })
+}
+
+exports.updateResetPassword_ = function (result) {
+    dataLayer.push({ 'event': 'updateResetPassword', 'result': result });
 }
 
 exports.updateCreditCard_ = function (cusno, subsno, oldCreditCard, registerNumber, result) {

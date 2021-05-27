@@ -20,7 +20,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -44,6 +44,10 @@ type Props =
 type State =
   { body :: Array (Either String BodyElement)
   , article :: Maybe FullArticle
+  , title :: String
+  , mainImage :: Maybe Image
+  , tags :: Array String
+  , preamble :: Maybe String
   }
 
 articleComponent :: Component Props
@@ -52,8 +56,15 @@ articleComponent = do
     let initialState =
           { body: []
           , article: Nothing
+          , title: maybe mempty (\articleStub -> articleStub.title) props.articleStub
+          , mainImage: do
+              articleStub <- props.articleStub
+              articleStub.listImage
+          , tags: maybe mempty (\articleStub -> articleStub.tags) props.articleStub
+          -- , preamble: maybe Nothing (\articleStub -> articleStub.preamble) props.articleStub
+          , preamble: (\articleStub -> articleStub.preamble) =<< props.articleStub
           }
-    state /\ setState <- useState initialState
+    state /\ setState <- useState initialState 
 
     useEffectOnce do
       loadArticle setState props.affArticle
@@ -72,7 +83,15 @@ loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Un
 loadArticle setState affArticle =
   Aff.launchAff_ do
     a <- affArticle
-    liftEffect $ setState \s -> s { article = Just a,  body = map Record.toSum $ _.body $ fromFullArticle a }
+    let realArticle = fromFullArticle a
+    liftEffect $ setState \s -> s
+      { article = Just a
+      , body = map Record.toSum $ _.body $ fromFullArticle a
+      , mainImage = realArticle.mainImage
+      , title = realArticle.title
+      , tags = realArticle.tags
+      , preamble = realArticle.preamble
+      }
 
 renderImage :: Image -> JSX
 renderImage img =
@@ -118,6 +137,10 @@ render { props, state, setState } =
             }
         , foldMap renderImage mainImage
         , DOM.div
+          { className: "mosaico--article--preamble"
+          , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
+          }
+        , DOM.div
             { className: "mosaico--article-times-and-author"
             , children:
                 [ foldMap renderAuthors $ _.authors <$> letteraArticle
@@ -126,13 +149,17 @@ render { props, state, setState } =
             }
         , DOM.div
             { className: "mosaico--article--body "
-            , children:
+            , children: case state.article of
+              (Just (PreviewArticle previewArticle)) ->
                 paywallFade
                 `cons` map renderElement state.body
                 `snoc` vetrina
-            }
-        ]
-      }
+              (Just (FullArticle fullArticle)) ->
+                map renderElement state.body
+              _ -> mempty
+          }
+      ]
+    }
   where
     renderAuthors authors =
       DOM.div
@@ -170,10 +197,9 @@ render { props, state, setState } =
             }
 
     paywallFade =
-      guard (maybe false isPreviewArticle state.article)
         DOM.div { className: "mosaico--article-fading-body" }
 
-    vetrina = guard (maybe false isPreviewArticle state.article)
+    vetrina =
       Vetrina.vetrina
         { onClose: Just $ loadArticle setState props.affArticle
         , onLogin: props.onLogin

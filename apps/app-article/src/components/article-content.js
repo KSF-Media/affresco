@@ -153,7 +153,7 @@ class Content extends Component {
     render() {
         return (
             <div className={"row"}>
-                <div className={`col-sm-12 content text-left mt-2 ${getBrandValueParam()}`} id={"content"}
+                <div className={`col-sm-12 content text-left mt-2 lp_article_content ${getBrandValueParam()}`} id={"content"}
                      style={{wordWrap: 'break-word'}}>
                     <div id="MOBPARAD"></div>
                     {
