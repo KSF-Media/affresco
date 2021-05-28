@@ -3,7 +3,7 @@ module Mosaico.Article where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (cons, head, snoc)
+import Data.Array (cons, head, snoc, insertAt, length)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
@@ -21,6 +21,7 @@ import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -124,6 +125,9 @@ render { props, state, setState } =
         title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
         tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
         mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+        body = map renderElement state.body
+        bodyArrayLength = length body
+        bodyWithAd = Ad.insertIntoBody adBox body
     in DOM.div
       { className: "mosaico--article"
       , children:
@@ -152,10 +156,10 @@ render { props, state, setState } =
             , children: case state.article of
               (Just (PreviewArticle previewArticle)) ->
                 paywallFade
-                `cons` map renderElement state.body
+                `cons` bodyWithAd
                 `snoc` vetrina
               (Just (FullArticle fullArticle)) ->
-                map renderElement state.body
+                bodyWithAd
               _ -> mempty
           }
       ]
@@ -195,6 +199,9 @@ render { props, state, setState } =
             { className: "mosaico--article-updated-timestamp"
             , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
             }
+
+    adBox =
+        Ad.ad { contentUnit: "test-contentunit" }
 
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
