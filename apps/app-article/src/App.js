@@ -76,6 +76,7 @@ class App extends Component {
         };
     }
     componentDidMount() {
+        if(isDarkModeOn())  document.body.style = 'background: #2B2B2B;';
         if (localStorage.getItem("currentUser") !== null) {
             this.setState({ user: JSON.parse(localStorage.getItem("currentUser")) });
         }
