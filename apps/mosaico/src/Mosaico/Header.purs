@@ -2,37 +2,11 @@ module Mosaico.Header where
 
 import Prelude
 
-import Effect (Effect)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, component, useEffectOnce, useState, (/\))
-import React.Basic.Hooks as React
 
-type Self =
-  { state :: State
-  , setState :: (State -> State) -> Effect Unit
-  , props :: Props
-  }
-
-type Props = {}
-
-type State = {}
-
-type SetState = (State -> State) -> Effect Unit
-
-headerComponent :: Component Props
-headerComponent = do
-  component "Header" \props -> React.do
-    let initialState = {}
-    state /\ setState <- useState initialState
-
-    useEffectOnce do
-      pure mempty
-
-    pure $ render { state, setState, props }
-
-render :: Self -> JSX
-render { props, state, setState } =
+header :: JSX
+header =
   DOM.header
     { className: block
     , children:

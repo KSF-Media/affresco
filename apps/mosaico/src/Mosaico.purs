@@ -49,7 +49,6 @@ type State =
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
-  , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , user :: Maybe User
   }
@@ -79,7 +78,6 @@ app = do
           Left err   -> pure unit
 
   articleComponent    <- Article.articleComponent
-  headerComponent     <- Header.headerComponent
   loginModalComponent <- LoginModal.loginModal
   component "Mosaico" \_ -> React.do
     let initialState =
@@ -90,7 +88,6 @@ app = do
           , clickedArticle: Nothing
           , modalView: Nothing
           , articleComponent
-          , headerComponent
           , loginModalComponent
           , user: Nothing
           }
@@ -132,7 +129,7 @@ render setState state router =
   <> DOM.div
   { className: "mosaico grid"
   , children:
-    [ state.headerComponent {}
+    [ Header.header
     , case state.route of
           ArticlePage articleId ->
             let affArticle = do
