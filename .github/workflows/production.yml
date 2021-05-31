@@ -136,8 +136,8 @@ jobs:
         name: Deploy App article server
         uses: "google-github-actions/deploy-appengine@main"
         with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/app-article-server
   refresh_cdn_app-article:
