@@ -43,7 +43,6 @@ const Card = (props) => {
   return (
     <a
       className={"card"}
-      style={{ border: 0 }}
       href={"/article/" + props.article.uuid + props.queryString}
     >
       <div className={"article-main-image"}>
