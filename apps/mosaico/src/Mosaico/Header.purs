@@ -40,7 +40,7 @@ render { props, state, setState } =
             { className: block <> "__left-links"
             , children:
                 [ DOM.a_ [ DOM.text "KONTAKTA OSS" ]
-                , DOM.text " | "
+                , DOM.text "|"
                 , DOM.a_ [ DOM.text "E-TIDNINGEN" ]
                 ]
             }
