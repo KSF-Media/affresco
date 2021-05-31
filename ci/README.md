@@ -23,6 +23,7 @@ The two workflow are slightly different. They both:
 - check that the generated workflows are up to date with the Dhall source
 - build all the apps
 - upload them to a bucket
+- deploy apps to App Engine (Where applicable)
 
 Then the "preview" workflows posts a comment to the PR with the link to the newly
 deployed previews, while the "production" workflows clears the CDN cache so that
@@ -55,6 +56,11 @@ In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
     - path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
 3. Create a new SSL certificate for the new host on this load balancer, and point a DNS A record to the IP of the load balancer
 4. Edit the `refreshCDNSteps` [source](./workflows.dhall) to include a `gcloud` command to clear the CDN cache on new deployments
+
+## Adding a new App Engine App
+
+1. Edit the [`app-servers.dhall`](./app-servers.dhall) file to add the new app details
+2. You'll find the production app deployed at https://${sevice-name}-dot-ksf-production.ey.r.appspot.com
 
 ### Maintenance Mode
 

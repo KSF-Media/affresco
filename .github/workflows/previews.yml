@@ -69,54 +69,66 @@ jobs:
         run: |2
             ruby deploy.rb mosaico
             mv apps/mosaico/dist build/mosaico
+      - name: Build Server App article server
+        run: |2
+            ruby deploy.rb app-article-server
+            mv apps/app-article-server build/app-article-server
       - name: Upload Scripts
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/scripts
       - name: Upload Mitt Konto
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/elections
       - name: Upload App article
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/app-article
       - name: Upload Corona banner
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/corona-banner
       - name: Upload Mosaico SPA
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
           path: build/mosaico
+      - id: deploy-app-article-server
+        name: Deploy App article server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/app-article-server
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
@@ -132,6 +144,7 @@ jobs:
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
             - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
             - [Mosaico SPA](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
+            - [App article server](${{ steps.deploy-app-article-server.outputs.url }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews
 on:
   pull_request:
