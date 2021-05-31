@@ -9,6 +9,7 @@ import MostReadArticles from "./most-read-articles";
 import Footer from "./footer";
 import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
+import "react-image-lightbox/style.css";
 
 var _ = require("lodash");
 
@@ -52,8 +53,8 @@ class Article extends Component {
 	    {this.props.articleType === "Advertorial" ? (
 	      <div>
 		<div className={"row"}>
-		  <div class="advertorial-top-box">
-		    <div class="advertorial-top-box-left">ANNONS</div>
+		  <div className="advertorial-top-box">
+		    <div className="advertorial-top-box-left">ANNONS</div>
 		  </div>
 		</div>
 	      </div>

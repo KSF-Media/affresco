@@ -195,7 +195,7 @@ class Content extends Component {
 		id={"expandOpacity2"}
 	      ></div>
 	      <div
-		class={`brandColor-${this.state.paper}`}
+		className={`brandColor-${this.state.paper}`}
 		style={{ display: "inline-block" }}
 	      >
 		<span>VIK UT</span>
