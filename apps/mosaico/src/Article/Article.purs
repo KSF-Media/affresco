@@ -201,7 +201,7 @@ render { props, state, setState } =
             }
 
     adBox =
-        Ad.ad { contentUnit: "test-contentunit" }
+        Ad.ad { contentUnit: "JATTEBOX" }
 
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
