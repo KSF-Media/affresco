@@ -5,6 +5,7 @@
     @logo-size: 68px;
     @logo-size-mobile: 48px;
     @max-mobile-width: 640px;
+    @font-weight: 400;
 
     grid-area: head;
     display: grid;
@@ -12,7 +13,7 @@
     grid-template-rows: 0.1fr 55px 0.1fr;
     grid-template-columns: 1fr 1fr 1fr;
 
-    font: 500 16px 'Roboto', sans-serif;
+    font: @font-weight 16px 'Roboto', sans-serif;
 
     @media screen and (max-width:@max-mobile-width) {
         grid-template-rows: @logo-size-mobile;
@@ -25,7 +26,7 @@
         display: flex;
         gap: 1%;
 
-        font: 500 13px 'Roboto', sans-serif;
+        font: @font-weight 13px 'Roboto', sans-serif;
         color: @grey-medium;
 
         @media screen and (max-width:@max-mobile-width) {
@@ -37,7 +38,7 @@
         grid-row: 1 / span 2;
         grid-column-start: 3;
 
-        font: 500 13px 'Roboto', sans-serif;
+        font: @font-weight 13px 'Roboto', sans-serif;
         color: #00a1ab;
 
         ul {
