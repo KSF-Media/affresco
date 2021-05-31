@@ -488,7 +488,6 @@ editEmail self =
                 self.props.logger.error $ Error.userError $ show err
                 self.setState _ { editEmail = AsyncWrapper.Error "Det gick inte att uppdatera e-postadressen. Vänligen ta kontakt med kundservice." }
                 Tracking.changeEmail self.props.profile.cusno "error: unexpected error when updating email"
-          throwError $ error "Unexpected error when updating email."
     updateEmail _ = pure unit
 
 editName :: Self -> JSX

@@ -32,6 +32,7 @@ isPreviewArticle :: FullArticle -> Boolean
 isPreviewArticle (PreviewArticle _) = true
 isPreviewArticle _ = false
 
+
 newtype LocalDateTime = LocalDateTime DateTime
 
 localizeArticleDateTimeString :: String -> String -> Effect (Maybe LocalDateTime)
@@ -55,7 +56,7 @@ fromUTCTime utcTime = do
 type ArticleStubCommon =
   ( title     :: String
   , uuid      :: String
-  , preamble  :: String
+  , preamble  :: Maybe String
   , listImage :: Maybe Image
   , tags      :: Array String
   , premium   :: Boolean
@@ -77,6 +78,7 @@ type ArticleCommon =
   , mainImage :: Maybe Image
   , tags      :: Array String
   , uuid      :: String
+  , preamble  :: Maybe String
   , authors   :: Array Author
   , premium   :: Boolean
   )

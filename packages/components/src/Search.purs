@@ -235,7 +235,7 @@ search = do
                         , children:
                             [ DOM.table
                                 { className: "search--results-table"
-                                , children: [  DOM.thead_ [ headerRow1 , headerRow2 ]
+                                , children: [  DOM.thead_ [ headerRow1 ]
                                             ,  DOM.tbody_ $ join $ renderResult actions <$> x
                                             ]
                                 }
@@ -251,7 +251,7 @@ search = do
               { className: "search--spinner-container"
               , children: [ spinner ]
               }
-          , DOM.div_ [ DOM.text "sök" ]
+          , DOM.div_ [ DOM.text "Söker" ]
           ]
       }
 
@@ -265,27 +265,17 @@ search = do
 
     headerRow1 =
       DOM.tr
-        { className: "search--item-identity"
-        , children:
+        { children:
             [ DOM.th_ [ DOM.text "Aktion" ]
-            , DOM.th_ [ DOM.text "" ]
+            , DOM.th_ [ DOM.text "Cusno" ]
             , DOM.th_ [ DOM.text "E-post" ]
-            , DOM.th_ [ DOM.text "Förnamn" ]
-            , DOM.th_ [ DOM.text "Efternamn" ]
-            , DOM.th { colSpan: 4, children: [ DOM.text "Kundnummer" ] }
+            , DOM.th { colSpan: 2, children: [ DOM.text "Namn" ] }
+            , DOM.th_ [ DOM.text "Adress" ]
+            , DOM.th { colSpan: 3
+                     , children: [ DOM.text "Prenumerationer" ]
+                     }
             ]
         }
-
-    headerRow2 =
-      DOM.tr_ [ DOM.th_ [ ]
-              , DOM.th_ [ DOM.text "Cusno" ]
-              , DOM.th_ [ DOM.text "E-post" ]
-              , DOM.th { colSpan: 2, children: [ DOM.text "Namn" ] }
-              , DOM.th_ [ DOM.text "Adress" ]
-              , DOM.th { colSpan: 3
-                       , children: [ DOM.text "Prenumerationer" ]
-                       }
-              ]
 
     renderResult actions { janrain, faro } =
       foldMap (renderJanrain actions.setActiveUser faro) janrain <>
@@ -320,17 +310,17 @@ search = do
                         }
                     ]
                 }
-            , DOM.td_ [ ]
+            , DOM.td_
+                [ intercalate (DOM.text " / ") $
+                    (foldMap (Array.singleton <<< DOM.text) user.cusno) <>
+                    (foldMap (map (DOM.i_ <<< pure <<< DOM.text)) user.otherCusnos)
+                ]
             , DOM.td_ [ DOM.text $ fromMaybe "vet ej" user.email ]
             , DOM.td_ [ DOM.text $ fromMaybe "vet ej" user.firstName ]
             , DOM.td_ [ DOM.text $ fromMaybe "vet ej" user.lastName ]
             , DOM.td
                 { colSpan: 4
-                , children:
-                    [ intercalate (DOM.text " / ") $
-                      (foldMap (Array.singleton <<< DOM.text) user.cusno) <>
-                      (foldMap (map (DOM.i_ <<< pure <<< DOM.text)) user.otherCusnos)
-                    ]
+                , children: [ ]
                 }
             ]
         }
@@ -409,7 +399,7 @@ search = do
                   , children:
                       [ DOM.i
                           { className: "selectable"
-                          , children: [ DOM.text "Inte laddad" ]
+                          , children: [ DOM.text "Klicka för att ladda" ]
                           , onClick: Events.handler_ loadSubs
                           }
                       ]

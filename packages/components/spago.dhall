@@ -23,6 +23,7 @@
     , "read"
     , "uuid"
     , "quickcheck"
+    , "web-url"
     ]
 , packages =
     ../../packages.dhall
