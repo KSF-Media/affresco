@@ -1,7 +1,10 @@
 module KSF.Api.Package where
 
+import Prelude
+
 import Data.JSDate (JSDate)
-import Data.Nullable (Nullable)
+import Data.Nullable (Nullable, toMaybe)
+import Data.Maybe (Maybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 
@@ -50,6 +53,12 @@ data CampaignLengthUnit
   | Month
   | Year
 
+instance showCampaignLengthUnit :: Show CampaignLengthUnit where
+  show Day = "day"
+  show Week = "week"
+  show Month = "month"
+  show Year = "year"
+
 toCampaignLengthUnit :: String -> CampaignLengthUnit
 toCampaignLengthUnit lengthUnit =
   case String.toLower lengthUnit of
@@ -86,3 +95,19 @@ type JSCampaign =
   , lengthUnit :: Nullable String
   , priceEur   :: Nullable Number
   }
+
+fromJSCampaign :: JSCampaign -> Maybe Campaign
+fromJSCampaign jsCampaign =
+  { id: _
+  , no: _
+  , name: _
+  , length: _
+  , lengthUnit: _
+  , priceEur: _
+  }
+  <$> toMaybe jsCampaign.id
+  <*> toMaybe jsCampaign.no
+  <*> toMaybe jsCampaign.name
+  <*> toMaybe jsCampaign.length
+  <*> (map toCampaignLengthUnit $ toMaybe jsCampaign.lengthUnit)
+  <*> toMaybe jsCampaign.priceEur

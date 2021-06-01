@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.Foldable (fold)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
-import KSF.Api.Package (Campaign, JSCampaign, toCampaignLengthUnit)
+import KSF.Api.Package (Campaign, JSCampaign, fromJSCampaign)
 import KSF.User as User
 import React.Basic (JSX)
 
@@ -71,22 +71,6 @@ fromJSProductContent jsProduct =
   }
   <$> toMaybe jsProduct.title
   <*> toMaybe jsProduct.description
-
-fromJSCampaign :: JSCampaign -> Maybe Campaign
-fromJSCampaign jsCampaign =
-  { id: _
-  , no: _
-  , name: _
-  , length: _
-  , lengthUnit: _
-  , priceEur: _
-  }
-  <$> toMaybe jsCampaign.id
-  <*> toMaybe jsCampaign.no
-  <*> toMaybe jsCampaign.name
-  <*> toMaybe jsCampaign.length
-  <*> (map toCampaignLengthUnit $ toMaybe jsCampaign.lengthUnit)
-  <*> toMaybe jsCampaign.priceEur
 
 parseJSCampaign :: JSProduct -> Either String (Maybe Campaign)
 parseJSCampaign jsProduct =
