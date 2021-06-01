@@ -1,7 +1,0 @@
-runtime: nodejs12
-service: app-article-server
-entrypoint: node dist/server
-env_variables:
-  PERSONA_URL: "https://persona.staging.ksfmedia.fi/v1"
-  LETTERA_URL: "https://lettera.staging.ksfmedia.fi/v3"
-  SHARE_URL: "https://app-article.ksfmedia.fi/index.html?uuid="
