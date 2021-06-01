@@ -1,44 +1,34 @@
-import React, { Fragment } from "react"
-import CoronaSvg from "../../../../images/covid-virus-icon.svg"
-import Chevron from "../../../../images/chevron.svg"
-import "../../../../less/corona-banner.less"
+import React, { Fragment } from "react";
+import CoronaSvg from "../../../../images/covid-virus-icon.svg";
+import Chevron from "../../../../images/chevron.svg";
+import "../../../../less/corona-banner.less";
 
-const LinkWrapper = ({ condition, wrapper, children }) =>
-  condition ? wrapper(children) : children
+const LinkWrapper = ({ condition, wrapper, children }) => (condition ? wrapper(children) : children);
 
-const CoronaBanner = ({
-  newCases,
-  hospitalised,
-  deaths,
-  vaccinated,
-  vaccinatedPercentage,
-  siteUrl,
-  showLinks,
-}) => {
+const CoronaBanner = ({ newCases, hospitalised, deaths, vaccinated, vaccinatedPercentage, siteUrl, showLinks }) => {
   const showVaccinated = () => {
     if (vaccinated && !vaccinatedPercentage) {
-      return <div className="stat-value">{vaccinated} </div>
+      return <div className="stat-value">{vaccinated} </div>;
     } else if (!vaccinated && vaccinatedPercentage) {
       return (
         <div className="stat-value">
           <span className="stat-percent">{vaccinatedPercentage}%</span>
         </div>
-      )
+      );
     } else {
       return (
         <div className="stat-value">
-          {vaccinated}{" "}
-          <span className="stat-percent">({vaccinatedPercentage}%)</span>
+          {vaccinated} <span className="stat-percent">({vaccinatedPercentage}%)</span>
         </div>
-      )
+      );
     }
-  }
+  };
 
   return (
     <div className="corona-banner-wrapper">
       <LinkWrapper
         condition={showLinks}
-        wrapper={children => (
+        wrapper={(children) => (
           <a href={siteUrl} target="_parent">
             {children}
           </a>
@@ -91,7 +81,7 @@ const CoronaBanner = ({
           Källa:{" "}
           <LinkWrapper
             condition={showLinks}
-            wrapper={children => (
+            wrapper={(children) => (
               <a
                 className="corona-banner-source-link"
                 href="https://thl.fi/sv/web/thlfi-sv/statistik-och-data/material-och-tjanster/oppna-data"
@@ -106,7 +96,7 @@ const CoronaBanner = ({
           och{" "}
           <LinkWrapper
             condition={showLinks}
-            wrapper={children => (
+            wrapper={(children) => (
               <a
                 className="corona-banner-source-link"
                 href="https://github.com/HS-Datadesk/koronavirus-avoindata"
@@ -121,7 +111,7 @@ const CoronaBanner = ({
         </em>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CoronaBanner
+export default CoronaBanner;

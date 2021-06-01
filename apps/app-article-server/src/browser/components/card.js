@@ -41,57 +41,42 @@ const formatTime = (date) => {
 
 const Card = (props) => {
   return (
-    <a
-      className={"card"}
-      href={"/article/" + props.article.uuid + props.queryString}
-    >
+    <a className={"card"} href={"/article/" + props.article.uuid + props.queryString}>
       <div className={"article-main-image"}>
-	{props.article.premium ? (
-	  <div className={"article-premium-badge"}>
-	    <PremiumBadge />
-	  </div>
-	) : (
-	  ""
-	)}
-	{!!props.article.listImage ? (
-	  <img
-	    className={"card-img-top"}
-	    src={
-	      props.article.listImage.url +
-	      "&function=hardcrop&width=798&height=649&q=95"
-	    }
-	  />
-	) : (
-	  <img className="card-img-top" src={hblDefaultImage} alt="" />
-	)}
+        {props.article.premium ? (
+          <div className={"article-premium-badge"}>
+            <PremiumBadge />
+          </div>
+        ) : (
+          ""
+        )}
+        {!!props.article.listImage ? (
+          <img
+            className={"card-img-top"}
+            src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}
+          />
+        ) : (
+          <img className="card-img-top" src={hblDefaultImage} alt="" />
+        )}
       </div>
       <div className={"card-body"}>
-	<h5 className={"card-title"}>
-	  <strong>
-	    <a
-	      className={`relatedArticlesItem ${
-		props.darkModeEnabled ? "darkMode" : ""
-	      }`}
-	      href={"/article/" + props.article.uuid + props.queryString}
-	    >
-	      {props.article.title.length > 50
-		? props.article.title.substring(0, 50) + "..."
-		: props.article.title}
-	    </a>
-	  </strong>
-	</h5>
+        <h5 className={"card-title"}>
+          <strong>
+            <a
+              className={`relatedArticlesItem ${props.darkModeEnabled ? "darkMode" : ""}`}
+              href={"/article/" + props.article.uuid + props.queryString}
+            >
+              {props.article.title.length > 50 ? props.article.title.substring(0, 50) + "..." : props.article.title}
+            </a>
+          </strong>
+        </h5>
 
-	<div
-	  className={"articleItemDetails"}
-	  style={{ bottom: 0, position: "absolute" }}
-	>
-	  <div className={`category brandColor-${props.paper}`}>
-	    {getTag(props.article.tags)}
-	  </div>
-	  <div className={"date"} style={{ display: "block" }}>
-	    {formatTime(props.article.publishingTime)}
-	  </div>
-	</div>
+        <div className={"articleItemDetails"} style={{ bottom: 0, position: "absolute" }}>
+          <div className={`category brandColor-${props.paper}`}>{getTag(props.article.tags)}</div>
+          <div className={"date"} style={{ display: "block" }}>
+            {formatTime(props.article.publishingTime)}
+          </div>
+        </div>
       </div>
     </a>
   );
