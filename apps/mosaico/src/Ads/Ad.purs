@@ -2,7 +2,6 @@ module Mosaico.Ad where
 
 import Prelude
 
-import Affjax (defaultRequest, request, printError, get) as AX
 import Data.Array (length, insertAt)
 import Data.Maybe (fromMaybe)
 import Effect (Effect)

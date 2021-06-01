@@ -3,7 +3,7 @@ module Mosaico.Article where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (cons, head, snoc, insertAt, length)
+import Data.Array (cons, head, snoc, length)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
