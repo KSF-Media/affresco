@@ -17,11 +17,7 @@ app.get("/article/:id", async (req, res) => {
   const articleId = req.params.id;
   if (articleId && UUID.validate(articleId)) {
     const authHeaders = () => {
-      if (
-	req.headers.authuser &&
-	UUID.validate(req.headers.authuser) &&
-	req.headers.authorization
-      ) {
+      if (req.headers.authuser && UUID.validate(req.headers.authuser) && req.headers.authorization) {
 	return {
 	  authuser: req.headers.authuser,
 	  authorization: req.headers.authorization,
@@ -35,13 +31,7 @@ app.get("/article/:id", async (req, res) => {
   }
 });
 
-async function renderArticle(
-  articleId,
-  res,
-  authHeaders,
-  queryParams,
-  queryString
-) {
+async function renderArticle(articleId, res, authHeaders, queryParams, queryString) {
   const httpGet = (url) => {
     const requestOptions = {
       method: "get",
@@ -57,43 +47,34 @@ async function renderArticle(
 	    const parsedJson = JSON.parse(body);
 	    resolve(parsedJson);
 	  } catch {
-	    resolve(null);
+	    resolve({ error: body });
 	  }
 	});
       });
     });
   };
 
-  const articleResponse = await httpGet(
-    "https://lettera.api.ksfmedia.fi/v3/article/" + articleId
-  );
+  const articleResponse = await httpGet(process.env.LETTERA_URL + "/article/" + articleId);
 
   // If we get some weird response or a 500, abort!
-  if (articleResponse === null || _.get(articleResponse, "http_code") === 500) {
-    const markup = ReactDOM.renderToString(
-      <ErrorPage message={"Artikeln kunde inte hämtas!"} />
-    );
+  if (_.has(articleResponse, "error") || _.get(articleResponse, "http_code") === 500) {
+    const markup = ReactDOM.renderToString(<ErrorPage message={"Artikeln kunde inte hämtas!"} />);
     const html = generateHtml(markup);
+    console.warn("Failed to fetch article! Error message: " + _.get(articleResponse, "error"));
     res.send(html);
     return;
   }
 
   const paper = queryParams.paper || "hbl";
-  const mostReadResponse = await httpGet(
-    process.env.LETTERA_URL + "/mostread?paper=" + paper
-  );
+  const mostReadResponse = await httpGet(process.env.LETTERA_URL + "/mostread?paper=" + paper);
 
   const user = _.get(authHeaders, "authuser")
     ? await httpGet(process.env.PERSONA_URL + "/users/" + authHeaders.authuser)
     : null;
 
-  const isPreviewArticle =
-    articleResponse.http_code === 403 &&
-    _.has(articleResponse, "not_entitled.articlePreview");
+  const isPreviewArticle = articleResponse.http_code === 403 && _.has(articleResponse, "not_entitled.articlePreview");
 
-  const article = isPreviewArticle
-    ? articleResponse.not_entitled.articlePreview
-    : articleResponse;
+  const article = isPreviewArticle ? articleResponse.not_entitled.articlePreview : articleResponse;
 
   const mostReadArticles = _.isArray(mostReadResponse) ? mostReadResponse : [];
 
