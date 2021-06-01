@@ -47,7 +47,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	    const parsedJson = JSON.parse(body);
 	    resolve(parsedJson);
 	  } catch {
-	    resolve(null);
+	    resolve({ error: body });
 	  }
 	});
       });
@@ -57,9 +57,10 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
   const articleResponse = await httpGet(process.env.LETTERA_URL + "/article/" + articleId);
 
   // If we get some weird response or a 500, abort!
-  if (articleResponse === null || _.get(articleResponse, "http_code") === 500) {
+  if (_.has(articleResponse, "error") || _.get(articleResponse, "http_code") === 500) {
     const markup = ReactDOM.renderToString(<ErrorPage message={"Artikeln kunde inte hämtas!"} />);
     const html = generateHtml(markup);
+    console.warn("Failed to fetch article! Error message: " + _.get(articleResponse, "error"));
     res.send(html);
     return;
   }
