@@ -212,7 +212,8 @@ render { props, state, setState } =
               ]
         , paper: Just HBL
         , paymentMethods: []
-        , minimalLayout: false
+        , customNewPurchase: Nothing
+        , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
         }
       where

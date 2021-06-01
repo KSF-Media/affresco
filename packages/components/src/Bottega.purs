@@ -3,6 +3,7 @@ module Bottega where
 import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
+import Data.Array (mapMaybe)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -13,7 +14,7 @@ import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)
 import KSF.Api (UserAuth, oauthToken)
 import KSF.Api.Error (ServerError)
-import KSF.Api.Package (Package)
+import KSF.Api.Package (Package, fromJSCampaign)
 import OpenApiClient (Api, callApi)
 
 foreign import ordersApi :: Api
@@ -108,7 +109,9 @@ payOrder { userId, authToken } orderNumber paymentMethod = do
     authUser = unsafeToForeign userId
 
 getPackages :: Aff (Array Package)
-getPackages = callApi packagesApi "packageGet" [] {}
+getPackages = do
+  map (\package -> package { campaigns = mapMaybe fromJSCampaign package.campaigns })
+    <$> callApi packagesApi "packageGet" [] {}
 
 readCreditCard :: ApiCreditCard -> Aff CreditCard
 readCreditCard creditCardObj = pure $
