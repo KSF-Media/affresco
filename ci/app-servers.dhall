@@ -9,10 +9,6 @@ let app-servers =
           , previewUrl = "article/c7da734f-9e2b-45be-b645-5f4742766486"
           , runtime = "nodejs12"
           , entrypoint = "node dist/server"
-          , env = toMap
-              { SHARE_URL =
-                  "https://app-article-server.ksfmedia.fi/index.html?uuid="
-              }
           }
         ]
       : List Actions.AppServer.Type

@@ -69,9 +69,7 @@ jobs:
         run: |2
             ruby deploy.rb mosaico
             mv apps/mosaico/dist build/mosaico
-      - env:
-          SHARE_URL: "https://app-article-server.ksfmedia.fi/index.html?uuid="
-        name: Build Server App article server
+      - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
             mv apps/app-article-server build/app-article-server
