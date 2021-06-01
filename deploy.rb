@@ -79,7 +79,7 @@ def setup_env(app)
     app_vars.each do |v|
       abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
-    if defined?(app['runtime'])
+    if app.key('runtime')
       puts "Generating production app.yaml"
       appYaml = {}
       appYaml['runtime'] = app['runtime']
@@ -106,7 +106,7 @@ def setup_env(app)
     ENV['NODE_ENV'] = 'production'
   else
     ENV['NODE_ENV'] = 'development'
-    if defined?(app['runtime'])
+    if app.key?('runtime')
       run_command("cp #{app['path']}/app.dev.yaml #{app['path']}/app.yaml")
     end
   end
