@@ -15,34 +15,34 @@ function positionAdsWithinArticle() {
   if (contentDiv != null) {
     contentDiv.childNodes.forEach((node) => {
       if (node.className === "html") {
-	var OK = true;
-	let approvedTags = ["B", "A", "I"];
-	let tt = node.getElementsByTagName("*");
-	// try to support iPads from 2013. They cannot iterate browser objects only js arrays.
-	var t = Array.prototype.slice.call(tt);
-	// check for non-text content
-	if (t.length > 0) {
-	  for (let item of t) {
-	    let upperCased = item.nodeName;
-	    upperCased = upperCased.toUpperCase();
+        var OK = true;
+        let approvedTags = ["B", "A", "I"];
+        let tt = node.getElementsByTagName("*");
+        // try to support iPads from 2013. They cannot iterate browser objects only js arrays.
+        var t = Array.prototype.slice.call(tt);
+        // check for non-text content
+        if (t.length > 0) {
+          for (let item of t) {
+            let upperCased = item.nodeName;
+            upperCased = upperCased.toUpperCase();
 
-	    if (approvedTags.indexOf(upperCased) > -1) {
-	    } else {
-	      OK = false;
-	    }
-	  }
-	}
-	textParagraphNum++;
-	if (OK && textParagraphNum > 3) {
-	  // We are far enough from the beginning and the previous para was text, as is this and text is long enough. Good! We approve the paragraph for ads
-	  textParagraphsOK[textParagraphCount].push(textParagraphNum);
-	} else {
-	  textParagraphCount++;
-	  textParagraphsOK.push([]);
-	}
+            if (approvedTags.indexOf(upperCased) > -1) {
+            } else {
+              OK = false;
+            }
+          }
+        }
+        textParagraphNum++;
+        if (OK && textParagraphNum > 3) {
+          // We are far enough from the beginning and the previous para was text, as is this and text is long enough. Good! We approve the paragraph for ads
+          textParagraphsOK[textParagraphCount].push(textParagraphNum);
+        } else {
+          textParagraphCount++;
+          textParagraphsOK.push([]);
+        }
       } else {
-	textParagraphCount++;
-	textParagraphsOK.push([]);
+        textParagraphCount++;
+        textParagraphsOK.push([]);
       }
     });
   }
@@ -60,10 +60,7 @@ function positionAdsWithinArticle() {
     }
     let mMittSet = Math.ceil(textParagraphsOK.length / 2);
     if (mMittSet > 1 || textParagraphsOK[mMittSet - 1].length > 5) {
-      mobMittPick =
-	textParagraphsOK[mMittSet - 1][
-	  Math.floor(textParagraphsOK[mMittSet - 1].length / 2)
-	];
+      mobMittPick = textParagraphsOK[mMittSet - 1][Math.floor(textParagraphsOK[mMittSet - 1].length / 2)];
       mobMittGood = true;
       AllParas[mobMittPick - 1].insertAdjacentHTML("beforebegin", slotTwo);
     }

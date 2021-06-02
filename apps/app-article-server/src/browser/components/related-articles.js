@@ -10,23 +10,17 @@ class RelatedArticles extends Component {
   render() {
     return (
       <div className={"relatedArticles "}>
-	<div className={"row"}>
-	  <div className={"col-12"}>
-	    <h3
-	      className={`latest ${
-		this.props.isDarkModeEnabled ? "darkMode" : ""
-	      }`}
-	    >
-	      Läs också
-	    </h3>
-	  </div>
-	</div>
-	<MobileList
-	  articles={this.props.relatedArticles}
-	  queryString={this.props.queryString}
-	  darkModeEnabled={this.props.darkModeEnabled}
-	  paper={this.props.paper}
-	/>
+        <div className={"row"}>
+          <div className={"col-12"}>
+            <h3 className={`latest ${this.props.isDarkModeEnabled ? "darkMode" : ""}`}>Läs också</h3>
+          </div>
+        </div>
+        <MobileList
+          articles={this.props.relatedArticles}
+          queryString={this.props.queryString}
+          darkModeEnabled={this.props.darkModeEnabled}
+          paper={this.props.paper}
+        />
       </div>
     );
   }

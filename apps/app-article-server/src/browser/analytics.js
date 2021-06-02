@@ -10,11 +10,8 @@ function pushLoadingArticleToGoogleTagManager(article, user) {
   if (user && user.subs) {
     let packages = [];
     for (let i in user.subs) {
-      if (
-	user.subs[i].state === "Active" &&
-	packages.indexOf(user.subs[i].package.id) === -1
-      ) {
-	packages.push(user.subs[i].package.id);
+      if (user.subs[i].state === "Active" && packages.indexOf(user.subs[i].package.id) === -1) {
+        packages.push(user.subs[i].package.id);
       }
     }
     push_data.packageid = packages.sort().toString();
@@ -46,5 +43,4 @@ function pushLoadingArticleToGoogleTagManager(article, user) {
   window.dataLayer.push(push_data);
 }
 
-window.pushLoadingArticleToGoogleTagManager =
-  pushLoadingArticleToGoogleTagManager;
+window.pushLoadingArticleToGoogleTagManager = pushLoadingArticleToGoogleTagManager;

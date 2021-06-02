@@ -1,1 +1,1 @@
-exports.requireDotenv = require('dotenv').config();
+exports.requireDotenv = require("dotenv").config();

@@ -47,63 +47,38 @@ const MobileList = (props) => {
   if (isArray(props.articles)) {
     relatedArticles = props.articles.map((item, index) => {
       return (
-	<React.Fragment key={index}>
-	  <div className={"articleItem mobileListItems"}>
-	    <div className={"row"}>
-	      <a
-		href={"/article/" + item.uuid + props.queryString}
-		className={"col-8"}
-	      >
-		<div className={""}>
-		  <div>
-		    <span
-		      className={
-			"relatedArticlesItem" + props.darkModeEnabled
-			  ? "darkMode"
-			  : ""
-		      }
-		    >
-		      {item.title.length > 80
-			? item.title.substring(0, 80) + "..."
-			: item.title}
-		    </span>
-		  </div>
-		  <div className={"articleItemDetails"}>
-		    <div className={`category brandColor-${props.paper}`}>
-		      {getTag(item.tags)}
-		    </div>
-		    <div className={"date"}>
-		      {formatTime(item.publishingTime)}
-		    </div>
-		  </div>
-		</div>
-	      </a>
-	      <a
-		href={"/article/" + item.uuid + props.queryString}
-		className={"col-4"}
-	      >
-		<div className={"articleImage"}>
-		  {item.listImage === null ? (
-		    <img
-		      className="card-img-top"
-		      src={hblDefaultImage}
-		      alt=""
-		    />
-		  ) : (
-		    <img
-		      className="card-img-top"
-		      src={
-			item.listImage.url +
-			"&function=hardcrop&width=798&height=649&q=95"
-		      }
-		      alt=""
-		    />
-		  )}
-		</div>
-	      </a>
-	    </div>
-	  </div>
-	</React.Fragment>
+        <React.Fragment key={index}>
+          <div className={"articleItem mobileListItems"}>
+            <div className={"row"}>
+              <a href={"/article/" + item.uuid + props.queryString} className={"col-8"}>
+                <div className={""}>
+                  <div>
+                    <span className={"relatedArticlesItem" + props.darkModeEnabled ? "darkMode" : ""}>
+                      {item.title.length > 80 ? item.title.substring(0, 80) + "..." : item.title}
+                    </span>
+                  </div>
+                  <div className={"articleItemDetails"}>
+                    <div className={`category brandColor-${props.paper}`}>{getTag(item.tags)}</div>
+                    <div className={"date"}>{formatTime(item.publishingTime)}</div>
+                  </div>
+                </div>
+              </a>
+              <a href={"/article/" + item.uuid + props.queryString} className={"col-4"}>
+                <div className={"articleImage"}>
+                  {item.listImage === null ? (
+                    <img className="card-img-top" src={hblDefaultImage} alt="" />
+                  ) : (
+                    <img
+                      className="card-img-top"
+                      src={item.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}
+                      alt=""
+                    />
+                  )}
+                </div>
+              </a>
+            </div>
+          </div>
+        </React.Fragment>
       );
     });
 

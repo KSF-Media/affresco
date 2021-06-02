@@ -1,6 +1,5 @@
-import React from 'react';
-import render from 'react-dom';
-
+import React from "react";
+import render from "react-dom";
 
 export default class Parliament extends React.Component {
   constructor(props) {
@@ -8,8 +7,8 @@ export default class Parliament extends React.Component {
   }
 
   render() {
-    const parliamentSVG = require('parliament-svg');
-    const toStr = require('virtual-dom-stringify');
+    const parliamentSVG = require("parliament-svg");
+    const toStr = require("virtual-dom-stringify");
     const { seats } = this.props;
 
     const totalSeats = 200;
@@ -19,28 +18,28 @@ export default class Parliament extends React.Component {
 
     const seatsInParliement = {
       ...seats,
-      'unfilled':
-        {
-          'seats': totalSeats-occupiedSeats,
-        }
+      unfilled: {
+        seats: totalSeats - occupiedSeats,
+      },
     };
     console.log("Seats in parliament", seatsInParliement);
 
     const svg = parliamentSVG(seatsInParliement, false);
     const getSvg = () => {
-        return {
-          __html: toStr(svg)
-        }
-    }
+      return {
+        __html: toStr(svg),
+      };
+    };
 
     return (
-      <div
-        className="parliament-spread"
-      >
+      <div className="parliament-spread">
         <div dangerouslySetInnerHTML={getSvg()}></div>
-        <h2>Riksdagens<br />fördelning just nu</h2>
+        <h2>
+          Riksdagens
+          <br />
+          fördelning just nu
+        </h2>
       </div>
-    )
+    );
   }
-
 }

@@ -18,10 +18,10 @@ app.get("/article/:id", async (req, res) => {
   if (articleId && UUID.validate(articleId)) {
     const authHeaders = () => {
       if (req.headers.authuser && UUID.validate(req.headers.authuser) && req.headers.authorization) {
-	return {
-	  authuser: req.headers.authuser,
-	  authorization: req.headers.authorization,
-	};
+        return {
+          authuser: req.headers.authuser,
+          authorization: req.headers.authorization,
+        };
       }
     };
     const queryString = req._parsedUrl.search || "";
@@ -39,17 +39,17 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     };
     return new Promise((resolve, reject) => {
       https.get(url, requestOptions, (res) => {
-	res.setEncoding("utf8");
-	let body = "";
-	res.on("data", (chunk) => (body += chunk));
-	res.on("end", () => {
-	  try {
-	    const parsedJson = JSON.parse(body);
-	    resolve(parsedJson);
-	  } catch {
-	    resolve({ error: body });
-	  }
-	});
+        res.setEncoding("utf8");
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          try {
+            const parsedJson = JSON.parse(body);
+            resolve(parsedJson);
+          } catch {
+            resolve({ error: body });
+          }
+        });
       });
     });
   };

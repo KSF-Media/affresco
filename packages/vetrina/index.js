@@ -1,6 +1,6 @@
-require('./build/Vetrina.css');
-import {jsComponent} from './build.js';
+require("./build/Vetrina.css");
+import { jsComponent } from "./build.js";
 
 module.exports = {
-  Vetrina: jsComponent
-}
+  Vetrina: jsComponent,
+};
