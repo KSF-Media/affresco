@@ -16,24 +16,17 @@ class Additional extends Component {
   render() {
     return (
       <div className={"row"}>
-	<div className="col-12">
-	  <p
-	    className={`preamble mt-3 ${
-	      this.props.darkModeEnabled ? "darkMode" : ""
-	    }`}
-	    style={this.customStyle()}
-	  >
-	    {this.props.preamble}
-	  </p>
-	</div>
+        <div className="col-12">
+          <p className={`preamble mt-3 ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={this.customStyle()}>
+            {this.props.preamble}
+          </p>
+        </div>
       </div>
     );
   }
 
   customStyle() {
-    return this.props.fontSize
-      ? { fontSize: this.props.fontSize + 0.05 + "rem", lineHeight: "120%" }
-      : {};
+    return this.props.fontSize ? { fontSize: this.props.fontSize + 0.05 + "rem", lineHeight: "120%" } : {};
   }
 }
 

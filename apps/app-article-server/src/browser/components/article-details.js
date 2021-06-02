@@ -4,9 +4,7 @@ import PremiumBadge from "./badge";
 const ArticleType = (props) => {
   return (
     <span className="article-opinion-type">
-      {!!props.articleTypeDetails
-	? props.articleTypeDetails.title.toUpperCase()
-	: ""}
+      {!!props.articleTypeDetails ? props.articleTypeDetails.title.toUpperCase() : ""}
     </span>
   );
 };
@@ -14,8 +12,7 @@ const ArticleType = (props) => {
 const ArticleDetails = (props) => {
   let publishingDate = new Date(props.publishingTime);
   let updatingDate = new Date(props.updateTime);
-  const isUpdateTimeEarlierThanPublishTime =
-    publishingDate.getTime() > updatingDate.getTime();
+  const isUpdateTimeEarlierThanPublishTime = publishingDate.getTime() > updatingDate.getTime();
 
   let newPublishingDate =
     publishingDate.getDate() +
@@ -76,93 +73,81 @@ const ArticleDetails = (props) => {
   return (
     <div className={"container"}>
       {props.category !== "Advertorial" && (
-	<div className={"row articleDetails"}>
-	  {isCategoryOpinion() ? (
-	    <Fragment>
-	      <div className={"col-2"} style={{ padding: "0px" }}>
-		{props.authors != null
-		  ? props.authors.map((author, index) => {
-		      return (
-			<div className={"mb-1"} key={index}>
-			  <div
-			    className="authorProfilePic"
-			    key={index}
-			    style={{
-			      backgroundImage: `url(${
-				author.image +
-				"?width=740&height=850&function=hardcrop"
-			      })`,
-			    }}
-			  ></div>
-			</div>
-		      );
-		    })
-		  : ""}
-	      </div>
-	      <div className={"col-5"} style={{ paddingLeft: "0px" }}>
-		{props.authors != null
-		  ? props.authors.map((author, index) => {
-		      return (
-			<div key={index}>
-			  <div className={"author"}> {author.byline} </div>
-			</div>
-		      );
-		    })
-		  : ""}
-		{props.premium ? (
-		  <div className="article-info">
-		    <ArticleType
-		      articleTypeDetails={props.articleTypeDetails}
-		    />{" "}
-		    <PremiumBadge paper={props.paper} />
-		  </div>
-		) : (
-		  ""
-		)}
-	      </div>
-	    </Fragment>
-	  ) : (
-	    ""
-	  )}
+        <div className={"row articleDetails"}>
+          {isCategoryOpinion() ? (
+            <Fragment>
+              <div className={"col-2"} style={{ padding: "0px" }}>
+                {props.authors != null
+                  ? props.authors.map((author, index) => {
+                      return (
+                        <div className={"mb-1"} key={index}>
+                          <div
+                            className="authorProfilePic"
+                            key={index}
+                            style={{
+                              backgroundImage: `url(${author.image + "?width=740&height=850&function=hardcrop"})`,
+                            }}
+                          ></div>
+                        </div>
+                      );
+                    })
+                  : ""}
+              </div>
+              <div className={"col-5"} style={{ paddingLeft: "0px" }}>
+                {props.authors != null
+                  ? props.authors.map((author, index) => {
+                      return (
+                        <div key={index}>
+                          <div className={"author"}> {author.byline} </div>
+                        </div>
+                      );
+                    })
+                  : ""}
+                {props.premium ? (
+                  <div className="article-info">
+                    <ArticleType articleTypeDetails={props.articleTypeDetails} /> <PremiumBadge paper={props.paper} />
+                  </div>
+                ) : (
+                  ""
+                )}
+              </div>
+            </Fragment>
+          ) : (
+            ""
+          )}
 
-	  {!isCategoryOpinion() ? (
-	    <div className={"col-7"} style={{ paddingLeft: "0px" }}>
-	      {props.authors != null ? (
-		<div>
-		  {props.authors.map((author, index) => {
-		    return (
-		      <div key={index}>
-			<div className={"author"}> {author.byline} </div>
-		      </div>
-		    );
-		  })}
-		</div>
-	      ) : (
-		""
-	      )}
-	      {props.premium ? (
-		<div className="article-info">
-		  <ArticleType articleTypeDetails={props.articleTypeDetails} />{" "}
-		  <PremiumBadge />
-		</div>
-	      ) : (
-		""
-	      )}
-	    </div>
-	  ) : (
-	    ""
-	  )}
+          {!isCategoryOpinion() ? (
+            <div className={"col-7"} style={{ paddingLeft: "0px" }}>
+              {props.authors != null ? (
+                <div>
+                  {props.authors.map((author, index) => {
+                    return (
+                      <div key={index}>
+                        <div className={"author"}> {author.byline} </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                ""
+              )}
+              {props.premium ? (
+                <div className="article-info">
+                  <ArticleType articleTypeDetails={props.articleTypeDetails} /> <PremiumBadge />
+                </div>
+              ) : (
+                ""
+              )}
+            </div>
+          ) : (
+            ""
+          )}
 
-	  <div
-	    className="col-5 pubDate text-right"
-	    style={{ paddingLeft: "0px", paddingRight: "0px" }}
-	  >
-	    <div>Pub. {newPublishingDate}</div>
-	    {!isUpdateTimeEarlierThanPublishTime && (
-	      <div style={{ marginTop: "-3px" }}>Uppd. {newUpdateDate}</div>
-	    )}
-	  </div>
-	</div>
+          <div className="col-5 pubDate text-right" style={{ paddingLeft: "0px", paddingRight: "0px" }}>
+            <div>Pub. {newPublishingDate}</div>
+            {!isUpdateTimeEarlierThanPublishTime && <div style={{ marginTop: "-3px" }}>Uppd. {newUpdateDate}</div>}
+          </div>
+        </div>
       )}
     </div>
   );

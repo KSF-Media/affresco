@@ -2,7 +2,7 @@ var googletag = googletag || {};
 var ksfDfp = {};
 
 (function () {
-  'use strict';
+  "use strict";
   googletag.cmd = googletag.cmd || [];
 
   ksfDfp.displayBanner = function (id) {
@@ -27,7 +27,7 @@ var ksfDfp = {};
   if (window.disableAds === true) {
     // if the backend main settings kill switch is activated we show no ads. The onSwitch will silently leave all banners unloaded
     ksfDfp.onSwitch = false;
-    console.log('We will not show ads on this page load!');
+    console.log("We will not show ads on this page load!");
   }
   if (ksfDfp.onSwitch) {
     ksfDfp.activated = false;
@@ -54,27 +54,24 @@ var ksfDfp = {};
           n = n - 1;
         }
       } else {
-        console.log('Already activated. Not running again!');
+        console.log("Already activated. Not running again!");
       }
     };
-    ksfDfp.account = '/21664538223/';
-    ksfDfp.w = Math.max(
-      document.documentElement.clientWidth,
-      window.innerWidth || 0
-    );
+    ksfDfp.account = "/21664538223/";
+    ksfDfp.w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
     ksfDfp.mobile = true; // app is all mobile
 
     // this var is available in KSF sites
-    ksfDfp.site = 'app'; // there is only one site in the app
-    googletag.pubads().setTargeting('newspaper', ksfDfp.site);
-    googletag.pubads().setTargeting('consent', 1);
+    ksfDfp.site = "app"; // there is only one site in the app
+    googletag.pubads().setTargeting("newspaper", ksfDfp.site);
+    googletag.pubads().setTargeting("consent", 1);
 
     ksfDfp.allPageSlots = [];
     // the order of sizes should be the same as in dfp:s ad unit definition
     // this array is used to block publication unless the display size is mobile
     ksfDfp.mobileOnlySlots = [
       [
-        'MOBPARAD',
+        "MOBPARAD",
         [
           [300, 100],
           [300, 250],
@@ -83,7 +80,7 @@ var ksfDfp = {};
         ],
       ],
       [
-        'MOBMITT',
+        "MOBMITT",
         [
           [300, 100],
           [300, 250],
@@ -93,7 +90,7 @@ var ksfDfp = {};
       ],
 
       [
-        'MOBNER',
+        "MOBNER",
         [
           [300, 100],
           [300, 250],
@@ -102,7 +99,7 @@ var ksfDfp = {};
         ],
       ],
       [
-        'DIGIHELMOB',
+        "DIGIHELMOB",
         [
           [300, 100],
           [300, 250],
@@ -140,11 +137,7 @@ var ksfDfp = {};
           // Array of banner heights, as some slots have several
           bannerSizeList = ksfDfp.slots[n][1];
           ksfDfp.slotObjects[ksfDfp.slots[n][0]] = googletag
-            .defineSlot(
-              ksfDfp.account + ksfDfp.slots[n][0],
-              bannerSizeList,
-              ksfDfp.slots[n][0]
-            )
+            .defineSlot(ksfDfp.account + ksfDfp.slots[n][0], bannerSizeList, ksfDfp.slots[n][0])
             .addService(googletag.pubads());
         } // slot size to screen comparison end of if
         n -= 1;
@@ -159,8 +152,8 @@ var ksfDfp = {};
       });
       googletag.enableServices();
 
-      googletag.pubads().addEventListener('slotRenderEnded', function (event) {
-        if (typeof event !== 'undefined' && event.size != null) {
+      googletag.pubads().addEventListener("slotRenderEnded", function (event) {
+        if (typeof event !== "undefined" && event.size != null) {
           var contentUnitDiv;
           var headerToShow;
           contentUnitDiv = event.slot.getSlotElementId();
@@ -171,7 +164,7 @@ var ksfDfp = {};
           // show ad header or a special ad header for ads that require a close button
           if (ksfDfp.closableAdSlots.indexOf(contentUnitDiv) === -1) {
             headerToShow.insertAdjacentHTML(
-              'afterbegin',
+              "afterbegin",
               '<header class="ksfDFPadHeader ' +
                 contentUnitDiv +
                 '" style="width: ' +
@@ -179,19 +172,17 @@ var ksfDfp = {};
                 'px"><span>annons</span></header>'
             );
             headerToShow.insertAdjacentHTML(
-              'beforeend',
-              '<header class="ksfDFPadHeader ' +
-                contentUnitDiv +
-                '"><span>annons slut</span></header>'
+              "beforeend",
+              '<header class="ksfDFPadHeader ' + contentUnitDiv + '"><span>annons slut</span></header>'
             );
           } else {
             headerToShow.insertAdjacentHTML(
-              'afterbegin',
+              "afterbegin",
               '<header class="ksfDFPadHeader  sticky"  id="' +
                 contentUnitDiv +
                 '_header" ><span>annons</span><p><a href="#" title="stäng annons" onclick="return ksfDfp.closeInterstitial(\'' +
                 contentUnitDiv +
-                '\');">x</a></p></header>'
+                "');\">x</a></p></header>"
             );
           }
         }
@@ -200,25 +191,20 @@ var ksfDfp = {};
 
     ksfDfp.closeInterstitial = function (interstitialDivName) {
       var divToClose = document.getElementById(interstitialDivName).parentNode;
-      document.body.className = document.body.className.replace('noScroll', '');
-      divToClose.style.display = 'none';
+      document.body.className = document.body.className.replace("noScroll", "");
+      divToClose.style.display = "none";
       return false;
     };
     ksfDfp.closeSlotAfterCallback = function (slot) {
       // this is used to close third party ad calls that has been abandoned and returned using a callback
       var divToClose = document.getElementById(slot);
-      if (typeof divToClose !== 'undefined' && divToClose != null) {
-        divToClose.style.display = 'none';
-        var headerToClose = document.getElementsByClassName(
-          'ksfDFPadHeader ' + slot
-        );
-        if (
-          typeof headerToClose[0] !== 'undefined' &&
-          headerToClose[0] != null
-        ) {
+      if (typeof divToClose !== "undefined" && divToClose != null) {
+        divToClose.style.display = "none";
+        var headerToClose = document.getElementsByClassName("ksfDFPadHeader " + slot);
+        if (typeof headerToClose[0] !== "undefined" && headerToClose[0] != null) {
           var unclosed = headerToClose.length - 1;
           while (unclosed >= 0) {
-            headerToClose[unclosed].style.display = 'none';
+            headerToClose[unclosed].style.display = "none";
             unclosed = unclosed - 1;
           }
         }
@@ -226,7 +212,7 @@ var ksfDfp = {};
     };
 
     // handle ads that cannot work in an iframe. Create them based on messages.
-    ksfDfp.allowedPostMessages = ['closeSlot'];
+    ksfDfp.allowedPostMessages = ["closeSlot"];
     ksfDfp.createBannerOnMessage = function (e) {
       // this will allow only post messages we expect
       if (!(e.data && ksfDfp.allowedPostMessages.indexOf(e.data.cmd) !== -1)) {
@@ -236,7 +222,7 @@ var ksfDfp = {};
       var bannerIdString = message.id;
 
       switch (message.cmd) {
-        case 'closeSlot':
+        case "closeSlot":
           ksfDfp.closeSlotAfterCallback(bannerIdString);
           break;
 
@@ -246,10 +232,10 @@ var ksfDfp = {};
     };
     // add listener for post message events from ads
     if (window.addEventListener) {
-      window.addEventListener('message', ksfDfp.createBannerOnMessage, false);
+      window.addEventListener("message", ksfDfp.createBannerOnMessage, false);
     } else {
       if (window.attachEvent) {
-        window.attachEvent('onmessage', ksfDfp.createBannerOnMessage);
+        window.attachEvent("onmessage", ksfDfp.createBannerOnMessage);
       } else {
         window.onmessage = ksfDfp.createBannerOnMessage;
       }

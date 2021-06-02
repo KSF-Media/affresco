@@ -10,14 +10,14 @@ const TabletList = (props) => {
   if (isArray(props.articles)) {
     relatedArticles = props.articles.map((item, index) => {
       return (
-	<div className={"col-4 mt-n1 "} style={{ padding: "5px" }} key={index}>
-	  <Card
-	    article={item}
-	    darkModeEnabled={props.darkModeEnabled}
-	    queryString={props.queryString}
-	    paper={props.paper}
-	  />
-	</div>
+        <div className={"col-4 mt-n1 "} style={{ padding: "5px" }} key={index}>
+          <Card
+            article={item}
+            darkModeEnabled={props.darkModeEnabled}
+            queryString={props.queryString}
+            paper={props.paper}
+          />
+        </div>
       );
     });
     return relatedArticles;

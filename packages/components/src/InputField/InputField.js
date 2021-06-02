@@ -1,5 +1,5 @@
 var inputFieldIdCounter = 0;
 
-exports.generateIdNumber = function() {
-    return inputFieldIdCounter++;
-}
+exports.generateIdNumber = function () {
+  return inputFieldIdCounter++;
+};
