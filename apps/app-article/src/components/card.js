@@ -27,7 +27,7 @@ const formatTime = (date) => {
 const Card = (props) => {
     const urlParams = "&paper=" + getBrandValueParam() + "&mode=" + getMode() + "&token=" + getTokenFromUrl() + "&userId=" + getUserUuidFromUrl() + "&isLogged=" + getIsLoggedFromUrl();
     return(
-        <div className={"card"} onClick={() => { window.location.href = "?uuid=" + props.article.uuid + urlParams }}>
+        <div className={`card ${isDarkModeOn() ? 'darkMode': ''}`} onClick={() => { window.location.href = "?uuid=" + props.article.uuid + urlParams }}>
             <div className={"article-main-image"} >
                 {
                     props.article.premium ?
@@ -42,8 +42,8 @@ const Card = (props) => {
                                alt=""/>
                 }
             </div>
-            <div className={"card-body"}>
-                <h5 className={"card-title"}>
+            <div className={`card-body ${isDarkModeOn() ? 'darkMode': ''}`}>
+                <h5 className={`card-title ${isDarkModeOn() ? 'darkMode': ''}`}>
                     <strong>
                         <a className={`relatedArticlesItem ${isDarkModeOn() ? 'darkMode': ''}`}
                            href={"?uuid=" + props.article.uuid + urlParams}>

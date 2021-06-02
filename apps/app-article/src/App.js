@@ -19,6 +19,8 @@ import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from 'js-cookie';
 import { AndroidView } from 'react-device-detect';
 import { Sentry } from './sentry'
+import CoronaBanner from '../../../packages/components/src/CoronaBanner/banner'
+
 
 class App extends Component {
     constructor(props) {
@@ -61,7 +63,16 @@ class App extends Component {
             mostReadArticles: [],
             errorFetching: false,
             errorFetchingLatestArticles: false,
-            forceLoginView: false
+            forceLoginView: false,
+            showBanner: false,
+            banner: {
+                newCases: null,
+                hospitalised: null,
+                deaths: null,
+                vaccinated: null,
+                vaccinatedPercentage: null,
+                showLinks: false
+            }
         };
     }
     componentDidMount() {
@@ -81,7 +92,13 @@ class App extends Component {
             this.getMostReadArticles();
         }
     }
-    componentDidUpdate() {
+    componentDidUpdate(prevProps, prevState) {
+        const hasCoronaTag = this.state.tags.some(tag => tag.match(/coronavirus/i))
+        const hadCoronaTag = prevState.tags.some(tag => tag.match(/coronavirus/i))
+        const articleHidden = this.state.showBuyOption
+        if (hasCoronaTag && !hadCoronaTag && !articleHidden) {
+            this.getCoronaBannerStats();
+        }       
     }
     componentWillUnmount() {
     }
@@ -155,6 +172,22 @@ class App extends Component {
                 this.setState({ isLoading: false });
                 this.setState({ isLoading: false, errorFetchingLatestArticles: true });
             });
+    }
+
+    getCoronaBannerStats() {
+            fetch('https://cdn.ksfmedia.fi/corona-banner/stats.json')
+                .then(res => res.json())
+                .then(data => {
+                    this.setState({showBanner: true, 
+                        banner: {
+                            newCases: data.newCases,
+                            hospitalised: data.hospitalised,
+                            deaths: data.deaths,
+                            vaccinated: data.vaccinatedAmount,
+                            vaccinatedPercentage: data.vaccinatedPercentage
+                    }
+                    })
+                })
     }
 
     checkCache(uuid) {
@@ -582,12 +615,12 @@ class App extends Component {
 
         if (this.state.forceLoginView) {
             return (
-                <div className={"col-sm-12"}>
+                <div className={`col-sm-12 login ${isDarkModeOn() ? 'darkMode': ''}`}>
                     <Login onRegister={() => this.onRegisterOpen()} onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)} onUserFetchFail={(error) => this.onUserFetchFail(error)} disableSocialLogins={["Facebook", "Google"]} />
                 </div>
             )
         }
-
+        
         return (
             <div className="App">
                 {this.state.isLoading ? <Loading /> : ''}
@@ -629,6 +662,11 @@ class App extends Component {
                         )}
                         <Content body={this.state.body}
                             showHighResolutionImage={this.showHighResolutionImage} />
+                        {this.state.showBanner && (
+                            <CoronaBanner newCases={this.state.banner.newCases} hospitalised={this.state.banner.hospitalised}
+                                deaths={this.state.banner.deaths} vaccinated={this.state.banner.vaccinated} 
+                                vaccinatedPercentage={this.state.banner.vaccinatedPercentage} showLinks={this.state.banner.showLinks}/> 
+                        )}
                         <div className={"row"}>
                             <div className={"col-sm-12"}>
                                 {

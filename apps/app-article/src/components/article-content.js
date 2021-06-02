@@ -101,7 +101,7 @@ class Content extends Component {
                     : 
                     <div className={`genericBox-headline ${isDarkModeOn() ? 'darkMode': ''}`}>{block.box.type === "fact" ? 'FAKTA': ''}</div>
                 }
-                <h3 class={isDarkModeOn() ? 'faktBoxdarkMode': ''}>{block && block.box && block.box.title}</h3>
+                <h3 className={isDarkModeOn() ? 'faktBoxdarkMode': ''}>{block && block.box && block.box.title}</h3>
                 <ul className={`factboxList ${isDarkModeOn() ? 'darkMode': ''}`}>
                     { block.box && 
                         block.box.content.map((fact, key) => {
@@ -116,7 +116,7 @@ class Content extends Component {
                 <div className={`expand ${isDarkModeOn() ? 'darkMode': ''}`} id={"expandFactBox-" + key} onClick={() => {this.expandFaktBox(key)}}>
                     <div className={`expandOpacity ${isDarkModeOn() ? 'darkMode': ''}`} id={"expandOpacity"}></div>
                     <div className={`expandOpacity2 ${isDarkModeOn() ? 'darkMode': ''}`} id={"expandOpacity2"}></div>
-                    <div class={`brandColor-${getBrandValueParam()}`} style={{display:'inline-block'}}><span>VIK UT</span></div>
+                    <div className={`brandColor-${getBrandValueParam()}`} style={{display:'inline-block'}}><span>VIK UT</span></div>
                     <div style={{display:'inline-block'}}><i className={`arrow down border-${getBrandValueParam()}`}/></div>
                 </div>
                 }
@@ -153,7 +153,7 @@ class Content extends Component {
     render() {
         return (
             <div className={"row"}>
-                <div className={`col-sm-12 content text-left mt-2 ${getBrandValueParam()}`} id={"content"}
+                <div className={`col-sm-12 content text-left mt-2 lp_article_content ${getBrandValueParam()}`} id={"content"}
                      style={{wordWrap: 'break-word'}}>
                     <div id="MOBPARAD"></div>
                     {
