@@ -41,7 +41,7 @@ header =
             { className: block <> "__account"
             , children: [ DOM.text "NAME"]
             }
-        , DOM.div
+        , DOM.nav
             { className: block <> "__menu-links"
             , children:
                 [ DOM.a_ [ DOM.text "OPINION" ]
