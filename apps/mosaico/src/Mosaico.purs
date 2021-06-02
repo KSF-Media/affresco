@@ -20,6 +20,7 @@ import KSF.User (User)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, FullArticle, Article)
 import Mosaico.Article as Article
+import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -128,12 +129,8 @@ render setState state router =
   <> DOM.div
   { className: "mosaico grid"
   , children:
-    [ DOM.header
-      { className: "mosaico--header"
-      , children: [ DOM.text "header" ]
-      , onClick: handler_ $ router.pushState (write {}) "/"
-      }
-      , case state.route of
+    [ Header.header
+    , case state.route of
           ArticlePage articleId ->
             let affArticle = do
                   a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
