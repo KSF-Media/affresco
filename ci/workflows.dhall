@@ -21,6 +21,8 @@ let AppServer =
           , deployDir : Text
           , name : Text
           , previewUrl : Text
+          , runtime : Text
+          , entrypoint : Text
           , env : Map Text Text
           }
       , default = { env = [] : Map Text Text, previewUrl = "" : Text }

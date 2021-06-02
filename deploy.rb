@@ -1,5 +1,6 @@
 require 'open3'
 require 'json'
+require 'yaml'
 
 def run_command(command)
   puts "Running `#{command}`"
@@ -78,18 +79,36 @@ def setup_env(app)
     app_vars.each do |v|
       abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
-
-    File.open("#{app['path']}/.env.production", 'a') do |f|
+    if app.key('runtime')
+      puts "Generating production app.yaml"
+      appYaml = {}
+      appYaml['runtime'] = app['runtime']
+      appYaml['service'] = app['id']
+      appYaml['entrypoint'] = app['entrypoint']
+      appYaml['env_variables'] = {}
       app_vars.each do |v|
-        # Strip 'PRODUCTION_' from the variable name
         env_var_name = v.sub(/^PRODUCTION_/, '')
-        f.puts("#{env_var_name}=#{ENV[v]}")
+        appYaml['env_variables']["#{env_var_name}"] = ENV[v]
+      end
+      File.open("#{app['path']}/app.yaml", 'w') do |f|
+        f.puts(YAML.dump(appYaml))
+      end
+    else
+      puts "Generating .env.production"
+      File.open("#{app['path']}/.env.production", 'a') do |f|
+        app_vars.each do |v|
+          # Strip 'PRODUCTION_' from the variable name
+          env_var_name = v.sub(/^PRODUCTION_/, '')
+          f.puts("#{env_var_name}=#{ENV[v]}")
+        end
       end
     end
-
     ENV['NODE_ENV'] = 'production'
   else
     ENV['NODE_ENV'] = 'development'
+    if app.key?('runtime')
+      run_command("cp #{app['path']}/app.dev.yaml #{app['path']}/app.yaml")
+    end
   end
 end
 
