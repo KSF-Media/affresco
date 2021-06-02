@@ -44,6 +44,7 @@ import React.Basic.Events as Events
 
 type Props =
   { setActiveUser :: UUID -> Effect Unit
+  , resetRedirect :: Effect Unit
   , now           :: Date
   }
 
@@ -62,7 +63,7 @@ type TaggedSubscription =
 
 search :: Component Props
 search = do
-  component "Search" \ { setActiveUser, now } -> React.do
+  component "Search" \ { setActiveUser, resetRedirect, now } -> React.do
     query /\ setQuery <- useState' Nothing
     results /\ setTaggedResults <- useState Nothing
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
@@ -73,6 +74,7 @@ search = do
           _ /\ Just uuid -> setActiveUser uuid
           Just q /\ _ -> do
             setSearchWrapper $ AsyncWrapper.Loading mempty
+            resetRedirect
             Aff.launchAff_ do
               queryResult <- User.searchUsers { query: q, faroLimit: 10 }
               case queryResult of
