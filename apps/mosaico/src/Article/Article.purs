@@ -27,6 +27,13 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 
+foreign import someIcons ::
+  { facebook :: String
+  , twitter :: String
+  , linkedin :: String
+  , mail :: String
+  }
+
 type Self =
   { state :: State
   , setState :: (State -> State) -> Effect Unit
@@ -146,6 +153,51 @@ render { props, state, setState } =
                 [ foldMap renderAuthors $ _.authors <$> letteraArticle
                 , foldMap articleTimestamps letteraArticle
                 ]
+            }
+        , DOM.ul
+            { className: "mosaico-article__some-tags-group"
+            , children:
+              [ DOM.li 
+                  { className: "mosaico-article__some-tags-group--facebook"
+                  , children:
+                      [ DOM.a
+                        { href: "#"
+                        , children: [ DOM.img { src: someIcons.facebook } ]
+                        }
+
+                      ]
+                  }
+              , DOM.li 
+                  { className: "mosaico-article__some-tags-group--twitter"
+                  , children:
+                      [ DOM.a
+                        { href: "#"
+                        , children: [ DOM.img { src: someIcons.twitter } ]
+                        }
+
+                      ]
+                  }
+              , DOM.li 
+                  { className: "mosaico-article__some-tags-group--linkedin"
+                  , children:
+                      [ DOM.a
+                        { href: "#"
+                        , children: [ DOM.img { src: someIcons.linkedin } ]
+                        }
+
+                      ]
+                  }
+              , DOM.li 
+                  { className: "mosaico-article__some-tags-group--mail"
+                  , children:
+                      [ DOM.a
+                        { href: "#"
+                        , children: [ DOM.img { src: someIcons.mail } ]
+                        }
+
+                      ]
+                  }
+              ]
             }
         , DOM.div
             { className: "mosaico--article--body "
