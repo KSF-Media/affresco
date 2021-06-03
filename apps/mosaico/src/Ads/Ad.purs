@@ -6,14 +6,13 @@ import Data.Array (length, insertAt)
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Class.Console as Console
+import Lettera.Models (BodyElement)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-
 import React.Basic.DOM as DOM
 import Web.HTML.Event.EventTypes (offline)
-import Lettera.Models (BodyElement)
 
 foreign import fetchAd :: Effect Unit
 
@@ -50,7 +49,19 @@ ad = make component
   , render: \self ->
       DOM.div
         { id: self.props.contentUnit
-        , className: "mosaico-ad"
-        , children: []
+        , className: blockClass
+        , children:
+          [ DOM.header
+              { className: blockClass <> "__header"
+              , children: [ DOM.text "Annons" ]
+              }
+          , DOM.div
+              { id: self.props.contentUnit
+              , className: blockClass <> "__content-unit"
+              }
+          ]
         }
-  }
+      }
+      where
+        blockClass = "mosaico-ad"
+
