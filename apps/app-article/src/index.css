@@ -317,6 +317,10 @@ body {
     font-weight: bolder;
 }
 
+.genericBox-headline.darkMode{
+    color: white;
+}
+
 .genericBox ul {
     padding-right: 0;
     padding-left: 0;
@@ -721,6 +725,10 @@ body {
     margin-top: 25px;
     padding-top: 5px;
     border-top: 1px solid rgb(158, 158, 158);
+}
+
+.text-footnote.darkMode {
+    color: white;
 }
 
 .article .hbl a {

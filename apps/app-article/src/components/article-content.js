@@ -169,7 +169,7 @@ class Content extends Component {
 
   renderQuestion(block, key) {
     return (
-      <h4 className={"headline headline-question"} key={key}>
+      <h4 className={`headline headline-question ${isDarkModeOn() ? "darkMode" : ""}`} key={key}>
         <i>{block.question}</i>
       </h4>
     );
@@ -177,7 +177,7 @@ class Content extends Component {
 
   renderFootnote(block, key) {
     return (
-      <div className={"html text-footnote"} key={key}>
+      <div className={`html text-footnote ${isDarkModeOn() ? "darkMode" : ""}`} key={key}>
         <i>{block.footnote}</i>
       </div>
     );
