@@ -1,0 +1,19 @@
+@import (reference) '../../ksf-colors';
+
+.mosaico-header {
+
+    &__menu {
+        display: none;
+        z-index: 1;
+        border: 1px solid @grey-medium;
+        border-radius: 1px;
+        background-color: @white;
+    }
+
+    &__menu--visible {
+        display: block;
+
+        grid-row-start: 3;
+        grid-column: 1 / span 3;
+    }
+}

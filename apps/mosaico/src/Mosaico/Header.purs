@@ -2,11 +2,38 @@ module Mosaico.Header where
 
 import Prelude
 
+import Effect (Effect)
+import Mosaico.Header.Menu as Menu
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
+import React.Basic.Hooks (Component, component, useEffect, useState, (/\))
+import React.Basic.Hooks as React
 
-header :: JSX
-header =
+type Self =
+  { state :: State
+  , setState :: SetState
+  }
+
+type State =
+  { showMenu :: Boolean
+  , menuComponent :: Menu.Props -> JSX
+  }
+
+type SetState = (State -> State) -> Effect Unit
+
+headerComponent :: Component {}
+headerComponent = do
+  component "Header" \_ -> React.do
+    let initialState =
+          { showMenu: false
+          , menuComponent: Menu.menuComponent
+          }
+    state /\ setState <- useState initialState
+    pure $ render { state, setState }
+
+render :: Self -> JSX
+render self@{ state: { showMenu, menuComponent }, setState } =
   DOM.header
     { className: block
     , children:
@@ -34,6 +61,7 @@ header =
                     ]
                 ]
             }
+        , menuComponent { visible: showMenu }
         , DOM.div
             { className: block <> "__logo"
             }
@@ -52,7 +80,9 @@ header =
             }
         , DOM.div
             { className: block <> "__menu-button"
-            , children: [ DOM.text "MENU"]
+            , children: [ DOM.text "MENU" ]
+            , onClick: handler_ do
+                setState \s -> s { showMenu = not showMenu }
             }
         ]
     }
