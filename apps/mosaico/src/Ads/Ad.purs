@@ -5,16 +5,13 @@ import Prelude
 import Data.Array (length, insertAt)
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
-import Effect.Class.Console as Console
-import Lettera.Models (BodyElement)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM as DOM
-import Web.HTML.Event.EventTypes (offline)
 
-foreign import fetchAd :: Effect Unit
+foreign import fetchAd :: EffectFn1 String Unit
 
 component :: React.Component Props
 component = React.createComponent "ad"
@@ -44,7 +41,7 @@ ad :: Props -> JSX
 ad = make component
   { initialState: { populated: false }
   , didMount: \self -> do
-      fetchAd
+      runEffectFn1 fetchAd "JATTEBOX"
 
   , render: \self ->
       DOM.div
