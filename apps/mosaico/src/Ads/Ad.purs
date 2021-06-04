@@ -43,7 +43,7 @@ ad :: Props -> JSX
 ad = make component
   { initialState: { populated: false }
   , didMount: \self -> do
-      runEffectFn1 fetchAd "JATTEBOX"
+      runEffectFn1 fetchAd self.props.contentUnit
 
   , render: \self ->
       DOM.div
