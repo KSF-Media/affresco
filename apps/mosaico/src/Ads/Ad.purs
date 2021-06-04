@@ -6,6 +6,8 @@ import Data.Array (length, insertAt)
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Effect.Class.Console as Console
+import Payload.Internal.Utils (toLowerCase)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -45,14 +47,9 @@ ad = make component
 
   , render: \self ->
       DOM.div
-        { id: self.props.contentUnit
-        , className: blockClass
+        { className: blockClass <> " " <> toLowerCase self.props.contentUnit
         , children:
-          [ DOM.header
-              { className: blockClass <> "__header"
-              , children: [ DOM.text "Annons" ]
-              }
-          , DOM.div
+          [ DOM.div
               { id: self.props.contentUnit
               , className: blockClass <> "__content-unit"
               }

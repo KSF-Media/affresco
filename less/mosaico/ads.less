@@ -1,3 +1,20 @@
+@import (reference) "../ksf-colors";
+
 .mosaico-ad {
+
+  &__content-unit {
+    div[id^="google_ads_iframe_"]::before {
+      content: "Annons";
+      font: 400 .75rem "Roboto", sans-serif;
+      color: @grey-medium;
+      text-transform: uppercase;
+      display: block;
+    }
+  }
+
+  &.jattebox {
+    text-align: center;
+    margin: 30px auto;
+  }
 
 }
