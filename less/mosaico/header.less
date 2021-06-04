@@ -1,0 +1,121 @@
+@import (reference) '../ksf-colors';
+
+.mosaico-header {
+
+    @logo-size: 68px;
+    @logo-size-mobile: 48px;
+    @max-mobile-width: 640px;
+    @font-weight: 400;
+
+    grid-area: head;
+    display: grid;
+
+    grid-template-rows: 0.1fr 55px 0.1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+
+    font: @font-weight 16px 'Roboto', sans-serif;
+
+    @media screen and (max-width:@max-mobile-width) {
+        grid-template-rows: @logo-size-mobile;
+    }
+
+    &__left-links {
+        grid-row-start: 1;
+        grid-column: 1 / span 2;
+
+        display: flex;
+        gap: 1%;
+
+        font: @font-weight 13px 'Roboto', sans-serif;
+        color: @grey-medium;
+
+        @media screen and (max-width:@max-mobile-width) {
+            display: none;
+        }
+    }
+
+    &__right-links {
+        grid-row: 1 / span 2;
+        grid-column-start: 3;
+
+        font: @font-weight 13px 'Roboto', sans-serif;
+        color: #00a1ab;
+
+        ul {
+            display: flex;
+            flex-direction: column;
+            row-gap: 4px;
+            align-items: flex-end;
+
+            margin-top: 0px;
+            list-style-type: none;
+        }
+
+        @media screen and (max-width:@max-mobile-width) {
+            display: none;
+        }
+    }
+
+    &__prenumerera-link {
+        border-radius: 3px;
+        background-color: #00a1ab;
+        color: #fff;
+        text-align: center;
+        padding: 3px 3px 1px 3px;
+    }
+
+    &__logo {
+        grid-row-start: 2;
+        grid-column-start: 2;
+
+        background-image: url('../images/logo-hbl.svg');
+        background-repeat: no-repeat;
+        background-position: top;
+        background-size: 68px;
+
+        @media screen and (max-width:@max-mobile-width) {
+            grid-row-start: 1;
+
+            background-position: center;
+            background-size: @logo-size-mobile;
+        }
+    }
+
+    &__account {
+        grid-row-start: 3;
+        grid-column-start: 1;
+
+        @media screen and (max-width:@max-mobile-width) {
+            grid-row-start: 1;
+
+            align-self: center;
+        }
+    }
+
+    &__menu-links {
+        grid-row-start: 3;
+        grid-column-start: 2;
+
+        display: flex;
+        gap: 6%;
+        justify-content: center;
+
+        @media screen and (max-width:@max-mobile-width) {
+            display: none;
+        }
+    }
+
+    &__menu-button {
+        grid-row-start: 3;
+        grid-column-start: 3;
+
+        justify-self: end;
+
+        @media screen and (max-width:@max-mobile-width) {
+            grid-row-start: 1;
+
+            align-self: center;
+        }
+
+    }
+}

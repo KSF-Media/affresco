@@ -7,7 +7,7 @@ env:
   PRODUCTION_JANRAIN_LOGIN_CLIENT_ID: jzbqvf3p68e8hje6wrzhezk98m8qndmz
   PRODUCTION_JANRAIN_SSO_SERVER: https://ksf-media.eu.janrainsso.com
   PRODUCTION_JANRAIN_XD_RECEIVER_PATH: /xd_receiver.html
-  PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v1
+  PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
   PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
 jobs:
   deploy:
@@ -80,54 +80,66 @@ jobs:
         run: |2
             ruby deploy.rb mosaico
             mv apps/mosaico/dist build/mosaico
+      - name: Build Server App article server
+        run: |2
+            ruby deploy.rb app-article-server
+            mv apps/app-article-server build/app-article-server
       - name: Upload Scripts
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/scripts
       - name: Upload Mitt Konto
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/elections
       - name: Upload App article
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/app-article
       - name: Upload Corona banner
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/corona-banner
       - name: Upload Mosaico SPA
-        uses: "GoogleCloudPlatform/github-actions/upload-cloud-storage@master"
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/mosaico
+      - id: deploy-app-article-server
+        name: Deploy App article server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/app-article-server
   refresh_cdn_app-article:
     needs: deploy
     runs-on: ubuntu-latest

@@ -4,276 +4,278 @@
 @import 'Components';
 
 body {
-    font-family: 'Duplex Sans', sans-serif;
-    font-weight: 300;
-    background-color: @grey-light;
-    margin: 0;
+  font-family: 'Duplex Sans', sans-serif;
+  font-weight: 300;
+  background-color: @grey-light;
+  margin: 0;
 }
 
-b, strong {
-    font-weight: bold;
+b,
+strong {
+  font-weight: bold;
 }
 
 a {
-    color: @link-color;
-    text-decoration: none;
-    &:hover {
-	transition: color 0.2s linear;
-	color: @grey-mediumdark;
-    }
+  color: @link-color;
+  text-decoration: none;
+  &:hover {
+    transition: color 0.2s linear;
+    color: @grey-mediumdark;
+  }
 }
 
 dt {
-    font-weight: 500;
+  font-weight: 500;
 }
 
 dd {
-    margin-left: 0;
+  margin-left: 0;
 }
 
-h1, .mitt-konto--heading {
-    color: @grey-dark;
-    font-family: 'Duplex Serif Web', serif;
-    font-weight: 700;
-    letter-spacing: -.015em;
-    margin-bottom: 10px;
-    font-size: 2.35rem;
+h1,
+.mitt-konto--heading {
+  color: @grey-dark;
+  font-family: 'Duplex Serif Web', serif;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 10px;
+  font-size: 2.35rem;
 }
 
 h2.mitt-konto--heading {
-    font-size: 1.75rem;
+  font-size: 1.75rem;
 }
 
 .mitt-konto--component-heading {
-    color: @grey-mediumlight;
-    font-family: 'Roboto', serif;
+  color: @grey-mediumlight;
+  font-family: 'Roboto', serif;
 }
 
 .mitt-konto--frontpage {
+  display: grid;
+  grid-template-rows: 70px auto auto auto auto;
+  grid-template-columns: 2fr 1fr 345px 1fr 2fr;
+
+  background-image: url('../images/shield.png');
+  background-repeat: no-repeat;
+  background-size: 280px 380px;
+  background-position: 50% 30%;
+
+  .logos {
+    grid-column-start: 3;
+    grid-row-start: 1;
+
     display: grid;
-    grid-template-rows: 70px auto auto auto auto;
-    grid-template-columns: 2fr 1fr 345px 1fr 2fr;
+    @logo-size: 32px;
+    grid-template-columns: @logo-size @logo-size @logo-size;
+    column-gap: 2.6em;
+    justify-content: center;
 
-    background-image: url('../images/shield.png');
-    background-repeat: no-repeat;
-    background-size: 280px 380px;
-    background-position: 50% 30%;
+    .logo {
+      align-self: center;
+      border-radius: 1.6px;
+      width: @logo-size;
+      height: @logo-size;
+    }
+  }
 
-    .logos {
-        grid-column-start: 3;
-        grid-row-start: 1;
+  .title {
+    grid-column: 1 / span 5;
+    grid-row-start: 2;
+    justify-self: center;
+    text-align: center;
+  }
 
-        display: grid;
-        @logo-size: 32px;
-        grid-template-columns: @logo-size @logo-size @logo-size;
-        column-gap: 2.6em;
-        justify-content: center;
+  .description {
+    grid-column: 2 / span 3;
+    grid-row-start: 3;
 
-        .logo {
-            align-self: center;
-            border-radius: 1.6px;
-            width: @logo-size;
-            height: @logo-size;
-        }
+    text-align: center;
+    color: @grey-dark;
+
+    h2 {
+      font-weight: 400;
     }
 
-    .title {
-        grid-column: 1 / span 5;
-        grid-row-start: 2;
-        justify-self: center;
-        text-align: center;
+    @media @to-large {
+      padding-bottom: 10px;
     }
+  }
 
-    .description {
-        grid-column: 2 / span 3;
-        grid-row-start: 3;
+  .list {
+    grid-column-start: 3;
+    grid-row-start: 4;
 
-        text-align: center;
-        color: @grey-dark;
+    display: grid;
+    row-gap: 0.2em;
+    .item {
+      @check-size: 16px;
 
-        h2 {
-            font-weight: 400;
-        }
+      display: grid;
+      grid-template-columns: @check-size auto;
+      align-items: center;
+      column-gap: 0.6em;
 
+      .check-icon {
+        background-repeat: no-repeat;
+        border-radius: 0.16em;
+        background-size: 100%;
+        width: @check-size;
+        height: @check-size;
+        background-image: url('../images/checkmark-round.png');
+      }
 
-        @media @to-large {
-            padding-bottom: 10px;
-        }
+      .text {
+        font-weight: 370;
+      }
     }
+  }
 
-    .list {
-
-        grid-column-start: 3;
-        grid-row-start: 4;
-
-        display: grid;
-        row-gap: 0.2em;
-        .item {
-            @check-size: 16px;
-
-            display: grid;
-            grid-template-columns: @check-size auto;
-            align-items: center;
-            column-gap: 0.6em;
-
-            .check-icon {
-                background-repeat: no-repeat;
-                border-radius: .16em;
-                background-size: 100%;
-                width: @check-size;
-                height: @check-size;
-                background-image: url('../images/checkmark-round.png');
-            }
-
-            .text {
-                font-weight: 370;
-            }
-        }
-    }
-
-    .form {
-        grid-column-start: 3;
-        grid-row-start: 5;
-    }
-
+  .form {
+    grid-column-start: 3;
+    grid-row-start: 5;
+  }
 }
 
 .mitt-konto--main-container {
-    @media @to-xsmall {
-	width: 100% !important;
-    }
+  @media @to-xsmall {
+    width: 100% !important;
+  }
 }
 
 .mitt-konto--container {
-    position: relative;
+  position: relative;
 }
 
 .mitt-konto--loading {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: @grey-light;
-    z-index: @loading;
-    .mitt-konto--loading-image {
-	background-image: url("../images/loader-gif.gif");
-	background-size: 32px 32px;
-	width: 32px;
-	height: 32px;
-    }
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: @grey-light;
+  z-index: @loading;
+  .mitt-konto--loading-image {
+    background-image: url('../images/loader-gif.gif');
+    background-size: 32px 32px;
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .mitt-konto--subscribe-button-container {
-    @media @to-xsmall {
-	justify-content: center;
-    }
+  @media @to-xsmall {
+    justify-content: center;
+  }
 }
 
 .mitt-konto--subscribe-button {
-    .button--blank-button {
-	background-color: @button-color-primary;
-	&:hover {
-	    background-color: @button-color-primary-hover;
-	}
+  .button--blank-button {
+    background-color: @button-color-primary;
+    &:hover {
+      background-color: @button-color-primary-hover;
     }
+  }
 }
 
 .mitt-konto--no-subscriptions {
-    p:first-child { margin-top: 0 }
-    p:last-child { margin-bottom: 0 }
+  p:first-child {
+    margin-top: 0;
+  }
+  p:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .mitt-konto--cancel-subscription-icon {
-    .icon-action--format-icon('ui-cross-2.svg');
+  .icon-action--format-icon('ui-cross-2.svg');
 }
 
 .mitt-konto--backwards {
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/backwards.svg');
-    background-size: 120px;
-    width: 140px;
-    height: 40px;
-    display: inline-block;
+  background-position: center;
+  background-repeat: no-repeat, repeat;
+  background-image: url('../images/backwards.svg');
+  background-size: 120px;
+  width: 140px;
+  height: 40px;
+  display: inline-block;
 }
 
 .mitt-konto--subscribe-image {
-    img {
-       width: 100%;
-    }
+  img {
+    width: 100%;
+  }
 }
 
 .mitt-konto--break {
-    border: 0;
-    height: 1px;
-    background: @grey-almostlight;
-    margin-top: 2em;
-    margin-bottom: 2em;
+  border: 0;
+  height: 1px;
+  background: @grey-almostlight;
+  margin-top: 2em;
+  margin-bottom: 2em;
 }
 
 .mitt-konto--edit-account {
-    margin-top: 2em;
+  margin-top: 2em;
 }
 
 .mitt-konto--need-help {
-    margin-top: 2em;
-    dl {
-	@media @to-xsmall {
-	    margin-left: 1em;
-	}
+  margin-top: 2em;
+  dl {
+    @media @to-xsmall {
+      margin-left: 1em;
     }
-    dt {
-	font-weight: 400;
-    }
+  }
+  dt {
+    font-weight: 400;
+  }
 }
 
 .mitt-konto--component-block-container {
-    @media @to-medium {
-	margin-right: 1em;
-
-    }
-    @media @to-xsmall {
-	margin-left: 1em;
-    }
-    .mitt-konto--heading {
-	padding-bottom: 1em;
-    }
+  @media @to-medium {
+    margin-right: 1em;
+  }
+  @media @to-xsmall {
+    margin-left: 1em;
+  }
+  .mitt-konto--heading {
+    padding-bottom: 1em;
+  }
 }
 
 .mitt-konto--component-block-content {
-    background: white;
-    border-radius: 5px;
-    margin-top: 1em;
-    padding: 15px;
-    dl {
-	margin-top: 0;
-	margin-bottom: 0;
-	> dt {
-	    color: @grey-mediumlight;
-	    margin-top: 1em;
-	    font-weight: 300;
-	    &:first-child {
-		margin-top: 0;
-	    }
-	}
+  background: white;
+  border-radius: 5px;
+  margin-top: 1em;
+  padding: 15px;
+  dl {
+    margin-top: 0;
+    margin-bottom: 0;
+    > dt {
+      color: @grey-mediumlight;
+      margin-top: 1em;
+      font-weight: 300;
+      &:first-child {
+        margin-top: 0;
+      }
     }
+  }
 }
 
 .mitt-konto--profile {
-    padding-right: 2em;
-    @media @to-medium {
-	padding: 0;
-    }
+  padding-right: 2em;
+  @media @to-medium {
+    padding: 0;
+  }
 }
 
 .mitt-konto--disappearing-break {
-    display: none;
-    @media @to-medium {
-	display: block;
-    }
+  display: none;
+  @media @to-medium {
+    display: block;
+  }
 }
 
 .mitt-konto--canceled-subscription {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 .mitt-konto--expired-subscription {
@@ -281,10 +283,10 @@ h2.mitt-konto--heading {
 }
 
 .mitt-konto--note {
-   font-size: 0.85em;
-   color: gray;
+  font-size: 0.85em;
+  color: gray;
 }
 
 .mitt-konto--personating {
-    background-color: palegoldenrod;
+  background-color: palegoldenrod;
 }
