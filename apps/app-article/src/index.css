@@ -798,3 +798,11 @@ body {
 .login.darkMode .center {
     color: white;
 }
+
+.ksfMedia.darkMode {
+    color:white;
+}
+
+#liveblog-iframe {
+    background: white;
+}
