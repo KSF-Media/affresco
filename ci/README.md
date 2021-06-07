@@ -20,7 +20,7 @@ use to generate the CI workflows, see [this file](./workflows.dhall)
 
 The two workflow are slightly different. They both:
 - setup the CI environment
-- check that the generated workflows are up to date with the Dhall source
+- check that the generated workflows are up to date with the Dhall source (do this with `make generate-ci-local`)
 - build all the apps
 - upload them to a bucket
 - deploy apps to App Engine (Where applicable)
