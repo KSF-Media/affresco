@@ -9,7 +9,7 @@ We have two CI workflows:
 ## Editing the workflows
 
 Since the workflows include a bunch of boilerplate, we do not edit the YAML files
-by hand, but instead we generate those files from some [Dhall](https://dhall-lang.org) definitions. To generate these files locally, run `make generate-ci-local".
+by hand, but instead we generate those files from some [Dhall](https://dhall-lang.org) definitions. To generate these files locally, without Nix, run `make generate-ci-local`.
 
 The template for the pull-requests CI is [here](./ci-pull-request.dhall), while
 the one for production is [here](./ci-master.dhall).
