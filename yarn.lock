@@ -4068,6 +4068,11 @@ devtools-protocol@0.0.854822:
   resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.854822.tgz#eac3a5260a6b3b4e729a09fdc0c77b0d322e777b"
   integrity sha512-xd4D8kHQtB0KtWW0c9xBZD5LVtm9chkMOfs/3Yn01RhT/sFIsVtzTtypfKoFfWBaL+7xCYLxjOLkhwPXaX/Kcg==
 
+dhall-to-yaml-cli@^1.7.6:
+  version "1.7.6"
+  resolved "https://registry.yarnpkg.com/dhall-to-yaml-cli/-/dhall-to-yaml-cli-1.7.6.tgz#ea35593d62be84a8dc3b9b1de809308578743f7b"
+  integrity sha512-z0Jv4XkofBMZFQafKXhErzsT5di55sY9QG7ZbDVaECUZaMX8SUUyOsirQ5+INXWgMG1iIUfIQHmFvs9B/8ZsWw==
+
 diffie-hellman@^5.0.0:
   version "5.0.3"
   resolved "https://registry.yarnpkg.com/diffie-hellman/-/diffie-hellman-5.0.3.tgz#40e8ee98f55a2149607146921c63e1ae5f3d2875"
