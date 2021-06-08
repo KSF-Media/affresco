@@ -33,6 +33,7 @@ foreign import someIcons ::
   , twitter :: String
   , linkedin :: String
   , mail :: String
+  , whatsapp :: String
   }
 
 type Self =
