@@ -2,7 +2,7 @@ module Mosaico.Ad where
 
 import Prelude
 
-import Data.Array (length, insertAt)
+import Data.Array (length, insertAt, snoc)
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
@@ -37,7 +37,7 @@ insertIntoBody adBox body =
   case length body of
     count
       | count > 4 -> fromMaybe body $ insertAt (count/2) adBox body
-      | otherwise -> fromMaybe body $ insertAt count adBox body
+      | otherwise -> body `snoc` adBox
 
 ad :: Props -> JSX
 ad = make component
