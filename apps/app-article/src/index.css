@@ -37,6 +37,10 @@ body {
     font-size: 15px;
 }
 
+body.darkMode {
+    background-color:#2B2B2B;
+}
+
 .headerImage {
     width: 100vw;
 }
