@@ -6,7 +6,6 @@ import Data.Array (length, insertAt, snoc)
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import Effect.Class.Console as Console
 import Payload.Internal.Utils (toLowerCase)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
