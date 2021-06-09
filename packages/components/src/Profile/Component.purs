@@ -12,6 +12,7 @@ import Data.Time.Duration (Days(..))
 import Data.Either (Either(..))
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
 import Data.Nullable as Nullable
 import Data.Set (Set)
@@ -151,13 +152,19 @@ render self@{ props: { profile: user } } =
   DOM.div_ $
     [ profileName
     , profileAddress
+    , guard (not $ null visiblePendingAddressChanges) $
+        DOM.div
+          { className: "profile--profile-row"
+          , id: "profile--pending-address-change"
+          , children:
+              [ DescriptionList.descriptionList { definitions: visiblePendingAddressChanges } ]
+          }
     , profileEmail
     , DOM.div
         { id: "profile--display"
         , children:
             [ DescriptionList.descriptionList
                 { definitions:
-                  visiblePendingAddressChanges <>
                     [ { term: "Kundnummer:", description: [ DOM.text $ Cusno.toString user.cusno ] }
                     ]
                 }
