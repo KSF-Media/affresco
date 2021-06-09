@@ -37,6 +37,10 @@ body {
     font-size: 15px;
 }
 
+body.darkMode {
+    background-color:#2B2B2B;
+}
+
 .headerImage {
     width: 100vw;
 }
@@ -203,8 +207,8 @@ body {
     font-size: 12px !important;
     text-transform: uppercase;
     padding-top:4px;
-    background: white;
 }
+
 .ksfDFPadHeader span {
     background: white;
     padding: 0 10px;
@@ -315,6 +319,10 @@ body {
     font-size: 18px;
     font-family: sans-serif;
     font-weight: bolder;
+}
+
+.genericBox-headline.darkMode{
+    color: white;
 }
 
 .genericBox ul {
@@ -723,6 +731,10 @@ body {
     border-top: 1px solid rgb(158, 158, 158);
 }
 
+.text-footnote.darkMode {
+    color: white;
+}
+
 .article .hbl a {
     color: #f07e26;
 }
@@ -789,4 +801,12 @@ body {
 
 .login.darkMode .center {
     color: white;
+}
+
+.ksfMedia.darkMode {
+    color:white;
+}
+
+#liveblog-iframe {
+    background: white;
 }

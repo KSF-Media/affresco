@@ -15,7 +15,7 @@ const Footer = (props) => {
         Ge respons
       </a>
       <br />
-      <h6>KSF Media {new Date().getFullYear()}</h6>
+      <h6 className={`ksfMedia ${isDarkModeOn() ? "darkMode" : ""}`}>KSF Media {new Date().getFullYear()}</h6>
     </div>
   );
 };
