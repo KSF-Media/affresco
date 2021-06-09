@@ -54,15 +54,13 @@ render (Just (Right xs)) = Just $
   DOM.div
     { className: "news--container clearfix"
     , children:
-        [ DOM.table_ $
-            [ DOM.tbody_ $ map renderNewsItem xs ]
-        ]
+        [ DOM.dl_ $ map renderNewsItem xs ]
     }
   where
     renderNewsItem { date, msg } =
       DOM.tr
         { children:
-            [ DOM.td_ [ DOM.text date ]
-            , DOM.td_ [ DOM.text msg ]
+            [ DOM.dt_ [ DOM.text date ]
+            , DOM.dd_ [ DOM.text msg ]
             ]
         }
