@@ -157,48 +157,38 @@ render { props, state, setState } =
                 ]
             }
         , DOM.ul
-            { className: "mosaico-article__some-tags-group"
+            { className: "mosaico-article__some"
             , children:
-              [ DOM.li 
-                  { className: "mosaico-article__some-tags-group--facebook"
-                  , children:
-                      [ DOM.a
-                        { href: "#"
-                        , children: [ DOM.img { src: someIcons.facebook } ]
-                        }
-
-                      ]
+              [ DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.facebook } ]
                   }
-              , DOM.li 
-                  { className: "mosaico-article__some-tags-group--twitter"
-                  , children:
-                      [ DOM.a
-                        { href: "#"
-                        , children: [ DOM.img { src: someIcons.twitter } ]
-                        }
-
-                      ]
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.twitter } ]
                   }
-              , DOM.li 
-                  { className: "mosaico-article__some-tags-group--linkedin"
-                  , children:
-                      [ DOM.a
-                        { href: "#"
-                        , children: [ DOM.img { src: someIcons.linkedin } ]
-                        }
-
-                      ]
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.linkedin } ]
                   }
-              , DOM.li 
-                  { className: "mosaico-article__some-tags-group--mail"
-                  , children:
-                      [ DOM.a
-                        { href: "#"
-                        , children: [ DOM.img { src: someIcons.mail } ]
-                        }
-
-                      ]
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.whatsapp } ]
                   }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.mail } ]
+                  }
+                ]
               ]
             }
         , DOM.div
