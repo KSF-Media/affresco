@@ -129,16 +129,18 @@ updatePasswordForm update = do
             }
 
         renderSuccess =
-          DOM.div
-            { className: "success-text"
-            , children:
-                [ DOM.text "Lösenordet ändrat"
-                , DOM.a
+          React.fragment
+            [ DOM.div
+                { className: "success-text"
+                , children: [ DOM.text "Lösenordet ändrat" ]
+                }
+            , DOM.div_
+                [ DOM.a
                     { href: "/"
                     , children: [ DOM.text "Tillbaka till inloggningssidan" ]
                     }
                 ]
-            }
+            ]
 
         renderFailure =
           DOM.div
