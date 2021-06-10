@@ -88,12 +88,15 @@
 
         @media screen and (max-width:@max-mobile-width) {
             grid-row-start: 1;
-
             align-self: center;
+        }
+
+        &--menu-visible {
+            z-index: 2;
         }
     }
 
-    &__menu-links {
+    &__center-links {
         grid-row-start: 3;
         grid-column-start: 2;
 
@@ -107,10 +110,14 @@
     }
 
     &__menu-button {
+        display: flex;
+
         grid-row-start: 3;
         grid-column-start: 3;
 
         justify-self: end;
+        align-content: center;
+        gap: 1%;
 
         @media screen and (max-width:@max-mobile-width) {
             grid-row-start: 1;
@@ -118,5 +125,17 @@
             align-self: center;
         }
 
+        &--menu-visible {
+            z-index: 2;
+        }
+
+    }
+
+    &__menu-icon {
+        width: 15px;
+        background-image: url('../images/icon-close-lg.svg');
+        background-repeat: no-repeat;
+        background-position: top;
+        background-size: 100%;
     }
 }
