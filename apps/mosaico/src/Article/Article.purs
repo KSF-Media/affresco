@@ -27,6 +27,15 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 
+
+foreign import someIcons ::
+  { facebook :: String
+  , twitter :: String
+  , linkedin :: String
+  , mail :: String
+  , whatsapp :: String
+  }
+
 type Self =
   { state :: State
   , setState :: (State -> State) -> Effect Unit
@@ -146,6 +155,41 @@ render { props, state, setState } =
                 [ foldMap renderAuthors $ _.authors <$> letteraArticle
                 , foldMap articleTimestamps letteraArticle
                 ]
+            }
+        , DOM.ul
+            { className: "mosaico-article__some"
+            , children:
+              [ DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.facebook } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.twitter } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.linkedin } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.whatsapp } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.mail } ]
+                  }
+                ]
+              ]
             }
         , DOM.div
             { className: "mosaico--article--body "
