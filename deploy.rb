@@ -79,7 +79,7 @@ def setup_env(app)
     app_vars.each do |v|
       abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
-    if app.key('runtime')
+    if app.key?('runtime')
       puts "Generating production app.yaml"
       appYaml = {}
       appYaml['runtime'] = app['runtime']
