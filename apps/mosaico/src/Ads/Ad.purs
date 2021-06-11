@@ -33,10 +33,10 @@ type State =
 
 insertIntoBody :: JSX -> Array JSX -> Array JSX  
 insertIntoBody adBox body =
-  case length body of
-    count
-      | count > 4 -> fromMaybe body $ insertAt (count/2) adBox body
-      | otherwise -> body `snoc` adBox
+  let elements = length body
+  in if elements > 4
+    then fromMaybe body $ insertAt (elements/2) adBox body
+    else body `snoc` adBox
 
 ad :: Props -> JSX
 ad = make component
