@@ -3,7 +3,7 @@ module Mosaico.Article where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (cons, head, snoc, length)
+import Data.Array (cons, head, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
@@ -125,9 +125,7 @@ render { props, state, setState } =
         title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
         tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
         mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
-        body = map renderElement state.body
-        bodyArrayLength = length body
-        bodyWithAd = Ad.insertIntoBody adBox body
+        bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
     in DOM.div
       { className: "mosaico--article"
       , children:
