@@ -28,20 +28,32 @@
     &__menu-content {
         display: grid;
 
-        grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+        grid-template-rows: auto auto auto auto auto auto auto auto;
         grid-template-columns: 0.5fr 1fr 1fr 1fr 1fr 1fr 0.5fr;
+
+        row-gap: 1rem;
     }
 
     &__section {
-        font: 600 13px 'Roboto', sans-serif;
+        display: flex;
+        flex-direction: column;
 
         &--gray {
             color: @grey-medium;
         }
     }
 
-    &__subsection {
+    &__section-title {
         font: 600 13px 'Roboto', sans-serif;
+    }
+
+    &__subsection {
+        font: 400 13px 'Roboto', sans-serif;
+    }
+
+    &__separator {
+        border-width: thin;
+        width: 100%;
     }
 
 }
