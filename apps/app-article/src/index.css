@@ -810,3 +810,7 @@ body.darkMode {
 #liveblog-iframe {
     background: white;
 }
+
+.login.darkMode label{
+    color:white;
+}
