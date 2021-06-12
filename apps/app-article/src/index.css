@@ -811,6 +811,22 @@ body.darkMode {
     background: white;
 }
 
-.login.darkMode label{
+.login.darkMode label {
+    color:white;
+}
+
+.premiumSection.darkMode label {
+    color:white;
+}
+
+.premiumSection strong {
+    color:black;
+}
+
+.premiumSection.darkMode strong {
+    color:white;
+}
+
+.premiumSection.darkMode > .login-form.pt2 .center {
     color:white;
 }
