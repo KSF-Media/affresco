@@ -30,6 +30,12 @@ type Self =
   , setState :: (State -> State) -> Effect Unit
   }
 
+type UserView =
+  { state :: State
+  , setState :: (State -> State) -> Effect Unit
+  , user :: User
+  }
+
 setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { loading = loading }
 

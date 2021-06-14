@@ -23,6 +23,7 @@ import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardU
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
+import MittKonto.Main.UserView.Subscription.Renew as RenewSubscription
 import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
 import MittKonto.Payment.PaymentAccordion as PaymentAccordion
 import MittKonto.Payment.PaymentDetail as PaymentDetail
@@ -45,6 +46,7 @@ type ViewComponents =
   , paymentDetailView :: JSX
   , creditCardUpdateView :: User.User -> JSX
   , passwordResetView :: JSX
+  , userView :: User.User -> JSX
   , needRootRedirect :: Boolean
   }
 
@@ -58,6 +60,8 @@ app = do
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
   loginComponent <- Login.login
+  renewSubscriptionView <- RenewSubscription.renewSubscription
+  userViewComponent <- Views.userView logger renewSubscriptionView
   location <- HTML.location =<< HTML.window
   initialHash <- HTML.hash location
   let initialState =
@@ -150,12 +154,19 @@ app = do
             , routeFrom: "/"
             }
         passwordResetView = passwordReset { user: state.activeUser }
+        userView user =
+          userViewComponent
+            { state
+            , setState
+            , user
+            }
         components =
           { searchView
           , paymentView
           , paymentDetailView
           , creditCardUpdateView
           , passwordResetView
+          , userView
           , needRootRedirect
           }
 
@@ -201,7 +212,7 @@ render self@{ state } logger components initialHash isPersonating =
      , defaultRouteElement "/fakturor" $ const components.paymentView
      , routeElement true false (Just "/sök") $ const components.searchView
      , simpleRoute "/#lösenord" components.passwordResetView
-     , defaultRouteElement "/" $ Views.userView self logger
+     , defaultRouteElement "/" components.userView
      , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" components.creditCardUpdateView
      , noMatchRoute
      ]
