@@ -24,7 +24,6 @@ import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as Views
 import MittKonto.Main.LoginView (loginView) as Views
 import MittKonto.Main.Types as Types
-import MittKonto.Main.UserView (userView) as Views
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)

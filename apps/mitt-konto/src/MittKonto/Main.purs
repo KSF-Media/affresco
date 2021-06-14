@@ -18,7 +18,6 @@ import KSF.Api (AuthScope(..))
 import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
-import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.Timeout as Timeout
@@ -30,7 +29,8 @@ import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardU
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
+import MittKonto.Main.UserView as UserView
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView) as Views
 import MittKonto.Payment.PaymentAccordion as PaymentAccordion
 import MittKonto.Payment.PaymentDetail as PaymentDetail
 import MittKonto.Payment.Types as Payments
@@ -63,7 +63,7 @@ app = do
   now <- Now.nowDate
   loginComponent <- Login.login
   timeout <- Timeout.newTimer
-  profile <- Profile.component
+  userViewComponent <- UserView.component router logger
 
   let initialState =
         { paper: KSF
@@ -189,14 +189,14 @@ app = do
                                                , setPasswordChangeDone
                                                , navToMain: router.pushState (unsafeToForeign {}) "/"
                                                }
-        profileView = case state.activeUser of
-          Just user -> profile { profile: user
-                               , onUpdate: setState <<< Types.setActiveUser <<< Just
-                               , logger
-                               }
-          Nothing -> mempty
+        userView user =
+          userViewComponent
+            { user
+            , state
+            , setState
+            }
         userContent = case route of
-          MittKonto -> foldMap (Views.userView router self logger profileView) state.activeUser
+          MittKonto -> foldMap userView state.activeUser
           Search -> guard state.adminMode searchView
           InvoiceList -> paymentView
           InvoiceDetail invno -> paymentDetailView invno

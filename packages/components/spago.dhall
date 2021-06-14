@@ -25,6 +25,7 @@
     , "read"
     , "uuid"
     , "quickcheck"
+    , "tailrec"
     ]
 , packages =
     ../../packages.dhall
