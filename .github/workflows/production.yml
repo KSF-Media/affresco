@@ -38,7 +38,7 @@ jobs:
             ruby deploy.rb scripts
             mv apps/scripts/dist build/scripts
       - env:
-          MAINTENANCE_MODE: 'false'
+          MAINTENANCE_MODE: 'true'
           PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
         name: Build Mitt Konto
         run: |2
