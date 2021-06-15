@@ -271,6 +271,10 @@ header.tight + div div.full-height-container {
 		margin-top: 0;
 	    }
 
+	    .vetrina--input-wrapper {
+		width: 95%;
+	    }
+
 	    .input-field--invalid-text {
 		color: yellow;
 	    }
@@ -300,6 +304,20 @@ header.tight + div div.full-height-container {
 		.spinner--spinner-image {
 		    filter: grayscale(100%);
 		}
+	    }
+
+	    #setPassword {
+		.input-field--no-label {
+		    grid-template-rows:
+			[input-field] 2.5em
+			[error-message] 3em !important;
+		}
+
+		input[type=password] {
+		    margin-bottom: 3em;
+		}
+
+		margin-bottom: -0.5em;
 	    }
 	}
     }
