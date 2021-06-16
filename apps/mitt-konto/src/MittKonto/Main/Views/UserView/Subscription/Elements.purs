@@ -68,7 +68,7 @@ deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddr
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
 paymentMethod self@{ props: props@{ subscription: sub@{ paymentMethod: method } } } = Array.singleton
-  { term: "Faktureringsmetoden:"
+  { term: "Faktureringsmetod:"
   , description: [ DOM.text $ Helpers.translatePaymentMethod method ]
   }
 

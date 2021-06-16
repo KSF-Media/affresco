@@ -25,7 +25,7 @@ useNews newsLoaded = React.do
   n /\ setNews <- useState' Nothing
   useEffectOnce $ do
     Aff.launchAff_ $ do
-      res <- AX.get "https://storage.googleapis.com/cdn-ksfmedia-fi/news/mitt-konto.json"
+      res <- AX.get "https://cdn.ksfmedia.fi/news/mitt-konto.json"
       x <- case res of
         Right x -> pure $ Just $ Right x
         Left err -> do
@@ -54,15 +54,13 @@ render (Just (Right xs)) = Just $
   DOM.div
     { className: "news--container clearfix"
     , children:
-        [ DOM.table_ $
-            [ DOM.tbody_ $ map renderNewsItem xs ]
-        ]
+        [ DOM.dl_ $ map renderNewsItem xs ]
     }
   where
     renderNewsItem { date, msg } =
       DOM.tr
         { children:
-            [ DOM.td_ [ DOM.text date ]
-            , DOM.td_ [ DOM.text msg ]
+            [ DOM.dt_ [ DOM.text date ]
+            , DOM.dd_ [ DOM.text msg ]
             ]
         }

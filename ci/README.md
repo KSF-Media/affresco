@@ -9,7 +9,7 @@ We have two CI workflows:
 ## Editing the workflows
 
 Since the workflows include a bunch of boilerplate, we do not edit the YAML files
-by hand, but instead we generate those files from some [Dhall](https://dhall-lang.org) definitions.
+by hand, but instead we generate those files from some [Dhall](https://dhall-lang.org) definitions. To generate these files locally, without Nix, run `make generate-ci-local`.
 
 The template for the pull-requests CI is [here](./ci-pull-request.dhall), while
 the one for production is [here](./ci-master.dhall).
@@ -20,7 +20,7 @@ use to generate the CI workflows, see [this file](./workflows.dhall)
 
 The two workflow are slightly different. They both:
 - setup the CI environment
-- check that the generated workflows are up to date with the Dhall source
+- check that the generated workflows are up to date with the Dhall source (do this with `make generate-ci-local`)
 - build all the apps
 - upload them to a bucket
 - deploy apps to App Engine (Where applicable)
@@ -52,8 +52,8 @@ In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
 2. For this you'll need to create new load balancer. You'll need to add a new "host and path rule", where:
   - the host is the one you need for the app
   - the path rules are:
-    - path `/` with a URL rewrite to `$deployDir/index.html` (note that `deployDir` is one of the configurations of an app, and ultimately the location of it in the bucket)
-    - path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
+	- path `/` with a URL rewrite to `$deployDir/index.html` (note that `deployDir` is one of the configurations of an app, and ultimately the location of it in the bucket)
+	- path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
 3. Create a new SSL certificate for the new host on this load balancer, and point a DNS A record to the IP of the load balancer
 4. Edit the `refreshCDNSteps` [source](./workflows.dhall) to include a `gcloud` command to clear the CDN cache on new deployments
 

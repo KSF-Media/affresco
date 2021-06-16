@@ -21,11 +21,21 @@ import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
+
+
+foreign import someIcons ::
+  { facebook :: String
+  , twitter :: String
+  , linkedin :: String
+  , mail :: String
+  , whatsapp :: String
+  }
 
 type Self =
   { state :: State
@@ -124,6 +134,7 @@ render { props, state, setState } =
         title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
         tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
         mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+        bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
     in DOM.div
       { className: "mosaico--article"
       , children:
@@ -147,15 +158,50 @@ render { props, state, setState } =
                 , foldMap articleTimestamps letteraArticle
                 ]
             }
+        , DOM.ul
+            { className: "mosaico-article__some"
+            , children:
+              [ DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.facebook } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.twitter } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.linkedin } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.whatsapp } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.mail } ]
+                  }
+                ]
+              ]
+            }
         , DOM.div
             { className: "mosaico--article--body "
             , children: case state.article of
               (Just (PreviewArticle previewArticle)) ->
                 paywallFade
-                `cons` map renderElement state.body
+                `cons` bodyWithAd
                 `snoc` vetrina
               (Just (FullArticle fullArticle)) ->
-                map renderElement state.body
+                bodyWithAd
               _ -> mempty
           }
       ]
@@ -196,6 +242,9 @@ render { props, state, setState } =
             , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
             }
 
+    adBox =
+        Ad.ad { contentUnit: "JATTEBOX" }
+
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
 
@@ -212,7 +261,8 @@ render { props, state, setState } =
               ]
         , paper: Just HBL
         , paymentMethods: []
-        , minimalLayout: false
+        , customNewPurchase: Nothing
+        , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
         }
       where

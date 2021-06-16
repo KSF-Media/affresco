@@ -38,7 +38,7 @@ translatePaymentMethod paymentMethod =
   case paymentMethod of
     PaperInvoice         -> "Pappersfaktura"
     CreditCard           -> "Kreditkort"
-    NetBank              -> "Netbank"
+    NetBank              -> "Nätbank"
     ElectronicInvoice    -> "Nätfaktura"
     DirectPayment        -> "Direktbetalning"
     UnknownPaymentMethod -> "Okänd"

@@ -64,6 +64,11 @@ let apps =
           , buildDir = "mosaico"
           , deployDir = "mosaico"
           }
+        , Actions.App::{
+          , name = "HBL365"
+          , buildDir = "hbl365"
+          , deployDir = "hbl365"
+          }
         ]
       : List Actions.App.Type
 
