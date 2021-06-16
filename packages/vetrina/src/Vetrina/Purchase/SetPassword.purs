@@ -100,7 +100,7 @@ setPasswordForm self@{ state: { passwordForm } } =
             , id: "setPassword"
             , children:
                 [ InputField.inputField
-                   { placeholder: "Önskat lösenord (minst 6 tecken)"
+                   { placeholder: "Önskat lösenord"
                    , type_: InputField.Password
                    , label: Nothing
                    , name: "password"
