@@ -24,6 +24,7 @@
     , "uuid"
     , "quickcheck"
     , "web-url"
+    , "tailrec"
     ]
 , packages =
     ../../packages.dhall

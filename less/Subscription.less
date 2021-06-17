@@ -40,6 +40,24 @@
 	    padding-left: 1em;
 	}
     }
+
+    .payment-wrapper {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: rgba(255,255,255,.75);
+	display: flex;
+
+	.payment-terminal {
+	    background: white;
+	    width: 550px;
+	    height: 440px;
+	    border: none;
+	    margin: auto;
+	}
+    }
 }
 
 .subscription--actions-container {
@@ -96,6 +114,8 @@
 .subscription--credit-card-update-icon {
     .subscription--update-icon('../images/fin-card-front-back.svg');
 }
+
+// TODO subscription--renew-icon
 
 .subscription--update-icon(@url) {
     display: block;
@@ -158,4 +178,16 @@
     .subscription--edit-text {
 	margin-top: 0.5em;
     }
+}
+
+.subscription--renew-price {
+    margin-bottom: 1em;
+
+    .subscription--renew-price-row {
+	font-weight: 400;
+    }
+}
+
+.subscription--renewal-confirm {
+    margin-bottom: 1em;
 }

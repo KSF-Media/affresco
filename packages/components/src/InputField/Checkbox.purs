@@ -71,7 +71,7 @@ render self@{ props, state } =
     , children:
         -- The final order of the children is defined in css!
         [ case props.label of
-             Just label -> inputLabel { label, nameFor: props.name } props.required
+             Just label -> inputLabel { label, nameFor: props.id } props.required
              _          -> mempty
         , DOM.input
             { type: show props.type_

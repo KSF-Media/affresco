@@ -1,21 +1,30 @@
 module MittKonto.Main.UserView.Subscription.Types where
 
+import Prelude
+
 import Data.Date (Date)
 import Data.Maybe (Maybe)
+import Effect (Effect)
+import KSF.Api.Subscription (Subsno)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Sentry as Sentry
 import KSF.User as User
 import KSF.User (User)
 import React.Basic (JSX)
-import React.Basic.Classic as React
 
-type Self = React.Self Props State
+type Self =
+  { props :: Props
+  , state :: State
+  , setState :: (State -> State) -> Effect Unit
+  }
 
 type Props =
   { subscription :: User.Subscription
   , user :: User
   , logger :: Sentry.Logger
   , now :: Date
+  , renewSubscription :: RenewSubscription -> JSX
+  , setRenewingSubscription :: Maybe Subsno -> Effect Unit
   }
 
 type State =
@@ -31,6 +40,7 @@ data SubscriptionUpdateAction
   | TemporaryAddressChange
   | EditTemporaryAddressChange User.PendingAddressChange
   | DeliveryReclamation
+  | RenewSubscription
 
 type Subscription =
   { package :: { name :: String
@@ -38,4 +48,12 @@ type Subscription =
                }
   , state :: String
   , dates :: User.SubscriptionDates
+  }
+
+type RenewSubscription =
+  { subscription :: User.Subscription
+  , user :: User
+  , onCancel :: Effect Unit
+  , onSuccess :: Effect Unit
+  , onError :: User.UserError -> Effect Unit
   }
