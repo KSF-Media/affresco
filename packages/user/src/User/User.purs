@@ -3,6 +3,7 @@ module KSF.User
   , User
   , MergeInfo
   , ValidationServerError
+  , ConflictingUser (..)
   , module PersonaReExport
   , module BottegaReExport
   , module Address
@@ -17,6 +18,7 @@ module KSF.User
   , getUser
   , isAdminUser
   , updateUser
+  , setCusno
   , updatePassword
   , requestPasswordReset
   , startPasswordReset
@@ -62,7 +64,7 @@ import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_, traverse_)
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
@@ -93,6 +95,7 @@ import KSF.Api.Subscription (Subsno)
 import KSF.Error as KSF.Error
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
+import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
@@ -103,6 +106,22 @@ import Unsafe.Coerce (unsafeCoerce)
 
 foreign import facebookAppId :: String
 
+-- Only in admin action responses
+type ConflictingUser =
+  { uuid :: UUID
+  , email :: Maybe String
+  , firstName :: Maybe String
+  , lastName :: Maybe String
+  }
+
+conflictingUserFromApiResponse :: Persona.CusnoViolationUser -> ConflictingUser
+conflictingUserFromApiResponse user =
+  { uuid: fromMaybe UUID.emptyUUID $ UUID.parseUUID user.uuid
+  , email: Nullable.toMaybe user.email
+  , firstName: Nullable.toMaybe user.firstName
+  , lastName: Nullable.toMaybe user.lastName
+  }
+
 data UserError =
   LoginInvalidCredentials
   | LoginFacebookEmailMissing
@@ -112,12 +131,13 @@ data UserError =
   | LoginTokenInvalid
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
-  | RegistrationCusnoInUse
+  | RegistrationCusnoInUse ConflictingUser
   | MergeEmailInUse MergeInfo
   | PasswordResetTokenInvalid
   | SomethingWentWrong
   | ServiceUnavailable
   | UniqueViolation
+  | InvalidCusno
   | UnexpectedError Error
 derive instance genericUserError :: Generic UserError _
 instance showUserError :: Show UserError where
@@ -184,8 +204,7 @@ createCusnoUser newCusnoUser = do
           Console.error errData.email_address_in_use_registration.description
           pure $ Left RegistrationEmailInUse
       | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
-          Console.error errData.unique_cusno_violation.description
-          pure $ Left RegistrationCusnoInUse
+          pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
       | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
           Console.error errData.invalid_form_fields.description
           pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
@@ -257,6 +276,18 @@ updateUser uuid update = do
       | KSF.Error.resourceConflictError err -> do
           pure $ Left UniqueViolation
       | otherwise -> pure $ Left $ UnexpectedError err
+
+setCusno :: UUID -> Cusno -> Aff (Either UserError User)
+setCusno uuid cusno = do
+  newUser <- try $ Persona.setUserCusno uuid cusno =<< requireToken
+  case newUser of
+    Right user -> pure $ Right $ fromPersonaUser user
+    Left err
+      | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
+          pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
+      | KSF.Error.badRequestError err -> do
+          pure $ Left InvalidCusno
+      | otherwise -> pure $ Left SomethingWentWrong
 
 updatePassword :: UUID -> Api.Password -> Api.Password -> Aff (Either UserError User)
 updatePassword uuid password confirmPassword = do
