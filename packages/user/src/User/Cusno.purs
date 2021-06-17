@@ -2,6 +2,9 @@ module KSF.User.Cusno where
 
 import Prelude
 
+import Data.Int as Int
+import Data.Maybe (Maybe)
+
 newtype Cusno = Cusno Int
 
 instance eqCusno :: Eq Cusno where
@@ -9,3 +12,6 @@ instance eqCusno :: Eq Cusno where
 
 toString :: Cusno -> String
 toString (Cusno c) = show c
+
+fromString :: String -> Maybe Cusno
+fromString = map Cusno <<< Int.fromString

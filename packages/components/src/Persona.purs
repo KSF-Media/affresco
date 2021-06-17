@@ -105,6 +105,15 @@ updateUser uuid update auth = do
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth
   user { subs = _ } <$> processSubs user.subs
 
+-- Admin only
+setUserCusno :: UUID -> Cusno -> UserAuth -> Aff User
+setUserCusno uuid cusno auth = do
+  user <- callApi usersApi "usersUuidPatch"
+            [ unsafeToForeign uuid
+            , unsafeToForeign {updateCusno: cusno}
+            ] $ authHeaders uuid auth
+  user { subs = _ } <$> processSubs user.subs
+
 processSubs :: Array (BaseSubscription Foreign) -> Aff (Array Subscription)
 processSubs subs = do
   now <- liftEffect Now.nowDate
@@ -419,8 +428,15 @@ pauseDateErrorToInvalidDateError = case _ of
 type EmailAddressInUseRegistration = ServerError
   ( email_address_in_use_registration :: { description :: String } )
 
+type CusnoViolationUser =
+  { uuid :: String
+  , email :: Nullable String
+  , firstName :: Nullable String
+  , lastName :: Nullable String
+  }
+
 type CusnoInUseRegistration = ServerError
-  ( unique_cusno_violation :: { description :: String } )
+  ( unique_cusno_violation :: CusnoViolationUser )
 
 data Provider
   = Facebook
