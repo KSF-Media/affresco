@@ -54,7 +54,8 @@ type SearchActions =
   , startCreateAccount :: forall a. FaroUser a -> Effect Unit
   , createAccountForm  :: Maybe (Tuple Cusno JSX)
   , startSetCusno      :: JanrainUser -> Effect Unit
-  , setCusnoForm       :: Maybe (Tuple UUID JSX)
+  , startPasswordCtrl  :: JanrainUser -> String -> Effect Unit
+  , personaUserForm    :: Maybe (Tuple UUID JSX)
   , isEditingAccount   :: Boolean
   }
 
@@ -62,6 +63,10 @@ type TaggedSubscription =
   { sub     :: Subscription
   , expired :: Boolean
   }
+
+data PersonaUserEdit
+  = SetCusno (AsyncWrapper.Progress (Maybe Cusno))
+  | ControlPassword (AsyncWrapper.Progress String)
 
 search :: Component Props
 search = do
@@ -71,8 +76,7 @@ search = do
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
     (accountData :: Maybe (Tuple Cusno (AsyncWrapper.Progress User.NewCusnoUser))) /\ setAccountData <-
       useState Nothing
-    (cusnoEdit :: Maybe (Tuple UUID (AsyncWrapper.Progress (Maybe Cusno)))) /\ setCusnoEdit <-
-      useState Nothing
+    (personaUserEdit :: Maybe (Tuple UUID PersonaUserEdit)) /\ setPersonaUserEdit <- useState Nothing
     let submitSearch = case query /\ (parseUUID =<< query) of
           Nothing /\ _ -> pure unit
           _ /\ Just uuid -> setActiveUser uuid
@@ -88,6 +92,7 @@ search = do
                 Left e -> liftEffect do
                   setResults $ const Nothing
                   setSearchWrapper $ AsyncWrapper.Error e
+        resetPersonaUserEdit = setPersonaUserEdit $ const Nothing
         loadSubs cusno = do
           setSearchWrapper $ AsyncWrapper.Loading mempty
           Aff.launchAff_ do
@@ -143,39 +148,65 @@ search = do
           _ -> false
         startSetCusno :: JanrainUser -> Effect Unit
         startSetCusno user = do
-          setCusnoEdit $ const $ Just $ Tuple user.uuid (AsyncWrapper.Editing $ Cusno.fromString =<< user.cusno)
-        resetCusnoEdit = setCusnoEdit $ const Nothing
-        submitSetCusno uuid cusno = Aff.launchAff_ do
-          result <- User.setCusno uuid cusno
-          let setError err = setCusnoEdit $ (map <<< map) (const $ AsyncWrapper.Error err)
-          case result of
-            Left (User.RegistrationCusnoInUse conflicting) -> liftEffect do
-              setError $ "Kundnummer är redan i bruk."
-                <> foldMap (\x -> " (" <> x <> ")") conflicting.email
-            Left User.InvalidCusno -> liftEffect do
-              setError $ "Ingen Kayak konto med detta kundnummer"
-            Left _ -> liftEffect do
-              setError "Något gick fel."
-            Right _ -> do
-              liftEffect $ setSearchWrapper $ AsyncWrapper.Loading mempty
-              queryResult <- User.searchUsers { query: Cusno.toString cusno, faroLimit: 1 }
-              liftEffect $ case Array.take 1 <$> queryResult of
-                Right [r] -> do
-                  setResults $ map $ map
-                    -- Replace this uuid with new load
-                    (\x -> if (_.uuid <$> x.janrain) == Just uuid then r else x) >>>
-                    -- Filter this cusno from Faro only results
-                    Array.filter (\x -> isJust x.janrain || Just cusno /= (_.cusno <$> Array.head x.faro))
+          setPersonaUserEdit $ const $ Just $ Tuple user.uuid $ SetCusno $
+            AsyncWrapper.Editing $ Cusno.fromString =<< user.cusno
+        submitSetCusno uuid cusno = do
+          setPersonaUserEdit <<< map <<< map $ const $
+            SetCusno $ AsyncWrapper.Loading $ Just cusno
+          Aff.launchAff_ do
+            result <- User.setCusno uuid cusno
+            let setError err = setPersonaUserEdit $ (map <<< map <<< mapSetCusno) $
+                               const $ AsyncWrapper.Error err
+                success = do
                   setSearchWrapper $ AsyncWrapper.Success Nothing
-                  resetCusnoEdit
-                Right _ -> resetCusnoEdit
-                Left err -> do
-                  setCusnoEdit $ (map <<< map) $ const $ AsyncWrapper.Error $ "Något gick fel. " <> show err
-        setCusnoForm :: Maybe (Tuple UUID JSX)
-        setCusnoForm = map
-                       (\(Tuple uuid wrp) -> Tuple uuid $
-                                             renderSetCusno (submitSetCusno uuid) resetCusnoEdit
-                                             (setCusnoEdit <<< map <<< map <<< map) wrp) cusnoEdit
+                  setPersonaUserEdit $ (map <<< map <<< mapSetCusno) $
+                    const $ AsyncWrapper.Success Nothing
+            case result of
+              Left (User.RegistrationCusnoInUse conflicting) -> liftEffect do
+                setError $ "Kundnummer är redan i bruk."
+                  <> foldMap (\x -> " (" <> x <> ")") conflicting.email
+              Left User.InvalidCusno -> liftEffect do
+                setError $ "Ingen Kayak konto med detta kundnummer"
+              Left _ -> liftEffect do
+                setError "Något gick fel."
+              Right _ -> do
+                liftEffect $ setSearchWrapper $ AsyncWrapper.Loading mempty
+                queryResult <- User.searchUsers { query: Cusno.toString cusno, faroLimit: 1 }
+                liftEffect $ case Array.take 1 <$> queryResult of
+                  Right [r] -> do
+                    setResults $ map $ map
+                      -- Replace this uuid with new load
+                      (\x -> if (_.uuid <$> x.janrain) == Just uuid then r else x) >>>
+                      -- Filter this cusno from Faro only results
+                      Array.filter (\x -> isJust x.janrain || Just cusno /= (_.cusno <$> Array.head x.faro))
+                    success
+                  Right _ -> success
+                  Left err -> do
+                    setPersonaUserEdit $ (map <<< map <<< mapSetCusno) $ const $ AsyncWrapper.Error $ "Något gick fel. " <> show err
+        startPasswordCtrl :: JanrainUser -> String -> Effect Unit
+        startPasswordCtrl user email = do
+          setPersonaUserEdit $ const $ Just $ Tuple user.uuid $ ControlPassword $
+            (AsyncWrapper.Editing email)
+        resetPassword :: String -> Effect Unit
+        resetPassword email = do
+          setPersonaUserEdit <<< map <<< map $ const $
+            ControlPassword $ AsyncWrapper.Loading email
+          Aff.launchAff_ do
+            result <- User.requestPasswordReset email
+            liftEffect $ case result of
+              Left _ -> setPersonaUserEdit <<< map <<< map <<< mapPasswordControl $
+                        const $ AsyncWrapper.Error ""
+              Right _ -> setPersonaUserEdit $ (map <<< map <<< mapPasswordControl) $
+                         const $ AsyncWrapper.Success Nothing
+        -- At most one Persona user has a form attached to it.
+        personaUserForm :: Maybe (Tuple UUID JSX)
+        personaUserForm = map renderUserForm personaUserEdit
+        renderUserForm :: Tuple UUID PersonaUserEdit -> Tuple UUID JSX
+        renderUserForm (Tuple uuid (SetCusno wrp)) =
+          Tuple uuid $ renderSetCusno (submitSetCusno uuid) resetPersonaUserEdit
+          (setPersonaUserEdit <<< map <<< map <<< mapSetCusno <<< map) wrp
+        renderUserForm (Tuple uuid (ControlPassword wrp)) =
+          Tuple uuid $ renderControlPassword resetPassword resetPersonaUserEdit wrp
         tagExpired :: Subscription -> TaggedSubscription
         tagExpired sub =
           { sub
@@ -199,7 +230,8 @@ search = do
           , startCreateAccount
           , createAccountForm
           , startSetCusno
-          , setCusnoForm
+          , startPasswordCtrl
+          , personaUserForm
           , isEditingAccount
           }
     pure $ React.fragment
@@ -210,6 +242,12 @@ search = do
                 }
       ]
   where
+    mapSetCusno f (SetCusno c) = SetCusno $ f c
+    mapSetCusno _ x = x
+
+    mapPasswordControl f (ControlPassword c) = ControlPassword $ f c
+    mapPasswordControl _ x = x
+
     updateSubs :: forall a. Cusno -> FaroUser a -> SearchResult a -> SearchResult a
     updateSubs cusno result state =
       state { faro = map (\x -> if x.cusno == cusno then result else x) state.faro }
@@ -322,6 +360,7 @@ search = do
       foldMap (renderJanrain
                  actions.setActiveUser
                  actions.startSetCusno
+                 actions.startPasswordCtrl
                  faro) janrain <>
       (Array.concatMap (\usr@{ cusno } ->
                          renderFaro
@@ -334,14 +373,14 @@ search = do
       (if isNothing janrain && (fst <$> actions.createAccountForm) == (_.cusno <$> Array.head faro)
          then pure $ foldMap (interruptForm <<< snd) actions.createAccountForm
          else mempty) <>
-      (if (_.uuid <$> janrain) == (fst <$> actions.setCusnoForm)
-         then pure $ foldMap (interruptForm <<< snd) actions.setCusnoForm
+      (if (_.uuid <$> janrain) == (fst <$> actions.personaUserForm)
+         then pure $ foldMap (interruptForm <<< snd) actions.personaUserForm
          else mempty)
 
     interruptForm form = DOM.tr_ [ DOM.td { colSpan: 9, children: [ form ] } ]
 
-    renderJanrain :: forall a. (UUID -> Effect Unit) -> (JanrainUser -> Effect Unit) -> Array (FaroUser a) -> JanrainUser -> Array JSX
-    renderJanrain setActiveUser startSetCusno faroResults user = pure $
+    renderJanrain :: forall a. (UUID -> Effect Unit) -> (JanrainUser -> Effect Unit) -> (JanrainUser -> String -> Effect Unit) -> Array (FaroUser a) -> JanrainUser -> Array JSX
+    renderJanrain setActiveUser startSetCusno startPasswordCtrl faroResults user = pure $
       DOM.tr
         { className: "search--item-identity"
         , children:
@@ -356,6 +395,11 @@ search = do
                         { onClick: Events.handler_ $ startSetCusno user
                         , children: [ DOM.text "Redigera kundnummer" ]
                         }
+                    , foldMap (\email ->
+                                DOM.button
+                                  { onClick: Events.handler_ $ startPasswordCtrl user email
+                                  , children: [ DOM.text "Kontrollera lösenord" ]
+                                  }) user.email
                     ]
                 }
             , DOM.td_
@@ -589,8 +633,8 @@ renderSetCusno submitCusno cancel setCusno wrapperState =
     , readyView: mempty
     , editingView: render
     , loadingView: const $ DOM.div { className: "tiny-spinner" }
-    , successView: const mempty
-    , errorView: editError
+    , successView: const genericSuccess
+    , errorView: genericError <<< Just
     }
   where
     render :: Maybe Cusno -> JSX
@@ -632,11 +676,46 @@ renderSetCusno submitCusno cancel setCusno wrapperState =
             ]
         }
 
-    editError err =
-      DOM.div
-        { className: "search--error"
+renderControlPassword :: (String -> Effect Unit) -> Effect Unit -> AsyncWrapper.Progress String -> JSX
+renderControlPassword resetPassword cancel wrapperState =
+  AsyncWrapper.asyncWrapper
+    { wrapperState
+    , readyView: mempty
+    , editingView: render
+    , loadingView: const $ DOM.div { className: "tiny-spinner" }
+    , successView: const genericSuccess
+    , errorView: const $ genericError Nothing
+    }
+  where
+    render :: String -> JSX
+    render email =
+      DOM.form
+        { className: "search--control-password"
+        , onSubmit: Events.handler preventDefault $ const $ resetPassword email
         , children:
-            [ DOM.div_ [ DOM.text "Något gick fel. Försök igen." ]
-            , DOM.div_ [ DOM.text err ]
+            [ Grid.row_
+                [ DOM.text $ "E-post: " <> email ]
+            , DOM.button
+                { type: "submit"
+                , className: "button-green"
+                , children: [ DOM.text "Skicka e-post för återställning av lösenord" ]
+                }
+            , DOM.div { className: "close-icon", onClick: capture_ cancel }
             ]
         }
+
+genericError :: Maybe String -> JSX
+genericError detail =
+  DOM.div
+    { className: "error-text"
+    , children:
+        [ DOM.div_ [ DOM.text "Något gick fel. Försok igen." ]
+        ] <> maybe mempty (pure <<< DOM.div_ <<< pure <<< DOM.text) detail
+    }
+
+genericSuccess :: JSX
+genericSuccess =
+  DOM.div
+    { children:
+        [ DOM.div_ [ DOM.text "Operation lyckades" ] ]
+    }
