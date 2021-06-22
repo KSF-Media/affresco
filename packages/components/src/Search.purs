@@ -22,6 +22,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import KSF.Api (Password(..))
 import KSF.Api.Search (FaroUser, JanrainUser, SearchResult)
 import KSF.Api.Subscription (Subscription, isSubscriptionExpired)
 import KSF.Api.Subscription (toString) as Subsno
@@ -64,9 +65,14 @@ type TaggedSubscription =
   , expired :: Boolean
   }
 
+type EmailPassword =
+  { email :: String
+  , password :: Maybe String
+  }
+
 data PersonaUserEdit
   = SetCusno (AsyncWrapper.Progress (Maybe Cusno))
-  | ControlPassword (AsyncWrapper.Progress String)
+  | ControlPassword (AsyncWrapper.Progress EmailPassword)
 
 search :: Component Props
 search = do
@@ -186,13 +192,25 @@ search = do
         startPasswordCtrl :: JanrainUser -> String -> Effect Unit
         startPasswordCtrl user email = do
           setPersonaUserEdit $ const $ Just $ Tuple user.uuid $ ControlPassword $
-            (AsyncWrapper.Editing email)
-        resetPassword :: String -> Effect Unit
-        resetPassword email = do
+            (AsyncWrapper.Editing $ { email, password: Nothing })
+        resetPassword :: EmailPassword -> Effect Unit
+        resetPassword state@{ email } = do
           setPersonaUserEdit <<< map <<< map $ const $
-            ControlPassword $ AsyncWrapper.Loading email
+            ControlPassword $ AsyncWrapper.Loading state
           Aff.launchAff_ do
             result <- User.requestPasswordReset email
+            liftEffect $ case result of
+              Left _ -> setPersonaUserEdit <<< map <<< map <<< mapPasswordControl $
+                        const $ AsyncWrapper.Error ""
+              Right _ -> setPersonaUserEdit $ (map <<< map <<< mapPasswordControl) $
+                         const $ AsyncWrapper.Success Nothing
+        submitPassword :: UUID -> EmailPassword -> Effect Unit
+        submitPassword uuid state@{ password } = do
+          let pw = Password $ fromMaybe "" password
+          setPersonaUserEdit <<< map <<< map $ const $
+            ControlPassword $ AsyncWrapper.Loading state
+          Aff.launchAff_ do
+            result <- User.updatePassword uuid pw pw
             liftEffect $ case result of
               Left _ -> setPersonaUserEdit <<< map <<< map <<< mapPasswordControl $
                         const $ AsyncWrapper.Error ""
@@ -206,7 +224,9 @@ search = do
           Tuple uuid $ renderSetCusno (submitSetCusno uuid) resetPersonaUserEdit
           (setPersonaUserEdit <<< map <<< map <<< mapSetCusno <<< map) wrp
         renderUserForm (Tuple uuid (ControlPassword wrp)) =
-          Tuple uuid $ renderControlPassword resetPassword resetPersonaUserEdit wrp
+          Tuple uuid $ renderControlPassword resetPassword (submitPassword uuid)
+          resetPersonaUserEdit
+          (setPersonaUserEdit <<< map <<< map <<< mapPasswordControl <<< map) wrp
         tagExpired :: Subscription -> TaggedSubscription
         tagExpired sub =
           { sub
@@ -520,7 +540,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
     , editingView: render
     , loadingView: const $ DOM.div { className: "tiny-spinner" }
     , successView: const mempty
-    , errorView: editError
+    , errorView: genericError <<< Just
     }
   where
     render account =
@@ -612,15 +632,6 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
     submit =
       validation (\errors -> Console.error "Could not create new cusno user.") submitNewAccount
 
-    editError err =
-      DOM.div
-        { className: "search--error"
-        , children:
-            [ DOM.div_ [ DOM.text "Något gick fel. Försök igen." ]
-            , DOM.div_ [ DOM.text err ]
-            ]
-        }
-
 renderSetCusno
   :: (Cusno -> Effect Unit)
   -> Effect Unit
@@ -676,8 +687,14 @@ renderSetCusno submitCusno cancel setCusno wrapperState =
             ]
         }
 
-renderControlPassword :: (String -> Effect Unit) -> Effect Unit -> AsyncWrapper.Progress String -> JSX
-renderControlPassword resetPassword cancel wrapperState =
+renderControlPassword
+  :: (EmailPassword -> Effect Unit)
+  -> (EmailPassword -> Effect Unit)
+  -> Effect Unit
+  -> ((EmailPassword -> EmailPassword) -> Effect Unit)
+  -> AsyncWrapper.Progress EmailPassword
+  -> JSX
+renderControlPassword resetPassword submitPassword cancel setState wrapperState =
   AsyncWrapper.asyncWrapper
     { wrapperState
     , readyView: mempty
@@ -687,22 +704,64 @@ renderControlPassword resetPassword cancel wrapperState =
     , errorView: const $ genericError Nothing
     }
   where
-    render :: String -> JSX
-    render email =
-      DOM.form
-        { className: "search--control-password"
-        , onSubmit: Events.handler preventDefault $ const $ resetPassword email
-        , children:
-            [ Grid.row_
-                [ DOM.text $ "E-post: " <> email ]
-            , DOM.button
-                { type: "submit"
-                , className: "button-green"
-                , children: [ DOM.text "Skicka e-post för återställning av lösenord" ]
-                }
-            , DOM.div { className: "close-icon", onClick: capture_ cancel }
-            ]
-        }
+    render :: EmailPassword -> JSX
+    render state@{ email, password } =
+      React.fragment
+        [ DOM.form
+            { className: "search--control-password"
+            , onSubmit: Events.handler preventDefault $ const $ resetPassword state
+            , children:
+                [ Grid.row_
+                    [ DOM.text $ "E-post: " <> email ]
+                , Grid.row_
+                    [ DOM.button
+                        { type: "submit"
+                        , className: "button-green"
+                        , children: [ DOM.text "Skicka e-post för återställning av lösenord" ]
+                        }
+                    ]
+                , DOM.div { className: "close-icon", onClick: capture_ cancel }
+                ]
+            }
+        , DOM.hr {}
+        , DOM.form
+            { className: "search--control-password"
+            , onSubmit: Events.handler preventDefault $ const $ submit validatedForm
+            , children:
+                [ Grid.row_
+                    [ InputField.inputField
+                        { type_: InputField.Text
+                        , name: "password"
+                        , placeholder: "Lösenord"
+                        , value: password
+                        , onChange: \newpw -> setState _ { password = newpw }
+                        , label: Just "Lösenord"
+                        , validationError: inputFieldErrorMessage $ validateField PasswordField password []
+                        }
+                    ]
+                , Grid.row_
+                    [ DOM.button
+                        { type: "submit"
+                        , className: "button-green"
+                        , children: [ DOM.text "Ändra lösenord" ]
+                        }
+                    ]
+                ]
+            }
+        ]
+
+    validatedForm :: ValidatedForm NewUserFields EmailPassword
+    validatedForm = case wrapperState of
+      AsyncWrapper.Editing state ->
+        (\password -> { email: state.email
+                      , password
+                      })
+        <$> validateField PasswordField state.password []
+      _ -> invalid $ pure $ InvalidNotInitialized PasswordField
+
+    submit :: ValidatedForm NewUserFields EmailPassword -> Effect Unit
+    submit =
+      validation (\errors -> Console.error "Could not set password.") submitPassword
 
 genericError :: Maybe String -> JSX
 genericError detail =
