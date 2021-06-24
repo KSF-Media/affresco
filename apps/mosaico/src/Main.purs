@@ -4,8 +4,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.List (List)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.UUID (UUID)
+import Data.Maybe (Maybe, fromMaybe)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -14,7 +13,6 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import KSF.Api (Token(..), UserAuth)
 import Lettera as Lettera
-import Lettera.Models (Article, FullArticle(..), fromFullArticle)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync as FS
 import Node.HTTP as HTTP
@@ -73,7 +71,7 @@ main :: Effect Unit
 main = do
   let handlers = { getArticle, assets, frontpage }
       guards = { credentials: getCredentials }
-  Aff.launchAff_ $ Payload.startGuarded_ spec { handlers, guards }
+  Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
 getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 getArticle r@{ params: { uuid } } = do
