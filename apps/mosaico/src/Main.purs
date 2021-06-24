@@ -12,9 +12,11 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import KSF.Api (Token(..), UserAuth)
 import Lettera as Lettera
+import Lettera.Models (Article, FullArticle(..), fromFullArticle)
+import Node.Encoding (Encoding(..))
 import Node.FS.Sync as FS
-import Node.Encoding (Encoding (..))
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
@@ -30,9 +32,6 @@ import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 foreign import requireDotenv :: Unit
 
 newtype TextHtml = TextHtml String
-
-type Credentials = { userId :: UUID, token :: String }
-
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
   encodeResponse (Response res) = do
     let (TextHtml b) = res.body
@@ -42,6 +41,9 @@ instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
         , headers: Headers.setIfNotDefined "content-type" ContentType.html res.headers
         , body: StringBody b
         }
+
+indexHtmlFileLocation :: String
+indexHtmlFileLocation = "./dist/client/index.html"
 
 spec ::
   Spec
@@ -63,7 +65,7 @@ spec ::
                 , guards :: Guards ("credentials" : Nil)
                 }
          }
-    , guards :: { credentials :: Maybe Credentials }
+    , guards :: { credentials :: Maybe UserAuth }
     }
 spec = Spec
 
@@ -73,34 +75,32 @@ main = do
       guards = { credentials: getCredentials }
   Aff.launchAff_ $ Payload.startGuarded_ spec { handlers, guards }
 
-assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: {path} } = Handlers.directory "dist/client" path
-
-frontpage :: { guards :: { credentials :: Maybe Credentials } } -> Aff TextHtml
-frontpage _ = do
-  html <- liftEffect$ FS.readTextFile UTF8 "./dist/client/index.html"
-  pure $ TextHtml html
-
-getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe Credentials } } -> Aff TextHtml
+getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 getArticle r@{ params: { uuid } } = do
-  case r.guards.credentials of
-    -- TODO: Pass credentials to Lettera
-    Just _  -> Console.log "YES CREDS!"
-    Nothing -> Console.log "NO CREDS!"
-  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) Nothing
+  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
   case article of
+    -- TODO: Add rendering for the article we get here
+    -- Now we are just returning the pre-built stuff Parcel gives us
     Right _ -> do
-      html <- liftEffect$ FS.readTextFile UTF8 "./dist/client/index.html"
+      html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
       pure $ TextHtml html
     Left err -> do
       Console.warn $ "Could not get article: " <> err
       pure $ TextHtml "Något gick fel :~("
 
-getCredentials :: HTTP.Request -> Aff (Maybe Credentials)
+assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
+assets { params: {path} } = Handlers.directory "dist/client" path
+
+frontpage :: { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+frontpage _ = do
+  html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+  pure $ TextHtml html
+
+getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
 getCredentials req = do
   headers <- Guards.headers req
   let tokens = do
-        token  <- Headers.lookup "Authorization" headers
+        authToken <- Token <$> Headers.lookup "Authorization" headers
         userId <- UUID.parseUUID =<< Headers.lookup "Auth-User" headers
-        pure { token, userId }
+        pure { authToken, userId }
   pure tokens
