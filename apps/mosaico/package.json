@@ -4,12 +4,13 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
-    "parcel": "1.12.3",
     "basscss": "^8.1.0",
+    "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
-    "react-dom": ">=16.12"
+    "react-dom": ">=16.12",
+    "xhr2": "^0.2.1"
   },
   "scripts": {
     "prestart": "parcel build ../../less/mosaico.less ./index.js",
