@@ -10,6 +10,18 @@ let app-servers =
           , runtime = "nodejs12"
           , entrypoint = "node dist/server"
           }
+        , Actions.AppServer::{
+          , id = "mosaico-server"
+          , name = "Mosaico server"
+          , buildDir = "mosaico"
+          , deployDir = "mosaico"
+          , previewUrl = "artikel/c7da734f-9e2b-45be-b645-5f4742766486"
+          , runtime = "nodejs12"
+          , entrypoint =
+              ''
+                node -e "require('./output/Main/index').main()"
+              ''
+          }
         ]
       : List Actions.AppServer.Type
 
