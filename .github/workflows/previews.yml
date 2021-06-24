@@ -77,6 +77,10 @@ jobs:
         run: |2
             ruby deploy.rb app-article-server
             mv apps/app-article-server build/app-article-server
+      - name: Build Server Mosaico server
+        run: |2
+            ruby deploy.rb mosaico
+            mv apps/mosaico build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -139,6 +143,14 @@ jobs:
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/app-article-server
+      - id: deploy-mosaico-server
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/mosaico
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
@@ -156,6 +168,7 @@ jobs:
             - [Mosaico SPA](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
             - [App article server](${{ steps.deploy-app-article-server.outputs.url }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
+            - [Mosaico server](${{ steps.deploy-mosaico-server.outputs.url }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews
 on:
   pull_request:
