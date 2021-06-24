@@ -335,14 +335,16 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         }
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
-pauseSubscriptionComponent self@{props, state} editing =
+pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }, state } editing =
   PauseSubscription.pauseSubscription
-    { subsno: props.subscription.subsno
+    { subsno: sub.subsno
     , cusno: props.user.cusno
     , userUuid: props.user.uuid
       -- Make sure that both exist if used
     , oldStart: oldEnd *> oldStart
     , oldEnd: oldStart *> oldEnd
+    , nextDelivery: toDate =<< toMaybe package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \pausedSubscription ->
