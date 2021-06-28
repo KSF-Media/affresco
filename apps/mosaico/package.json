@@ -17,7 +17,7 @@
     "start": "spago run",
     "start-web": "parcel start web/index.html -p 8000",
     "prebuild": "parcel build ../../less/mosaico.less",
-    "build": "spago build && parcel build web/index.html --no-cache --public-url ./",
+    "build": "spago build && parcel build web/index.html --no-cache --public-url ./ && yarn build-server",
     "build-server": "parcel build web/index.html -d dist/client --no-cache --public-url /assets",
     "start-server": "node -e 'require(\"./output/Main/index\").main()'"
   }
