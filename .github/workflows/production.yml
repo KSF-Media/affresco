@@ -76,10 +76,6 @@ jobs:
         run: |2
             ruby deploy.rb corona-banner
             mv apps/corona-banner/dist build/corona-banner
-      - name: Build Mosaico SPA
-        run: |2
-            ruby deploy.rb mosaico
-            mv apps/mosaico/dist build/mosaico
       - name: Build HBL365
         run: |2
             ruby deploy.rb hbl365
@@ -91,7 +87,7 @@ jobs:
       - name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
-            mv apps/mosaico build/mosaico-server
+            mv apps/mosaico build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -134,12 +130,6 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/corona-banner
-      - name: Upload Mosaico SPA
-        uses: "google-github-actions/upload-cloud-storage@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
-          path: build/mosaico
       - name: Upload HBL365
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -161,7 +151,7 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           promote: 'true'
-          working_directory: build/mosaico-server
+          working_directory: build/mosaico
   refresh_cdn_app-article:
     needs: deploy
     runs-on: ubuntu-latest
