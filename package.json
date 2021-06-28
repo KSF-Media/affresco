@@ -9,6 +9,7 @@
     "spago": "^0.19.1",
     "uglify-es": "^3.3.9",
     "uuid": "3.4.0",
+    "uuid-validate": "^0.0.3",
     "yarn": "^1.22.10"
   },
   "bootstrap": {
