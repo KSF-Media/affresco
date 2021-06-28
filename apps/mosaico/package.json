@@ -10,6 +10,8 @@
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",
+    "uuid": "3.4.0",
+    "uuid-validate": "^0.0.3",
     "xhr2": "^0.2.1"
   },
   "scripts": {
