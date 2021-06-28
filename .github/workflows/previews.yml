@@ -79,8 +79,8 @@ jobs:
             mv apps/app-article-server build/app-article-server
       - name: Build Server Mosaico server
         run: |2
-            ruby deploy.rb mosaico-server
-            mv apps/mosaico-server build/mosaico-server
+            ruby deploy.rb mosaico
+            mv apps/mosaico build/mosaico-server
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
