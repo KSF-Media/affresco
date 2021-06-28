@@ -13,7 +13,7 @@ let app-servers =
         , Actions.AppServer::{
           , id = "mosaico-server"
           , name = "Mosaico server"
-          , buildDir = "mosaico-server"
+          , buildDir = "mosaico"
           , deployDir = "mosaico-server"
           , previewUrl = "artikel/c7da734f-9e2b-45be-b645-5f4742766486"
           , runtime = "nodejs12"
