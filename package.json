@@ -8,6 +8,7 @@
     "react-router-dom": "^5.2.0",
     "spago": "^0.19.1",
     "uglify-es": "^3.3.9",
+    "uuid": "3.4.0",
     "yarn": "^1.22.10"
   },
   "bootstrap": {
