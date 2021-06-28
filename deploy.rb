@@ -54,7 +54,7 @@ maintenance = ENV['MAINTENANCE_MODE']
 abort("Invalid app name: #{app_name}") if !apps.keys.include?(app_name)
 
 app = apps[app_name]
-app["path"] = "./apps/#{app['buildDir']}"
+app["path"] = "./apps/#{app['deployDir']}"
 
 puts "Branch: #{ENV['GITHUB_REF']}"
 puts "Workflow: #{ENV['GITHUB_WORKFLOW']}"
