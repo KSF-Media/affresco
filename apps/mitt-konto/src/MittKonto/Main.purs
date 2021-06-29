@@ -12,6 +12,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
 import KSF.News as News
 import KSF.Paper (Paper(..))
+import KSF.Password.Reset as Reset
 import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
@@ -32,8 +33,20 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.Router as Router
+import Web.HTML (window) as HTML
+import Web.HTML.Location (hash) as HTML
+import Web.HTML.Window (location) as HTML
 
 foreign import sentryDsn_ :: Effect String
+
+type ViewComponents =
+  { searchView :: JSX
+  , paymentView :: JSX
+  , paymentDetailView :: JSX
+  , creditCardUpdateView :: User.User -> JSX
+  , passwordResetView :: JSX
+  , needRootRedirect :: Boolean
+  }
 
 app :: Component {}
 app = do
@@ -45,6 +58,8 @@ app = do
   creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
   loginComponent <- Login.login
+  location <- HTML.location =<< HTML.window
+  initialHash <- HTML.hash location
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -58,10 +73,12 @@ app = do
         , news: News.render Nothing
         , loginComponent
         }
+  passwordReset <- Reset.resetPassword location
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
+    needRootRedirect /\ setNeedRootRedirect <- useState' false
 
     useEffectOnce do
       let attemptMagicLogin =
@@ -69,7 +86,7 @@ app = do
               case userResponse of
                 Right user -> do
                   Tracking.login (Just user.cusno) "magic login" "success"
-                  setState \s -> s { activeUser = Just user }
+                  setUser { state, setState } logger user
                 _ -> pure unit
       Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
                 $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
@@ -85,7 +102,8 @@ app = do
                       , message: "Något gick fel."
                       }
           Right user -> do
-            setState $ Types.setActiveUser $ Just user
+            setState $ Types.setActiveUser (Just user) >>> Types.setAlert Nothing
+            setNeedRootRedirect true
             setPersonating true
 
         searchSelect uuid =
@@ -93,7 +111,10 @@ app = do
             setActive $ Spinner.withSpinner (setState <<< Types.setLoading)
               $ User.getUser Nothing uuid
         searchView :: JSX
-        searchView = search { setActiveUser: searchSelect }
+        searchView = search { setActiveUser: searchSelect
+                            , resetRedirect: setNeedRootRedirect false
+                            , now
+                            }
         usePayments = Helpers.useLoadSpinner setState
                         (isJust state.payments /\ (_.cusno <$> state.activeUser))
                         (Payments.getPayments
@@ -128,30 +149,60 @@ app = do
             , route: "/kreditkort/uppdatera"
             , routeFrom: "/"
             }
+        passwordResetView = passwordReset { user: state.activeUser }
+        components =
+          { searchView
+          , paymentView
+          , paymentDetailView
+          , creditCardUpdateView
+          , passwordResetView
+          , needRootRedirect
+          }
 
-    pure $ render self logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating
+    pure $ render self logger components initialHash isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Types.Self -> Sentry.Logger -> JSX -> JSX -> JSX -> (User.User -> JSX) -> Boolean -> JSX
-render self@{ state } logger searchView paymentView paymentDetailView creditCardUpdateView isPersonating =
-  Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "")
+setUser :: Types.Self -> Sentry.Logger -> User.User -> Effect Unit
+setUser self logger user = do
+  admin <- User.isAdminUser
+  self.setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
+  logger.setUser $ Just user
+
+render :: Types.Self -> Sentry.Logger -> ViewComponents -> String -> Boolean -> JSX
+render self@{ state } logger components initialHash isPersonating =
+  Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "") $
     [ Views.navbarView self logger isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ Router.switch { children: routes } ]
+            [ case initialHash of
+                 "#l%C3%B6senord" -> components.passwordResetView
+                 _ -> Router.switch { children: routes }
+            ]
         ]
     , Views.footerView
-    ]
+    ] <>
+    (if components.needRootRedirect
+       then  [ Router.redirect
+                 { to: { pathname: "/"
+                       , state: {}
+                       }
+                 , from: "/*"
+                 , push: true
+                 }
+             ]
+       else mempty
+    )
  where
    routes =
-     [ defaultRouteElement "/fakturor/:invno" $ const paymentDetailView
-     , defaultRouteElement "/fakturor" $ const paymentView
-     , routeElement true false (Just "/sök") $ const searchView
+     [ defaultRouteElement "/fakturor/:invno" $ const components.paymentDetailView
+     , defaultRouteElement "/fakturor" $ const components.paymentView
+     , routeElement true false (Just "/sök") $ const components.searchView
+     , simpleRoute "/#lösenord" components.passwordResetView
      , defaultRouteElement "/" $ Views.userView self logger
-     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" creditCardUpdateView
+     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" components.creditCardUpdateView
      , noMatchRoute
      ]
    defaultRouteElement = routeElement true true <<< Just
@@ -163,8 +214,14 @@ render self@{ state } logger searchView paymentView paymentDetailView creditCard
            [ foldMap Elements.loadingIndicator state.loading
            , case state.activeUser /\ (state.adminMode || allowAll) of
                Just user /\ true -> view user
-               _ -> Views.loginView self logger
+               _ -> Views.loginView self (setUser self logger) logger
            ]
+       }
+   simpleRoute path view =
+     Router.route
+       { exact: true
+       , path: Just path
+       , render: const view
        }
    noMatchRoute =
      Router.redirect

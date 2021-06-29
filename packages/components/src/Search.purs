@@ -2,8 +2,11 @@ module KSF.Search where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Array (mapMaybe, drop, take)
 import Data.Array as Array
+import Data.Date (Date)
+import Data.Date as Date
 import Data.Either (Either(..))
 import Data.Foldable (intercalate, length, foldMap, sum, sequence_)
 import Data.JSDate (toDate)
@@ -11,6 +14,7 @@ import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
+import Data.Time.Duration (Days(..))
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.UUID (UUID, parseUUID)
 import Data.Validation.Semigroup (invalid, isValid, validation)
@@ -19,11 +23,13 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import KSF.Api.Search (FaroUser, JanrainUser, SearchResult)
+import KSF.Api.Subscription (Subscription, isSubscriptionExpired)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
+import KSF.InputField.Checkbox as InputCheckbox
 import KSF.Random (randomString)
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
@@ -38,21 +44,28 @@ import React.Basic.Events as Events
 
 type Props =
   { setActiveUser :: UUID -> Effect Unit
+  , resetRedirect :: Effect Unit
+  , now           :: Date
   }
 
 type SearchActions =
   { setActiveUser      :: UUID -> Effect Unit
   , loadSubs           :: Cusno -> Effect Unit
-  , startCreateAccount :: FaroUser -> Effect Unit
+  , startCreateAccount :: forall a. FaroUser a -> Effect Unit
   , createAccountForm  :: Maybe (Tuple Cusno JSX)
   , isEditingAccount   :: Boolean
   }
 
+type TaggedSubscription =
+  { sub     :: Subscription
+  , expired :: Boolean
+  }
+
 search :: Component Props
 search = do
-  component "Search" \ { setActiveUser } -> React.do
+  component "Search" \ { setActiveUser, resetRedirect, now } -> React.do
     query /\ setQuery <- useState' Nothing
-    results /\ setResults <- useState Nothing
+    results /\ setTaggedResults <- useState Nothing
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
     (accountData :: Maybe (Tuple Cusno (AsyncWrapper.Progress User.NewCusnoUser))) /\ setAccountData <-
       useState Nothing
@@ -61,6 +74,7 @@ search = do
           _ /\ Just uuid -> setActiveUser uuid
           Just q /\ _ -> do
             setSearchWrapper $ AsyncWrapper.Loading mempty
+            resetRedirect
             Aff.launchAff_ do
               queryResult <- User.searchUsers { query: q, faroLimit: 10 }
               case queryResult of
@@ -95,6 +109,7 @@ search = do
             , lastName: ""
             , password: pw
             , consents: [legalConsent]
+            , sendReset: true
             }
         submitCreateAccount newUser = Aff.launchAff_ do
           result <- User.createCusnoUser newUser
@@ -108,7 +123,7 @@ search = do
               setError "Något gick fel."
             Right res -> do
               let faroCusno x = map _.cusno $ Array.head x.faro
-                  updateWithJanrain :: SearchResult -> SearchResult -> SearchResult
+                  updateWithJanrain :: SearchResult Subscription -> SearchResult Subscription -> SearchResult Subscription
                   updateWithJanrain x state =
                     if isNothing state.janrain && faroCusno state == faroCusno x
                       then x
@@ -121,6 +136,26 @@ search = do
         isEditingAccount = case accountData of
           Just (Tuple _ (AsyncWrapper.Editing _)) -> true
           _ -> false
+        isAncient :: Subscription -> Boolean
+        isAncient sub =
+          maybe false (isSubscriptionExpired sub) $ Date.adjust (Days (-180.0)) now
+        tagExpired :: Subscription -> TaggedSubscription
+        tagExpired sub =
+          { sub
+          , expired: isSubscriptionExpired sub now
+          }
+        tagAndFilterAge :: FaroUser Subscription -> FaroUser TaggedSubscription
+        tagAndFilterAge u = u { subs = map (map tagExpired <<< Array.filter (not <<< isAncient)) u.subs }
+        unTag :: FaroUser TaggedSubscription -> FaroUser Subscription
+        unTag u = u { subs = (map <<< map) _.sub u.subs }
+        setResults :: (Maybe (Array (SearchResult Subscription)) -> Maybe (Array (SearchResult Subscription))) -> Effect Unit
+        setResults f = setTaggedResults $
+                       -- Remove tag
+                       (map <<< map) (\r -> r { faro = map unTag r.faro } ) >>>
+                       -- Apply transformation
+                       f >>>
+                       -- Tag result
+                       (map <<< map) (\r -> r { faro = map tagAndFilterAge r.faro })
         actions =
           { setActiveUser
           , loadSubs
@@ -136,7 +171,7 @@ search = do
                 }
       ]
   where
-    updateSubs :: Cusno -> FaroUser -> SearchResult -> SearchResult
+    updateSubs :: forall a. Cusno -> FaroUser a -> SearchResult a -> SearchResult a
     updateSubs cusno result state =
       state { faro = map (\x -> if x.cusno == cusno then result else x) state.faro }
 
@@ -202,7 +237,7 @@ search = do
                         , children:
                             [ DOM.table
                                 { className: "search--results-table"
-                                , children: [  DOM.thead_ [ headerRow1 , headerRow2 ]
+                                , children: [  DOM.thead_ [ headerRow1 ]
                                             ,  DOM.tbody_ $ join $ renderResult actions <$> x
                                             ]
                                 }
@@ -218,7 +253,7 @@ search = do
               { className: "search--spinner-container"
               , children: [ spinner ]
               }
-          , DOM.div_ [ DOM.text "sök" ]
+          , DOM.div_ [ DOM.text "Söker" ]
           ]
       }
 
@@ -232,27 +267,17 @@ search = do
 
     headerRow1 =
       DOM.tr
-        { className: "search--item-identity"
-        , children:
+        { children:
             [ DOM.th_ [ DOM.text "Aktion" ]
-            , DOM.th_ [ DOM.text "" ]
+            , DOM.th_ [ DOM.text "Cusno" ]
             , DOM.th_ [ DOM.text "E-post" ]
-            , DOM.th_ [ DOM.text "Förnamn" ]
-            , DOM.th_ [ DOM.text "Efternamn" ]
-            , DOM.th { colSpan: 4, children: [ DOM.text "Kundnummer" ] }
+            , DOM.th { colSpan: 2, children: [ DOM.text "Namn" ] }
+            , DOM.th_ [ DOM.text "Adress" ]
+            , DOM.th { colSpan: 3
+                     , children: [ DOM.text "Prenumerationer" ]
+                     }
             ]
         }
-
-    headerRow2 =
-      DOM.tr_ [ DOM.th_ [ ]
-              , DOM.th_ [ DOM.text "Cusno" ]
-              , DOM.th_ [ DOM.text "E-post" ]
-              , DOM.th { colSpan: 2, children: [ DOM.text "Namn" ] }
-              , DOM.th_ [ DOM.text "Adress" ]
-              , DOM.th { colSpan: 3
-                       , children: [ DOM.text "Prenumerationer" ]
-                       }
-              ]
 
     renderResult actions { janrain, faro } =
       foldMap (renderJanrain actions.setActiveUser faro) janrain <>
@@ -273,7 +298,7 @@ search = do
                 ]
          else mempty)
 
-    renderJanrain :: (UUID -> Effect Unit) -> Array FaroUser -> JanrainUser -> Array JSX
+    renderJanrain :: forall a. (UUID -> Effect Unit) -> Array (FaroUser a) -> JanrainUser -> Array JSX
     renderJanrain setActiveUser faroResults user = pure $
       DOM.tr
         { className: "search--item-identity"
@@ -287,24 +312,24 @@ search = do
                         }
                     ]
                 }
-            , DOM.td_ [ ]
+            , DOM.td_
+                [ intercalate (DOM.text " / ") $
+                    (foldMap (Array.singleton <<< DOM.text) user.cusno) <>
+                    (foldMap (map (DOM.i_ <<< pure <<< DOM.text)) user.otherCusnos)
+                ]
             , DOM.td_ [ DOM.text $ fromMaybe "vet ej" user.email ]
             , DOM.td_ [ DOM.text $ fromMaybe "vet ej" user.firstName ]
             , DOM.td_ [ DOM.text $ fromMaybe "vet ej" user.lastName ]
             , DOM.td
                 { colSpan: 4
-                , children:
-                    [ intercalate (DOM.text " / ") $
-                      (foldMap (Array.singleton <<< DOM.text) user.cusno) <>
-                      (foldMap (map (DOM.i_ <<< pure <<< DOM.text)) user.otherCusnos)
-                    ]
+                , children: [ ]
                 }
             ]
         }
       where
         faroLength x = maybe 1 (\s -> if Array.null s then 1 else length s) x.subs
 
-    renderFaro :: Effect Unit -> Effect Unit -> Boolean -> Boolean -> FaroUser -> Array JSX
+    renderFaro :: Effect Unit -> Effect Unit -> Boolean -> Boolean -> FaroUser TaggedSubscription -> Array JSX
     renderFaro loadSubs startCreateAccount standalone isEditingThis user =
       [ DOM.tr
           { className: if standalone then "search--standalone-cusno" else "search--sub-cusno"
@@ -348,20 +373,35 @@ search = do
         td children = DOM.td { rowSpan: rowSpan, children: children }
         rowSpan = maybe 1 (\s -> if Array.null s then 1 else length s) user.subs
         subtr children =  DOM.tr { className: "search--subrow", children: children }
-        subscriptionRow sub =
+        subscriptionRow { sub, expired } =
           [ DOM.td
-              { className: "search--result-subsno-column"
+              { className: "search--result-subsno-column" <>
+                           if expired then " search--result-expired" else ""
               , children: [ DOM.text $ Subsno.toString sub.subsno ]
               }
-          , DOM.td_ $ [ DOM.text $ sub.package.name ]
-          , DOM.td_ $ [ DOM.text $ fromMaybe "ogiltig" $ formatDateDots <$> (toDate sub.dates.start) ]
+          , DOM.td
+              { className: if expired then "search--result-expired" else ""
+              , children: [ DOM.text $ sub.package.name ]
+              }
+          , DOM.td
+              { className: if expired then "search--result-expired" else ""
+              , children: [ DOM.text $ case Tuple (toDate sub.dates.start) leastEnd of
+                               Tuple Nothing Nothing -> "ogiltig"
+                               Tuple start end -> maybe "" formatDateDots start <> "–" <>
+                                                  maybe "" formatDateDots end
+                          ]
+              }
           ]
+          where
+            leastEnd = case Tuple (toDate =<< toMaybe sub.dates.suspend) (toDate =<< toMaybe sub.dates.end) of
+              Tuple (Just end1) (Just end2) -> Just $ min end1 end2
+              Tuple end1 end2 -> end1 <|> end2
         loadableSubs cusno =
            DOM.td { colSpan: 3
                   , children:
                       [ DOM.i
                           { className: "selectable"
-                          , children: [ DOM.text "Inte laddad" ]
+                          , children: [ DOM.text "Klicka för att ladda" ]
                           , onClick: Events.handler_ loadSubs
                           }
                       ]
@@ -441,6 +481,13 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                     , validationError: inputFieldErrorMessage $ validateField PasswordField (Just account.password) []
                     }
                 ]
+            , InputCheckbox.inputCheckbox
+                { type_: InputCheckbox.Checkbox
+                , name: "sendReset"
+                , checked: account.sendReset
+                , onChange: \checked -> setAccountData _ { sendReset = checked }
+                , label: Just "skicka e-post för återställning av lösenord"
+                }
             , DOM.div
                 { className: "search--create-account-submit"
                 , children:
@@ -465,6 +512,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                             , email: fromMaybe "" email
                             , password: fromMaybe "" password
                             , consents: state.consents
+                            , sendReset: state.sendReset
                             })
         <$> validateField EmailField (Just state.email) []
         <*> validateField PasswordField (Just state.password) []

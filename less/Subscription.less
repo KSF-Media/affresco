@@ -32,6 +32,16 @@
     }
 }
 
+.subscription--container {
+    .description-list--container {
+	margin-top: 0;
+	ul {
+	    margin-top: 0;
+	    padding-left: 1em;
+	}
+    }
+}
+
 .subscription--actions-container {
     align-items: flex-end;
     flex-direction: column;
@@ -139,7 +149,13 @@
     width: 100%;
 }
 
-.subscription--edit-subscription-pause, .subscription--edit-pending-address-change {
+.subscription--edit-period-button {
     cursor: pointer;
     text-decoration: underline;
+    display: flex;
+    float: right;
+
+    .subscription--edit-text {
+	margin-top: 0.5em;
+    }
 }

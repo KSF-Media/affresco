@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (cons, head, snoc)
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
@@ -15,15 +16,26 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Api.Package (CampaignLengthUnit(..))
+import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle, Image, fromFullArticle, isPreviewArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
+
+
+foreign import someIcons ::
+  { facebook :: String
+  , twitter :: String
+  , linkedin :: String
+  , mail :: String
+  , whatsapp :: String
+  }
 
 type Self =
   { state :: State
@@ -42,16 +54,27 @@ type Props =
 type State =
   { body :: Array (Either String BodyElement)
   , article :: Maybe FullArticle
+  , title :: String
+  , mainImage :: Maybe Image
+  , tags :: Array String
+  , preamble :: Maybe String
   }
 
-article :: Component Props
-article = do
+articleComponent :: Component Props
+articleComponent = do
   component "Article" \props -> React.do
     let initialState =
           { body: []
           , article: Nothing
+          , title: maybe mempty (\articleStub -> articleStub.title) props.articleStub
+          , mainImage: do
+              articleStub <- props.articleStub
+              articleStub.listImage
+          , tags: maybe mempty (\articleStub -> articleStub.tags) props.articleStub
+          -- , preamble: maybe Nothing (\articleStub -> articleStub.preamble) props.articleStub
+          , preamble: (\articleStub -> articleStub.preamble) =<< props.articleStub
           }
-    state /\ setState <- useState initialState
+    state /\ setState <- useState initialState 
 
     useEffectOnce do
       loadArticle setState props.affArticle
@@ -70,7 +93,15 @@ loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Un
 loadArticle setState affArticle =
   Aff.launchAff_ do
     a <- affArticle
-    liftEffect $ setState \s -> s { article = Just a,  body = map Record.toSum $ _.body $ fromFullArticle a }
+    let realArticle = fromFullArticle a
+    liftEffect $ setState \s -> s
+      { article = Just a
+      , body = map Record.toSum $ _.body $ fromFullArticle a
+      , mainImage = realArticle.mainImage
+      , title = realArticle.title
+      , tags = realArticle.tags
+      , preamble = realArticle.preamble
+      }
 
 renderImage :: Image -> JSX
 renderImage img =
@@ -103,6 +134,7 @@ render { props, state, setState } =
         title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
         tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
         mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+        bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
     in DOM.div
       { className: "mosaico--article"
       , children:
@@ -116,20 +148,107 @@ render { props, state, setState } =
             }
         , foldMap renderImage mainImage
         , DOM.div
-            { className: "mosaico--article--body "
+          { className: "mosaico--article--preamble"
+          , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
+          }
+        , DOM.div
+            { className: "mosaico--article-times-and-author"
             , children:
-                paywallFade
-                `cons` map renderElement state.body
-                `snoc` vetrina
+                [ foldMap renderAuthors $ _.authors <$> letteraArticle
+                , foldMap articleTimestamps letteraArticle
+                ]
             }
-        ]
-      }
+        , DOM.ul
+            { className: "mosaico-article__some"
+            , children:
+              [ DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.facebook } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.twitter } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.linkedin } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.whatsapp } ]
+                  }
+                ]
+              , DOM.li_
+                [ DOM.a
+                  { href: "#"
+                  , children: [ DOM.img { src: someIcons.mail } ]
+                  }
+                ]
+              ]
+            }
+        , DOM.div
+            { className: "mosaico--article--body "
+            , children: case state.article of
+              (Just (PreviewArticle previewArticle)) ->
+                paywallFade
+                `cons` bodyWithAd
+                `snoc` vetrina
+              (Just (FullArticle fullArticle)) ->
+                bodyWithAd
+              _ -> mempty
+          }
+      ]
+    }
   where
+    renderAuthors authors =
+      DOM.div
+        { className: "mosaico--article-authors"
+        , children:
+            map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
+            `snoc` premiumBadge
+        }
+      where
+        premiumBadge =
+          guard (maybe false (_.premium <<< fromFullArticle) state.article)
+          DOM.div
+            { className: "mosaico--article--premium background-hbl"
+            , children: [ DOM.text "premium" ]
+            }
+
+    articleTimestamps { publishingTime, updateTime } =
+      DOM.div
+        { className: "mosaico--article-timestamps"
+        , children:
+            [ foldMap renderPublishingTime publishingTime
+            , foldMap renderUpdateTime updateTime
+            ]
+        }
+      where
+        renderPublishingTime (LocalDateTime time) =
+          DOM.div
+            { className: "mosaico--article-published-timestamp"
+            , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
+            }
+        renderUpdateTime (LocalDateTime time) =
+          DOM.div
+            { className: "mosaico--article-updated-timestamp"
+            , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
+            }
+
+    adBox =
+        Ad.ad { contentUnit: "JATTEBOX" }
+
     paywallFade =
-      guard (maybe false isPreviewArticle state.article)
         DOM.div { className: "mosaico--article-fading-body" }
 
-    vetrina = guard (maybe false isPreviewArticle state.article)
+    vetrina =
       Vetrina.vetrina
         { onClose: Just $ loadArticle setState props.affArticle
         , onLogin: props.onLogin
@@ -142,7 +261,8 @@ render { props, state, setState } =
               ]
         , paper: Just HBL
         , paymentMethods: []
-        , minimalLayout: false
+        , customNewPurchase: Nothing
+        , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
         }
       where

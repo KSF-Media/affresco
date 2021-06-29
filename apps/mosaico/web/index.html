@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sv-FI">
 
 <head>
@@ -7,16 +7,32 @@
     <link rel="stylesheet" href="../../../less/mosaico.less">
     <link rel="stylesheet" href="../../../less/Vetrina.less">
     <link rel="stylesheet" href="../../../less/Login.less">
-
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500&display=swap" rel="stylesheet">
     <!-- Basscss is only for the Login component! Not good -->
     <link rel="stylesheet" href="../../../node_modules/basscss/css/basscss-cp.min.css">
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+    window.googletag = window.googletag || {cmd: []};
+
+    window.googletag.cmd.push(function() {
+        googletag.pubads().setTargeting('newspaper', 'hbl');
+        googletag.defineSlot('/21664538223/JATTEBOX', [468, 400], 'JATTEBOX').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.pubads().collapseEmptyDivs();
+        googletag.enableServices();
+    });
+    </script>
 </head>
+    <link
+      rel="stylesheet"
+      href="../../../node_modules/basscss/css/basscss-cp.min.css"
+    />
+  </head>
 
-
-<body>
+  <body>
     <div id="app"></div>
-</body>
+  </body>
 
-<script src="./index.js"></script>
-
+  <script src="./index.js"></script>
 </html>

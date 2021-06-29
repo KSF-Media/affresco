@@ -4,7 +4,6 @@ import Data.Maybe           (Maybe)
 import Data.UUID            (UUID)
 import KSF.Api.Address      (Address)
 import KSF.Api.Consent      (GdprConsent, LegalConsent)
-import KSF.Api.Subscription (Subscription)
 import KSF.User.Cusno       (Cusno)
 
 type SearchQuery =
@@ -23,15 +22,15 @@ type JanrainUser =
   , otherCusnos :: Maybe (Array String)
   }
 
-type FaroUser =
+type FaroUser a =
   { cusno       :: Cusno
   , name        :: String
   , address     :: Maybe Address
   , email       :: Maybe String
-  , subs        :: Maybe (Array Subscription)
+  , subs        :: Maybe (Array a)
   }
 
-type SearchResult =
+type SearchResult a =
   { janrain     :: Maybe JanrainUser
-  , faro        :: Array FaroUser
+  , faro        :: Array (FaroUser a)
   }

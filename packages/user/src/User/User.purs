@@ -18,6 +18,9 @@ module KSF.User
   , isAdminUser
   , updateUser
   , updatePassword
+  , requestPasswordReset
+  , startPasswordReset
+  , updateForgottenPassword
   , pauseSubscription
   , editSubscriptionPause
   , unpauseSubscription
@@ -111,6 +114,7 @@ data UserError =
   | RegistrationEmailInUse
   | RegistrationCusnoInUse
   | MergeEmailInUse MergeInfo
+  | PasswordResetTokenInvalid
   | SomethingWentWrong
   | ServiceUnavailable
   | UniqueViolation
@@ -171,7 +175,7 @@ createUserWithEmail newTemporaryUser = do
           pure $ Left $ UnexpectedError err
     Right user -> finalizeLogin Nothing =<< saveToken user
 
-createCusnoUser :: Persona.NewCusnoUser -> Aff (Either UserError SearchResult)
+createCusnoUser :: Persona.NewCusnoUser -> Aff (Either UserError (SearchResult Subscription.Subscription))
 createCusnoUser newCusnoUser = do
   newUser <- try $ Persona.registerCusno newCusnoUser =<< requireToken
   case newUser of
@@ -260,6 +264,38 @@ updatePassword uuid password confirmPassword = do
   case eitherUser of
     Left err   -> pure $ Left $ UnexpectedError err
     Right user -> Right <$> fromPersonaUserWithCards user
+
+requestPasswordReset :: String -> Aff (Either String Unit)
+requestPasswordReset email = do
+  response <- try $ Persona.requestPasswordReset email
+  case response of
+    Left _  -> pure $ Left "error"
+    Right _ -> pure $ Right unit
+
+startPasswordReset :: String -> Aff (Either UserError Unit)
+startPasswordReset token = do
+  response <- try $ Persona.startPasswordReset token
+  case response of
+    Left err
+      | KSF.Error.badRequestError err -> pure $ Left PasswordResetTokenInvalid
+      | otherwise -> do
+          Console.error "An unexpected error occurred during password reset start"
+          pure $ Left $ UnexpectedError err
+    Right _ -> pure $ Right unit
+
+updateForgottenPassword :: String -> Api.Password -> Api.Password -> Aff (Either UserError Unit)
+updateForgottenPassword token password confirmPassword = do
+  response <- try $ Persona.updateForgottenPassword token password confirmPassword
+  case response of
+    Left err
+      | KSF.Error.badRequestError err -> pure $ Left PasswordResetTokenInvalid
+      | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
+          Console.error errData.invalid_form_fields.description
+          pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
+      | otherwise -> do
+          Console.error "An unexpected error occurred during password reset"
+          pure $ Left $ UnexpectedError err
+    Right _  -> pure $ Right unit
 
 loginTraditional :: Persona.LoginData -> Aff (Either UserError User)
 loginTraditional loginData = do
@@ -594,7 +630,7 @@ createDeliveryReclamation uuid subsno date claim = do
 
 searchUsers
   :: SearchQuery
-  -> Aff (Either String (Array SearchResult))
+  -> Aff (Either String (Array (SearchResult Subscription.Subscription)))
 searchUsers query = do
   users <- try $ Persona.searchUsers query =<< requireToken
   case users of

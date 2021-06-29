@@ -43,13 +43,19 @@ getContent selector page = do
   theTitleF <- Chrome.unsafePageEval selector "e => e.textContent" page
   pure (unsafeFromForeign theTitleF)
 
+-- Ok for testing I suppose but watch out for the obvious injection
+-- attack.
+getData :: Selector -> String -> Page -> Aff String
+getData selector field page = do
+  unsafeFromForeign <$> Chrome.unsafePageEval selector ("e => e.dataset." <> field) page
+
 assertContent :: Selector -> String -> Page -> Aff Unit
 assertContent selector expected page = do
   -- here we wait because most likely we're trying to do this on a new page load
   Aff.delay (Milliseconds 300.0)
   waitFor_ selector page
   content <- getContent selector page
-  Assert.equal content expected
+  Assert.equal expected content
 
 assertNotFound :: Selector -> Page -> Aff Unit
 assertNotFound selector@(Selector sel) page =

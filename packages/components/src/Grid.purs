@@ -2,8 +2,11 @@ module KSF.Grid where
 
 import Prelude
 
+import Data.Array as Array
 import Data.Nullable as Nullable
 import Data.String (joinWith)
+import Data.Tuple (Tuple)
+import Foreign.Object as Object
 import Prim.Row (class Nub, class Union)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -12,6 +15,7 @@ import Unsafe.Coerce (unsafeCoerce)
 
 type RowOptions =
   ( extraClasses :: Array String
+  , _data :: Array (Tuple String String)
   , id :: String
   )
 
@@ -26,11 +30,16 @@ row children userOpts =
     { className: classes
     , children: children
     , id: unsafeCoerce $ if opts.id == "" then Nullable.null else Nullable.notNull opts.id
+    , _data: unsafeCoerce $
+        if Array.null opts._data
+          then Nullable.null
+          else Nullable.notNull $ Object.fromFoldable opts._data
     }
   where
     defaultOpts :: Record RowOptions
     defaultOpts =
       { extraClasses: []
+      , _data: []
       , id: ""
       }
     opts :: Record RowOptions

@@ -2,13 +2,14 @@ module MittKonto.Main.UserView.Subscription where
 
 import Prelude
 
-import Data.Array (concatMap, filter)
-import Data.Array as Array
+import Data.Array (concatMap, cons, filter)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import KSF.Api.Subscription (toString) as Subsno
+import KSF.Api.Subscription (isSubscriptionExpired)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -50,19 +51,18 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
     (DescriptionList.descriptionList
          { definitions:
              [ { term: "Produkt:"
-               , description: [ DOM.text package.name ]
+               , description: DOM.text package.name `cons`
+                              (pure <<< DOM.ul_ <<< map (DOM.li_ <<< pure <<< DOM.text))
+                              package.info
                }
              , { term: "Pren.nr:"
-               , description: [ DOM.text $ Subsno.toString sub.subsno ]
+               , description: [ DOM.text subsno ]
                }
              , { term: "Status:"
                , description:
                    [ DOM.text $ Helpers.translateStatus state ]
                    <> let pausedDates = foldMap filterExpiredPausePeriods $ self.state.pausedSubscriptions
-                          descriptionText = if Array.null pausedDates
-                                            then mempty
-                                            else Elements.pauseDescription
-                       in (Elements.showPausedDates self pausedDates) <> [ descriptionText ]
+                       in Elements.showPausedDates self pausedDates
                }
              ]
              <> concatMap (\f -> f self) [ Elements.receiverName
@@ -75,11 +75,14 @@ render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } 
                                              else mempty
                                          ]
          })
-      (Elements.subscriptionUpdates self)
+      (if expired then mempty else Elements.subscriptionUpdates self)
       { extraClasses: [ "subscription--container" ]
-      , id: "subscription-" <> Subsno.toString sub.subsno
+      , _data: [ Tuple "subsno" subsno ]
+      , id: "subscription-" <> subsno
       }
   where
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
       filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) pausedSubs
+    expired = isSubscriptionExpired sub now
+    subsno = Subsno.toString sub.subsno

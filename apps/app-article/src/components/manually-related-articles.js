@@ -1,26 +1,26 @@
-import React, {Component} from 'react';
+import React, { Component } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import { isDarkModeOn } from '../helper';
+import { isDarkModeOn } from "../helper";
 import MobileList from "./moble-article-list";
 import TabletList from "./tablet-article-list";
 
 class ManuallyRelatedArticles extends Component {
-    constructor(props) {
-        super(props);
-    }
+  constructor(props) {
+    super(props);
+  }
 
-    render() {
-        return (
-            <div className={"relatedArticles "}>
-                <div className={"row"}>
-                    <div className={"col-12"}>
-                        <h3 className={`latest ${isDarkModeOn() ? 'darkMode': ''}`}>Läs också</h3>
-                    </div>
-                </div>
-                <MobileList articles = {this.props.manuallyRelatedArticles}/>
-            </div>
-        )
-    }
+  render() {
+    return (
+      <div className={"relatedArticles "}>
+        <div className={"row"}>
+          <div className={"col-12"}>
+            <h3 className={`latest ${isDarkModeOn() ? "darkMode" : ""}`}>Läs också</h3>
+          </div>
+        </div>
+        <MobileList articles={this.props.manuallyRelatedArticles} />
+      </div>
+    );
+  }
 }
 
-export default ManuallyRelatedArticles
+export default ManuallyRelatedArticles;

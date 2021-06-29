@@ -37,6 +37,10 @@ body {
     font-size: 15px;
 }
 
+body.darkMode {
+    background-color:#2B2B2B;
+}
+
 .headerImage {
     width: 100vw;
 }
@@ -46,7 +50,6 @@ body {
 }
 
 .article{
-    margin-bottom: 20px;
     padding-bottom: 20px;
 }
 
@@ -204,8 +207,8 @@ body {
     font-size: 12px !important;
     text-transform: uppercase;
     padding-top:4px;
-    background: white;
 }
+
 .ksfDFPadHeader span {
     background: white;
     padding: 0 10px;
@@ -318,6 +321,10 @@ body {
     font-weight: bolder;
 }
 
+.genericBox-headline.darkMode{
+    color: white;
+}
+
 .genericBox ul {
     padding-right: 0;
     padding-left: 0;
@@ -413,8 +420,16 @@ body {
     text-align: center;
 }
 
-.shareIcon {
-    width: 28px;
+.footer.darkMode {
+    background-color: #313639;
+}
+
+.footer.darkMode h4,h6 {
+    color:white;
+}
+
+.footer h6 {
+    color: black;
 }
 
 .articleDetails {
@@ -486,6 +501,11 @@ body {
 .relatedArticles .articleItem a {
     color: #464646;
 }
+
+.relatedArticles .articleItem a.darkMode {
+    color: white;
+}
+
 
 .relatedArticles .latest {
     font-family: "Duplex Sans Bold", sans-serif;
@@ -584,6 +604,10 @@ body {
     border-radius:0px !important;
 }
 
+.card.darkMode {
+    border: 1px solid black;
+}
+
 .card-img-top {
     border-top-left-radius: 0px !important;
     border-top-right-radius: 0px !important;
@@ -592,6 +616,10 @@ body {
 .card-body {
     padding: 7px !important;
     min-height: 112px;
+}
+
+.card-body.darkMode {
+    background-color: #313639;
 }
 
 .card-title {
@@ -703,6 +731,10 @@ body {
     border-top: 1px solid rgb(158, 158, 158);
 }
 
+.text-footnote.darkMode {
+    color: white;
+}
+
 .article .hbl a {
     color: #f07e26;
 }
@@ -716,7 +748,7 @@ body {
 }
 
 .article.darkMode {
-    background-color: black;
+    background-color: #313639;
 }
 
 .title.darkMode {
@@ -761,4 +793,24 @@ body {
 
 .expandOpacity2.darkMode {
     display: none;
+}
+
+.login.darkMode {
+    background-color: #2B2B2B;
+}
+
+.login.darkMode .center {
+    color: white;
+}
+
+.ksfMedia.darkMode {
+    color:white;
+}
+
+#liveblog-iframe {
+    background: white;
+}
+
+.login.darkMode label{
+    color:white;
 }

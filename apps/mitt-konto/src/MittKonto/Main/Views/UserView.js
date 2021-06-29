@@ -1,3 +1,3 @@
 exports.images = {
-    subscribe: require('../../../../images/offer-cta.png')
+  subscribe: require("../../../../images/offer-cta.png"),
 };

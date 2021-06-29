@@ -20,6 +20,7 @@ import KSF.User (User)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, FullArticle, Article)
 import Mosaico.Article as Article
+import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -76,7 +77,7 @@ app = do
           Right path -> setState \s -> s { route = path }
           Left err   -> pure unit
 
-  articleComponent    <- Article.article
+  articleComponent    <- Article.articleComponent
   loginModalComponent <- LoginModal.loginModal
   component "Mosaico" \_ -> React.do
     let initialState =
@@ -99,10 +100,8 @@ app = do
         Frontpage -> do
           if null state.articleList
           then Aff.launchAff_ do
-            frontPage <- Lettera.getFrontpage HBL
-            case frontPage of
-              Right fp -> liftEffect $ setState \s -> s { articleList = fp, article = Nothing }
-              Left err -> Aff.throwError $ error err
+            frontpage <- Lettera.getFrontpage HBL
+            liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
           -- Set article to Nothing to prevent flickering of old article
           else liftEffect $ setState \s -> s { article = Nothing }
         ArticlePage articleId -> pure unit
@@ -130,12 +129,8 @@ render setState state router =
   <> DOM.div
   { className: "mosaico grid"
   , children:
-    [ DOM.header
-      { className: "mosaico--header"
-      , children: [ DOM.text "header" ]
-      , onClick: handler_ $ router.pushState (write {}) "/"
-      }
-      , case state.route of
+    [ Header.header
+    , case state.route of
           ArticlePage articleId ->
             let affArticle = do
                   a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)

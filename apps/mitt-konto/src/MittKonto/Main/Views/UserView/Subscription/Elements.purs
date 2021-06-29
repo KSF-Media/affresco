@@ -34,6 +34,7 @@ import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (handler_)
 import React.Basic.Router as Router
 
@@ -67,7 +68,7 @@ deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddr
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
 paymentMethod self@{ props: props@{ subscription: sub@{ paymentMethod: method } } } = Array.singleton
-  { term: "Faktureringsmetoden:"
+  { term: "Faktureringsmetod:"
   , description: [ DOM.text $ Helpers.translatePaymentMethod method ]
   }
 
@@ -88,15 +89,13 @@ showPendingAddressChange :: Types.Self -> (Tuple Int User.PendingAddressChange) 
 showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
   let addressString = Helpers.formatAddress address
       pendingPeriod = Helpers.formatDateString startDate (toMaybe endDate)
-  in DOM.span
-       { className: "subscription--edit-pending-address-change"
-       , children: [ DOM.text $ addressString <> " (" <> pendingPeriod <> ")" ]
-       , id: "subscription-" <> Subsno.toString self.props.subscription.subsno <> "-edit-pending-address-change-" <> show n
-       , onClick: handler_ do
-           self.setState _
-             { updateAction = Just $ Types.EditTemporaryAddressChange change
-             , wrapperProgress = AsyncWrapper.Editing $ temporaryAddressChangeComponent self $ Just change
-             }
+  in DOM.div
+       { children: [ changeButton self
+                       (Types.EditTemporaryAddressChange change)
+                       (temporaryAddressChangeComponent self $ Just change)
+                   , DOM.text $ addressString <> " (" <> pendingPeriod <> ")"
+                   ]
+       , id: "subscription-" <> Subsno.toString self.props.subscription.subsno <> "-pending-address-change-" <> show n
        }
 
 billingDateTerm :: Types.Self -> Array DescriptionList.Definition
@@ -424,12 +423,6 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ packag
       , temporaryName: toMaybe tmp.temporaryName
       }
 
-pauseDescription :: JSX
-pauseDescription = DOM.div
-                      { className: "mitt-konto--note"
-                      , children: [ DOM.text "Klicka på uppehållet eller adressförändringen för att göra ändringar." ]
-                      }
-
 showPausedDates :: Types.Self -> Array User.PausedSubscription -> Array JSX
 showPausedDates self =
   let formatDates { startDate, endDate } = Helpers.formatDateString startDate $ toMaybe endDate
@@ -437,14 +430,35 @@ showPausedDates self =
         let text = "Uppehåll: " <> formatDates pause
         in case Tuple (toDate pause.startDate) (toDate =<< toMaybe pause.endDate) of
           Tuple (Just startDate) (Just endDate) ->
-            DOM.span
-              { className: "subscription--edit-subscription-pause"
-              , children: [ DOM.text text ]
-              , onClick: handler_ do
-                  self.setState _
-                    { updateAction = Just $ Types.EditSubscriptionPause pause
-                    , wrapperProgress = AsyncWrapper.Editing $ pauseSubscriptionComponent self $ Just pause
-                    }
+            DOM.div
+              { children: [ changeButton self
+                              (Types.EditSubscriptionPause pause)
+                              (pauseSubscriptionComponent self $ Just pause)
+                          , DOM.text text
+                          ]
+              , className: "subscription--subscription-pause"
               }
           _ -> DOM.text text
   in map pauseLine
+
+changeButton :: Types.Self -> Types.SubscriptionUpdateAction -> JSX -> JSX
+changeButton self updateAction component =
+  DOM.div
+    { className: "subscription--edit-period-button"
+    , children:
+        [ DOM.div
+            { className: "edit-icon circle"
+            , onClick: capture_ startEdit
+            }
+        , DOM.span
+            { className: "subscription--edit-text"
+            , onClick: capture_ startEdit
+            , children: [ DOM.text "Ändra" ]
+            }
+        ]
+    }
+  where
+    startEdit = self.setState _
+                  { updateAction = Just updateAction
+                  , wrapperProgress = AsyncWrapper.Editing component
+                  }
