@@ -41,6 +41,7 @@ translatePaymentMethod paymentMethod =
     NetBank              -> "Nätbank"
     ElectronicInvoice    -> "Nätfaktura"
     DirectPayment        -> "Direktbetalning"
+    Email                -> "E-post"
     UnknownPaymentMethod -> "Okänd"
 
 isPeriodExpired :: Boolean -> Date -> Maybe JSDate -> Boolean
