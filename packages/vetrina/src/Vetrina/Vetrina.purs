@@ -59,7 +59,8 @@ type JSProps =
   , headline           :: Nullable JSX
   , paper              :: Nullable String
   , paymentMethods     :: Nullable (Array String)
-  , minimalLayout      :: Nullable Boolean
+  , loadingContainer   :: Nullable (JSX -> JSX)
+  , customNewPurchase  :: Nullable (JSX -> NewPurchase.State -> JSX)
   }
 
 type Props =
@@ -72,9 +73,8 @@ type Props =
   , headline           :: Maybe JSX
   , paper              :: Maybe Paper
   , paymentMethods     :: Array User.PaymentMethod
-  -- If true, will show texts, links etc.
-  -- FIXME: This is nothing but a band-aid and the entire thing should be redesigned
-  , minimalLayout      :: Boolean
+  , loadingContainer   :: Maybe (JSX -> JSX)
+  , customNewPurchase  :: Maybe (JSX -> NewPurchase.State -> JSX)
   }
 
 fromJSProps :: JSProps -> Props
@@ -96,7 +96,8 @@ fromJSProps jsProps =
   , headline: toMaybe jsProps.headline
   , paper: Paper.fromString =<< toMaybe jsProps.paper
   , paymentMethods: foldMap (mapMaybe toPaymentMethod) $ toMaybe jsProps.paymentMethods
-  , minimalLayout: fromMaybe false $ toMaybe jsProps.minimalLayout
+  , loadingContainer: toMaybe jsProps.loadingContainer
+  , customNewPurchase: toMaybe jsProps.customNewPurchase
   }
 
 type State =
@@ -130,6 +131,8 @@ data PurchaseState
   | PurchaseCompleted AccountStatus
   | PurchasePolling
 
+derive instance eqPurchaseState :: Eq PurchaseState
+
 data OrderFailure
   = EmailInUse String
   | SubscriptionExists
@@ -139,6 +142,8 @@ data OrderFailure
   | AuthenticationError
   | ServerError
   | UnexpectedError String
+
+derive instance eqOrderFailure :: Eq OrderFailure
 
 component :: React.Component Props
 component = React.createComponent "Vetrina"
@@ -286,7 +291,9 @@ pollOrder setState { logger } (Left bottegaErr) = liftEffect do
 render :: Self -> JSX
 render self = vetrinaContainer self $
   if isJust self.state.isLoading
-  then maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
+  then if self.state.purchaseState == NewPurchase && isJust self.props.loadingContainer
+       then (fromMaybe identity self.props.loadingContainer) Spinner.loadingSpinner
+       else maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
   else case self.state.purchaseState of
     PurchasePolling -> maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
     NewPurchase ->
@@ -304,7 +311,7 @@ render self = vetrinaContainer self $
         , paymentMethod: self.state.paymentMethod
         , paymentMethods: self.state.paymentMethods
         , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
-        , minimalLayout: self.props.minimalLayout
+        , customRender: self.props.customNewPurchase
         }
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
@@ -327,7 +334,6 @@ render self = vetrinaContainer self $
                      -- The user is logged in the current session though, so it's recoverable.
                      self.state.logger.error $ Error.orderError $ "Failed to update user: " <> show userError
                      self.setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
-                , minimalLayout: self.props.minimalLayout
                 }
             -- Can't do much without a user
             Nothing -> self.props.unexpectedError
@@ -346,7 +352,7 @@ render self = vetrinaContainer self $
             , paper: self.props.paper
             , paymentMethods: self.state.paymentMethods
             , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
-            , minimalLayout: self.props.minimalLayout
+            , customRender: self.props.customNewPurchase
             }
         ServerError         -> Purchase.Error.error { onRetry }
         UnexpectedError _   -> Purchase.Error.error { onRetry }
@@ -382,16 +388,12 @@ vetrinaContainer self@{ state: { purchaseState } } child =
                            PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
                            otherwise                          -> mempty
-      minimalClass = if self.props.minimalLayout then "vetrina--minimal-layout" else mempty
   in
     DOM.div
       { className:
           joinWith " "
-          -- `errorClass` and `minimalClass` do not play well together
-          -- Yeah this is not that good...
-          -- TODO: Make a saner way of `minimalLayout`
           $ take 2
-          $ filter (not String.null) [ "vetrina--container", errorClass, minimalClass ]
+          $ filter (not String.null) [ "vetrina--container", errorClass ]
       , children: [ child ]
       }
 
