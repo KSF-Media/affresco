@@ -2,9 +2,11 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Date (Date, adjust)
+import Data.Date as Date
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Time.Duration as Time.Duration
 import Data.Tuple (Tuple(..))
 import Data.UUID (UUID)
@@ -31,15 +33,17 @@ import KSF.Tracking as Tracking
 type Self = React.Self Props State
 
 type Props =
-  { subsno    :: Subsno
-  , cusno     :: Cusno
-  , userUuid  :: UUID
-  , oldStart  :: Maybe Date
-  , oldEnd    :: Maybe Date
-  , onCancel  :: Effect Unit
-  , onLoading :: Effect Unit
-  , onSuccess :: User.Subscription -> Effect Unit
-  , onError   :: User.InvalidDateInput -> Effect Unit
+  { subsno       :: Subsno
+  , cusno        :: Cusno
+  , userUuid     :: UUID
+  , nextDelivery :: Maybe Date
+  , lastDelivery :: Maybe Date
+  , oldStart     :: Maybe Date
+  , oldEnd       :: Maybe Date
+  , onCancel     :: Effect Unit
+  , onLoading    :: Effect Unit
+  , onSuccess    :: User.Subscription -> Effect Unit
+  , onError      :: User.InvalidDateInput -> Effect Unit
   }
 
 type State =
@@ -68,12 +72,17 @@ initialState =
   }
 
 -- | Minimum pause period is one week
-calcMinEndDate :: Maybe Date -> Maybe Date
-calcMinEndDate Nothing = Nothing
-calcMinEndDate (Just startDate) = do
+calcMinEndDate :: Maybe Date -> Maybe Date -> Maybe Date
+calcMinEndDate _ Nothing = Nothing
+calcMinEndDate lastDelivery (Just startDate) = do
   -- 6 days added to the starting date = 7 (one week)
   let week = Time.Duration.Days 6.0
-  adjust week startDate
+      diffToLastDelivery = maybe (Time.Duration.Days 0.0)
+                           (\x -> Date.diff x startDate) lastDelivery
+      -- Week from the delivery date of the last product in
+      -- subscription
+      span = if diffToLastDelivery > Time.Duration.Days 0.0 then week <> diffToLastDelivery else week
+  adjust span startDate
 
 -- | Maximum pause period is three months
 calcMaxEndDate :: Maybe Date -> Maybe Date
@@ -88,10 +97,11 @@ didMount self = do
   -- We set the minimum start date two days ahead because of system issues.
   -- TODO: This could be set depending on the time of day
   let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
+      byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
       ongoing = case self.props.oldStart of
         Nothing -> false
         Just date -> date <= now
-  self.setState _ { minStartDate = dayAfterTomorrow
+  self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow
                   , startDate = self.props.oldStart
                   , ongoing = ongoing
                   }
@@ -175,7 +185,7 @@ render self =
     onStartDateChange newStartDate =
       self.setState _
         { startDate = newStartDate
-        , minEndDate = calcMinEndDate newStartDate
+        , minEndDate = calcMinEndDate self.props.lastDelivery newStartDate
         , maxEndDate = calcMaxEndDate newStartDate
         }
 

@@ -2,11 +2,39 @@ module Mosaico.Header where
 
 import Prelude
 
+import Effect (Effect)
+import Mosaico.Header.Menu as Menu
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler_)
+import React.Basic.Hooks (Component, component, useState, (/\))
+import React.Basic.Hooks as React
 
-header :: JSX
-header =
+type Self =
+  { state :: State
+  , setState :: SetState
+  }
+
+type State =
+  { menuVisible :: Boolean
+  , menuComponent :: Menu.Props -> JSX
+  }
+
+type SetState = (State -> State) -> Effect Unit
+
+headerComponent :: Component {}
+headerComponent = do
+  menuComponent <- Menu.menuComponent
+  component "Header" \_ -> React.do
+    let initialState =
+          { menuVisible: false
+          , menuComponent
+          }
+    state /\ setState <- useState initialState
+    pure $ render { state, setState }
+
+render :: Self -> JSX
+render self@{ state: { menuVisible, menuComponent }, setState } =
   DOM.header
     { className: block
     , children:
@@ -34,15 +62,20 @@ header =
                     ]
                 ]
             }
+        , menuComponent { visible: menuVisible }
         , DOM.div
             { className: block <> "__logo"
             }
         , DOM.div
-            { className: block <> "__account"
+            { className: block <> "__account" <>
+                if menuVisible then
+                  " " <> block <> "__account" <> "--menu-visible"
+                else
+                  mempty
             , children: [ DOM.text "NAME"]
             }
         , DOM.nav
-            { className: block <> "__menu-links"
+            { className: block <> "__center-links"
             , children:
                 [ DOM.a_ [ DOM.text "OPINION" ]
                 , DOM.a_ [ DOM.text "KULTUR" ]
@@ -51,8 +84,15 @@ header =
                 ]
             }
         , DOM.div
-            { className: block <> "__menu-button"
-            , children: [ DOM.text "MENU"]
+            { className: block <> "__menu-button" <>
+                if menuVisible then
+                  " " <> block <> "__menu-button" <> "--menu-visible"
+                else
+                  mempty
+            , children: [ DOM.text "MENU"
+                        , DOM.div { className: block <> "__menu-icon" } ]
+            , onClick: handler_ do
+                setState \s -> s { menuVisible = not menuVisible }
             }
         ]
     }

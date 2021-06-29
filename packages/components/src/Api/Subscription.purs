@@ -67,6 +67,7 @@ data SubscriptionPaymentMethod
   | NetBank
   | ElectronicInvoice
   | DirectPayment
+  | Email
   | UnknownPaymentMethod
 
 type PausedSubscription =

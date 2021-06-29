@@ -5,7 +5,6 @@ import Prelude
 import Data.Maybe (fromMaybe)
 import Data.Nullable (toMaybe)
 import React.Basic (JSX, fragment)
-import React.Basic.Classic (Self) as React
 import React.Basic.DOM as DOM
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Types (AccountStatus(..))
