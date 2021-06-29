@@ -76,15 +76,14 @@ main = do
 getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 getArticle r@{ params: { uuid } } = do
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
+  html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
   case article of
     -- TODO: Add rendering for the article we get here
     -- Now we are just returning the pre-built stuff Parcel gives us
-    Right _ -> do
-      html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
-      pure $ TextHtml html
+    Right _ -> pure $ TextHtml html
     Left err -> do
       Console.warn $ "Could not get article: " <> err
-      pure $ TextHtml "Något gick fel :~("
+      pure $ TextHtml html
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: {path} } = Handlers.directory "dist/client" path
