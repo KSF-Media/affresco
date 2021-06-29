@@ -719,7 +719,7 @@ class App extends Component {
               />
             )}
             <div className={"row"}>
-              <div className={"col-sm-12"}>
+              <div className={`col-sm-12 premiumSection ${isDarkModeOn() ? "darkMode" : ""}`}>
                 {this.state.showBuyOption ? <PremiumBox showLogin={this.showLogin} /> : ""}
 
                 {this.state.appearLogin ? (
