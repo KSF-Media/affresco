@@ -46,7 +46,7 @@ didMount self = do
   self.props.logger.setUser $ Just self.props.user
 
 render :: Types.Self -> JSX
-render self@{ props: { now, subscription: sub@{ package, paymentMethod, state } } } =
+render self@{ props: { now, subscription: sub@{ package, state } } } =
   Grid.row2
     (DescriptionList.descriptionList
          { definitions:

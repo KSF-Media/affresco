@@ -86,7 +86,6 @@ import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, UserAuth)
 import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Address (Address) as Address
-import KSF.Api.Consent (GdprConsent)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
@@ -211,10 +210,10 @@ createCusnoUser newCusnoUser = do
       | otherwise -> do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
-    Right user -> do
+    Right _user -> do
       searchResult <- searchUsers { faroLimit: 1, query: Cusno.toString newCusnoUser.cusno }
       case searchResult of
-        Left err -> do
+        Left _ -> do
           Console.error "Cusno user created successfully but searching it failed"
           pure $ Left SomethingWentWrong
         Right res -> case Array.head res of
@@ -420,12 +419,12 @@ loginSso maybeInvalidateCache callback = do
     checkSsoSession loginConfig = do
       JanrainSSO.checkSession $ Record.merge
         loginConfig
-        { callback_failure: mkEffectFn1 \a -> do
+        { callback_failure: mkEffectFn1 \_ -> do
              Console.log "Janrain SSO failure"
-        , callback_success: mkEffectFn1 \a -> do
+        , callback_success: mkEffectFn1 \_ -> do
              Console.log "Janrain SSO success"
              JanrainSSO.setSsoSuccess
-        , capture_error: mkEffectFn1 \a -> do
+        , capture_error: mkEffectFn1 \_ -> do
             Console.log "Janrain SSO capture error"
         , capture_success: mkEffectFn1 \r@({ result: { accessToken, userData: { uuid } } }) -> do
              JanrainSSO.setSsoSuccess
@@ -547,15 +546,6 @@ requireToken =
     Nothing -> liftEffect $ throw "Did not find uuid/token in local storage."
     Just loginResponse -> pure loginResponse
 
-jsUpdateGdprConsent
-  :: UUID
-  -> Api.Token
-  -> Array GdprConsent
-  -> Effect Unit
-  -> Effect Unit
-jsUpdateGdprConsent uuid token consents callback
-  = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents
-
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
@@ -643,7 +633,7 @@ deleteTemporaryAddressChange userUuid subsno startDate endDate = do
   tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate =<< requireToken
   case tempAddressChangeDeletedSub of
     Right sub -> pure $ Right sub
-    Left err  -> pure $ Left Persona.InvalidUnexpected
+    Left _  -> pure $ Left Persona.InvalidUnexpected
 
 createDeliveryReclamation
   :: UUID
@@ -655,7 +645,7 @@ createDeliveryReclamation uuid subsno date claim = do
   deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date claim =<< requireToken
   case deliveryReclamation of
     Right recl -> pure $ Right recl
-    Left err -> do
+    Left _ -> do
       Console.error "Unexpected error when creating delivery reclamation."
       pure $ Left Persona.InvalidUnexpected
 
@@ -678,7 +668,7 @@ getPayments uuid = do
   payments <- try $ Persona.getPayments uuid =<< requireToken
   case payments of
     Right pay -> pure $ Right pay
-    Left err -> do
+    Left _ -> do
       Console.error "Unexpected error when getting user payment history "
       pure $ Left "unexpected"
 

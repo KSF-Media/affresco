@@ -29,7 +29,7 @@ asyncWrapper :: forall a. Props a -> JSX
 asyncWrapper props = case props.wrapperState of
   Ready       -> props.readyView
   Editing a   -> props.editingView a
-  Loading a   -> props.loadingView loadingSpinner
+  Loading _   -> props.loadingView loadingSpinner
   Success msg -> props.successView msg
   Error msg   -> props.errorView msg
 

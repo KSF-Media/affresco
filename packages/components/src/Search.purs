@@ -109,7 +109,7 @@ search = do
                              Array.concatMap (_.faro) res
               Left _ -> pure unit
             liftEffect $ setSearchWrapper $ AsyncWrapper.Success Nothing
-        startCreateAccount usr@{ cusno, email } = do
+        startCreateAccount { cusno, email } = do
           pw <- randomString 10
           nowISO <- JSDate.toISOString =<< JSDate.now
           let legalConsent =
@@ -506,7 +506,7 @@ search = do
             leastEnd = case Tuple (toDate =<< toMaybe sub.dates.suspend) (toDate =<< toMaybe sub.dates.end) of
               Tuple (Just end1) (Just end2) -> Just $ min end1 end2
               Tuple end1 end2 -> end1 <|> end2
-        loadableSubs cusno =
+        loadableSubs _cusno =
            DOM.td { colSpan: 3
                   , children:
                       [ DOM.i
@@ -630,7 +630,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
 
     submit :: ValidatedForm NewUserFields User.NewCusnoUser -> Effect Unit
     submit =
-      validation (\errors -> Console.error "Could not create new cusno user.") submitNewAccount
+      validation (\_ -> Console.error "Could not create new cusno user.") submitNewAccount
 
 renderSetCusno
   :: (Cusno -> Effect Unit)
@@ -761,7 +761,7 @@ renderControlPassword resetPassword submitPassword cancel setState wrapperState 
 
     submit :: ValidatedForm NewUserFields EmailPassword -> Effect Unit
     submit =
-      validation (\errors -> Console.error "Could not set password.") submitPassword
+      validation (\_ -> Console.error "Could not set password.") submitPassword
 
 genericError :: Maybe String -> JSX
 genericError detail =

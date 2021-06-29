@@ -35,7 +35,7 @@ initialState :: State
 initialState = { chosenCard: Nothing }
 
 render :: Self -> JSX
-render self@{ setState, state: { chosenCard }, props: { creditCards, onSelect } } =
+render { props: { creditCards, onSelect } } =
   DOM.div
     { className: "credit-card-menu"
     , children:  map creditCardMenuItem creditCards

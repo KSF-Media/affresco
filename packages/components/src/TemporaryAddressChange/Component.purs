@@ -142,7 +142,7 @@ didMount self = do
     _ -> pure unit
 
 render :: Self -> JSX
-render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName, isIndefinite }} =
+render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, temporaryName }} =
   DOM.div
     { className: "temporary-address-change--container"
     , children:

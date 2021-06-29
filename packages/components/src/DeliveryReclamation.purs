@@ -69,7 +69,7 @@ didMount self = do
   self.setState _ { maxPublicationDate = Just now }
 
 render :: Self -> JSX
-render self@{ state: { publicationDate, claim, maxPublicationDate }} =
+render self@{ state: { publicationDate, claim }} =
   DOM.div
     { className: "clearfix delivery-reclamation--container"
     , children:

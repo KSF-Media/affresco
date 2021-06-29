@@ -37,7 +37,7 @@ render self =
   case self.props.onClick of
     Href url -> accountActionAnchor url
     Router path -> routerLink path
-    Action onClick -> accountActionContainer
+    Action _onClick -> accountActionContainer
 
   where
     accountActionContainer =

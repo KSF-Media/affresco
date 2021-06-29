@@ -26,6 +26,3 @@ accountEdit = DOM.div
       where
         passwordChangeClass = "account-edit--password-change"
         paymentHistoryClass = "account-edit--payment-history"
-        creditCardUpdateClass = "account-edit--credit-card-update"
-
-

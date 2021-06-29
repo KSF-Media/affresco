@@ -419,7 +419,7 @@ editAddress self =
 
     submitNewAddress :: ValidatedForm AddressFormFields Address -> Effect Unit
     submitNewAddress = validation
-      (\errors -> Console.error "Could not submit address.")
+      (\_ -> Console.error "Could not submit address.")
       updateAddress
 
     updateAddress :: Address -> Effect Unit
@@ -472,7 +472,7 @@ editEmail self =
 
     submitNewEmail :: ValidatedForm EmailFormFields (Maybe String) -> Effect Unit
     submitNewEmail = validation
-      (\errors -> Console.error "Could not submit email.")
+      (\_ -> Console.error "Could not submit email.")
       updateEmail
 
     updateEmail :: Maybe String -> Effect Unit
@@ -538,7 +538,7 @@ editName self =
 
       submitNewName :: ValidatedForm NameFormFields Name -> Effect Unit
       submitNewName = validation
-        (\errors -> Console.error "Could not submit name.")
+        (\_ -> Console.error "Could not submit name.")
         updateName
 
       updateName :: Name -> Effect Unit
@@ -659,7 +659,7 @@ isUpcomingPendingChange (Just now) { startDate } =
   maybe true (_ > now) $ toDate startDate
 
 pendingAddressChangeText :: User.PendingAddressChange -> String
-pendingAddressChangeText { address, startDate, endDate } =
+pendingAddressChangeText { address, startDate } =
   let addressString = formatAddress address
       pendingPeriod = formatDateString startDate
   in addressString <> " (fr.o.m. " <> pendingPeriod <> ")"
