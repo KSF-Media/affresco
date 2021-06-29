@@ -34,8 +34,8 @@ loginView self@{ state, setState } setUser logger =
           , description
           , descriptionList
           ]
-    <> [ Helpers.classy DOM.div "form" [ loginForm ] ]
-  where
+    <> [ Helpers.classy DOM.div "form" [ loginForm ], instructionVideo ]
+  where 
     loginForm =
         state.loginComponent
           { onMerge:             setState \s -> s { showWelcome = false }
@@ -59,6 +59,35 @@ loginView self@{ state, setState } setUser logger =
           , onLogin: Aff.launchAff_
           , disableSocialLogins: Set.empty
           }
+
+    {- This is the exact embed code YouTube gives us that is then converted to PS,
+       except for the allow attribute which cannot be found in JSX.
+     <iframe 
+        width="560" 
+        height="315" 
+        src="https://www.youtube.com/embed/EQtWIjnRlN0" 
+        title="YouTube video player" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+      </iframe> 
+    -}
+    instructionVideo = 
+      DOM.div 
+        { className: "mitt-konto--frontpage__instruction-video"
+        , children: 
+            [ DOM.span_ 
+                [ DOM.text "Så här sköter du dina prenumerationsärenden i Mitt konto:" ]
+            , DOM.iframe 
+                { width: "560"
+                , height: "315"
+                , src:"https://www.youtube.com/embed/EQtWIjnRlN0"
+                , title: "YouTube video player"
+                , frameBorder:"0"
+                , allowFullScreen: true
+                }
+            ]
+        }
 
     logosWrapper = Helpers.classy DOM.div "logos"
               [ DOM.img { src: logos.vn, className: "logo", alt: "VN Västis" }
