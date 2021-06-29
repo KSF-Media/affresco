@@ -17,6 +17,7 @@ const PremiumBox = (props) => {
 };
 
 function showLogin(e) {
+  e.preventDefault();
   try {
     Android.showLogin();
   } catch (err) {
