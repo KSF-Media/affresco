@@ -152,6 +152,17 @@ jobs:
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/mosaico
+      - name: Generate AppEngine domain map
+        run: |2
+            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+      - name: Deploy AppEngine domain map
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          deliverables: dispatch.yaml
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          working_directory: build
   refresh_cdn_app-article:
     needs: deploy
     runs-on: ubuntu-latest
