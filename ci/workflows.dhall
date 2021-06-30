@@ -33,7 +33,7 @@ let AppServer =
         { env = [] : Map Text Text
         , previewUrl = ""
         , lockfile = "yarn.lock"
-        , caches = ""
+        , caches = "README.md"
         }
       }
 
