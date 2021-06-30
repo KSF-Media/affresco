@@ -7,10 +7,10 @@ const PremiumBox = (props) => {
       <br />
       <p>En del av vårt material är endast tillgängligt för våra prenumeranter.</p>
       <p className="cta-login-existing">
-        Redan kund?{" "}
-        <a onClick={(e) => showLogin(e)} href={"#"}>
-          Logga in
-        </a>
+	Redan kund?{" "}
+	<a onClick={(e) => showLogin(e)} href={"#"}>
+	  Logga in
+	</a>
       </p>
     </div>
   );
@@ -18,8 +18,18 @@ const PremiumBox = (props) => {
 
 function showLogin(e) {
   e.preventDefault();
-  // TODO: Add mobile bridge
-  console.log("SHOW LOGIN");
+  try {
+    Android.showLogin();
+  } catch (err) {
+    // we might have a crash when Android bridge is not registered
+  }
+
+  // For Ios
+  try {
+    Window.webkit.messageHandlers.showLogin.postMessage("");
+  } catch (err) {
+    // we might have a crash when Ios webkit bridge is not registered
+  }
 }
 
 export default PremiumBox;
