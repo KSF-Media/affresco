@@ -26,8 +26,15 @@ jobs:
       - uses: "cachix/install-nix-action@v12"
         with:
           nix_path: nixpkgs=channel:nixos-20.09
+      - name: Setup yarn cache
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-yarn-${{ hashFiles('yarn.lock')}}"
+          path: |2
+              node_modules
+              .yarn-cache
       - run: |2
-            yarn install --pure-lockfile
+            yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
       - name: Check CI script has been generated from Dhall
         run: |2

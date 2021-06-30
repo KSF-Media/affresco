@@ -15,6 +15,7 @@ let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
 
 let steps =
         Actions.setupSteps
+      # Actions.cacheSteps apps
       # [ Actions.checkCIStep ]
       # Actions.buildSteps apps
       # Actions.buildServerSteps app-servers

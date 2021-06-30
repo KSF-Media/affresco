@@ -10,8 +10,10 @@ let App =
           , deployDir : Text
           , name : Text
           , env : Map Text Text
+          , lockfile : Text
+          , caches : Text
           }
-      , default.env = [] : Map Text Text
+      , default = { env = [] : Map Text Text, lockfile = "", caches = "" }
       }
 
 let AppServer =
@@ -20,12 +22,19 @@ let AppServer =
           , buildDir : Text
           , deployDir : Text
           , name : Text
-          , previewUrl : Text
           , runtime : Text
           , entrypoint : Text
           , env : Map Text Text
+          , previewUrl : Text
+          , lockfile : Text
+          , caches : Text
           }
-      , default = { env = [] : Map Text Text, previewUrl = "" : Text }
+      , default =
+        { env = [] : Map Text Text
+        , previewUrl = ""
+        , lockfile = "yarn.lock"
+        , caches = ""
+        }
       }
 
 let Step =
@@ -64,13 +73,37 @@ let setupSteps =
         , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
         }
       , Step::{
+        , name = Some "Setup yarn cache"
+        , uses = Some "actions/cache@v2"
+        , `with` = toMap
+            { key = "\${{ runner.os }}-yarn-\${{ hashFiles('yarn.lock')}}"
+            , path =
+                ''
+                  node_modules
+                  .yarn-cache
+                ''
+            }
+        }
+      , Step::{
         , run = Some
             ''
-              yarn install --pure-lockfile
+              yarn install --pure-lockfile --cache-folder=.yarn-cache
               mkdir -p build
             ''
         }
       ]
+
+let mkCacheAppStep =
+      \(app : App.Type) ->
+        Step::{
+        , name = Some "Setup build cache for ${app.name}"
+        , uses = Some "actions/cache@v2"
+        , `with` = toMap
+            { path = app.caches
+            , key =
+                "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('${app.buildDir}/${app.lockfile}')}}"
+            }
+        }
 
 let mkBuildStep =
       \(app : App.Type) ->
@@ -270,6 +303,8 @@ let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 let buildServerSteps =
       Prelude.List.map AppServer.Type Step.Type mkBuildServerStep
 
+let cacheSteps = Prelude.List.map App.Type Step.Type mkCacheAppStep
+
 in  { Step
     , Prelude
     , App
@@ -285,4 +320,5 @@ in  { Step
     , refreshCDNJob
     , generateDispatchYamlStep
     , deployDispatchYamlStep
+    , cacheSteps
     }

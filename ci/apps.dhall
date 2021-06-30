@@ -15,6 +15,14 @@ let apps =
                   "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
               , MAINTENANCE_MODE = "false"
               }
+          , lockfile = "yarn.lock"
+          , caches =
+              ''
+              app/mitt-konto/.spago
+              app/mitt-konto/dist
+              app/mitt-konto/node_modules
+              app/mitt-konto/output
+              ''
           }
         , Actions.App::{
           , name = "Vetrina (for testing only)"
@@ -25,6 +33,14 @@ let apps =
               , SENTRY_DSN =
                   "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
               }
+          , lockfile = "yarn.lock"
+          , caches =
+              ''
+              app/vetrina-test/.spago
+              app/vetrina-test/dist
+              app/vetrina-test/node_modules
+              app/vetrina-test/output
+              ''
           }
         , Actions.App::{
           , name = "Elections (EU)"
@@ -34,6 +50,12 @@ let apps =
               { ELECTION_BACKEND_URL = "https://elections-eu.api.ksfmedia.fi/v1"
               , ELECTION_TYPE = "EU"
               }
+          , lockfile = "yarn.lock"
+          , caches =
+              ''
+              app/elections/dist
+              app/elections/node_modules
+              ''
           }
         , Actions.App::{
           , name = "Elections (Parliament)"
@@ -53,16 +75,36 @@ let apps =
               , PRODUCTION_SENTRY_DSN =
                   "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
               }
+          , lockfile = "yarn.lock"
+          , caches =
+              ''
+              app/app-article/dist
+              app/app-article/node_modules
+              ''
           }
         , Actions.App::{
           , name = "Corona banner"
           , buildDir = "corona-banner"
           , deployDir = "corona-banner"
+          , lockfile = "yarn.lock"
+          , caches =
+              ''
+              app/corona-banner/dist
+              app/corona-banner/node_modules
+              ''
           }
         , Actions.App::{
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
+          , lockfile = "yarn.lock"
+          , caches =
+              ''
+              app/hbl365/.spago
+              app/hbl365/dist
+              app/hbl365/node_modules
+              app/hbl365/output
+              ''
           }
         ]
       : List Actions.App.Type
