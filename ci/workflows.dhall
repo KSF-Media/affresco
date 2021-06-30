@@ -13,7 +13,11 @@ let App =
           , lockfile : Text
           , caches : Text
           }
-      , default = { env = [] : Map Text Text, lockfile = "", caches = "" }
+      , default =
+        { env = [] : Map Text Text
+        , lockfile = "yarn.lock"
+        , caches = "README.md"
+        }
       }
 
 let AppServer =
