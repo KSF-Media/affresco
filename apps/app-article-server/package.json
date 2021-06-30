@@ -14,8 +14,7 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-image-lightbox": "^5.1.1",
-    "react-imported-component": "^6.4.1",
-    "uuid": "^8.3.2"
+    "react-imported-component": "^6.4.1"
   },
   "scripts": {
     "clean": "rm -rf .cache dist node_modules",

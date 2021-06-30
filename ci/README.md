@@ -60,7 +60,8 @@ In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
 ## Adding a new App Engine App
 
 1. Edit the [`app-servers.dhall`](./app-servers.dhall) file to add the new app details
-2. You'll find the production app deployed at https://${sevice-name}-dot-ksf-production.ey.r.appspot.com
+2. Create a `app.dev.yaml` to the root of your app (look for examples from other apps)
+3. You'll find the production app deployed at https://${sevice-name}-dot-ksf-production.ey.r.appspot.com
 
 ### Maintenance Mode
 

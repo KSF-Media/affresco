@@ -60,11 +60,6 @@ let apps =
           , deployDir = "corona-banner"
           }
         , Actions.App::{
-          , name = "Mosaico SPA"
-          , buildDir = "mosaico"
-          , deployDir = "mosaico"
-          }
-        , Actions.App::{
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
