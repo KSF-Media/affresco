@@ -34,7 +34,7 @@ headerComponent = do
     pure $ render { state, setState }
 
 render :: Self -> JSX
-render self@{ state: { menuVisible, menuComponent }, setState } =
+render { state: { menuVisible, menuComponent }, setState } =
   DOM.header
     { className: block
     , children:
