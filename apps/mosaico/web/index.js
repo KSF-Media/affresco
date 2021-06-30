@@ -8,9 +8,9 @@ React.createClass = createReactClass;
 var Mosaico = require("../output/Mosaico/index.js");
 
 function main() {
-  const myComponent = <Mosaico.jsApp />;
+  const mosaico = <Mosaico.jsApp />;
 
-  ReactDOM.render(myComponent, document.getElementById("app"));
+  ReactDOM.render(mosaico, document.getElementById("app"));
 }
 
 if (module.hot) {

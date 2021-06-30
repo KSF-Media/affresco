@@ -4,18 +4,18 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
-    "parcel": "1.12.3",
     "basscss": "^8.1.0",
+    "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
-    "react-dom": ">=16.12"
+    "react-dom": ">=16.12",
+    "uuid": "3.4.0",
+    "uuid-validate": "^0.0.3",
+    "xhr2": "^0.2.1"
   },
   "scripts": {
-    "prestart": "parcel build ../../less/mosaico.less ./index.js",
     "start": "spago run",
-    "start-web": "parcel start web/index.html -p 8000",
-    "prebuild": "parcel build ../../less/mosaico.less",
-    "build": "spago build && parcel build web/index.html --no-cache --public-url ./"
+    "build": "spago build && parcel build web/index.html -d dist/client --no-cache --public-url /assets"
   }
 }
