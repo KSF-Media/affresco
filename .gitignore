@@ -21,3 +21,4 @@ yarn-error.log
 .tern-port
 .psc-ide-port
 .parcel-cache
+.log
