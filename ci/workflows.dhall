@@ -88,6 +88,8 @@ let setupSteps =
                 ''
                   node_modules
                   .yarn-cache
+                  ~/.npm
+                  ~/.cache
                 ''
             }
         }

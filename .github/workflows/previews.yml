@@ -22,58 +22,11 @@ jobs:
           path: |2
               node_modules
               .yarn-cache
+              ~/.npm
+              ~/.cache
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Setup build cache for Mitt Konto
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
-          path: |
-            apps/mitt-konto/.spago
-            apps/mitt-konto/dist
-            apps/mitt-konto/node_modules
-            apps/mitt-konto/output
-      - name: "Setup build cache for Vetrina (for testing only)"
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
-          path: |
-            apps/vetrina-test/.spago
-            apps/vetrina-test/dist
-            apps/vetrina-test/node_modules
-            apps/vetrina-test/output
-      - name: "Setup build cache for Elections (EU)"
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-elections-eu-${{ hashFiles('apps/elections/yarn.lock')}}"
-          path: |
-            apps/elections/dist
-            apps/elections/node_modules
-      - name: Setup build cache for App article
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
-          path: |
-            apps/app-article/dist
-            apps/app-article/node_modules
-            packages/user/node_modules
-      - name: Setup build cache for Corona banner
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
-          path: |
-            apps/corona-banner/dist
-            apps/corona-banner/node_modules
-      - name: Setup build cache for HBL365
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
-          path: |
-            apps/hbl365/.spago
-            apps/hbl365/dist
-            apps/hbl365/node_modules
-            apps/hbl365/output
       - name: Check CI script has been generated from Dhall
         run: |2
             make

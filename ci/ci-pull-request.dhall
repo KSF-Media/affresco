@@ -18,7 +18,6 @@ let apps-to-cache =
 
 let steps =
         Actions.setupSteps
-      # Actions.cacheSteps apps-to-cache
       # [ Actions.checkCIStep ]
       # Actions.buildSteps apps
       # Actions.buildServerSteps app-servers
