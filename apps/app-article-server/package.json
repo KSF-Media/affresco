@@ -18,7 +18,7 @@
   },
   "scripts": {
     "clean": "rm -rf .cache dist node_modules",
-    "build": "parcel build src/browser/index.html -d dist/client --no-cache --public-url /dist && parcel build src/server/index.js -d dist/server --public-url /dist --target=node --bundle-node-modules",
+    "build": "parcel build src/browser/index.html -d dist/client --public-url /dist && parcel build src/server/index.js -d dist/server --public-url /dist --target=node --bundle-node-modules",
     "start": "node dist/server"
   }
 }
