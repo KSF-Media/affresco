@@ -4,7 +4,7 @@
   "dependencies": {
     "dhall-to-yaml-cli": "^1.7.6",
     "parcel-bundler": "^1.12.4",
-    "purescript": "^0.14.0",
+    "purescript": "^0.14.2",
     "react-router-dom": "^5.2.0",
     "spago": "^0.19.1",
     "uglify-es": "^3.3.9",

@@ -39,14 +39,14 @@ import React.Basic.Events (handler_)
 import React.Basic.Router as Router
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
-receiverName self@{ props: { subscription: { receiver } } } =
+receiverName { props: { subscription: { receiver } } } =
   foldMap (\r -> Array.singleton
               { term: "Mottagare:"
               , description: [ DOM.text r ]
               }) $ toMaybe receiver
 
 deliveryAddress :: Types.Self -> Array DescriptionList.Definition
-deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
+deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
   if package.digitalOnly
   then mempty
   else Array.singleton
@@ -67,7 +67,7 @@ deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddr
       | otherwise = "-"
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
-paymentMethod self@{ props: props@{ subscription: sub@{ paymentMethod: method } } } = Array.singleton
+paymentMethod { props: { subscription: { paymentMethod: method } } } = Array.singleton
   { term: "Faktureringsmetod:"
   , description: [ DOM.text $ Helpers.translatePaymentMethod method ]
   }
@@ -99,7 +99,7 @@ showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
        }
 
 billingDateTerm :: Types.Self -> Array DescriptionList.Definition
-billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
+billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
   (\e -> Array.singleton $
       { term: "Faktureringsperioden upphör:"
       , description: [ DOM.text $ e ]
@@ -107,7 +107,7 @@ billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
   ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe end)
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
-subscriptionEndTerm self@{ props: { subscription: { dates: { suspend } } } } = foldMap
+subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap
   (\s -> Array.singleton $
       { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text s ]
@@ -217,7 +217,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
               unpausedSubscription <- Aff.try $ do
                 User.unpauseSubscription props.user.uuid props.subscription.subsno
               case unpausedSubscription of
-                Left err -> liftEffect do
+                Left _ -> liftEffect do
                   self.setState _
                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
@@ -335,7 +335,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         }
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
-pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }, state } editing =
+pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =
   PauseSubscription.pauseSubscription
     { subsno: sub.subsno
     , cusno: props.user.cusno
@@ -382,7 +382,7 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
     oldEnd = ((toDate <=< toMaybe) <<< _.endDate) =<< editing
 
 temporaryAddressChangeComponent :: Types.Self -> Maybe User.PendingAddressChange -> JSX
-temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ package } } }  editing =
+temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } } }  editing =
   TemporaryAddressChange.temporaryAddressChange
     { subsno: props.subscription.subsno
     , cusno: props.user.cusno
@@ -431,7 +431,7 @@ showPausedDates self =
       pauseLine pause =
         let text = "Uppehåll: " <> formatDates pause
         in case Tuple (toDate pause.startDate) (toDate =<< toMaybe pause.endDate) of
-          Tuple (Just startDate) (Just endDate) ->
+          Tuple (Just _startDate) (Just _endDate) ->
             DOM.div
               { children: [ changeButton self
                               (Types.EditSubscriptionPause pause)

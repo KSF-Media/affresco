@@ -153,7 +153,7 @@ render props self@{ state: { contactForm } } = fragment
       <*> Form.validateField Country self.state.contactForm.countryCode mempty
 
     submitForm = validation
-      (\errors -> do
+      (\_ -> do
           let form = self.state.contactForm
           self.setState _
             { contactForm

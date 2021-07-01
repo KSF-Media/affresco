@@ -17,4 +17,4 @@ transaction
   -> Effect Unit
 transaction orderNumber (Just productId) (Just productPrice) maybeCampaignNo =
   runFn4 transaction_ orderNumber productId productPrice (fold maybeCampaignNo)
-transaction orderNumber _ _ _ = pure unit
+transaction _ _ _ _ = pure unit

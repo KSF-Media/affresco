@@ -190,9 +190,6 @@ description self =
           ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
           LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
       }
-  where
-    isLoggedInAccount (LoggedInAccount _) = true
-    isLoggedInAccount _ = false
 
 form :: Self -> JSX
 form self = DOM.form $
@@ -223,7 +220,7 @@ form self = DOM.form $
     onSubmit = handler preventDefault $ case self.state.accountStatus of
       NewAccount ->
         (\_ -> validation
-          (\errors ->
+          (\_ ->
             self.setState _
               { newAccountForm
                 { emailAddress = self.state.newAccountForm.emailAddress <|> Just "" }})
@@ -231,7 +228,7 @@ form self = DOM.form $
           $ newAccountFormValidations self)
       ExistingAccount _ ->
         (\_ -> validation
-          (\errors ->
+          (\_ ->
             self.setState _
               { existingAccountForm
                 { emailAddress = self.state.existingAccountForm.emailAddress <|> Just ""
@@ -241,7 +238,7 @@ form self = DOM.form $
           $ existingAccountFormValidations self)
       LoggedInAccount user ->
         (\_ -> validation
-          (\errors -> pure unit)
+          (\_ -> pure unit)
           (\validForm -> self.props.mkPurchaseWithLoggedInAccount user validForm)
           $ loggedInAccountFormValidations self)
     children = case self.state.accountStatus of

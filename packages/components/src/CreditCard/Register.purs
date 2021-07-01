@@ -21,7 +21,7 @@ component :: React.Component Props
 component = React.createComponent "Register"
 
 render :: Self -> JSX
-render self@{ props: { terminalUrl } } =
+render { props: { terminalUrl } } =
   DOM.div_ [ warning
            , netsTerminalIframe terminalUrl
            ]

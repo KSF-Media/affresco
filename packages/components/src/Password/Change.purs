@@ -163,5 +163,4 @@ updatePasswordForm update = do
 
         submit :: ValidatedForm PasswordChangeField PasswordReset -> Effect Unit
         submit =
-          validation (\errors -> Console.error "Could not update password.") submitPassword
-
+          validation (\_ -> Console.error "Could not update password.") submitPassword

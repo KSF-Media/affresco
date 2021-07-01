@@ -74,7 +74,7 @@ articleComponent = do
           -- , preamble: maybe Nothing (\articleStub -> articleStub.preamble) props.articleStub
           , preamble: (\articleStub -> articleStub.preamble) =<< props.articleStub
           }
-    state /\ setState <- useState initialState 
+    state /\ setState <- useState initialState
 
     useEffectOnce do
       loadArticle setState props.affArticle
@@ -196,11 +196,11 @@ render { props, state, setState } =
         , DOM.div
             { className: "mosaico--article--body "
             , children: case state.article of
-              (Just (PreviewArticle previewArticle)) ->
+              (Just (PreviewArticle _previewArticle)) ->
                 paywallFade
                 `cons` bodyWithAd
                 `snoc` vetrina
-              (Just (FullArticle fullArticle)) ->
+              (Just (FullArticle _fullArticle)) ->
                 bodyWithAd
               _ -> mempty
           }
@@ -302,7 +302,7 @@ render { props, state, setState } =
     -- and we want to throw them away?
     renderElement :: Either String BodyElement -> JSX
     renderElement = case _ of
-      Left err -> mempty
+      Left _   -> mempty
       Right el -> case el of
         Html content -> DOM.p
           { dangerouslySetInnerHTML: { __html: content }

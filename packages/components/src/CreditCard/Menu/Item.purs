@@ -30,7 +30,7 @@ initialState :: State
 initialState = { selected: false }
 
 render :: Self -> JSX
-render self@{ setState, state: { selected }, props: { creditCard, onClick } } = DOM.label
+render { props: { creditCard, onClick } } = DOM.label
                 { className: "credit-card-menu-item"
                 , children: [ DOM.input
                                 { type: "radio"

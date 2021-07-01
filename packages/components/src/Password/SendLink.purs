@@ -40,7 +40,7 @@ requestResetLink = do
           Aff.launchAff_ do
             res <- User.requestPasswordReset email
             liftEffect $ case res of
-              Right unit -> setWrapperState $ AsyncWrapper.Success Nothing
+              Right _unit -> setWrapperState $ AsyncWrapper.Success Nothing
               Left err -> setWrapperState $ AsyncWrapper.Error err
     pure $ renderForm submitForm (setWrapperState initialState)
       (setWrapperState <<< AsyncWrapper.Editing) wrapperState
@@ -112,4 +112,4 @@ requestResetLink = do
 
         submit :: ValidatedForm EmailField (Maybe String) -> Effect Unit
         submit =
-          validation (\errors -> Console.error "Invalid email.") (submitEmail <<< fromMaybe "")
+          validation (\_ -> Console.error "Invalid email.") (submitEmail <<< fromMaybe "")

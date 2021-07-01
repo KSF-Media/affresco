@@ -64,7 +64,7 @@ inputCheckbox props = React.make component
       }
 
 render :: Self -> JSX
-render self@{ props, state } =
+render { props } =
   DOM.div
     { className: "input-chekcbox--checkbox-container" <>
         if isNothing props.label then " input-field--no-label" else ""

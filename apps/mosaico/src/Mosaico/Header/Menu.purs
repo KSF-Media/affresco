@@ -2,17 +2,13 @@ module Mosaico.Header.Menu where
 
 import Prelude
 
-import Data.Array ((..), concat, cons, foldl, range)
-import Data.List (List, (:))
+import Data.Array (concat, cons, foldl, range)
 import Data.List.Lazy as List
 import Data.String.Common (trim)
-import Data.Tuple (uncurry)
-import Data.Tuple.Nested ((/\))
 
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component)
-import React.Basic.Hooks as React
 
 type Self =
   { props :: Props
@@ -28,7 +24,7 @@ menuComponent = do
     pure $ render { props }
 
 render :: Self -> JSX
-render self@{ props: { visible } } = DOM.div
+render { props: { visible } } = DOM.div
   { className: menuClass <>
       if visible then
         " " <> menuModifierClass
