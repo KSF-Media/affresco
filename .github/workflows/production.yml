@@ -34,7 +34,6 @@ jobs:
               node_modules
               .yarn-cache
       - run: |2
-            ls -laf
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
       - name: Check CI script has been generated from Dhall

@@ -23,67 +23,66 @@ jobs:
               node_modules
               .yarn-cache
       - run: |2
-            ls -laf
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
       - name: Setup build cache for Scripts
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-scripts-${{ hashFiles('scripts/yarn.lock')}}"
+          key: "${{ runner.os }}-scripts-${{ hashFiles('apps/scripts/yarn.lock')}}"
           path: README.md
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('mitt-konto/yarn.lock')}}"
+          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
           path: |
-            app/mitt-konto/.spago
-            app/mitt-konto/dist
-            app/mitt-konto/node_modules
-            app/mitt-konto/output
+            apps/mitt-konto/.spago
+            apps/mitt-konto/dist
+            apps/mitt-konto/node_modules
+            apps/mitt-konto/output
       - name: "Setup build cache for Vetrina (for testing only)"
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('vetrina-test/yarn.lock')}}"
+          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
           path: |
-            app/vetrina-test/.spago
-            app/vetrina-test/dist
-            app/vetrina-test/node_modules
-            app/vetrina-test/output
+            apps/vetrina-test/.spago
+            apps/vetrina-test/dist
+            apps/vetrina-test/node_modules
+            apps/vetrina-test/output
       - name: "Setup build cache for Elections (EU)"
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-elections-eu-${{ hashFiles('elections/yarn.lock')}}"
+          key: "${{ runner.os }}-elections-eu-${{ hashFiles('apps/elections/yarn.lock')}}"
           path: |
-            app/elections/dist
-            app/elections/node_modules
+            apps/elections/dist
+            apps/elections/node_modules
       - name: "Setup build cache for Elections (Parliament)"
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-elections-${{ hashFiles('elections/yarn.lock')}}"
+          key: "${{ runner.os }}-elections-${{ hashFiles('apps/elections/yarn.lock')}}"
           path: README.md
       - name: Setup build cache for App article
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-app-article-${{ hashFiles('app-article/yarn.lock')}}"
+          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
           path: |
-            app/app-article/dist
-            app/app-article/node_modules
+            apps/app-article/dist
+            apps/app-article/node_modules
       - name: Setup build cache for Corona banner
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-corona-banner-${{ hashFiles('corona-banner/yarn.lock')}}"
+          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
           path: |
-            app/corona-banner/dist
-            app/corona-banner/node_modules
+            apps/corona-banner/dist
+            apps/corona-banner/node_modules
       - name: Setup build cache for HBL365
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-hbl365-${{ hashFiles('hbl365/yarn.lock')}}"
+          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
           path: |
-            app/hbl365/.spago
-            app/hbl365/dist
-            app/hbl365/node_modules
-            app/hbl365/output
+            apps/hbl365/.spago
+            apps/hbl365/dist
+            apps/hbl365/node_modules
+            apps/hbl365/output
       - name: Check CI script has been generated from Dhall
         run: |2
             make

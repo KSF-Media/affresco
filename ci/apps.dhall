@@ -18,10 +18,10 @@ let apps =
           , lockfile = "yarn.lock"
           , caches =
               ''
-              app/mitt-konto/.spago
-              app/mitt-konto/dist
-              app/mitt-konto/node_modules
-              app/mitt-konto/output
+              apps/mitt-konto/.spago
+              apps/mitt-konto/dist
+              apps/mitt-konto/node_modules
+              apps/mitt-konto/output
               ''
           }
         , Actions.App::{
@@ -36,10 +36,10 @@ let apps =
           , lockfile = "yarn.lock"
           , caches =
               ''
-              app/vetrina-test/.spago
-              app/vetrina-test/dist
-              app/vetrina-test/node_modules
-              app/vetrina-test/output
+              apps/vetrina-test/.spago
+              apps/vetrina-test/dist
+              apps/vetrina-test/node_modules
+              apps/vetrina-test/output
               ''
           }
         , Actions.App::{
@@ -53,8 +53,8 @@ let apps =
           , lockfile = "yarn.lock"
           , caches =
               ''
-              app/elections/dist
-              app/elections/node_modules
+              apps/elections/dist
+              apps/elections/node_modules
               ''
           }
         , Actions.App::{
@@ -78,8 +78,8 @@ let apps =
           , lockfile = "yarn.lock"
           , caches =
               ''
-              app/app-article/dist
-              app/app-article/node_modules
+              apps/app-article/dist
+              apps/app-article/node_modules
               ''
           }
         , Actions.App::{
@@ -89,8 +89,8 @@ let apps =
           , lockfile = "yarn.lock"
           , caches =
               ''
-              app/corona-banner/dist
-              app/corona-banner/node_modules
+              apps/corona-banner/dist
+              apps/corona-banner/node_modules
               ''
           }
         , Actions.App::{
@@ -100,10 +100,10 @@ let apps =
           , lockfile = "yarn.lock"
           , caches =
               ''
-              app/hbl365/.spago
-              app/hbl365/dist
-              app/hbl365/node_modules
-              app/hbl365/output
+              apps/hbl365/.spago
+              apps/hbl365/dist
+              apps/hbl365/node_modules
+              apps/hbl365/output
               ''
           }
         ]

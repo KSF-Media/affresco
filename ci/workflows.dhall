@@ -91,7 +91,6 @@ let setupSteps =
       , Step::{
         , run = Some
             ''
-              ls -laf
               yarn install --pure-lockfile --cache-folder=.yarn-cache
               mkdir -p build
             ''
@@ -106,7 +105,7 @@ let mkCacheAppStep =
         , `with` = toMap
             { path = app.caches
             , key =
-                "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('${app.buildDir}/${app.lockfile}')}}"
+                "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('apps/${app.buildDir}/${app.lockfile}')}}"
             }
         }
 
