@@ -86,8 +86,9 @@ let setupSteps =
             { key = "\${{ runner.os }}-yarn-\${{ hashFiles('yarn.lock')}}"
             , path =
                 ''
-                  node_modules
-                  .yarn-cache
+                  **/node_modules
+                  **/.yarn-cache
+                  **/.spago
                   ~/.npm
                   ~/.cache
                 ''

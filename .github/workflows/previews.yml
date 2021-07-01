@@ -20,8 +20,9 @@ jobs:
         with:
           key: "${{ runner.os }}-yarn-${{ hashFiles('yarn.lock')}}"
           path: |2
-              node_modules
-              .yarn-cache
+              **/node_modules
+              **/.yarn-cache
+              **/.spago
               ~/.npm
               ~/.cache
       - run: |2
