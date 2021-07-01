@@ -91,6 +91,7 @@ let setupSteps =
       , Step::{
         , run = Some
             ''
+              ls -laf
               yarn install --pure-lockfile --cache-folder=.yarn-cache
               mkdir -p build
             ''
