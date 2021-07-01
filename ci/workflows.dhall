@@ -2,6 +2,12 @@ let Prelude = ./Prelude.dhall
 
 let Map = Prelude.Map.Type
 
+let default = Prelude.Text.default
+
+let not = Prelude.Bool.not
+
+let null = Prelude.Optional.null
+
 let Env = < Staging | Production >
 
 let App =
@@ -10,14 +16,11 @@ let App =
           , deployDir : Text
           , name : Text
           , env : Map Text Text
-          , lockfile : Text
-          , caches : Text
+          , lockfile : Optional Text
+          , caches : Optional Text
           }
       , default =
-        { env = [] : Map Text Text
-        , lockfile = "yarn.lock"
-        , caches = "README.md"
-        }
+        { env = [] : Map Text Text, lockfile = None Text, caches = None Text }
       }
 
 let AppServer =
@@ -30,14 +33,14 @@ let AppServer =
           , entrypoint : Text
           , env : Map Text Text
           , previewUrl : Text
-          , lockfile : Text
-          , caches : Text
+          , lockfile : Optional Text
+          , caches : Optional Text
           }
       , default =
         { env = [] : Map Text Text
         , previewUrl = ""
-        , lockfile = "yarn.lock"
-        , caches = "README.md"
+        , lockfile = None Text
+        , caches = None Text
         }
       }
 
@@ -99,15 +102,19 @@ let setupSteps =
 
 let mkCacheAppStep =
       \(app : App.Type) ->
-        Step::{
-        , name = Some "Setup build cache for ${app.name}"
-        , uses = Some "actions/cache@v2"
-        , `with` = toMap
-            { path = app.caches
-            , key =
-                "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('apps/${app.buildDir}/${app.lockfile}')}}"
+        let c = default app.caches
+
+        let l = default app.lockfile
+
+        in  Step::{
+            , name = Some "Setup build cache for ${app.name}"
+            , uses = Some "actions/cache@v2"
+            , `with` = toMap
+                { path = c
+                , key =
+                    "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('apps/${app.buildDir}/${l}')}}"
+                }
             }
-        }
 
 let mkBuildStep =
       \(app : App.Type) ->
@@ -309,6 +316,10 @@ let buildServerSteps =
 
 let cacheSteps = Prelude.List.map App.Type Step.Type mkCacheAppStep
 
+let hasLockfile
+    : App.Type -> Bool
+    = \(a : App.Type) -> not (null Text a.lockfile)
+
 in  { Step
     , Prelude
     , App
@@ -325,4 +336,5 @@ in  { Step
     , generateDispatchYamlStep
     , deployDispatchYamlStep
     , cacheSteps
+    , hasLockfile
     }

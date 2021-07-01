@@ -25,11 +25,6 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Setup build cache for Scripts
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-scripts-${{ hashFiles('apps/scripts/yarn.lock')}}"
-          path: README.md
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -55,11 +50,6 @@ jobs:
           path: |
             apps/elections/dist
             apps/elections/node_modules
-      - name: "Setup build cache for Elections (Parliament)"
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-elections-${{ hashFiles('apps/elections/yarn.lock')}}"
-          path: README.md
       - name: Setup build cache for App article
         uses: "actions/cache@v2"
         with:
@@ -67,6 +57,7 @@ jobs:
           path: |
             apps/app-article/dist
             apps/app-article/node_modules
+            packages/user/node_modules
       - name: Setup build cache for Corona banner
         uses: "actions/cache@v2"
         with:

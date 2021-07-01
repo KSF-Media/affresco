@@ -15,8 +15,8 @@ let apps =
                   "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
               , MAINTENANCE_MODE = "false"
               }
-          , lockfile = "yarn.lock"
-          , caches =
+          , lockfile = Some "yarn.lock"
+          , caches = Some
               ''
               apps/mitt-konto/.spago
               apps/mitt-konto/dist
@@ -33,8 +33,8 @@ let apps =
               , SENTRY_DSN =
                   "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
               }
-          , lockfile = "yarn.lock"
-          , caches =
+          , lockfile = Some "yarn.lock"
+          , caches = Some
               ''
               apps/vetrina-test/.spago
               apps/vetrina-test/dist
@@ -50,8 +50,8 @@ let apps =
               { ELECTION_BACKEND_URL = "https://elections-eu.api.ksfmedia.fi/v1"
               , ELECTION_TYPE = "EU"
               }
-          , lockfile = "yarn.lock"
-          , caches =
+          , lockfile = Some "yarn.lock"
+          , caches = Some
               ''
               apps/elections/dist
               apps/elections/node_modules
@@ -75,19 +75,20 @@ let apps =
               , PRODUCTION_SENTRY_DSN =
                   "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
               }
-          , lockfile = "yarn.lock"
-          , caches =
+          , lockfile = Some "yarn.lock"
+          , caches = Some
               ''
               apps/app-article/dist
               apps/app-article/node_modules
+              packages/user/node_modules
               ''
           }
         , Actions.App::{
           , name = "Corona banner"
           , buildDir = "corona-banner"
           , deployDir = "corona-banner"
-          , lockfile = "yarn.lock"
-          , caches =
+          , lockfile = Some "yarn.lock"
+          , caches = Some
               ''
               apps/corona-banner/dist
               apps/corona-banner/node_modules
@@ -97,8 +98,8 @@ let apps =
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
-          , lockfile = "yarn.lock"
-          , caches =
+          , lockfile = Some "yarn.lock"
+          , caches = Some
               ''
               apps/hbl365/.spago
               apps/hbl365/dist
