@@ -34,8 +34,8 @@ jobs:
               **/node_modules
               **/.yarn-cache
               **/.spago
+              **/.cache
               ~/.npm
-              ~/.cache
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build

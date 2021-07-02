@@ -89,8 +89,8 @@ let setupSteps =
                   **/node_modules
                   **/.yarn-cache
                   **/.spago
+                  **/.cache
                   ~/.npm
-                  ~/.cache
                 ''
             }
         }
