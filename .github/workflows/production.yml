@@ -35,10 +35,10 @@ jobs:
               **/.yarn-cache
               **/.spago
               **/.cache
+              apps/*/dist
               ~/.npm
               ~/.cache/spago
       - run: |2
-            tar --use-compress-program zstd -tf $(find ~/ -name '*.tzst')
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
       - name: Check CI script has been generated from Dhall

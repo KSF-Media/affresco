@@ -90,6 +90,7 @@ let setupSteps =
                   **/.yarn-cache
                   **/.spago
                   **/.cache
+                  apps/*/dist
                   ~/.npm
                   ~/.cache/spago
                 ''
@@ -98,7 +99,6 @@ let setupSteps =
       , Step::{
         , run = Some
             ''
-              tar --use-compress-program zstd -tf $(find ~/ -name '*.tzst')
               yarn install --pure-lockfile --cache-folder=.yarn-cache
               mkdir -p build
             ''
