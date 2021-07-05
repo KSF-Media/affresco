@@ -91,6 +91,7 @@ let setupSteps =
                   **/.spago
                   **/.cache
                   ~/.npm
+                  ~/.cache/spago
                 ''
             }
         }
