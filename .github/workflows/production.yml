@@ -57,6 +57,13 @@ jobs:
             ruby deploy.rb mitt-konto
             mv apps/mitt-konto/dist build/mitt-konto
       - env:
+          MAINTENANCE_MODE: 'false'
+          PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+        name: Build Mitt Konto
+        run: |2
+            ruby deploy.rb mitt-konto
+            mv apps/mitt-konto/dist build/mitt-konto
+      - env:
           NODE_ENV: development
           SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
         name: "Build Vetrina (for testing only)"
@@ -106,6 +113,12 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends
           path: build/scripts
+      - name: Upload Mitt Konto
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends
+          path: build/mitt-konto
       - name: Upload Mitt Konto
         uses: "google-github-actions/upload-cloud-storage@main"
         with:

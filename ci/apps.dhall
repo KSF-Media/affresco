@@ -25,6 +25,24 @@ let apps =
               ''
           }
         , Actions.App::{
+          , name = "Mitt Konto"
+          , buildDir = "mitt-konto"
+          , deployDir = "mitt-konto"
+          , env = toMap
+              { PRODUCTION_SENTRY_DSN =
+                  "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+              , MAINTENANCE_MODE = "false"
+              }
+          , lockfile = Some "yarn.lock"
+          , caches = Some
+              ''
+              apps/mitt-konto/.spago
+              apps/mitt-konto/dist
+              apps/mitt-konto/node_modules
+              apps/mitt-konto/output
+              ''
+          }
+        , Actions.App::{
           , name = "Vetrina (for testing only)"
           , buildDir = "vetrina-test"
           , deployDir = "vetrina-test"
