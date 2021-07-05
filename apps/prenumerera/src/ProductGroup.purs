@@ -10,14 +10,17 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import KSF.Api.Package (Package)
+import KSF.Api.Package (Package, PackageId)
 import KSF.Helpers as Helpers
 import Prenumerera.PackageDescription (Description)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
-import React.Basic.Hooks (Component, useState', useMemo, (/\))
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler)
+import React.Basic.Hooks (Component, useState', (/\))
 import React.Basic.Hooks as React
+import Debug
+import Effect.Console (log)
 
 type WithDescription = Tuple Package Description
 
@@ -32,30 +35,30 @@ type Props =
 component :: Component Props
 component = do
   React.component "ProductGroup" \{ packages, startPurchase } -> React.do
-    activePackage /\ setActivePackage <- useState' $ NonEmpty.head packages
-    transitionPackage /\ setTransitionPackage <- useState' $ NonEmpty.head packages
+    activePackage /\ setActivePackage <- useState' $ _.id $ fst $ NonEmpty.head packages
+    transitionPackage /\ setTransitionPackage <- useState' activePackage
     fade /\ setFade <- useState' false
-    let startActivePackageFade package = when (not fade) do
+    let startActivePackageFade id = when (not fade) do
           setFade true
-          setTransitionPackage package
+          setTransitionPackage id
           Aff.launchAff_ do
-            Aff.delay $ Aff.Milliseconds 100.0
+            Aff.delay $ Aff.Milliseconds 150.0
             liftEffect do
               setFade false
-              setActivePackage package
-    packageHeader <- useMemo (_.id $ fst $ transitionPackage) $ const $
-                     renderHeader packages transitionPackage startActivePackageFade
-    pure $ render packageHeader activePackage fade startPurchase
+              setActivePackage id
+    let packageHeader = renderHeader packages transitionPackage startActivePackageFade
+    trace (packages) $ \_ ->
+      pure $ render packageHeader activePackage (NonEmpty.toArray packages) fade startPurchase
 
-renderHeader :: NonEmptyArray WithDescription -> WithDescription -> (WithDescription -> Effect Unit) -> JSX
+renderHeader :: NonEmptyArray WithDescription -> PackageId -> (PackageId -> Effect Unit) -> JSX
 renderHeader packages activePackage setActivePackage =
   DOM.div
     { className: "package-header"
     , children:
         [ DOM.h2_ [ DOM.text $
                       if NonEmpty.length packages == 1
-                        then activeDesc.brandLong <> " " <> activeDesc.descriptionShort
-                        else activeDesc.packageGroup
+                        then firstDesc.brandLong <> " " <> firstDesc.descriptionShort
+                        else firstDesc.packageGroup
                   ]
           -- Weekday selection or display
         , DOM.ul
@@ -63,7 +66,7 @@ renderHeader packages activePackage setActivePackage =
             , children: if NonEmpty.length packages == 1
                           then [ DOM.li
                                    { className: "single"
-                                   , children: [ DOM.text activeDesc.weekdays ]
+                                   , children: [ DOM.text firstDesc.weekdays ]
                                    }
                                ]
                           else NonEmpty.toArray $ map displaySelectPackage packages
@@ -71,47 +74,124 @@ renderHeader packages activePackage setActivePackage =
         ]
     }
   where
-    (Tuple _ activeDesc) = activePackage
-    displaySelectPackage pkg =
+    (Tuple _ firstDesc) = NonEmpty.head packages
+    displaySelectPackage (Tuple package description) =
       DOM.li
-        { className: if (_.id $ fst pkg) == (_.id $ fst activePackage) then "active" else ""
+        { className: if package.id == activePackage then "active" else ""
         , children:
             [ DOM.a
-                { onClick: handler_ $ setActivePackage pkg
-                , children: [ DOM.text $ _.weekdays $ snd pkg ]
+                { onClick: handler preventDefault $ const $ setActivePackage package.id
+                , children: [ DOM.text $ description.weekdays ]
+                , href: "#"
                 }
             ]
         }
 
+render :: JSX -> PackageId -> Array WithDescription -> Boolean -> (Package -> Effect Unit) -> JSX
+render packageHeader activePackage packages fade startPurchase =
+  DOM.div
+    { className: "ksf-package-group"
+    , children:
+        [ DOM.div
+            { className: "package-box text-center"
+            , children:
+                [ packageHeader
+                , DOM.div
+                    { className: "tab-content"
+                    , children: map renderPackage packages
+                    }
+                ]
+            }
+        ]
+    }
+  where
+    renderPackage (Tuple package description) =
+      DOM.div
+        { className: "tab-pane fade"
+          <> (if package.id /= activePackage then "" else
+                if fade then " active" else " active in")
+        , children:
+            [ DOM.div
+                { className: "package-price"
+                , children:
+                    [ DOM.div
+                        { className: "package-ribbon"
+                        , children:
+                            [ DOM.p_ [ description.ribbon ] ]
+                        }
+                    , DOM.img { src: imgRoot <> description.image }
+                    , DOM.div
+                        { className: "price-container"
+                        , children:
+                            [ DOM.div
+                                { className: "price-bubble"
+                                , children:
+                                    [ DOM.span_ [ DOM.text $ maybe "?" Helpers.formatEur $
+                                                    minimum $ map _.monthlyPrice $ package.offers ]
+                                    , DOM.br {}
+                                    , DOM.text "euro/mån"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            , case description.url of
+                  Just url ->
+                    DOM.a
+                      { className: "btn btn-cta"
+                      , children: [ DOM.text "Köp nu" ]
+                      , href: url
+                      }
+                  Nothing ->
+                    DOM.a
+                      { className: "btn btn-cta"
+                      , children: [ DOM.text "Köp nu" ]
+                      , onClick: handler preventDefault $ \_ -> startPurchase package
+                      , href: "#"
+                      }
+            , DOM.div
+                { className: "details"
+                , children: [ description.descriptionLong ]
+                }
+            ]
+        }
+
+
+{-
 render :: JSX -> WithDescription -> Boolean -> (Package -> Effect Unit) -> JSX
 render packageHeader activePackage fade startPurchase =
   DOM.div
-    { className: "ksf-package-group text-center"
+    { className: "ksf-package-group"
     , children:
-        [ packageHeader
-        , DOM.div
-            { className: "tab-content" <> if fade then " fade" else ""
+        [ DOM.div
+            { className: "package-box text-center"
             , children:
-                [ DOM.div
-                    { className: "package-price"
+                [ packageHeader
+                , DOM.div
+                    { className: "tab-content" <> if fade then " fade" else ""
                     , children:
                         [ DOM.div
-                            { className: "package-ribbon"
-                            , children:
-                                [ DOM.p_ [ _.ribbon $ snd $ activePackage ] ]
-                            }
-                        , DOM.img { src: imgRoot <> (_.image $ snd $ activePackage) }
-                        , DOM.div
-                            { className: "price-container"
+                            { className: "package-price"
                             , children:
                                 [ DOM.div
-                                    { className: "price-bubble"
+                                    { className: "package-ribbon"
                                     , children:
-                                        [ DOM.text $
-                                            (maybe "?" Helpers.formatEur $ minimum $ map (_.monthlyPrice) $
-                                             (_.offers $ fst $ activePackage)) <> " "
-                                            <> "euro/mån"
-                                        ]
+                                        [ DOM.p_ [ _.ribbon $ snd $ activePackage ] ]
+                                    }
+                                , DOM.img { src: imgRoot <> (_.image $ snd $ activePackage) }
+                                , DOM.div
+                                    { className: "price-container"
+                                    , children:
+                                         [ DOM.div
+                                             { className: "price-bubble"
+                                             , children:
+                                                 [ DOM.span_ [ DOM.text $ maybe "?" Helpers.formatEur $ minimum $ map (_.monthlyPrice) $ (_.offers $ fst $ activePackage) ]
+                                                 , DOM.br {}
+                                                 , DOM.text "euro/mån"
+                                                 ]
+                                             }
+                                         ]
                                     }
                                 ]
                             }
@@ -126,7 +206,8 @@ render packageHeader activePackage fade startPurchase =
                                 DOM.a
                                   { className: "btn btn-cta"
                                   , children: [ DOM.text "Köp nu" ]
-                                  , onClick: handler_ $ startPurchase $ fst $ activePackage
+                                  , onClick: handler preventDefault $ \_ -> startPurchase $ fst $ activePackage
+                                  , href: "#"
                                   }
                         , DOM.div
                             { className: "details"
@@ -138,3 +219,4 @@ render packageHeader activePackage fade startPurchase =
             }
         ]
     }
+-}

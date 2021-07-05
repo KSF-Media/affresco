@@ -12,11 +12,12 @@ import Effect.Console (log)
 import Effect.Exception (Error)
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Api.Package (Package)
-import KSF.Paper (Paper(HBL))
+import KSF.Paper (Paper(..))
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
 import KSF.Navbar.Component (navbar)
+import Prenumerera.Register as Register
 import Prenumerera.ProductSelect as ProductSelect
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -60,16 +61,21 @@ app = do
         case match routes location.pathname of
           Right path -> setRoute path
           Left _ -> pure unit
-      startPurchase package = do
-        log $ "start purhcase " <> package.id
 
   productSelectComponent <- ProductSelect.component
+  registerComponent <- Register.component
 
   component "Prenumerera" \_ -> React.do
     user /\ setUser <- useState Nothing
     route /\ setRoute <- useState' initialRoute
 --    loading /\ setLoading <- useState' false
     maybePackages /\ setPackages <- useState' Nothing
+    brand /\ setBrand <- useState' HBL
+    purchasePackage /\ setPurchasePackage <- useState' Nothing
+    let startPurchase package = do
+          nav.pushState (write {}) "/login"
+          log $ "start purhcase " <> package.id
+          setPurchasePackage $ Just package
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit
           attemptMagicLogin =
@@ -91,43 +97,40 @@ app = do
 
       locations (routeListener setRoute) nav
 
-    pure $ renderMain setUser user nav $
-      trace ("route " <> show route) $ \_ -> case route of
+    content <- case route of
         ProductSelectPage ->
-          case maybePackages of
+          pure $ case maybePackages of
             Nothing -> Spinner.loadingSpinner
-            Just packages -> productSelectComponent { user, nav, packages, startPurchase }
+            Just packages -> productSelectComponent { user, nav, packages, startPurchase, setBrand }
+        CreateAccountPage ->
+          case purchasePackage of
+            Nothing -> do
+              nav.pushState (write {}) "/"
+              pure mempty
+            Just package -> pure $ registerComponent { user, setUser, package }
         _ -> mempty
+    pure $ renderMain brand setUser user nav content
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-renderMain :: ((Maybe User -> Maybe User) -> Effect Unit) -> Maybe User -> PushStateInterface -> JSX -> JSX
-renderMain setUser user router content =
-  DOM.div
-    { className: "prenumerera"
-    , children:
-        [ navbar { paper: HBL
-                 , adminMode: false
-                 , isPersonating: false
-                 , activeUser: user
-                 , logoutWrapper: Just $
-                     \x -> DOM.a
-                             { children: [ x ]
-                             , onClick: handler_ do
-                                  pure unit
-                                  router.pushState (write {}) "/"
-                             }
-                 , logout: setUser $ const Nothing
-                 }
-        , DOM.div
-            { className: "mt3 mb4 clearfix"
-            , children:
-                [ DOM.div
-                    { className: "prenumerera--main-container"
-                    , children: [ content ]
-                    }
-                ]
-            }
-        ]
-    }
+renderMain :: Paper -> ((Maybe User -> Maybe User) -> Effect Unit) -> Maybe User -> PushStateInterface -> JSX -> JSX
+renderMain brand setUser user router content =
+  React.fragment
+    [ navbar { paper: brand
+             , adminMode: false
+             , isPersonating: false
+             , activeUser: user
+             , logoutWrapper: Just $
+                 \x -> DOM.a
+                       { children: [ x ]
+                       , onClick: handler_ do
+                            router.pushState (write {}) "/"
+                       }
+             , logout: setUser $ const Nothing
+             }
+    , DOM.div
+        { className: "ksf-main-container"
+        , children: [ content ]
+        }
+    ]

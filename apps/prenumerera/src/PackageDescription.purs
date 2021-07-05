@@ -6,12 +6,13 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Data.Maybe (Maybe(..))
 import Data.Map (Map, fromFoldable)
+import KSF.Paper (Paper(..))
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
 
 type Description =
-  { brand :: String
+  { brand :: Paper
   , brandLong :: String
   , descriptionShort :: String
   , descriptionLong :: JSX
@@ -27,7 +28,7 @@ packageDescriptions :: Map String Description
 packageDescriptions = fromFoldable
   -- HBL PACKAGES
   [ "HBL_P+D" /\
-      { brand: "HBL"
+      { brand: HBL
       , brandLong: "HBL"
       , descriptionShort: "Total"
       , descriptionLong: description
@@ -46,7 +47,7 @@ packageDescriptions = fromFoldable
       , packageGroup: "Papperstidningen"
       }
   , "HBL_P+D FR" /\
-      { brand: "HBL"
+      { brand: HBL
       , brandLong: "HBL"
       , descriptionShort: "Helg"
       , descriptionLong: description
@@ -65,7 +66,7 @@ packageDescriptions = fromFoldable
       , packageGroup: "Papperstidningen"
       }
   , "HBL P+D SÖ" /\
-      { brand: "HBL"
+      { brand: HBL
       , brandLong: "HBL"
       , descriptionShort: "Söndag"
       , descriptionLong: description
@@ -84,7 +85,7 @@ packageDescriptions = fromFoldable
       , packageGroup: "Papperstidningen"
       }
   , "HBL WEBB" /\
-      { brand: "HBL"
+      { brand: HBL
       , brandLong: "HBL"
       , descriptionShort: "Premium"
       , descriptionLong: description
@@ -101,7 +102,7 @@ packageDescriptions = fromFoldable
       }
   -- ÖSTNYLAND PACKAGES
   , "ÖNY_P+D" /\
-      { brand: "ON"
+      { brand: ON
       , brandLong: "Östnyland"
       , descriptionShort: ""
       , descriptionLong: description
@@ -120,7 +121,7 @@ packageDescriptions = fromFoldable
       , packageGroup: "Papperstidningen"
       }
   , "ÖNY+HBL" /\
-      { brand: "ON"
+      { brand: ON
       , brandLong: "Östnyland"
       , descriptionShort: " + HBL"
       , descriptionLong: description
@@ -139,8 +140,8 @@ packageDescriptions = fromFoldable
       , packageGroup: "2+5"
       }
   , "ÖNY_DIGI" /\
-      { brand: "ON"
-      , brandLong: "Östnyland"
+      { brand: ON
+      , brandLong: "ÖN Premium"
       , descriptionShort: ""
       , descriptionLong: description
           [ Tuple "Premium" "Alla artiklar på ostnyland.fi"
@@ -158,7 +159,7 @@ packageDescriptions = fromFoldable
       }
   -- VÄSTRA NYLAND PACKAGES
   , "VN_P+D" /\
-      { brand: "VN"
+      { brand: VN
       , brandLong: "Västra Nyland"
       , descriptionShort: ""
       , descriptionLong: description
@@ -177,7 +178,7 @@ packageDescriptions = fromFoldable
       , packageGroup: "Papperstidningen"
       }
   , "VN+HBL" /\
-      { brand: "VN"
+      { brand: VN
       , brandLong: "Västra Nyland"
       , descriptionShort: " + HBL"
       , descriptionLong: description
@@ -192,11 +193,11 @@ packageDescriptions = fromFoldable
       , url: Nothing
       , weekdays: "mån – sön"
       , ordering: 3
-      , image: "VPN.png"
+      , image: "VN.png"
       , packageGroup: "2+5"
       }
   , "VN_DIGI" /\
-      { brand: "VN"
+      { brand: VN
       , brandLong: "VN Premium"
       , descriptionShort: ""
       , descriptionLong: description
@@ -215,8 +216,8 @@ packageDescriptions = fromFoldable
       }
   -- HBL JUNIOR PACKAGES
   , "JUNIOR PD" /\
-      { brand: "JUNIOR"
-      , brandLong: ""
+      { brand: JUNIOR
+      , brandLong: "HBL Junior"
       , descriptionShort: ""
       , descriptionLong: description
           [ Tuple "Papperstidningen" "Onsdag varannan vecka"
@@ -230,7 +231,7 @@ packageDescriptions = fromFoldable
       }
   -- OTHER PACKAGES
   , "HBL 365" /\
-      { brand: "HBL"
+      { brand: HBL
       , brandLong: "HBL"
       , descriptionShort: "365"
       , descriptionLong: description
@@ -254,7 +255,7 @@ packageDescriptions = fromFoldable
       DOM.ul_ <<< map (\(Tuple a b) ->
                           DOM.li_ [ DOM.p_ [ DOM.strong_ [ DOM.text a ]
                                            , DOM.br {}
-                                           , DOM.strong_ [ DOM.text b ]
+                                           , DOM.text b
                                            ]
                                   ]
                       )

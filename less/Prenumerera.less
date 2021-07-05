@@ -1,1 +1,168 @@
+@import 'prenumerera/main';
 @import 'Navbar';
+
+body {
+    font-size: 100%;
+    line-height: 1.4285;
+    box-sizing: border-box;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.container-fluid {
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.ksf-block {
+    padding-top: 50px;
+    padding-bottom: 90px;
+    margin-bottom: 30px;
+}
+
+.container {
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    @media (min-width: 768px) {
+	width: 750px;
+    }
+    @media (min-width: 992px) {
+	width: 970px;
+    }
+    @media (min-width: 1200px) {
+	width: 1170px;
+    }
+}
+
+.nav {
+    margin-bottom: 0;
+    padding-left: 0;
+    list-style: none;
+
+    > li {
+	display: block;
+	> a {
+	    position: relative;
+	    display: block;
+	}
+    }
+}
+
+.nav::before,.nav::after,.row::before {
+    content: " ";
+    display: table;
+}
+
+.nav::after,.row::after {
+    clear: both;
+}
+
+.nav-pills-brand {
+    position: relative;
+
+    li {
+	position: relative;
+    }
+
+    li:nth-child(n+2)::before {
+	content: "|";
+	position: absolute;
+	right: 0;
+	top: 1em;
+    }
+}
+
+.nav-pills {
+    > li {
+	float: left;
+	+ li {
+	    margin-left: 2px;
+	}
+    }
+
+    li.active {
+	.hbl {
+	    border-color: #f07e26;
+	}
+	.vn {
+	    border-color: #c90c0f;
+	}
+	.on {
+	    border-color: #518196;
+	}
+    }
+}
+
+.row {
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+.tab-content {
+    > .active {
+	display: block !important;
+    }
+
+    > .tab-pane {
+	display: none;
+    }
+}
+
+.text-center {
+    text-align: center;
+}
+
+.fade {
+    opacity: 0;
+    transition: opacity 0.15s linear;
+}
+
+.fade.in {
+    opacity: 1;
+}
+
+.nav-package {
+    margin-top: 0;
+}
+
+.btn {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    touch-action: manipulation;
+    cursor: pointer;
+    background-image: none;
+    white-space: nowrap;
+    user-select: none;
+}
+
+ul {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+b, strong {
+    font-weight: bold;
+}
+
+.collapsed-nav--container,.nav--hamburger-container {
+    display: none;
+}
+
+/*
+.ksf-block-products .package-box .package-header h2 {
+    margin-left: -10px;
+    margin-right: -10px;
+    margin-bottom: 15px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    position: relative;
+}
+*/

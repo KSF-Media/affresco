@@ -53,10 +53,11 @@ fromJSProps jsProps =
   where
     paper =
       case String.toUpper jsProps.paperCode of
-        "HBL"  -> HBL
-        "ON"   -> ON
-        "VN"   -> VN
-        _      -> KSF
+        "HBL"    -> HBL
+        "ON"     -> ON
+        "VN"     -> VN
+        "JUNIOR" -> JUNIOR
+        _        -> KSF
 
 type State =
   { collapsedNavVisibility :: Visibility  }
@@ -164,7 +165,8 @@ hamburgerButton self =
 paperLogoUrl :: Paper -> String
 paperLogoUrl paper =
   case paper of
-    HBL  -> papers.hbl
-    ON   -> papers.on
-    VN   -> papers.vn
-    KSF  -> papers.ksf
+    HBL    -> papers.hbl
+    ON     -> papers.on
+    VN     -> papers.vn
+    KSF    -> papers.ksf
+    JUNIOR -> papers.junior
