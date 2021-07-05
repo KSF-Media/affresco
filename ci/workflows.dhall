@@ -98,7 +98,7 @@ let setupSteps =
       , Step::{
         , run = Some
             ''
-              tar --use-compress-program zstd -tf /home/runner/work/_temp/**/*.tzst
+              tar --use-compress-program zstd -tf $(find ~/ -name '*.tzst')
               yarn install --pure-lockfile --cache-folder=.yarn-cache
               mkdir -p build
             ''
