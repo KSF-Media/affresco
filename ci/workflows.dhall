@@ -98,6 +98,7 @@ let setupSteps =
       , Step::{
         , run = Some
             ''
+              ls ~/.cache/spago
               yarn install --pure-lockfile --cache-folder=.yarn-cache
               mkdir -p build
             ''
