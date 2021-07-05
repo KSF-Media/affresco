@@ -27,7 +27,7 @@ jobs:
               ~/.npm
               ~/.cache/spago
       - run: |2
-            ls ~/.cache/spago
+            ls ~/.cache/spago || true
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
       - name: Check CI script has been generated from Dhall
