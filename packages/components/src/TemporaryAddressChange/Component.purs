@@ -83,7 +83,9 @@ data AddressChangeFields
 instance validatableFieldAddressChangeFields :: VF.ValidatableField AddressChangeFields where
   validateField field value _serverErrors = case field of
     StreetAddress -> VF.validateEmptyField field "Adress krävs." value
-    Zip           -> VF.validateZipCode field value
+    -- Country is always Finland or Åland in this form so let's use
+    -- this.
+    Zip           -> VF.validateFinnishZipCode field value
     CityName      -> VF.noValidation value
     CountryCode   -> VF.validateEmptyField field "Land krävs." value
     TemporaryName -> VF.noValidation value
