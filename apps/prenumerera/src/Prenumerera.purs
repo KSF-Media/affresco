@@ -19,10 +19,11 @@ import KSF.User as User
 import KSF.Navbar.Component (navbar)
 import Prenumerera.Register as Register
 import Prenumerera.ProductSelect as ProductSelect
+import Prenumerera.ProgressBar as ProgressBar
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
-import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
+import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import Routing (match)
 import Routing.Match (Match, lit, root, end, param)
@@ -39,10 +40,12 @@ data PrenumereraPage
   | SelectPeriodPage
   | EndPage String String
 
-derive instance genericMyADT :: Generic PrenumereraPage _
+derive instance genericPrenumerera :: Generic PrenumereraPage _
 
-instance showMyADT :: Show PrenumereraPage where
+instance showPrenumerera :: Show PrenumereraPage where
   show = genericShow
+
+derive instance eqPrenumerera :: Eq PrenumereraPage
 
 routes :: Match PrenumereraPage
 routes =
@@ -76,6 +79,9 @@ app = do
           nav.pushState (write {}) "/login"
           log $ "start purhcase " <> package.id
           setPurchasePackage $ Just package
+        accountDone = do
+          nav.pushState (write {}) "/godkänn"
+          log $ "Account sorted out"
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit
           attemptMagicLogin =
@@ -97,19 +103,36 @@ app = do
 
       locations (routeListener setRoute) nav
 
-    content <- case route of
-        ProductSelectPage ->
-          pure $ case maybePackages of
-            Nothing -> Spinner.loadingSpinner
-            Just packages -> productSelectComponent { user, nav, packages, startPurchase, setBrand }
+    useEffect route $ do
+      case route of
         CreateAccountPage ->
           case purchasePackage of
-            Nothing -> do
-              nav.pushState (write {}) "/"
-              pure mempty
-            Just package -> pure $ registerComponent { user, setUser, package }
+            Nothing -> nav.pushState (write {}) "/"
+            _ -> pure unit
+        _ -> pure unit
+      pure $ pure unit
+
+    pure $ renderMain brand setUser user nav $
+      case route of
+        ProductSelectPage ->
+          case maybePackages of
+            Nothing -> Spinner.loadingSpinner
+            Just packages -> productSelectComponent { user, packages, startPurchase, setBrand }
+        CreateAccountPage ->
+          case purchasePackage of
+            Nothing -> DOM.text "no package!"
+            Just package ->
+              React.fragment
+                [ ProgressBar.render ProgressBar.Login
+                , registerComponent
+                    { user
+                    , setUser: setUser <<< const
+                    , package
+                    , next: accountDone
+                    , cancel: nav.pushState (write {}) "/"
+                    }
+                ]
         _ -> mempty
-    pure $ renderMain brand setUser user nav content
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app

@@ -33,7 +33,6 @@ import Effect.Console (log)
 
 type Props =
   { user :: Maybe User
-  , nav :: PushStateInterface
   , packages :: Array Package
   , startPurchase :: Package -> Effect Unit
   , setBrand :: Paper -> Effect Unit
@@ -61,7 +60,7 @@ component :: Component Props
 component = do
   productGroupComponent <- ProductGroup.component
   let papers = [HBL, VN, ON, JUNIOR]
-  React.component "ProductSelect" $ \ { user, nav, packages, startPurchase, setBrand } -> React.do
+  React.component "ProductSelect" $ \ { user, packages, startPurchase, setBrand } -> React.do
     let buildGroupElements =
           map (\packages -> productGroupComponent { startPurchase, packages }) >>>
           NonEmpty.toArray >>> React.fragment
