@@ -7,9 +7,7 @@ import Data.Array (length)
 import Data.Date (Date, adjust)
 import Data.Date as Date
 import Data.Either (Either(..))
-import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
-import Data.Nullable (toMaybe)
 import Data.Time.Duration as Time.Duration
 import Data.UUID (UUID)
 import Data.Validation.Semigroup (validation)
@@ -133,13 +131,13 @@ didMount self = do
   self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow }
   case self.props.editing of
     Just p -> do
-      self.setState _ { streetAddress = toMaybe p.address.streetAddress
+      self.setState _ { streetAddress = p.address.streetAddress
                       , zipCode = Just p.address.zipcode
-                      , cityName = toMaybe p.address.city
-                      , temporaryName = toMaybe p.address.temporaryName
-                      , startDate = toDate p.startDate
-                      , endDate = toDate =<< toMaybe p.endDate
-                      , isIndefinite = isNothing $ toMaybe p.endDate
+                      , cityName = p.address.city
+                      , temporaryName = p.address.temporaryName
+                      , startDate = Just p.startDate
+                      , endDate = p.endDate
+                      , isIndefinite = isNothing p.endDate
                       }
     _ -> pure unit
 
@@ -182,7 +180,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         )
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm ((toDate <<< _.startDate) =<< self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm (_.startDate <$> self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
           , children:
               (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity

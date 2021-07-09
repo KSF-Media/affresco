@@ -649,13 +649,19 @@ createDeliveryReclamation uuid subsno date claim = do
       Console.error "Unexpected error when creating delivery reclamation."
       pure $ Left Persona.InvalidUnexpected
 
+data StoredSearch =
+  StoredSearch { query :: SearchQuery, results :: Array (SearchResult Subscription.Subscription) }
+
+derive instance genericStoredSearch :: Generic StoredSearch _
+
 searchUsers
   :: SearchQuery
   -> Aff (Either String (Array (SearchResult Subscription.Subscription)))
 searchUsers query = do
   users <- try $ Persona.searchUsers query =<< requireToken
   case users of
-    Right xs -> pure $ Right xs
+    Right results -> do
+      pure $ Right results
     Left err
       | Just (errData :: Persona.Forbidden) <- Api.Error.errorData err ->
           pure $ Left $ errData.forbidden.description

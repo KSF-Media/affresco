@@ -3,18 +3,16 @@ module MittKonto.Main.UserView.Subscription.Helpers where
 import Prelude
 
 import Data.Date (Date)
-import Data.JSDate (JSDate, toDate)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Nullable (toMaybe)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..))
 import KSF.Helpers (formatDateDots)
 import KSF.User as User
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =
-  (maybe "" (_ <> ", ") $ toMaybe temporaryName) <>
-  intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
+  (maybe "" (_ <> ", ") temporaryName) <>
+  intercalate ", " [ fromMaybe "-" streetAddress, zipcode, fromMaybe "-" city ]
 
 -- | Translates English status to Swedish.
 -- | Described in https://git.ksfmedia.fi/taco/faro/blob/master/kayak-api-details.md
@@ -44,21 +42,20 @@ translatePaymentMethod paymentMethod =
     Email                -> "E-post"
     UnknownPaymentMethod -> "Okänd"
 
-isPeriodExpired :: Boolean -> Date -> Maybe JSDate -> Boolean
+isPeriodExpired :: Boolean -> Date -> Maybe Date -> Boolean
 isPeriodExpired excludeCurrentDay baseDate endDate =
   case endDate of
     -- If there's no end date, the period is ongoing
     Nothing   -> false
     Just date ->
       let op end = if excludeCurrentDay then end < baseDate else end <= baseDate
-      in maybe true op $ toDate date
+      in op date
 
-formatDateString :: JSDate -> Maybe JSDate -> String
-formatDateString startDate endDate
-  | Just startString <- formatDateDots <$> toDate startDate =
-    let endString = maybe "" formatDateDots $ toDate =<< endDate
-    in startString <> " – " <> endString
-  | otherwise = mempty
+formatDateString :: Date -> Maybe Date -> String
+formatDateString startDate endDate =
+  let startString = formatDateDots startDate
+      endString = maybe "" formatDateDots endDate
+  in startString <> " – " <> endString
 
 successText :: Maybe String
 successText = Just "Tack, åtgärden lyckades!"

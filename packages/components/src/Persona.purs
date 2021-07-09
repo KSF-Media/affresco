@@ -3,9 +3,8 @@ module Persona where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (catMaybes, filter)
+import Data.Array (catMaybes)
 import Data.Date (Date)
-import Data.Date as Date
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..), maybe)
@@ -15,23 +14,21 @@ import Data.Show.Generic (genericShow)
 import Data.String as String
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
-import Data.Time.Duration (Days(..))
 import Data.Traversable (sequence)
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
-import Effect.Now as Now
-import Foreign (Foreign, unsafeToForeign)
+import Effect.Exception (throw)
+import Foreign (unsafeToForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
-import KSF.Api.Address (Address)
+import KSF.Api.Address (Address, JSAddress, fromJSAddress)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Search (SearchQuery, SearchResult, JanrainUser, FaroUser)
-import KSF.Api.Subscription (BaseSubscription, Subscription, PendingAddressChange, Subsno(..), isSubscriptionExpired)
-import KSF.Api.Subscription as Subscription
+import KSF.Api.Subscription (Subscription, JSSubscription, fromJSSubscription, PendingAddressChange, JSPendingAddressChange, Subsno(..), fromJSPendingAddressChange)
 import KSF.Helpers (formatDate)
 import KSF.User.Cusno (Cusno)
 import OpenApiClient (Api, callApi)
@@ -63,8 +60,7 @@ authHeaders uuid { userId, authToken } =
 
 getUser :: Maybe InvalidateCache -> UUID -> UserAuth -> Aff User
 getUser invalidateCache uuid auth = do
-  user <- callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
-  user { subs = _ } <$> processSubs user.subs
+  parseUser =<< callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
   where
     headers = Record.merge (authHeaders uuid auth)
       { cacheControl: toNullable maybeCacheControl
@@ -103,22 +99,46 @@ updateUser uuid update auth = do
         DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
   user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth
-  user { subs = _ } <$> processSubs user.subs
+  parseUser user
 
 -- Admin only
 setUserCusno :: UUID -> Cusno -> UserAuth -> Aff User
 setUserCusno uuid cusno auth = do
-  user <- callApi usersApi "usersUuidPatch"
+  user <-callApi usersApi "usersUuidPatch"
             [ unsafeToForeign uuid
             , unsafeToForeign {updateCusno: cusno}
             ] $ authHeaders uuid auth
-  user { subs = _ } <$> processSubs user.subs
+  parseUser user
 
-processSubs :: Array (BaseSubscription Foreign) -> Aff (Array Subscription)
-processSubs subs = do
-  now <- liftEffect Now.nowDate
-  let threshold = maybe (const true) (not <<< flip isSubscriptionExpired) $ Date.adjust (Days (-180.0)) now
-  pure $ filter threshold $ map Subscription.parseSubscription subs
+parseUser :: JSUser -> Aff User
+parseUser user = do
+  liftEffect $ maybe (throw "no parse") pure $ fromJSUser user
+
+fromJSUser :: JSUser -> Maybe User
+fromJSUser j = do
+  pendingAddressChanges <- maybe (pure Nothing)
+                           (map Just <<< sequence <<< map fromJSPendingAddressChange) $
+                           toMaybe j.pendingAddressChanges
+  subs <- sequence $ map fromJSSubscription j.subs
+  pure { uuid: j.uuid
+       , email: j.email
+       , firstName: toMaybe j.firstName
+       , lastName: toMaybe j.lastName
+       , address: fromJSAddress <$> toMaybe j.address
+       , cusno: j.cusno
+       , subs
+       , consent: j.consent
+       , pendingAddressChanges
+       , pastTemporaryAddresses: map fromJSTemporaryAddressChange j.pastTemporaryAddresses
+       , hasCompletedRegistration: j.hasCompletedRegistration
+       }
+  where
+    fromJSTemporaryAddressChange x = { street: x.street
+                                     , zipcode: x.zipcode
+                                     , cityName: toMaybe x.cityName
+                                     , countryCode: x.countryCode
+                                     , temporaryName: toMaybe x.temporaryName
+                                     }
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
@@ -461,16 +481,30 @@ type User = Record BaseUser
 type BaseUser =
   ( uuid :: UUID
   , email :: String
-  , firstName :: Nullable String
-  , lastName :: Nullable String
-  , address :: Nullable Address
+  , firstName :: Maybe String
+  , lastName :: Maybe String
+  , address :: Maybe Address
   , cusno :: Cusno
   , subs :: Array Subscription
   , consent :: Array GdprConsent
-  , pendingAddressChanges :: Nullable (Array PendingAddressChange)
+  , pendingAddressChanges :: Maybe (Array PendingAddressChange)
   , pastTemporaryAddresses :: Array TemporaryAddressChange
   , hasCompletedRegistration :: Boolean
   )
+
+type JSUser =
+  { uuid :: UUID
+  , email :: String
+  , firstName :: Nullable String
+  , lastName :: Nullable String
+  , address :: Nullable JSAddress
+  , cusno :: Cusno
+  , subs :: Array JSSubscription
+  , consent :: Array GdprConsent
+  , pendingAddressChanges :: Nullable (Array JSPendingAddressChange)
+  , pastTemporaryAddresses :: Array JSTemporaryAddressChange
+  , hasCompletedRegistration :: Boolean
+  }
 
 type NewUser =
   { firstName :: String
@@ -487,6 +521,14 @@ type NewUser =
   }
 
 type TemporaryAddressChange =
+  { street        :: String
+  , zipcode       :: String
+  , cityName      :: Maybe String
+  , countryCode   :: String
+  , temporaryName :: Maybe String
+  }
+
+type JSTemporaryAddressChange =
   { street        :: String
   , zipcode       :: String
   , cityName      :: Nullable String
@@ -678,9 +720,9 @@ type ApiJanrainUser =
 type ApiFaroUser =
   { cusno         :: Cusno
   , name          :: String
-  , address       :: Nullable Address
+  , address       :: Nullable JSAddress
   , email         :: Nullable String
-  , subscriptions :: Nullable (Array Subscription)
+  , subscriptions :: Nullable (Array JSSubscription)
   }
 
 type ApiSearchResult =
@@ -716,9 +758,10 @@ searchUsers query auth = do
           }
     nativeFaro :: ApiFaroUser -> Maybe (FaroUser Subscription)
     nativeFaro x = do
+      subs <- maybe (pure Nothing) (map Just <<< sequence <<< map fromJSSubscription) $ toMaybe x.subscriptions
       pure $ { cusno:   x.cusno
              , name:    x.name
-             , address: toMaybe x.address
+             , address: fromJSAddress <$> toMaybe x.address
              , email:   toMaybe x.email
-             , subs:    toMaybe x.subscriptions
+             , subs
              }

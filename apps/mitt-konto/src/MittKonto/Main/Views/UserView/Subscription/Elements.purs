@@ -7,10 +7,8 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Enum (enumFromTo)
 import Data.Foldable (foldMap, for_, null, maximum)
-import Data.JSDate (toDate)
 import Data.List (intercalate)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
-import Data.Nullable (toMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.String (trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
@@ -43,7 +41,7 @@ receiverName { props: { subscription: { receiver } } } =
   foldMap (\r -> Array.singleton
               { term: "Mottagare:"
               , description: [ DOM.text r ]
-              }) $ toMaybe receiver
+              }) receiver
 
 deliveryAddress :: Types.Self -> Array DescriptionList.Definition
 deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
@@ -56,13 +54,13 @@ deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, 
   where
     currentDeliveryAddress :: String
     currentDeliveryAddress
-      | Just address <- toMaybe subDeliveryAddress
+      | Just address <- subDeliveryAddress
       = Helpers.formatAddress address
-      | Just { streetAddress, zipCode, city } <- toMaybe userAddress
+      | Just { streetAddress, zipCode, city } <- userAddress
       = intercalate ", "
           [ streetAddress
-          , fromMaybe "-" $ toMaybe zipCode
-          , fromMaybe "-" $ toMaybe city
+          , fromMaybe "-" zipCode
+          , fromMaybe "-" city
           ]
       | otherwise = "-"
 
@@ -83,12 +81,12 @@ pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, p
     filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
     filterExpiredPendingChanges :: Array User.PendingAddressChange -> Array User.PendingAddressChange
     filterExpiredPendingChanges changes =
-      filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate) changes
+      filter (not <<< Helpers.isPeriodExpired true now <<< _.endDate) changes
 
 showPendingAddressChange :: Types.Self -> (Tuple Int User.PendingAddressChange) -> JSX
 showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
   let addressString = Helpers.formatAddress address
-      pendingPeriod = Helpers.formatDateString startDate (toMaybe endDate)
+      pendingPeriod = Helpers.formatDateString startDate endDate
   in DOM.div
        { children: [ changeButton self
                        (Types.EditTemporaryAddressChange change)
@@ -104,7 +102,7 @@ billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
       { term: "Faktureringsperioden upphör:"
       , description: [ DOM.text $ e ]
       }
-  ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe end)
+  ) $ trim <<< formatDateDots <$> end
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
 subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap
@@ -112,7 +110,7 @@ subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMa
       { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text s ]
       }
-  ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe suspend)
+  ) $ trim <<< formatDateDots <$> suspend
 
 subscriptionUpdates :: Types.Self -> JSX
 subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, package } }, state } =
@@ -131,13 +129,13 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
 
     paperOnlyActions =
       [ if isSubscriptionPausable sub then pauseIcon else mempty
-      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate))
+      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< _.endDate))
            self.state.pausedSubscriptions
           then mempty
           else removeSubscriptionPauses
       , if isSubscriptionTemporaryAddressChangable sub then temporaryAddressChangeIcon else mempty
       , case self.state.pendingAddressChanges of
-              Just a | not $ null $ filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) a ->
+              Just a | not $ null $ filter (not <<< Helpers.isPeriodExpired false now <<< _.endDate) a ->
                 removeTempAddressChanges a
               _ -> mempty
       , deliveryReclamationIcon
@@ -223,7 +221,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
                 Right newSubscription -> liftEffect do
                   self.setState _
-                    { pausedSubscriptions = toMaybe newSubscription.paused
+                    { pausedSubscriptions = newSubscription.paused
                     , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
                     }
                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
@@ -268,22 +266,19 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
             self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
             Aff.launchAff_ $ do
                 for_ tempAddressChanges $ \tempAddressChange -> do
-                  let startDate = toDate tempAddressChange.startDate
-                  let endDate   = toDate =<< toMaybe tempAddressChange.endDate
-                  case startDate, endDate of
-                    (Just startDate'), endDate' -> do
-                      tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
-                      case tempAddressChangesDeleted of
-                        Right newSubscription -> liftEffect do
-                          self.setState _
-                            { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
-                            pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
-                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
-                        Left _ -> liftEffect do
-                          self.setState _
-                            { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
-                    _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                  let startDate = tempAddressChange.startDate
+                  let endDate   = tempAddressChange.endDate
+                  tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate endDate
+                  case tempAddressChangesDeleted of
+                    Right newSubscription -> liftEffect do
+                      self.setState _
+                        { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort"
+                        , pendingAddressChanges = newSubscription.pendingAddressChanges }
+                      Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate endDate "success"
+                    Left _ -> liftEffect do
+                      self.setState _
+                        { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
+                      Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate endDate "success"
         }
 
     deliveryReclamationIcon =
@@ -343,13 +338,13 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
       -- Make sure that both exist if used
     , oldStart: oldEnd *> oldStart
     , oldEnd: oldStart *> oldEnd
-    , nextDelivery: toDate =<< toMaybe package.nextDelivery
-    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
+    , nextDelivery: package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe _.nextDelivery package.products
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \pausedSubscription ->
                     self.setState _
-                      { pausedSubscriptions = toMaybe pausedSubscription.paused
+                      { pausedSubscriptions = pausedSubscription.paused
                       , wrapperProgress = AsyncWrapper.Success Helpers.successText
                       }
 
@@ -378,8 +373,8 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
         self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
     }
   where
-    oldStart = (toDate <<< _.startDate) =<< editing
-    oldEnd = ((toDate <=< toMaybe) <<< _.endDate) =<< editing
+    oldStart = _.startDate <$> editing
+    oldEnd = _.endDate =<< editing
 
 temporaryAddressChangeComponent :: Types.Self -> Maybe User.PendingAddressChange -> JSX
 temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } } }  editing =
@@ -387,15 +382,15 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } 
     { subsno: props.subscription.subsno
     , cusno: props.user.cusno
     , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
-    , nextDelivery: toDate =<< toMaybe package.nextDelivery
-    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
+    , nextDelivery: package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe _.nextDelivery package.products
     , editing: editing
     , userUuid: props.user.uuid
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
                     self.setState _
-                        { pendingAddressChanges = toMaybe newPendingChanges
+                        { pendingAddressChanges = newPendingChanges
                         , wrapperProgress = AsyncWrapper.Success Helpers.successText
                         }
 
@@ -420,27 +415,27 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } 
     readPastTemporaryAddress tmp =
       { streetAddress: Just tmp.street
       , zipCode: Just tmp.zipcode
-      , cityName: toMaybe tmp.cityName
+      , cityName: tmp.cityName
       , countryCode: Just tmp.countryCode
-      , temporaryName: toMaybe tmp.temporaryName
+      , temporaryName: tmp.temporaryName
       }
 
 showPausedDates :: Types.Self -> Array User.PausedSubscription -> Array JSX
 showPausedDates self =
-  let formatDates { startDate, endDate } = Helpers.formatDateString startDate $ toMaybe endDate
+  let formatDates { startDate, endDate } = Helpers.formatDateString startDate endDate
       pauseLine pause =
         let text = "Uppehåll: " <> formatDates pause
-        in case Tuple (toDate pause.startDate) (toDate =<< toMaybe pause.endDate) of
-          Tuple (Just _startDate) (Just _endDate) ->
-            DOM.div
-              { children: [ changeButton self
-                              (Types.EditSubscriptionPause pause)
-                              (pauseSubscriptionComponent self $ Just pause)
-                          , DOM.text text
-                          ]
-              , className: "subscription--subscription-pause"
-              }
-          _ -> DOM.text text
+        in if isJust pause.endDate
+           then
+             DOM.div
+               { children: [ changeButton self
+                             (Types.EditSubscriptionPause pause)
+                             (pauseSubscriptionComponent self $ Just pause)
+                           , DOM.text text
+                           ]
+               , className: "subscription--subscription-pause"
+               }
+           else DOM.text text
   in map pauseLine
 
 changeButton :: Types.Self -> Types.SubscriptionUpdateAction -> JSX -> JSX

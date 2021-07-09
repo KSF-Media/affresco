@@ -2,10 +2,12 @@ module KSF.Api.Package where
 
 import Prelude
 
-import Data.JSDate (JSDate)
+import Data.Date (Date)
+import Data.JSDate (JSDate, toDate)
 import Data.Nullable (Nullable, toMaybe)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 
 type PackageId = String
@@ -17,6 +19,20 @@ type Package =
   , products     :: Array Product
   , offers       :: Array PackageOffer
   , campaigns    :: Array Campaign
+  , nextDelivery :: Maybe Date
+  , digitalOnly  :: Boolean
+  , canPause     :: Boolean
+  , canTempAddr  :: Boolean
+  , info         :: Array String
+  }
+
+type JSPackage =
+  { id           :: PackageId
+  , name         :: String
+  , paper        :: { code :: String, name :: String }
+  , products     :: Array JSProduct
+  , offers       :: Array PackageOffer
+  , campaigns    :: Array JSCampaign
   , nextDelivery :: Nullable JSDate
   , digitalOnly  :: Boolean
   , canPause     :: Boolean
@@ -31,6 +47,13 @@ type PackageOffer =
   }
 
 type Product =
+  { id           :: String
+  , name         :: String
+  , active       :: ActiveDays
+  , nextDelivery :: Maybe Date
+  }
+
+type JSProduct =
   { id           :: String
   , name         :: String
   , active       :: ActiveDays
@@ -111,3 +134,33 @@ fromJSCampaign jsCampaign =
   <*> toMaybe jsCampaign.length
   <*> (map toCampaignLengthUnit $ toMaybe jsCampaign.lengthUnit)
   <*> toMaybe jsCampaign.priceEur
+
+fromJSPackage :: JSPackage -> Maybe Package
+fromJSPackage jsPackage = do
+  let fromJSProduct jsProduct =
+        { id: jsProduct.id
+        , name: jsProduct.name
+        , active: jsProduct.active
+        , nextDelivery: _
+        }
+        <$> (case toMaybe jsProduct.nextDelivery of
+                Nothing -> Just Nothing
+                Just x -> Just <$> toDate x)
+  products <- sequence $ map fromJSProduct jsPackage.products
+  campaigns <- sequence $ map fromJSCampaign jsPackage.campaigns
+  nextDelivery <- case toMaybe jsPackage.nextDelivery of
+    Nothing -> Just Nothing
+    Just x -> Just <$> toDate x
+  pure
+    { id: jsPackage.id
+    , name: jsPackage.name
+    , paper: jsPackage.paper
+    , products
+    , offers: jsPackage.offers
+    , campaigns
+    , nextDelivery
+    , digitalOnly: jsPackage.digitalOnly
+    , canPause: jsPackage.canPause
+    , canTempAddr: jsPackage.canTempAddr
+    , info: jsPackage.info
+    }

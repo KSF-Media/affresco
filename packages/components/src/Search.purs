@@ -4,16 +4,14 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Alternative (guard)
-import Data.Array (mapMaybe, drop, take)
+import Data.Array (catMaybes, drop, take)
 import Data.Array as Array
 import Data.Date (Date)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate, length, foldMap, sum, sequence_)
 import Data.Int as Int
-import Data.JSDate (toDate)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
-import Data.Nullable (toMaybe)
 import Data.String.Common as String
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.UUID (UUID, parseUUID)
@@ -465,7 +463,7 @@ search = do
                   (\address -> intercalate [DOM.br {}] $
                                  [ [ DOM.text address.streetAddress ]
                                  , [ DOM.text $ String.joinWith " " $
-                                       mapMaybe toMaybe [ address.zipCode, address.city ] ]
+                                       catMaybes [ address.zipCode, address.city ] ]
                                  ] ) $
                   user.address
               ] <>
@@ -495,15 +493,14 @@ search = do
               }
           , DOM.td
               { className: if expired then "search--result-expired" else ""
-              , children: [ DOM.text $ case Tuple (toDate sub.dates.start) leastEnd of
-                               Tuple Nothing Nothing -> "ogiltig"
-                               Tuple start end -> maybe "" formatDateDots start <> "–" <>
-                                                  maybe "" formatDateDots end
+              , children: [ DOM.text $
+                            formatDateDots sub.dates.start <> "–" <>
+                            maybe "" formatDateDots leastEnd
                           ]
               }
           ]
           where
-            leastEnd = case Tuple (toDate =<< toMaybe sub.dates.suspend) (toDate =<< toMaybe sub.dates.end) of
+            leastEnd = case Tuple sub.dates.suspend sub.dates.end of
               Tuple (Just end1) (Just end2) -> Just $ min end1 end2
               Tuple end1 end2 -> end1 <|> end2
         loadableSubs _cusno =

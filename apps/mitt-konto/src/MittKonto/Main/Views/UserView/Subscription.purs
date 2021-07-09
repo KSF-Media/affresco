@@ -5,7 +5,6 @@ import Prelude
 import Data.Array (concatMap, cons, filter)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
-import Data.Nullable (toMaybe)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import KSF.Api.Subscription (toString) as Subsno
@@ -40,8 +39,8 @@ subscription = make component
 didMount :: Types.Self -> Effect Unit
 didMount self = do
   self.setState _
-    { pausedSubscriptions = toMaybe self.props.subscription.paused
-    , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
+    { pausedSubscriptions = self.props.subscription.paused
+    , pendingAddressChanges = self.props.subscription.pendingAddressChanges
     }
   self.props.logger.setUser $ Just self.props.user
 
@@ -83,6 +82,6 @@ render self@{ props: { now, subscription: sub@{ package, state } } } =
   where
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
-      filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) pausedSubs
+      filter (not <<< Helpers.isPeriodExpired false now <<< _.endDate) pausedSubs
     expired = isSubscriptionExpired sub now
     subsno = Subsno.toString sub.subsno

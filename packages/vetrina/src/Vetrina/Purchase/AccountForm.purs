@@ -5,7 +5,6 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (validation)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -47,12 +46,12 @@ mkAccountForm = do
     -- Set initial form values from user if defined
     let initialContactInformation =
           emptyCommonContactInformation
-            { firstName = toMaybe props.user.firstName
-            , lastName = toMaybe props.user.lastName
-            , streetAddress = _.streetAddress <$> toMaybe props.user.address
-            , city = toMaybe <<< _.city =<< toMaybe props.user.address
-            , zipCode =  toMaybe <<< _.zipCode =<< toMaybe props.user.address
-            , countryCode = _.countryCode <$> toMaybe props.user.address <|> Just "FI"
+            { firstName = props.user.firstName
+            , lastName = props.user.lastName
+            , streetAddress = _.streetAddress <$> props.user.address
+            , city = _.city =<< props.user.address
+            , zipCode =  _.zipCode =<< props.user.address
+            , countryCode = _.countryCode <$> props.user.address <|> Just "FI"
             }
     state /\ setState <- useState { contactForm: initialContactInformation }
     let self = { state, setState }
@@ -125,7 +124,7 @@ render props self@{ state: { contactForm } } = fragment
             }
         , CountryDropdown.defaultCountryDropDown
             (\newCountry -> self.setState _ { contactForm { countryCode = newCountry } })
-            (contactForm.countryCode <|> _.countryCode <$> toMaybe props.user.address)
+            (contactForm.countryCode <|> _.countryCode <$> props.user.address)
         , DOM.input
             { type: "submit"
             , className: "vetrina--button vetrina--button__contact_information"

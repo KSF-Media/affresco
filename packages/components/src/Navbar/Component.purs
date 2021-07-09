@@ -2,10 +2,10 @@ module KSF.Navbar.Component where
 
 import Prelude
 
-import Data.Array (replicate, mapMaybe)
+import Data.Array (replicate, catMaybes)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Nullable (Nullable, toMaybe)
+import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String as String
 import Effect (Effect)
@@ -182,7 +182,7 @@ customerService isPersonating activeUser = do
           { to: { pathname: "/", state: {} }
           , children: [ DOM.text $ Cusno.toString user.cusno <> " - " <>
                           ( String.joinWith " " $
-                            mapMaybe toMaybe [ user.firstName, user.lastName ] )
+                            catMaybes [ user.firstName, user.lastName ] )
                       ]
           , className: ""
           }

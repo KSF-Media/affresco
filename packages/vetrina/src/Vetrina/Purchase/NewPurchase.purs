@@ -10,7 +10,6 @@ import Data.Foldable (all, foldMap)
 import Data.Int as Int
 import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
-import Data.Nullable (toMaybe)
 import Data.Tuple as Tuple
 import Data.Validation.Semigroup (toEither, invalid, validation)
 import Effect (Effect)
@@ -150,7 +149,7 @@ render self =
   <> newPurchaseLinks self
   <> case self.state.accountStatus of
     LoggedInAccount user
-      | isNothing $ toMaybe user.firstName ->
+      | isNothing user.firstName ->
         DOM.div
           { className: "vetrina--temporary-user-email"
           , children: [ DOM.text user.email ]
@@ -170,7 +169,7 @@ title self =
   let headlineText =
         case self.state.accountStatus of
           ExistingAccount _    -> Just $ DOM.text "Du har redan ett KSF Media-konto"
-          LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
+          LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" user.firstName)
           NewAccount -> self.props.headline
   in foldMap headline headlineText
   where
