@@ -211,7 +211,7 @@ createCusnoUser newCusnoUser = do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
     Right _user -> do
-      searchResult <- searchUsers { faroLimit: 1, query: Cusno.toString newCusnoUser.cusno }
+      searchResult <- searchUsers false { faroLimit: 1, query: Cusno.toString newCusnoUser.cusno }
       case searchResult of
         Left _ -> do
           Console.error "Cusno user created successfully but searching it failed"
@@ -538,7 +538,7 @@ saveToken { token, ssoCode, uuid, isAdmin } = liftEffect do
   pure { userId: uuid, authToken: token }
 
 deleteToken :: Effect Unit
-deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid", "isAdmin" ]
+deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid", "isAdmin", "searchQuery", "searchResult" ]
 
 requireToken :: forall m. MonadEffect m => m UserAuth
 requireToken =
@@ -650,10 +650,11 @@ createDeliveryReclamation uuid subsno date claim = do
       pure $ Left Persona.InvalidUnexpected
 
 searchUsers
-  :: SearchQuery
+  :: Boolean
+  -> SearchQuery
   -> Aff (Either String (Array (SearchResult Subscription.Subscription)))
-searchUsers query = do
-  users <- try $ Persona.searchUsers query =<< requireToken
+searchUsers useStored query = do
+  users <- try $ Persona.searchUsers useStored query =<< requireToken
   case users of
     Right xs -> pure $ Right xs
     Left err
