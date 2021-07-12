@@ -160,6 +160,7 @@ render self =
         , disabled: self.state.ongoing
         , label: "Börjar från"
         , id: "pause-start"
+        , activeStartDate: Nothing
         }
 
     endDayInput =
@@ -172,6 +173,7 @@ render self =
         , disabled: isNothing self.state.startDate
         , label: "Avslutas"
         , id: "pause-end"
+        , activeStartDate: self.state.minEndDate
         }
 
     submitFormButton =
@@ -190,17 +192,18 @@ render self =
         }
 
 type DateInputField =
-  { action   :: Maybe Date -> Effect Unit
-  , value    :: Maybe Date
-  , minDate  :: Maybe Date
-  , maxDate  :: Maybe Date
-  , disabled :: Boolean
-  , label    :: String
-  , id       :: String
+  { action          :: Maybe Date -> Effect Unit
+  , value           :: Maybe Date
+  , minDate         :: Maybe Date
+  , maxDate         :: Maybe Date
+  , disabled        :: Boolean
+  , label           :: String
+  , id              :: String
+  , activeStartDate :: Maybe Date
   }
 
 dateInput :: Self -> DateInputField -> JSX
-dateInput self { action, value, minDate, maxDate, disabled, label, id } =
+dateInput self { action, value, minDate, maxDate, disabled, label, id, activeStartDate } =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
@@ -214,6 +217,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label, id } =
             , maxDate: maxDate
             , disabled
             , locale: "sv-FI"
+            , activeStartDate
             }
         ]
     ]
