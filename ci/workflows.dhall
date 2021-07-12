@@ -107,9 +107,10 @@ let mkUploadStep =
             , destination =
                 merge
                   { Staging = "deploy-previews/\${{ github.sha }}"
-                  , Production = "ksf-frontends"
+                  , Production = "ksf-frontends/${app.deployDir}"
                   }
                   env
+            , parent = "false"
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
