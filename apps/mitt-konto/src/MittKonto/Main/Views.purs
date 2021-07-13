@@ -56,7 +56,7 @@ navbarView { state, setState } logger isPersonating =
 
 alertView :: Alert -> JSX
 alertView alert =
-  Helpers.classy DOM.div "col-4 mx-auto center"
+  Helpers.classy DOM.div "mitt-konto--alert"
     [ Alert.alert alert ]
 
 footerView :: JSX

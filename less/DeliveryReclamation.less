@@ -3,7 +3,7 @@
 .delivery-reclamation--container {
     h3 { margin-top: 0 };
     justify-content: flex-end;
-
+    clear: both;
 }
 
 .delivery-reclamation--close-icon {
@@ -13,6 +13,21 @@
     .close-icon {
 	cursor: pointer;
     }
+    width: 8.3%;
+    display: flex;
+}
+
+.delivery-reclamation--submit-container {
+    margin-top: 1rem;
+}
+
+.delivery-reclamation--submit-container:before, .delivery-reclamation--submit-container:after {
+    content: " ";
+    display: table;
+}
+
+.delivery-reclamation--submit-container:after {
+    clear: both;
 }
 
 .delivery-reclamation--date-picker {

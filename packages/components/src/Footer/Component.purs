@@ -28,11 +28,10 @@ footer = make component
 render :: Self -> JSX
 render _ =
   DOM.div
-    { className: "clearfix mx-auto center mt4 mb4"
+    { className: "footer--container"
     , children:
         [ DOM.div
-            { className: "col-10 lg-col-7 mx-auto"
-            , children: [ DOM.hr { className: "footer--break" } ]
+            { children: [ DOM.hr { className: "footer--break" } ]
             }
         , paperImages
         , ksfAddress
@@ -43,8 +42,7 @@ render _ =
 ksfLogo :: JSX
 ksfLogo =
   DOM.div
-    { className: "col col-12 mt3"
-    , children:
+    { children:
         [ DOM.img
             { className: "footer--ksf-logo"
             , src: papers.ksf
@@ -55,7 +53,7 @@ ksfLogo =
 ksfAddress :: JSX
 ksfAddress =
   DOM.div
-    { className: "footer--ksf-address flex justify-center col col-12 mt3"
+    { className: "footer--ksf-address"
     , children:
       [ addressText "KSF Media"
       , separator
@@ -70,7 +68,7 @@ ksfAddress =
 paperImages :: JSX
 paperImages =
   DOM.div
-    { className: "footer--paper-images flex justify-center col col-12 mt3"
+    { className: "footer--paper-images"
     , children:
         [ imageLink "https://www.hbl.fi/" papers.hbl
         , imageLink "https://www.vastranyland.fi/" papers.vn

@@ -21,6 +21,7 @@
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
+    padding-top: 1rem;
     a {
 	color: @link-color;
 	text-decoration: none;
@@ -29,7 +30,13 @@
 	    color: @grey-mediumdark;
 	}
     }
+    form {
+	padding-bottom: 1rem;
+    }
 
+    a.login--important {
+	text-decoration: underline;
+    }
 }
 
 .login--error-msg {
@@ -39,6 +46,17 @@
 	color: red;
 	text-decoration: underline;
     }
+    padding-bottom: 0.5rem;
+}
+
+.login--cancel {
+    text-decoration: underline;
+    text-align: center;
+}
+
+.login--merge-account {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }
 
 .format-some-button(@bg-color; @bg-color-hover; @image-url) {
@@ -52,6 +70,10 @@
 	    background-color: @bg-color-hover !important;
 	}
     }
+}
+
+.login--some-button {
+    margin-bottom: 0.5rem;
 }
 
 .login--some-button-fb {
@@ -68,4 +90,13 @@
     margin-bottom: 1em;
     cursor: pointer;
     text-align: center;
+    text-decoration: underline;
+}
+
+.login--loginLinks > * {
+    text-align: center;
+}
+
+.login--loginLinks > *:not(:first-child) {
+    padding-top: 0.5rem;
 }

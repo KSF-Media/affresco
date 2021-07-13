@@ -174,9 +174,9 @@ render :: Types.Self -> Sentry.Logger -> ViewComponents -> String -> Boolean -> 
 render self@{ state } logger components initialHash isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "") $
     [ Views.navbarView self logger isPersonating
-    , Helpers.classy DOM.div "mt3 mb4 clearfix"
+    , Helpers.classy DOM.div "mitt-konto--main-container-container"
         [ foldMap Views.alertView state.alert
-        , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
+        , Helpers.classy DOM.div "mitt-konto--main-container"
             [ case initialHash of
                  "#l%C3%B6senord" -> components.passwordResetView
                  _ -> Router.switch { children: routes }
@@ -210,7 +210,7 @@ render self@{ state } logger components initialHash isPersonating =
      Router.route
        { exact: exact
        , path: path
-       , render: const $ Helpers.classy DOM.div "mitt-konto--container clearfix"
+       , render: const $ Helpers.classy DOM.div "mitt-konto--container"
            [ foldMap Elements.loadingIndicator state.loading
            , case state.activeUser /\ (state.adminMode || allowAll) of
                Just user /\ true -> view user
