@@ -1,6 +1,39 @@
 @import (reference) 'ksf-variables';
 @import (reference) 'ksf-colors';
 
+.footer--container {
+    margin-right: auto;
+    margin-left: auto;
+    margin-bottom: 4rem;
+    margin-top: 4rem;
+    text-align: center;
+}
+
+.footer--container:before, .footer--container:after {
+    content: " ";
+    display: table;
+}
+
+.footer--container:after {
+    clear: both;
+}
+
+.footer--container > * {
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.footer--container > *:first-child {
+    width: 58%;
+}
+
+.footer--container > *:not(:first-child ) {
+    margin-top: 2rem;
+    width: 100%;
+    float: left;
+}
+
 .footer--paper-images {
     a {
 	margin-left: 5em;
@@ -16,12 +49,14 @@
 	    max-height: 40px;
 	}
     }
+    display: flex;
 }
 
 .footer--ksf-address {
     @media @to-small {
 	display: block;
     }
+    display: flex;
 }
 
 .footer--address-separator {

@@ -90,7 +90,7 @@ initialState =
 render :: Self -> JSX
 render self@{ setState, state: { asyncWrapperState, updateState }, props: { creditCards } } =
   asyncWrapper $ DOM.div
-    { className: "clearfix credit-card-update--container"
+    { className: "credit-card-update--container"
     , children:
         [ case updateState of
             ChooseCreditCard       -> Choice.choice

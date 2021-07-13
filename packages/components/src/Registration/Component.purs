@@ -274,7 +274,7 @@ confirm self =
       | not isFormInvalid = mempty
       | otherwise =
           DOM.div
-            { className: "registration--invalid-form-generic-message mt2"
+            { className: "registration--invalid-form-generic-message"
             , children: [ DOM.text "Alla obligatoriska fält är inte korrekt ifyllda, kontrollera uppgifterna." ]
             }
 
@@ -282,7 +282,7 @@ confirm self =
     confirmButton =
       DOM.input
         { type: "submit"
-        , className: "registration--create-button mt2"
+        , className: "registration--create-button"
         , disabled: isFormInvalid
         , value: "Skapa konto"
         }
@@ -290,8 +290,7 @@ confirm self =
     cancelText :: JSX
     cancelText =
       DOM.div
-        { className: "mt2"
-        , children:
+        { children:
             [ DOM.text "Eller "
             , DOM.a
                 { href: ""

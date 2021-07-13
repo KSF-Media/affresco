@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Control.Monad.Error.Class (catchError, throwError)
 import Data.Array as Array
 import Data.Either (Either(..), either)
-import Data.Foldable (foldMap, surround)
+import Data.Foldable (foldMap)
 import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (Nullable, toNullable)
@@ -300,13 +300,21 @@ renderLogin self =
 renderLoginForm :: Self -> JSX
 renderLoginForm self =
   DOM.div
-    { className: "login-form pt2"
+    { className: "login-form"
     , children:
         [ foldMap formatErrorMessage self.state.errors.social
         , loginForm
         , if hideLoginLinks
           then mempty
-          else forgotPassword <> forgotEmail <> buySubscription
+          else
+            DOM.div
+              { className: "login--loginLinks"
+              , children:
+                  [ forgotPassword
+                  , forgotEmail
+                  , buySubscription
+                  ]
+              }
         , socialLogins
         ]
     }
@@ -320,7 +328,7 @@ renderLoginForm self =
       where
         loginWithSocial =
           DOM.span
-            { className: "login--login-social-media-text underline"
+            { className: "login--login-social-media-text"
             , children: [ DOM.text "Logga in med Facebook eller Google" ]
             , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
             }
@@ -334,7 +342,6 @@ renderLoginForm self =
     loginForm =
       DOM.form
         { onSubmit: Events.handler preventDefault $ \_ -> onLogin self $ loginFormValidations self
-        , className: "pb2"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
@@ -423,7 +430,7 @@ renderMerge self@{ props } mergeInfo =
     cancelButton :: JSX
     cancelButton =
       DOM.div
-        { className: "underline center"
+        { className: "login--cancel"
         , key: "cancelButton" -- this is here because otherwise React mixes it up with another link
         , children:
           [ DOM.a
@@ -442,7 +449,7 @@ renderMerge self@{ props } mergeInfo =
     mergeAccountForm =
       DOM.form
         { onSubmit
-        , className: "pt2 pb2"
+        , className: "login--merge-account"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
@@ -474,7 +481,7 @@ googleLogin self =
   if not $ Set.member Google self.props.disableSocialLogins
     then
       someLoginButton
-        { className: "login--some-button-google"
+        { className: "login--some-button login--some-button-google"
         , description: "Logga in med Google"
         , onClick: Google.loadGapi { onSuccess: onGoogleLogin, onFailure: onGoogleFailure }
         }
@@ -520,7 +527,7 @@ facebookLogin :: Self -> JSX
 facebookLogin self =
   if not $ Set.member Facebook self.props.disableSocialLogins
     then someLoginButton
-      { className: "login--some-button-fb"
+      { className: "login--some-button login--some-button-fb"
       , description: "Logga in med Facebook"
       , onClick: onFacebookLogin
       }
@@ -587,7 +594,7 @@ someLoginButton ::
   -> JSX
 someLoginButton { className, description, onClick } =
   DOM.div
-  { className: className <> surround " " additionalClasses
+  { className: className
   , children:
     [ Button.button
         { description
@@ -596,8 +603,6 @@ someLoginButton { className, description, onClick } =
         }
     ]
   }
-  where
-    additionalClasses = [ "pb1" ]
 
 loginButton :: String -> JSX
 loginButton text =
@@ -610,11 +615,10 @@ loginButton text =
 buySubscription :: JSX
 buySubscription =
   DOM.div
-    { className: "center"
-    , children:
+    { children:
         [ DOM.text "Är du inte prenumerant? "
         , DOM.a
-            { className: "underline"
+            { className: "login--important"
             , href: "https://prenumerera.ksfmedia.fi/"
             , children: [ DOM.text "Köp en prenumeration!" ]
             }
@@ -624,8 +628,7 @@ buySubscription =
 forgotPassword :: JSX
 forgotPassword =
   DOM.div
-    { className: "center mb1"
-    , children:
+    { children:
       [ DOM.text "Glömt lösenordet? "
         , DOM.a
             { href: "https://www.hbl.fi/losenord/"
@@ -637,11 +640,10 @@ forgotPassword =
 forgotEmail :: JSX
 forgotEmail =
   DOM.div
-    { className: "center mb1"
-    , children:
+    { children:
       [ DOM.text "Glömt din e-post? "
       , DOM.a
-          { className: "underline center mb1"
+          { className: "login--important"
           , href: "https://www.hbl.fi/kundservice/"
           , children: [ DOM.text "Ta kontakt med vår kundtjänst!" ]
           }
@@ -651,7 +653,7 @@ forgotEmail =
 formatErrorMessage :: UserError -> JSX
 formatErrorMessage err =
   DOM.div
-    { className: "login--error-msg pb1"
+    { className: "login--error-msg"
     , children: [ errorMsg ]
     }
   where

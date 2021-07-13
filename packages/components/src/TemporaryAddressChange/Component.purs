@@ -196,7 +196,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
               , temporaryNameInput
               , DOM.div
                   { children: [ submitFormButton ]
-                  , className: "mt2 clearfix"
+                  , className: "temporary-address-change--submit-container"
                   }
               ]
           }
@@ -377,7 +377,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label, id, activeSta
             }
         ]
     ]
-    { extraClasses: [ "mb2" ]
+    { extraClasses: [ "date-picker-container" ]
     , id: id <> "--" <> Subsno.toString self.props.subsno
     }
 
