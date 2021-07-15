@@ -1,6 +1,10 @@
 @import 'prenumerera/main';
+@import 'Button';
 @import 'Navbar';
+@import 'InputField';
 @import 'Login';
+@import 'ksf-utils';
+@import 'ksf-variables';
 
 body {
     font-size: 100%;
@@ -167,4 +171,67 @@ b, strong {
 
 ::before,::after {
     box-sizing: border-box;
+}
+
+#ksf-identify-login .login-form {
+    width: 345px;
+}
+
+#ksf-identify-login .login-form > * {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    line-height: initial;
+}
+
+#ksf-identify-login .login-form > *:first-child {
+    padding-bottom: 1rem;
+}
+
+#ksf-identify-login .login-form > *:not(:first-child) {
+    margin-top: 0.5rem;
+}
+
+#ksf-identify-login .login--some-button-fb {
+    padding-bottom: 0.5rem;
+}
+
+#ksf-identify-login .login--login-social-media-text {
+    text-decoration: underline;
+}
+
+#ksf-registration-form .row {
+    clear: both;
+    margin-left: -15px;
+    margin-right: -15px;
+
+    > *:first-child {
+	padding-right: 30px;
+    }
+}
+
+#ksf-registration-form .row > * {
+    width: 50%;
+    float: left;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    @media @to-small {
+	width: 100%;
+    }
+}
+
+.janrain-api-container .janrain-api-form .input-field--container {
+    .input-field--input-label {
+	font-weight: 500;
+    }
+
+    input {
+	margin-top: 5px;
+    }
+
+}
+
+#ksf-registration-form .submit-button {
+    width: 100%;
 }

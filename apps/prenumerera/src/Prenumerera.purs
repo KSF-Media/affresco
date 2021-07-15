@@ -67,6 +67,7 @@ app = do
 
   productSelectComponent <- ProductSelect.component
   registerComponent <- Register.component
+  selectPeriodComponent <- SelectPeriod.component
 
   component "Prenumerera" \_ -> React.do
     user /\ setUser <- useState Nothing
@@ -98,7 +99,7 @@ app = do
           loadPackages err = do
             log $ "error loading packages " <> show err
             pure unit -- TODO
---      Aff.launchAff_ attemptMagicLogin
+      Aff.launchAff_ attemptMagicLogin
       Aff.runAff_ loadPackages Bottega.getPackages
 
       locations (routeListener setRoute) nav
@@ -129,6 +130,18 @@ app = do
                     , setUser: setUser <<< const
                     , package
                     , next: accountDone
+                    , cancel: nav.pushState (write {}) "/"
+                    }
+                ]
+        SelectPeriod ->
+          case purchasePackage of
+            Nothing -> DOM.text "no package!"
+            Just package ->
+              React.fragment
+                [ ProgressBar.render ProgressBar.Accept
+                , selectPackcageComponent
+                    { user
+                    , package
                     , cancel: nav.pushState (write {}) "/"
                     }
                 ]

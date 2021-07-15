@@ -94,7 +94,7 @@ component = do
             , onRegister: pure unit
             , onRegisterCancelled: pure unit
             , onUserFetch: userFetched
-            , onLogin: const $ pure unit
+            , onLogin: Aff.launchAff_
             , disableSocialLogins: mempty
             }
         userFetched (Right user) = setUser $ Just user
@@ -104,11 +104,12 @@ component = do
     registerData /\ setRegisterData <- useState $ initialRegisterData user
     let onSubmit form = do
           if registerData.existingUser
-            then pure unit -- TODO
+            then next -- TODO update information
             else Registration.submitForm registerData.form (setFormState setRegisterData)
-                 -- TODO
-                 (Aff.runAff_ (setUser <<< hush)) form
-          next
+                 -- TODO errors
+                 (Aff.runAff_ (\user -> do
+                                  setUser $ hush user
+                                  next)) form
     pure $ render package $
       if loginScreen
       then renderLogin loginForm $ setLoginScreen false -- renderLoginScreen login
@@ -186,26 +187,38 @@ renderLogin content startRegister =
 renderRegister :: RegisterData -> ((RegisterData -> RegisterData) -> Effect Unit) -> (ValidatedForm RegistrationInputField Registration.FormData -> Effect Unit) -> Effect Unit -> JSX
 renderRegister reg@{ form } setState save cancel =
   DOM.div
-    { className: "janrain-api-container ksf-janrain-user-form"
+    { id: "ksf-registration-form"
+    , className: "ksf-auth-section"
     , children:
-        [ DOM.form
-            { className: "janrain-api-form user-form"
-            , onSubmit: handler preventDefault $ const $ save $ Registration.formValidations form
+        [ if reg.existingUser
+            then DOM.div
+                   { className: "ksf-auth-header"
+                   , children: [ DOM.h2_ [ DOM.text "Kontrollera konto" ] ]
+                   }
+            else mempty
+        , DOM.div
+            { className: "janrain-api-container ksf-janrain-user-form"
             , children:
-                (if reg.existingUser then [ DOM.h3_ [ DOM.text "Din information" ] ] else []) <>
-                [ row [ inputField FirstName, inputField LastName ]
-                , row [ inputField StreetAddress, inputField City ]
-                , row [ inputField (Zip (form.formData.country)), inputField Country ]
-                , row [ inputField EmailAddress ]
-                ] <>
-                (case reg.existingUser of
-                    false ->
-                      [ row [ inputField Password, inputField (ConfirmPassword form.formData.password) ]
-                      , row [ mempty, submit ]
-                      ]
-                    true ->
-                      [ DOM.text "todo" ]
-                )
+                [ DOM.form
+                    { className: "janrain-api-form user-form"
+                    , onSubmit: handler preventDefault $ const $ save $ Registration.formValidations form
+                    , children:
+                        (if reg.existingUser then [ DOM.h3_ [ DOM.text "Din information" ] ] else []) <>
+                        [ row [ inputField FirstName, inputField LastName ]
+                        , row [ inputField StreetAddress, inputField City ]
+                        , row [ inputField (Zip (form.formData.country)), inputField Country ]
+                        , row [ inputField EmailAddress ]
+                        ] <>
+                        (case reg.existingUser of
+                            false ->
+                              [ row [ inputField Password, inputField (ConfirmPassword form.formData.password) ]
+                              , row [ mempty, submit ]
+                              ]
+                            true ->
+                              [ row [ DOM.span_ [ DOM.text "todo" ], submit ] ]
+                        )
+                    }
+                ]
             }
         ]
     }
@@ -213,13 +226,15 @@ renderRegister reg@{ form } setState save cancel =
     row xs =
       DOM.div
         { className: "row"
-        , children: map rowElement xs
+        , children: xs
         }
+{-
     rowElement x =
       DOM.div
-        { className: "column col-xs-12 col-sm-6"
+        { className: "element"
         , children: [ x ]
         }            
+-}
     inputField :: RegistrationInputField -> JSX
     inputField EmailAddress = case reg.existingUser of
       false -> Registration.inputField EmailAddress form $ setFormState setState
@@ -235,7 +250,7 @@ renderRegister reg@{ form } setState save cancel =
         }
     inputField field = Registration.inputField field form $ setFormState setState
     submit =
-      React.fragment
+      DOM.div_
         [ if not reg.existingUser then disclaimer else mempty
         , DOM.input
             { type: "submit"
