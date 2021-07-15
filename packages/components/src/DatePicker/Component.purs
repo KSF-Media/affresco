@@ -26,33 +26,33 @@ import Record as Record
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
 
 type Props =
-  ( onChange        :: Effect (Maybe Date) -> Effect Unit
-  , className       :: String
-  , value           :: Maybe Date
-  , format          :: String
-  , required        :: Boolean
-  , minDate         :: Maybe Date
-  , maxDate         :: Maybe Date
-  , disabled        :: Boolean
-  , locale          :: String
-  , activeStartDate :: Maybe Date
+  ( onChange               :: Effect (Maybe Date) -> Effect Unit
+  , className              :: String
+  , value                  :: Maybe Date
+  , format                 :: String
+  , required               :: Boolean
+  , minDate                :: Maybe Date
+  , maxDate                :: Maybe Date
+  , disabled               :: Boolean
+  , locale                 :: String
+  , defaultActiveStartDate :: Maybe Date
   )
 
 type DefaultProps =
-  ( activeStartDate :: Maybe Date
+  ( defaultActiveStartDate :: Maybe Date
   )
 
 type DatePickerProps =
-  { onChange        :: EffectFn1 (Nullable JSDate) Unit
-  , className       :: String
-  , value           :: Nullable JSDate
-  , format          :: String
-  , required        :: Boolean
-  , minDate         :: Nullable JSDate
-  , maxDate         :: Nullable JSDate
-  , disabled        :: Boolean
-  , locale          :: String
-  , activeStartDate :: Nullable JSDate
+  { onChange               :: EffectFn1 (Nullable JSDate) Unit
+  , className              :: String
+  , value                  :: Nullable JSDate
+  , format                 :: String
+  , required               :: Boolean
+  , minDate                :: Nullable JSDate
+  , maxDate                :: Nullable JSDate
+  , disabled               :: Boolean
+  , locale                 :: String
+  , defaultActiveStartDate :: Nullable JSDate
   }
 
 datePicker :: forall attrs attrs_ . Union attrs DefaultProps attrs_ => Nub attrs_ Props => Record attrs -> JSX
@@ -65,7 +65,7 @@ datePicker userProps =
     props = Record.merge userProps defaultProps
     defaultProps :: Record DefaultProps
     defaultProps =
-      { activeStartDate: Nothing
+      { defaultActiveStartDate: Nothing
       }
     picker = React.element (runFn0 datePicker_) datePickerProps
     datePickerProps :: DatePickerProps
@@ -79,7 +79,7 @@ datePicker userProps =
       , disabled:  props.disabled
       , locale:    props.locale
       , onChange:  mkEffectFn1 $ adjustTimezone >>> props.onChange
-      , activeStartDate: toNullable $ (fromInstant <<< Instant.fromDate) <$> props.activeStartDate
+      , defaultActiveStartDate: toNullable $ (fromInstant <<< Instant.fromDate) <$> props.defaultActiveStartDate
       }
 
 -- | Glues current timezone to the JS date we get here.
