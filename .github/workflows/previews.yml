@@ -24,7 +24,7 @@ jobs:
               **/.yarn-cache
               **/.spago
               **/.cache
-              apps/*/dist
+              apps/*/output
               ~/.npm
               ~/.cache/spago
       - run: |2

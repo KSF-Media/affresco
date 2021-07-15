@@ -90,7 +90,7 @@ let setupSteps =
                   **/.yarn-cache
                   **/.spago
                   **/.cache
-                  apps/*/dist
+                  apps/*/output
                   ~/.npm
                   ~/.cache/spago
                 ''
