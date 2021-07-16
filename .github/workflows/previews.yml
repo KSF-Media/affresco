@@ -22,9 +22,7 @@ jobs:
           path: |2
               **/node_modules
               **/.yarn-cache
-              **/.spago
               **/.cache
-              apps/*/output
               ~/.npm
               ~/.cache/spago
       - run: |2
@@ -34,6 +32,55 @@ jobs:
         run: |2
             make
             git diff --exit-code
+      - name: Setup build cache for Scripts
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-scripts-${{ hashFiles('apps/scripts/')}}"
+          path: ''
+      - name: Setup build cache for Mitt Konto
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
+          path: |
+            apps/mitt-konto/.spago
+            apps/mitt-konto/output
+      - name: "Setup build cache for Vetrina (for testing only)"
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
+          path: |
+            apps/vetrina-test/.spago
+            apps/vetrina-test/output
+      - name: "Setup build cache for Elections (EU)"
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-elections-eu-${{ hashFiles('apps/elections/yarn.lock')}}"
+          path: |
+            apps/elections/dist
+      - name: "Setup build cache for Elections (Parliament)"
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-elections-${{ hashFiles('apps/elections/')}}"
+          path: ''
+      - name: Setup build cache for App article
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
+          path: |
+            apps/app-article/dist
+      - name: Setup build cache for Corona banner
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
+          path: |
+            apps/corona-banner/dist
+      - name: Setup build cache for HBL365
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
+          path: |
+            apps/hbl365/.spago
+            apps/hbl365/output
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -84,11 +131,19 @@ jobs:
       - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
-            mv apps/app-article-server build/app-article-server
+            cp -R apps/app-article-server build/app-article-server
+            cat apps/app-article-server/app.yaml
+            ls -laF apps/app-article-server
+            cat apps/app-article-server/app.yaml
+            ls -laF build/app-article-server
       - name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
-            mv apps/mosaico build/mosaico
+            cp -R apps/mosaico build/mosaico
+            cat apps/mosaico/app.yaml
+            ls -laF apps/mosaico
+            cat apps/mosaico/app.yaml
+            ls -laF build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -143,7 +198,7 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
-          promote: 'true'
+          promote: 'false'
           working_directory: build/app-article-server
       - id: deploy-mosaico-server
         name: Deploy Mosaico server
@@ -151,7 +206,7 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
-          promote: 'true'
+          promote: 'false'
           working_directory: build/mosaico
       - name: Generate AppEngine domain map
         run: |2

@@ -33,9 +33,7 @@ jobs:
           path: |2
               **/node_modules
               **/.yarn-cache
-              **/.spago
               **/.cache
-              apps/*/output
               ~/.npm
               ~/.cache/spago
       - run: |2
@@ -95,11 +93,19 @@ jobs:
       - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
-            mv apps/app-article-server build/app-article-server
+            cp -R apps/app-article-server build/app-article-server
+            cat apps/app-article-server/app.yaml
+            ls -laF apps/app-article-server
+            cat apps/app-article-server/app.yaml
+            ls -laF build/app-article-server
       - name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
-            mv apps/mosaico build/mosaico
+            cp -R apps/mosaico build/mosaico
+            cat apps/mosaico/app.yaml
+            ls -laF apps/mosaico
+            cat apps/mosaico/app.yaml
+            ls -laF build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:

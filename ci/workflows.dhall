@@ -88,9 +88,7 @@ let setupSteps =
                 ''
                   **/node_modules
                   **/.yarn-cache
-                  **/.spago
                   **/.cache
-                  apps/*/output
                   ~/.npm
                   ~/.cache/spago
                 ''
@@ -141,7 +139,11 @@ let mkBuildServerStep =
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
-              mv apps/${app.buildDir} build/${app.deployDir}
+              cp -R apps/${app.buildDir} build/${app.deployDir}
+              cat apps/${app.buildDir}/app.yaml
+              ls -laF apps/${app.buildDir}
+              cat apps/${app.deployDir}/app.yaml
+              ls -laF build/${app.deployDir}
             ''
         }
 
@@ -177,7 +179,7 @@ let mkAppEngineStep =
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = "true"
+            , promote = merge { Staging = "false", Production = "true" } env
             , project_id =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"

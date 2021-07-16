@@ -19,8 +19,6 @@ let apps =
           , caches = Some
               ''
               apps/mitt-konto/.spago
-              apps/mitt-konto/dist
-              apps/mitt-konto/node_modules
               apps/mitt-konto/output
               ''
           }
@@ -37,8 +35,6 @@ let apps =
           , caches = Some
               ''
               apps/vetrina-test/.spago
-              apps/vetrina-test/dist
-              apps/vetrina-test/node_modules
               apps/vetrina-test/output
               ''
           }
@@ -54,7 +50,6 @@ let apps =
           , caches = Some
               ''
               apps/elections/dist
-              apps/elections/node_modules
               ''
           }
         , Actions.App::{
@@ -79,8 +74,6 @@ let apps =
           , caches = Some
               ''
               apps/app-article/dist
-              apps/app-article/node_modules
-              packages/user/node_modules
               ''
           }
         , Actions.App::{
@@ -91,7 +84,6 @@ let apps =
           , caches = Some
               ''
               apps/corona-banner/dist
-              apps/corona-banner/node_modules
               ''
           }
         , Actions.App::{
@@ -102,8 +94,6 @@ let apps =
           , caches = Some
               ''
               apps/hbl365/.spago
-              apps/hbl365/dist
-              apps/hbl365/node_modules
               apps/hbl365/output
               ''
           }
