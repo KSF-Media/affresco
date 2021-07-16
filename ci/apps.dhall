@@ -46,11 +46,6 @@ let apps =
               { ELECTION_BACKEND_URL = "https://elections-eu.api.ksfmedia.fi/v1"
               , ELECTION_TYPE = "EU"
               }
-          , lockfile = Some "yarn.lock"
-          , caches = Some
-              ''
-              apps/elections/dist
-              ''
           }
         , Actions.App::{
           , name = "Elections (Parliament)"

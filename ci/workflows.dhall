@@ -80,7 +80,7 @@ let setupSteps =
         , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
         }
       , Step::{
-        , name = Some "Setup build cache"
+        , name = Some "Setup global build cache"
         , uses = Some "actions/cache@v2"
         , `with` = toMap
             { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
@@ -91,6 +91,7 @@ let setupSteps =
                   **/.cache
                   ~/.npm
                   ~/.cache/spago
+                  apps/elections/dist
                 ''
             }
         }

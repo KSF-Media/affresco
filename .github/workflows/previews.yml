@@ -15,7 +15,7 @@ jobs:
       - uses: "cachix/install-nix-action@v12"
         with:
           nix_path: nixpkgs=channel:nixos-20.09
-      - name: Setup build cache
+      - name: Setup global build cache
         uses: "actions/cache@v2"
         with:
           key: "${{ runner.os }}-build-${{ hashFiles('yarn.lock')}}"
@@ -25,6 +25,7 @@ jobs:
               **/.cache
               ~/.npm
               ~/.cache/spago
+              apps/elections/dist
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
@@ -32,11 +33,6 @@ jobs:
         run: |2
             make
             git diff --exit-code
-      - name: Setup build cache for Scripts
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-scripts-${{ hashFiles('apps/scripts/')}}"
-          path: ''
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -51,17 +47,6 @@ jobs:
           path: |
             apps/vetrina-test/.spago
             apps/vetrina-test/output
-      - name: "Setup build cache for Elections (EU)"
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-elections-eu-${{ hashFiles('apps/elections/yarn.lock')}}"
-          path: |
-            apps/elections/dist
-      - name: "Setup build cache for Elections (Parliament)"
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-elections-${{ hashFiles('apps/elections/')}}"
-          path: ''
       - name: Setup build cache for App article
         uses: "actions/cache@v2"
         with:
