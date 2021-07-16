@@ -26,6 +26,7 @@ jobs:
               ~/.npm
               ~/.cache/spago
               apps/elections/dist
+              !build
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
@@ -121,7 +122,7 @@ jobs:
             echo "cat apps/app-article-server/app.yaml"
             cat apps/app-article-server/app.yaml
             echo "mv apps/app-article-server build/app-article-server"
-            mv apps/app-article-server build/app-article-server
+            cp -R apps/app-article-server build/app-article-server
             echo "ls -laF build/app-article-server"
             ls -laF build/app-article-server
             ehco "cat build/app-article-server/app.yaml"
@@ -134,7 +135,7 @@ jobs:
             echo "cat apps/mosaico/app.yaml"
             cat apps/mosaico/app.yaml
             echo "mv apps/mosaico build/mosaico"
-            mv apps/mosaico build/mosaico
+            cp -R apps/mosaico build/mosaico
             echo "ls -laF build/mosaico"
             ls -laF build/mosaico
             ehco "cat build/mosaico/app.yaml"

@@ -92,6 +92,7 @@ let setupSteps =
                   ~/.npm
                   ~/.cache/spago
                   apps/elections/dist
+                  !build
                 ''
             }
         }
@@ -145,7 +146,7 @@ let mkBuildServerStep =
               echo "cat apps/${app.buildDir}/app.yaml"
               cat apps/${app.buildDir}/app.yaml
               echo "mv apps/${app.buildDir} build/${app.deployDir}"
-              mv apps/${app.buildDir} build/${app.deployDir}
+              cp -R apps/${app.buildDir} build/${app.deployDir}
               echo "ls -laF build/${app.deployDir}"
               ls -laF build/${app.deployDir}
               ehco "cat build/${app.deployDir}/app.yaml"
