@@ -80,10 +80,10 @@ let setupSteps =
         , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
         }
       , Step::{
-        , name = Some "Setup yarn cache"
+        , name = Some "Setup build cache"
         , uses = Some "actions/cache@v2"
         , `with` = toMap
-            { key = "\${{ runner.os }}-yarn-\${{ hashFiles('yarn.lock')}}"
+            { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
             , path =
                 ''
                   **/node_modules
@@ -107,17 +107,17 @@ let setupSteps =
 
 let mkCacheAppStep =
       \(app : App.Type) ->
-        let c = default app.caches
+        let caches = default app.caches
 
-        let l = default app.lockfile
+        let lockfile = default app.lockfile
 
         in  Step::{
             , name = Some "Setup build cache for ${app.name}"
             , uses = Some "actions/cache@v2"
             , `with` = toMap
-                { path = c
+                { path = caches
                 , key =
-                    "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('apps/${app.buildDir}/${l}')}}"
+                    "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('apps/${app.buildDir}/${lockfile}')}}"
                 }
             }
 
