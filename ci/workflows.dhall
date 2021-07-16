@@ -92,7 +92,9 @@ let setupSteps =
                   ~/.npm
                   ~/.cache/spago
                   apps/elections/dist
-                  !build
+                  !./build
+                  !./build/*
+                  !./build/**
                 ''
             }
         }
