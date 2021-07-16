@@ -132,7 +132,9 @@ render setState state router =
   <> DOM.div
   { className: "mosaico grid"
   , children:
-    [ state.headerComponent {}
+    [ Header.topLine
+    , state.headerComponent {}
+    , Header.mainSeparator
     , case state.route of
           ArticlePage articleId ->
             let affArticle = do

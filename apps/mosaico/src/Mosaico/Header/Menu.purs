@@ -31,10 +31,6 @@ render { props: { visible } } = DOM.div
       else
         mempty
   , children: [ DOM.div
-                  { className: searchClass
-                  , children: [ DOM.text "search" ]
-                  }
-              , DOM.div
                   { className: menuContentClass <> " grid-row-2 grid-colspan-3"
                   , children: sections
                   }

@@ -98,3 +98,11 @@ render { state: { menuVisible, menuComponent }, setState } =
     }
   where
     block = "mosaico-header"
+
+-- The characteristic line at the top of every KSF media's site
+topLine :: JSX
+topLine = DOM.hr { className: "mosaico-top-line" }
+
+-- The separator between the header and the rest of the page
+mainSeparator :: JSX
+mainSeparator = DOM.hr { className: "mosaico-main-separator" }

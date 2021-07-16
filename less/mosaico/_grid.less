@@ -22,8 +22,8 @@
             max-width: calc(@breakpoint-xxl - @breakpoint-padding);
         }
         min-height: 100vh;
-        grid-template-rows: 150px 1fr 150px;
-        grid-template-columns: 1rf;
+        grid-template-rows: auto 85px auto 1fr auto;
+        grid-template-columns: 1fr;
         grid-row-gap: 15px;
         grid-template-areas:
             "head"
@@ -31,21 +31,25 @@
             "aside"
             "foot";
         @media (min-width: @breakpoint-lg) {
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 0.1fr 1fr 300px 0.1f;
             grid-column-gap: 30px;
             grid-template-areas:
-            "head head"
-            "main aside"
-            "foot foot";
-        }    
+            "line line line line"
+            ". head head ."
+            "separator separator separator separator"
+            ". main aside . "
+            ". foot foot foot foot .";
+        }
         @media (min-width: @breakpoint-xl) {
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 0.1fr 1fr 1fr 1fr 0.1fr;
             grid-column-gap: 30px;
             grid-template-areas:
-            "head head head"
-            "main main aside"
-            "foot foot foot";
-        }    
+            "line line line line line"
+            ". head head head ."
+            "separator separator separator separator separator"
+            ". main main aside ."
+            ". foot foot foot .";
+        }
         @media (min-width: @breakpoint-xl) {
             grid-column-gap: 30px;
         }
