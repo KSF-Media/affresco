@@ -4,11 +4,13 @@
     margin: 0 auto;
     min-height: 100%;
     max-width: 300px;
-    grid-template-rows: 150px 1fr 150px;
+    grid-template-rows: auto 150px auto 1fr 150px;
     grid-template-columns: 1fr;
     grid-row-gap: 15px;
     grid-template-areas:
+      "line"
       "head"
+      "separator"
       "main"
       "aside"
       "foot";
@@ -23,7 +25,9 @@
       // don't use repeat, causes error
       grid-template-columns: @content-block @content-block;
       grid-template-areas:
+        "line line"
         "head head"
+        "separator separator"
         "main aside"
         "foot foot";
     }
@@ -33,7 +37,9 @@
       // don't use repeat, causes error
       grid-template-columns: @content-block @content-block @content-block;
       grid-template-areas:
+        "line line line"
         "head head head"
+        "separator separator separator"
         "main main aside"
         "foot foot foot";
     }
