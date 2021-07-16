@@ -116,21 +116,29 @@ jobs:
       - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
-            set -v
-            cat apps/app-article-server/app.yaml
+            echo "ls -laF apps/app-article-server"
             ls -laF apps/app-article-server
+            echo "cat apps/app-article-server/app.yaml"
+            cat apps/app-article-server/app.yaml
+            echo "mv apps/app-article-server build/app-article-server"
             mv apps/app-article-server build/app-article-server
-            cat build/app-article-server/app.yaml
+            echo "ls -laF build/app-article-server"
             ls -laF build/app-article-server
+            ehco "cat build/app-article-server/app.yaml"
+            cat build/app-article-server/app.yaml
       - name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
-            set -v
-            cat apps/mosaico/app.yaml
+            echo "ls -laF apps/mosaico"
             ls -laF apps/mosaico
+            echo "cat apps/mosaico/app.yaml"
+            cat apps/mosaico/app.yaml
+            echo "mv apps/mosaico build/mosaico"
             mv apps/mosaico build/mosaico
-            cat build/mosaico/app.yaml
+            echo "ls -laF build/mosaico"
             ls -laF build/mosaico
+            ehco "cat build/mosaico/app.yaml"
+            cat build/mosaico/app.yaml
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
