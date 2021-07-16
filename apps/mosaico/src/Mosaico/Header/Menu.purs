@@ -52,16 +52,16 @@ render { props: { visible } } = DOM.div
         withSubsections = List.zipWith (List.zipWith ($)) withTitles subsections
         -- same structure as below, but the proper title is now assigned to each section function
         withTitles = List.zipWith (List.zipWith ($)) fixedRowsAndColumns sectionTitles
-        -- produces a list of lists, each list contains one row of section generating functions, eeach with row and column class arguments assigned:
+        -- produces a list of lists, each list contains one row of section-generating functions, each with row and column class arguments assigned:
         -- [[defaultSection "grid-row-1" "grid-column-2", defaultSection "grid-row-1" "grid-column-3", ... ], [defaultSection "grid-row-2" "grid-column-2", ... ], ... ]
         fixedRowsAndColumns = List.zipWith (<$>) fixedRows $ List.repeat gridColumns
-        -- Produces a list of section generating functions that have the row class argument assigned: [ defaultSection "grid-row-1", .. ]
-        fixedRows = List.zipWith ($) (List.fromFoldable [ defaultSection, defaultSection, greySection ]) gridRows
+        -- Produces a list of section-generating functions that have the row class argument assigned: [ defaultSection "grid-row-1", .. ]
+        fixedRows = List.zipWith ($) (List.fromFoldable [ defaultSection, defaultSection, defaultSection ]) gridRows
 
         -- CSS classes for grid rows positions
         gridRows = List.fromFoldable $ ((<>) "grid-row-" <<< show) <$> [ 1, 3, 5 ]
         -- CSS classes for grid columns positions
-        gridColumns = List.fromFoldable $ ((<>) "grid-col-" <<< show) <$> range 2 6
+        gridColumns = List.fromFoldable $ ((<>) "grid-col-" <<< show) <$> range 3 7
 
         separators = List.fromFoldable $ List.singleton <<< separator <$> separatorRows
 
@@ -71,7 +71,7 @@ render { props: { visible } } = DOM.div
 
         topSectionTitles = List.fromFoldable ["E-TIDNINGEN", "KUNDERSVICE", "ANNONSERA", "ANNAT VIKTIGT"]
         middleSectionTitles = List.fromFoldable ["STARTSIDAN", "OPINION", "KULTUR", "SPORT", "ANNAT"]
-        bottomSectionTitles = List.fromFoldable ["KONTAKT", "ANNONSERA", "KUNDSERVICE", "KUNDSERVICE"]
+        bottomSectionTitles = List.fromFoldable ["KONTAKT", "ANNONSERA", "KUNDSERVICE", "ANNAT"]
 
         subsections =  List.fromFoldable [ topSubsections, middleSubsections, bottomSubsections ]
 
@@ -94,7 +94,7 @@ render { props: { visible } } = DOM.div
     defaultSection :: String -> String -> String  -> Array String -> JSX
     defaultSection = section mempty
 
-    greySection :: String -> String -> String  -> Array String -> JSX
+    greySection :: String -> String -> String -> Array String -> JSX
     greySection = section [ graySectionClass ]
 
     section :: Array String -> String -> String -> String -> Array String -> JSX
@@ -112,7 +112,7 @@ render { props: { visible } } = DOM.div
       }
 
     separator :: String -> JSX
-    separator rowClass = DOM.hr { className: unwords [ separatorClass, rowClass, "grid-col-2", "grid-colspan-5"] }
+    separator rowClass = DOM.hr { className: unwords [ separatorClass, rowClass, "grid-col-2", "grid-colspan-7"] }
 
     unwords :: Array String -> String
     unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty

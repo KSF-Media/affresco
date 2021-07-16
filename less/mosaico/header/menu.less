@@ -29,7 +29,7 @@
         display: grid;
 
         grid-template-rows: auto auto auto auto auto auto auto auto;
-        grid-template-columns: 0.5fr 1fr 1fr 1fr 1fr 1fr 0.5fr;
+        grid-template-columns: 0.25fr 0.25fr 1fr 1fr 1fr 1fr 1fr 0.25fr 0.25fr;
 
         row-gap: 1rem;
     }
@@ -52,7 +52,9 @@
     }
 
     &__separator {
-        border-width: thin;
+        border: none;
+        height: 1px;
+        background-color: @grey-slightlylight;
         width: 100%;
     }
 
