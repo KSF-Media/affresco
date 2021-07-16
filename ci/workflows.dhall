@@ -149,7 +149,7 @@ let mkBuildServerStep =
               cp -R apps/${app.buildDir} build/${app.deployDir}
               echo "ls -laF build/${app.deployDir}"
               ls -laF build/${app.deployDir}
-              ehco "cat build/${app.deployDir}/app.yaml"
+              echo "cat build/${app.deployDir}/app.yaml"
               cat build/${app.deployDir}/app.yaml
             ''
         }
