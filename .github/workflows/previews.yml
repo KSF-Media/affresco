@@ -115,20 +115,20 @@ jobs:
             mv apps/hbl365/dist build/hbl365
       - name: Build Server App article server
         run: |2
-            set -v
             ruby deploy.rb app-article-server
-            mv apps/app-article-server build/app-article-server
+            set -v
             cat apps/app-article-server/app.yaml
             ls -laF apps/app-article-server
+            mv apps/app-article-server build/app-article-server
             cat build/app-article-server/app.yaml
             ls -laF build/app-article-server
       - name: Build Server Mosaico server
         run: |2
-            set -v
             ruby deploy.rb mosaico
-            mv apps/mosaico build/mosaico
+            set -v
             cat apps/mosaico/app.yaml
             ls -laF apps/mosaico
+            mv apps/mosaico build/mosaico
             cat build/mosaico/app.yaml
             ls -laF build/mosaico
       - name: Upload Scripts

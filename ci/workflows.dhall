@@ -139,11 +139,11 @@ let mkBuildServerStep =
         , env = app.env
         , run = Some
             ''
-              set -v
               ruby deploy.rb ${app.buildDir}
-              mv apps/${app.buildDir} build/${app.deployDir}
+              set -v
               cat apps/${app.buildDir}/app.yaml
               ls -laF apps/${app.buildDir}
+              mv apps/${app.buildDir} build/${app.deployDir}
               cat build/${app.deployDir}/app.yaml
               ls -laF build/${app.deployDir}
             ''
