@@ -7,7 +7,7 @@
   "scripts": {
     "start": "parcel index.html -p 8000",
     "build-user": "yarn --cwd '../../packages/user' build-npm",
-    "build": "yarn build-user && parcel build index.html --no-cache --public-url ./ && cp _redirects dist/"
+    "build": "yarn build-user && parcel build index.html --public-url ./ && cp _redirects dist/"
   },
   "dependencies": {
     "@ksf-media/user": "^0.1.2",

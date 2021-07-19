@@ -2,6 +2,12 @@ let Prelude = ./Prelude.dhall
 
 let Map = Prelude.Map.Type
 
+let default = Prelude.Text.default
+
+let not = Prelude.Bool.not
+
+let null = Prelude.Optional.null
+
 let Env = < Staging | Production >
 
 let App =
@@ -10,8 +16,11 @@ let App =
           , deployDir : Text
           , name : Text
           , env : Map Text Text
+          , lockfile : Optional Text
+          , caches : Optional Text
           }
-      , default.env = [] : Map Text Text
+      , default =
+        { env = [] : Map Text Text, lockfile = None Text, caches = None Text }
       }
 
 let AppServer =
@@ -20,12 +29,19 @@ let AppServer =
           , buildDir : Text
           , deployDir : Text
           , name : Text
-          , previewUrl : Text
           , runtime : Text
           , entrypoint : Text
           , env : Map Text Text
+          , previewUrl : Text
+          , lockfile : Optional Text
+          , caches : Optional Text
           }
-      , default = { env = [] : Map Text Text, previewUrl = "" : Text }
+      , default =
+        { env = [] : Map Text Text
+        , previewUrl = ""
+        , lockfile = None Text
+        , caches = None Text
+        }
       }
 
 let Step =
@@ -64,13 +80,48 @@ let setupSteps =
         , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
         }
       , Step::{
+        , name = Some "Setup global build cache"
+        , uses = Some "actions/cache@v2"
+        , `with` = toMap
+            { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
+            , path =
+                ''
+                  **/node_modules
+                  **/.yarn-cache
+                  **/.cache
+                  ~/.npm
+                  ~/.cache/spago
+                  apps/elections/dist
+                  !build
+                  !build/*
+                  !build/**
+                ''
+            }
+        }
+      , Step::{
         , run = Some
             ''
-              yarn install --pure-lockfile
+              yarn install --pure-lockfile --cache-folder=.yarn-cache
               mkdir -p build
             ''
         }
       ]
+
+let mkCacheAppStep =
+      \(app : App.Type) ->
+        let caches = default app.caches
+
+        let lockfile = default app.lockfile
+
+        in  Step::{
+            , name = Some "Setup build cache for ${app.name}"
+            , uses = Some "actions/cache@v2"
+            , `with` = toMap
+                { path = caches
+                , key =
+                    "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('apps/${app.buildDir}/${lockfile}')}}"
+                }
+            }
 
 let mkBuildStep =
       \(app : App.Type) ->
@@ -80,7 +131,7 @@ let mkBuildStep =
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
-              mv apps/${app.buildDir}/dist build/${app.deployDir}
+              cp -R apps/${app.buildDir}/dist build/${app.deployDir}
             ''
         }
 
@@ -92,7 +143,7 @@ let mkBuildServerStep =
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
-              mv apps/${app.buildDir} build/${app.deployDir}
+              cp -R apps/${app.buildDir} build/${app.deployDir}
             ''
         }
 
@@ -129,7 +180,7 @@ let mkAppEngineStep =
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = "true"
+            , promote = merge { Staging = "false", Production = "true" } env
             , project_id =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
@@ -271,6 +322,12 @@ let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 let buildServerSteps =
       Prelude.List.map AppServer.Type Step.Type mkBuildServerStep
 
+let cacheSteps = Prelude.List.map App.Type Step.Type mkCacheAppStep
+
+let hasLockfile
+    : App.Type -> Bool
+    = \(a : App.Type) -> not (null Text a.lockfile)
+
 in  { Step
     , Prelude
     , App
@@ -286,4 +343,6 @@ in  { Step
     , refreshCDNJob
     , generateDispatchYamlStep
     , deployDispatchYamlStep
+    , cacheSteps
+    , hasLockfile
     }
