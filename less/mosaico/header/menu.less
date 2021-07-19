@@ -6,18 +6,21 @@
     &__menu {
         display: none;
         z-index: 1;
-        border: 1px solid @grey-medium;
+        border: 1px solid @grey-slightlylight;
         border-radius: 1px;
         background-color: @white;
 
         &--visible {
             display: grid;
 
-            grid-template-rows: auto auto;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: repeat(2, auto);
+            grid-template-columns: repeat(3, 1fr);
 
             grid-row-start: 3;
             grid-column: 1 / span 3;
+
+            margin: -13px -30px;
+
         }
     }
 
@@ -29,8 +32,8 @@
     &__menu-content {
         display: grid;
 
-        grid-template-rows: auto auto auto auto auto auto auto auto;
-        grid-template-columns: 0.25fr 0.25fr 1fr 1fr 1fr 1fr 1fr 0.25fr 0.25fr;
+        grid-template-rows: repeat(8, auto);
+        grid-template-columns: 0.25fr 0.25fr repeat(5, 1fr) 0.25fr 0.25fr;
 
         row-gap: 1rem;
 
