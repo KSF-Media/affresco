@@ -17,7 +17,7 @@
   "scripts": {
     "start": "parcel src/index.html -p 8000",
     "build-user": "yarn --cwd '../../packages/user' build-npm",
-    "build": "yarn build-user && yarn clean && yarn install && parcel build src/index.html --no-cache --public-url ./ && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
+    "build": "yarn build-user && yarn install --cache-folder ../../.yarn-cache && parcel build src/index.html --public-url ./ && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
     "clean": "rm -rf .cache dist node_modules"
   },
   "devDependencies": {
