@@ -27,12 +27,27 @@ render :: Self -> JSX
 render { props: { visible } } = DOM.div
   { className: menuClass <>
       if visible then
-        " " <> menuModifierClass
+        " " <> visibleMenuClass
       else
         mempty
   , children: [ DOM.div
-                  { className: menuContentClass <> " grid-row-2 grid-colspan-3"
+                  { className: menuContentClass <> " grid-row-2 grid-col-2"
                   , children: sections
+                  }
+              , DOM.div
+                  { className: menuFooterClass <> " grid-row-3 grid-col-2"
+                  , children:
+                      [ DOM.div
+                          { className: footerCaptionClass <> " grid-row-1 grid-col-2 grid-colspan-2"
+                          , children: [ DOM.text "ANDRA KSF-TIDNINGAR" ]
+                          }
+                      , DOM.div
+                          { className: logoClass <> " " <> onLogoClass <> " grid-row-2 grid-col-2"
+                          }
+                      , DOM.div
+                          { className: logoClass <> " " <> vnLogoClass <> " grid-row-2 grid-col-3"
+                          }
+                      ]
                   }
               ]
   }
@@ -57,7 +72,7 @@ render { props: { visible } } = DOM.div
         -- CSS classes for grid rows positions
         gridRows = List.fromFoldable $ ((<>) "grid-row-" <<< show) <$> [ 1, 3, 5 ]
         -- CSS classes for grid columns positions
-        gridColumns = List.fromFoldable $ ((<>) "grid-col-" <<< show) <$> range 3 7
+        gridColumns = List.fromFoldable $ ((<>) "grid-col-" <<< show) <$> range 2 6
 
         separators = List.fromFoldable $ List.singleton <<< separator <$> separatorRows
 
@@ -108,7 +123,7 @@ render { props: { visible } } = DOM.div
       }
 
     separator :: String -> JSX
-    separator rowClass = DOM.hr { className: unwords [ separatorClass, rowClass, "grid-col-2", "grid-colspan-7"] }
+    separator rowClass = DOM.hr { className: unwords [ separatorClass, rowClass, "grid-col-1", "grid-colspan-7"] }
 
     unwords :: Array String -> String
     unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty
@@ -118,13 +133,16 @@ render { props: { visible } } = DOM.div
     menuElement = "__menu"
     visibleModifier = "--visible"
     menuClass = headerBlock <> menuElement
-    menuModifierClass = menuClass <> visibleModifier
+    visibleMenuClass = menuClass <> visibleModifier
 
     searchElement = "__search"
     searchClass = headerBlock <> searchElement
 
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement
+
+    menuFooterElement = "__menu-footer"
+    menuFooterClass = headerBlock <> menuFooterElement
 
     sectionElement = "__section"
     sectionClass = headerBlock <> sectionElement
@@ -139,3 +157,13 @@ render { props: { visible } } = DOM.div
 
     separatorElement = "__separator"
     separatorClass = headerBlock <> separatorElement
+
+    footerCaptionElement = "__footer-caption"
+    footerCaptionClass = headerBlock <> footerCaptionElement
+
+    logoElement =  "__footer-logo"
+    logoClass = headerBlock <> logoElement
+    onLogoModifier = "--on"
+    vnLogoModifier = "--vn"
+    onLogoClass = logoClass <> onLogoModifier
+    vnLogoClass = logoClass <> vnLogoModifier
