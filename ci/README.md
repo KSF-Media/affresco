@@ -35,6 +35,14 @@ The global environment variables (i.e. the ones shared by more than one app)
 should go in every workflow's `env` key, while the ones belonging to a single app
 should go in the `apps.dhall` file.
 
+## Build caching
+
+We globally cache all `node_modules`, `.yarn-cache` and `.cache` folders keyed to the hash of the global yarn.lock
+
+Individual build caches can be configured separately for each app in `apps.dhall` by adding a refenece to a "lockfile" and the paths that require caching.
+
+Individual build caching for AppEngine builds is still a WIP.
+
 ## Adding a new app
 
 1. Edit the [`apps.dhall`](./apps.dhall) file to add the new app details
