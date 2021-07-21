@@ -1,17 +1,16 @@
-module Prenumerera.ProductGroup where
+module Prenumerera.PackageSelect.PackageGroup where
 
 import Prelude
 
 import Data.Array.NonEmpty as NonEmpty
-import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Foldable (minimum)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Tuple (Tuple(..), fst, snd)
+import Data.Array.NonEmpty (NonEmptyArray, foldr1)
+import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..), fst)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import KSF.Api.Package (Package, PackageId)
 import KSF.Helpers as Helpers
+import Prenumerera.Package (Package, PackageId)
 import Prenumerera.PackageDescription (Description)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -19,8 +18,6 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, useState', (/\))
 import React.Basic.Hooks as React
-import Debug
-import Effect.Console (log)
 
 type WithDescription = Tuple Package Description
 
@@ -29,12 +26,12 @@ imgRoot = "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/products/"
 
 type Props =
   { packages :: NonEmptyArray WithDescription
-  , startPurchase :: Package -> Effect Unit
+  , startPurchase :: Package -> Description -> Effect Unit
   }
 
 component :: Component Props
 component = do
-  React.component "ProductGroup" \{ packages, startPurchase } -> React.do
+  React.component "PackageGroup" \{ packages, startPurchase } -> React.do
     activePackage /\ setActivePackage <- useState' $ _.id $ fst $ NonEmpty.head packages
     transitionPackage /\ setTransitionPackage <- useState' activePackage
     fade /\ setFade <- useState' false
@@ -47,8 +44,7 @@ component = do
               setFade false
               setActivePackage id
     let packageHeader = renderHeader packages transitionPackage startActivePackageFade
-    trace (packages) $ \_ ->
-      pure $ render packageHeader activePackage (NonEmpty.toArray packages) fade startPurchase
+    pure $ render packageHeader activePackage (NonEmpty.toArray packages) fade startPurchase
 
 renderHeader :: NonEmptyArray WithDescription -> PackageId -> (PackageId -> Effect Unit) -> JSX
 renderHeader packages activePackage setActivePackage =
@@ -87,7 +83,7 @@ renderHeader packages activePackage setActivePackage =
             ]
         }
 
-render :: JSX -> PackageId -> Array WithDescription -> Boolean -> (Package -> Effect Unit) -> JSX
+render :: JSX -> PackageId -> Array WithDescription -> Boolean -> (Package -> Description -> Effect Unit) -> JSX
 render packageHeader activePackage packages fade startPurchase =
   DOM.div
     { className: "ksf-package-group"
@@ -126,8 +122,8 @@ render packageHeader activePackage packages fade startPurchase =
                             [ DOM.div
                                 { className: "price-bubble"
                                 , children:
-                                    [ DOM.span_ [ DOM.text $ maybe "?" Helpers.formatEur $
-                                                    minimum $ map _.monthlyPrice $ package.offers ]
+                                    [ DOM.span_ [ DOM.text $ Helpers.formatEur $
+                                                    foldr1 min $ map _.monthlyPrice package.offers ]
                                     , DOM.br {}
                                     , DOM.text "euro/mån"
                                     ]
@@ -147,7 +143,7 @@ render packageHeader activePackage packages fade startPurchase =
                     DOM.a
                       { className: "btn btn-cta"
                       , children: [ DOM.text "Köp nu" ]
-                      , onClick: handler preventDefault $ \_ -> startPurchase package
+                      , onClick: handler preventDefault $ \_ -> startPurchase package description
                       , href: "#"
                       }
             , DOM.div

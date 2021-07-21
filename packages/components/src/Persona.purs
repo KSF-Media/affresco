@@ -485,7 +485,7 @@ type NewUser =
   , zipCode :: String
   , city :: String
   , country :: String
-  , phone :: String
+  , phone :: Nullable String
   , legalConsents :: Array LegalConsent
   }
 

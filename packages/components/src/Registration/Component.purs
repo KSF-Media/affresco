@@ -10,6 +10,7 @@ import Data.Foldable (traverse_)
 import Data.List.NonEmpty (all)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..))
+import Data.Nullable as Nullable
 import Data.Validation.Semigroup (toEither, validation)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -20,7 +21,7 @@ import Foreign.Object as Object
 import KSF.CountryDropDown (defaultCountryDropDown)
 import KSF.InputField as InputField
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateFinnishZipCode, validateZipCode)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, noValidation, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateFinnishZipCode, validateZipCode)
 import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.Classic (make)
@@ -39,6 +40,7 @@ type Props =
 type State =
   { serverErrors :: Array (ValidationError RegistrationInputField)
   , formData :: FormData
+  , usePhone :: Boolean
   }
 
 type FormData =
@@ -127,6 +129,7 @@ initialState =
       , confirmPassword:     Nothing
       }
   , serverErrors: []
+  , usePhone: true
   }
 
 inputField :: RegistrationInputField -> State -> ((State -> State) -> Effect Unit) -> JSX
@@ -394,7 +397,7 @@ mkNewUser f nowISO =
   <*> f.city
   <*> f.zipCode
   <*> f.country
-  <*> f.phone
+  <*> (pure $ Nullable.toNullable f.phone)
 
 formValidations :: State -> ValidatedForm RegistrationInputField FormData
 formValidations state@{ formData } =
@@ -415,7 +418,7 @@ formValidations state@{ formData } =
   <*> validateField City formData.city []
   <*> validateField Country formData.country []
   <*> validateField (Zip formData.country) formData.zipCode []
-  <*> validateField Phone formData.phone []
+  <*> (if state.usePhone then validateField Phone formData.phone [] else noValidation formData.phone)
   <*> validateField EmailAddress formData.emailAddress state.serverErrors
   <*> validateField Password formData.password state.serverErrors
   <*> validateField (ConfirmPassword formData.password) formData.confirmPassword []

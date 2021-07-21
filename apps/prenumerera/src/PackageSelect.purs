@@ -1,40 +1,32 @@
-module Prenumerera.ProductSelect where
+module Prenumerera.PackageSelect where
 
 import Prelude
 
-import Bottega as Bottega
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Map as Map
-import Data.Foldable (find, foldMap)
-import Data.Maybe
 import Data.String.Common (toLower)
-import Data.Tuple
+import Data.Tuple (Tuple(..), snd)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import KSF.Api.Package (Package)
 import KSF.Paper (Paper(..), paperName)
 import KSF.Paper as Paper
-import KSF.User (User)
+import Prenumerera.Package (Package)
 import Prenumerera.PackageDescription as PackageDescription
-import Prenumerera.PackageDescription (Description, packageDescriptions)
-import Prenumerera.ProductGroup as ProductGroup
+import Prenumerera.PackageDescription (Description)
+import Prenumerera.PackageSelect.PackageGroup as PackageGroup
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
-import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Debug
-import Effect.Console (log)
 
 type Props =
-  { user :: Maybe User
-  , packages :: Array Package
-  , startPurchase :: Package -> Effect Unit
+  { packages :: Array Package
+  , startPurchase :: Package -> Description -> Effect Unit
   , setBrand :: Paper -> Effect Unit
   }
 
@@ -58,11 +50,11 @@ packagesByPaper buildGroupElements =
 
 component :: Component Props
 component = do
-  productGroupComponent <- ProductGroup.component
+  packageGroupComponent <- PackageGroup.component
   let papers = [HBL, VN, ON, JUNIOR]
-  React.component "ProductSelect" $ \ { user, packages, startPurchase, setBrand } -> React.do
+  React.component "ProductSelect" $ \ { packages, startPurchase, setBrand } -> React.do
     let buildGroupElements =
-          map (\packages -> productGroupComponent { startPurchase, packages }) >>>
+          map (\pkgs -> packageGroupComponent { startPurchase, packages: pkgs }) >>>
           NonEmpty.toArray >>> React.fragment
         packagePapers :: Array (Tuple Paper JSX)
         packagePapers = packagesByPaper buildGroupElements packages
@@ -85,7 +77,6 @@ component = do
             liftEffect do
               setFade false
               setActivePaper paper
-              log $ "activePaper " <> Paper.toString paper
         selectPaper = renderSelectPaper transitionPaper papers fade setPaper
     pure $ render firstRender selectPaper fade activePaper packagePapers
 
@@ -117,7 +108,7 @@ renderSelectPaper selected papers fade setPaper =
         }
 
 render :: Boolean -> JSX -> Boolean -> Paper -> (Array (Tuple Paper JSX)) -> JSX
-render firstRender selectPaper fade activePaper productGroups =
+render firstRender selectPaper fade activePaper packageGroups =
   DOM.div
     { className: "container-fluid ksf-block-productmatrix"
     , children:
@@ -137,7 +128,7 @@ render firstRender selectPaper fade activePaper productGroups =
                         [ selectPaper
                         , DOM.div
                             { className: "tab-content ksf-products"
-                            , children: map renderProductGroup productGroups
+                            , children: map renderPackageGroup packageGroups
                             }
                         ]
                     }
@@ -146,7 +137,7 @@ render firstRender selectPaper fade activePaper productGroups =
         ]
     }
   where
-    renderProductGroup (Tuple paper content) =
+    renderPackageGroup (Tuple paper content) =
       DOM.div
         { className: "tab-pane fade"
           <> (if not firstRender && paper == activePaper then " active" else "")

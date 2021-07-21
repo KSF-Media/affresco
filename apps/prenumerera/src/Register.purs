@@ -3,23 +3,21 @@ module Prenumerera.Register where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Either (Either(..), hush)
+import Data.Either (Either(..))
 import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Nullable (toMaybe)
 import Data.Validation.Semigroup (toEither)
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import KSF.Api.Package (Package)
-import KSF.CountryDropDown (defaultCountryDropDown)
 import KSF.InputField as InputField
 import KSF.Registration.Component (RegistrationInputField(..))
 import KSF.Registration.Component as Registration
 import KSF.User (User)
 import KSF.User.Login as Login
-import KSF.ValidatableForm as VF
 import KSF.ValidatableForm (ValidatedForm, isNotInitialized)
+import Prenumerera.Package (Package)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -31,6 +29,10 @@ type Props =
   { user :: Maybe User
   , setUser :: Maybe User -> Effect Unit
   , package :: Package
+-- TODO: Why doesn't this work?
+--  , withSpinner :: forall a. Aff a -> Aff a
+  , withSpinnerUnit :: Aff Unit -> Aff Unit
+  , withSpinnerUser :: Aff User -> Aff User
   , next :: Effect Unit
   , cancel :: Effect Unit
   }
@@ -43,22 +45,7 @@ type RegisterData =
 initialRegisterData :: Maybe User -> RegisterData
 initialRegisterData Nothing =
   { existingUser: false
-  , form:
-      { formData:
-          { emailAddress: Nothing
-          , firstName: Nothing
-          , lastName: Nothing
-          , streetAddress: Nothing
-          , zipCode: Nothing
-          , city: Nothing
-          , country: Just "FI"
-            -- Always submitted as Nothing in Prenumerera
-          , phone: Nothing
-          , password: Nothing
-          , confirmPassword: Nothing
-          }
-      , serverErrors: []
-      }
+  , form: Registration.initialState { usePhone = false }
   }
 
 initialRegisterData (Just user) =
@@ -78,6 +65,7 @@ initialRegisterData (Just user) =
           , confirmPassword: Nothing
           }
       , serverErrors: []
+      , usePhone: false
       }
   }
   where
@@ -86,7 +74,7 @@ initialRegisterData (Just user) =
 component :: Component Props
 component = do
   login <- Login.login
-  React.component "Register" $ \ { user, setUser, package, next, cancel } -> React.do
+  React.component "Register" $ \ { user, setUser, package, withSpinnerUnit, withSpinnerUser, next, cancel } -> React.do
     let loginForm =
           login
             { onMerge: pure unit
@@ -94,26 +82,31 @@ component = do
             , onRegister: pure unit
             , onRegisterCancelled: pure unit
             , onUserFetch: userFetched
-            , onLogin: Aff.launchAff_
+            , onLogin: Aff.launchAff_ <<< withSpinnerUnit
             , disableSocialLogins: mempty
             }
-        userFetched (Right user) = setUser $ Just user
+        userFetched (Right u) = setUser $ Just u
         userFetched (Left _) = pure unit
     loginScreen /\ setLoginScreen <- useState' $ isNothing user
 --    loginData /\ setLoginData <- useState $ { email: Nothing, password: Nothing }
     registerData /\ setRegisterData <- useState $ initialRegisterData user
+    createError /\ setCreateError <- useState' false
     let onSubmit form = do
           if registerData.existingUser
             then next -- TODO update information
             else Registration.submitForm registerData.form (setFormState setRegisterData)
                  -- TODO errors
-                 (Aff.runAff_ (\user -> do
-                                  setUser $ hush user
-                                  next)) form
+                 (Aff.runAff_ userCreate <<< withSpinnerUser) form
+        userCreate (Right u) = do
+          setUser $ Just u
+          next
+        userCreate (Left _) = do
+          setCreateError true
     pure $ render package $
-      if loginScreen
-      then renderLogin loginForm $ setLoginScreen false -- renderLoginScreen login
-      else renderRegister registerData setRegisterData onSubmit cancel
+      if createError then renderError else
+        if loginScreen
+        then renderLogin loginForm $ setLoginScreen false
+        else renderRegister registerData setRegisterData onSubmit cancel
 
 render :: Package -> JSX -> JSX
 render package content =
@@ -137,6 +130,10 @@ render package content =
             }
         ]
     }
+
+renderError :: JSX
+renderError =
+  DOM.text "Något gick fel."
 
 renderLogin :: JSX -> Effect Unit -> JSX
 renderLogin content startRegister =
@@ -228,13 +225,7 @@ renderRegister reg@{ form } setState save cancel =
         { className: "row"
         , children: xs
         }
-{-
-    rowElement x =
-      DOM.div
-        { className: "element"
-        , children: [ x ]
-        }            
--}
+
     inputField :: RegistrationInputField -> JSX
     inputField EmailAddress = case reg.existingUser of
       false -> Registration.inputField EmailAddress form $ setFormState setState
@@ -264,6 +255,7 @@ renderRegister reg@{ form } setState save cancel =
                 [ DOM.text "eller "
                 , DOM.a { href: "/", children: [ DOM.text "avbryt" ] }
                 ]
+            , onClick: handler preventDefault $ const cancel
             }
         ]
     disclaimer =

@@ -4,22 +4,26 @@ import Prelude
 
 import Bottega as Bottega
 import Control.Alt ((<|>))
+import Data.Array (mapMaybe)
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Effect.Unsafe (unsafePerformEffect)
-import KSF.Api.Package (Package)
+import KSF.Api.Package as Api
 import KSF.Paper (Paper(..))
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
 import KSF.Navbar.Component (navbar)
+import Prenumerera.Package (fromApiPackage)
+import Prenumerera.PackageSelect as PackageSelect
 import Prenumerera.Register as Register
-import Prenumerera.ProductSelect as ProductSelect
 import Prenumerera.ProgressBar as ProgressBar
+import Prenumerera.SelectPeriod as SelectPeriod
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
@@ -32,10 +36,9 @@ import Simple.JSON (write)
 
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
-import Debug
 
 data PrenumereraPage
-  = ProductSelectPage
+  = PackageSelectPage
   | CreateAccountPage
   | SelectPeriodPage
   | EndPage String String
@@ -52,50 +55,54 @@ routes =
   (CreateAccountPage <$ (lit "" *> lit "login") <* end) <|>
   (SelectPeriodPage <$ (lit "" *> lit "godkänn") <* end) <|>
   (EndPage <$ (lit "" *> lit "nets" *> lit "return") <*> param "transactionId" <*> param "responseCode" <* end) <|>
-  (ProductSelectPage <$ root)
+  (PackageSelectPage <$ root)
 
 app :: Component {}
 app = do
   nav <- makeInterface
   locationState <- nav.locationState
-  let initialRoute = either (const $ ProductSelectPage) identity $ match routes locationState.path
+  let initialRoute = either (const $ PackageSelectPage) identity $ match routes locationState.path
       routeListener :: (PrenumereraPage -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
       routeListener setRoute _oldLoc location = do
         case match routes location.pathname of
           Right path -> setRoute path
           Left _ -> pure unit
 
-  productSelectComponent <- ProductSelect.component
+  packageSelectComponent <- PackageSelect.component
   registerComponent <- Register.component
   selectPeriodComponent <- SelectPeriod.component
 
   component "Prenumerera" \_ -> React.do
     user /\ setUser <- useState Nothing
+    loadingUser /\ setLoadingUser <- useState' true
     route /\ setRoute <- useState' initialRoute
---    loading /\ setLoading <- useState' false
+    loading /\ setLoading' <- useState' Nothing
     maybePackages /\ setPackages <- useState' Nothing
     brand /\ setBrand <- useState' HBL
     purchasePackage /\ setPurchasePackage <- useState' Nothing
-    let startPurchase package = do
+    let startPurchase package description = do
           nav.pushState (write {}) "/login"
           log $ "start purhcase " <> package.id
-          setPurchasePackage $ Just package
+          setPurchasePackage $ Just $ Tuple package description
         accountDone = do
           nav.pushState (write {}) "/godkänn"
           log $ "Account sorted out"
+        startPay _ _ = do
+          log "start purchase"
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit
           attemptMagicLogin =
-            User.magicLogin Nothing \userResponse ->
+            User.magicLogin Nothing \userResponse -> do
               case userResponse of
                 Right u -> do
 --                  Tracking.login (Just user.cusno) "magic login" "success"
                   setUser $ const $ Just u
                 _ -> pure unit
+              setLoadingUser false
       --Aff.runAff_ $ Spinner.withSpinner (setLoading <<< isJust) attemptMagicLogin
 --      Aff.runAff_ do
-          loadPackages :: Either Error (Array Package) -> Effect Unit
-          loadPackages (Right packages) = setPackages $ Just packages
+          loadPackages :: Either Error (Array Api.Package) -> Effect Unit
+          loadPackages (Right packages) = setPackages $ Just $ mapMaybe fromApiPackage packages
           loadPackages err = do
             log $ "error loading packages " <> show err
             pure unit -- TODO
@@ -114,38 +121,45 @@ app = do
       pure $ pure unit
 
     pure $ renderMain brand setUser user nav $
-      case route of
-        ProductSelectPage ->
-          case maybePackages of
-            Nothing -> Spinner.loadingSpinner
-            Just packages -> productSelectComponent { user, packages, startPurchase, setBrand }
-        CreateAccountPage ->
-          case purchasePackage of
-            Nothing -> DOM.text "no package!"
-            Just package ->
-              React.fragment
-                [ ProgressBar.render ProgressBar.Login
-                , registerComponent
-                    { user
-                    , setUser: setUser <<< const
-                    , package
-                    , next: accountDone
-                    , cancel: nav.pushState (write {}) "/"
-                    }
-                ]
-        SelectPeriod ->
-          case purchasePackage of
-            Nothing -> DOM.text "no package!"
-            Just package ->
-              React.fragment
-                [ ProgressBar.render ProgressBar.Accept
-                , selectPackcageComponent
-                    { user
-                    , package
-                    , cancel: nav.pushState (write {}) "/"
-                    }
-                ]
-        _ -> mempty
+      case loading of
+        Nothing -> 
+          case route of
+            PackageSelectPage ->
+              case maybePackages of
+                Nothing -> Spinner.loadingSpinner
+                Just packages -> packageSelectComponent { packages, startPurchase, setBrand }
+            CreateAccountPage ->
+              case purchasePackage of
+                Nothing -> DOM.text "no package!"
+                Just (Tuple package _) ->
+                  if loadingUser then Spinner.loadingSpinner else
+                    React.fragment
+                      [ ProgressBar.render ProgressBar.Login
+                      , registerComponent
+                          { user
+                          , setUser: setUser <<< const
+                          , package
+                          , withSpinnerUnit: Spinner.withSpinner setLoading'
+                          , withSpinnerUser: Spinner.withSpinner setLoading'
+                          , next: accountDone
+                          , cancel: nav.pushState (write {}) "/"
+                          }
+                      ]
+            SelectPeriodPage ->
+              case purchasePackage of
+                Nothing -> DOM.text "no package!"
+                Just (Tuple package description) ->
+                  React.fragment
+                    [ ProgressBar.render ProgressBar.Accept
+                    , selectPeriodComponent
+                        { package
+                        , description
+                        , next: startPay
+                        , cancel: nav.pushState (write {}) "/"
+                        }
+                    ]
+            _ -> mempty
+        Just Spinner.Loading -> Spinner.loadingSpinner
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
