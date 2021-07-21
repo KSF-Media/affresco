@@ -41,12 +41,8 @@ render { props: { visible } } = DOM.div
                           { className: footerCaptionClass <> " grid-row-1 grid-col-2 grid-colspan-2"
                           , children: [ DOM.text "ANDRA KSF-TIDNINGAR" ]
                           }
-                      , DOM.div
-                          { className: logoClass <> " " <> onLogoClass <> " grid-row-2 grid-col-2"
-                          }
-                      , DOM.div
-                          { className: logoClass <> " " <> vnLogoClass <> " grid-row-2 grid-col-3"
-                          }
+                      , logo "grid-row-2" "grid-col-2" vnLogoImageClass "Västra Nyland"
+                      , logo "grid-row-2" "grid-col-3" onLogoImageClass "Östnyland"
                       ]
                   }
               ]
@@ -125,6 +121,20 @@ render { props: { visible } } = DOM.div
     separator :: String -> JSX
     separator rowClass = DOM.hr { className: unwords [ separatorClass, rowClass, "grid-col-1", "grid-colspan-7"] }
 
+    logo :: String -> String -> String -> String -> JSX
+    logo rowClass colClass imageModifierClass caption = DOM.div
+      { className: unwords [ logoClass, rowClass, colClass ]
+      , children: 
+          [ DOM.div
+              { className: unwords [ logoImageClass, imageModifierClass, " grid-row-1" ]
+              }
+          , DOM.div
+              { className: unwords [ logoCaptionClass, " grid-row-2" ]
+              , children: [ DOM.text caption ]
+              }
+          ]
+      }
+
     unwords :: Array String -> String
     unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty
 
@@ -163,7 +173,13 @@ render { props: { visible } } = DOM.div
 
     logoElement =  "__footer-logo"
     logoClass = headerBlock <> logoElement
+
+    logoImageElement = "__footer-logo-image"
+    logoImageClass = headerBlock <> logoImageElement
     onLogoModifier = "--on"
     vnLogoModifier = "--vn"
-    onLogoClass = logoClass <> onLogoModifier
-    vnLogoClass = logoClass <> vnLogoModifier
+    onLogoImageClass = logoImageClass <> onLogoModifier
+    vnLogoImageClass = logoImageClass <> vnLogoModifier
+
+    logoCaptionElement = "__footer-logo-caption"
+    logoCaptionClass = headerBlock <> logoCaptionElement

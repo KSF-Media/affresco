@@ -16,6 +16,6 @@
   },
   "scripts": {
     "start": "spago run",
-    "build": "spago build && parcel build web/index.html -d dist/client --no-cache --public-url /assets"
+    "build": "parcel watch web/index.html -d dist/client --no-cache --public-url /assets"
   }
 }
