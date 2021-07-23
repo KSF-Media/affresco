@@ -9,7 +9,7 @@ import Data.Foldable (find)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Effect (Effect)
-import KSF.Helpers (formatEur)
+import KSF.Helpers (formatEur, paperInvoiceCents)
 import KSF.InputField.Checkbox as Checkbox
 import KSF.Paper as Paper
 import Prenumerera.Package (Package, PackageOffer)
@@ -202,7 +202,7 @@ render description remindElement paymentOfferElement acceptElement offer payment
                 , children:
                     [ DOM.strong_ [ DOM.text $ "Totalpris: " <>
                                     formatEur (offer.totalPrice +
-                                               if paymentMethod == CreditCard then 0 else 500) <>
+                                               if paymentMethod == CreditCard then 0 else paperInvoiceCents) <>
                                     " €"
                                   ]
                     ]

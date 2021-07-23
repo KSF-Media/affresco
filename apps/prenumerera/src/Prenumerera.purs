@@ -6,7 +6,7 @@ import Bottega as Bottega
 import Control.Alt ((<|>))
 import Data.Array (mapMaybe)
 import Data.Either (Either(..), either)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing, fromMaybe)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -21,6 +21,7 @@ import KSF.User as User
 import KSF.Navbar.Component (navbar)
 import Prenumerera.Package (fromApiPackage)
 import Prenumerera.PackageSelect as PackageSelect
+import Prenumerera.Payment as Payment
 import Prenumerera.Register as Register
 import Prenumerera.ProgressBar as ProgressBar
 import Prenumerera.SelectPeriod as SelectPeriod
@@ -30,7 +31,7 @@ import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import Routing (match)
-import Routing.Match (Match, lit, root, end, param)
+import Routing.Match (Match, lit, root, end)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 
@@ -41,7 +42,8 @@ data PrenumereraPage
   = PackageSelectPage
   | CreateAccountPage
   | SelectPeriodPage
-  | EndPage String String
+  | PaymentPage
+  | EndPage
 
 derive instance genericPrenumerera :: Generic PrenumereraPage _
 
@@ -54,7 +56,8 @@ routes :: Match PrenumereraPage
 routes =
   (CreateAccountPage <$ (lit "" *> lit "login") <* end) <|>
   (SelectPeriodPage <$ (lit "" *> lit "godkänn") <* end) <|>
-  (EndPage <$ (lit "" *> lit "nets" *> lit "return") <*> param "transactionId" <*> param "responseCode" <* end) <|>
+--  (EndPage <$ (lit "" *> lit "nets" *> lit "return") <*> param "transactionId" <*> param "responseCode" <* end) <|>
+  (EndPage <$ (lit "" *> lit "färdig") <* end) <|>
   (PackageSelectPage <$ root)
 
 app :: Component {}
@@ -71,6 +74,7 @@ app = do
   packageSelectComponent <- PackageSelect.component
   registerComponent <- Register.component
   selectPeriodComponent <- SelectPeriod.component
+  paymentComponent <- Payment.component
 
   component "Prenumerera" \_ -> React.do
     user /\ setUser <- useState Nothing
@@ -80,6 +84,7 @@ app = do
     maybePackages /\ setPackages <- useState' Nothing
     brand /\ setBrand <- useState' HBL
     purchasePackage /\ setPurchasePackage <- useState' Nothing
+    purchaseDetails /\ setPurchaseDetails <- useState' Nothing
     let startPurchase package description = do
           nav.pushState (write {}) "/login"
           log $ "start purhcase " <> package.id
@@ -87,8 +92,9 @@ app = do
         accountDone = do
           nav.pushState (write {}) "/godkänn"
           log $ "Account sorted out"
-        startPay _ _ = do
-          log "start purchase"
+        offerAndMethodSelected offer method = do
+          setPurchaseDetails $ Just { offer, method }
+          nav.pushState (write {}) "/bekräfta"
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit
           attemptMagicLogin =
@@ -111,12 +117,18 @@ app = do
 
       locations (routeListener setRoute) nav
 
+    -- Redirect to main page if we're in funny state
     useEffect route $ do
       case route of
         CreateAccountPage ->
-          case purchasePackage of
-            Nothing -> nav.pushState (write {}) "/"
-            _ -> pure unit
+          when (isNothing purchasePackage) $
+            nav.pushState (write {}) "/"
+        SelectPeriodPage ->
+          when (isNothing purchasePackage) $
+            nav.pushState (write {}) "/"
+        PaymentPage -> do
+          when (isNothing user || isNothing purchasePackage || isNothing purchaseDetails) $
+            nav.pushState (write {}) "/"
         _ -> pure unit
       pure $ pure unit
 
@@ -145,20 +157,33 @@ app = do
                           , cancel: nav.pushState (write {}) "/"
                           }
                       ]
-            SelectPeriodPage ->
-              case purchasePackage of
-                Nothing -> DOM.text "no package!"
-                Just (Tuple package description) ->
-                  React.fragment
-                    [ ProgressBar.render ProgressBar.Accept
-                    , selectPeriodComponent
-                        { package
-                        , description
-                        , next: startPay
-                        , cancel: nav.pushState (write {}) "/"
-                        }
-                    ]
-            _ -> mempty
+            SelectPeriodPage -> fromMaybe mempty do
+              Tuple package description <- purchasePackage
+              pure $ React.fragment
+                [ ProgressBar.render ProgressBar.Accept
+                , selectPeriodComponent
+                    { package
+                    , description
+                    , next: offerAndMethodSelected
+                    , cancel: nav.pushState (write {}) "/"
+                    }
+                ]
+            PaymentPage -> fromMaybe mempty do 
+              Tuple package description <- purchasePackage
+              { offer, method } <- purchaseDetails
+              u <- user
+              pure $ React.fragment
+                [ ProgressBar.render ProgressBar.Payment
+                , paymentComponent
+                    { user: u
+                    , package
+                    , description
+                    , offer
+                    , method
+                    , next: nav.pushState (write {}) "/färdig"
+                    }
+                ]
+            EndPage -> mempty -- TODO
         Just Spinner.Loading -> Spinner.loadingSpinner
 
 jsApp :: {} -> JSX

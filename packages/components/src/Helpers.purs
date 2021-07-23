@@ -82,3 +82,6 @@ formatEur amountCent =
   in case String.split (Pattern ".") eurString of
     [euros, cents] -> euros <> "," <> (String.take 2 $ cents <> "0")
     _              -> eurString
+
+paperInvoiceCents :: Int
+paperInvoiceCents = 500

@@ -5,7 +5,7 @@ import Prelude
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
-data Progress = Login | Accept | Payment | Confirm
+data Progress = Login | Accept | Payment | Success
 
 derive instance eqProgress :: Eq Progress
 derive instance ordProgress :: Ord Progress
@@ -32,7 +32,7 @@ stages =
     }
   , { num: "4"
     , desc: "Bekräftelse"
-    , stage: Confirm
+    , stage: Success
     }
   ]
 
@@ -59,7 +59,7 @@ render progress =
         { className: "col-xs-3" <>
             (case stage of
                 Login -> " first"
-                Confirm -> " last"
+                Success -> " last"
                 _ -> "") <>
             (if progress == stage then " active" else "")
         , children:

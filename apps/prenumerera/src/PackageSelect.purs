@@ -48,6 +48,8 @@ packagesByPaper buildGroupElements =
                     in Tuple brand groupElements)
 
 
+-- This should disable selecting packages that the user already has,
+-- since those will get rejected at payment stage.
 component :: Component Props
 component = do
   packageGroupComponent <- PackageGroup.component
