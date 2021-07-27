@@ -67,9 +67,9 @@ render { state: { menuVisible, menuComponent }, setState } =
             { className: block <> "__logo"
             }
         , DOM.div
-            { className: block <> "__account" <>
+            { className: accountClass <>
                 if menuVisible then
-                  " " <> block <> "__account" <> "--menu-visible"
+                  " " <> menuVisibleAccountClass
                 else
                   mempty
             , children: [ DOM.text "NAME"]
@@ -89,8 +89,14 @@ render { state: { menuVisible, menuComponent }, setState } =
                   " " <> block <> "__menu-button" <> "--menu-visible"
                 else
                   mempty
-            , children: [ DOM.text "MENU"
-                        , DOM.div { className: block <> "__menu-icon" } ]
+            , children: [ DOM.div_ [ DOM.text "MENU" ]
+                        , DOM.div 
+                            { className: menuIconClass <> 
+                                if menuVisible then
+                                  " " <> menuVisibleMenuIconClass
+                                else
+                                  mempty
+                            } ]
             , onClick: handler_ do
                 setState \s -> s { menuVisible = not menuVisible }
             }
@@ -107,10 +113,27 @@ render { state: { menuVisible, menuComponent }, setState } =
   where
     block = "mosaico-header"
 
+    menuVisibleModifier = "--menu-visible"
+
+    accountElement = "__account"
+    accountClass = block <> accountElement
+    menuVisibleAccountClass = accountClass <> menuVisibleModifier
+
+    menuButtonElement = "__menu-button"
+    menuButtonClass = block <> menuButtonElement
+    menuVisibleMenuButtonClass = menuButtonClass <> menuVisibleModifier
+
+    menuTextElement = "__menu-text"
+    menuTextClass = block <> menuTextElement
+
+    menuIconElement = "__menu-icon"
+    menuIconClass = block <> menuIconElement
+    menuVisibleMenuIconClass = menuIconClass <> menuVisibleModifier
+
     menuOverlayElement = "__menu-overlay"
     menuOverlayClass = block <> menuOverlayElement
-    visibleMenuOverlayModifier = "--visible"
-    visibleMenuOverlayClass = menuOverlayClass <> visibleMenuOverlayModifier
+    visibleModifier = "--visible"
+    visibleMenuOverlayClass = menuOverlayClass <> visibleModifier
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX
