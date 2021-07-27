@@ -32,7 +32,7 @@
         display: grid;
 
         grid-template-rows: repeat(6, auto);
-        grid-template-columns: 0.1fr repeat(5, 1fr) 0.1fr;
+        grid-template-columns: 0.39fr repeat(5, 1fr) 0.39fr;
 
         row-gap: 1rem;
 
@@ -68,12 +68,14 @@
 
         grid-template-rows: auto auto;
         grid-template-columns: repeat(4, 1fr);
-        row-gap: 30px;
+        row-gap: 8px;
         column-gap: 0px;
+
+        margin-bottom: 30px;
     }
 
     &__footer-caption {
-        font: 500 13px 'Roboto', sans-serif;
+        font: 600 13px 'Roboto', sans-serif;
         color: @grey-mediumlight;
 
         justify-self: center;
@@ -89,19 +91,19 @@
     &__footer-logo-image  {
         background-repeat: no-repeat;
         background-position: center;
-        background-size: 68px;
+        background-size: 55px;
 
         &--on {
-            background-image: url("../images/logo-hbl.svg");
+            background-image: url("../images/logo-on.svg");
         }
 
         &--vn {
-            background-image: url("../images/logo-hbl.svg");
+            background-image: url("../images/logo-vn.svg");
         }
     }
 
     &__footer-logo-caption {
-        font: 600 13px 'Roboto', sans-serif;
+        font: 400 13px 'Roboto', sans-serif;
         color: @grey-mediumlight;
 
         justify-self: center;
