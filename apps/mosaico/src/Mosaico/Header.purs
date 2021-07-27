@@ -94,10 +94,23 @@ render { state: { menuVisible, menuComponent }, setState } =
             , onClick: handler_ do
                 setState \s -> s { menuVisible = not menuVisible }
             }
+
+        , DOM.div 
+            { className: menuOverlayClass <>
+                           if menuVisible then
+                             " " <> visibleMenuOverlayClass
+                           else
+                             mempty
+            }
         ]
     }
   where
     block = "mosaico-header"
+
+    menuOverlayElement = "__menu-overlay"
+    menuOverlayClass = block <> menuOverlayElement
+    visibleMenuOverlayModifier = "--visible"
+    visibleMenuOverlayClass = menuOverlayClass <> visibleMenuOverlayModifier
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX

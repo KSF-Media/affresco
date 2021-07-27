@@ -5,10 +5,11 @@
 
     &__menu {
         display: none;
-        z-index: 1;
+        z-index: 2;
         border: 1px solid @grey-slightlylight;
         border-radius: 1px;
         background-color: @white;
+        transition: visibility 0s, opacity 0.5s linear;
 
         &--visible {
             display: grid;
@@ -36,7 +37,7 @@
 
         row-gap: 1rem;
 
-        margin-top: 50px
+        margin-top: 50px;
     }
 
     &__section {
@@ -85,7 +86,7 @@
     &__footer-logo {
         display: grid;
 
-        grid-template-rows: 68px auto;
+        grid-template-rows: 55px auto;
     }
 
     &__footer-logo-image  {
@@ -107,6 +108,23 @@
         color: @grey-mediumlight;
 
         justify-self: center;
+    }
+
+    &__menu-overlay {
+        display: none;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.94);
+        z-index: 1;
+
+        &--visible {
+            display: block;
+        }
     }
 
 }
