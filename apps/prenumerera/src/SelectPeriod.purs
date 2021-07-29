@@ -143,10 +143,10 @@ renderAccept accept setAccept =
 render :: Description -> JSX -> JSX -> JSX -> PackageOffer -> PaymentMethod -> Boolean -> Effect Unit -> JSX
 render description remindElement paymentOfferElement acceptElement offer paymentMethod acceptTerms submit =
   DOM.div
-    { className: "container row ksf-identify"
+    { className: "container ksf-identify"
     , children:
         [ DOM.div
-            { className: "ksf-auth-wrapper"
+            { className: "row ksf-auth-wrapper"
             , children:
                 [ DOM.div
                     { id: "ksf-accept-terms-form"
