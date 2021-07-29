@@ -45,7 +45,7 @@ initialState = { chosenCard: Nothing
                }
 
 render :: Self -> JSX
-render self@{ setState, state: { chosenCard, validationError }, props: { creditCards, onSubmit, onCancel } } =
+render { setState, state: { chosenCard, validationError }, props: { creditCards, onSubmit } } =
   DOM.div
     { className: "credit-card-choice--form-wrapper"
     , children: [ DOM.form

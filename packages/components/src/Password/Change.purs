@@ -107,7 +107,7 @@ updatePasswordForm update = do
                     , placeholder: "Önskat lösenord"
                     , value: password
                     , onChange: \newPw -> setForm _ { password = newPw }
-                    , label: Just "Önstkat lösenord"
+                    , label: Just "Önskat lösenord"
                     , validationError: inputFieldErrorMessage $ validateField Password password state.serverErrors
                     }
                 , InputField.inputField
@@ -163,5 +163,4 @@ updatePasswordForm update = do
 
         submit :: ValidatedForm PasswordChangeField PasswordReset -> Effect Unit
         submit =
-          validation (\errors -> Console.error "Could not update password.") submitPassword
-
+          validation (\_ -> Console.error "Could not update password.") submitPassword

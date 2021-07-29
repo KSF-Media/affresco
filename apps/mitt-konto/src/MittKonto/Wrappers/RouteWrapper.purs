@@ -47,7 +47,7 @@ routeWrapper wrappedComponent = do
       , onClose: pure unit
       }
 
-    render props@{ closeType, route, routeFrom } { closeable, closeAutomatically, titleText, onClose } renderedContent = DOM.div
+    render props@{ closeType, routeFrom } { closeable, closeAutomatically, titleText, onClose } renderedContent = DOM.div
          { className: "route-wrapper"
          , children:
              [ header
@@ -98,14 +98,14 @@ routeWrapper wrappedComponent = do
             }
 
 autoClose :: forall p. Props p -> AutoClose -> JSX
-autoClose props@{ route, routeFrom } Immediate = Router.redirect
+autoClose { route, routeFrom } Immediate = Router.redirect
   { to: { pathname: routeFrom
         , state: {}
         }
   , from: route
   , push: true
   }
-autoClose props@{ route, routeFrom } (Delayed delay) = Router.delayedRedirect
+autoClose { route, routeFrom } (Delayed delay) = Router.delayedRedirect
   { to: { pathname: routeFrom
         , state: {}
         }

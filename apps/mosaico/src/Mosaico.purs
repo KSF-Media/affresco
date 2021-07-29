@@ -76,7 +76,7 @@ app = do
       routeListener setState _oldLoc location = do
         case match routes location.pathname of
           Right path -> setState \s -> s { route = path }
-          Left err   -> pure unit
+          Left _     -> pure unit
 
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
@@ -107,7 +107,7 @@ app = do
             liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
           -- Set article to Nothing to prevent flickering of old article
           else liftEffect $ setState \s -> s { article = Nothing }
-        ArticlePage articleId -> pure unit
+        ArticlePage _articleId -> pure unit
       pure mempty
 
     pure $ render setState state nav
@@ -139,7 +139,7 @@ render setState state router =
                   a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
                   case a of
                     Right article -> pure article
-                    Left err -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
+                    Left _ -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
             in renderArticle state setState affArticle state.clickedArticle
           Frontpage -> articleList state setState router
     , DOM.footer

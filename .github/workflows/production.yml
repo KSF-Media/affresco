@@ -76,10 +76,6 @@ jobs:
         run: |2
             ruby deploy.rb corona-banner
             mv apps/corona-banner/dist build/corona-banner
-      - name: Build Mosaico SPA
-        run: |2
-            ruby deploy.rb mosaico
-            mv apps/mosaico/dist build/mosaico
       - name: Build HBL365
         run: |2
             ruby deploy.rb hbl365
@@ -88,59 +84,65 @@ jobs:
         run: |2
             ruby deploy.rb app-article-server
             mv apps/app-article-server build/app-article-server
+      - name: Build Server Mosaico server
+        run: |2
+            ruby deploy.rb mosaico
+            mv apps/mosaico build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/scripts
+          parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/mitt-konto
+          parent: 'false'
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/vetrina-test
+          parent: 'false'
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/elections-eu
+          parent: 'false'
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/elections
+          parent: 'false'
           path: build/elections
       - name: Upload App article
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/app-article
+          parent: 'false'
           path: build/app-article
       - name: Upload Corona banner
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/corona-banner
+          parent: 'false'
           path: build/corona-banner
-      - name: Upload Mosaico SPA
-        uses: "google-github-actions/upload-cloud-storage@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
-          path: build/mosaico
       - name: Upload HBL365
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends
+          destination: ksf-frontends/hbl365
+          parent: 'false'
           path: build/hbl365
       - id: deploy-app-article-server
         name: Deploy App article server
@@ -150,6 +152,25 @@ jobs:
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/app-article-server
+      - id: deploy-mosaico-server
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/mosaico
+      - name: Generate AppEngine domain map
+        run: |2
+            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+      - name: Deploy AppEngine domain map
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          deliverables: dispatch.yaml
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          working_directory: build
   refresh_cdn_app-article:
     needs: deploy
     runs-on: ubuntu-latest

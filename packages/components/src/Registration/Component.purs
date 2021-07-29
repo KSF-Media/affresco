@@ -308,7 +308,7 @@ confirm self =
 
 submitForm :: Self -> ValidatedForm RegistrationInputField FormData -> Effect Unit
 submitForm self@{ state: { formData } } = validation
-  (\errors   -> do
+  (\_   -> do
       -- Show validation errors to user (if not shown):
       -- As we don't show error messages when an input field is InvalidNotinitialized (when the value is Nothing),
       -- let's set all of the Nothing values to Just empty strings to vizualise errors to the user, when the submit button is clicked.

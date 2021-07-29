@@ -6,6 +6,7 @@ import Control.Alt ((<|>))
 import Control.Alternative (guard)
 import Data.Array (mapMaybe, drop, take)
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmpty
 import Data.Date (Date)
 import Data.Either (Either(..))
 import Data.Foldable (intercalate, length, foldMap, sum, sequence_)
@@ -15,6 +16,9 @@ import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
+import Data.String.Regex as Regex
+import Data.String.Regex.Flags (noFlags)
+import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.UUID (UUID, parseUUID)
 import Data.Validation.Semigroup (invalid, isValid, validation)
@@ -22,6 +26,8 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Foreign (unsafeToForeign)
+import JSURI (decodeURIComponent)
 import KSF.Api (Password(..))
 import KSF.Api.Search (FaroUser, JanrainUser, SearchResult)
 import KSF.Api.Subscription (Subscription, isSubscriptionExpired)
@@ -31,17 +37,22 @@ import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
+import KSF.LocalStorage as LocalStorage
 import KSF.Random (randomString)
 import KSF.User as User
 import KSF.User.Cusno (Cusno(..))
 import KSF.User.Cusno as Cusno
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, validateEmailAddress, validateField, validatePassword)
 import React.Basic (JSX)
-import React.Basic.Hooks (Component, component, useState, useState', (/\))
+import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events as Events
+import Web.HTML (window) as HTML
+import Web.HTML.Location (hash) as HTML
+import Web.HTML.History (replaceState, DocumentTitle(..), URL(..)) as HTML
+import Web.HTML.Window (history, location) as HTML
 
 type Props =
   { setActiveUser :: UUID -> Effect Unit
@@ -76,6 +87,9 @@ data PersonaUserEdit
 
 search :: Component Props
 search = do
+  window <- HTML.window
+  location <- HTML.location window
+  history <- HTML.history window
   component "Search" \ { setActiveUser, resetRedirect, now } -> React.do
     query /\ setQuery <- useState' Nothing
     results /\ setTaggedResults <- useState Nothing
@@ -83,14 +97,16 @@ search = do
     (accountData :: Maybe (Tuple Cusno (AsyncWrapper.Progress User.NewCusnoUser))) /\ setAccountData <-
       useState Nothing
     (personaUserEdit :: Maybe (Tuple UUID PersonaUserEdit)) /\ setPersonaUserEdit <- useState Nothing
-    let submitSearch = case query /\ (parseUUID =<< query) of
+    let submitSearch stored = case (stored <|> query) /\ (parseUUID =<< query) of
           Nothing /\ _ -> pure unit
           _ /\ Just uuid -> setActiveUser uuid
           Just q /\ _ -> do
+            when (isNothing stored) $
+              HTML.replaceState (unsafeToForeign {}) (HTML.DocumentTitle "Mitt Konto") (HTML.URL $ "#q=" <> q) history
             setSearchWrapper $ AsyncWrapper.Loading mempty
             resetRedirect
             Aff.launchAff_ do
-              queryResult <- User.searchUsers { query: q, faroLimit: 10 }
+              queryResult <- User.searchUsers (isJust stored) { query: q, faroLimit: 10 }
               case queryResult of
                 Right r -> liftEffect do
                   setResults $ const $ Just r
@@ -102,14 +118,14 @@ search = do
         loadSubs cusno = do
           setSearchWrapper $ AsyncWrapper.Loading mempty
           Aff.launchAff_ do
-            queryResult <- User.searchUsers { query: Cusno.toString cusno, faroLimit: 1 }
+            queryResult <- User.searchUsers false { query: Cusno.toString cusno, faroLimit: 1 }
             case queryResult of
               Right res -> liftEffect $ sequence_ $
                              map (\r -> setResults $ map (map (updateSubs cusno r))) $
                              Array.concatMap (_.faro) res
               Left _ -> pure unit
             liftEffect $ setSearchWrapper $ AsyncWrapper.Success Nothing
-        startCreateAccount usr@{ cusno, email } = do
+        startCreateAccount { cusno, email } = do
           pw <- randomString 10
           nowISO <- JSDate.toISOString =<< JSDate.now
           let legalConsent =
@@ -177,7 +193,7 @@ search = do
                 setError "Något gick fel."
               Right _ -> do
                 liftEffect $ setSearchWrapper $ AsyncWrapper.Loading mempty
-                queryResult <- User.searchUsers { query: Cusno.toString cusno, faroLimit: 1 }
+                queryResult <- User.searchUsers false { query: Cusno.toString cusno, faroLimit: 1 }
                 liftEffect $ case Array.take 1 <$> queryResult of
                   Right [r] -> do
                     setResults $ map $ map
@@ -254,9 +270,25 @@ search = do
           , personaUserForm
           , isEditingAccount
           }
+    useEffectOnce $ do
+      -- React optimizes away effects in component init on back
+      -- navigation, so this needs useEffectOnce.
+      hash <- HTML.hash location
+      let rg = decodeURIComponent <=< join <<< join <<< map (\x -> NonEmpty.index x 1) <<<
+               Regex.match (unsafeRegex "^#q=(.+)$" noFlags)
+          hashQuery = rg hash
+      storedQuery <- LocalStorage.getItem "storedQuery"
+      case hashQuery == storedQuery of
+        true -> do
+          setQuery hashQuery
+          liftEffect $ submitSearch hashQuery
+        false -> do
+          LocalStorage.removeItem "storedQuery"
+          LocalStorage.removeItem "storedResult"
+      pure (pure unit)
     pure $ React.fragment
       [ DOM.div { className: "search--container"
-                , children: [ searchQuery query setQuery submitSearch
+                , children: [ searchQuery query setQuery (submitSearch Nothing)
                             , searchResults actions searchWrapper results
                             ]
                 }
@@ -506,7 +538,7 @@ search = do
             leastEnd = case Tuple (toDate =<< toMaybe sub.dates.suspend) (toDate =<< toMaybe sub.dates.end) of
               Tuple (Just end1) (Just end2) -> Just $ min end1 end2
               Tuple end1 end2 -> end1 <|> end2
-        loadableSubs cusno =
+        loadableSubs _cusno =
            DOM.td { colSpan: 3
                   , children:
                       [ DOM.i
@@ -630,7 +662,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
 
     submit :: ValidatedForm NewUserFields User.NewCusnoUser -> Effect Unit
     submit =
-      validation (\errors -> Console.error "Could not create new cusno user.") submitNewAccount
+      validation (\_ -> Console.error "Could not create new cusno user.") submitNewAccount
 
 renderSetCusno
   :: (Cusno -> Effect Unit)
@@ -761,7 +793,7 @@ renderControlPassword resetPassword submitPassword cancel setState wrapperState 
 
     submit :: ValidatedForm NewUserFields EmailPassword -> Effect Unit
     submit =
-      validation (\errors -> Console.error "Could not set password.") submitPassword
+      validation (\_ -> Console.error "Could not set password.") submitPassword
 
 genericError :: Maybe String -> JSX
 genericError detail =

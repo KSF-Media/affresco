@@ -80,7 +80,7 @@ navbar = make component
   { initialState, render }
 
 render :: Self -> JSX
-render self@{ props, state } =
+render self =
   DOM.div
     { className: "nav--navbars"
     , children:
@@ -92,20 +92,20 @@ render self@{ props, state } =
 
 -- | Full width navbar
 fullNav :: Self -> JSX
-fullNav self@{ props, state } =
+fullNav self@{ props } =
   DOM.div
     { className: "nav--nav-container"
     , children:
         [ paperLogo props.paper
         , if not props.adminMode
-            then needHelp props.paper
+            then needHelp
             else customerService props.isPersonating props.activeUser
         , logoutButton self
         ]
     }
 
 logoutButton :: Self -> JSX
-logoutButton self@{ props: { logout, activeUser, logoutWrapper } } =
+logoutButton self@{ props: { activeUser, logoutWrapper } } =
   foldMap button activeUser
   where
     button _user =
@@ -124,7 +124,7 @@ logoutButton self@{ props: { logout, activeUser, logoutWrapper } } =
 
 -- | Narrow navbar with hamburger button
 hamburgerNav :: Self -> JSX
-hamburgerNav self@{ props, state } =
+hamburgerNav self@{ props } =
   DOM.div
     { className: "nav--hamburger-container"
     , children:
@@ -138,15 +138,15 @@ collapsedNav :: Self -> JSX
 collapsedNav self =
   Collapsed.collapsed
     { visibility: self.state.collapsedNavVisibility
-    , navItems: [ logoutButton self, needHelp self.props.paper ]
+    , navItems: [ logoutButton self, needHelp ]
     }
 
 paperLogo :: Paper -> JSX
 paperLogo paper =
   DOM.img { className: "nav--paper-logo", src: paperLogoUrl paper }
 
-needHelp :: Paper -> JSX
-needHelp paper =
+needHelp :: JSX
+needHelp =
   DOM.div
     { className: "nav--logout-limpet"
     , children:

@@ -128,7 +128,7 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } 
         setState \_ -> newState
         setWrapperState _ { closeable = false }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } oldCreditCard register
-    Right register@{ terminalUrl: Nothing } ->
+    Right { terminalUrl: Nothing } ->
       liftEffect do
         logger.log "No terminal url received" Sentry.Error
         onError self
@@ -149,7 +149,7 @@ startRegisterPoller self@{ setState, state } oldCreditCard creditCardRegister = 
   liftEffect $ setState _ { poller = newPoller }
 
 pollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-pollRegister self@{ setState, props: { cusno, logger }, state } oldCreditCard (Right register) = do
+pollRegister self@{ props: { cusno, logger } } oldCreditCard (Right register) = do
   case register.status.state of
     CreditCardRegisterStarted ->
       delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
@@ -190,17 +190,17 @@ pollRegister self@{ props: { logger } } _ (Left err) = liftEffect do
   onError self
 
 onCancel :: Self -> Effect Unit
-onCancel self@{ props: { setWrapperState } } = setWrapperState _ { closeAutomatically = Immediate }
+onCancel { props: { setWrapperState } } = setWrapperState _ { closeAutomatically = Immediate }
 
 onLoading :: Self -> Effect Unit
-onLoading self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
+onLoading { setState } = setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
 
 onSuccess :: Self -> Effect Unit
-onSuccess self@{ setState, props: { setWrapperState } } = do
+onSuccess { setState, props: { setWrapperState } } = do
   setState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Betalningsinformationen har uppdaterats. Du styrs strax tillbaka till kontosidan." }
   setWrapperState _ { closeable = true
                     , closeAutomatically = Delayed 5000.0
                     }
 
 onError :: Self -> Effect Unit
-onError self@{ setState } = setState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+onError { setState } = setState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }

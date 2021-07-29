@@ -14,9 +14,7 @@
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d8d6397abbc9978ddc3862b5e57274aa2ac48150",
     "purescript": "^0.14.0",
     "react": "^16.12.0",
-    "react-dom": "^16.12.0",
-    "uuid": "^3.4.0",
-    "uuid-validate": "^0.0.3"
+    "react-dom": "^16.12.0"
   },
   "files": [
     "build",

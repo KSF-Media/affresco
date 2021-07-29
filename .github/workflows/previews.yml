@@ -65,10 +65,6 @@ jobs:
         run: |2
             ruby deploy.rb corona-banner
             mv apps/corona-banner/dist build/corona-banner
-      - name: Build Mosaico SPA
-        run: |2
-            ruby deploy.rb mosaico
-            mv apps/mosaico/dist build/mosaico
       - name: Build HBL365
         run: |2
             ruby deploy.rb hbl365
@@ -77,59 +73,65 @@ jobs:
         run: |2
             ruby deploy.rb app-article-server
             mv apps/app-article-server build/app-article-server
+      - name: Build Server Mosaico server
+        run: |2
+            ruby deploy.rb mosaico
+            mv apps/mosaico build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/elections
       - name: Upload App article
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/app-article
       - name: Upload Corona banner
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/corona-banner
-      - name: Upload Mosaico SPA
-        uses: "google-github-actions/upload-cloud-storage@main"
-        with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
-          path: build/mosaico
       - name: Upload HBL365
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}"
+          parent: 'false'
           path: build/hbl365
       - id: deploy-app-article-server
         name: Deploy App article server
@@ -139,6 +141,25 @@ jobs:
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/app-article-server
+      - id: deploy-mosaico-server
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/mosaico
+      - name: Generate AppEngine domain map
+        run: |2
+            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
+      - name: Deploy AppEngine domain map
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          deliverables: dispatch.yaml
+          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          working_directory: build
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
@@ -153,9 +174,9 @@ jobs:
             - [Elections (Parliament)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections/index.html)
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
             - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
-            - [Mosaico SPA](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
             - [App article server](${{ steps.deploy-app-article-server.outputs.url }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
+            - [Mosaico server](${{ steps.deploy-mosaico-server.outputs.url }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews
 on:
   pull_request:

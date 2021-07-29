@@ -37,8 +37,8 @@ let additions =
 	    , "test-unit"
 	    , "typelevel-prelude"
 	  ]
-	, repo = "https://github.com/KSF-Media/purescript-payload.git"
-	, version = "31c1f71c4531282e34fc35bdbc0902ddf1d32733"
+	, repo = "https://github.com/hoodunit/purescript-payload.git"
+	, version = "f1f707490c5463029765c15a960d799c9972be56"
       }
       , simple-ajax =
 	{ repo = "https://github.com/dariooddenino/purescript-simple-ajax.git"

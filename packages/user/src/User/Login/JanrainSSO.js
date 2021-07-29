@@ -1,4 +1,4 @@
-exports.sso = window.JANRAIN ? window.JANRAIN.SSO : null;
+exports.sso = typeof window !== "undefined" && window.JANRAIN ? window.JANRAIN.SSO : null;
 
 exports.loadConfig = function () {
   var baseUrl = window.location.protocol + "//" + window.location.host;

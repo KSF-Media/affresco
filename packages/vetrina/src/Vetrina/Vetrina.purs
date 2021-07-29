@@ -380,14 +380,14 @@ render self = vetrinaContainer self $
     onRetry = self.setState _ { purchaseState = NewPurchase }
 
 vetrinaContainer :: Self -> JSX -> JSX
-vetrinaContainer self@{ state: { purchaseState } } child =
+vetrinaContainer { state: { purchaseState } } child =
   let errorClassString = "vetrina--purchase-error"
       errorClass       = case purchaseState of
                            PurchaseFailed SubscriptionExists  -> mempty
                            PurchaseFailed AuthenticationError -> mempty
                            PurchaseFailed InsufficientAccount -> mempty
                            PurchaseFailed _                   -> errorClassString
-                           otherwise                          -> mempty
+                           _                                  -> mempty
   in
     DOM.div
       { className:
@@ -472,12 +472,12 @@ mkPurchase self@{ state: { logger } } validForm affUser =
         _ -> pure unit
 
       let errState = { user: hush eitherUser } `merge` case err of
-            emailInUse@(EmailInUse email) -> self.state { accountStatus = ExistingAccount email
-                                                        , purchaseState = NewPurchase
-                                                        -- Let's keep the selected product even when
-                                                        -- asking for the password
-                                                        , productSelection = validForm.productSelection
-                                                        }
+            EmailInUse email -> self.state { accountStatus = ExistingAccount email
+                                           , purchaseState = NewPurchase
+                                           -- Let's keep the selected product even when
+                                           -- asking for the password
+                                           , productSelection = validForm.productSelection
+                                           }
             SubscriptionExists            -> self.state { purchaseState = PurchaseFailed SubscriptionExists }
             AuthenticationError           -> self.state { purchaseState = PurchaseFailed AuthenticationError }
             InsufficientAccount           ->
@@ -516,7 +516,7 @@ getUserEntitlements = do
     Left err -> Left (UnexpectedError $ show err)
 
 createNewAccount :: Self -> Maybe String -> Aff (Either OrderFailure User)
-createNewAccount self@{ state: { logger } } (Just emailString) = do
+createNewAccount _ (Just emailString) = do
   nowISO <- liftEffect $ JSDate.toISOString =<< JSDate.now
   let legalConsent =
         { consentId: "legal_acceptance_v1"
@@ -527,7 +527,7 @@ createNewAccount self@{ state: { logger } } (Just emailString) = do
   case newUser of
     Right user -> pure $ Right user
     Left User.RegistrationEmailInUse -> pure $ Left $ EmailInUse emailString
-    Left (User.InvalidFormFields errors) -> pure $ Left $ UnexpectedError "invalid form fields"
+    Left (User.InvalidFormFields _errors) -> pure $ Left $ UnexpectedError "invalid form fields"
     _ -> pure $ Left $ UnexpectedError "Could not create a new account"
 createNewAccount _ Nothing = pure $ Left $ UnexpectedError ""
 
@@ -550,7 +550,7 @@ loginToExistingAccount _ _ _ =
   pure $ Left $ FormFieldError [ EmailAddress, Password ]
 
 createOrder :: User -> Product -> Aff (Either OrderFailure Order)
-createOrder user product = do
+createOrder _ product = do
   -- TODO: fix period etc.
   let newOrder =
         { packageId: product.id
