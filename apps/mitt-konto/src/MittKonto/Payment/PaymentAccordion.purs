@@ -8,6 +8,7 @@ import Data.Formatter.Number as FormatterN
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
+import Foreign (unsafeToForeign)
 import KSF.Helpers (formatDateDots)
 import KSF.User (SubscriptionPayments)
 import MittKonto.Payment.Types (Props, stateString, typeString, formatEuro, percentFormatter)
@@ -15,20 +16,21 @@ import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
-import React.Basic.Router as Router
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler, handler_)
+import Routing.PushState (PushStateInterface)
 
 paymentAccordion :: Component Props
 paymentAccordion = do
-  component "PaymentAccordion" \ { usePayments, subscriptionPayments } -> React.do
+  component "PaymentAccordion" \ { usePayments, subscriptionPayments, router } -> React.do
     usePayments
     focus /\ setFocus <- useState' Nothing
     case subscriptionPayments of
       Nothing -> pure $ DOM.text "Något gick fel!"
-      Just payments -> pure $ render payments focus setFocus
+      Just payments -> pure $ render router payments focus setFocus
 
-render :: Array SubscriptionPayments -> Maybe Int -> (Maybe Int -> Effect Unit) -> JSX
-render payments focus setFocus =
+render :: PushStateInterface -> Array SubscriptionPayments -> Maybe Int -> (Maybe Int -> Effect Unit) -> JSX
+render router payments focus setFocus =
   DOM.div
     { className: "payment-accordion--payments"
     , children: if length payments <= 0 then renderEmpty
@@ -83,10 +85,10 @@ render payments focus setFocus =
       DOM.tr
         { className: "payment-accordion--item"
         , children:
-            map (_ $ \x -> Router.link
-                             { to: { pathname: "/fakturor/" <> show payment.invno, state: {} }
+            map (_ $ \x -> DOM.a
+                             { onClick: (handler preventDefault $ const $
+                                         router.pushState (unsafeToForeign {}) ("/fakturor/" <> show payment.invno))
                              , children: x
-                             , className: mempty
                              })
             [ \f -> DOM.td_ [ f [ DOM.text $ formatDateDots payment.date ] ]
             , \f -> DOM.td_ [ f [ DOM.text $ typeString payment.type ] ]

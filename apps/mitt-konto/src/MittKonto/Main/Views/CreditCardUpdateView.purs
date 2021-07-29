@@ -4,17 +4,14 @@ import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..))
-import Data.Array (index)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.String (Pattern(..), split)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import KSF.Api.Subscription (Subsno)
-import KSF.Api.Subscription (fromString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Choice (choice) as Choice
 import KSF.CreditCard.Register (register) as Register
@@ -29,14 +26,12 @@ import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState, useEffectOnce, (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
-import Web.HTML (window)
-import Web.HTML.Window (location)
-import Web.HTML.Location (pathname)
 
 type BaseProps =
   ( creditCards :: Array CreditCard
   , cusno       :: Cusno
   , logger      :: Sentry.Logger
+  , subsno      :: Subsno
   )
 
 type Props =
@@ -149,7 +144,7 @@ startRegisterPoller self@{ setState, state } oldCreditCard creditCardRegister = 
   liftEffect $ setState _ { poller = newPoller }
 
 pollRegister :: Self -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-pollRegister self@{ props: { cusno, logger } } oldCreditCard (Right register) = do
+pollRegister self@{ props: { cusno, subsno, logger } } oldCreditCard (Right register) = do
   case register.status.state of
     CreditCardRegisterStarted ->
       delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
@@ -175,12 +170,7 @@ pollRegister self@{ props: { cusno, logger } } oldCreditCard (Right register) = 
 
     track :: String -> Effect Unit
     track result = do
-      subsno <- subsnoFromPathname
       Tracking.updateCreditCard cusno subsno (Tracking.readBottegaCreditCard oldCreditCard) (unRegisterNumber register.number) result
-
-    subsnoFromPathname :: Effect (Maybe Subsno)
-    subsnoFromPathname = do
-      (Subsno.fromString <=< flip index 2 <<< split (Pattern "/")) <$> (pathname =<< location =<< window)
 
     unRegisterNumber :: CreditCardRegisterNumber -> String
     unRegisterNumber (CreditCardRegisterNumber number) = number

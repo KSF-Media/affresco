@@ -94,7 +94,7 @@ exports.updateCreditCard_ = function (cusno, subsno, oldCreditCard, registerNumb
   dataLayer.push({
     event: "updateCreditCard",
     cusno: cusno,
-    subsno: subsno === null ? "" : subsno,
+    subsno: subsno,
     oldCreditCard: oldCreditCard,
     registerNumber: registerNumber,
     result: result,

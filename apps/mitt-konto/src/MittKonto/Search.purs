@@ -1,14 +1,14 @@
-module KSF.Search where
+module MittKonto.Search where
 
 import Prelude
 
 import Control.Alt ((<|>))
 import Control.Alternative (guard)
+import Control.Monad.Except.Trans (runExceptT)
 import Data.Array (mapMaybe, drop, take)
 import Data.Array as Array
-import Data.Array.NonEmpty as NonEmpty
 import Data.Date (Date)
-import Data.Either (Either(..))
+import Data.Either (Either(..), hush)
 import Data.Foldable (intercalate, length, foldMap, sum, sequence_)
 import Data.Int as Int
 import Data.JSDate (toDate)
@@ -16,9 +16,6 @@ import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
-import Data.String.Regex as Regex
-import Data.String.Regex.Flags (noFlags)
-import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.UUID (UUID, parseUUID)
 import Data.Validation.Semigroup (invalid, isValid, validation)
@@ -26,8 +23,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Foreign (unsafeToForeign)
-import JSURI (decodeURIComponent)
+import Foreign (unsafeToForeign, readString)
 import KSF.Api (Password(..))
 import KSF.Api.Search (FaroUser, JanrainUser, SearchResult)
 import KSF.Api.Subscription (Subscription, isSubscriptionExpired)
@@ -49,14 +45,11 @@ import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events as Events
-import Web.HTML (window) as HTML
-import Web.HTML.Location (hash) as HTML
-import Web.HTML.History (replaceState, DocumentTitle(..), URL(..)) as HTML
-import Web.HTML.Window (history, location) as HTML
+import Routing.PushState (PushStateInterface)
 
 type Props =
   { setActiveUser :: UUID -> Effect Unit
-  , resetRedirect :: Effect Unit
+  , router        :: PushStateInterface
   , now           :: Date
   }
 
@@ -87,10 +80,7 @@ data PersonaUserEdit
 
 search :: Component Props
 search = do
-  window <- HTML.window
-  location <- HTML.location window
-  history <- HTML.history window
-  component "Search" \ { setActiveUser, resetRedirect, now } -> React.do
+  component "Search" \ { setActiveUser, router, now } -> React.do
     query /\ setQuery <- useState' Nothing
     results /\ setTaggedResults <- useState Nothing
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
@@ -102,9 +92,8 @@ search = do
           _ /\ Just uuid -> setActiveUser uuid
           Just q /\ _ -> do
             when (isNothing stored) $
-              HTML.replaceState (unsafeToForeign {}) (HTML.DocumentTitle "Mitt Konto") (HTML.URL $ "#q=" <> q) history
+              router.replaceState (unsafeToForeign q) $ "/sök#q"
             setSearchWrapper $ AsyncWrapper.Loading mempty
-            resetRedirect
             Aff.launchAff_ do
               queryResult <- User.searchUsers (isJust stored) { query: q, faroLimit: 10 }
               case queryResult of
@@ -273,15 +262,13 @@ search = do
     useEffectOnce $ do
       -- React optimizes away effects in component init on back
       -- navigation, so this needs useEffectOnce.
-      hash <- HTML.hash location
-      let rg = decodeURIComponent <=< join <<< join <<< map (\x -> NonEmpty.index x 1) <<<
-               Regex.match (unsafeRegex "^#q=(.+)$" noFlags)
-          hashQuery = rg hash
+      locationState <- router.locationState
+      routeQuery <- hush <$> runExceptT (readString locationState.state)
       storedQuery <- LocalStorage.getItem "storedQuery"
-      case hashQuery == storedQuery of
+      case routeQuery == storedQuery of
         true -> do
-          setQuery hashQuery
-          liftEffect $ submitSearch hashQuery
+          setQuery routeQuery
+          liftEffect $ submitSearch routeQuery
         false -> do
           LocalStorage.removeItem "storedQuery"
           LocalStorage.removeItem "storedResult"

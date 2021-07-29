@@ -8,6 +8,7 @@ import KSF.User as User
 import KSF.User (User)
 import React.Basic (JSX)
 import React.Basic.Classic as React
+import Routing.PushState (PushStateInterface)
 
 type Self = React.Self Props State
 
@@ -16,6 +17,7 @@ type Props =
   , user :: User
   , logger :: Sentry.Logger
   , now :: Date
+  , router :: PushStateInterface
   }
 
 type State =

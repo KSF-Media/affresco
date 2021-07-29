@@ -3,12 +3,14 @@ module MittKonto.Main.UserView.IconAction where
 import Prelude
 
 import Effect (Effect)
+import Foreign (unsafeToForeign)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
-import React.Basic.Router as Router
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler, handler_)
+import Routing.PushState (PushStateInterface)
 
 type Self = React.Self Props {}
 
@@ -21,6 +23,7 @@ type Props =
   { iconClassName :: String
   , description :: String
   , onClick :: OnClick
+  , router :: PushStateInterface
   }
 
 iconAction :: Props -> JSX
@@ -60,8 +63,7 @@ render self =
         }
 
     routerLink pathname =
-      Router.link
-        { to: { pathname, state: {} }
+      DOM.div
+        { onClick: handler preventDefault $ const $ self.props.router.pushState (unsafeToForeign {}) pathname
         , children: [ accountActionContainer ]
-        , className: mempty
         }
