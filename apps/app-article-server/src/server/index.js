@@ -42,14 +42,15 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
       return httpStatus < 400 || httpStatus === 403;
     },
   });
-  const userReq = _.get(authHeaders, "authuser")
-    ? axios.get(process.env.PERSONA_URL + "/users/" + authHeaders.authuser)
-    : null;
   const paper = queryParams.paper || "hbl";
   const darkModeEnabled = queryParams.mode === "dark";
   const mostReadReq = axios.get(process.env.LETTERA_URL + "/mostread?paper=" + paper);
 
-  const requests = [articleReq, mostReadReq, userReq].filter((r) => r !== null);
+  const requests = [articleReq, mostReadReq];
+  // If we have a user id in the headers, let's fetch the user too
+  if (_.get(authHeaders, "authuser")) {
+    requests.push(axios.get(process.env.PERSONA_URL + "/users/" + authHeaders.authuser));
+  }
 
   axios
     .all(requests)
