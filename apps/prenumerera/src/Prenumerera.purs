@@ -13,12 +13,14 @@ import Effect.Aff as Aff
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Effect.Unsafe (unsafePerformEffect)
+import Foreign (unsafeToForeign)
 import KSF.Api.Package as Api
 import KSF.Paper (Paper(..))
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
 import KSF.Navbar.Component (navbar)
+import Prenumerera.Finish as Finish
 import Prenumerera.Package (fromApiPackage)
 import Prenumerera.PackageSelect as PackageSelect
 import Prenumerera.Payment as Payment
@@ -33,7 +35,6 @@ import React.Basic.Hooks as React
 import Routing (match)
 import Routing.Match (Match, lit, root, end)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Simple.JSON (write)
 
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
@@ -56,8 +57,8 @@ routes :: Match PrenumereraPage
 routes =
   (CreateAccountPage <$ (lit "" *> lit "login") <* end) <|>
   (SelectPeriodPage <$ (lit "" *> lit "godkänn") <* end) <|>
---  (EndPage <$ (lit "" *> lit "nets" *> lit "return") <*> param "transactionId" <*> param "responseCode" <* end) <|>
-  (EndPage <$ (lit "" *> lit "färdig") <* end) <|>
+  (PaymentPage <$ (lit "" *> lit "betala") <* end) <|>
+  (EndPage <$ (lit "" *> lit "bekräftelse") <* end) <|>
   (PackageSelectPage <$ root)
 
 app :: Component {}
@@ -75,6 +76,7 @@ app = do
   registerComponent <- Register.component
   selectPeriodComponent <- SelectPeriod.component
   paymentComponent <- Payment.component
+  finishComponent <- Finish.component
 
   component "Prenumerera" \_ -> React.do
     user /\ setUser <- useState Nothing
@@ -86,15 +88,15 @@ app = do
     purchasePackage /\ setPurchasePackage <- useState' Nothing
     purchaseDetails /\ setPurchaseDetails <- useState' Nothing
     let startPurchase package description = do
-          nav.pushState (write {}) "/login"
+          nav.pushState (unsafeToForeign {}) "/login"
           log $ "start purhcase " <> package.id
           setPurchasePackage $ Just $ Tuple package description
         accountDone = do
-          nav.pushState (write {}) "/godkänn"
+          nav.pushState (unsafeToForeign {}) "/godkänn"
           log $ "Account sorted out"
         offerAndMethodSelected offer method = do
           setPurchaseDetails $ Just { offer, method }
-          nav.pushState (write {}) "/bekräfta"
+          nav.pushState (unsafeToForeign {}) "/betala"
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit
           attemptMagicLogin =
@@ -105,8 +107,6 @@ app = do
                   setUser $ const $ Just u
                 _ -> pure unit
               setLoadingUser false
-      --Aff.runAff_ $ Spinner.withSpinner (setLoading <<< isJust) attemptMagicLogin
---      Aff.runAff_ do
           loadPackages :: Either Error (Array Api.Package) -> Effect Unit
           loadPackages (Right packages) = setPackages $ Just $ mapMaybe fromApiPackage packages
           loadPackages err = do
@@ -122,13 +122,13 @@ app = do
       case route of
         CreateAccountPage ->
           when (isNothing purchasePackage) $
-            nav.pushState (write {}) "/"
+            nav.pushState (unsafeToForeign {}) "/"
         SelectPeriodPage ->
           when (isNothing purchasePackage) $
-            nav.pushState (write {}) "/"
+            nav.pushState (unsafeToForeign {}) "/"
         PaymentPage -> do
           when (isNothing user || isNothing purchasePackage || isNothing purchaseDetails) $
-            nav.pushState (write {}) "/"
+            nav.pushState (unsafeToForeign {}) "/"
         _ -> pure unit
       pure $ pure unit
 
@@ -154,7 +154,7 @@ app = do
                           , withSpinnerUnit: Spinner.withSpinner setLoading'
                           , withSpinnerUser: Spinner.withSpinner setLoading'
                           , next: accountDone
-                          , cancel: nav.pushState (write {}) "/"
+                          , cancel: nav.pushState (unsafeToForeign {}) "/"
                           }
                       ]
             SelectPeriodPage -> fromMaybe mempty do
@@ -165,7 +165,7 @@ app = do
                     { package
                     , description
                     , next: offerAndMethodSelected
-                    , cancel: nav.pushState (write {}) "/"
+                    , cancel: nav.pushState (unsafeToForeign {}) "/"
                     }
                 ]
             PaymentPage -> fromMaybe mempty do 
@@ -180,10 +180,22 @@ app = do
                     , description
                     , offer
                     , method
-                    , next: nav.pushState (write {}) "/färdig"
+                    , next: nav.pushState (unsafeToForeign {}) "/bekräftelse"
                     }
                 ]
-            EndPage -> mempty -- TODO
+            EndPage -> fromMaybe mempty do
+              Tuple _ description <- purchasePackage
+              { offer, method } <- purchaseDetails
+              u <- user
+              pure $ React.fragment
+                [ ProgressBar.render ProgressBar.Success
+                , finishComponent
+                    { user: u
+                    , description
+                    , offer
+                    , method
+                    }
+                ]
         Just Spinner.Loading -> Spinner.loadingSpinner
 
 jsApp :: {} -> JSX
@@ -200,7 +212,7 @@ renderMain brand setUser user router content =
                  \x -> DOM.a
                        { children: [ x ]
                        , onClick: handler_ do
-                            router.pushState (write {}) "/"
+                            router.pushState (unsafeToForeign {}) "/"
                        }
              , logout: setUser $ const Nothing
              }
