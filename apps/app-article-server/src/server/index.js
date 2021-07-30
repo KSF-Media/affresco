@@ -1,16 +1,18 @@
-var express = require("express");
-var React = require("react");
-var ReactDOM = require("react-dom/server");
-var app = express();
-var axios = require("axios");
+const express = require("express");
+const React = require("react");
+const ReactDOM = require("react-dom/server");
+const app = express();
 const port = 8080;
-require("dotenv").config();
-import generateHtml from "./generateHtml";
-import Article from "../browser/components/article";
-import ErrorPage from "../browser/components/error";
+const axios = require("axios");
 const _ = require("lodash");
 const https = require("https");
 const UUID = require("uuid");
+
+import generateHtml from "./generateHtml";
+import Article from "../browser/components/article";
+import ErrorPage from "../browser/components/error";
+
+require("dotenv").config();
 
 app.use("/dist", express.static(`${__dirname}/../client`));
 
