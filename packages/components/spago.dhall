@@ -14,7 +14,6 @@
     , "psci-support"
     , "prelude"
     , "js-date"
-    , "js-uri"
     , "foreign-generic"
     , "ordered-collections"
     , "simple-json"
