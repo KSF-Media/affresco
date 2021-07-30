@@ -48,8 +48,12 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 
   const requests = [articleReq, mostReadReq];
   // If we have a user id in the headers, let's fetch the user too
-  if (_.get(authHeaders, "authuser")) {
-    requests.push(axios.get(process.env.PERSONA_URL + "/users/" + authHeaders.authuser));
+  if (_.has(authHeaders, "authuser") && _.has(authHeaders, "authorization")) {
+    requests.push(
+      axios.get(process.env.PERSONA_URL + "/users/" + authHeaders.authuser, {
+	headers: { authorization: authHeaders.authorization },
+      })
+    );
   }
 
   axios
@@ -111,7 +115,11 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     .catch((errors) => {
       const markup = ReactDOM.renderToString(<ErrorPage message={"Artikeln kunde inte hämtas!"} />);
       const html = generateHtml(markup);
-      console.warn("Failed to fetch article! Error message: " + errors.data);
+      console.warn("Failed to fetch article!", {
+	url: _.get(errors, "response.config.url"),
+	status: _.get(errors, "response.status"),
+	message: _.get(errors, "response.data"),
+      });
       res.send(html);
     });
 }
