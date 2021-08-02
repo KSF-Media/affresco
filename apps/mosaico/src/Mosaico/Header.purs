@@ -84,9 +84,20 @@ render { state: { menuVisible, menuComponent }, setState } =
                 ]
             }
         , DOM.div
-            { className: block <> "__menu-button" <>
+            { className: iconButtonClass <> searchButtonClass <>
                 if menuVisible then
-                  " " <> block <> "__menu-button" <> "--menu-visible"
+                  " " <> menuVisibleSearchButtonClass
+                else
+                  mempty
+            , children: [ DOM.div { className: searchIconClass } 
+                        , DOM.div_ [ DOM.text "SÖK" ]]
+            , onClick: handler_ do
+                setState \s -> s { menuVisible = not menuVisible }
+            }
+        , DOM.div
+            { className: menuButtonClass <>
+                if menuVisible then
+                  " " <> menuVisibleMenuButtonClass
                 else
                   mempty
             , children: [ DOM.div_ [ DOM.text "MENU" ]
@@ -118,6 +129,18 @@ render { state: { menuVisible, menuComponent }, setState } =
     accountElement = "__account"
     accountClass = block <> accountElement
     menuVisibleAccountClass = accountClass <> menuVisibleModifier
+
+    searchModifier = "--search"
+    menuModifier = "--menu"
+
+    iconButtonElement = "__icon-button"
+    iconButtonClass = block <> iconButtonElement
+    searchButtonClass = iconButtonClass <> searchModifier
+    menuVisibleSearchButtonClass = iconButtonClass <> searchModifier
+
+    iconElement = "__icon"
+    iconClass = block <> iconElement
+    searchIconClass = searchIconClass <> menuVisibleModifier
 
     menuButtonElement = "__menu-button"
     menuButtonClass = block <> menuButtonElement
