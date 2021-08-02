@@ -93,10 +93,6 @@
       grid-row-start: 3;
       align-self: stretch;
     }
-
-    &--menu-visible {
-      z-index: 2;
-    }
   }
 
   &__center-links {
@@ -107,12 +103,21 @@
     justify-content: center;
   }
 
+  &__right-buttons {
+    grid-row-start: 3;
+    grid-column-start: 3;
+
+    display: flex;
+
+    justify-content: flex-end;
+    gap: 6%
+  }
+
   &__icon-button {
     display: grid;
 
     grid-template-columns: auto 15px;
 
-    justify-self: end;
     gap: 10%;
 
     @media screen and (max-width:@max-mobile-width) {
@@ -123,6 +128,10 @@
 
     &--menu-visible {
         z-index: 2;
+    }
+
+    &--search {
+        justify-self: center;
     }
 
   }

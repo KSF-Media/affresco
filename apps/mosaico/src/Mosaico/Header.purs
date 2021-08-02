@@ -72,47 +72,48 @@ render { state: { menuVisible, menuComponent }, setState } =
                   " " <> menuVisibleAccountClass
                 else
                   mempty
-            , children: [ DOM.text "NAME"]
+            , children: [ DOM.text "NAME" ]
             }
         , DOM.nav
             { className: block <> "__center-links"
             , children:
-                [ DOM.a_ [ DOM.text "OPINION" ]
-                , DOM.a_ [ DOM.text "KULTUR" ]
-                , DOM.a_ [ DOM.text "SPORT" ]
-                , DOM.a_ [ DOM.text "ANNAT" ]
-                ]
-            }
-        , DOM.div
-            { className: iconButtonClass <> searchButtonClass <>
                 if menuVisible then
-                  " " <> menuVisibleSearchButtonClass
+                  [ searchButton ]
                 else
-                  mempty
-            , children: [ DOM.div { className: searchIconClass } 
-                        , DOM.div_ [ DOM.text "SÖK" ]]
-            , onClick: handler_ do
-                setState \s -> s { menuVisible = not menuVisible }
-            }
-        , DOM.div
-            { className: menuButtonClass <>
-                if menuVisible then
-                  " " <> menuVisibleMenuButtonClass
-                else
-                  mempty
-            , children: [ DOM.div_ [ DOM.text "MENU" ]
-                        , DOM.div 
-                            { className: menuIconClass <> 
-                                if menuVisible then
-                                  " " <> menuVisibleMenuIconClass
-                                else
-                                  mempty
-                            } ]
-            , onClick: handler_ do
-                setState \s -> s { menuVisible = not menuVisible }
+                  [ DOM.a_ [ DOM.text "OPINION" ]
+                  , DOM.a_ [ DOM.text "KULTUR" ]
+                  , DOM.a_ [ DOM.text "SPORT" ]
+                  , DOM.a_ [ DOM.text "ANNAT" ]
+                  ]
             }
 
-        , DOM.div 
+        , DOM.div
+            { className: block <> "__right-buttons"
+            , children:
+                (if menuVisible then
+                   mempty
+                 else
+                   [ searchButton ])
+                <> [ DOM.div
+                       { className: iconButtonClass <> " " <> menuButtonClass <>
+                           if menuVisible then
+                           " " <> menuVisibleIconButtonClass
+                           else
+                           mempty
+                       , children: [ DOM.div_ [ DOM.text "MENU" ]
+                                   , DOM.div
+                                       { className: iconClass <> " " <> menuIconClass <>
+                                           if menuVisible then
+                                           " " <> menuVisibleIconClass
+                                           else
+                                           mempty
+                                       } ]
+                       , onClick: handler_ do
+                           setState \s -> s { menuVisible = not menuVisible }
+                       }
+                   ]
+            }
+        , DOM.div
             { className: menuOverlayClass <>
                            if menuVisible then
                              " " <> visibleMenuOverlayClass
@@ -122,6 +123,20 @@ render { state: { menuVisible, menuComponent }, setState } =
         ]
     }
   where
+
+    searchButton :: JSX
+    searchButton = DOM.div
+                    { className: iconButtonClass <> " " <> searchButtonClass <>
+                                " grid-row-3 grid-col-2" <>
+                        if menuVisible then
+                          " " <> menuVisibleIconButtonClass
+                        else
+                          mempty
+                    , children: [ DOM.div_ [ DOM.text "SÖK" ]
+                                , DOM.div { className: iconClass <> " " <> searchIconClass }
+                                ]
+                    }
+
     block = "mosaico-header"
 
     menuVisibleModifier = "--menu-visible"
@@ -136,22 +151,14 @@ render { state: { menuVisible, menuComponent }, setState } =
     iconButtonElement = "__icon-button"
     iconButtonClass = block <> iconButtonElement
     searchButtonClass = iconButtonClass <> searchModifier
-    menuVisibleSearchButtonClass = iconButtonClass <> searchModifier
+    menuButtonClass = iconButtonClass <> menuModifier
+    menuVisibleIconButtonClass = iconButtonClass <> menuVisibleModifier
 
     iconElement = "__icon"
     iconClass = block <> iconElement
-    searchIconClass = searchIconClass <> menuVisibleModifier
-
-    menuButtonElement = "__menu-button"
-    menuButtonClass = block <> menuButtonElement
-    menuVisibleMenuButtonClass = menuButtonClass <> menuVisibleModifier
-
-    menuTextElement = "__menu-text"
-    menuTextClass = block <> menuTextElement
-
-    menuIconElement = "__menu-icon"
-    menuIconClass = block <> menuIconElement
-    menuVisibleMenuIconClass = menuIconClass <> menuVisibleModifier
+    searchIconClass = iconClass <> searchModifier
+    menuIconClass = iconClass <> menuModifier
+    menuVisibleIconClass = iconClass <> menuVisibleModifier
 
     menuOverlayElement = "__menu-overlay"
     menuOverlayClass = block <> menuOverlayElement
