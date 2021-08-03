@@ -20,7 +20,6 @@
   , "react-basic"
   , "react-basic-classic"
   , "react-basic-dom"
-  , "react-basic-router"
   , "simple-json"
   , "test-unit"
   , "toppokki"

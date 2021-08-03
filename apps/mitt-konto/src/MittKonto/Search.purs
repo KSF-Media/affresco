@@ -1,13 +1,14 @@
-module KSF.Search where
+module MittKonto.Search where
 
 import Prelude
 
 import Control.Alt ((<|>))
 import Control.Alternative (guard)
+import Control.Monad.Except.Trans (runExceptT)
 import Data.Array (mapMaybe, drop, take)
 import Data.Array as Array
 import Data.Date (Date)
-import Data.Either (Either(..))
+import Data.Either (Either(..), hush)
 import Data.Foldable (intercalate, length, foldMap, sum, sequence_)
 import Data.Int as Int
 import Data.JSDate (toDate)
@@ -22,6 +23,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Foreign (unsafeToForeign, readString)
 import KSF.Api (Password(..))
 import KSF.Api.Search (FaroUser, JanrainUser, SearchResult)
 import KSF.Api.Subscription (Subscription, isSubscriptionExpired)
@@ -31,21 +33,23 @@ import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
+import KSF.LocalStorage as LocalStorage
 import KSF.Random (randomString)
 import KSF.User as User
 import KSF.User.Cusno (Cusno(..))
 import KSF.User.Cusno as Cusno
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, validateEmailAddress, validateField, validatePassword)
 import React.Basic (JSX)
-import React.Basic.Hooks (Component, component, useState, useState', (/\))
+import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events as Events
+import Routing.PushState (PushStateInterface)
 
 type Props =
   { setActiveUser :: UUID -> Effect Unit
-  , resetRedirect :: Effect Unit
+  , router        :: PushStateInterface
   , now           :: Date
   }
 
@@ -76,21 +80,22 @@ data PersonaUserEdit
 
 search :: Component Props
 search = do
-  component "Search" \ { setActiveUser, resetRedirect, now } -> React.do
+  component "Search" \ { setActiveUser, router, now } -> React.do
     query /\ setQuery <- useState' Nothing
     results /\ setTaggedResults <- useState Nothing
     (searchWrapper :: AsyncWrapper.Progress JSX) /\ setSearchWrapper <- useState' AsyncWrapper.Ready
     (accountData :: Maybe (Tuple Cusno (AsyncWrapper.Progress User.NewCusnoUser))) /\ setAccountData <-
       useState Nothing
     (personaUserEdit :: Maybe (Tuple UUID PersonaUserEdit)) /\ setPersonaUserEdit <- useState Nothing
-    let submitSearch = case query /\ (parseUUID =<< query) of
+    let submitSearch stored = case (stored <|> query) /\ (parseUUID =<< query) of
           Nothing /\ _ -> pure unit
           _ /\ Just uuid -> setActiveUser uuid
           Just q /\ _ -> do
+            when (isNothing stored) $
+              router.replaceState (unsafeToForeign q) $ "/sök#q"
             setSearchWrapper $ AsyncWrapper.Loading mempty
-            resetRedirect
             Aff.launchAff_ do
-              queryResult <- User.searchUsers { query: q, faroLimit: 10 }
+              queryResult <- User.searchUsers (isJust stored) { query: q, faroLimit: 10 }
               case queryResult of
                 Right r -> liftEffect do
                   setResults $ const $ Just r
@@ -102,7 +107,7 @@ search = do
         loadSubs cusno = do
           setSearchWrapper $ AsyncWrapper.Loading mempty
           Aff.launchAff_ do
-            queryResult <- User.searchUsers { query: Cusno.toString cusno, faroLimit: 1 }
+            queryResult <- User.searchUsers false { query: Cusno.toString cusno, faroLimit: 1 }
             case queryResult of
               Right res -> liftEffect $ sequence_ $
                              map (\r -> setResults $ map (map (updateSubs cusno r))) $
@@ -177,7 +182,7 @@ search = do
                 setError "Något gick fel."
               Right _ -> do
                 liftEffect $ setSearchWrapper $ AsyncWrapper.Loading mempty
-                queryResult <- User.searchUsers { query: Cusno.toString cusno, faroLimit: 1 }
+                queryResult <- User.searchUsers false { query: Cusno.toString cusno, faroLimit: 1 }
                 liftEffect $ case Array.take 1 <$> queryResult of
                   Right [r] -> do
                     setResults $ map $ map
@@ -254,9 +259,23 @@ search = do
           , personaUserForm
           , isEditingAccount
           }
+    useEffectOnce $ do
+      -- React optimizes away effects in component init on back
+      -- navigation, so this needs useEffectOnce.
+      locationState <- router.locationState
+      routeQuery <- hush <$> runExceptT (readString locationState.state)
+      storedQuery <- LocalStorage.getItem "storedQuery"
+      case routeQuery == storedQuery of
+        true -> do
+          setQuery routeQuery
+          liftEffect $ submitSearch routeQuery
+        false -> do
+          LocalStorage.removeItem "storedQuery"
+          LocalStorage.removeItem "storedResult"
+      pure (pure unit)
     pure $ React.fragment
       [ DOM.div { className: "search--container"
-                , children: [ searchQuery query setQuery submitSearch
+                , children: [ searchQuery query setQuery (submitSearch Nothing)
                             , searchResults actions searchWrapper results
                             ]
                 }

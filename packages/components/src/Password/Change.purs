@@ -8,7 +8,6 @@ import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Validation.Semigroup (invalid, isValid, validation)
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -17,7 +16,6 @@ import KSF.Api (Password(..)) as Api
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.InputField as InputField
 import KSF.Tracking as Tracking
-import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, validateField, validatePassword, validatePasswordComparison, validateWithServerErrors)
 import React.Basic (JSX)
@@ -27,7 +25,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, capture_)
 import React.Basic.Events as Events
 
-type Props = { user :: Maybe User }
+type Props = { code :: String }
 
 type PasswordReset =
   { password :: Maybe String
@@ -46,21 +44,21 @@ instance validatablePasswordChangeField :: ValidatableField PasswordChangeField 
     Password -> validateWithServerErrors serverErrors Password value validatePassword
     confirmPw@(ConfirmPassword originalPassword) -> validatePasswordComparison Password confirmPw originalPassword value
 
-updatePasswordForm :: (Api.Password -> Api.Password -> Aff (Either User.UserError Unit)) -> Component Props
-updatePasswordForm update = do
+updatePasswordForm :: Component Props
+updatePasswordForm = do
   let initialWrapperState = AsyncWrapper.Editing { password: Nothing, confirmPassword: Nothing }
       initialState =
         { serverErrors: mempty
         , formData: initialWrapperState
         }
-  component "PasswordReset" $ const React.do
+  component "PasswordReset" \ { code } -> React.do
     state /\ setState <- useState initialState
     let setWrapperState :: (AsyncWrapper.Progress PasswordReset -> AsyncWrapper.Progress PasswordReset) -> Effect Unit
         setWrapperState f = setState (\s -> s { formData = f s.formData })
         submitPassword :: PasswordReset -> Effect Unit
         submitPassword pw = Aff.launchAff_ do
           liftEffect $ setWrapperState $ const $ AsyncWrapper.Loading pw
-          res <- update (Api.Password $ fromMaybe "" pw.password) (Api.Password $ fromMaybe "" pw.confirmPassword)
+          res <- User.updateForgottenPassword code (Api.Password $ fromMaybe "" pw.password) (Api.Password $ fromMaybe "" pw.confirmPassword)
           liftEffect $ case res of
             Right _ -> setWrapperState $ const $ AsyncWrapper.Success Nothing
             Left (User.InvalidFormFields errors) -> do
@@ -107,7 +105,7 @@ updatePasswordForm update = do
                     , placeholder: "Önskat lösenord"
                     , value: password
                     , onChange: \newPw -> setForm _ { password = newPw }
-                    , label: Just "Önstkat lösenord"
+                    , label: Just "Önskat lösenord"
                     , validationError: inputFieldErrorMessage $ validateField Password password state.serverErrors
                     }
                 , InputField.inputField

@@ -5,6 +5,7 @@ You can edit this file as you like.
 { name = "mitt-konto"
 , dependencies =
   [ "aff"
+  , "avar"
   , "affresco-components"
   , "affresco-user"
   , "arrays"
@@ -29,7 +30,8 @@ You can edit this file as you like.
   , "react-basic-classic"
   , "react-basic-dom"
   , "react-basic-hooks"
-  , "react-basic-router"
+  , "routing"
+  , "routing-duplex"
   , "record"
   , "strings"
   , "tuples"

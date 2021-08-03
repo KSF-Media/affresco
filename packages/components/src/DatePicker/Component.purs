@@ -17,43 +17,56 @@ import Data.Time.Duration (Minutes(..))
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, mkEffectFn1)
 import Math (abs)
+import Prim.Row (class Nub, class Union)
 import React.Basic (JSX, ReactComponent)
 import React.Basic as React
 import React.Basic.DOM as DOM
+import Record as Record
 
 foreign import datePicker_ :: Fn0 (ReactComponent DatePickerProps)
 
 type Props =
-  { onChange  :: Effect (Maybe Date) -> Effect Unit
-  , className :: String
-  , value     :: Maybe Date
-  , format    :: String
-  , required  :: Boolean
-  , minDate   :: Maybe Date
-  , maxDate   :: Maybe Date
-  , disabled  :: Boolean
-  , locale    :: String
-  }
+  ( onChange               :: Effect (Maybe Date) -> Effect Unit
+  , className              :: String
+  , value                  :: Maybe Date
+  , format                 :: String
+  , required               :: Boolean
+  , minDate                :: Maybe Date
+  , maxDate                :: Maybe Date
+  , disabled               :: Boolean
+  , locale                 :: String
+  , defaultActiveStartDate :: Maybe Date
+  )
+
+type DefaultProps =
+  ( defaultActiveStartDate :: Maybe Date
+  )
 
 type DatePickerProps =
-  { onChange  :: EffectFn1 (Nullable JSDate) Unit
-  , className :: String
-  , value     :: Nullable JSDate
-  , format    :: String
-  , required  :: Boolean
-  , minDate   :: Nullable JSDate
-  , maxDate   :: Nullable JSDate
-  , disabled  :: Boolean
-  , locale    :: String
+  { onChange               :: EffectFn1 (Nullable JSDate) Unit
+  , className              :: String
+  , value                  :: Nullable JSDate
+  , format                 :: String
+  , required               :: Boolean
+  , minDate                :: Nullable JSDate
+  , maxDate                :: Nullable JSDate
+  , disabled               :: Boolean
+  , locale                 :: String
+  , defaultActiveStartDate :: Nullable JSDate
   }
 
-datePicker :: Props -> JSX
-datePicker props =
+datePicker :: forall attrs attrs_ . Union attrs DefaultProps attrs_ => Nub attrs_ Props => Record attrs -> JSX
+datePicker userProps =
   DOM.div
     { className: "date-picker--wrapper"
     , children: [ picker ]
     }
   where
+    props = Record.merge userProps defaultProps
+    defaultProps :: Record DefaultProps
+    defaultProps =
+      { defaultActiveStartDate: Nothing
+      }
     picker = React.element (runFn0 datePicker_) datePickerProps
     datePickerProps :: DatePickerProps
     datePickerProps =
@@ -66,6 +79,7 @@ datePicker props =
       , disabled:  props.disabled
       , locale:    props.locale
       , onChange:  mkEffectFn1 $ adjustTimezone >>> props.onChange
+      , defaultActiveStartDate: toNullable $ (fromInstant <<< Instant.fromDate) <$> props.defaultActiveStartDate
       }
 
 -- | Glues current timezone to the JS date we get here.

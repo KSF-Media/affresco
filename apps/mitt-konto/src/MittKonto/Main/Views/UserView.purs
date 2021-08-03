@@ -18,12 +18,13 @@ import KSF.User (User)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
+import Routing.PushState (PushStateInterface)
 
 foreign import images :: { subscribe :: String }
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: Types.Self -> Sentry.Logger -> User -> JSX
-userView { state: { now, news }, setState } logger user = React.fragment
+userView :: PushStateInterface -> Types.Self -> Sentry.Logger -> User -> JSX
+userView router { state: { now, news }, setState } logger user = React.fragment
   [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ newsView news, profileView ]
   , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
   ]
@@ -50,7 +51,7 @@ userView { state: { now, news }, setState } logger user = React.fragment
           { className: "mitt-konto--edit-account"
           , children:
               [ componentHeader "Mina inställningar:"
-              , componentBlockContent $ AccountEdit.accountEdit
+              , componentBlockContent $ AccountEdit.accountEdit router
               ]
           }
 
@@ -64,7 +65,7 @@ userView { state: { now, news }, setState } logger user = React.fragment
             subs -> do
               map subscriptionComponentBlockContent subs `snoc` cancelSubscription
               where
-                subscriptionView subscription = Subscription.subscription { subscription, user, logger, now }
+                subscriptionView subscription = Subscription.subscription { subscription, user, logger, now, router }
                 subscriptionComponentBlockContent subscription
                   -- If the subscription has a canceled state, we want to add extra css to it.
                   | Subscription.isSubscriptionCanceled subscription =
@@ -87,6 +88,7 @@ userView { state: { now, news }, setState } logger user = React.fragment
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
                 , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU"
+                , router
                 }
             ]
         }

@@ -37,7 +37,7 @@ import KSF.Sentry as Sentry
 import KSF.User (User, UserError(UniqueViolation))
 import KSF.User as User
 import KSF.User.Cusno as Cusno
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validateZipCode)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validateFinnishZipCode, validateZipCode)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -94,13 +94,17 @@ instance validatableFieldNameFormFields :: ValidatableField NameFormFields where
 data AddressFormFields
   = StreetAddress
   | City
-  | Zip
+  | Zip (Maybe String)
   | CountryCode
 instance validatableFieldAddressFormFields :: ValidatableField AddressFormFields where
   validateField field value _serverErrors = case field of
     StreetAddress -> validateEmptyField field "Adress krävs." value
     City          -> validateEmptyField field "Stad krävs." value
-    Zip           -> validateZipCode field value
+    -- Sweden also has five number zips and we don't look up further
+    -- than that so
+    Zip country   -> if country `Array.elem` [Just "FI", Just "AX", Just "SE"]
+                       then validateFinnishZipCode field value
+                       else validateZipCode field value
     CountryCode   -> validateEmptyField field "Land krävs." value
 
 data EmailFormFields
@@ -383,7 +387,7 @@ editAddress self =
             , value: self.state.address.zipCode
             , onChange: \newZip -> self.setState _ { address { zipCode = newZip } }
             , label: Just "Postnummer"
-            , validationError: inputFieldErrorMessage $ validateField Zip self.state.address.zipCode []
+            , validationError: inputFieldErrorMessage $ validateField (Zip self.state.address.countryCode) self.state.address.zipCode []
             }
         , InputField.inputField
             { type_: InputField.Text
@@ -413,7 +417,7 @@ editAddress self =
       , countryCode: _
       }
       <$> validateField StreetAddress form.streetAddress []
-      <*> validateField Zip form.zipCode []
+      <*> validateField (Zip form.countryCode) form.zipCode []
       <*> validateField City form.city []
       <*> validateField CountryCode form.countryCode []
 

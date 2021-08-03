@@ -3,7 +3,7 @@ module KSF.Password.Reset where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import KSF.Password.SendLink (requestResetLink)
@@ -14,20 +14,16 @@ import KSF.User as User
 import React.Basic.Hooks (Component, component, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
-import Web.HTML.Location (Location, search) as HTML
-import Web.URL.URLSearchParams as URL
 
-type Props = { user :: Maybe User }
+type Props = { user :: Maybe User
+             , code :: Maybe String
+             }
 
-resetPassword :: HTML.Location -> Component Props
-resetPassword location = do
-  code <- URL.get "code" <<< URL.fromString <$> HTML.search location
-  updateForm <-
-    maybe mempty
-      (\c -> updatePasswordForm (\pw confirmPw -> User.updateForgottenPassword c pw confirmPw))
-      code
+resetPassword :: Component Props
+resetPassword = do
+  updateForm <- updatePasswordForm
   resetLinkForm <- requestResetLink
-  component "ResetPassword" $ \{ user } -> React.do
+  component "ResetPassword" $ \{ code, user } -> React.do
     resetElement /\ setResetElement <- useState' Nothing
     useEffectOnce $ do
       case code of
@@ -40,7 +36,7 @@ resetPassword location = do
           -- Check that the recovery code is valid and reserve it for use.
           startResult <- User.startPasswordReset c
           liftEffect $ setResetElement <<< Just =<< case startResult of
-            Right _ -> pure $ updateForm { user }
+            Right _ -> pure $ updateForm { code: c }
             Left err -> do
               msg <- case err of
                 User.PasswordResetTokenInvalid -> do

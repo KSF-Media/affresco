@@ -1,89 +1,89 @@
-@import (reference) '../ksf-colors';
+@import (reference) "../ksf-colors";
 
 .mosaico--article {
-    h1 {
-	font: 700 1.92rem 'Duplex Serif Web', serif;
-	color: #333;
-	margin-top: 0.9375rem;
-	margin-bottom: 10px;
-	letter-spacing: -0.015em;
-	@media (min-width: @breakpoint-md) {
-	    font-size: 2.75rem;
-	}
-	@media (min-width: @breakpoint-xl) {
-	    font-size: 3.75rem;
-	}
+  h1 {
+    font: 700 1.92rem "Duplex Serif Web", serif;
+    color: #333;
+    margin-top: 0.9375rem;
+    margin-bottom: 10px;
+    letter-spacing: -0.015em;
+    @media (min-width: @breakpoint-2col) {
+      font-size: 2.75rem;
     }
-    p {
-	font: 300 1rem/1.5rem "Roboto", sans-serif;
+    @media (min-width: @breakpoint-3col) {
+      font-size: 3.75rem;
     }
-    h4 {
-	font: 600 1rem/1.5rem "Roboto", sans-serif;
+  }
+  p {
+    font: 300 1rem/1.5rem "Roboto", sans-serif;
+  }
+  h4 {
+    font: 600 1rem/1.5rem "Roboto", sans-serif;
+  }
+  &--meta {
+  }
+  &--premium {
+    padding: 2px 5px;
+    color: #fff;
+    display: inline-block;
+    text-transform: uppercase;
+    font: 500 0.75rem "Roboto", sans-serif;
+  }
+  &--preamble p {
+    font: 300 16px "Roboto", sans-serif;
+    line-height: 1.2rem;
+    @media (min-width: @breakpoint-2col) {
+      font-size: 1.25rem;
+      line-height: 1.5rem;
     }
-    &--meta {
+    @media (min-width: @breakpoint-3col) {
+      font-size: 1.5rem;
+      line-height: 2rem;
     }
-    &--premium {
-	padding: 2px 5px;
-	color: #fff;
-	display: inline-block;
-	text-transform: uppercase;
-	font: 500 .75rem "Roboto", sans-serif;
-    }
-    &--preamble p{
-        font: 300 16px "Roboto", sans-serif;
-        line-height: 1.2rem;
-        @media (min-width: @breakpoint-sm) {
-            font-size: 1.25rem;
-            line-height: 1.5rem;
-        }
-        @media (min-width: @breakpoint-lg) {
-            font-size: 1.5rem;
-            line-height: 2rem;
-        }
-    }
+  }
 }
 
 .mosaico--article-date {
-    border-top:red;
-    border-top-style: none;
-    border-top-width: medium;
-    border-top-width: 1px;
-    border-style: solid;
-    border-left-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 1px;
+  border-top: red;
+  border-top-style: none;
+  border-top-width: medium;
+  border-top-width: 1px;
+  border-style: solid;
+  border-left-width: 0;
+  border-right-width: 0;
+  border-bottom-width: 1px;
 }
 
 .mosaico--article-times-and-author {
-    display: grid;
-    grid-template-columns: auto auto;
-    grid-template-rows: auto auto;
-    border-style: solid;
-    border-bottom-width: 1px;
-    border-top-width: 1px;
-    border-left-width: 0;
-    border-right-width: 0;
-    padding-top: .5em;
-    margin-top: 1.5em;
-    padding-bottom: .5em;
-    border-color: #dbd3d3;
-    color: @grey-mediumlight;
-    font-family: "Roboto";
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  border-style: solid;
+  border-bottom-width: 1px;
+  border-top-width: 1px;
+  border-left-width: 0;
+  border-right-width: 0;
+  padding-top: 0.5em;
+  margin-top: 1.5em;
+  padding-bottom: 0.5em;
+  border-color: #dbd3d3;
+  color: @grey-mediumlight;
+  font-family: "Roboto";
 }
 
 .mosaico--article-authors {
-    display: flex;
-    flex-direction: column;
-    font-size: 14px;
-    *:not(:last-child) {
-	margin-bottom: .5em;
-    }
-    .mosaico--article--premium {
-	display: table;
-    }
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  *:not(:last-child) {
+    margin-bottom: 0.5em;
+  }
+  .mosaico--article--premium {
+    display: table;
+  }
 }
 
 .mosaico--article-timestamps {
-    font-size: 12px;
-    text-align: right;
+  font-size: 12px;
+  text-align: right;
 }

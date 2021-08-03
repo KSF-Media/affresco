@@ -83,7 +83,9 @@ data AddressChangeFields
 instance validatableFieldAddressChangeFields :: VF.ValidatableField AddressChangeFields where
   validateField field value _serverErrors = case field of
     StreetAddress -> VF.validateEmptyField field "Adress krävs." value
-    Zip           -> VF.validateZipCode field value
+    -- Country is always Finland or Åland in this form so let's use
+    -- this.
+    Zip           -> VF.validateFinnishZipCode field value
     CityName      -> VF.noValidation value
     CountryCode   -> VF.validateEmptyField field "Land krävs." value
     TemporaryName -> VF.noValidation value
@@ -213,6 +215,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , disabled: false
         , label: "Börjar från"
         , id: "edit-start"
+        , defaultActiveStartDate: Nothing
         }
 
     isIndefiniteCheckbox =
@@ -235,6 +238,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , disabled: isNothing self.state.startDate || self.state.isIndefinite
         , label: "Avslutas"
         , id: "edit-end"
+        , defaultActiveStartDate: self.state.minEndDate
         }
 
     addressInput =
@@ -344,17 +348,18 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
     submitForm _ _ _ _ _ = Console.error "Temporary address change dates were not defined."
 
 type DateInputField =
-  { action   :: Maybe Date -> Effect Unit
-  , value    :: Maybe Date
-  , minDate  :: Maybe Date
-  , maxDate  :: Maybe Date
-  , disabled :: Boolean
-  , label    :: String
-  , id       :: String
+  { action                 :: Maybe Date -> Effect Unit
+  , value                  :: Maybe Date
+  , minDate                :: Maybe Date
+  , maxDate                :: Maybe Date
+  , disabled               :: Boolean
+  , label                  :: String
+  , id                     :: String
+  , defaultActiveStartDate :: Maybe Date
   }
 
 dateInput :: Self -> DateInputField -> JSX
-dateInput self { action, value, minDate, maxDate, disabled, label, id } =
+dateInput self { action, value, minDate, maxDate, disabled, label, id, defaultActiveStartDate } =
   Grid.row
     [ Grid.row_ [ DOM.label_ [ DOM.text label ] ]
     , Grid.row_
@@ -368,6 +373,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label, id } =
             , maxDate: maxDate
             , disabled
             , locale: "sv-FI"
+            , defaultActiveStartDate
             }
         ]
     ]

@@ -11,6 +11,8 @@ import React.Basic.Events (handler_)
 data CloseType = XButton | Back
 data AutoClose = Immediate | Delayed Number | Off
 
+derive instance eqAutoClose :: Eq AutoClose
+
 successWrapper :: forall t. Foldable t => t String -> JSX
 successWrapper msg =
   DOM.div { className: "actions-wrapper--action-item"

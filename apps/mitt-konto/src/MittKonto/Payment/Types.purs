@@ -14,11 +14,14 @@ import KSF.User as User
 import KSF.User.Cusno (Cusno)
 import MittKonto.Wrappers (SetRouteWrapperState)
 import React.Basic.Hooks (type (/\), Render, UseEffect)
+import Routing.PushState (PushStateInterface)
 
 type Props =
   { usePayments :: Render Unit (UseEffect (Boolean /\ Maybe Cusno) Unit) Unit
   , subscriptionPayments :: Maybe (Array SubscriptionPayments)
   , setWrapperState :: SetRouteWrapperState
+  , detail :: Maybe Int
+  , router :: PushStateInterface
   }
 
 getPayments :: Maybe UUID -> (Array SubscriptionPayments -> Effect Unit) -> (Aff Boolean -> Effect Unit) -> Effect Unit

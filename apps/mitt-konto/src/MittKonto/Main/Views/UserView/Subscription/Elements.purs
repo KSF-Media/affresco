@@ -15,6 +15,7 @@ import Data.String (trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Foreign (unsafeToForeign)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
@@ -34,9 +35,8 @@ import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (capture_)
-import React.Basic.Events (handler_)
-import React.Basic.Router as Router
+import React.Basic.DOM.Events (capture_, preventDefault)
+import React.Basic.Events (handler, handler_)
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
 receiverName { props: { subscription: { receiver } } } =
@@ -312,10 +312,10 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
     creditCardUpdateIcon =
       DOM.div
         { className: "subscription--action-item"
-        , children: [ Router.link
-                        { to: { pathname: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
-                              , state: {}
-                              }
+        , children: [ DOM.a
+                        { onClick: handler preventDefault $ const $ props.router.pushState (unsafeToForeign {}) $
+                                   "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
+                        , href: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
                         , children: [ DOM.div
                                         { className: "subscription--action-link"
                                         , children: [ DOM.div
@@ -329,7 +329,6 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                                                     ]
                                         }
                                     ]
-                        , className: mempty
                         }
                     ]
         }

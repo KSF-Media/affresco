@@ -44,7 +44,7 @@ data CommonContactInformationFormField
 
 derive instance eqCommonContactInformationFormField :: Eq CommonContactInformationFormField
 instance validatableFieldRegistrationFormField :: ValidatableField CommonContactInformationFormField where
-  validateField field value serverErrors = case field of
+  validateField field value _serverErrors = case field of
     FirstName     -> validateEmptyField FirstName     "Förnamn krävs."   value
     LastName      -> validateEmptyField LastName      "Efternamn krävs." value
     StreetAddress -> validateEmptyField StreetAddress "Adress krävs."    value
@@ -79,6 +79,11 @@ validateZipCode field zipCode =
   validateEmptyField field "Postnummer krävs." zipCode `andThen`
   validateInputWithRegex field "^[\\s|\\w|-]+$" "Postnummerfältet kan bara innehålla siffror och bokstäver."
 
+validateFinnishZipCode :: forall a. a -> Maybe String -> ValidatedForm a (Maybe String)
+validateFinnishZipCode field zipCode =
+  validateEmptyField field "Postnummer krävs." zipCode `andThen`
+  validateInputWithRegex field "^[0-9]{5}$" "Vänligen kontrollera postnumret (5 siffror)"
+
 validateEmailAddress :: forall a. Eq a => a -> Maybe String -> ValidatedForm a (Maybe String)
 validateEmailAddress emailField email =
   validateEmptyField emailField "E-postadress krävs." email `andThen`
@@ -106,7 +111,7 @@ validatePasswordLength field password
 
 validatePasswordComparison :: forall a. a -> a -> Maybe String -> Maybe String -> ValidatedForm a (Maybe String)
 validatePasswordComparison originalField _confirmField Nothing Nothing = notInitialized originalField
-validatePasswordComparison originalField confirmField password confirmedPassword
+validatePasswordComparison _ confirmField password confirmedPassword
   | Just pw <- password
   , Just confirmedPw <- confirmedPassword
   , pw == confirmedPw

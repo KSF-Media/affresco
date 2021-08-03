@@ -22,7 +22,7 @@ import Data.UUID as UUID
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Now as Now
-import Foreign (Foreign, unsafeToForeign)
+import Foreign (Foreign, unsafeToForeign, unsafeFromForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
 import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
@@ -33,6 +33,7 @@ import KSF.Api.Search (SearchQuery, SearchResult, JanrainUser, FaroUser)
 import KSF.Api.Subscription (BaseSubscription, Subscription, PendingAddressChange, Subsno(..), isSubscriptionExpired)
 import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
+import KSF.LocalStorage as LocalStorage
 import KSF.User.Cusno (Cusno)
 import OpenApiClient (Api, callApi)
 import Record as Record
@@ -42,6 +43,8 @@ foreign import accountApi :: Api
 foreign import adminApi :: Api
 foreign import loginApi :: Api
 foreign import usersApi :: Api
+foreign import rawJSONStringify :: Foreign -> String
+foreign import rawJSONParse :: String -> Foreign
 
 login :: LoginData -> Aff LoginResponse
 login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
@@ -689,12 +692,23 @@ type ApiSearchResult =
   }
 
 -- Pass dummy uuid to force authUser field generation.
-searchUsers :: SearchQuery -> UserAuth -> Aff (Array (SearchResult Subscription))
-searchUsers query auth = do
-  catMaybes <<< map nativeSearchResults <$>
-    callApi adminApi "adminSearchPost" [ unsafeToForeign query ]
-    ( authHeaders UUID.emptyUUID auth )
+searchUsers :: Boolean -> SearchQuery -> UserAuth -> Aff (Array (SearchResult Subscription))
+searchUsers useCache query auth = do
+  storedResult <- liftEffect do
+    if useCache then do
+      storedQuery <- LocalStorage.getItem "storedQuery"
+      if Just query.query == storedQuery then do
+        map (unsafeFromForeign <<< rawJSONParse) <$> LocalStorage.getItem "storedResult"
+        else pure Nothing
+      else pure Nothing
+  result <- maybe apiCall pure storedResult
+  liftEffect do
+    LocalStorage.setItem "storedQuery" query.query
+    LocalStorage.setItem "storedResult" $ rawJSONStringify $ unsafeToForeign result
+  pure $ catMaybes $ map nativeSearchResults result
   where
+    apiCall = callApi adminApi "adminSearchPost" [ unsafeToForeign query ]
+              ( authHeaders UUID.emptyUUID auth )
     nativeSearchResults :: ApiSearchResult -> Maybe (SearchResult Subscription)
     nativeSearchResults x = do
       janrain <- nativeJanrain x.janrain
