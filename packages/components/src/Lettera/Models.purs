@@ -160,7 +160,7 @@ type BoxInfo =
 type Image =
   { url       :: String
   , caption   :: Maybe String
-  , thumb     :: Maybe String
+  , thumb     :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
   }
