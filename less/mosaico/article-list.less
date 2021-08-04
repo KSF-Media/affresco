@@ -52,3 +52,60 @@
     }
   }
 }
+
+.mosaico-asidelist {
+  @aside-imgsize: 70px;
+
+  &__mostread {
+    counter-reset: listcounter;
+
+    li {
+      counter-increment: listcounter;
+      margin: 0 10px;
+      padding: 10px 0;
+      border-bottom: dotted 1px @hairline-color;
+
+      > a {
+        cursor: pointer;
+        display: flex;
+  
+        .list-article-image {
+          flex-basis: @aside-imgsize;
+          flex-shrink: 0;
+          margin-right: 10px;
+  
+          > div {
+            background-size: cover;
+            width: @aside-imgsize;
+            height: @aside-imgsize;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &::after {
+              content: counter(listcounter);
+              text-shadow: 0 0 10px #000;
+              font-weight: 600;
+              font-size: 2.5rem;
+              color: #fff;
+            }
+          }
+        }
+
+        .list-article-liftup {
+
+          h6 {
+            font: bold 0.9rem/1.125rem "Roboto", sans-serif;
+            color: @grey-warm-mid;
+          }
+
+          .mosaico--article--premium {
+            transform: scale(.85);
+            transform-origin: left;
+          }
+        }
+      }
+    }
+  }
+}
