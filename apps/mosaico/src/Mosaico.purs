@@ -44,6 +44,8 @@ data ModalView = LoginModal
 type State =
   { article :: Maybe FullArticle
   , articleList :: Array ArticleStub
+  , mostreadList :: Array ArticleStub
+  , latestList :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
   , route :: MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -85,6 +87,8 @@ app = do
     let initialState =
           { article: Nothing
           , articleList: []
+          , mostreadList: []
+          , latestList: []
           , affArticle: Nothing
           , route: initialRoute
           , clickedArticle: Nothing
@@ -109,6 +113,11 @@ app = do
           else liftEffect $ setState \s -> s { article = Nothing }
         ArticlePage _articleId -> pure unit
       pure mempty
+    useEffectOnce do
+      Aff.launchAff_ do
+        mostread <- Lettera.getMostRead 0 10 "" HBL true
+        liftEffect $ setState \s -> s { mostreadList = mostread }
+      pure $ pure unit
 
     pure $ render setState state nav
 
@@ -147,7 +156,9 @@ render setState state router =
       , children: [ DOM.text "footer" ]
       }
     , DOM.aside
-      { className: "mosaico--aside" }
+      { className: "mosaico-aside"
+      , children: [ renderMostreadList state setState router ]
+      }
     ]
   }
 
@@ -208,3 +219,52 @@ articleList state setState router =
               }
             ]
         }
+
+renderMostreadList :: State -> SetState -> PushStateInterface -> JSX
+renderMostreadList state setState router =
+  DOM.ul
+    { className: "mosaico-asidelist__mostread"
+    , children: map renderMostreadArticle state.mostreadList
+    }
+  where
+    renderMostreadArticle :: ArticleStub -> JSX
+    renderMostreadArticle a =
+      DOM.li_
+        [ DOM.a
+            { href: "/artikel/" <> a.uuid
+              -- onClick: handler_ do
+              --     setState \s -> s { clickedArticle = Just a }
+              --     window <- Web.window
+              --     _ <- Web.scroll 0 0 window
+              --     router.pushState (write {}) $ "/artikel/" <> a.uuid
+            , children:
+                [ DOM.div
+                    { className: "list-article-image"
+                    , children:[ DOM.div
+                        { style: DOM.css
+                            { "background-image": "url(" <> thumb <> ")"
+                            }
+                        }
+                      ]
+                    }
+                  , DOM.div
+                      { className: "list-article-liftup"
+                      , children:
+                          [ DOM.h6_ [ DOM.text a.title ]
+                          , DOM.div
+                            { className: "mosaico--article--meta"
+                            , children:
+                                [ guard a.premium $
+                                    DOM.div
+                                      { className: "mosaico--article--premium background-hbl"
+                                      , children: [ DOM.text "premium" ]
+                                      }
+                                ]
+                            }
+                          ]
+                      }
+                  ]
+              }
+        ]
+      where
+        thumb = fromMaybe "" $ map _.thumb a.listImage
