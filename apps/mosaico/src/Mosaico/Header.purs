@@ -67,34 +67,108 @@ render { state: { menuVisible, menuComponent }, setState } =
             { className: block <> "__logo"
             }
         , DOM.div
-            { className: block <> "__account" <>
+            { className: accountClass <>
                 if menuVisible then
-                  " " <> block <> "__account" <> "--menu-visible"
+                  " " <> menuVisibleAccountClass
                 else
                   mempty
-            , children: [ DOM.text "NAME"]
+            , children: [ DOM.text "NAME" ]
             }
         , DOM.nav
             { className: block <> "__center-links"
             , children:
-                [ DOM.a_ [ DOM.text "OPINION" ]
-                , DOM.a_ [ DOM.text "KULTUR" ]
-                , DOM.a_ [ DOM.text "SPORT" ]
-                , DOM.a_ [ DOM.text "ANNAT" ]
-                ]
+                if menuVisible then
+                  [ searchButton ]
+                else
+                  [ DOM.a_ [ DOM.text "OPINION" ]
+                  , DOM.a_ [ DOM.text "KULTUR" ]
+                  , DOM.a_ [ DOM.text "SPORT" ]
+                  , DOM.a_ [ DOM.text "ANNAT" ]
+                  ]
+            }
+
+        , DOM.div
+            { className: block <> "__right-buttons"
+            , children:
+                (if menuVisible then
+                   mempty
+                 else
+                   [ searchButton ])
+                <> [ DOM.div
+                       { className: iconButtonClass <> " " <> menuButtonClass <>
+                           if menuVisible then
+                           " " <> menuVisibleIconButtonClass
+                           else
+                           mempty
+                       , children: [ DOM.div_ [ DOM.text "MENU" ]
+                                   , DOM.div
+                                       { className: iconClass <> " " <> menuIconClass <>
+                                           if menuVisible then
+                                           " " <> menuVisibleIconClass
+                                           else
+                                           mempty
+                                       } ]
+                       , onClick: handler_ do
+                           setState \s -> s { menuVisible = not menuVisible }
+                       }
+                   ]
             }
         , DOM.div
-            { className: block <> "__menu-button" <>
-                if menuVisible then
-                  " " <> block <> "__menu-button" <> "--menu-visible"
-                else
-                  mempty
-            , children: [ DOM.text "MENU"
-                        , DOM.div { className: block <> "__menu-icon" } ]
-            , onClick: handler_ do
-                setState \s -> s { menuVisible = not menuVisible }
+            { className: menuOverlayClass <>
+                           if menuVisible then
+                             " " <> visibleMenuOverlayClass
+                           else
+                             mempty
             }
         ]
     }
   where
+
+    searchButton :: JSX
+    searchButton = DOM.div
+                    { className: iconButtonClass <> " " <> searchButtonClass <>
+                                " grid-row-3 grid-col-2" <>
+                        if menuVisible then
+                          " " <> menuVisibleIconButtonClass
+                        else
+                          mempty
+                    , children: [ DOM.div_ [ DOM.text "SÖK" ]
+                                , DOM.div { className: iconClass <> " " <> searchIconClass }
+                                ]
+                    }
+
     block = "mosaico-header"
+
+    menuVisibleModifier = "--menu-visible"
+
+    accountElement = "__account"
+    accountClass = block <> accountElement
+    menuVisibleAccountClass = accountClass <> menuVisibleModifier
+
+    searchModifier = "--search"
+    menuModifier = "--menu"
+
+    iconButtonElement = "__icon-button"
+    iconButtonClass = block <> iconButtonElement
+    searchButtonClass = iconButtonClass <> searchModifier
+    menuButtonClass = iconButtonClass <> menuModifier
+    menuVisibleIconButtonClass = iconButtonClass <> menuVisibleModifier
+
+    iconElement = "__icon"
+    iconClass = block <> iconElement
+    searchIconClass = iconClass <> searchModifier
+    menuIconClass = iconClass <> menuModifier
+    menuVisibleIconClass = iconClass <> menuVisibleModifier
+
+    menuOverlayElement = "__menu-overlay"
+    menuOverlayClass = block <> menuOverlayElement
+    visibleModifier = "--visible"
+    visibleMenuOverlayClass = menuOverlayClass <> visibleModifier
+
+-- The characteristic line at the top of every KSF media's site
+topLine :: JSX
+topLine = DOM.hr { className: "mosaico-top-line" }
+
+-- The separator between the header and the rest of the page
+mainSeparator :: JSX
+mainSeparator = DOM.hr { className: "mosaico-main-separator" }

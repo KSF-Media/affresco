@@ -287,7 +287,7 @@ let refreshCDNSteps =
       \(cdnName : Text) ->
         [ Step::{
           , name = Some "Install gcloud"
-          , uses = Some "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+          , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
               { project_id = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
               , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"

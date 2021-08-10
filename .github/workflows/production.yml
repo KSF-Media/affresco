@@ -223,7 +223,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
@@ -236,7 +236,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
@@ -249,7 +249,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
