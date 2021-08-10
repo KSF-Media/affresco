@@ -2,7 +2,7 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
-import Data.Array (filter, mapMaybe)
+import Data.Array (filter, find, mapMaybe)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Enum (enumFromTo)
@@ -11,7 +11,7 @@ import Data.JSDate (toDate)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
-import Data.String (trim)
+import Data.String (length, splitAt, trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -67,10 +67,32 @@ deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, 
       | otherwise = "-"
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
-paymentMethod { props: { subscription: { paymentMethod: method } } } = Array.singleton
+paymentMethod { props: { subscription: { paymentMethod: method, paymentMethodId }, user: { creditCards } } } = Array.singleton
   { term: "Faktureringsmetod:"
-  , description: [ DOM.text $ Helpers.translatePaymentMethod method ]
+  , description: [ DOM.div_ [ DOM.text $ Helpers.translatePaymentMethod method
+                            , case method of
+                                CreditCard -> subscriptionCreditCard
+                                _ -> mempty
+                            ]
+                 ]
   }
+  where
+    subscriptionCreditCard :: JSX
+    subscriptionCreditCard
+      | Just id <- toMaybe paymentMethodId,
+        Just card <- find (\c -> c.paymentMethodId == id) creditCards =
+          DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
+                  , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
+                  ]
+      | otherwise = mempty
+
+    formatExpiryDate :: String -> String
+    formatExpiryDate expiryDate
+      | (length expiryDate) == 4 =
+          let { before: year, after: month } = splitAt 2 expiryDate
+           in
+            month <> "/" <> year
+      | otherwise = ""
 
 pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
 pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, props: { now } } =
