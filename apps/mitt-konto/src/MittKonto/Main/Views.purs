@@ -42,7 +42,7 @@ navbarView :: Types.Self -> Sentry.Logger -> PushStateInterface -> Boolean -> JS
 navbarView { state, setState } logger router isPersonating =
     Navbar.navbar
       { paper: state.paper
-      , specialHelp: guard state.adminMode $ Just
+      , specialHelp: guard state.adminMode $ state.activeUser *> Just
         (DOM.div
            { className: "nav--logout-limpet"
            , children:
