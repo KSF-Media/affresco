@@ -81,56 +81,56 @@ jobs:
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/scripts"
           parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/mitt-konto"
           parent: 'false'
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/vetrina-test"
           parent: 'false'
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/elections-eu"
           parent: 'false'
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/elections"
           parent: 'false'
           path: build/elections
       - name: Upload App article
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/app-article"
           parent: 'false'
           path: build/app-article
       - name: Upload Corona banner
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/corona-banner"
           parent: 'false'
           path: build/corona-banner
       - name: Upload HBL365
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}"
+          destination: "deploy-previews/${{ github.sha }}/hbl365"
           parent: 'false'
           path: build/hbl365
       - id: deploy-app-article-server
