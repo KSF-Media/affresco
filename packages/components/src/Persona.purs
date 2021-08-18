@@ -25,7 +25,7 @@ import Effect.Now as Now
 import Foreign (Foreign, unsafeToForeign, unsafeFromForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
-import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
+import KSF.Api (AuthScope(..), InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
 import KSF.Api.Error (ServerError)
@@ -198,6 +198,18 @@ registerCusno newUser@{ cusno } auth = do
     ( authHeaders UUID.emptyUUID auth )
   when newUser.sendReset $ requestPasswordReset newUser.email
   pure response
+
+hasScope :: UUID -> AuthScope -> UserAuth -> Aff Number
+hasScope uuid authScope auth = do
+  callApi usersApi "usersUuidScopeGet"
+    [ unsafeToForeign uuid
+    ] $
+    Record.merge ( authHeaders uuid auth ) { scope }
+  where
+    scope = case authScope of
+      UserRead -> "UserRead"
+      UserWrite -> "UserWrite"
+      UserPassword -> "UserPassword"
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
