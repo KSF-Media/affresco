@@ -398,7 +398,7 @@ editAddress self =
             , label: Just "Stad"
             , validationError: inputFieldErrorMessage $ validateField City self.state.address.city []
             }
-        , CountryDropDown.defaultCountryDropDown
+        , CountryDropDown.countryDropDown countries false
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
             self.state.address.countryCode
         , submitButton
@@ -407,6 +407,11 @@ editAddress self =
     , onSubmit: Events.handler preventDefault $ \_ -> submitNewAddress $ validateAddressForm self.state.address
     }
   where
+    countries =
+      [ { countryCode: "FI", countryName: "Finland" }
+      , { countryCode: "AX", countryName: "Åland" }
+      ]
+
     submitButton = iconSubmit $ isValid (validateAddressForm self.state.address)
 
     validateAddressForm :: Address -> ValidatedForm AddressFormFields Address
