@@ -401,6 +401,7 @@ editAddress self =
         , CountryDropDown.countryDropDown countries false
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
             self.state.address.countryCode
+        , countryChangeMessage
         , submitButton
         , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditAddress ] }
         ]
@@ -411,6 +412,12 @@ editAddress self =
       [ { countryCode: "FI", countryName: "Finland" }
       , { countryCode: "AX", countryName: "Åland" }
       ]
+
+    countryChangeMessage =
+      DOM.div
+        { className: "mitt-konto--note"
+        , children: [ DOM.text "Vid ändring till en utländsk adress vänligen kontakta Kundservice" ]
+        }
 
     submitButton = iconSubmit $ isValid (validateAddressForm self.state.address)
 
