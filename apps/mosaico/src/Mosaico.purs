@@ -130,28 +130,28 @@ render setState state router =
         }
     _ -> mempty
   <> DOM.div
-  { className: "mosaico grid"
-  , children:
-    [ Header.topLine
-    , state.headerComponent {}
-    , Header.mainSeparator
-    , case state.route of
-          ArticlePage articleId ->
-            let affArticle = do
-                  a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-                  case a of
-                    Right article -> pure article
-                    Left _ -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
-            in renderArticle state setState affArticle state.clickedArticle
-          Frontpage -> articleList state setState router
-    , DOM.footer
-      { className: "mosaico--footer"
-      , children: [ DOM.text "footer" ]
-      }
-    , DOM.aside
-      { className: "mosaico--aside" }
-    ]
-  }
+       { className: "mosaico grid"
+       , children:
+           [ Header.topLine
+           , state.headerComponent {}
+           , Header.mainSeparator
+           , case state.route of
+                 ArticlePage articleId ->
+                   let affArticle = do
+                         a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+                         case a of
+                           Right article -> pure article
+                           Left _ -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
+                   in renderArticle state setState affArticle state.clickedArticle
+                 Frontpage -> articleList state setState router
+           , DOM.footer
+               { className: "mosaico--footer"
+               , children: [ DOM.text "footer" ]
+               }
+           , DOM.aside
+               { className: "mosaico--aside" }
+           ]
+       }
 
 renderArticle :: State -> SetState -> Aff FullArticle -> Maybe ArticleStub -> JSX
 renderArticle state setState affA aStub =
