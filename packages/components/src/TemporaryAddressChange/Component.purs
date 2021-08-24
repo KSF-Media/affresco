@@ -9,6 +9,7 @@ import Data.Date as Date
 import Data.Either (Either(..))
 import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
+import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
 import Data.Time.Duration as Time.Duration
 import Data.UUID (UUID)
@@ -28,7 +29,7 @@ import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
 import KSF.ValidatableForm as VF
-import KSF.CountryDropDown (countryDropDown)
+import KSF.CountryDropDown as CountryDropDown
 import KSF.TemporaryAddressChange.DropDown (pastTemporaryAddressDropDown)
 import KSF.TemporaryAddressChange.Types (AddressChange)
 import React.Basic (JSX)
@@ -193,6 +194,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
               , zipInput
               , cityInput
               , countryInput
+              , guard (isNothing self.props.editing) $ CountryDropDown.countryChangeMessage
               , temporaryNameInput
               , DOM.div
                   { children: [ submitFormButton ]
@@ -278,10 +280,8 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         }
 
     countryInput =
-      countryDropDown
-        [ { countryCode: "FI", countryName: "Finland" }
-        , { countryCode: "AX", countryName: "Åland" }
-        ]
+      CountryDropDown.countryDropDown
+        CountryDropDown.limitedCountries
         (isJust self.props.editing)
         (\newCountryCode -> self.setState _ { countryCode = newCountryCode })
         self.state.countryCode
