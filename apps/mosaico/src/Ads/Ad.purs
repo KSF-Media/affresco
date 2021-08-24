@@ -34,9 +34,11 @@ type State =
 insertIntoBody :: JSX -> Array JSX -> Array JSX  
 insertIntoBody adBox body =
   let elements = length body
-  in if elements > 4
-    then fromMaybe body $ insertAt (elements/2) adBox body
-    else body `snoc` adBox
+  in if elements > 10
+    then fromMaybe body $ insertAt 7 adBox =<< insertAt 4 adBox body
+    else if elements > 4
+      then fromMaybe body $ insertAt (elements/2) adBox body
+      else body `snoc` adBox
 
 ad :: Props -> JSX
 ad = make component
