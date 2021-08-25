@@ -8,19 +8,20 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Article, fromFullArticle)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
@@ -49,6 +50,7 @@ type Props =
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
   , user :: Maybe User
+  , article :: Maybe FullArticle
   }
 
 type State =
@@ -63,21 +65,24 @@ type State =
 articleComponent :: Component Props
 articleComponent = do
   component "Article" \props -> React.do
+    let article = fromFullArticle <$> props.article
     let initialState =
-          { body: []
-          , article: Nothing
-          , title: maybe mempty (\articleStub -> articleStub.title) props.articleStub
+          { body: foldMap (map Record.toSum) $ _.body <$> article
+          , article: props.article
+          , title: fold $ _.title <$> article <|>
+                          _.title <$> props.articleStub
           , mainImage: do
               articleStub <- props.articleStub
               articleStub.listImage
-          , tags: maybe mempty (\articleStub -> articleStub.tags) props.articleStub
-          -- , preamble: maybe Nothing (\articleStub -> articleStub.preamble) props.articleStub
-          , preamble: (\articleStub -> articleStub.preamble) =<< props.articleStub
+          , tags: fold $ _.tags <$> article <|>
+                         _.tags <$> props.articleStub
+          , preamble: fold $ _.preamble <$> article <|>
+                             _.preamble <$> props.articleStub
           }
     state /\ setState <- useState initialState
 
     useEffectOnce do
-      loadArticle setState props.affArticle
+      when (isNothing props.article) $ loadArticle setState props.affArticle
       pure mempty
 
     -- If user logs in / logs out, reload the article.
@@ -92,15 +97,15 @@ articleComponent = do
 loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
 loadArticle setState affArticle =
   Aff.launchAff_ do
-    a <- affArticle
-    let realArticle = fromFullArticle a
+    article <- fromFullArticle <$> affArticle
+    liftEffect $ Console.log $ "a " <> article.title
     liftEffect $ setState \s -> s
-      { article = Just a
-      , body = map Record.toSum $ _.body $ fromFullArticle a
-      , mainImage = realArticle.mainImage
-      , title = realArticle.title
-      , tags = realArticle.tags
-      , preamble = realArticle.preamble
+      { article = Just $ FullArticle article
+      , body = map Record.toSum article.body
+      , mainImage = article.mainImage
+      , title = article.title
+      , tags = article.tags
+      , preamble = article.preamble
       }
 
 renderImage :: Image -> JSX
@@ -148,9 +153,9 @@ render { props, state, setState } =
             }
         , foldMap renderImage mainImage
         , DOM.div
-          { className: "mosaico--article--preamble"
-          , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
-          }
+            { className: "mosaico--article--preamble"
+            , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
+            }
         , DOM.div
             { className: "mosaico--article-times-and-author"
             , children:
@@ -161,37 +166,37 @@ render { props, state, setState } =
         , DOM.ul
             { className: "mosaico-article__some"
             , children:
-              [ DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.facebook } ]
-                  }
+                [ DOM.li_
+                    [ DOM.a
+                      { href: "#"
+                      , children: [ DOM.img { src: "" } ]
+                      }
+                  ]
+                , DOM.li_
+                    [ DOM.a
+                      { href: "#"
+                      , children: [ DOM.img { src: "" } ]
+                      }
+                  ]
+                , DOM.li_
+                    [ DOM.a
+                      { href: "#"
+                      , children: [ DOM.img { src: "" } ]
+                      }
+                  ]
+                , DOM.li_
+                    [ DOM.a
+                      { href: "#"
+                      , children: [ DOM.img { src: "" } ]
+                      }
+                  ]
+                , DOM.li_
+                    [ DOM.a
+                      { href: "#"
+                      , children: [ DOM.img { src: "" } ]
+                      }
+                    ]
                 ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.twitter } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.linkedin } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.whatsapp } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.mail } ]
-                  }
-                ]
-              ]
             }
         , DOM.div
             { className: "mosaico--article--body "

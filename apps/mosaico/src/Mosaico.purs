@@ -158,6 +158,7 @@ renderArticle state setState affA aStub =
   state.articleComponent
     { affArticle: affA
     , brand: "hbl"
+    , article: Nothing
     , articleStub: aStub
     , onLogin: setState \s -> s { modalView = Just LoginModal }
     , user: state.user
@@ -178,8 +179,7 @@ articleList state setState router =
             [ DOM.a
               { onClick: handler_ do
                     setState \s -> s { clickedArticle = Just a }
-                    window <- Web.window
-                    _ <- Web.scroll 0 0 window
+                    void $ Web.scroll 0 0 =<< Web.window
                     router.pushState (write {}) $ "/artikel/" <> a.uuid
               , children:
                   [ DOM.div
