@@ -5,11 +5,13 @@
   "license": "MIT",
   "dependencies": {
     "basscss": "^8.1.0",
+    "cheerio": "^1.0.0-rc.10",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",
+    "react-imported-component": "^6.4.1",
     "uuid": "3.4.0",
     "uuid-validate": "^0.0.3",
     "xhr2": "^0.2.1"
