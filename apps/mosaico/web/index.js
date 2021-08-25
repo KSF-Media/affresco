@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { BrowserRouter as Router } from "react-router-dom";
+import { rehydrateMarks } from "react-imported-component";
 
 // yup, welcome to react 16
 import createReactClass from "create-react-class";
@@ -8,9 +9,10 @@ React.createClass = createReactClass;
 var Mosaico = require("../output/Mosaico/index.js");
 
 function main() {
-  const mosaico = <Mosaico.jsApp />;
-
-  ReactDOM.render(mosaico, document.getElementById("app"));
+  rehydrateMarks().then(() => {
+    const mosaico = <Mosaico.jsApp />;
+    ReactDOM.hydrate(mosaico, document.getElementById("app"));
+  });
 }
 
 if (module.hot) {
