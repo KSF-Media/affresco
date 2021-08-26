@@ -6,11 +6,11 @@ import { rehydrateMarks } from "react-imported-component";
 // yup, welcome to react 16
 import createReactClass from "create-react-class";
 React.createClass = createReactClass;
-var Mosaico = require("../output/Mosaico/index.js");
+var Mosaico = require("../output/Mosaico/index.js").jsApp();
 
 function main() {
   rehydrateMarks().then(() => {
-    const mosaico = <Mosaico.jsApp />;
+    const mosaico = <Mosaico article={window.article || null} />;
     ReactDOM.hydrate(mosaico, document.getElementById("app"));
   });
 }
