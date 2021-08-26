@@ -2,6 +2,7 @@ module Mosaico.Header where
 
 import Prelude
 
+import Data.Maybe (Maybe, maybe)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
 import React.Basic (JSX)
@@ -9,10 +10,15 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
+import Routing.PushState (PushStateInterface)
+import Simple.JSON (write)
+
+type Props = { router :: Maybe PushStateInterface }
 
 type Self =
   { state :: State
   , setState :: SetState
+    , props :: Props
   }
 
 type State =
@@ -22,19 +28,19 @@ type State =
 
 type SetState = (State -> State) -> Effect Unit
 
-headerComponent :: Component {}
+headerComponent :: Component Props
 headerComponent = do
   menuComponent <- Menu.menuComponent
-  component "Header" \_ -> React.do
+  component "Header" \props -> React.do
     let initialState =
           { menuVisible: false
           , menuComponent
           }
     state /\ setState <- useState initialState
-    pure $ render { state, setState }
+    pure $ render { state, setState, props }
 
 render :: Self -> JSX
-render { state: { menuVisible, menuComponent }, setState } =
+render { state: { menuVisible, menuComponent }, setState, props } =
   DOM.header
     { className: block
     , children:
@@ -65,6 +71,7 @@ render { state: { menuVisible, menuComponent }, setState } =
         , menuComponent { visible: menuVisible }
         , DOM.div
             { className: block <> "__logo"
+            , onClick: handler_ $ maybe (pure unit) (\r -> r.pushState (write {}) $ "/") props.router
             }
         , DOM.div
             { className: accountClass <>
