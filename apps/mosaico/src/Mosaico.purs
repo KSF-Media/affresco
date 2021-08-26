@@ -22,7 +22,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, parseArticle)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, parseArticle, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
@@ -79,20 +79,13 @@ routes =
 app :: Component Props
 app = do
   initialValues <- getInitialValues
-  component "Mosaico" $ mosaicoComponent initialValues <<< Right
+  component "Mosaico" $ mosaicoComponent initialValues
 
 -- mosaicoComponent :: InitialValues -> Either JSProps Props -> Render Unit (UseEffect State Unit) JSX
-mosaicoComponent initialValues eitherProps = React.do
-  state /\ setState <- useState initialValues.state
+mosaicoComponent initialValues props = React.do
+  state /\ setState <- useState initialValues.state { article = FullArticle <$> props.article }
 
-  useEffectOnce do
-    props <- case eitherProps of
-                  Left jsProps -> fromJSProps jsProps
-                  Right props  -> pure props
-    setState \s -> s { article = FullArticle <$> props.article }
-    pure mempty
-
--- Listen for route changes and set state accordingly
+  -- Listen for route changes and set state accordingly
   useEffectOnce $ locations (routeListener setState) initialValues.nav
   useEffect state.route do
     case state.route of
@@ -148,18 +141,13 @@ getInitialValues = do
     , initialRoute
     }
 
-fromJSProps :: JSProps -> Effect Props
-fromJSProps jsProps = do
-  article <- runMaybeT do
-    a <- MaybeT $ pure $ toMaybe jsProps.article
-    MaybeT $ hush <$> parseArticle a
-  Console.log $ "from js props" <> fromMaybe "nope" (_.uuid <$> article)
-  pure { article }
+fromJSProps :: JSProps -> Props
+fromJSProps jsProps = { article: hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
   initialValues <- getInitialValues
-  React.reactComponent "Mosaico" $ mosaicoComponent initialValues <<< Left
+  React.reactComponent "Mosaico" $ mosaicoComponent initialValues <<< fromJSProps
 
 render :: SetState -> State -> PushStateInterface -> JSX
 render setState state router =
@@ -185,8 +173,8 @@ render setState state router =
                  ArticlePage articleId
                    | Just article <- fromFullArticle <$> state.article
                    , article.uuid == articleId ->
-                       renderArticle state setState (pure $ FullArticle $ article { title = "ayoo" }) Nothing
-                   | otherwise -> --DOM.text "YOLO"
+                       renderArticle state setState (pure $ FullArticle $ article) Nothing
+                   | otherwise ->
                        let affArticle = do
                              a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
                              case a of
