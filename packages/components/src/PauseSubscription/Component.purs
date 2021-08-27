@@ -20,6 +20,7 @@ import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Helpers (formatDateDots)
 import KSF.Grid as Grid
+import KSF.InputField as InputField
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
 import React.Basic (JSX)
@@ -54,6 +55,7 @@ type State =
   , minEndDate   :: Maybe Date
   , maxEndDate   :: Maybe Date
   , ongoing      :: Boolean
+  , delete       :: Boolean
   }
 
 pauseSubscription :: Props -> JSX
@@ -70,6 +72,7 @@ initialState =
   , minEndDate: Nothing
   , maxEndDate: Nothing
   , ongoing: false
+  , delete: false
   }
 
 -- | Minimum pause period is one week
@@ -135,14 +138,21 @@ render self =
           , children:
               (case Tuple self.props.oldStart self.props.oldEnd of
                   Tuple (Just start) (Just end) ->
-                    [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <> formatDateDots end ]
+                    [ DOM.div
+                        { className: "pause-subscription--originals"
+                        , children:
+                            [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <> formatDateDots end
+                            ]
+                        }
+                    ] <>
+                    deleteChoice
                   _ -> []) <>
-              [ guard (isNothing self.props.oldStart || not self.state.ongoing) $
+              [ guard (isNothing self.props.oldStart || (not self.state.ongoing && not self.state.delete)) $
                 DOM.div
                   { className: "pause-subscription--start"
                   , children: [ startDayInput ]
                   }
-              , DOM.div
+              , guard (not self.state.delete) $ DOM.div
                   { className: "pause-subscription--end"
                   , children: [ endDayInput ]
                   }
@@ -152,6 +162,34 @@ render self =
                   }
               ]
           }
+
+    deleteChoice :: Array JSX
+    deleteChoice =
+      [ InputField.inputField
+          { type_: InputField.Radio
+          , placeholder: ""
+          , name: "delete"
+          , onChange: onDeleteChange
+          , value: Just "false"
+          , label: Just "Ändra"
+          , validationError: Nothing
+          , defaultChecked: not self.state.delete
+          }
+      , InputField.inputField
+          { type_: InputField.Radio
+          , placeholder: ""
+          , id: "delete-pause-radio"
+          , name: "delete"
+          , onChange: onDeleteChange
+          , value: Just "true"
+          , label: Just $ if self.state.ongoing then "Avbryt omedelbart" else "Radera"
+          , validationError: Nothing
+          , defaultChecked: self.state.delete
+          }
+      ]
+
+    onDeleteChange :: Maybe String -> Effect Unit
+    onDeleteChange newDelete = self.setState _ { delete = Just "true" == newDelete }
 
     startDayInput =
       dateInput
@@ -229,6 +267,17 @@ dateInput self { action, value, minDate, maxDate, disabled, label, id, defaultAc
     }
 
 submitForm :: State -> Props -> Effect Unit
+submitForm { delete: true } props@{ oldStart: Just start, oldEnd: Just end, userUuid, subsno } = do
+  props.onLoading
+  Aff.launchAff_ $
+    User.unpauseSubscription userUuid subsno start end >>=
+      case _ of
+        Right sub -> liftEffect do
+          props.onSuccess sub
+          Tracking.unpauseSubscription props.cusno subsno start end "success"
+        Left err -> liftEffect do
+          props.onError err
+          Tracking.unpauseSubscription props.cusno subsno start end "error"
 
 submitForm { startDate: Just start, endDate: Just end, ongoing } props@{ userUuid, subsno, oldStart: Just oldStart, oldEnd: Just oldEnd} = do
   props.onLoading

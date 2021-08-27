@@ -66,8 +66,15 @@ exports.editSubscriptionPause_ = function (cusno, subsno, oldStartDate, oldEndDa
   });
 };
 
-exports.unpauseSubscription_ = function (cusno, subsno, result) {
-  dataLayer.push({ event: "unPauseSubscription", cusno: cusno, subsno: subsno, result: result });
+exports.unpauseSubscription_ = function (cusno, subsno, startDate, endDate, result) {
+    dataLayer.push({
+	event: "unPauseSubscription",
+	cusno: cusno,
+	subsno: subsno,
+	startDate: startDate,
+	endDate: endDate,
+	result: result
+    });
 };
 
 exports.changeName_ = function (cusno, result) {

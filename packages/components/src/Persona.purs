@@ -227,12 +227,15 @@ editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate 
     ]
     ( authHeaders uuid auth )
 
-unpauseSubscription :: UUID -> Subsno -> UserAuth -> Aff Subscription
-unpauseSubscription uuid (Subsno subsno) auth = do
+unpauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
+unpauseSubscription uuid (Subsno subsno) startDate endDate auth = do
+  let startDateISO = formatDate startDate
+      endDateISO   = formatDate endDate
   callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
-    ([ unsafeToForeign uuid
-     , unsafeToForeign subsno
-     ])
+    [ unsafeToForeign uuid
+    , unsafeToForeign subsno
+    ] $ Record.merge
+    { startDate: startDateISO, endDate: endDateISO }
     ( authHeaders uuid auth )
 
 temporaryAddressChange
