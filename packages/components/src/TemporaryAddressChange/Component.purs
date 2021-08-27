@@ -8,9 +8,10 @@ import Data.Date (Date, adjust)
 import Data.Date as Date
 import Data.Either (Either(..))
 import Data.JSDate (toDate)
-import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
+import Data.String.Common as String
 import Data.Time.Duration as Time.Duration
 import Data.UUID (UUID)
 import Data.Validation.Semigroup (validation)
@@ -188,15 +189,20 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
               (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity
                  else ([ pastTempSelection ] <> _))
-              [ DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
+              [ guard (isJust self.props.editing) displayAddress
+              , DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
               , endDayInput
-              , addressInput
-              , zipInput
-              , cityInput
-              , countryInput
-              , guard (isNothing self.props.editing) $ CountryDropDown.countryChangeMessage
-              , temporaryNameInput
-              , DOM.div
+              ] <>
+              ( guard (isNothing self.props.editing) $
+                [ addressInput
+                , zipInput
+                , cityInput
+                , countryInput
+                , CountryDropDown.countryChangeMessage
+                , temporaryNameInput
+                ]
+              ) <>
+              [ DOM.div
                   { children: [ submitFormButton ]
                   , className: "mt2 clearfix"
                   }
@@ -243,6 +249,22 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , defaultActiveStartDate: self.state.minEndDate
         }
 
+    displayAddress =
+      DOM.div
+        { className: "temporary-address-change--editing-summary"
+        , children:
+            [ DOM.text $ fromMaybe "" self.state.streetAddress
+            , DOM.br {}
+            , DOM.text $ fromMaybe "" self.state.zipCode
+            , DOM.br {}
+            , DOM.text $ fromMaybe "" self.state.cityName
+            ] <> maybe mempty (\co -> guard (not $ String.null $ String.trim co) $
+                                      [ DOM.br {}
+                                      , DOM.text $ "c/o " <> co
+                                      ]
+                              ) self.state.temporaryName
+        }
+
     addressInput =
       InputField.inputField
         { type_: InputField.Text
@@ -252,7 +274,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.streetAddress
         , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
-        , disabled: isJust self.props.editing
         }
 
     zipInput =
@@ -264,7 +285,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.zipCode
         , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
-        , disabled: isJust self.props.editing
         }
 
     cityInput =
@@ -276,7 +296,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.cityName
         , validationError: Nothing
         , label: Just "Stad"
-        , disabled: isJust self.props.editing
         }
 
     countryInput =
@@ -295,7 +314,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.temporaryName
         , validationError: Nothing
         , label: Just "Tillfällig namnändring eller C/O"
-        , disabled: isJust self.props.editing
         }
 
     submitFormButton =
