@@ -366,6 +366,7 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
     , oldEnd: oldStart *> oldEnd
     , nextDelivery: toDate =<< toMaybe package.nextDelivery
     , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
+    , now: self.props.now
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \pausedSubscription ->
@@ -412,6 +413,7 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } 
     , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
     , editing: editing
     , userUuid: props.user.uuid
+    , now: self.props.now
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
