@@ -21,10 +21,10 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Now as Now
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Grid as Grid
+import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
@@ -53,6 +53,7 @@ type State =
   , countryCode    :: Maybe String
   , temporaryName  :: Maybe String
   , isIndefinite   :: Boolean
+  , ongoing        :: Boolean
   }
 
 type Self = React.Self Props State
@@ -65,6 +66,7 @@ type Props =
   , lastDelivery  :: Maybe Date
   , editing       :: Maybe User.PendingAddressChange
   , userUuid      :: UUID
+  , now           :: Date
   , onCancel      :: Effect Unit
   , onLoading     :: Effect Unit
   , onSuccess     :: User.Subscription -> Effect Unit
@@ -107,6 +109,7 @@ initialState =
   , countryCode: Just "FI"
   , temporaryName: Nothing
   , isIndefinite: false
+  , ongoing: false
   }
 
 component :: React.Component Props
@@ -127,11 +130,16 @@ calcMinEndDate lastDelivery (Just startDate) = do
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDate
   -- We set the minimum start date two days ahead because of system issues.
   -- TODO: This could be set depending on the time of day
-  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
+  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) self.props.now
       byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
+      ongoing = fromMaybe false do
+        current <- self.props.editing
+        start <- toDate current.startDate
+        -- No need to check for end, this component shouldn't even show
+        -- up then.
+        pure $ self.props.now >= start
   self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow }
   case self.props.editing of
     Just p -> do
@@ -142,6 +150,8 @@ didMount self = do
                       , startDate = toDate p.startDate
                       , endDate = toDate =<< toMaybe p.endDate
                       , isIndefinite = isNothing $ toMaybe p.endDate
+                      , ongoing = ongoing
+                      , minEndDate = if ongoing then Just self.props.now else Nothing
                       }
     _ -> pure unit
 
@@ -165,6 +175,8 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         ]
     }
   where
+    originalStart =
+      (toDate <<< _.startDate) =<< self.props.editing
     titleText =
       case self.props.editing of
         Just _ -> "Ändra datum för din adressändring"
@@ -189,8 +201,14 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
               (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity
                  else ([ pastTempSelection ] <> _))
-              [ guard (isJust self.props.editing) displayAddress
-              , DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
+              [ guard (isJust self.props.editing) originalDates
+              , guard (isJust self.props.editing) displayAddress
+              , DOM.div
+                  { children:
+                      [ guard (isNothing self.props.editing || not self.state.ongoing) startDayInput
+                      , isIndefiniteCheckbox
+                      ]
+                  }
               , endDayInput
               ] <>
               ( guard (isNothing self.props.editing) $
@@ -208,6 +226,18 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
                   }
               ]
           }
+
+    originalDates =
+      case originalStart of
+        Just start ->
+          DOM.div
+            { className: "temporary-address-change--originals"
+            , children:
+                [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <>
+                  maybe "" formatDateDots (toDate =<< toMaybe <<< _.endDate =<< self.props.editing)
+                ]
+            }
+        _ -> mempty
 
     startDayInput =
       dateInput
