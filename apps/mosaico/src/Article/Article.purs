@@ -29,15 +29,6 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 
-
-foreign import someIcons ::
-  { facebook :: String
-  , twitter :: String
-  , linkedin :: String
-  , mail :: String
-  , whatsapp :: String
-  }
-
 type Self =
   { state :: State
   , setState :: (State -> State) -> Effect Unit
@@ -169,31 +160,36 @@ render { props, state, setState } =
                 [ DOM.li_
                     [ DOM.a
                       { href: "#"
-                      , children: [ DOM.img { src: "" } ]
+                      , children: [ DOM.span {} ]
+                      , className: "mosaico-article__some--facebook"
                       }
                   ]
                 , DOM.li_
                     [ DOM.a
                       { href: "#"
-                      , children: [ DOM.img { src: "" } ]
+                      , children: [ DOM.span {} ]
+                      , className: "mosaico-article__some--twitter"
                       }
                   ]
                 , DOM.li_
                     [ DOM.a
                       { href: "#"
-                      , children: [ DOM.img { src: "" } ]
+                      , children: [ DOM.span {} ]
+                      , className: "mosaico-article__some--linkedin"
                       }
                   ]
                 , DOM.li_
                     [ DOM.a
                       { href: "#"
-                      , children: [ DOM.img { src: "" } ]
+                      , children: [ DOM.span {} ]
+                      , className: "mosaico-article__some--whatsapp"
                       }
                   ]
                 , DOM.li_
                     [ DOM.a
                       { href: "#"
-                      , children: [ DOM.img { src: "" } ]
+                      , children: [ DOM.span {} ]
+                      , className: "mosaico-article__some--mail"
                       }
                     ]
                 ]
