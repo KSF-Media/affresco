@@ -21,7 +21,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Article, fromFullArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
@@ -38,10 +38,14 @@ type Self =
 type Props =
   { brand :: String
   , affArticle :: Aff FullArticle
+  -- ^ `affArticle` is needed always, even if we get the `article`.
+  --   In the case it's a premium article and the customer has no subscription,
+  --   we need to load the article again after they make the purchase.
+  --   You can think `affArticle` being the Lettera call to get the article.
+  , article :: Maybe FullArticle
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
   , user :: Maybe User
-  , article :: Maybe FullArticle
   }
 
 type State =
@@ -73,31 +77,36 @@ articleComponent = do
     state /\ setState <- useState initialState
 
     useEffectOnce do
-      when (isNothing props.article) $ loadArticle setState props.affArticle
+      when (isNothing props.article) $ do
+        loadArticle setState props.affArticle
       pure mempty
 
     -- If user logs in / logs out, reload the article.
     -- NOTE: We simply compare the email attribute of `User`
     -- as not every attribute of `User` implements `Eq`
-    useEffect (_.email <$> props.user) do
-      loadArticle setState props.affArticle
-      pure mempty
+    -- TODO: Should probably be state.user, right?
+    -- TODO: Actually, this should probably live some place else
+    --       Leaving the code for reference until the whole thing is resolved
+    -- useEffect (_.email <$> props.user) do
+    --   loadArticle setState props.affArticle
+    --   pure mempty
 
     pure $ render { state, setState, props }
 
 loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
-loadArticle setState affArticle =
+loadArticle setState affArticle = do
   Aff.launchAff_ do
-    article <- fromFullArticle <$> affArticle
-    liftEffect $ Console.log $ "a " <> article.title
-    liftEffect $ setState \s -> s
-      { article = Just $ FullArticle article
-      , body = map Record.toSum article.body
-      , mainImage = article.mainImage
-      , title = article.title
-      , tags = article.tags
-      , preamble = article.preamble
-      }
+    fullArticle <- affArticle
+    let article = fromFullArticle fullArticle
+    liftEffect $ do
+      setState \s -> s
+                  { article = Just fullArticle
+                  , body = map Record.toSum article.body
+                  , mainImage = article.mainImage
+                  , title = article.title
+                  , tags = article.tags
+                  , preamble = article.preamble
+                  }
 
 renderImage :: Image -> JSX
 renderImage img =
