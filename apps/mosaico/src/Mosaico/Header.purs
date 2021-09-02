@@ -18,7 +18,7 @@ type Props = { router :: Maybe PushStateInterface }
 type Self =
   { state :: State
   , setState :: SetState
-    , props :: Props
+  , props :: Props
   }
 
 type State =
