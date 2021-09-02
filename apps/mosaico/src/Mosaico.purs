@@ -3,13 +3,11 @@ module Mosaico where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Data.Argonaut.Core (Json)
 import Data.Array (null, head)
 import Data.Either (Either(..), either, hush)
-import Data.Foldable (fold)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
-import Data.Monoid (guard, mempty)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -18,11 +16,10 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Exception (error)
-import Effect.Unsafe (unsafePerformEffect)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, parseArticle, parseArticleWithoutLocalizing)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
@@ -35,11 +32,8 @@ import Routing (match)
 import Routing.Match (Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
-import Unsafe.Coerce (unsafeCoerce)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
-
-foreign import windowArticleId :: Effect (Nullable String)
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -63,8 +57,8 @@ type State =
 
 type SetState = (State -> State) -> Effect Unit
 
-type Props = { article :: Maybe Article }
-type JSProps = { article :: Nullable Json }
+type Props = { article :: Maybe FullArticle }
+type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
 
 frontpageRoute :: Match MosaicoPage
 frontpageRoute = Frontpage <$ root
@@ -81,9 +75,12 @@ app = do
   initialValues <- getInitialValues
   component "Mosaico" $ mosaicoComponent initialValues
 
--- mosaicoComponent :: InitialValues -> Either JSProps Props -> Render Unit (UseEffect State Unit) JSX
+mosaicoComponent
+  :: InitialValues
+  -> Props
+  -> Render Unit (UseEffect MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
-  state /\ setState <- useState initialValues.state { article = FullArticle <$> props.article }
+  state /\ setState <- useState initialValues.state { article = props.article }
 
   -- Listen for route changes and set state accordingly
   useEffectOnce $ locations (routeListener setState) initialValues.nav
@@ -142,7 +139,13 @@ getInitialValues = do
     }
 
 fromJSProps :: JSProps -> Props
-fromJSProps jsProps = { article: hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article }
+fromJSProps jsProps =
+  let isPreview = fromMaybe false $ toMaybe jsProps.isPreview
+      mkFullArticle
+        | isPreview = PreviewArticle
+        | otherwise = FullArticle
+      article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
+  in { article }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -171,16 +174,13 @@ render setState state router =
            , Header.mainSeparator
            , case state.route of
                  ArticlePage articleId
-                   | Just article <- fromFullArticle <$> state.article
-                   , article.uuid == articleId ->
-                       renderArticle state setState (pure $ FullArticle $ article) Nothing
-                   | otherwise ->
-                       let affArticle = do
-                             a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-                             case a of
-                               Right article -> pure article
-                               Left _ -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
-                       in renderArticle state setState affArticle state.clickedArticle
+                   | Just fullArticle <- state.article
+                   , article <- fromFullArticle fullArticle
+                   -- If we have this article already in `state`, let's pass that to `articleComponent`
+                   -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
+                   -- e.g. when a subscription is purchased or user logs in
+                   , article.uuid == articleId -> renderArticle state setState (Just fullArticle) (affArticle articleId) Nothing
+                   | otherwise                 -> renderArticle state setState Nothing (affArticle articleId) state.clickedArticle
                  Frontpage -> articleList state setState router
            , DOM.footer
                { className: "mosaico--footer"
@@ -191,12 +191,19 @@ render setState state router =
            ]
        }
 
-renderArticle :: State -> SetState -> Aff FullArticle -> Maybe ArticleStub -> JSX
-renderArticle state setState affA aStub =
+affArticle :: String -> Aff FullArticle
+affArticle articleId = do
+  a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+  case a of
+    Right article -> pure article
+    Left _ -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
+
+renderArticle :: State -> SetState -> Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> JSX
+renderArticle state setState maybeA affA aStub =
   state.articleComponent
     { affArticle: affA
     , brand: "hbl"
-    , article: Nothing
+    , article: maybeA
     , articleStub: aStub
     , onLogin: setState \s -> s { modalView = Just LoginModal }
     , user: state.user
