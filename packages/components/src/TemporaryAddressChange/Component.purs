@@ -8,9 +8,10 @@ import Data.Date (Date, adjust)
 import Data.Date as Date
 import Data.Either (Either(..))
 import Data.JSDate (toDate)
-import Data.Maybe (Maybe(..), isNothing, isJust, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
+import Data.String.Common as String
 import Data.Time.Duration as Time.Duration
 import Data.UUID (UUID)
 import Data.Validation.Semigroup (validation)
@@ -20,10 +21,10 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Now as Now
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Grid as Grid
+import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
@@ -52,6 +53,7 @@ type State =
   , countryCode    :: Maybe String
   , temporaryName  :: Maybe String
   , isIndefinite   :: Boolean
+  , ongoing        :: Boolean
   }
 
 type Self = React.Self Props State
@@ -64,6 +66,7 @@ type Props =
   , lastDelivery  :: Maybe Date
   , editing       :: Maybe User.PendingAddressChange
   , userUuid      :: UUID
+  , now           :: Date
   , onCancel      :: Effect Unit
   , onLoading     :: Effect Unit
   , onSuccess     :: User.Subscription -> Effect Unit
@@ -106,6 +109,7 @@ initialState =
   , countryCode: Just "FI"
   , temporaryName: Nothing
   , isIndefinite: false
+  , ongoing: false
   }
 
 component :: React.Component Props
@@ -126,11 +130,16 @@ calcMinEndDate lastDelivery (Just startDate) = do
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDate
   -- We set the minimum start date two days ahead because of system issues.
   -- TODO: This could be set depending on the time of day
-  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) now
+  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) self.props.now
       byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
+      ongoing = fromMaybe false do
+        current <- self.props.editing
+        start <- toDate current.startDate
+        -- No need to check for end, this component shouldn't even show
+        -- up then.
+        pure $ self.props.now >= start
   self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow }
   case self.props.editing of
     Just p -> do
@@ -141,6 +150,8 @@ didMount self = do
                       , startDate = toDate p.startDate
                       , endDate = toDate =<< toMaybe p.endDate
                       , isIndefinite = isNothing $ toMaybe p.endDate
+                      , ongoing = ongoing
+                      , minEndDate = if ongoing then Just self.props.now else Nothing
                       }
     _ -> pure unit
 
@@ -164,6 +175,8 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         ]
     }
   where
+    originalStart =
+      (toDate <<< _.startDate) =<< self.props.editing
     titleText =
       case self.props.editing of
         Just _ -> "Ändra datum för din adressändring"
@@ -188,20 +201,43 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
               (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity
                  else ([ pastTempSelection ] <> _))
-              [ DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
-              , endDayInput
-              , addressInput
-              , zipInput
-              , cityInput
-              , countryInput
-              , guard (isNothing self.props.editing) $ CountryDropDown.countryChangeMessage
-              , temporaryNameInput
+              [ guard (isJust self.props.editing) originalDates
+              , guard (isJust self.props.editing) displayAddress
               , DOM.div
+                  { children:
+                      [ guard (isNothing self.props.editing || not self.state.ongoing) startDayInput
+                      , isIndefiniteCheckbox
+                      ]
+                  }
+              , endDayInput
+              ] <>
+              ( guard (isNothing self.props.editing) $
+                [ addressInput
+                , zipInput
+                , cityInput
+                , countryInput
+                , CountryDropDown.countryChangeMessage
+                , temporaryNameInput
+                ]
+              ) <>
+              [ DOM.div
                   { children: [ submitFormButton ]
                   , className: "mt2 clearfix"
                   }
               ]
           }
+
+    originalDates =
+      case originalStart of
+        Just start ->
+          DOM.div
+            { className: "temporary-address-change--originals"
+            , children:
+                [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <>
+                  maybe "" formatDateDots (toDate =<< toMaybe <<< _.endDate =<< self.props.editing)
+                ]
+            }
+        _ -> mempty
 
     startDayInput =
       dateInput
@@ -243,6 +279,22 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , defaultActiveStartDate: self.state.minEndDate
         }
 
+    displayAddress =
+      DOM.div
+        { className: "temporary-address-change--editing-summary"
+        , children:
+            [ DOM.text $ fromMaybe "" self.state.streetAddress
+            , DOM.br {}
+            , DOM.text $ fromMaybe "" self.state.zipCode
+            , DOM.br {}
+            , DOM.text $ fromMaybe "" self.state.cityName
+            ] <> maybe mempty (\co -> guard (not $ String.null $ String.trim co) $
+                                      [ DOM.br {}
+                                      , DOM.text $ "c/o " <> co
+                                      ]
+                              ) self.state.temporaryName
+        }
+
     addressInput =
       InputField.inputField
         { type_: InputField.Text
@@ -252,7 +304,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.streetAddress
         , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
-        , disabled: isJust self.props.editing
         }
 
     zipInput =
@@ -264,7 +315,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.zipCode
         , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
-        , disabled: isJust self.props.editing
         }
 
     cityInput =
@@ -276,7 +326,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.cityName
         , validationError: Nothing
         , label: Just "Stad"
-        , disabled: isJust self.props.editing
         }
 
     countryInput =
@@ -295,7 +344,6 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.temporaryName
         , validationError: Nothing
         , label: Just "Tillfällig namnändring eller C/O"
-        , disabled: isJust self.props.editing
         }
 
     submitFormButton =
