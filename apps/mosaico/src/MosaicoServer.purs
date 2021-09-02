@@ -26,7 +26,7 @@ app = do
           { articleComponent
           , headerComponent
           }
-    state /\ setState <- useState initialState
+    state /\ _setState <- useState initialState
     pure $ render state props
 
 

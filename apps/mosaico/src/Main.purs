@@ -18,7 +18,7 @@ import Lettera as Lettera
 import Mosaico.Article as Article
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
-import Lettera.Models (fromFullArticle, articleToJson, fromFullArticle, isPreviewArticle)
+import Lettera.Models (fromFullArticle, articleToJson, isPreviewArticle)
 import Node.FS.Sync as FS
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
