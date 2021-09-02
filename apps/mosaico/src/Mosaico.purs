@@ -92,7 +92,7 @@ mosaicoComponent initialValues props = React.do
           frontpage <- Lettera.getFrontpage HBL
           liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
         -- Set article to Nothing to prevent flickering of old article
-        else liftEffect $ setState \s -> s { article = Nothing }
+        else setState \s -> s { article = Nothing }
       ArticlePage _articleId -> pure unit
     pure mempty
 
