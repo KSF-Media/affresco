@@ -165,43 +165,7 @@ render { props, state, setState } =
             }
         , DOM.ul
             { className: "mosaico-article__some"
-            , children:
-                [ DOM.li_
-                    [ DOM.a
-                      { href: "#"
-                      , children: [ DOM.span {} ]
-                      , className: "mosaico-article__some--facebook"
-                      }
-                  ]
-                , DOM.li_
-                    [ DOM.a
-                      { href: "#"
-                      , children: [ DOM.span {} ]
-                      , className: "mosaico-article__some--twitter"
-                      }
-                  ]
-                , DOM.li_
-                    [ DOM.a
-                      { href: "#"
-                      , children: [ DOM.span {} ]
-                      , className: "mosaico-article__some--linkedin"
-                      }
-                  ]
-                , DOM.li_
-                    [ DOM.a
-                      { href: "#"
-                      , children: [ DOM.span {} ]
-                      , className: "mosaico-article__some--whatsapp"
-                      }
-                  ]
-                , DOM.li_
-                    [ DOM.a
-                      { href: "#"
-                      , children: [ DOM.span {} ]
-                      , className: "mosaico-article__some--mail"
-                      }
-                    ]
-                ]
+            , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
             }
         , DOM.div
             { className: "mosaico--article--body "
@@ -251,6 +215,15 @@ render { props, state, setState } =
             { className: "mosaico--article-updated-timestamp"
             , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
             }
+
+    mkShareIcon someName =
+      DOM.li_
+        [ DOM.a
+            { href: "#"
+            , children: [ DOM.span {} ]
+            , className: "mosaico-article__some--" <> someName
+            }
+        ]
 
     adBox =
         Ad.ad { contentUnit: "JATTEBOX" }
