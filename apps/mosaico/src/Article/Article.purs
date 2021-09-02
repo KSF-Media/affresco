@@ -136,9 +136,9 @@ renderImage img =
 render :: Self -> JSX
 render { props, state, setState } =
     let letteraArticle = map fromFullArticle state.article
-        title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
-        tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
-        mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+        title = fromMaybe mempty $  map _.title letteraArticle <|> map _.title props.articleStub
+        tags = fromMaybe mempty $ map _.tags letteraArticle <|> map _.tags props.articleStub
+        mainImage = (_.mainImage =<< letteraArticle) <|> (_.listImage =<< props.articleStub)
         bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
     in DOM.div
       { className: "mosaico--article"
