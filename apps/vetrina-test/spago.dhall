@@ -2,10 +2,12 @@
 , dependencies =
   [ "aff"
   , "aff-promise"
+  , "affjax"
   , "affresco-components"
   , "affresco-test"
   , "affresco-user"
   , "affresco-vetrina"
+  , "argonaut-codecs"
   , "console"
   , "datetime"
   , "effect"
@@ -24,7 +26,6 @@
   , "test-unit"
   , "toppokki"
   , "uuid"
-  , "affjax"
   ]
 , packages = ../../packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
