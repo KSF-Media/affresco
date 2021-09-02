@@ -101,7 +101,7 @@ mosaicoComponent initialValues props = React.do
 routeListener :: ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener setState _oldLoc location = do
   case match routes location.pathname of
-    Right path -> setState \s -> s { route = path }
+    Right path -> setState _ { route = path }
     Left _     -> pure unit
 
 type InitialValues =
