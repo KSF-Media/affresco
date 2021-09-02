@@ -398,20 +398,16 @@ editAddress self =
             , label: Just "Stad"
             , validationError: inputFieldErrorMessage $ validateField City self.state.address.city []
             }
-        , CountryDropDown.countryDropDown countries false
+        , CountryDropDown.countryDropDown CountryDropDown.limitedCountries false
             (\newCountryCode -> self.setState _ { address { countryCode = newCountryCode } })
             self.state.address.countryCode
+        , CountryDropDown.countryChangeMessage
         , submitButton
         , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditAddress ] }
         ]
     , onSubmit: Events.handler preventDefault $ \_ -> submitNewAddress $ validateAddressForm self.state.address
     }
   where
-    countries =
-      [ { countryCode: "FI", countryName: "Finland" }
-      , { countryCode: "AX", countryName: "Åland" }
-      ]
-
     submitButton = iconSubmit $ isValid (validateAddressForm self.state.address)
 
     validateAddressForm :: Address -> ValidatedForm AddressFormFields Address

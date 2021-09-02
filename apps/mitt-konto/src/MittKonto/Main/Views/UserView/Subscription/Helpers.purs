@@ -56,7 +56,7 @@ isPeriodExpired excludeCurrentDay baseDate endDate =
 formatDateString :: JSDate -> Maybe JSDate -> String
 formatDateString startDate endDate
   | Just startString <- formatDateDots <$> toDate startDate =
-    let endString = maybe "" formatDateDots $ toDate =<< endDate
+    let endString = maybe "tillsvidare" formatDateDots $ toDate =<< endDate
     in startString <> " – " <> endString
   | otherwise = mempty
 
