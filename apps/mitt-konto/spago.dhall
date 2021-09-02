@@ -7,6 +7,7 @@ You can edit this file as you like.
   [ "aff"
   , "affresco-components"
   , "affresco-user"
+  , "argonaut-codecs"
   , "arrays"
   , "avar"
   , "console"
