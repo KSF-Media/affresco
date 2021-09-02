@@ -77,8 +77,7 @@ articleComponent = do
     state /\ setState <- useState initialState
 
     useEffectOnce do
-      when (isNothing props.article) $ do
-        loadArticle setState props.affArticle
+      when (isNothing props.article) $ loadArticle setState props.affArticle
       pure mempty
 
     -- If user logs in / logs out, reload the article.
@@ -98,7 +97,7 @@ loadArticle setState affArticle = do
   Aff.launchAff_ do
     fullArticle <- affArticle
     let article = fromFullArticle fullArticle
-    liftEffect $ do
+    liftEffect do
       setState \s -> s
                   { article = Just fullArticle
                   , body = map Record.toSum article.body
@@ -136,7 +135,7 @@ renderImage img =
 render :: Self -> JSX
 render { props, state, setState } =
     let letteraArticle = map fromFullArticle state.article
-        title = fromMaybe mempty $  map _.title letteraArticle <|> map _.title props.articleStub
+        title = fromMaybe mempty $ map _.title letteraArticle <|> map _.title props.articleStub
         tags = fromMaybe mempty $ map _.tags letteraArticle <|> map _.tags props.articleStub
         mainImage = (_.mainImage =<< letteraArticle) <|> (_.listImage =<< props.articleStub)
         bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
