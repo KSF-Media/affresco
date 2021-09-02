@@ -234,7 +234,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
             { className: "temporary-address-change--originals"
             , children:
                 [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <>
-                  maybe "" formatDateDots (toDate =<< toMaybe <<< _.endDate =<< self.props.editing)
+                  maybe "tillsvidare" formatDateDots (toDate =<< toMaybe <<< _.endDate =<< self.props.editing)
                 ]
             }
         _ -> mempty
