@@ -1,30 +1,28 @@
-{ name =
-    "affresco-user"
+{ name = "affresco-user"
 , dependencies =
-    [ "effect"
-    , "record"
-    , "console"
-    , "aff"
-    , "aff-promise"
-    , "formatters"
-    , "datetime"
-    , "react-basic"
-    , "react-basic-hooks"
-    , "react-basic-router"
-    , "psci-support"
-    , "prelude"
-    , "js-date"
-    , "foreign-generic"
-    , "ordered-collections"
-    , "simple-json"
-    , "facebook"
-    , "now"
-    , "affresco-components"
-    , "uuid"
-    , "affjax"
-    ]
-, packages =
-    ../../packages.dhall
-, sources =
-    [ "src/**/*.purs" ]
+  [ "aff"
+  , "aff-promise"
+  , "affjax"
+  , "affresco-components"
+  , "argonaut-codecs"
+  , "console"
+  , "datetime"
+  , "effect"
+  , "facebook"
+  , "foreign-generic"
+  , "formatters"
+  , "js-date"
+  , "now"
+  , "ordered-collections"
+  , "prelude"
+  , "psci-support"
+  , "react-basic"
+  , "react-basic-hooks"
+  , "react-basic-router"
+  , "record"
+  , "simple-json"
+  , "uuid"
+  ]
+, packages = ../../packages.dhall
+, sources = [ "src/**/*.purs" ]
 }
