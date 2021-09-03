@@ -92,6 +92,11 @@ let apps =
               apps/hbl365/output
               ''
           }
+        , Actions.App::{
+          , name = "Prenumerera"
+          , buildDir = "prenumerera"
+          , deployDir = "prenumerera"
+          }
         ]
       : List Actions.App.Type
 

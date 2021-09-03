@@ -293,6 +293,7 @@ pollOrder setState { logger } (Left bottegaErr) = liftEffect do
   let errMessage = case bottegaErr of
         BottegaUnexpectedError e   -> e
         BottegaInsufficientAccount -> "InsufficientAccount"
+        BottegaTimeout             -> "Timeout"
   logger.error $ Error.orderError $ "Failed to get order from server: " <> errMessage
   setState _ { purchaseState = PurchaseFailed ServerError }
 
@@ -587,6 +588,7 @@ toOrderFailure :: BottegaError -> OrderFailure
 toOrderFailure bottegaErr =
   case bottegaErr of
     BottegaInsufficientAccount    -> InsufficientAccount
+    BottegaTimeout                -> UnexpectedError "Timeout"
     BottegaUnexpectedError errMsg -> UnexpectedError errMsg
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX
