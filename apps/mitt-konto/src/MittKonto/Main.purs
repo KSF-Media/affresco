@@ -82,6 +82,9 @@ app = do
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
     route /\ setRoute <- useState' initialRoute
+    -- Display a nicer message to a user if they try to navigate back
+    -- after changing their password.
+    passwordChangeDone /\ setPasswordChangeDone <- useState' false
     useEffectOnce $ pure do
       Aff.launchAff_ $ Timeout.stopTimer timeout
     let logout = do
@@ -178,7 +181,12 @@ app = do
             , route: "/kreditkort/uppdatera"
             , routeFrom: "/"
             }
-        passwordResetView code = passwordReset { user: state.activeUser, code }
+        passwordResetView code = passwordReset { user: state.activeUser
+                                               , code
+                                               , passwordChangeDone
+                                               , setPasswordChangeDone
+                                               , navToMain: router.pushState (unsafeToForeign {}) "/"
+                                               }
         userContent = case route of
           MittKonto -> foldMap (Views.userView router self logger) state.activeUser
           Search -> guard state.adminMode searchView
