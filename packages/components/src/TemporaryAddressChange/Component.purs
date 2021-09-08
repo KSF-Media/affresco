@@ -23,6 +23,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (toString) as Subsno
+import KSF.Helpers (formatDateDots)
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
@@ -54,6 +55,7 @@ type State =
   , temporaryName  :: Maybe String
   , isIndefinite   :: Boolean
   , ongoing        :: Boolean
+  , delete         :: Boolean
   }
 
 type Self = React.Self Props State
@@ -110,6 +112,7 @@ initialState =
   , temporaryName: Nothing
   , isIndefinite: false
   , ongoing: false
+  , delete: false
   }
 
 component :: React.Component Props
@@ -179,8 +182,15 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
       (toDate <<< _.startDate) =<< self.props.editing
     titleText =
       case self.props.editing of
-        Just _ -> "Ändra datum för din adressändring"
+        Just _ -> "Ändra datum för din adressändring " <>
+          if ongoing then "eller avbryt den" else "eller radera den"
         Nothing -> "Gör tillfällig adressändring"
+    ongoing = fromMaybe false do
+      current <- self.props.editing
+      start <- toDate current.startDate
+      -- No need to check for end, this component shouldn't even show
+      -- up then.
+      pure $ self.props.now >= start
     pastTempSelection =
       pastTemporaryAddressDropDown
         self.props.pastAddresses
@@ -196,20 +206,26 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         )
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm ((toDate <<< _.startDate) =<< self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
+          { onSubmit: handler preventDefault
+              (\_ -> submitForm
+                     originalStart
+                     (if self.state.delete then Nothing else startDate)
+                     (if self.state.delete || self.state.isIndefinite then Nothing else endDate)
+                     self.props.editing
+                     { streetAddress
+                     , zipCode
+                     , cityName: Nothing
+                     , countryCode
+                     , temporaryName
+                     })
           , children:
               (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity
                  else ([ pastTempSelection ] <> _))
-              [ guard (isJust self.props.editing) originalDates
-              , guard (isJust self.props.editing) displayAddress
-              , DOM.div
-                  { children:
-                      [ guard (isNothing self.props.editing || not self.state.ongoing) startDayInput
-                      , isIndefiniteCheckbox
-                      ]
-                  }
-              , endDayInput
+              [ guard (isJust self.props.editing) $ originalDates <> deleteChoice <> displayAddress
+              , guard (not self.state.delete) $
+                  DOM.div { children: [ startDayInput, isIndefiniteCheckbox ] }
+              , guard (not self.state.delete) endDayInput
               ] <>
               ( guard (isNothing self.props.editing) $
                 [ addressInput
@@ -239,6 +255,34 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
             }
         _ -> mempty
 
+    deleteChoice =
+      React.fragment
+        [ InputField.inputField
+            { type_: InputField.Radio
+            , placeholder: ""
+            , name: "delete"
+            , onChange: onDeleteChange
+            , value: Just "false"
+            , label: Just "Ändra"
+            , validationError: Nothing
+            , defaultChecked: not self.state.delete
+            }
+        , InputField.inputField
+            { type_: InputField.Radio
+            , placeholder: ""
+            , name: "delete"
+            , id: "delete-temp-address-change-radio"
+            , onChange: onDeleteChange
+            , value: Just "true"
+            , label: Just $ if ongoing then "Avbryt omedelbart" else "Radera"
+            , validationError: Nothing
+            , defaultChecked: self.state.delete
+            }
+        ]
+
+    onDeleteChange :: Maybe String -> Effect Unit
+    onDeleteChange newDelete = self.setState _ { delete = Just "true" == newDelete }
+
     startDayInput =
       dateInput
         self
@@ -250,7 +294,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.startDate
         , minDate: self.state.minStartDate
         , maxDate: Nothing
-        , disabled: false
+        , disabled: self.state.delete
         , label: "Börjar från"
         , id: "edit-start"
         , defaultActiveStartDate: Nothing
@@ -264,6 +308,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , onChange: \checked -> self.setState _ { isIndefinite = checked }
         , label: Just "Tillsvidare"
         , id: "edit-indefinite--" <> Subsno.toString self.props.subsno
+        , disabled: self.state.delete
         }
 
     endDayInput =
@@ -273,7 +318,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.endDate
         , minDate: self.state.minEndDate
         , maxDate: Nothing
-        , disabled: isNothing self.state.startDate || self.state.isIndefinite
+        , disabled: isNothing self.state.startDate || self.state.isIndefinite || self.state.delete
         , label: "Avslutas"
         , id: "edit-end"
         , defaultActiveStartDate: self.state.minEndDate
@@ -393,6 +438,19 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
           Left invalidDateInput -> liftEffect do
             self.props.onError invalidDateInput
             Tracking.editTempAddressChange self.props.cusno self.props.subsno oldStartDate startDate' endDate' "error: invalidDateInput"
+
+    submitForm (Just oldStartDate) Nothing _ (Just editing) _ = do
+      self.props.onLoading
+      let endDate' = toDate =<< toMaybe editing.endDate
+      Aff.launchAff_ $ User.deleteTemporaryAddressChange self.props.userUuid self.props.subsno oldStartDate endDate' >>=
+        case _ of
+          Right sub -> liftEffect do
+            self.props.onSuccess sub
+            Tracking.deleteTempAddressChange self.props.cusno self.props.subsno oldStartDate endDate' "success"
+          Left invalidDateInput -> liftEffect do
+            self.props.onError invalidDateInput
+            Tracking.deleteTempAddressChange self.props.cusno self.props.subsno oldStartDate endDate' "error: invalidDateInput"
+
     submitForm _ _ _ _ _ = Console.error "Temporary address change dates were not defined."
 
 type DateInputField =

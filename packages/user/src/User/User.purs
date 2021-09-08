@@ -597,9 +597,14 @@ editSubscriptionPause userUuid subsno oldStartDate oldEndDate newStartDate newEn
 unpauseSubscription
   :: UUID
   -> Subsno
-  -> Aff Subscription.Subscription
-unpauseSubscription userUuid subsno = do
-  Persona.unpauseSubscription userUuid subsno =<< requireToken
+  -> Date
+  -> Date
+  -> Aff (Either Persona.InvalidDateInput Subscription.Subscription)
+unpauseSubscription userUuid subsno startDate endDate = do
+  unpausedSub <- try $ Persona.unpauseSubscription userUuid subsno startDate endDate =<< requireToken
+  case unpausedSub of
+    Right sub -> pure $ Right sub
+    Left _ -> pure $ Left Persona.InvalidUnexpected
 
 temporaryAddressChange
   :: UUID

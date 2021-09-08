@@ -18,7 +18,7 @@ foreign import tempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndD
 foreign import editTempAddressChange_ :: EffectFn6 Cusno Subsno StartDateString StartDateString EndDateString Result Unit
 foreign import pauseSubscription_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import editSubscriptionPause_ :: EffectFn7 Cusno Subsno StartDateString EndDateString StartDateString EndDateString Result Unit
-foreign import unpauseSubscription_ :: EffectFn3 Cusno Subsno Result Unit
+foreign import unpauseSubscription_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import deleteTempAddressChange_ :: EffectFn5 Cusno Subsno StartDateString EndDateString Result Unit
 foreign import updateCreditCard_ :: EffectFn5 Cusno Subsno CreditCard CreditCardRegisterNumber Result Unit
 foreign import changeName_ :: EffectFn2 Cusno Result Unit
@@ -73,8 +73,9 @@ editSubscriptionPause  :: Cusno -> Subsno -> StartDate -> EndDate -> StartDate -
 editSubscriptionPause cusno subsno oldStartDate oldEndDate newStartDate newEndDate result =
   runEffectFn7 editSubscriptionPause_ cusno subsno (Helpers.formatDate oldStartDate) (Helpers.formatDate oldEndDate) (Helpers.formatDate newStartDate) (Helpers.formatDate newEndDate) result
 
-unpauseSubscription :: Cusno -> Subsno -> Result -> Effect Unit
-unpauseSubscription = runEffectFn3 unpauseSubscription_
+unpauseSubscription :: Cusno -> Subsno -> StartDate -> EndDate -> Result -> Effect Unit
+unpauseSubscription cusno subsno startDate endDate result =
+  runEffectFn5 unpauseSubscription_ cusno subsno (Helpers.formatDate startDate) (Helpers.formatDate endDate) result
 
 deleteTempAddressChange :: Cusno -> Subsno -> StartDate -> Maybe EndDate -> Result -> Effect Unit
 deleteTempAddressChange cusno subsno startDate endDate result =

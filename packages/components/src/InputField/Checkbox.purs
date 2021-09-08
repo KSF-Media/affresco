@@ -28,6 +28,7 @@ type Props =
   , label           :: Maybe String
   , required        :: Boolean
   , id              :: String
+  , disabled        :: Boolean
   )
 
 type OptionalProps =
@@ -35,6 +36,7 @@ type OptionalProps =
   , label           :: Maybe String
   , required        :: Boolean
   , id              :: String
+  , disabled        :: Boolean
   )
 
 type State =
@@ -61,6 +63,7 @@ inputCheckbox props = React.make component
       , label: Nothing
       , required: false
       , id: ""
+      , disabled: false
       }
 
 render :: Self -> JSX
@@ -81,6 +84,7 @@ render { props } =
             , onChange: handler targetChecked \maybeNewVal -> do
                 props.onChange $ fromMaybe false maybeNewVal
             , id: if props.id == "" then unsafeCoerce Nullable.null else props.id
+            , disabled: props.disabled
             }
         ]
     }

@@ -4,17 +4,14 @@ import Prelude
 
 import Data.Array (filter, find, mapMaybe)
 import Data.Array as Array
-import Data.Either (Either(..))
 import Data.Enum (enumFromTo)
-import Data.Foldable (foldMap, for_, null, maximum)
+import Data.Foldable (foldMap, maximum)
 import Data.JSDate (toDate)
 import Data.List (intercalate)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Nullable (toMaybe)
 import Data.String (length, splitAt, trim)
 import Data.Tuple (Tuple(..))
-import Effect.Aff as Aff
-import Effect.Class (liftEffect)
 import Foreign (unsafeToForeign)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
 import KSF.Api.Subscription (toString) as Subsno
@@ -27,7 +24,6 @@ import KSF.JSError as Error
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.Sentry as Sentry
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
-import KSF.Tracking as Tracking
 import KSF.User (InvalidDateInput(..))
 import KSF.User as User
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
@@ -112,7 +108,7 @@ showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
   let addressString = Helpers.formatAddress address
       pendingPeriod = Helpers.formatDateString startDate (toMaybe endDate)
   in DOM.div
-       { children: [ changeButton self
+       { children: [ changeButton self ((_ <= self.props.now) <$> toDate startDate)
                        (Types.EditTemporaryAddressChange change)
                        (temporaryAddressChangeComponent self $ Just change)
                    , DOM.text $ addressString <> " (" <> pendingPeriod <> ")"
@@ -137,7 +133,7 @@ subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMa
   ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe suspend)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, package } }, state } =
+subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno, package } }, state } =
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
@@ -153,15 +149,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
 
     paperOnlyActions =
       [ if isSubscriptionPausable sub then pauseIcon else mempty
-      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate))
-           self.state.pausedSubscriptions
-          then mempty
-          else removeSubscriptionPauses
       , if isSubscriptionTemporaryAddressChangable sub then temporaryAddressChangeIcon else mempty
-      , case self.state.pendingAddressChanges of
-              Just a | not $ null $ filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) a ->
-                removeTempAddressChanges a
-              _ -> mempty
       , deliveryReclamationIcon
       ]
 
@@ -220,37 +208,6 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
             , wrapperProgress = AsyncWrapper.Editing $ pauseSubscriptionComponent self Nothing
             }
 
-    removeSubscriptionPauses =
-      DOM.div
-        { className: "subscription--action-item"
-        , children:
-            [ DOM.div
-                { className: "subscription--unpause-icon circle" }
-            , DOM.span
-                { className: "subscription--update-action-text"
-                , children:
-                    [ DOM.u_ [ DOM.text "Ta bort alla uppehåll" ] ]
-                }
-            ]
-        , onClick: handler_ $ do
-            self.setState _
-              { wrapperProgress = AsyncWrapper.Loading mempty }
-            Aff.launchAff_ $ do
-              unpausedSubscription <- Aff.try $ do
-                User.unpauseSubscription props.user.uuid props.subscription.subsno
-              case unpausedSubscription of
-                Left _ -> liftEffect do
-                  self.setState _
-                    { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
-                Right newSubscription -> liftEffect do
-                  self.setState _
-                    { pausedSubscriptions = toMaybe newSubscription.paused
-                    , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
-                    }
-                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
-        }
-
     temporaryAddressChangeIcon =
       DOM.div
         { className: "subscription--action-item"
@@ -273,40 +230,6 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                 { updateAction = Just Types.TemporaryAddressChange
                 , wrapperProgress = AsyncWrapper.Editing $ temporaryAddressChangeComponent self Nothing
                 }
-
-    removeTempAddressChanges tempAddressChanges =
-      DOM.div
-        { className: "subscription--action-item"
-        , children:
-            [ DOM.div
-                { className: "subscription--delete-temporary-address-change-icon circle" }
-            , DOM.span
-                { className: "subscription--update-action-text"
-                , children:
-                    [ DOM.u_ [ DOM.text "Avbryt tillfälliga adressändringar" ] ]
-                }
-            ]
-        , onClick: handler_ $ do
-            self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-            Aff.launchAff_ $ do
-                for_ tempAddressChanges $ \tempAddressChange -> do
-                  let startDate = toDate tempAddressChange.startDate
-                  let endDate   = toDate =<< toMaybe tempAddressChange.endDate
-                  case startDate, endDate of
-                    (Just startDate'), endDate' -> do
-                      tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
-                      case tempAddressChangesDeleted of
-                        Right newSubscription -> liftEffect do
-                          self.setState _
-                            { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
-                            pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
-                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
-                        Left _ -> liftEffect do
-                          self.setState _
-                            { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
-                    _, _ -> liftEffect $ self.setState _ { wrapperProgress = AsyncWrapper.Error "Tillfällig addressändring kunde inte tas bort. Vänligen kontakta kundtjänst." }
-        }
 
     deliveryReclamationIcon =
       DOM.div
@@ -456,7 +379,7 @@ showPausedDates self =
         in case Tuple (toDate pause.startDate) (toDate =<< toMaybe pause.endDate) of
           Tuple (Just _startDate) (Just _endDate) ->
             DOM.div
-              { children: [ changeButton self
+              { children: [ changeButton self (Just $ _startDate <= self.props.now)
                               (Types.EditSubscriptionPause pause)
                               (pauseSubscriptionComponent self $ Just pause)
                           , DOM.text text
@@ -466,8 +389,8 @@ showPausedDates self =
           _ -> DOM.text text
   in map pauseLine
 
-changeButton :: Types.Self -> Types.SubscriptionUpdateAction -> JSX -> JSX
-changeButton self updateAction component =
+changeButton :: Types.Self -> Maybe Boolean -> Types.SubscriptionUpdateAction -> JSX -> JSX
+changeButton self ongoing updateAction component =
   DOM.div
     { className: "subscription--edit-period-button"
     , children:
@@ -478,7 +401,7 @@ changeButton self updateAction component =
         , DOM.span
             { className: "subscription--edit-text"
             , onClick: capture_ startEdit
-            , children: [ DOM.text "Ändra" ]
+            , children: [ DOM.text $ "Ändra" <> deleteMessage ]
             }
         ]
     }
@@ -487,3 +410,7 @@ changeButton self updateAction component =
                   { updateAction = Just updateAction
                   , wrapperProgress = AsyncWrapper.Editing component
                   }
+    deleteMessage = case ongoing of
+      Nothing -> ""
+      Just false -> " eller radera"
+      Just true -> " eller avbryt"
