@@ -2,8 +2,8 @@ module MittKonto.Wrappers.Elements where
 
 import Prelude
 
+import Data.Maybe (Maybe, fromMaybe)
 import Effect (Effect)
-import Data.Foldable (class Foldable, foldMap)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
@@ -13,14 +13,18 @@ data AutoClose = Immediate | Delayed Number | Off
 
 derive instance eqAutoClose :: Eq AutoClose
 
-successWrapper :: forall t. Foldable t => t String -> JSX
-successWrapper msg =
-  DOM.div { className: "actions-wrapper--action-item"
-            , children: [ successContainer [ DOM.div { className: "actions-wrapper--success check-icon" }
-                                            , foldMap successMessage msg
-                                            ]
-                        ]
-            }
+successWrapper :: Maybe JSX -> String -> JSX
+successWrapper extra msg =
+  DOM.div
+    { className: "actions-wrapper--action-item"
+    , children:
+        [ successContainer
+            [ DOM.div { className: "actions-wrapper--success check-icon" }
+            , successMessage msg
+            ]
+        ]
+    } <> fromMaybe mempty extra
+
 errorWrapper :: Effect Unit -> String -> JSX
 errorWrapper onTryAgain err =
   DOM.div { className: "actions-wrapper--action-item"
