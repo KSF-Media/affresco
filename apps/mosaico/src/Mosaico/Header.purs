@@ -134,7 +134,6 @@ render { state: { menuVisible, menuComponent }, setState, props } =
     searchButton :: JSX
     searchButton = DOM.div
                     { className: iconButtonClass <> " " <> searchButtonClass <>
-                                " grid-row-3 grid-col-2" <>
                         if menuVisible then
                           " " <> menuVisibleIconButtonClass
                         else
