@@ -55,11 +55,11 @@ render { props: { visible } } = DOM.div
                   { className: menuFooterClass
                   , children:
                       [ DOM.div
-                          { className: footerCaptionClass <> " grid-row-1 grid-col-2 grid-colspan-2"
+                          { className: footerCaptionClass
                           , children: [ DOM.text "ANDRA KSF-TIDNINGAR" ]
                           }
-                      , logo "grid-row-2" "grid-col-2" vnLogoImageClass "Västra Nyland"
-                      , logo "grid-row-2" "grid-col-3" onLogoImageClass "Östnyland"
+                      , logo vnLogoClass vnLogoImageClass "Västra Nyland"
+                      , logo onLogoClass onLogoImageClass "Östnyland"
                       ]
                   }
               ]
@@ -254,7 +254,7 @@ render { props: { visible } } = DOM.div
 
     renderMenuLayout :: JSX
     renderMenuLayout = DOM.div
-      { className: menuContentClass <> " grid-row-2 grid-col-2"
+      { className: menuContentClass
       , children: renderMenuLayoutElement <$> menuLayout
       }
       where
@@ -280,15 +280,15 @@ render { props: { visible } } = DOM.div
         renderSeparator :: String -> JSX
         renderSeparator modifier = DOM.hr { className: unwords [ separatorClass, separatorClass <> modifier ] }
 
-    logo :: String -> String -> String -> String -> JSX
-    logo rowClass colClass imageModifierClass caption = DOM.div
-      { className: unwords [ logoClass, rowClass, colClass ]
+    logo :: String -> String ->  String -> JSX
+    logo modifierClass imageModifierClass caption = DOM.div
+      { className: unwords [ logoClass, modifierClass ]
       , children:
           [ DOM.div
-              { className: unwords [ logoImageClass, imageModifierClass, " grid-row-1" ]
+              { className: unwords [ logoImageClass, imageModifierClass ]
               }
           , DOM.div
-              { className: unwords [ logoCaptionClass, " grid-row-2" ]
+              { className: unwords [ logoCaptionClass ]
               , children: [ DOM.text caption ]
               }
           ]
@@ -326,12 +326,14 @@ render { props: { visible } } = DOM.div
     footerCaptionClass = headerBlock <> footerCaptionElement
 
     logoElement =  "__footer-logo"
+    onLogoModifier = "--on"
+    vnLogoModifier = "--vn"
     logoClass = headerBlock <> logoElement
+    onLogoClass = logoClass <> onLogoModifier
+    vnLogoClass = logoClass <> vnLogoModifier
 
     logoImageElement = "__footer-logo-image"
     logoImageClass = headerBlock <> logoImageElement
-    onLogoModifier = "--on"
-    vnLogoModifier = "--vn"
     onLogoImageClass = logoImageClass <> onLogoModifier
     vnLogoImageClass = logoImageClass <> vnLogoModifier
 
