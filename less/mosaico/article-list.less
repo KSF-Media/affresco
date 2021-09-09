@@ -54,9 +54,9 @@
 }
 
 .mosaico-asidelist {
-  @aside-imgsize: 70px;
 
   &__mostread {
+    @counter-size: 30px;
     counter-reset: listcounter;
 
     li {
@@ -68,16 +68,16 @@
       > a {
         cursor: pointer;
         display: flex;
+        text-decoration: none;
   
-        .list-article-image {
-          flex-basis: @aside-imgsize;
+        .counter {
+          flex-basis: @counter-size;
           flex-shrink: 0;
           margin-right: 10px;
   
           > div {
-            background-size: cover;
-            width: @aside-imgsize;
-            height: @aside-imgsize;
+            width: @counter-size;
+            height: @counter-size;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -85,9 +85,8 @@
 
             &::after {
               content: counter(listcounter);
-              text-shadow: 0 0 10px #000;
-              font-weight: 600;
-              font-size: 2.5rem;
+              font-weight: 500;
+              font-size: 1rem;
               color: #fff;
             }
           }

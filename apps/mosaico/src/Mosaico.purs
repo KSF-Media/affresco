@@ -239,12 +239,8 @@ renderMostreadList state setState router =
               --     router.pushState (write {}) $ "/artikel/" <> a.uuid
             , children:
                 [ DOM.div
-                    { className: "list-article-image"
-                    , children:[ DOM.div
-                        { style: DOM.css
-                            { "background-image": "url(" <> thumb <> ")"
-                            }
-                        }
+                    { className: "counter"
+                    , children:[ DOM.div { className: "background-hbl" }
                       ]
                     }
                   , DOM.div
@@ -266,5 +262,3 @@ renderMostreadList state setState router =
                   ]
               }
         ]
-      where
-        thumb = fromMaybe "" $ map _.thumb a.listImage
