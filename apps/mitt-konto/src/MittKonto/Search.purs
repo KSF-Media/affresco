@@ -806,5 +806,5 @@ genericSuccess :: JSX
 genericSuccess =
   DOM.div
     { children:
-        [ DOM.div_ [ DOM.text "Operation lyckades" ] ]
+        [ DOM.div_ [ DOM.text "Åtgärden lyckades" ] ]
     }
