@@ -22,23 +22,121 @@
   }
 
   &__menu-content {
-    display: grid;
 
-    grid-template-rows: repeat(6, auto);
-    grid-template-columns: 0.39fr repeat(5, 1fr) 0.39fr;
+    @media (min-width: @breakpoint-3col) {
+      display: grid;
 
-    row-gap: 1rem;
+      grid-template-rows: repeat(6, auto);
+      grid-template-columns: 0.39fr repeat(5, 1fr) 0.39fr;
+
+      row-gap: 1rem;
+    }
 
     margin-top: 50px;
   }
 
   &__section {
-    display: flex;
-    flex-direction: column;
+
+    @media (min-width: @breakpoint-3col) {
+      display: flex;
+      flex-direction: column;
+    }
 
     &--gray {
       color: @grey-medium;
     }
+
+    &--e-tidningen {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 2;
+      }
+    }
+
+    &--kundservice {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 3;
+      }
+    }
+
+    &--annonsera {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 4;
+      }
+    }
+
+    &--other-important {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 5;
+      }
+    }
+
+    &--startsidan {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 2;
+      }
+    }
+
+    &--section1 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 3;
+      }
+    }
+
+    &--section2 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 4;
+      }
+    }
+
+    &--section3 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 5;
+      }
+    }
+
+    &--section4 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 6;
+      }
+    }
+
+    &--kontakt {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 2;
+      }
+    }
+
+    &--annonsera2 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 3;
+      }
+    }
+
+    &--kundservice2 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 4;
+      }
+    }
+
+    &--other {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 5;
+      }
+    }
+
   }
 
   &__section-title {
@@ -54,6 +152,19 @@
     height: 1px;
     background-color: @grey-slightlylight;
     width: 100%;
+
+    grid-column: 1 / span 7;
+
+      &--top {
+        grid-row-start: 2;
+      }
+      &--center {
+        grid-row-start: 4;
+      }
+      &--top {
+        grid-row-start: 6;
+      }
+
   }
 
   &__menu-footer {
