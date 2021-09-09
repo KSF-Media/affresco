@@ -222,43 +222,55 @@ articleList state setState router =
 
 renderMostreadList :: State -> SetState -> PushStateInterface -> JSX
 renderMostreadList state setState router =
-  DOM.ul
-    { className: "mosaico-asidelist__mostread"
-    , children: map renderMostreadArticle state.mostreadList
-    }
-  where
-    renderMostreadArticle :: ArticleStub -> JSX
-    renderMostreadArticle a =
-      DOM.li_
-        [ DOM.a
-            { href: "/artikel/" <> a.uuid
-              -- onClick: handler_ do
-              --     setState \s -> s { clickedArticle = Just a }
-              --     window <- Web.window
-              --     _ <- Web.scroll 0 0 window
-              --     router.pushState (write {}) $ "/artikel/" <> a.uuid
-            , children:
-                [ DOM.div
-                    { className: "counter"
-                    , children:[ DOM.div { className: "background-hbl" }
-                      ]
-                    }
-                  , DOM.div
-                      { className: "list-article-liftup"
-                      , children:
-                          [ DOM.h6_ [ DOM.text a.title ]
-                          , DOM.div
-                            { className: "mosaico--article--meta"
-                            , children:
-                                [ guard a.premium $
-                                    DOM.div
-                                      { className: "mosaico--article--premium background-hbl"
-                                      , children: [ DOM.text "premium" ]
-                                      }
-                                ]
-                            }
-                          ]
-                      }
-                  ]
+  let
+    block = "mosaico-asidelist"
+  in
+    DOM.div
+      { className: block
+      , children:
+          [ DOM.h6
+              { className: block <> "--header color-hbl"
+              , children: [ DOM.text "Andra läser" ]
               }
-        ]
+          , DOM.ul
+              { className: block <> "__mostread"
+              , children: map renderMostreadArticle state.mostreadList
+              }
+          ]
+      }
+      where
+        renderMostreadArticle :: ArticleStub -> JSX
+        renderMostreadArticle a =
+          DOM.li_
+            [ DOM.a
+                { href: "/artikel/" <> a.uuid
+                  -- onClick: handler_ do
+                  --     setState \s -> s { clickedArticle = Just a }
+                  --     window <- Web.window
+                  --     _ <- Web.scroll 0 0 window
+                  --     router.pushState (write {}) $ "/artikel/" <> a.uuid
+                , children:
+                    [ DOM.div
+                        { className: "counter"
+                        , children:[ DOM.div { className: "background-hbl" }
+                          ]
+                        }
+                      , DOM.div
+                          { className: "list-article-liftup"
+                          , children:
+                              [ DOM.h6_ [ DOM.text a.title ]
+                              , DOM.div
+                                { className: "mosaico--article--meta"
+                                , children:
+                                    [ guard a.premium $
+                                        DOM.div
+                                          { className: "mosaico--article--premium background-hbl"
+                                          , children: [ DOM.text "premium" ]
+                                          }
+                                    ]
+                                }
+                              ]
+                          }
+                      ]
+                  }
+            ]

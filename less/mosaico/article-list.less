@@ -55,9 +55,16 @@
 
 .mosaico-asidelist {
 
+  &--header {
+    font: bold 1.125rem "Roboto", sans-serif;
+    text-transform: uppercase;
+    margin: 0 10px;
+  }
+
   &__mostread {
     @counter-size: 30px;
     counter-reset: listcounter;
+    border-bottom: solid 1px @hairline-color;
 
     li {
       counter-increment: listcounter;
