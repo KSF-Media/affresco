@@ -60,5 +60,5 @@ formatDateString startDate endDate
     in startString <> " – " <> endString
   | otherwise = mempty
 
-successText :: Maybe String
-successText = Just "Tack, åtgärden lyckades!"
+successText :: String
+successText = "Tack, åtgärden lyckades!"
