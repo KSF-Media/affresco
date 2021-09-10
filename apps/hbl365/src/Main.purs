@@ -11,6 +11,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error)
 import Effect.Unsafe (unsafePerformEffect)
+import HBL365.AnotherAccount (anotherAccount)
 import HBL365.Product (getProduct)
 import HBL365.NewPurchase as NewPurchase
 import KSF.Spinner as Spinner
@@ -157,6 +158,7 @@ render product =
         , loadingContainer: Just NewPurchase.descriptionBox
         , customNewPurchase: Just NewPurchase.render
         , orderSource: PrenumereraSource -- TODO: find out if there is a more suitable value for this
+        , subscriptionExists: anotherAccount
         }
 
     imgLink href alt src =
