@@ -23,6 +23,7 @@ module KSF.User
   , requestPasswordReset
   , startPasswordReset
   , updateForgottenPassword
+  , hasScope
   , pauseSubscription
   , editSubscriptionPause
   , unpauseSubscription
@@ -70,6 +71,7 @@ import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
+import Data.Time.Duration (Seconds(..))
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -83,7 +85,7 @@ import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
-import KSF.Api (InvalidateCache, UserAuth)
+import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Address (Address) as Address
 import KSF.Api.Error as Api.Error
@@ -548,6 +550,13 @@ requireToken =
 
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
+
+hasScope :: UUID -> AuthScope -> Aff (Maybe Seconds)
+hasScope uuid scope = do
+  res <- try $ Persona.hasScope uuid scope =<< requireToken
+  case res of
+    Left _ -> pure Nothing
+    Right s -> pure $ Just $ Seconds s
 
 pauseSubscription
   :: UUID

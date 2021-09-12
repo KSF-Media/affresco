@@ -30,7 +30,6 @@ type Props =
   { paper :: Paper
   , specialHelp :: Maybe JSX
   , activeUser :: Maybe User
-  , logoutWrapper :: Maybe (JSX -> JSX)
   , logout :: Effect Unit
   }
 
@@ -38,7 +37,6 @@ type JSProps =
   { paperCode :: String
   , specialHelp :: Nullable JSX
   , activeUser :: Nullable User
-  , logoutWrapper :: Nullable (JSX -> JSX)
   , onLogout :: Effect Unit
   }
 
@@ -47,7 +45,6 @@ fromJSProps jsProps =
   { paper
   , specialHelp: Nullable.toMaybe jsProps.specialHelp
   , activeUser: Nullable.toMaybe jsProps.activeUser
-  , logoutWrapper: Nullable.toMaybe jsProps.logoutWrapper
   , logout: jsProps.onLogout
   }
   where
@@ -98,19 +95,18 @@ fullNav self@{ props } =
     }
 
 logoutButton :: Self -> JSX
-logoutButton self@{ props: { activeUser, logoutWrapper } } =
+logoutButton self@{ props: { activeUser } } =
   foldMap button activeUser
   where
     button _user =
-      fromMaybe identity logoutWrapper $
-        DOM.div
-          { className: "nav--logout-button"
-          , onClick: Event.handler_ onLogout
-          , children:
-              [ DOM.img { src: icons.signOut }
-              , DOM.div_ [ DOM.text "Logga ut" ]
-              ]
-          }
+      DOM.div
+        { className: "nav--logout-button"
+        , onClick: Event.handler_ onLogout
+        , children:
+            [ DOM.img { src: icons.signOut }
+            , DOM.div_ [ DOM.text "Logga ut" ]
+            ]
+        }
     onLogout = do
       self.props.logout
       self.setState _ { collapsedNavVisibility = Hidden }
