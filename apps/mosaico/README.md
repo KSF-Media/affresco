@@ -13,6 +13,26 @@ yarn start
 
 ## Development
 
-For now, the server will not in fact render any react components. Instead, it returns the same HTML the former SPA version of Mosaico did.
-For this to work, we need to pre-build the client HTML/JS before running the server and also every time a `purs` file is changed (this is the `yarn build` part).
-So you will be restarting the server and building a lot. There might be smoother ways of doing this.
+We can mentally divide Mosaico into two parts: the server code and the browser code. In production, both parts are required in order to run it as designed. However, as building the server dependent parts and restarting the thing continuously takes time and requires patience, it might be desired to run only the browser part when developing Mosaico. That is, if the development work does not concern the server itself. You can start the development server using Parcel with `yarn start-dev`.
+
+When developing the server side bits, you need to restart the server after any changes with `yarn start` or `spago run` (there might be smoother ways of doing things). Note that if your server side code requires also changes to the browser side of things, you need to build the static files with Parcel before running your server. This is what `yarn build` does. This is a bit clumsy and again, a bit time consuming.
+
+Under `web/` we have `index.html` and `index.js` which can be thought of as templates that we load in the browser. This is the entry point for Mosaico react component. In fact, with these files alone, one could run a single page app version of Mosaico (`yarn build-dev`). When the node server of Mosaico is involved, however, the server might want to write something to the files. Or more specifically, it will write to the parcel built version of these files, located under `dist/client/`. This is what `yarn build` will do. Each yarn command is defined in `package.json` under `scripts` object. Let's look at what `yarn build` does:
+
+```
+"scripts": {
+  "yarn build": "spago build && parcel build web/index.html -d dist/client --no-cache --public-url /assets",
+  ...
+}
+```
+
+First we run `spago build` which compiles our PureScript code into `output/`. This is important, as we use the compiled PureScript in `web/index.js`
+
+```
+...
+var Mosaico = require("../output/Mosaico/index.js").jsApp();
+...
+
+```
+
+After that, we run `parcel build web/index.html -d dist/client --no-cache --public-url /assets`. Here, we build the file `index.html` we have under `web/` into a destination directory `dist/client/`. Parcel does its thing: it finds every dependency it needs (js, css, images, whatever) and places them into `dist/client/`. We don't want Parcel to use any caching and we set the public url of our assets to be `/assets`. This where we look for static files in our server, and parcel will just prefix the file url's with `/assets` in this case.
