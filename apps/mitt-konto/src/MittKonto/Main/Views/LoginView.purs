@@ -113,7 +113,7 @@ loginView self@{ state, setState } setUser logger =
                                                 , "göra uppehåll"
                                                 , "reklamera utebliven tidning"
                                                 , "uppdatera ditt kredit- eller bankkort"
-                                                , "visa din fakturor"
+                                                , "visa dina fakturor"
                                                 , "avsluta din prenumeration"
                                                 , "med mera ..."
                                                 ]
