@@ -476,6 +476,7 @@ type User = Record BaseUser
 type BaseUser =
   ( uuid :: UUID
   , email :: String
+  , phones :: Nullable (Array String)
   , firstName :: Nullable String
   , lastName :: Nullable String
   , address :: Nullable Address

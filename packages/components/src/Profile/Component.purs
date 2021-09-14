@@ -3,6 +3,7 @@
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Bind as Control.Bind
 import Control.Monad.Error.Class (throwError)
 import Data.Array (any, catMaybes, filter, intercalate, length, mapMaybe, null, (:))
 import Data.Array as Array
@@ -59,11 +60,13 @@ type State =
   { name :: Name
   , address :: Address
   , email :: Maybe String
+  , phones :: Array String
   , now :: Maybe Date
   , changeDate :: Maybe Date
   , editFields :: Set EditField
   , editName :: AsyncWrapper.Progress JSX
   , editEmail :: AsyncWrapper.Progress JSX
+  , editPhone :: AsyncWrapper.Progress JSX
   , editAddress :: AsyncWrapper.Progress JSX
   }
 
@@ -79,7 +82,7 @@ type Address =
   , city          :: Maybe String
   }
 
-data EditField = EditAddress | EditEmail | EditName
+data EditField = EditAddress | EditEmail | EditPhone | EditName
 derive instance eqEditField :: Eq EditField
 derive instance ordEditField :: Ord EditField
 
@@ -126,12 +129,14 @@ profile = make component
   { initialState:
       { name: { firstName: Nothing, lastName: Nothing }
       , email: Nothing
+      , phones: []
       , address: { zipCode: Nothing, countryCode: Nothing, streetAddress: Nothing, city: Nothing }
       , now: Nothing
       , changeDate: Nothing
       , editFields: Set.empty
       , editName: Ready
       , editEmail: Ready
+      , editPhone: Ready
       , editAddress: Ready
       }
   , render
@@ -148,6 +153,7 @@ didMount self = do
   now <- Now.nowDate
   self.setState _ { now = Just now }
   resetFields self EditEmail
+  resetFields self EditPhone
   resetFields self EditAddress
   resetFields self EditName
 
@@ -164,6 +170,7 @@ render self@{ props: { profile: user } } =
               [ DescriptionList.descriptionList { definitions: visiblePendingAddressChanges } ]
           }
     , profileEmail
+    , profilePhone
     , DOM.div
         { id: "profile--display"
         , children:
@@ -216,6 +223,49 @@ render self@{ props: { profile: user } } =
             { definitions:
                 [ { term: "E-postadress:"
                   , description: [ DOM.text user.email ]
+                  }
+                ]
+            }
+
+    profilePhone =
+      AsyncWrapper.asyncWrapper
+        { wrapperState: self.state.editPhone
+        , readyView: profilePhoneReady
+        , editingView: \_ -> profilePhoneEditing
+        , loadingView: profilePhoneLoading
+        , successView: \_ -> profilePhoneReady
+        , errorView: editingError self EditPhone
+        }
+      where
+        profilePhoneReady = DOM.div
+          { className: "profile--profile-row"
+          , id: "profile--phone"
+          , children:
+              [ currentPhone
+              , changePhoneButton self
+              ]
+          }
+        profilePhoneEditing = DOM.div_
+          [ DescriptionList.descriptionList
+              { definitions:
+                  [ { term: "Telefonnummer:"
+                    , description: [ editPhone self ]
+                    }
+                  ]
+              }
+          ]
+        profilePhoneLoading spinner = DOM.div
+          { className: "profile--profile-row"
+          , children:
+              [ currentPhone
+              , spinner
+              ]
+          }
+        currentPhone =
+          DescriptionList.descriptionList
+            { definitions:
+                [ { term: "Telefonnummer:"
+                  , description: Array.singleton $ DOM.text $ fromMaybe "" $ Control.Bind.join (map Array.head $ Nullable.toMaybe user.phones)
                   }
                 ]
             }
@@ -329,6 +379,7 @@ editingError self fieldName errMessage =
                EditAddress -> self.setState _ { editAddress = AsyncWrapper.Ready }
                EditName    -> self.setState _ { editName    = AsyncWrapper.Ready }
                EditEmail   -> self.setState _ { editEmail   = AsyncWrapper.Ready }
+               EditPhone   -> self.setState _ { editPhone   = AsyncWrapper.Ready }
              }
          ]
      }
@@ -502,6 +553,11 @@ editEmail self =
                 Tracking.changeEmail self.props.profile.cusno "error: unexpected error when updating email"
     updateEmail _ = pure unit
 
+editPhone :: Self -> JSX
+editPhone _self =
+  DOM.div_
+    []
+
 editName :: Self -> JSX
 editName self =
   DOM.form
@@ -628,6 +684,9 @@ deletePendingAddressChanges self multiple =
 changeEmailButton :: Self -> JSX
 changeEmailButton self = changeAttributeButton self EditEmail
 
+changePhoneButton :: Self -> JSX
+changePhoneButton self = changeAttributeButton self EditPhone
+
 changeNameButton :: Self -> JSX
 changeNameButton self = changeAttributeButton self EditName
 
@@ -656,6 +715,7 @@ editButton buttonText self field =
 switchEditProgress :: Self -> EditField -> AsyncWrapper.Progress JSX -> Effect Unit
 switchEditProgress self EditName progress = self.setState _ { editName = progress }
 switchEditProgress self EditEmail progress = self.setState _ { editEmail = progress }
+switchEditProgress self EditPhone progress = self.setState _ { editPhone = progress }
 switchEditProgress self EditAddress progress = self.setState _ { editAddress = progress }
 
 isUpcomingPendingChange :: Maybe Date -> User.PendingAddressChange -> Boolean
@@ -687,6 +747,9 @@ resetFields self EditName =
                   }
 resetFields self EditEmail =
   self.setState _ { email = Just self.props.profile.email }
+
+resetFields self EditPhone =
+  self.setState _ { phones = fromMaybe [] $ toMaybe self.props.profile.phones }
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =

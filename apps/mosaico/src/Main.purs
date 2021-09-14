@@ -57,7 +57,7 @@ spec ::
          { getArticle ::
               GET "/artikel/<uuid>"
                 { response :: TextHtml
-                , params :: { uuid :: String }
+                , params :: Record ( uuid :: String )
                 , guards :: Guards ("credentials" : Nil)
                 }
          , assets ::
