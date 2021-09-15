@@ -35,6 +35,7 @@ You can edit this file as you like.
   , "routing"
   , "simple-json"
   , "strings"
+  , "tuples"
   , "uuid"
   , "web-events"
   , "web-html"
