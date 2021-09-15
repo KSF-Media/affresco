@@ -4,11 +4,12 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json)
-import Data.Array (null, head)
+import Data.Array (catMaybes, head, mapMaybe, null)
 import Data.Either (Either(..), either, hush)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
+import Data.Traversable (traverse, traverse_)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -32,8 +33,18 @@ import Routing (match)
 import Routing.Match (Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
+import Web.DOM.Element as Element
+import Web.DOM.Node (nodeName, toEventTarget)
+import Web.DOM.NodeList as Web
+import Web.DOM.ParentNode (QuerySelector(..))
+import Web.DOM.ParentNode as Web
+import Web.Event.Event (EventType(..))
+import Web.Event.Event as Event
+import Web.Event.EventTarget (addEventListener)
+import Web.Event.EventTarget as Event
 import Web.HTML (window) as Web
-import Web.HTML.Window (scroll) as Web
+import Web.HTML.HTMLDocument as Web
+import Web.HTML.Window (scroll, document) as Web
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -75,15 +86,20 @@ app = do
   initialValues <- getInitialValues
   component "Mosaico" $ mosaicoComponent initialValues
 
-mosaicoComponent
-  :: InitialValues
-  -> Props
-  -> Render Unit (UseEffect MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
+-- mosaicoComponent
+--   :: InitialValues
+--   -> Props
+--   -> Render Unit (UseEffect MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   state /\ setState <- useState initialValues.state { article = props.article }
 
   -- Listen for route changes and set state accordingly
   useEffectOnce $ locations (routeListener setState) initialValues.nav
+
+  useEffectOnce $ do
+    hookDrEditionLinks initialValues.nav
+    pure mempty
+
   useEffect state.route do
     case state.route of
       Frontpage -> do
@@ -97,6 +113,31 @@ mosaicoComponent initialValues props = React.do
     pure mempty
 
   pure $ render setState state initialValues.nav
+
+hookDrEditionLinks router = do
+  w <- Web.window
+  doc <-  Web.document w
+  let p = Web.toParentNode doc
+  links <- Web.querySelectorAll (QuerySelector "a") p
+  articles <- Web.querySelectorAll (QuerySelector "article") p
+
+  links' <- Web.toArray links
+  articles' <- Web.toArray articles
+
+  let articleNodes = mapMaybe Element.fromNode articles'
+  articleIds <- catMaybes <$> traverse (Element.getAttribute "data-articleid") articleNodes
+  let aId = head articleIds
+
+  let mouseEvent e = do
+        void $ Event.preventDefault e
+        void $ Web.scroll 0 0 =<< Web.window
+        router.pushState (write {}) $ "/artikel/" <> fromMaybe "" aId
+        Console.log "CLICK!"
+  e <- Event.eventListener mouseEvent
+
+  -- Add event listener to each `a` tag we find
+  traverse_ (addEventListener (EventType "click") e false <<< toEventTarget) links'
+  pure unit
 
 routeListener :: ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener setState _oldLoc location = do
