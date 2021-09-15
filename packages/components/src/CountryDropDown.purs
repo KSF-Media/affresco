@@ -45,6 +45,19 @@ defaultCountryDropDown =
       , { countryCode: "DK", countryName: "Danmark" }
       ]
 
+limitedCountries :: Array DropDownCountry
+limitedCountries =
+  [ { countryCode: "FI", countryName: "Finland" }
+  , { countryCode: "AX", countryName: "Åland" }
+  ]
+
+countryChangeMessage :: JSX
+countryChangeMessage =
+  DOM.div
+    { className: "mitt-konto--note"
+    , children: [ DOM.text "Vid ändring till en utländsk adress vänligen kontakta Kundservice" ]
+    }
+
 type DropDownCountry =
   { countryCode :: String
   , countryName :: String

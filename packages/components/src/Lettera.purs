@@ -96,8 +96,7 @@ getArticle articleId auth = do
             -- TODO: Sentry and whatnot
             Console.warn "Did not find article preview from response!"
             pure $ Left "Parsing error"
-
-      | otherwise -> pure $ Left "Unexpected HTTP status"
+      | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
 
 getFrontpage :: Paper -> Aff (Array ArticleStub)
 getFrontpage paper = do

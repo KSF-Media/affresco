@@ -2,9 +2,10 @@ module MittKonto.Wrappers.ActionsWrapper where
 
 import Prelude
 
+import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import KSF.AsyncWrapper as AsyncWrapper
-import MittKonto.Wrappers.Elements (errorWrapper, successWrapper)
+import MittKonto.Wrappers.Elements (errorWrapper)
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -34,7 +35,7 @@ render self@{ props: { actions, wrapperState, onTryAgain } } =
     , editingView: identity
     , successView: \msg -> DOM.div_
                              [ actionsContainer actions
-                             , successWrapper msg
+                             , fromMaybe mempty msg
                              ]
     , errorView: \err -> DOM.div_
                            [ actionsContainer actions

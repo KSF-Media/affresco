@@ -3,6 +3,7 @@
 , dependencies =
     [ "effect"
     , "console"
+    , "avar"
     , "aff"
     , "aff-promise"
     , "simple-ajax"

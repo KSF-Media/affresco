@@ -157,7 +157,7 @@ let mkUploadStep =
             { path = "build/${app.deployDir}"
             , destination =
                 merge
-                  { Staging = "deploy-previews/\${{ github.sha }}"
+                  { Staging = "deploy-previews/\${{ github.sha }}/${app.deployDir}"
                   , Production = "ksf-frontends/${app.deployDir}"
                   }
                   env

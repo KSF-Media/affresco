@@ -12,6 +12,7 @@ data PaymentMethod
   | PaperInvoice
 
 newtype PaymentMethodId = PaymentMethodId Int
+derive instance eqPaymentMethodId :: Eq PaymentMethodId
 
 toPaymentMethod :: String -> Maybe PaymentMethod
 toPaymentMethod paymentMethod =
