@@ -71,20 +71,19 @@ didMount self = do
 render :: Self -> JSX
 render self@{ state: { publicationDate, claim }} =
   DOM.div
-    { className: "clearfix delivery-reclamation--container"
+    { className: "delivery-reclamation--container"
     , children:
-        [ Grid.row_
+        [ Grid.row
            [ DOM.div
-               { className: "col col-11"
-               , children: [ DOM.h3_ [ DOM.text "Reklamation" ] ]
+               { children: [ DOM.h3_ [ DOM.text "Reklamation" ] ]
                }
            , DOM.div
-               { className: "col-1 flex delivery-reclamation--close-icon"
+               { className: "delivery-reclamation--close-icon"
                , children: [ DOM.div { className: "close-icon" } ]
                , onClick: handler_ self.props.onCancel
                }
-           , deliveryReclamationForm
-           ]
+           ]  { extraClasses: [ "mitt-konto--closable-row" ] }
+        , deliveryReclamationForm
         ]
     }
   where
@@ -98,7 +97,7 @@ render self@{ state: { publicationDate, claim }} =
               ] `snoc`foldMap errorMessage self.state.validationError
                 `snoc` DOM.div
                         { children: [ submitFormButton ]
-                        , className: "mt2 clearfix"
+                        , className: "delivery-reclamation--submit-container"
                         }
           }
 
@@ -180,4 +179,4 @@ dateInput self value label =
             }
         ]
     ]
-    { extraClasses: [ "mb2" ] }
+    { extraClasses: [ "mitt-konto--date-picker-container" ] }

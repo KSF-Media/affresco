@@ -293,7 +293,7 @@ search = do
 
     searchQuery query setQuery submitSearch =
       DOM.div
-        { className: "search--query mitt-konto--container clearfix"
+        { className: "search--query mitt-konto--container"
         , children:
             [ DOM.span
                 { className: "mitt-konto--component-heading"

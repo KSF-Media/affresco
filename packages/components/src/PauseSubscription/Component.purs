@@ -111,19 +111,18 @@ didMount self = do
 render :: Self -> JSX
 render self =
   DOM.div
-    { className: "clearfix pause-subscription--container"
+    { className: "pause-subscription--container"
     , children:
-        [ Grid.row_
+        [ Grid.row
             [ DOM.div
-                { className: "col col-11"
-                , children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumerationen" ] ]
+                { children: [ DOM.h3_ [ DOM.text "Uppehåll på prenumerationen" ] ]
                 }
             , DOM.div
-                { className: "col-1 flex pause-subscription--close-icon"
+                { className: "pause-subscription--close-icon"
                 , children: [ DOM.div { className: "close-icon" } ]
                 , onClick: handler_ self.props.onCancel
                 }
-            ]
+            ] { extraClasses: [ "mitt-konto--closable-row" ] }
         , pauseForm
         ]
     }
@@ -148,7 +147,7 @@ render self =
                   }
               , DOM.div
                   { children: [ submitFormButton ]
-                  , className: "mt2 clearfix"
+                  , className: "mitt-konto--form-submit-container"
                   }
               ]
           }
@@ -224,7 +223,7 @@ dateInput self { action, value, minDate, maxDate, disabled, label, id, defaultAc
             }
         ]
     ]
-    { extraClasses: [ "mt2" ]
+    { extraClasses: [ "mitt-konto--date-picker-container" ]
     , id: id <> "--" <> Subsno.toString self.props.subsno
     }
 
