@@ -1,0 +1,253 @@
+@import (reference) "../../ksf-colors";
+
+.mosaico-header {
+  &__menu {
+    grid-template-rows: repeat(3, auto);
+    grid-template-columns: 0.1fr 1fr 0.1fr;
+    grid-row-start: 4;
+    grid-column: 1 / span 3;
+
+    margin: -33px -30px -13px -30px;
+
+    display: none;
+    z-index: 2;
+    border: 1px solid @grey-slightlylight;
+    border-radius: 1px;
+    background-color: @white;
+
+    &--visible {
+      display: grid;
+    }
+  }
+
+  &__menu-content {
+    grid-row-start: 2;
+    grid-column-start: 2;
+
+    @media (min-width: @breakpoint-3col) {
+      display: grid;
+
+      grid-template-rows: repeat(6, auto);
+      grid-template-columns: 0.39fr repeat(5, 1fr) 0.39fr;
+
+      row-gap: 1rem;
+    }
+
+    margin-top: 50px;
+  }
+
+  &__section {
+
+    @media (min-width: @breakpoint-3col) {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &--gray {
+      color: @grey-medium;
+    }
+
+    &--e-tidningen {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 2;
+      }
+    }
+
+    &--kundservice {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 3;
+      }
+    }
+
+    &--annonsera {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 4;
+      }
+    }
+
+    &--other-important {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 1;
+        grid-column-start: 5;
+      }
+    }
+
+    &--startsidan {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 2;
+      }
+    }
+
+    &--section1 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 3;
+      }
+    }
+
+    &--section2 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 4;
+      }
+    }
+
+    &--section3 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 5;
+      }
+    }
+
+    &--section4 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 3;
+        grid-column-start: 6;
+      }
+    }
+
+    &--kontakt {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 2;
+      }
+    }
+
+    &--annonsera2 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 3;
+      }
+    }
+
+    &--kundservice2 {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 4;
+      }
+    }
+
+    &--other {
+      @media (min-width: @breakpoint-3col) {
+        grid-row-start: 5;
+        grid-column-start: 5;
+      }
+    }
+
+  }
+
+  &__section-title {
+    font: 600 13px "Roboto", sans-serif;
+  }
+
+  &__subsection {
+    font: 400 13px "Roboto", sans-serif;
+  }
+
+  &__separator {
+    border: none;
+    height: 1px;
+    background-color: @grey-slightlylight;
+    width: 100%;
+
+    grid-column: 1 / span 7;
+
+      &--top {
+        grid-row-start: 2;
+      }
+      &--center {
+        grid-row-start: 4;
+      }
+      &--top {
+        grid-row-start: 6;
+      }
+
+  }
+
+  &__menu-footer {
+    display: grid;
+
+    grid-template-rows: auto auto;
+    grid-template-columns: repeat(4, 1fr);
+    row-gap: 8px;
+    column-gap: 0px;
+
+    grid-row-start: 3;
+    grid-column-start: 2;
+
+    margin-bottom: 30px;
+  }
+
+  &__footer-caption {
+
+    grid-row-start: 1;
+    grid-column: 2 / span 2;
+
+    font: 600 13px "Roboto", sans-serif;
+    color: @grey-mediumlight;
+
+    justify-self: center;
+    margin-top: 15px;
+  }
+
+  &__footer-logo {
+    display: grid;
+
+    grid-template-rows: 55px auto;
+
+    &--on {
+      grid-row-start: 2;
+      grid-column-start: 2;
+    }
+
+    &--vn {
+      grid-row-start: 2;
+      grid-column-start: 3;
+    }
+  }
+
+  &__footer-logo-image {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 55px;
+    grid-row-start: 1;
+
+    &--on {
+      background-image: url("../images/logo-on.svg");
+    }
+
+    &--vn {
+      background-image: url("../images/logo-vn.svg");
+    }
+  }
+
+  &__footer-logo-caption {
+    grid-row-start: 2;
+
+    font: 400 13px "Roboto", sans-serif;
+    color: @grey-mediumlight;
+
+    justify-self: center;
+  }
+
+  &__menu-overlay {
+    display: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.94);
+    z-index: 1;
+
+    &--visible {
+      display: block;
+    }
+  }
+}

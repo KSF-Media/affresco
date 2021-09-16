@@ -11,7 +11,7 @@ type Props a =
   , readyView    :: JSX
   , editingView  :: a -> JSX
   , loadingView  :: (JSX -> JSX)
-  , successView  :: Maybe String -> JSX
+  , successView  :: Maybe JSX -> JSX
   , errorView    :: String -> JSX
   }
 
@@ -19,7 +19,7 @@ data Progress a
   = Ready
   | Editing a
   | Loading a
-  | Success (Maybe String)
+  | Success (Maybe JSX)
   | Error String
 
 derive instance functorProgress :: Functor Progress
@@ -29,7 +29,7 @@ asyncWrapper :: forall a. Props a -> JSX
 asyncWrapper props = case props.wrapperState of
   Ready       -> props.readyView
   Editing a   -> props.editingView a
-  Loading a   -> props.loadingView loadingSpinner
+  Loading _   -> props.loadingView loadingSpinner
   Success msg -> props.successView msg
   Error msg   -> props.errorView msg
 

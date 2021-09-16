@@ -2,23 +2,29 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Either (Either(..), either)
+import Data.Either (Either(..), either, hush, isLeft)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Monoid (guard)
+import Data.Time.Duration (class Duration, Days(..), convertDuration)
 import Effect (Effect)
 import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
+import KSF.Api (AuthScope(..))
 import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
-import KSF.Search as Search
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
+import KSF.Timeout as Timeout
 import KSF.Tracking as Tracking
 import KSF.User as User
 import KSF.User.Login as Login
+import Foreign (unsafeToForeign)
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
@@ -27,39 +33,36 @@ import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userV
 import MittKonto.Payment.PaymentAccordion as PaymentAccordion
 import MittKonto.Payment.PaymentDetail as PaymentDetail
 import MittKonto.Payment.Types as Payments
+import MittKonto.Routes (MittKontoRoute(..), needsLogin, routes)
+import MittKonto.Search as Search
 import MittKonto.Wrappers as Wrappers
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
-import React.Basic.Router as Router
-import Web.HTML (window) as HTML
-import Web.HTML.Location (hash) as HTML
-import Web.HTML.Window (location) as HTML
+import Routing.PushState (PushStateInterface, matchesWith, makeInterface)
+import Routing.Duplex as Duplex
 
 foreign import sentryDsn_ :: Effect String
 
-type ViewComponents =
-  { searchView :: JSX
-  , paymentView :: JSX
-  , paymentDetailView :: JSX
-  , creditCardUpdateView :: User.User -> JSX
-  , passwordResetView :: JSX
-  , needRootRedirect :: Boolean
-  }
-
 app :: Component {}
 app = do
+  router <- makeInterface
+  locationState <- router.locationState
+  let fullPath = locationState.pathname <> locationState.search <> locationState.hash
+      routeParse = Duplex.parse routes
+  initialRoute <- maybe (router.pushState (unsafeToForeign {}) "/" *> pure MittKonto) pure $
+                  hush $ routeParse fullPath
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
   search <- Search.search
-  payments <- Wrappers.routeWrapper PaymentAccordion.paymentAccordion
-  paymentDetail <- Wrappers.routeWrapper PaymentDetail.paymentDetail
-  creditCardUpdate <- Wrappers.routeWrapper CreditCardUpdateView.creditCardUpdateView
+  payments <- Wrappers.routeWrapper router PaymentAccordion.paymentAccordion
+  paymentDetail <- Wrappers.routeWrapper router PaymentDetail.paymentDetail
+  creditCardUpdate <- Wrappers.routeWrapper router CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
   loginComponent <- Login.login
-  location <- HTML.location =<< HTML.window
-  initialHash <- HTML.hash location
+  timeout <- Timeout.newTimer
+
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -73,24 +76,50 @@ app = do
         , news: News.render Nothing
         , loginComponent
         }
-  passwordReset <- Reset.resetPassword location
+  passwordReset <- Reset.resetPassword
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
-    needRootRedirect /\ setNeedRootRedirect <- useState' false
+    route /\ setRoute <- useState' initialRoute
+    -- Display a nicer message to a user if they try to navigate back
+    -- after changing their password.
+    passwordChangeDone /\ setPasswordChangeDone <- useState' false
+    useEffectOnce $ pure do
+      Aff.launchAff_ $ Timeout.stopTimer timeout
+    let logout = do
+          router.pushState (unsafeToForeign {}) "/"
+          Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
+            User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
+            liftEffect do
+              logger.setUser Nothing
+              setState $ Types.setActiveUser Nothing
+        setUser :: forall a. Duration a => Maybe a -> User.User -> Effect Unit
+        setUser maybeDuration user = do
+          let duration = fromMaybe (convertDuration $ Days 1.0) maybeDuration
+          admin <- User.isAdminUser
+          setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
+          logger.setUser $ Just user
+          Aff.launchAff_ $ Timeout.startTimer duration timeout do
+            liftEffect logout
 
     useEffectOnce do
-      let attemptMagicLogin =
-            User.magicLogin Nothing \userResponse ->
-              case userResponse of
-                Right user -> do
-                  Tracking.login (Just user.cusno) "magic login" "success"
-                  setUser { state, setState } logger user
-                _ -> pure unit
+      let attemptMagicLogin = do
+            User.magicLogin Nothing $ hush >>> case _ of
+              Just user -> Aff.launchAff_ do
+                -- User logged in via old session but check that it
+                -- has sufficient scope for using Mitt Konto.
+                validScope <- User.hasScope user.uuid UserWrite
+                liftEffect $ case validScope of
+                  Just _ -> do
+                    Tracking.login (Just user.cusno) "magic login" "success"
+                    setUser validScope user
+                  Nothing -> do
+                    pure unit
+              Nothing -> pure unit
       Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
                 $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
-      pure mempty
+      matchesWith routeParse (const setRoute) router
 
     let self = { state, setState }
         -- The user data in the search results isn't quite complete.
@@ -103,7 +132,7 @@ app = do
                       }
           Right user -> do
             setState $ Types.setActiveUser (Just user) >>> Types.setAlert Nothing
-            setNeedRootRedirect true
+            router.pushState (unsafeToForeign {}) "/"
             setPersonating true
 
         searchSelect uuid =
@@ -112,7 +141,7 @@ app = do
               $ User.getUser Nothing uuid
         searchView :: JSX
         searchView = search { setActiveUser: searchSelect
-                            , resetRedirect: setNeedRootRedirect false
+                            , router
                             , now
                             }
         usePayments = Helpers.useLoadSpinner setState
@@ -122,6 +151,8 @@ app = do
                          (setState <<< Types.setPayments <<< Just))
         paymentProps = { usePayments: usePayments
                        , subscriptionPayments: state.payments
+                       , detail: Nothing
+                       , router
                        }
         paymentView =
           payments
@@ -130,104 +161,57 @@ app = do
             , route: "/fakturor"
             , routeFrom: "/"
             }
-        paymentDetailView =
+        paymentDetailView invno =
           paymentDetail
-            { contentProps: paymentProps
+            { contentProps: paymentProps { detail = Just invno }
             , closeType: Wrappers.Back
             , route: "/fakturor/:invno"
             , routeFrom: "/fakturor"
             }
-        creditCardUpdateInputs user =
+        creditCardUpdateInputs subsno user =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
           , cusno: user.cusno
           , logger: logger
+          , subsno
           }
-        creditCardUpdateView user =
+        creditCardUpdateView subsno user =
           creditCardUpdate
-            { contentProps: creditCardUpdateInputs user
+            { contentProps: creditCardUpdateInputs subsno user
             , closeType: Wrappers.XButton
             , route: "/kreditkort/uppdatera"
             , routeFrom: "/"
             }
-        passwordResetView = passwordReset { user: state.activeUser }
-        components =
-          { searchView
-          , paymentView
-          , paymentDetailView
-          , creditCardUpdateView
-          , passwordResetView
-          , needRootRedirect
-          }
-
-    pure $ render self logger components initialHash isPersonating
+        passwordResetView code = passwordReset { user: state.activeUser
+                                               , code
+                                               , passwordChangeDone
+                                               , setPasswordChangeDone
+                                               , navToMain: router.pushState (unsafeToForeign {}) "/"
+                                               }
+        userContent = case route of
+          MittKonto -> foldMap (Views.userView router self logger) state.activeUser
+          Search -> guard state.adminMode searchView
+          InvoiceList -> paymentView
+          InvoiceDetail invno -> paymentDetailView invno
+          PasswordRecovery -> passwordResetView Nothing
+          PasswordRecoveryCode code -> passwordResetView $ Just code
+          CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno) state.activeUser
+        content = if isNothing state.activeUser && needsLogin route
+                  then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
+                  else userContent
+    pure $ render self router (foldMap Elements.loadingIndicator state.loading <> content) logout isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-setUser :: Types.Self -> Sentry.Logger -> User.User -> Effect Unit
-setUser self logger user = do
-  admin <- User.isAdminUser
-  self.setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
-  logger.setUser $ Just user
-
-render :: Types.Self -> Sentry.Logger -> ViewComponents -> String -> Boolean -> JSX
-render self@{ state } logger components initialHash isPersonating =
+render :: Types.Self -> PushStateInterface -> JSX -> Effect Unit -> Boolean -> JSX
+render self@{ state } router content logout isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "") $
-    [ Views.navbarView self logger isPersonating
+    [ Views.navbarView self router logout isPersonating
     , Helpers.classy DOM.div "mt3 mb4 clearfix"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ case initialHash of
-                 "#l%C3%B6senord" -> components.passwordResetView
-                 _ -> Router.switch { children: routes }
+            [ Helpers.classy DOM.div "mitt-konto--container clearfix" [ content ]
             ]
         ]
     , Views.footerView
-    ] <>
-    (if components.needRootRedirect
-       then  [ Router.redirect
-                 { to: { pathname: "/"
-                       , state: {}
-                       }
-                 , from: "/*"
-                 , push: true
-                 }
-             ]
-       else mempty
-    )
- where
-   routes =
-     [ defaultRouteElement "/fakturor/:invno" $ const components.paymentDetailView
-     , defaultRouteElement "/fakturor" $ const components.paymentView
-     , routeElement true false (Just "/sök") $ const components.searchView
-     , simpleRoute "/#lösenord" components.passwordResetView
-     , defaultRouteElement "/" $ Views.userView self logger
-     , defaultRouteElement "/prenumerationer/:subsno/kreditkort/uppdatera" components.creditCardUpdateView
-     , noMatchRoute
-     ]
-   defaultRouteElement = routeElement true true <<< Just
-   routeElement exact allowAll path view =
-     Router.route
-       { exact: exact
-       , path: path
-       , render: const $ Helpers.classy DOM.div "mitt-konto--container clearfix"
-           [ foldMap Elements.loadingIndicator state.loading
-           , case state.activeUser /\ (state.adminMode || allowAll) of
-               Just user /\ true -> view user
-               _ -> Views.loginView self (setUser self logger) logger
-           ]
-       }
-   simpleRoute path view =
-     Router.route
-       { exact: true
-       , path: Just path
-       , render: const view
-       }
-   noMatchRoute =
-     Router.redirect
-       { to: { pathname: "/"
-             , state: {}
-             }
-       , from: "/*"
-       , push: true
-       }
+    ]

@@ -2,6 +2,7 @@ module KSF.Api.Subscription where
 
 import Prelude
 
+import Bottega.Models.PaymentMethod (PaymentMethodId)
 import Control.Alt ((<|>))
 import Data.Date (Date)
 import Data.Either (Either(..))
@@ -59,6 +60,7 @@ type BaseSubscription p =
   , receiver              :: Nullable String
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
   , paymentMethod         :: p
+  , paymentMethodId       :: Nullable PaymentMethodId
   }
 
 data SubscriptionPaymentMethod
@@ -67,6 +69,7 @@ data SubscriptionPaymentMethod
   | NetBank
   | ElectronicInvoice
   | DirectPayment
+  | Email
   | UnknownPaymentMethod
 
 type PausedSubscription =

@@ -1,4 +1,6 @@
-window.dataLayer = window.dataLayer || [];
+if (typeof window !== "undefined") {
+  window.dataLayer = window.dataLayer || [];
+}
 
 exports.login_ = function (cusno, method, result) {
   dataLayer.push({ event: "login", cusno: cusno === null ? "" : cusno, method: method, result: result });
@@ -94,7 +96,7 @@ exports.updateCreditCard_ = function (cusno, subsno, oldCreditCard, registerNumb
   dataLayer.push({
     event: "updateCreditCard",
     cusno: cusno,
-    subsno: subsno === null ? "" : subsno,
+    subsno: subsno,
     oldCreditCard: oldCreditCard,
     registerNumber: registerNumber,
     result: result,

@@ -8,34 +8,26 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
-
-
-foreign import someIcons ::
-  { facebook :: String
-  , twitter :: String
-  , linkedin :: String
-  , mail :: String
-  , whatsapp :: String
-  }
 
 type Self =
   { state :: State
@@ -46,6 +38,11 @@ type Self =
 type Props =
   { brand :: String
   , affArticle :: Aff FullArticle
+  -- ^ `affArticle` is needed always, even if we get the `article`.
+  --   In the case it's a premium article and the customer has no subscription,
+  --   we need to load the article again after they make the purchase.
+  --   You can think `affArticle` being the Lettera call to get the article.
+  , article :: Maybe FullArticle
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
   , user :: Maybe User
@@ -63,45 +60,52 @@ type State =
 articleComponent :: Component Props
 articleComponent = do
   component "Article" \props -> React.do
+    let article = fromFullArticle <$> props.article
     let initialState =
-          { body: []
-          , article: Nothing
-          , title: maybe mempty (\articleStub -> articleStub.title) props.articleStub
+          { body: foldMap (map Record.toSum) $ _.body <$> article
+          , article: props.article
+          , title: fold $ _.title <$> article <|>
+                          _.title <$> props.articleStub
           , mainImage: do
               articleStub <- props.articleStub
               articleStub.listImage
-          , tags: maybe mempty (\articleStub -> articleStub.tags) props.articleStub
-          -- , preamble: maybe Nothing (\articleStub -> articleStub.preamble) props.articleStub
-          , preamble: (\articleStub -> articleStub.preamble) =<< props.articleStub
+          , tags: fold $ _.tags <$> article <|>
+                         _.tags <$> props.articleStub
+          , preamble: fold $ _.preamble <$> article <|>
+                             _.preamble <$> props.articleStub
           }
-    state /\ setState <- useState initialState 
+    state /\ setState <- useState initialState
 
     useEffectOnce do
-      loadArticle setState props.affArticle
+      when (isNothing props.article) $ loadArticle setState props.affArticle
       pure mempty
 
     -- If user logs in / logs out, reload the article.
     -- NOTE: We simply compare the email attribute of `User`
     -- as not every attribute of `User` implements `Eq`
-    useEffect (_.email <$> props.user) do
-      loadArticle setState props.affArticle
-      pure mempty
+    -- TODO: Should probably be state.user, right?
+    -- TODO: Actually, this should probably live some place else
+    --       Leaving the code for reference until the whole thing is resolved
+    -- useEffect (_.email <$> props.user) do
+    --   loadArticle setState props.affArticle
+    --   pure mempty
 
     pure $ render { state, setState, props }
 
 loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
-loadArticle setState affArticle =
+loadArticle setState affArticle = do
   Aff.launchAff_ do
-    a <- affArticle
-    let realArticle = fromFullArticle a
-    liftEffect $ setState \s -> s
-      { article = Just a
-      , body = map Record.toSum $ _.body $ fromFullArticle a
-      , mainImage = realArticle.mainImage
-      , title = realArticle.title
-      , tags = realArticle.tags
-      , preamble = realArticle.preamble
-      }
+    fullArticle <- affArticle
+    let article = fromFullArticle fullArticle
+    liftEffect do
+      setState \s -> s
+                  { article = Just fullArticle
+                  , body = map Record.toSum article.body
+                  , mainImage = article.mainImage
+                  , title = article.title
+                  , tags = article.tags
+                  , preamble = article.preamble
+                  }
 
 renderImage :: Image -> JSX
 renderImage img =
@@ -131,9 +135,9 @@ renderImage img =
 render :: Self -> JSX
 render { props, state, setState } =
     let letteraArticle = map fromFullArticle state.article
-        title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
-        tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
-        mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+        title = fromMaybe mempty $ map _.title letteraArticle <|> map _.title props.articleStub
+        tags = fromMaybe mempty $ map _.tags letteraArticle <|> map _.tags props.articleStub
+        mainImage = (_.mainImage =<< letteraArticle) <|> (_.listImage =<< props.articleStub)
         bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
     in DOM.div
       { className: "mosaico--article"
@@ -148,9 +152,9 @@ render { props, state, setState } =
             }
         , foldMap renderImage mainImage
         , DOM.div
-          { className: "mosaico--article--preamble"
-          , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
-          }
+            { className: "mosaico--article--preamble"
+            , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
+            }
         , DOM.div
             { className: "mosaico--article-times-and-author"
             , children:
@@ -160,47 +164,16 @@ render { props, state, setState } =
             }
         , DOM.ul
             { className: "mosaico-article__some"
-            , children:
-              [ DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.facebook } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.twitter } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.linkedin } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.whatsapp } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.mail } ]
-                  }
-                ]
-              ]
+            , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
             }
         , DOM.div
             { className: "mosaico--article--body "
             , children: case state.article of
-              (Just (PreviewArticle previewArticle)) ->
+              (Just (PreviewArticle _previewArticle)) ->
                 paywallFade
                 `cons` bodyWithAd
                 `snoc` vetrina
-              (Just (FullArticle fullArticle)) ->
+              (Just (FullArticle _fullArticle)) ->
                 bodyWithAd
               _ -> mempty
           }
@@ -241,6 +214,15 @@ render { props, state, setState } =
             { className: "mosaico--article-updated-timestamp"
             , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
             }
+
+    mkShareIcon someName =
+      DOM.li_
+        [ DOM.a
+            { href: "#"
+            , children: [ DOM.span {} ]
+            , className: "mosaico-article__some--" <> someName
+            }
+        ]
 
     adBox =
         Ad.ad { contentUnit: "JATTEBOX" }
@@ -302,7 +284,7 @@ render { props, state, setState } =
     -- and we want to throw them away?
     renderElement :: Either String BodyElement -> JSX
     renderElement = case _ of
-      Left err -> mempty
+      Left _   -> mempty
       Right el -> case el of
         Html content -> DOM.p
           { dangerouslySetInnerHTML: { __html: content }

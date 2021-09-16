@@ -20,6 +20,8 @@ let steps =
       # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Staging apps
       # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
+      # [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
+      # [ Actions.deployDispatchYamlStep Actions.Env.Staging ]
       # [ Actions.linkPreviewsStep apps app-servers previewUrl ]
 
 in  { name = "previews"

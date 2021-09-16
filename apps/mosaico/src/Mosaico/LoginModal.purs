@@ -37,7 +37,7 @@ loginModal :: Component Props
 loginModal = do
   loginComponent <- Login.login
   component "LoginModal" \props -> React.do
-    state /\ setState <- useState { loginComponent }
+    state /\ _setState <- useState { loginComponent }
 
     -- Add eventListener for ESC key, which closes the modal
     -- Remove the listener when the LoginModal is unmounted

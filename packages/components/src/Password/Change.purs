@@ -8,7 +8,6 @@ import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Validation.Semigroup (invalid, isValid, validation)
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -17,17 +16,21 @@ import KSF.Api (Password(..)) as Api
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.InputField as InputField
 import KSF.Tracking as Tracking
-import KSF.User (User)
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, validateField, validatePassword, validatePasswordComparison, validateWithServerErrors)
 import React.Basic (JSX)
+import React.Basic.Events (handler)
 import React.Basic.Hooks as React
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, capture_)
 import React.Basic.Events as Events
 
-type Props = { user :: Maybe User }
+type Props =
+  { code :: String
+  , setChangeDone :: Effect Unit
+  , navToMain :: Effect Unit
+  }
 
 type PasswordReset =
   { password :: Maybe String
@@ -46,23 +49,25 @@ instance validatablePasswordChangeField :: ValidatableField PasswordChangeField 
     Password -> validateWithServerErrors serverErrors Password value validatePassword
     confirmPw@(ConfirmPassword originalPassword) -> validatePasswordComparison Password confirmPw originalPassword value
 
-updatePasswordForm :: (Api.Password -> Api.Password -> Aff (Either User.UserError Unit)) -> Component Props
-updatePasswordForm update = do
+updatePasswordForm :: Component Props
+updatePasswordForm = do
   let initialWrapperState = AsyncWrapper.Editing { password: Nothing, confirmPassword: Nothing }
       initialState =
         { serverErrors: mempty
         , formData: initialWrapperState
         }
-  component "PasswordReset" $ const React.do
+  component "PasswordReset" \ { code, navToMain, setChangeDone } -> React.do
     state /\ setState <- useState initialState
     let setWrapperState :: (AsyncWrapper.Progress PasswordReset -> AsyncWrapper.Progress PasswordReset) -> Effect Unit
         setWrapperState f = setState (\s -> s { formData = f s.formData })
         submitPassword :: PasswordReset -> Effect Unit
         submitPassword pw = Aff.launchAff_ do
           liftEffect $ setWrapperState $ const $ AsyncWrapper.Loading pw
-          res <- update (Api.Password $ fromMaybe "" pw.password) (Api.Password $ fromMaybe "" pw.confirmPassword)
+          res <- User.updateForgottenPassword code (Api.Password $ fromMaybe "" pw.password) (Api.Password $ fromMaybe "" pw.confirmPassword)
           liftEffect $ case res of
-            Right _ -> setWrapperState $ const $ AsyncWrapper.Success Nothing
+            Right _ -> do
+              setChangeDone
+              setWrapperState $ const $ AsyncWrapper.Success Nothing
             Left (User.InvalidFormFields errors) -> do
               liftEffect $ handleServerErrs errors
               setWrapperState $ const $ AsyncWrapper.Editing pw
@@ -74,11 +79,11 @@ updatePasswordForm update = do
           traverse_ setFormInvalid $ Object.keys errs
         setFormInvalid "password" = setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` state.serverErrors }
         setFormInvalid _ = pure unit
-    pure $ renderForm submitPassword (setWrapperState $ const initialWrapperState)
+    pure $ renderForm navToMain submitPassword (setWrapperState $ const initialWrapperState)
       (setWrapperState <<< map) state
   where
-    renderForm :: (PasswordReset -> Effect Unit) -> Effect Unit -> ((PasswordReset -> PasswordReset) -> Effect Unit) -> State -> JSX
-    renderForm submitPassword resetForm setForm state =
+    renderForm :: Effect Unit -> (PasswordReset -> Effect Unit) -> Effect Unit -> ((PasswordReset -> PasswordReset) -> Effect Unit) -> State -> JSX
+    renderForm navToMain submitPassword resetForm setForm state =
       DOM.div
         { className: "password--reset"
         , children:
@@ -107,7 +112,7 @@ updatePasswordForm update = do
                     , placeholder: "Önskat lösenord"
                     , value: password
                     , onChange: \newPw -> setForm _ { password = newPw }
-                    , label: Just "Önstkat lösenord"
+                    , label: Just "Önskat lösenord"
                     , validationError: inputFieldErrorMessage $ validateField Password password state.serverErrors
                     }
                 , InputField.inputField
@@ -138,6 +143,7 @@ updatePasswordForm update = do
                 [ DOM.a
                     { href: "/"
                     , children: [ DOM.text "Tillbaka till inloggningssidan" ]
+                    , onClick: handler preventDefault $ const navToMain
                     }
                 ]
             ]
@@ -163,5 +169,4 @@ updatePasswordForm update = do
 
         submit :: ValidatedForm PasswordChangeField PasswordReset -> Effect Unit
         submit =
-          validation (\errors -> Console.error "Could not update password.") submitPassword
-
+          validation (\_ -> Console.error "Could not update password.") submitPassword

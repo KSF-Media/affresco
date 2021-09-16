@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { BrowserRouter as Router } from "react-router-dom";
 import "basscss/css/basscss-cp.css";
 
 // yup, welcome to react 16
@@ -10,9 +9,7 @@ var Main = require("./output/MittKonto.Main/index.js");
 
 function main() {
   const myComponent = (
-    <Router>
-      <Main.jsApp />
-    </Router>
+    <Main.jsApp />
   );
 
   ReactDOM.render(myComponent, document.getElementById("app"));

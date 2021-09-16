@@ -3,6 +3,7 @@ module KSF.User
   , User
   , MergeInfo
   , ValidationServerError
+  , ConflictingUser (..)
   , module PersonaReExport
   , module BottegaReExport
   , module Address
@@ -17,10 +18,12 @@ module KSF.User
   , getUser
   , isAdminUser
   , updateUser
+  , setCusno
   , updatePassword
   , requestPasswordReset
   , startPasswordReset
   , updateForgottenPassword
+  , hasScope
   , pauseSubscription
   , editSubscriptionPause
   , unpauseSubscription
@@ -62,12 +65,13 @@ import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_, traverse_)
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
+import Data.Time.Duration (Seconds(..))
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -81,10 +85,9 @@ import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
-import KSF.Api (InvalidateCache, UserAuth)
+import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Address (Address) as Address
-import KSF.Api.Consent (GdprConsent)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
@@ -93,6 +96,7 @@ import KSF.Api.Subscription (Subsno)
 import KSF.Error as KSF.Error
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
+import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
@@ -103,6 +107,22 @@ import Unsafe.Coerce (unsafeCoerce)
 
 foreign import facebookAppId :: String
 
+-- Only in admin action responses
+type ConflictingUser =
+  { uuid :: UUID
+  , email :: Maybe String
+  , firstName :: Maybe String
+  , lastName :: Maybe String
+  }
+
+conflictingUserFromApiResponse :: Persona.CusnoViolationUser -> ConflictingUser
+conflictingUserFromApiResponse user =
+  { uuid: fromMaybe UUID.emptyUUID $ UUID.parseUUID user.uuid
+  , email: Nullable.toMaybe user.email
+  , firstName: Nullable.toMaybe user.firstName
+  , lastName: Nullable.toMaybe user.lastName
+  }
+
 data UserError =
   LoginInvalidCredentials
   | LoginFacebookEmailMissing
@@ -112,12 +132,13 @@ data UserError =
   | LoginTokenInvalid
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
-  | RegistrationCusnoInUse
+  | RegistrationCusnoInUse ConflictingUser
   | MergeEmailInUse MergeInfo
   | PasswordResetTokenInvalid
   | SomethingWentWrong
   | ServiceUnavailable
   | UniqueViolation
+  | InvalidCusno
   | UnexpectedError Error
 derive instance genericUserError :: Generic UserError _
 instance showUserError :: Show UserError where
@@ -184,18 +205,17 @@ createCusnoUser newCusnoUser = do
           Console.error errData.email_address_in_use_registration.description
           pure $ Left RegistrationEmailInUse
       | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
-          Console.error errData.unique_cusno_violation.description
-          pure $ Left RegistrationCusnoInUse
+          pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
       | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
           Console.error errData.invalid_form_fields.description
           pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
       | otherwise -> do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
-    Right user -> do
-      searchResult <- searchUsers { faroLimit: 1, query: Cusno.toString newCusnoUser.cusno }
+    Right _user -> do
+      searchResult <- searchUsers false { faroLimit: 1, query: Cusno.toString newCusnoUser.cusno }
       case searchResult of
-        Left err -> do
+        Left _ -> do
           Console.error "Cusno user created successfully but searching it failed"
           pure $ Left SomethingWentWrong
         Right res -> case Array.head res of
@@ -257,6 +277,18 @@ updateUser uuid update = do
       | KSF.Error.resourceConflictError err -> do
           pure $ Left UniqueViolation
       | otherwise -> pure $ Left $ UnexpectedError err
+
+setCusno :: UUID -> Cusno -> Aff (Either UserError User)
+setCusno uuid cusno = do
+  newUser <- try $ Persona.setUserCusno uuid cusno =<< requireToken
+  case newUser of
+    Right user -> pure $ Right $ fromPersonaUser user
+    Left err
+      | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
+          pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
+      | KSF.Error.badRequestError err -> do
+          pure $ Left InvalidCusno
+      | otherwise -> pure $ Left SomethingWentWrong
 
 updatePassword :: UUID -> Api.Password -> Api.Password -> Aff (Either UserError User)
 updatePassword uuid password confirmPassword = do
@@ -389,12 +421,12 @@ loginSso maybeInvalidateCache callback = do
     checkSsoSession loginConfig = do
       JanrainSSO.checkSession $ Record.merge
         loginConfig
-        { callback_failure: mkEffectFn1 \a -> do
+        { callback_failure: mkEffectFn1 \_ -> do
              Console.log "Janrain SSO failure"
-        , callback_success: mkEffectFn1 \a -> do
+        , callback_success: mkEffectFn1 \_ -> do
              Console.log "Janrain SSO success"
              JanrainSSO.setSsoSuccess
-        , capture_error: mkEffectFn1 \a -> do
+        , capture_error: mkEffectFn1 \_ -> do
             Console.log "Janrain SSO capture error"
         , capture_success: mkEffectFn1 \r@({ result: { accessToken, userData: { uuid } } }) -> do
              JanrainSSO.setSsoSuccess
@@ -508,7 +540,7 @@ saveToken { token, ssoCode, uuid, isAdmin } = liftEffect do
   pure { userId: uuid, authToken: token }
 
 deleteToken :: Effect Unit
-deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid", "isAdmin" ]
+deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid", "isAdmin", "searchQuery", "searchResult" ]
 
 requireToken :: forall m. MonadEffect m => m UserAuth
 requireToken =
@@ -516,17 +548,15 @@ requireToken =
     Nothing -> liftEffect $ throw "Did not find uuid/token in local storage."
     Just loginResponse -> pure loginResponse
 
-jsUpdateGdprConsent
-  :: UUID
-  -> Api.Token
-  -> Array GdprConsent
-  -> Effect Unit
-  -> Effect Unit
-jsUpdateGdprConsent uuid token consents callback
-  = Aff.runAff_ (\_ -> callback) $ Persona.updateGdprConsent uuid token consents
-
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
+
+hasScope :: UUID -> AuthScope -> Aff (Maybe Seconds)
+hasScope uuid scope = do
+  res <- try $ Persona.hasScope uuid scope =<< requireToken
+  case res of
+    Left _ -> pure Nothing
+    Right s -> pure $ Just $ Seconds s
 
 pauseSubscription
   :: UUID
@@ -612,7 +642,7 @@ deleteTemporaryAddressChange userUuid subsno startDate endDate = do
   tempAddressChangeDeletedSub <- try $ Persona.deleteTemporaryAddressChange userUuid subsno startDate endDate =<< requireToken
   case tempAddressChangeDeletedSub of
     Right sub -> pure $ Right sub
-    Left err  -> pure $ Left Persona.InvalidUnexpected
+    Left _  -> pure $ Left Persona.InvalidUnexpected
 
 createDeliveryReclamation
   :: UUID
@@ -624,15 +654,16 @@ createDeliveryReclamation uuid subsno date claim = do
   deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date claim =<< requireToken
   case deliveryReclamation of
     Right recl -> pure $ Right recl
-    Left err -> do
+    Left _ -> do
       Console.error "Unexpected error when creating delivery reclamation."
       pure $ Left Persona.InvalidUnexpected
 
 searchUsers
-  :: SearchQuery
+  :: Boolean
+  -> SearchQuery
   -> Aff (Either String (Array (SearchResult Subscription.Subscription)))
-searchUsers query = do
-  users <- try $ Persona.searchUsers query =<< requireToken
+searchUsers useStored query = do
+  users <- try $ Persona.searchUsers useStored query =<< requireToken
   case users of
     Right xs -> pure $ Right xs
     Left err
@@ -647,7 +678,7 @@ getPayments uuid = do
   payments <- try $ Persona.getPayments uuid =<< requireToken
   case payments of
     Right pay -> pure $ Right pay
-    Left err -> do
+    Left _ -> do
       Console.error "Unexpected error when getting user payment history "
       pure $ Left "unexpected"
 

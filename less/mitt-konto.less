@@ -53,7 +53,7 @@ h2.mitt-konto--heading {
 
 .mitt-konto--frontpage {
   display: grid;
-  grid-template-rows: 70px auto auto auto auto;
+  grid-template-rows: 70px auto auto auto auto auto;
   grid-template-columns: 2fr 1fr 345px 1fr 2fr;
 
   background-image: url('../images/shield.png');
@@ -134,6 +134,15 @@ h2.mitt-konto--heading {
   .form {
     grid-column-start: 3;
     grid-row-start: 5;
+  }
+
+  .mitt-konto--frontpage__instruction-video {
+    grid-row-start: 6;
+    grid-column: 1 / span 5;
+    justify-self: center;
+    display: flex;
+    flex-direction: column;
+    margin-top: 15px;
   }
 }
 

@@ -65,7 +65,7 @@ setPassword = make component
   }
 
 didMount :: Self -> Effect Unit
-didMount { setState, props } = do
+didMount { props } = do
   when (isNothing props.user) do
     -- TODO: Call onError?
     props.logger.log "Did not get user to Purchase.SetPassword phase" Sentry.Warning
@@ -80,7 +80,7 @@ render self =
       , children:[ DOM.text "Tack för din beställning!" ]
       }
     <> case self.props.user of
-        Just u ->
+        Just _ ->
           DOM.p
             { className: "vetrina--description-text"
             , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
@@ -100,7 +100,7 @@ setPasswordForm self@{ state: { passwordForm } } =
             , id: "setPassword"
             , children:
                 [ InputField.inputField
-                   { placeholder: "Önskat lösenord (minst 6 tecken)"
+                   { placeholder: "Önskat lösenord"
                    , type_: InputField.Password
                    , label: Nothing
                    , name: "password"
@@ -132,7 +132,7 @@ submitNewPassword :: Self -> ValidatedForm PasswordFormField PasswordForm -> Eff
 submitNewPassword self@{ state: { passwordForm } } form =
   validateForm form $
     \eitherValidForm -> case eitherValidForm of
-      Left errs -> self.setState _ { passwordForm { newPassword = passwordForm.newPassword <|> Just "" } }
+      Left _ -> self.setState _ { passwordForm { newPassword = passwordForm.newPassword <|> Just "" } }
       Right validForm
         | Just user <- self.props.user
         , Just password <- validForm.newPassword
@@ -141,12 +141,12 @@ submitNewPassword self@{ state: { passwordForm } } form =
           eitherUser <- User.updatePassword user.uuid (Password password) (Password confirmPassword)
           liftEffect $ case eitherUser of
             Left err -> self.props.onError err
-            Right u  -> self.props.onSuccess
+            Right _  -> self.props.onSuccess
         | otherwise ->
           self.props.logger.log "Purchase.SetPassword: Tried to submit invalid password form" Sentry.Warning
 
 formValidations :: Self -> ValidatedForm PasswordFormField PasswordForm
-formValidations self@{ state: { passwordForm } } =
+formValidations { state: { passwordForm } } =
   { newPassword: _
   , confirmPassword: _
   }

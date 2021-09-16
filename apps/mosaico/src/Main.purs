@@ -2,18 +2,24 @@ module Main where
 
 import Prelude
 
+import Data.Argonaut.Core (Json)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
+import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import KSF.Paper (Paper(..))
+import Effect.Uncurried (EffectFn2, EffectFn3, runEffectFn2, runEffectFn3)
+import KSF.Api (Token(..), UserAuth)
 import Lettera as Lettera
-import Lettera.Models (Article, FullArticle(..))
+import Mosaico.Article as Article
+import MosaicoServer as MosaicoServer
+import Node.Encoding (Encoding(..))
+import Lettera.Models (fromFullArticle, articleToJson, isPreviewArticle)
+import Node.FS.Sync as FS
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
@@ -24,19 +30,16 @@ import Payload.Server.Handlers (File)
 import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
-import React.Basic (JSX)
-import React.Basic.DOM as DOM
-import React.Basic.DOM.Server (renderToString)
+import React.Basic.DOM.Server as DOM
 
 -- NOTE: We need to require dotenv in JS
 foreign import requireDotenv :: Unit
+foreign import appendMosaico :: EffectFn2 String String String
+foreign import writeArticle :: EffectFn3 Json Boolean String String
 
 newtype TextHtml = TextHtml String
-
-type Credentials = { userId :: UUID, token :: String }
-
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
-  encodeResponse r@(Response res) = do
+  encodeResponse (Response res) = do
     let (TextHtml b) = res.body
     pure $
       Response
@@ -44,6 +47,9 @@ instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
         , headers: Headers.setIfNotDefined "content-type" ContentType.html res.headers
         , body: StringBody b
         }
+
+indexHtmlFileLocation :: String
+indexHtmlFileLocation = "./dist/client/index.html"
 
 spec ::
   Spec
@@ -54,117 +60,68 @@ spec ::
                 , params :: { uuid :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
-         , getMostRead ::
-              GET "/mostread"
-                { response :: TextHtml }
          , assets ::
               GET "/assets/<..path>"
-            { params :: { path :: List String }
-            , response :: File
-            }
+                { params :: { path :: List String }
+                , response :: File
+                }
+         , frontpage ::
+              GET "/"
+                { response :: TextHtml
+                , guards :: Guards ("credentials" : Nil)
+                }
          }
-    , guards :: { credentials :: Maybe Credentials }
+    , guards :: { credentials :: Maybe UserAuth }
     }
 spec = Spec
 
 main :: Effect Unit
 main = do
-  let handlers = { getArticle, getMostRead, assets }
+  let handlers = { getArticle, assets, frontpage }
       guards = { credentials: getCredentials }
-  Aff.launchAff_ $ Payload.startGuarded_ spec { handlers, guards }
+  Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+
+getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+getArticle r@{ params: { uuid } } = do
+  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
+  htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+  articleComponent <- liftEffect Article.articleComponent
+  mosaico <- liftEffect MosaicoServer.app
+  case article of
+    Right a -> do
+      let articleJSX =
+            articleComponent
+              { brand: "hbl"
+              , affArticle: pure a
+              , articleStub: Nothing
+              , onLogin: pure unit
+              , user: Nothing
+              , article: Just a
+              }
+          mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX }
+
+      html <- liftEffect do
+        runEffectFn2 appendMosaico htmlTemplate mosaicoString
+          >>= runEffectFn3 writeArticle (articleToJson $ fromFullArticle a) (isPreviewArticle a)
+
+      pure $ TextHtml html
+    Left err -> do
+      Console.warn $ "Could not get article: " <> err
+      pure $ TextHtml "Could not get article"
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: {path} } = Handlers.directory "dist" path
+assets { params: { path } } = Handlers.directory "dist/client" path
 
-getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe Credentials } } -> Aff TextHtml
-getArticle r@{ params: { uuid } } = do
-  case r.guards.credentials of
-    -- TODO: Pass credentials to Lettera
-    Just _  -> Console.log "YES CREDS!"
-    Nothing -> Console.log "NO CREDS!"
-  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) Nothing
-  case article of
-    Right (FullArticle a) -> pure $ TextHtml $ mosaicoString a
-    Right (PreviewArticle a) -> pure $ TextHtml $ mosaicoString a
-    Left _ -> pure $ TextHtml mempty
+frontpage :: { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+frontpage _ = do
+  html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+  pure $ TextHtml html
 
-getCredentials :: HTTP.Request -> Aff (Maybe Credentials)
+getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
 getCredentials req = do
   headers <- Guards.headers req
   let tokens = do
-        token  <- Headers.lookup "Authorization" headers
+        authToken <- Token <$> Headers.lookup "Authorization" headers
         userId <- UUID.parseUUID =<< Headers.lookup "Auth-User" headers
-        pure { token, userId }
+        pure { authToken, userId }
   pure tokens
-
-getMostRead :: {} -> Aff TextHtml
-getMostRead _ = do
-  frontpage <- Lettera.getFrontpage HBL
-  pure $ TextHtml $ renderToString $ mostRead frontpage
-  where
-    mostRead articles =
-      DOM.ul
-        { className: "most-read-yo"
-        , children: map mkListItem articles
-        }
-
-    mkListItem a =
-      DOM.li
-        { children:
-          [ DOM.a
-            { href: "/artikel/" <> a.uuid
-            , children: [ DOM.text a.title ]
-            }
-          ]
-        }
-
-mosaicoString :: Article -> String
-mosaicoString = renderToString <<< mosaico
-
-mosaico :: Article -> JSX
-mosaico a =
-  DOM.html
-    { lang: "sv"
-    , children:
-      [ DOM.head
-        { children:
-          [ DOM.meta { charSet: "UTF-8" }
-          , DOM.meta
-            { name: "viewport"
-            , content: "width=device-width, initial-scale=1.0"
-            }
-          , DOM.link
-            { rel: "stylesheet"
-            , href: "/assets/mosaico.css"
-            }
-          , DOM.script
-            { src: "/assets/apps/mosaico/index.js"
-            , defer: true
-            }
-          ]
-        }
-      , DOM.body
-        { children:
-          [ DOM.div
-            { className: "mosaico grid"
-            , children:
-              [ DOM.header
-                { className: "mosaico--header"
-                , children: [ DOM.text "header" ]
-                }
-              -- , Article.article
-              --   { article: a
-              --   , brand: "hbl"
-              --   }
-              , DOM.footer
-                { className: "mosaico--footer"
-                , children: [ DOM.text "footer" ]
-                }
-              , DOM.aside
-                { className: "mosaico--aside" }
-              ]
-            }
-          ]
-        }
-      ]
-    }

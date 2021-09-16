@@ -2,36 +2,46 @@
 Welcome to a Spago project!
 You can edit this file as you like.
 -}
-{ name =
-    "mitt-konto"
+{ name = "mitt-konto"
 , dependencies =
-    [ "affresco-components"
-    , "affresco-user"
-    , "effect"
-    , "console"
-    , "aff"
-    , "aff-promise"
-    , "formatters"
-    , "datetime"
-    , "react-basic"
-    , "react-basic-classic"
-    , "react-basic-dom"
-    , "react-basic-hooks"
-    , "react-basic-router"
-    , "psci-support"
-    , "prelude"
-    , "js-date"
-    , "foreign-generic"
-    , "ordered-collections"
-    , "simple-json"
-    , "facebook"
-    , "now"
-    , "web-html"
-    , "uuid"
-    , "affjax"
-    ]
-, packages =
-    ../../packages.dhall
-, sources =
-    [ "src/**/*.purs" ]
+  [ "aff"
+  , "affresco-components"
+  , "affresco-user"
+  , "argonaut-codecs"
+  , "arrays"
+  , "avar"
+  , "console"
+  , "control"
+  , "datetime"
+  , "effect"
+  , "either"
+  , "enums"
+  , "exceptions"
+  , "foldable-traversable"
+  , "foreign"
+  , "formatters"
+  , "integers"
+  , "js-date"
+  , "lists"
+  , "maybe"
+  , "now"
+  , "nullable"
+  , "ordered-collections"
+  , "prelude"
+  , "psci-support"
+  , "react-basic"
+  , "react-basic-classic"
+  , "react-basic-dom"
+  , "react-basic-hooks"
+  , "record"
+  , "routing"
+  , "routing-duplex"
+  , "strings"
+  , "transformers"
+  , "tuples"
+  , "uuid"
+  , "validation"
+  ]
+, packages = ../../packages.dhall
+, sources = [ "src/**/*.purs" ]
 }

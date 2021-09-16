@@ -2,10 +2,12 @@
 , dependencies =
   [ "aff"
   , "aff-promise"
+  , "affjax"
   , "affresco-components"
   , "affresco-test"
   , "affresco-user"
   , "affresco-vetrina"
+  , "argonaut-codecs"
   , "console"
   , "datetime"
   , "effect"
@@ -20,12 +22,10 @@
   , "react-basic"
   , "react-basic-classic"
   , "react-basic-dom"
-  , "react-basic-router"
   , "simple-json"
   , "test-unit"
   , "toppokki"
   , "uuid"
-  , "affjax"
   ]
 , packages = ../../packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

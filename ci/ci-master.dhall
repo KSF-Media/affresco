@@ -18,6 +18,8 @@ let deploySteps =
       # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Production apps
       # Actions.deployAppEngineSteps Actions.Env.Production app-servers
+      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
+      # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto"

@@ -2,7 +2,7 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
-import Data.Array (filter, mapMaybe)
+import Data.Array (filter, find, mapMaybe)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Enum (enumFromTo)
@@ -11,10 +11,11 @@ import Data.JSDate (toDate)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
-import Data.String (trim)
+import Data.String (length, splitAt, trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Foreign (unsafeToForeign)
 import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
@@ -32,21 +33,21 @@ import KSF.User as User
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
+import MittKonto.Wrappers.Elements (successWrapper)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (capture_)
-import React.Basic.Events (handler_)
-import React.Basic.Router as Router
+import React.Basic.DOM.Events (capture_, preventDefault)
+import React.Basic.Events (handler, handler_)
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
-receiverName self@{ props: { subscription: { receiver } } } =
+receiverName { props: { subscription: { receiver } } } =
   foldMap (\r -> Array.singleton
               { term: "Mottagare:"
               , description: [ DOM.text r ]
               }) $ toMaybe receiver
 
 deliveryAddress :: Types.Self -> Array DescriptionList.Definition
-deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
+deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
   if package.digitalOnly
   then mempty
   else Array.singleton
@@ -67,10 +68,32 @@ deliveryAddress self@{ props: { subscription: { deliveryAddress: subDeliveryAddr
       | otherwise = "-"
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
-paymentMethod self@{ props: props@{ subscription: sub@{ paymentMethod: method } } } = Array.singleton
+paymentMethod { props: { subscription: { paymentMethod: method, paymentMethodId }, user: { creditCards } } } = Array.singleton
   { term: "Faktureringsmetod:"
-  , description: [ DOM.text $ Helpers.translatePaymentMethod method ]
+  , description: [ DOM.div_ [ DOM.text $ Helpers.translatePaymentMethod method
+                            , case method of
+                                CreditCard -> subscriptionCreditCard
+                                _ -> mempty
+                            ]
+                 ]
   }
+  where
+    subscriptionCreditCard :: JSX
+    subscriptionCreditCard
+      | Just id <- toMaybe paymentMethodId,
+        Just card <- find (\c -> c.paymentMethodId == id) creditCards =
+          DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
+                  , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
+                  ]
+      | otherwise = mempty
+
+    formatExpiryDate :: String -> String
+    formatExpiryDate expiryDate
+      | (length expiryDate) == 4 =
+          let { before: year, after: month } = splitAt 2 expiryDate
+           in
+            month <> "/" <> year
+      | otherwise = ""
 
 pendingAddressChanges :: Types.Self -> Array DescriptionList.Definition
 pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, props: { now } } =
@@ -99,7 +122,7 @@ showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
        }
 
 billingDateTerm :: Types.Self -> Array DescriptionList.Definition
-billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
+billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
   (\e -> Array.singleton $
       { term: "Faktureringsperioden upphör:"
       , description: [ DOM.text $ e ]
@@ -107,7 +130,7 @@ billingDateTerm self@{ props: { subscription: { dates: { end } } } } = foldMap
   ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe end)
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
-subscriptionEndTerm self@{ props: { subscription: { dates: { suspend } } } } = foldMap
+subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap
   (\s -> Array.singleton $
       { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text s ]
@@ -168,7 +191,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
         , onSuccess: \_ ->
                         self.setState _
-                            { wrapperProgress = AsyncWrapper.Success Helpers.successText
+                            { wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing Helpers.successText
                             }
         , onError: \err -> do
             self.props.logger.error $ Error.subscriptionError Error.SubscriptionReclamation $ show err
@@ -186,7 +209,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
             , DOM.span
                 { className: "subscription--update-action-text"
                 , children:
-                    [ DOM.u_ [ DOM.text "Gör uppehåll" ] ]
+                    [ DOM.u_ [ DOM.text "Gör uppehåll för papperstidningen" ] ]
                 , onClick: showPauseView
                 }
             ]
@@ -217,14 +240,14 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
               unpausedSubscription <- Aff.try $ do
                 User.unpauseSubscription props.user.uuid props.subscription.subsno
               case unpausedSubscription of
-                Left err -> liftEffect do
+                Left _ -> liftEffect do
                   self.setState _
                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
                 Right newSubscription -> liftEffect do
                   self.setState _
                     { pausedSubscriptions = toMaybe newSubscription.paused
-                    , wrapperProgress = AsyncWrapper.Success $ Just "Uppehållet har tagits bort"
+                    , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing "Uppehållet har tagits bort"
                     }
                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
         }
@@ -276,7 +299,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                       case tempAddressChangesDeleted of
                         Right newSubscription -> liftEffect do
                           self.setState _
-                            { wrapperProgress = AsyncWrapper.Success $ Just "Tillfällig adressändring har tagits bort",
+                            { wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing "Tillfällig adressändring har tagits bort",
                             pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
                           Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
                         Left _ -> liftEffect do
@@ -312,10 +335,10 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
     creditCardUpdateIcon =
       DOM.div
         { className: "subscription--action-item"
-        , children: [ Router.link
-                        { to: { pathname: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
-                              , state: {}
-                              }
+        , children: [ DOM.a
+                        { onClick: handler preventDefault $ const $ props.router.pushState (unsafeToForeign {}) $
+                                   "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
+                        , href: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
                         , children: [ DOM.div
                                         { className: "subscription--action-link"
                                         , children: [ DOM.div
@@ -329,28 +352,29 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                                                     ]
                                         }
                                     ]
-                        , className: mempty
                         }
                     ]
         }
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
-pauseSubscriptionComponent self@{props, state} editing =
+pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =
   PauseSubscription.pauseSubscription
-    { subsno: props.subscription.subsno
+    { subsno: sub.subsno
     , cusno: props.user.cusno
     , userUuid: props.user.uuid
       -- Make sure that both exist if used
     , oldStart: oldEnd *> oldStart
     , oldEnd: oldStart *> oldEnd
+    , nextDelivery: toDate =<< toMaybe package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
+    , now: self.props.now
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \pausedSubscription ->
                     self.setState _
                       { pausedSubscriptions = toMaybe pausedSubscription.paused
-                      , wrapperProgress = AsyncWrapper.Success Helpers.successText
+                      , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper pauseReadMsg Helpers.successText
                       }
-
     , onError: \err -> do
         let unexpectedError = "Något gick fel och vi kunde tyvärr inte genomföra den aktivitet du försökte utföra. Vänligen kontakta vår kundtjänst."
             startDateError = "Din begäran om uppehåll i beställningen misslyckades. Uppehåll kan endast påbörjas fr.o.m. följande dag."
@@ -378,9 +402,13 @@ pauseSubscriptionComponent self@{props, state} editing =
   where
     oldStart = (toDate <<< _.startDate) =<< editing
     oldEnd = ((toDate <=< toMaybe) <<< _.endDate) =<< editing
+    pauseReadMsg = Just $
+      DOM.div
+        { children: [ DOM.text "Du kan läsa tidningen digitalt utan extra kostnad under uppehållet." ]
+        }
 
 temporaryAddressChangeComponent :: Types.Self -> Maybe User.PendingAddressChange -> JSX
-temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ package } } }  editing =
+temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } } }  editing =
   TemporaryAddressChange.temporaryAddressChange
     { subsno: props.subscription.subsno
     , cusno: props.user.cusno
@@ -389,12 +417,13 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: sub@{ packag
     , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
     , editing: editing
     , userUuid: props.user.uuid
+    , now: self.props.now
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
                     self.setState _
                         { pendingAddressChanges = toMaybe newPendingChanges
-                        , wrapperProgress = AsyncWrapper.Success Helpers.successText
+                        , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing Helpers.successText
                         }
 
     , onError: \(err :: User.InvalidDateInput) -> do
@@ -429,7 +458,7 @@ showPausedDates self =
       pauseLine pause =
         let text = "Uppehåll: " <> formatDates pause
         in case Tuple (toDate pause.startDate) (toDate =<< toMaybe pause.endDate) of
-          Tuple (Just startDate) (Just endDate) ->
+          Tuple (Just _startDate) (Just _endDate) ->
             DOM.div
               { children: [ changeButton self
                               (Types.EditSubscriptionPause pause)

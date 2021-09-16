@@ -2,10 +2,10 @@ module KSF.Navbar.Component where
 
 import Prelude
 
-import Data.Array (replicate, mapMaybe)
+import Data.Array (replicate)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Nullable (Nullable, toMaybe)
+import Data.Maybe (Maybe, fromMaybe)
+import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String as String
 import Effect (Effect)
@@ -14,12 +14,10 @@ import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Paper (Paper(..))
 import KSF.User (User)
-import KSF.User.Cusno as Cusno
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
-import React.Basic.Router as Router
 
 foreign import icons ::
   { signOut :: String
@@ -30,29 +28,23 @@ type Self = React.Self Props State
 
 type Props =
   { paper :: Paper
-  , adminMode :: Boolean
-  , isPersonating :: Boolean
+  , specialHelp :: Maybe JSX
   , activeUser :: Maybe User
-  , logoutWrapper :: Maybe (JSX -> JSX)
   , logout :: Effect Unit
   }
 
 type JSProps =
   { paperCode :: String
-  , adminMode :: Boolean
-  , isPersonating :: Boolean
+  , specialHelp :: Nullable JSX
   , activeUser :: Nullable User
-  , logoutWrapper :: Nullable (JSX -> JSX)
   , onLogout :: Effect Unit
   }
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { paper
-  , adminMode: jsProps.adminMode
-  , isPersonating: jsProps.isPersonating
+  , specialHelp: Nullable.toMaybe jsProps.specialHelp
   , activeUser: Nullable.toMaybe jsProps.activeUser
-  , logoutWrapper: Nullable.toMaybe jsProps.logoutWrapper
   , logout: jsProps.onLogout
   }
   where
@@ -80,7 +72,7 @@ navbar = make component
   { initialState, render }
 
 render :: Self -> JSX
-render self@{ props, state } =
+render self =
   DOM.div
     { className: "nav--navbars"
     , children:
@@ -92,39 +84,36 @@ render self@{ props, state } =
 
 -- | Full width navbar
 fullNav :: Self -> JSX
-fullNav self@{ props, state } =
+fullNav self@{ props } =
   DOM.div
     { className: "nav--nav-container"
     , children:
         [ paperLogo props.paper
-        , if not props.adminMode
-            then needHelp props.paper
-            else customerService props.isPersonating props.activeUser
+        , fromMaybe needHelp props.specialHelp
         , logoutButton self
         ]
     }
 
 logoutButton :: Self -> JSX
-logoutButton self@{ props: { logout, activeUser, logoutWrapper } } =
+logoutButton self@{ props: { activeUser } } =
   foldMap button activeUser
   where
     button _user =
-      fromMaybe identity logoutWrapper $
-        DOM.div
-          { className: "nav--logout-button"
-          , onClick: Event.handler_ onLogout
-          , children:
-              [ DOM.img { src: icons.signOut }
-              , DOM.div_ [ DOM.text "Logga ut" ]
-              ]
-          }
+      DOM.div
+        { className: "nav--logout-button"
+        , onClick: Event.handler_ onLogout
+        , children:
+            [ DOM.img { src: icons.signOut }
+            , DOM.div_ [ DOM.text "Logga ut" ]
+            ]
+        }
     onLogout = do
       self.props.logout
       self.setState _ { collapsedNavVisibility = Hidden }
 
 -- | Narrow navbar with hamburger button
 hamburgerNav :: Self -> JSX
-hamburgerNav self@{ props, state } =
+hamburgerNav self@{ props } =
   DOM.div
     { className: "nav--hamburger-container"
     , children:
@@ -138,15 +127,15 @@ collapsedNav :: Self -> JSX
 collapsedNav self =
   Collapsed.collapsed
     { visibility: self.state.collapsedNavVisibility
-    , navItems: [ logoutButton self, needHelp self.props.paper ]
+    , navItems: [ logoutButton self, needHelp ]
     }
 
 paperLogo :: Paper -> JSX
 paperLogo paper =
   DOM.img { className: "nav--paper-logo", src: paperLogoUrl paper }
 
-needHelp :: Paper -> JSX
-needHelp paper =
+needHelp :: JSX
+needHelp =
   DOM.div
     { className: "nav--logout-limpet"
     , children:
@@ -157,35 +146,6 @@ needHelp paper =
     where
       formatMailtoAnchorTag :: String -> JSX
       formatMailtoAnchorTag email = DOM.a { href: "mailto:" <> email, children: [ DOM.text email ] }
-
-customerService :: Boolean -> Maybe User -> JSX
-customerService isPersonating activeUser = do
-  DOM.div
-    { className: "nav--logout-limpet"
-    , children: [ Router.link
-                    { to: { pathname: "/sök", state: {} }
-                    , children: [ DOM.text "Sök kund" ]
-                    , className: ""
-                    }
-                ] <> if isPersonating
-                       then ( case activeUser of
-                                 Just user -> [ DOM.div_ [ DOM.strong_ [ DOM.text "Aktiv kund" ] ]
-                                              , userLink user
-                                              ]
-                                 Nothing -> []
-                            )
-                       else []
-    }
-    where
-      userLink user =
-        Router.link
-          { to: { pathname: "/", state: {} }
-          , children: [ DOM.text $ Cusno.toString user.cusno <> " - " <>
-                          ( String.joinWith " " $
-                            mapMaybe toMaybe [ user.firstName, user.lastName ] )
-                      ]
-          , className: ""
-          }
 
 hamburgerButton :: Self -> JSX
 hamburgerButton self =

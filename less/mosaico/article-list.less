@@ -1,43 +1,51 @@
 .mosaico--article-list {
   grid-area: main;
+
   .list-article-image {
     img {
       width: 100%;
       height: auto;
     }
   }
+
   .mosaico--tag {
     margin-bottom: 5px;
   }
+
   .mosaico--list-article {
     &.list-article-default {
       h2 {
         margin-bottom: 5px;
-        @media (min-width: @breakpoint-md) {
+        @media (min-width: @breakpoint-2col) {
           margin-top: 0;
         }
       }
+
       > a {
         cursor: pointer;
         display: grid;
-        @grid-template-columns: 1fr;
+        grid-template-columns: 1fr;
         grid-template-areas:
-        "left"
-        "right";
-        @media (min-width: @breakpoint-md) {
+          "left"
+          "right";
+
+        @media (min-width: @breakpoint-2col) {
           grid-template-columns: 1fr 1fr;
-          grid-column-gap: 30px;
-          grid-template-areas:
-          "left right";
+          grid-column-gap: @block-padding;
+          grid-template-areas: "left right";
         }
+
         .list-article-image {
           grid-area: left;
         }
+
         .list-article-liftup {
           grid-area: right;
         }
-        transition: all .2s;
+
+        transition: all 0.2s;
       }
+
       > a:hover {
         filter: contrast(120%);
       }

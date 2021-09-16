@@ -1,0 +1,17 @@
+---
+runtime:
+service:
+entrypoint:
+env_variables:
+  JANRAIN_LOGIN_CLIENT_ID: jzbqvf3p68e8hje6wrzhezk98m8qndmz
+  JANRAIN_SSO_SERVER: https://ksf-media.eu.janrainsso.com
+  JANRAIN_FLOW_VERSION: '20201223120649370442'
+  JANRAIN_XD_RECEIVER_PATH: "/xd_receiver.html"
+  GOOGLE_CLIENT_ID: 584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo
+  FACEBOOK_APP_ID: '1742585382627694'
+  BOTTEGA_URL: https://bottega.api.ksfmedia.fi/v1
+  PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+  DUELLEN_URL: https://duellen.api.ksfmedia.fi
+  LETTERA_URL: https://lettera.api.ksfmedia.fi/v1
+  HIDE_LOGIN_LINKS: 'true'
+  SENTRY_DSN: ''

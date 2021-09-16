@@ -106,10 +106,11 @@ let mkUploadStep =
             { path = "build/${app.deployDir}"
             , destination =
                 merge
-                  { Staging = "deploy-previews/\${{ github.sha }}"
-                  , Production = "ksf-frontends"
+                  { Staging = "deploy-previews/\${{ github.sha }}/${app.deployDir}"
+                  , Production = "ksf-frontends/${app.deployDir}"
                   }
                   env
+            , parent = "false"
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
@@ -144,6 +145,29 @@ let mkAppEngineStep =
             }
         }
 
+let deployDispatchYamlStep =
+      \(env : Env) ->
+        Step::{
+        , name = Some "Deploy AppEngine domain map"
+        , uses = Some "google-github-actions/deploy-appengine@main"
+        , `with` = toMap
+            { working_directory = "build"
+            , deliverables = "dispatch.yaml"
+            , project_id =
+                merge
+                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
+                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+                  }
+                  env
+            , credentials =
+                merge
+                  { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
+                  , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+                  }
+                  env
+            }
+        }
+
 let checkCIStep =
       Step::{
       , name = Some "Check CI script has been generated from Dhall"
@@ -153,6 +177,26 @@ let checkCIStep =
             git diff --exit-code
           ''
       }
+
+let generateDispatchYamlStep =
+      \(env : Env) ->
+        Step::{
+        , name = Some "Generate AppEngine domain map"
+        , run =
+            merge
+              { Staging = Some
+                  ''
+                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
+                  ''
+              , Production = Some
+                  ''
+                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+                  ''
+              }
+              env
+        }
 
 let linkPreviewsStep =
       \(apps : List App.Type) ->
@@ -192,7 +236,7 @@ let refreshCDNSteps =
       \(cdnName : Text) ->
         [ Step::{
           , name = Some "Install gcloud"
-          , uses = Some "GoogleCloudPlatform/github-actions/setup-gcloud@master"
+          , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
               { project_id = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
               , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -240,4 +284,6 @@ in  { Step
     , checkCIStep
     , linkPreviewsStep
     , refreshCDNJob
+    , generateDispatchYamlStep
+    , deployDispatchYamlStep
     }

@@ -31,9 +31,39 @@
     background: skyblue;
 }
 
+.search--cusno {
+    background: white;
+}
+
+tr.search--spacer td {
+    height: 1ex;
+}
+
+.explainer {
+    width: 2ex;
+    height: 2ex;
+    margin: 1ex 1ex -1ex 1em;
+    display: inline-block;
+    border: solid;
+}
+
 .search--create-account {
     display: grid;
     grid-template-rows: repeat(6, 1fr);
+    grid-template-columns: 1fr .5fr;
+    grid-auto-flow: column;
+}
+
+.search--set-cusno {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: 1fr .5fr;
+    grid-auto-flow: column;
+}
+
+.search--control-password {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
     grid-template-columns: 1fr .5fr;
     grid-auto-flow: column;
 }

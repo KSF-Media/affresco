@@ -79,19 +79,20 @@ def setup_env(app)
     app_vars.each do |v|
       abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
+    # For deploying things to gcloud app engine
     if app.key?('runtime')
       puts "Generating production app.yaml"
-      appYaml = {}
-      appYaml['runtime'] = app['runtime']
-      appYaml['service'] = app['id']
-      appYaml['entrypoint'] = app['entrypoint']
-      appYaml['env_variables'] = {}
+      app_yaml                  = {}
+      app_yaml['runtime']       = app['runtime']
+      app_yaml['service']       = app['id']
+      app_yaml['entrypoint']    = app['entrypoint']
+      app_yaml['env_variables'] = {}
       app_vars.each do |v|
         env_var_name = v.sub(/^PRODUCTION_/, '')
-        appYaml['env_variables']["#{env_var_name}"] = ENV[v]
+        app_yaml['env_variables']["#{env_var_name}"] = ENV[v]
       end
       File.open("#{app['path']}/app.yaml", 'w') do |f|
-        f.puts(YAML.dump(appYaml))
+        f.puts(YAML.dump(app_yaml))
       end
     else
       puts "Generating .env.production"
@@ -127,7 +128,7 @@ if maintenance == 'true'
   deploy_maintenance_page(app['path'])
 elsif app_name == 'scripts'
   Dir.glob("scripts/**/*.js").each do |f|
-    `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}` 
+    `./node_modules/.bin/uglifyjs #{f} -o #{f.gsub(/js\z/, "min.js")}`
   end
   run_command("mkdir -p #{app['path']} && cp -R scripts #{app['path']}/dist")
 else

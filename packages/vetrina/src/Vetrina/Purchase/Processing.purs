@@ -18,4 +18,4 @@ processing = make component
   }
 
 render :: Self -> JSX
-render self = DOM.div_ [DOM.text "Vänligen vänta. Vi behandlar din beställning."]
+render _ = DOM.div_ [DOM.text "Vänligen vänta. Vi behandlar din beställning."]

@@ -6,6 +6,7 @@ import Data.Array as Array
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
+import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error)
@@ -28,6 +29,8 @@ foreign import appStore ::
 
 foreign import logo :: String
 
+foreign import addOnScroll :: Effect Unit
+
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
@@ -36,6 +39,7 @@ app = do
   component "HBL365" \_ -> React.do
     product /\ setProduct <- useState' Nothing
     useEffectOnce do
+      addOnScroll
       Aff.launchAff_ do
         liftEffect <<< setProduct <<< Just <<< map Array.singleton =<< getProduct
       pure $ pure unit
