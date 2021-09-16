@@ -45,7 +45,7 @@ row children userOpts =
     opts :: Record RowOptions
     opts = Record.merge userOpts defaultOpts
     classes =
-      let baseClasses = [ "clearfix", "grid--row" ]
+      let baseClasses = [ "grid--row" ]
       in joinWith " " $ baseClasses <> opts.extraClasses
 
 -- | Row without options
@@ -56,23 +56,23 @@ columnHalf :: JSX -> JSX
 columnHalf = col6
 
 columnThird :: JSX -> JSX
-columnThird = column [ "col-4" ]
+columnThird = column [ "grid--column-third" ]
 
 col10 :: JSX -> JSX
-col10 = column [ "col-10" ]
+col10 = column [ "grid--column-10" ]
 
 
 col8 :: JSX -> JSX
-col8 = column [ "col-8" ]
+col8 = column [ "grid--column-8" ]
 
 col6 :: JSX -> JSX
 col6 = column [ "grid--column-half" ]
 
 col4 :: JSX -> JSX
-col4 = column [ "col-4" ]
+col4 = column [ "grid--column-4" ]
 
 col2 :: JSX -> JSX
-col2 = column [ "col-2" ]
+col2 = column [ "grid--column-2" ]
 
 
 column :: Array String -> JSX -> JSX
@@ -82,4 +82,4 @@ column classes child =
     , children: [ child ]
     }
   where
-    columnBaseClasses = [ "col", "grid--column"]
+    columnBaseClasses = [ "grid--column"]

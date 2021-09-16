@@ -60,7 +60,7 @@ render { setState, state: { chosenCard, validationError }, props: { creditCards,
                         `snoc` foldMap InputField.errorMessage validationError
                         `snoc` DOM.div
                           { children: [ submitFormButton ]
-                          , className: "mt2 clearfix"
+                          , className: "mitt-konto--form-submit-container"
                           }
                     }
                 ]

@@ -25,8 +25,8 @@ foreign import images :: { subscribe :: String }
 -- | User info page with profile info, subscriptions, etc.
 userView :: PushStateInterface -> Types.Self -> Sentry.Logger -> User -> JSX
 userView router { state: { now, news }, setState } logger user = React.fragment
-  [ Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6 mitt-konto--profile" [ newsView news, profileView ]
-  , Helpers.classy DOM.div "col col-12 md-col-6 lg-col-6" [ subscriptionsView ]
+  [ Helpers.classy DOM.div "mitt-konto--column mitt-konto--profile" [ newsView news, profileView ]
+  , Helpers.classy DOM.div "mitt-konto--column" [ subscriptionsView ]
   ]
   where
     componentHeader title =
@@ -82,7 +82,7 @@ userView router { state: { now, news }, setState } logger user = React.fragment
 
     cancelSubscription =
       DOM.div
-        { className: "mt2"
+        { className: "mitt-konto--cancel-subscription-icon-container"
         , children:
             [ IconAction.iconAction
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
