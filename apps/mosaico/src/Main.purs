@@ -3,6 +3,7 @@ module Main where
 import Prelude
 
 import Data.Argonaut.Core (Json)
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -21,6 +22,7 @@ import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync as FS
 import Node.HTTP as HTTP
+import NotFound as NotFound
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure, Response(..), ResponseBody(..))
@@ -34,9 +36,13 @@ import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic.DOM.Server as DOM
 
 -- NOTE: We need to require dotenv in JS
-foreign import requireDotenv :: Unit
-foreign import appendMosaico :: EffectFn2 String String String
-foreign import writeArticle :: EffectFn3 Json Boolean String String
+foreign import requireDotenv :: Effect Unit
+foreign import appendMosaicoImpl :: EffectFn2 String String String
+appendMosaico :: String -> String -> Effect String
+appendMosaico htmlTemplate content = runEffectFn2 appendMosaicoImpl htmlTemplate content
+foreign import writeArticleImpl :: EffectFn3 Json Boolean String String
+writeArticle :: Json -> Boolean -> String -> Effect String
+writeArticle article isPreviewArticle htmlTemplate = runEffectFn3 writeArticleImpl article isPreviewArticle htmlTemplate
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -109,8 +115,8 @@ getArticle r@{ params: { uuid } } = do
           mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX }
 
       html <- liftEffect do
-        runEffectFn2 appendMosaico htmlTemplate mosaicoString
-          >>= runEffectFn3 writeArticle (articleToJson $ fromFullArticle a) (isPreviewArticle a)
+        appendMosaico htmlTemplate mosaicoString
+          >>= writeArticle (articleToJson $ fromFullArticle a) (isPreviewArticle a)
 
       pure $ TextHtml html
     Left err -> do
@@ -126,7 +132,19 @@ frontpage _ = do
   pure $ TextHtml html
 
 notFound :: { params :: { path :: List String } } -> Aff (Response ResponseBody) 
-notFound { params: { path } } = pure $ Response.notFound $ StringBody $ show path
+notFound { params: { path} } = do
+  htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+  notFoundComponent <- liftEffect NotFound.notFoundComponent
+  let notFoundJSX = 
+        notFoundComponent { path: Array.fromFoldable path }
+
+  mosaico <- liftEffect MosaicoServer.app
+  let mosaicoString = DOM.renderToString $ mosaico { mainContent: notFoundJSX }
+ 
+  html <- liftEffect $
+    appendMosaico htmlTemplate mosaicoString
+
+  pure $ Response.notFound $ StringBody $ html
 
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
 getCredentials req = do

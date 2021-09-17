@@ -23,6 +23,8 @@ import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, p
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
+import NotFound (notFoundComponent)
+import NotFound as NotFound
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
@@ -38,6 +40,7 @@ import Web.HTML.Window (scroll) as Web
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
   | ArticlePage String
+  | NotFoundPage String
 derive instance eqR :: Eq MosaicoPage
 
 data ModalView = LoginModal
@@ -50,6 +53,7 @@ type State =
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
+  , notFoundComponent :: NotFound.Props -> JSX
   , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , user :: Maybe User
@@ -66,9 +70,12 @@ frontpageRoute = Frontpage <$ root
 articleRoute :: Match MosaicoPage
 articleRoute = ArticlePage <$> (lit "" *> lit "artikel" *> str)
 
+notFoundRoute :: Match MosaicoPage
+notFoundRoute = NotFoundPage <$> str
+
 routes :: Match MosaicoPage
 routes =
-  articleRoute <|> frontpageRoute
+  articleRoute <|> notFoundRoute <|> frontpageRoute
 
 app :: Component Props
 app = do
@@ -94,6 +101,7 @@ mosaicoComponent initialValues props = React.do
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
       ArticlePage _articleId -> pure unit
+      NotFoundPage _path -> pure unit
     pure mempty
 
   pure $ render setState state initialValues.nav
@@ -120,6 +128,7 @@ getInitialValues = do
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
   loginModalComponent <- LoginModal.loginModal
+  notFoundComponent   <- NotFound.notFoundComponent
   pure
     { state:
         { article: Nothing
@@ -132,6 +141,7 @@ getInitialValues = do
         , headerComponent
         , loginModalComponent
         , user: Nothing
+        , notFoundComponent 
         }
     , nav
     , locationState
@@ -182,6 +192,7 @@ render setState state router =
                    , article.uuid == articleId -> renderArticle state setState (Just fullArticle) (affArticle articleId) Nothing
                    | otherwise                 -> renderArticle state setState Nothing (affArticle articleId) state.clickedArticle
                  Frontpage -> articleList state setState router
+                 NotFoundPage path -> state.notFoundComponent { path: [path] }
            , DOM.footer
                { className: "mosaico--footer"
                , children: [ DOM.text "footer" ]
