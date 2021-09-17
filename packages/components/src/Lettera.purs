@@ -40,6 +40,7 @@ getArticle' u = do
     case a of
       Right (FullArticle a') -> pure a'
       Right (PreviewArticle a') -> pure a'
+      Right (ErrorArticle a') -> pure a'
       Left err -> throwError $ error $ "Failed to get article: " <> err
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)

@@ -6,6 +6,7 @@ import Data.Argonaut.Core (Json)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List)
+import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -16,13 +17,12 @@ import Effect.Class.Console as Console
 import Effect.Uncurried (EffectFn2, EffectFn3, runEffectFn2, runEffectFn3)
 import KSF.Api (Token(..), UserAuth)
 import Lettera as Lettera
-import Lettera.Models (fromFullArticle, articleToJson, isPreviewArticle)
+import Lettera.Models (fromFullArticle, articleToJson, notFoundArticle, isPreviewArticle)
 import Mosaico.Article as Article
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync as FS
 import Node.HTTP as HTTP
-import NotFound as NotFound
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure, Response(..), ResponseBody(..))
@@ -63,7 +63,7 @@ spec ::
     { routes ::
          { getArticle ::
               GET "/artikel/<uuid>"
-                { response :: TextHtml
+                { response :: ResponseBody
                 , params :: { uuid :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
@@ -95,7 +95,7 @@ main = do
 
 getArticle
   :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } }
-  -> Aff TextHtml
+  -> Aff (Response ResponseBody)
 getArticle r@{ params: { uuid } } = do
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
   htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
@@ -118,10 +118,9 @@ getArticle r@{ params: { uuid } } = do
         appendMosaico htmlTemplate mosaicoString
           >>= writeArticle (articleToJson $ fromFullArticle a) (isPreviewArticle a)
 
-      pure $ TextHtml html
-    Left err -> do
-      Console.warn $ "Could not get article: " <> err
-      pure $ TextHtml "Could not get article"
+      pure $ Response.ok $ StringBody html
+    Left err ->
+      notFound { params: {path: List.fromFoldable ["artikel", uuid]} }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/client" path
@@ -134,12 +133,19 @@ frontpage _ = do
 notFound :: { params :: { path :: List String } } -> Aff (Response ResponseBody) 
 notFound { params: { path} } = do
   htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
-  notFoundComponent <- liftEffect NotFound.notFoundComponent
-  let notFoundJSX = 
-        notFoundComponent { path: Array.fromFoldable path }
+  articleComponent <- liftEffect Article.articleComponent
+  let articleJSX =
+        articleComponent
+          { brand: "hbl"
+          , affArticle: pure notFoundArticle
+          , articleStub: Nothing
+          , onLogin: pure unit
+          , user: Nothing
+          , article: Just notFoundArticle
+          }
 
   mosaico <- liftEffect MosaicoServer.app
-  let mosaicoString = DOM.renderToString $ mosaico { mainContent: notFoundJSX }
+  let mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX }
  
   html <- liftEffect $
     appendMosaico htmlTemplate mosaicoString

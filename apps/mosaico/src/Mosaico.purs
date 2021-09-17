@@ -6,6 +6,7 @@ import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json)
 import Data.Array (null, head)
 import Data.Either (Either(..), either, hush)
+import Data.Foldable (oneOf)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
@@ -19,19 +20,17 @@ import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, parseArticleWithoutLocalizing)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), notFoundArticle, fromFullArticle, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
-import NotFound (notFoundComponent)
-import NotFound as NotFound
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
-import Routing.Match (Match, lit, root, str)
+import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
@@ -53,7 +52,6 @@ type State =
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
-  , notFoundComponent :: NotFound.Props -> JSX
   , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , user :: Maybe User
@@ -64,19 +62,12 @@ type SetState = (State -> State) -> Effect Unit
 type Props = { article :: Maybe FullArticle }
 type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
 
-frontpageRoute :: Match MosaicoPage
-frontpageRoute = Frontpage <$ root
-
-articleRoute :: Match MosaicoPage
-articleRoute = ArticlePage <$> (lit "" *> lit "artikel" *> str)
-
-notFoundRoute :: Match MosaicoPage
-notFoundRoute = NotFoundPage <$> str
-
 routes :: Match MosaicoPage
-routes =
-  articleRoute <|> notFoundRoute <|> frontpageRoute
-
+routes = root *> oneOf
+  [ ArticlePage <$> (lit "artikel" *> str)
+  , Frontpage <$end
+  , NotFoundPage <$> str
+  ]
 app :: Component Props
 app = do
   initialValues <- getInitialValues
@@ -128,7 +119,6 @@ getInitialValues = do
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
   loginModalComponent <- LoginModal.loginModal
-  notFoundComponent   <- NotFound.notFoundComponent
   pure
     { state:
         { article: Nothing
@@ -141,7 +131,6 @@ getInitialValues = do
         , headerComponent
         , loginModalComponent
         , user: Nothing
-        , notFoundComponent 
         }
     , nav
     , locationState
@@ -189,10 +178,10 @@ render setState state router =
                    -- If we have this article already in `state`, let's pass that to `articleComponent`
                    -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
                    -- e.g. when a subscription is purchased or user logs in
-                   , article.uuid == articleId -> renderArticle state setState (Just fullArticle) (affArticle articleId) Nothing
-                   | otherwise                 -> renderArticle state setState Nothing (affArticle articleId) state.clickedArticle
+                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing
+                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle
                  Frontpage -> articleList state setState router
-                 NotFoundPage path -> state.notFoundComponent { path: [path] }
+                 NotFoundPage path -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing
            , DOM.footer
                { className: "mosaico--footer"
                , children: [ DOM.text "footer" ]
@@ -201,24 +190,24 @@ render setState state router =
                { className: "mosaico--aside" }
            ]
        }
+  where
+    affArticle :: String -> Aff FullArticle
+    affArticle articleId = do
+      a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+      pure case a of
+        Right article -> article
+        Left _ -> notFoundArticle
 
-affArticle :: String -> Aff FullArticle
-affArticle articleId = do
-  a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-  case a of
-    Right article -> pure article
-    Left _ -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
-
-renderArticle :: State -> SetState -> Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> JSX
-renderArticle state setState maybeA affA aStub =
-  state.articleComponent
-    { affArticle: affA
-    , brand: "hbl"
-    , article: maybeA
-    , articleStub: aStub
-    , onLogin: setState \s -> s { modalView = Just LoginModal }
-    , user: state.user
-    }
+    renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> JSX
+    renderArticle maybeA affA aStub =
+      state.articleComponent
+        { affArticle: affA
+        , brand: "hbl"
+        , article: maybeA
+        , articleStub: aStub
+        , onLogin: setState \s -> s { modalView = Just LoginModal }
+        , user: state.user
+        }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX
 articleList state setState router =

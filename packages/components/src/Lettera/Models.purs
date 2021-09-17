@@ -26,15 +26,30 @@ import Simple.JSON as JSON
 data FullArticle
   = FullArticle Article
   | PreviewArticle Article
+  | ErrorArticle Article
 
 fromFullArticle :: FullArticle -> Article
 fromFullArticle (FullArticle a) = a
 fromFullArticle (PreviewArticle a) = a
+fromFullArticle (ErrorArticle a) = a
 
 isPreviewArticle :: FullArticle -> Boolean
 isPreviewArticle (PreviewArticle _) = true
 isPreviewArticle _ = false
 
+notFoundArticle :: FullArticle
+notFoundArticle = ErrorArticle
+  { title: "Hoppsan! Sidan eller artikeln hittades inte"
+  , body: []
+  , mainImage: Nothing
+  , tags: []
+  , uuid: "notfound"
+  , preamble: Nothing
+  , authors: []
+  , premium: false
+  , publishingTime: Nothing
+  , updateTime: Nothing
+  }
 
 newtype LocalDateTime = LocalDateTime DateTime
 derive instance newtypeLocalDateTime :: Newtype LocalDateTime _
@@ -98,6 +113,8 @@ type Article =
   , updateTime     :: Maybe LocalDateTime
   | ArticleCommon
   }
+
+  
 
 type Author =
   { byline :: String
