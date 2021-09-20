@@ -4,6 +4,7 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "cheerio": "^1.0.0-rc.10",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
