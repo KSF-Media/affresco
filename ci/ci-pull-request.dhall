@@ -13,15 +13,17 @@ let app-servers = ./app-servers.dhall
 
 let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
 
+let apps-to-cache =
+      Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
+
 let steps =
         Actions.setupSteps
       # [ Actions.checkCIStep ]
+      # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Staging apps
       # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
-      # [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
-      # [ Actions.deployDispatchYamlStep Actions.Env.Staging ]
       # [ Actions.linkPreviewsStep apps app-servers previewUrl ]
 
 in  { name = "previews"
