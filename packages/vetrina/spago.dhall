@@ -1,20 +1,33 @@
-{ name =
-    "vetrina"
+{ name = "vetrina"
 , dependencies =
-    [ "effect"
-    , "aff"
-    , "react-basic"
-    , "psci-support"
-    , "prelude"
-    , "simple-json"
-    , "now"
-    , "affresco-components"
-    , "affresco-user"
-    , "uuid"
-    , "react-basic-hooks"
-    ]
-, packages =
-    ../../packages.dhall
-, sources =
-    [ "src/**/*.purs" ]
+  [ "aff"
+  , "affresco-components"
+  , "affresco-user"
+  , "arrays"
+  , "control"
+  , "effect"
+  , "either"
+  , "exceptions"
+  , "foldable-traversable"
+  , "functions"
+  , "integers"
+  , "js-date"
+  , "lists"
+  , "maybe"
+  , "nullable"
+  , "ordered-collections"
+  , "prelude"
+  , "psci-support"
+  , "react-basic"
+  , "react-basic-classic"
+  , "react-basic-dom"
+  , "react-basic-hooks"
+  , "record"
+  , "strings"
+  , "transformers"
+  , "tuples"
+  , "validation"
+  ]
+, packages = ../../packages.dhall
+, sources = [ "src/**/*.purs" ]
 }
