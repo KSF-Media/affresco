@@ -20,6 +20,7 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
+import Bottega.Models.Order (OrderSource(..))
 import Vetrina.Types (Product)
 
 foreign import appStore ::
@@ -155,6 +156,7 @@ render product =
         , paymentMethods: [ User.CreditCard ]
         , loadingContainer: Just NewPurchase.descriptionBox
         , customNewPurchase: Just NewPurchase.render
+        , orderSource: PrenumereraSource -- TODO: find out if there is a more suitable value for this
         }
 
     imgLink href alt src =
