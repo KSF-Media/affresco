@@ -15,10 +15,10 @@ import Effect.Class.Console as Console
 import Effect.Uncurried (EffectFn2, EffectFn3, runEffectFn2, runEffectFn3)
 import KSF.Api (Token(..), UserAuth)
 import Lettera as Lettera
+import Lettera.Models (fromFullArticle, articleToJson, isPreviewArticle)
 import Mosaico.Article as Article
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
-import Lettera.Models (fromFullArticle, articleToJson, isPreviewArticle)
 import Node.FS.Sync as FS
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
@@ -29,6 +29,7 @@ import Payload.Server.Guards as Guards
 import Payload.Server.Handlers (File)
 import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
+import Payload.Server.Response as Response
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic.DOM.Server as DOM
 
@@ -70,6 +71,11 @@ spec ::
                 { response :: TextHtml
                 , guards :: Guards ("credentials" : Nil)
                 }
+          , notFound ::
+              GET "/<..path>"
+                { response :: ResponseBody 
+                , params :: { path :: List String}
+                }
          }
     , guards :: { credentials :: Maybe UserAuth }
     }
@@ -77,11 +83,13 @@ spec = Spec
 
 main :: Effect Unit
 main = do
-  let handlers = { getArticle, assets, frontpage }
+  let handlers = { getArticle, assets, frontpage, notFound }
       guards = { credentials: getCredentials }
   Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
-getArticle :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+getArticle
+  :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } }
+  -> Aff TextHtml
 getArticle r@{ params: { uuid } } = do
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
   htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
@@ -116,6 +124,9 @@ frontpage :: { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 frontpage _ = do
   html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
   pure $ TextHtml html
+
+notFound :: { params :: { path :: List String } } -> Aff (Response ResponseBody) 
+notFound { params: { path } } = pure $ Response.notFound $ StringBody $ show path
 
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
 getCredentials req = do

@@ -18,10 +18,10 @@ disappearingBreak =
 loadingIndicator :: Spinner.Loading -> JSX
 loadingIndicator Spinner.Loading =
   DOM.div
-    { className: "mitt-konto--loading flex items-center"
+    { className: "mitt-konto--loading"
     , children:
         [ DOM.div
-            { className: "clearfix mx-auto"
+            { className: "mitt-konto--loading-image-container"
             , children: [ DOM.div { className: "mitt-konto--loading-image", children: [] } ]
             }
         ]
