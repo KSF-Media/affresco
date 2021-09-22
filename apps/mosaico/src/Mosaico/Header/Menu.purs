@@ -5,8 +5,8 @@ import Data.Monoid
 import Data.Semigroup
 import Prelude
 
-import Data.Array (concat, cons, foldl, intersperse, length, singleton, snoc, toUnfoldable)
-import Data.Foldable as Foldable
+import Data.Array (concat, cons, foldl, length, singleton, toUnfoldable)
+import Data.String.Common (trim)
 import Data.List ((:))
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -254,17 +254,24 @@ render { props: { visible } } = DOM.div
 
         renderSection :: Section -> JSX
         renderSection { modifier, subsections, title } = DOM.div
-          { className: unwords [ sectionClass, sectionClass <> fromMaybe mempty modifier ]
+          { className: unwords [ sectionClass, sectionClass <> modifier ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
-                              [ DOM.div
-                                 { className: sectionTitleClass
-                                 , children: [ DOM.text title ]
-                                 }
-                              ]
+                              DOM.div
+                                { className: sectionTitleClass
+                                , children: [ DOM.text title ]
+                                } `cons` 
+                                  if length subsections > 0 then
+                                    [ DOM.div
+                                        { className: sectionExpanderClass
+                                        , children: [ ]
+                                        }
+                                    ]
+                                  else
+                                    []
                           }
-                      , DOM.div
+                      , DOM.div 
                           { className: subsectionsClass
                           , children: renderSubsection <$> subsections
                           }
