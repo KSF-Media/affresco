@@ -156,12 +156,10 @@ render { props, state, setState } =
                 { className: "mosaico--tag color-" <> props.brand
                 , children: [ DOM.text $ fromMaybe "" (head tags) ]
                 }
-              , DOM.ul
-                  { className: "mosaico-article__some"
-                  , children: map mkShareIcon case state.article of
-                      Just (ErrorArticle _) -> []
-                      _                     -> [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-                  }
+            , DOM.ul
+                { className: "mosaico-article__some"
+                , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+                }
             ]
             , DOM.div
                 { className: "image"

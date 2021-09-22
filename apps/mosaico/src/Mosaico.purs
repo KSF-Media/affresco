@@ -180,7 +180,7 @@ render setState state router =
                    , article <- fromFullArticle fullArticle
                    -- If we have this article already in `state`, let's pass that to `articleComponent`
                    -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
-                   -- e.g. when a subscription is purchased or user logs in
+                   -- e.g. when a subsc ription is purchased or user logs in
                    , article.uuid == articleId -> renderArticle state setState (Just fullArticle) (affArticle articleId) Nothing
                    | otherwise                 -> renderArticle state setState Nothing (affArticle articleId) state.clickedArticle
                  Frontpage -> articleList state setState router
