@@ -141,8 +141,9 @@ render { props, state, setState } =
         mainImage = (_.mainImage =<< letteraArticle) <|> (_.listImage =<< props.articleStub)
         bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
     in DOM.div
-      { className: "mosaico--article"
+      { className: "article"
       , children:
+<<<<<<< Updated upstream
         [ DOM.div
             { className: "mosaico--tag color-" <> props.brand
             , children: [ DOM.text $ fromMaybe "" (head tags) ]
@@ -181,6 +182,56 @@ render { props, state, setState } =
               _ -> mempty
           }
       ]
+=======
+          [ DOM.header_
+            [ DOM.h1
+                { className: "mosaico--article--title title"
+                , children: [ DOM.text title ]
+                }
+            , DOM.div
+                { className: "mosaico--article--preamble"
+                , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
+                }
+            ,  DOM.div
+                { className: "mosaico--tag color-" <> props.brand
+                , children: [ DOM.text $ fromMaybe "" (head tags) ]
+                }
+              , DOM.ul
+                  { className: "mosaico-article__some"
+                  , children: map mkShareIcon case state.article of
+                      Just (ErrorArticle _) -> []
+                      _                     -> [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+                  }
+            ]
+            , DOM.div
+                { className: "image"
+                , children: [ foldMap renderImage mainImage ]
+                }
+            , DOM.div 
+                { className: "articlebody"
+                , children:
+                    [ DOM.div
+                          { className: "mosaico--article-times-and-author"
+                          , children:
+                              [ foldMap renderAuthors $ _.authors <$> letteraArticle
+                              , foldMap articleTimestamps letteraArticle
+                              ]
+                          }
+                      , DOM.div
+                          { className: "mosaico--article--body "
+                          , children: case state.article of
+                            (Just (PreviewArticle _previewArticle)) ->
+                              paywallFade
+                              `cons` bodyWithAd
+                              `snoc` vetrina
+                            (Just (FullArticle _fullArticle)) ->
+                              bodyWithAd
+                            _ -> mempty
+                        }
+                    ]
+                }
+        ]
+>>>>>>> Stashed changes
     }
   where
     renderAuthors authors =
