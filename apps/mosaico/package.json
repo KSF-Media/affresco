@@ -4,9 +4,11 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "cheerio": "^1.0.0-rc.10",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#40058b09b6d969390daaad6e58918b04129b1c16",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",
@@ -17,6 +19,6 @@
   },
   "scripts": {
     "start": "spago run",
-    "build": "spago build && parcel build web/index.html -d dist/client --no-cache --public-url /assets"
+    "build": "spago build && parcel build web/index.html -d dist/client --public-url /assets"
   }
 }

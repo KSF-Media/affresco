@@ -15,68 +15,115 @@ jobs:
       - uses: "cachix/install-nix-action@v12"
         with:
           nix_path: nixpkgs=channel:nixos-20.09
+      - name: Setup global build cache
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-build-${{ hashFiles('yarn.lock')}}"
+          path: |2
+              **/node_modules
+              **/.yarn-cache
+              **/.cache
+              ~/.npm
+              ~/.cache/spago
+              apps/elections/dist
+              !build
+              !build/*
+              !build/**
       - run: |2
-            yarn install --pure-lockfile
+            yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
       - name: Check CI script has been generated from Dhall
         run: |2
             make
             git diff --exit-code
+      - name: Setup build cache for Mitt Konto
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
+          path: |
+            apps/mitt-konto/.spago
+            apps/mitt-konto/output
+      - name: "Setup build cache for Vetrina (for testing only)"
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
+          path: |
+            apps/vetrina-test/.spago
+            apps/vetrina-test/output
+      - name: Setup build cache for App article
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
+          path: |
+            apps/app-article/dist
+      - name: Setup build cache for Corona banner
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
+          path: |
+            apps/corona-banner/dist
+      - name: Setup build cache for HBL365
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
+          path: |
+            apps/hbl365/.spago
+            apps/hbl365/output
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
-            mv apps/scripts/dist build/scripts
+            cp -R apps/scripts/dist build/scripts
       - env:
           MAINTENANCE_MODE: 'false'
           PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
         name: Build Mitt Konto
         run: |2
             ruby deploy.rb mitt-konto
-            mv apps/mitt-konto/dist build/mitt-konto
+            cp -R apps/mitt-konto/dist build/mitt-konto
       - env:
           NODE_ENV: development
           SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
         name: "Build Vetrina (for testing only)"
         run: |2
             ruby deploy.rb vetrina-test
-            mv apps/vetrina-test/dist build/vetrina-test
+            cp -R apps/vetrina-test/dist build/vetrina-test
       - env:
           ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
           ELECTION_TYPE: EU
         name: "Build Elections (EU)"
         run: |2
             ruby deploy.rb elections
-            mv apps/elections/dist build/elections-eu
+            cp -R apps/elections/dist build/elections-eu
       - env:
           ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
           ELECTION_TYPE: PARLIAMENT
         name: "Build Elections (Parliament)"
         run: |2
             ruby deploy.rb elections
-            mv apps/elections/dist build/elections
+            cp -R apps/elections/dist build/elections
       - env:
           HIDE_LOGIN_LINKS: 'true'
           PRODUCTION_SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         name: Build App article
         run: |2
             ruby deploy.rb app-article
-            mv apps/app-article/dist build/app-article
+            cp -R apps/app-article/dist build/app-article
       - name: Build Corona banner
         run: |2
             ruby deploy.rb corona-banner
-            mv apps/corona-banner/dist build/corona-banner
+            cp -R apps/corona-banner/dist build/corona-banner
       - name: Build HBL365
         run: |2
             ruby deploy.rb hbl365
-            mv apps/hbl365/dist build/hbl365
+            cp -R apps/hbl365/dist build/hbl365
       - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
-            mv apps/app-article-server build/app-article-server
+            cp -R apps/app-article-server build/app-article-server
       - name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
-            mv apps/mosaico build/mosaico
+            cp -R apps/mosaico build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -139,7 +186,7 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
-          promote: 'true'
+          promote: 'false'
           working_directory: build/app-article-server
       - id: deploy-mosaico-server
         name: Deploy Mosaico server
@@ -147,19 +194,8 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
-          promote: 'true'
+          promote: 'false'
           working_directory: build/mosaico
-      - name: Generate AppEngine domain map
-        run: |2
-            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
-            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
-      - name: Deploy AppEngine domain map
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          deliverables: dispatch.yaml
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
-          working_directory: build
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
