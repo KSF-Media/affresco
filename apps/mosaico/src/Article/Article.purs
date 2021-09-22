@@ -143,46 +143,6 @@ render { props, state, setState } =
     in DOM.div
       { className: "article"
       , children:
-<<<<<<< Updated upstream
-        [ DOM.div
-            { className: "mosaico--tag color-" <> props.brand
-            , children: [ DOM.text $ fromMaybe "" (head tags) ]
-            }
-        , DOM.h1
-            { className: "mosaico--article--title title"
-            , children: [ DOM.text title ]
-            }
-        , foldMap renderImage mainImage
-        , DOM.div
-            { className: "mosaico--article--preamble"
-            , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
-            }
-        , DOM.div
-            { className: "mosaico--article-times-and-author"
-            , children:
-                [ foldMap renderAuthors $ _.authors <$> letteraArticle
-                , foldMap articleTimestamps letteraArticle
-                ]
-            }
-        , DOM.ul
-            { className: "mosaico-article__some"
-            , children: map mkShareIcon case state.article of
-                Just (ErrorArticle _) -> []
-                _                     -> [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-            }
-        , DOM.div
-            { className: "mosaico--article--body "
-            , children: case state.article of
-              (Just (PreviewArticle _previewArticle)) ->
-                paywallFade
-                `cons` bodyWithAd
-                `snoc` vetrina
-              (Just (FullArticle _fullArticle)) ->
-                bodyWithAd
-              _ -> mempty
-          }
-      ]
-=======
           [ DOM.header_
             [ DOM.h1
                 { className: "mosaico--article--title title"
@@ -231,7 +191,6 @@ render { props, state, setState } =
                     ]
                 }
         ]
->>>>>>> Stashed changes
     }
   where
     renderAuthors authors =
