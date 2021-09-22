@@ -67,7 +67,6 @@ render { state: { menuVisible, menuComponent }, setState, props } =
                     ]
                 ]
             }
-        , menuComponent { visible: menuVisible }
         , DOM.div
             { className: block <> "__logo"
             , onClick: handler_ $ props.router.pushState (write {}) "/"
@@ -100,23 +99,26 @@ render { state: { menuVisible, menuComponent }, setState, props } =
                    mempty
                  else
                    [ searchButton ])
-                <> [ DOM.div
-                       { className: iconButtonClass <> " " <> menuButtonClass <>
-                           if menuVisible then
-                           " " <> menuVisibleIconButtonClass
-                           else
-                           mempty
-                       , children: [ DOM.div_ [ DOM.text "MENU" ]
-                                   , DOM.div
-                                       { className: iconClass <> " " <> menuIconClass <>
-                                           if menuVisible then
-                                           " " <> menuVisibleIconClass
-                                           else
-                                           mempty
-                                       } ]
-                       , onClick: handler_ do
-                           setState \s -> s { menuVisible = not menuVisible }
-                       }
+                <> [ DOM.div_
+                      [ menuComponent { visible: menuVisible }
+                      , DOM.div
+                          { className: iconButtonClass <> " " <> menuButtonClass <>
+                              if menuVisible then
+                              " " <> menuVisibleIconButtonClass
+                              else
+                              mempty
+                          , children: [ DOM.div_ [ DOM.text "MENU" ]
+                                      , DOM.div
+                                          { className: iconClass <> " " <> menuIconClass <>
+                                              if menuVisible then
+                                              " " <> menuVisibleIconClass
+                                              else
+                                              mempty
+                                          } ]
+                          , onClick: handler_ do
+                              setState \s -> s { menuVisible = not menuVisible }
+                          }
+                      ]
                    ]
             }
         , DOM.div

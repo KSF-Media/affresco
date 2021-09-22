@@ -2,7 +2,7 @@ module Mosaico.Header.Menu where
 
 import Prelude
 
-import Data.Array (concat, foldl, singleton, toUnfoldable)
+import Data.Array (concat, cons, foldl, length, singleton, toUnfoldable)
 import Data.String.Common (trim)
 import Data.List ((:))
 import Data.List as List
@@ -265,10 +265,27 @@ render { props: { visible } } = DOM.div
         renderSection :: Section -> JSX
         renderSection { modifier, subsections, title } = DOM.div
           { className: unwords [ sectionClass, sectionClass <> modifier ]
-          , children: [ DOM.div { className: sectionTitleClass
+          , children: [ DOM.div
+                          { className: sectionHeaderClass
+                          , children:
+                              DOM.div
+                                { className: sectionTitleClass
                                 , children: [ DOM.text title ]
-                                }
-                      ] <> (renderSubsection <$> subsections)
+                                } `cons` 
+                                  if length subsections > 0 then
+                                    [ DOM.div
+                                        { className: sectionExpanderClass
+                                        , children: [ ]
+                                        }
+                                    ]
+                                  else
+                                    []
+                          }
+                      , DOM.div 
+                          { className: subsectionsClass
+                          , children: renderSubsection <$> subsections
+                          }
+                      ]
           }
 
         renderSubsection :: Subsection -> JSX
@@ -310,8 +327,17 @@ render { props: { visible } } = DOM.div
     sectionElement = "__section"
     sectionClass = headerBlock <> sectionElement
 
+    sectionHeaderElement = "__section-header"
+    sectionHeaderClass = headerBlock <> sectionHeaderElement
+
     sectionTitleElement = "__section-title"
     sectionTitleClass = headerBlock <> sectionTitleElement
+
+    sectionExpanderElement = "__section-expander"
+    sectionExpanderClass = headerBlock <> sectionExpanderElement
+
+    subsectionsElement = "__subsections"
+    subsectionsClass = headerBlock <> subsectionsElement
 
     subsectionElement = "__subsection"
     subsectionClass = headerBlock <> subsectionElement
