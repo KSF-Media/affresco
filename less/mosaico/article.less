@@ -1,6 +1,23 @@
 @import (reference) "../ksf-colors";
 
-.mosaico--article {
+.article {
+  grid-area: main;
+  display: grid;
+  grid-template-columns: 100px 1fr 100px;
+  grid-template-areas:
+    ".     head  ."
+    "image image image"
+    ".     body  body";
+
+  header {
+    grid-area: head;
+  }
+  .image {
+    grid-area: image;
+  }
+  .articlebody {
+    grid-area: body;
+  }
   h1 {
     font: 700 1.92rem "Duplex Serif Web", serif;
     color: #333;
@@ -29,16 +46,18 @@
     text-transform: uppercase;
     font: 500 0.75rem "Roboto", sans-serif;
   }
-  &--preamble p {
-    font: 300 16px "Roboto", sans-serif;
-    line-height: 1.2rem;
-    @media (min-width: @breakpoint-2col) {
-      font-size: 1.25rem;
-      line-height: 1.5rem;
-    }
-    @media (min-width: @breakpoint-3col) {
-      font-size: 1.5rem;
-      line-height: 2rem;
+  &--preamble {
+    p {
+      font: 300 16px "Roboto", sans-serif;
+      line-height: 1.2rem;
+      @media (min-width: @breakpoint-2col) {
+        font-size: 1.25rem;
+        line-height: 1.5rem;
+      }
+      @media (min-width: @breakpoint-3col) {
+        font-size: 1.5rem;
+        line-height: 2rem;
+      }
     }
   }
 }
