@@ -8,6 +8,7 @@ import Data.List ((:))
 import Data.List as List
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\))
+import Effect (Effect)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component)
@@ -42,6 +43,11 @@ menuComponent :: Component Props
 menuComponent = do
   component "Menu" \props -> React.do
     pure $ render { props }
+
+visibleMenuComponent :: Effect JSX
+visibleMenuComponent = do
+  component <- menuComponent
+  pure $ component { visible: true }
 
 render :: Self -> JSX
 render { props: { visible } } = DOM.div

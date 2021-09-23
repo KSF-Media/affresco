@@ -24,6 +24,7 @@ import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, n
 import Mosaico.Article as Article
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
+import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
 import React.Basic (JSX)
@@ -43,6 +44,7 @@ data MosaicoPage
   | ArticlePage String
   | NotFoundPage String
   | StaticPage String
+  | MenuPage
 derive instance eqR :: Eq MosaicoPage
 
 data ModalView = LoginModal
@@ -57,6 +59,7 @@ type State =
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
   , headerComponent :: Header.Props -> JSX
+  , menuComponent :: JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   , frontpageComponent :: Frontpage.Props -> JSX
@@ -88,6 +91,7 @@ routes = root *> oneOf
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
   , Frontpage <$end
+  , MenuPage <$ lit "meny"
   , NotFoundPage <$> str
   ]
 
@@ -120,6 +124,7 @@ mosaicoComponent initialValues props = React.do
         else setState \s -> s { article = Nothing }
       DraftPage -> pure unit
       ArticlePage _articleId -> pure unit
+      MenuPage -> pure unit
       NotFoundPage _path -> pure unit
       StaticPage page -> Aff.launchAff_ do
         let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
@@ -165,9 +170,10 @@ getInitialValues = do
   locationState <- nav.locationState
   let initialRoute = either (const $ Frontpage) identity $ match routes locationState.path
 
-  articleComponent      <- Article.articleComponent
-  headerComponent       <- Header.headerComponent
-  loginModalComponent   <- LoginModal.loginModal
+  articleComponent    <- Article.articleComponent
+  headerComponent     <- Header.headerComponent
+  menuComponent       <- Menu.visibleMenuComponent
+  loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
   frontpageComponent    <- Frontpage.frontpageComponent
   pure
@@ -181,6 +187,7 @@ getInitialValues = do
         , modalView: Nothing
         , articleComponent
         , headerComponent
+        , menuComponent
         , loginModalComponent
         , mostReadListComponent
         , frontpageComponent
@@ -246,6 +253,7 @@ render setState state router =
                                     void $ Web.scroll 0 0 =<< Web.window
                                     router.pushState (write {}) $ "/artikel/" <> article.uuid
                                 }
+                 MenuPage -> state.menuComponent
                  NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
                  StaticPage _ -> case state.staticPage of
                   Nothing -> DOM.text "laddar"
