@@ -1,5 +1,175 @@
 @import (reference) '../less/ksf-variables';
 
+.grid--column-third {
+    width: calc(3/12 * 100%);
+}
+
 .grid--column-half {
     width: calc(6/12 * 100%);
+}
+
+.grid--column-10 {
+    width: calc(10/12 * 100%);
+}
+
+.grid--column-8 {
+    width: calc(8/12 * 100%);
+}
+
+.grid--column-4 {
+    width: calc(4/12 * 100%);
+}
+
+.grid--column-2 {
+    width: calc(2/12 * 100%);
+}
+
+.grid--row:before, .grid--row:after {
+    content: " ";
+    display: table;
+}
+
+.grid--row:after {
+    clear: both;
+}
+
+.grid--column {
+    float: left;
+    box-sizing: border-box;
+}
+
+.grid-col-1 {
+    grid-column-start: 1;
+}
+
+.grid-col-2 {
+    grid-column-start: 2;
+}
+
+.grid-col-3 {
+    grid-column-start: 3;
+}
+
+.grid-col-4 {
+    grid-column-start: 4;
+}
+
+.grid-col-5 {
+    grid-column-start: 5;
+}
+
+.grid-col-6 {
+    grid-column-start: 6;
+}
+
+.grid-col-7 {
+    grid-column-start: 7;
+}
+
+.grid-colspan-1 {
+    grid-column-end: span 1;
+}
+
+.grid-colspan-2 {
+    grid-column-end: span 2;
+}
+
+.grid-colspan-3 {
+    grid-column-end: span 3;
+}
+
+.grid-colspan-4 {
+    grid-column-end: span 4;
+}
+
+.grid-colspan-5 {
+    grid-column-end: span 5;
+}
+
+.grid-colspan-6 {
+    grid-column-end: span 6;
+}
+
+.grid-colspan-7 {
+    grid-column-end: span 7;
+}
+
+.grid-row-1 {
+    grid-row-start: 1;
+}
+
+.grid-row-2 {
+    grid-row-start: 2;
+}
+
+.grid-row-3 {
+    grid-row-start: 3;
+}
+
+.grid-row-4 {
+    grid-row-start: 4;
+}
+
+.grid-row-5 {
+    grid-row-start: 5;
+}
+
+.grid-row-6 {
+    grid-row-start: 6;
+}
+
+.grid-row-7 {
+    grid-row-start: 7;
+}
+
+.grid-row-8 {
+    grid-row-start: 8;
+}
+
+.grid-row-9 {
+    grid-row-start: 9;
+}
+
+.grid-row-10 {
+    grid-row-start: 10;
+}
+
+.grid-rowspan-1 {
+    grid-row-end: span 1;
+}
+
+.grid-rowspan-2 {
+    grid-row-end: span 2;
+}
+
+.grid-rowspan-3 {
+    grid-row-end: span 3;
+}
+
+.grid-rowspan-4 {
+    grid-row-end: span 4;
+}
+
+.grid-rowspan-5 {
+    grid-row-end: span 5;
+}
+
+.grid-rowspan-6 {
+    grid-row-end: span 6;
+}
+
+.grid-rowspan-7 {
+    grid-row-end: span 7;
+}
+
+.grid-rowspan-8 {
+    grid-row-end: span 8;
+}
+
+.grid-rowspan-9 {
+    grid-row-end: span 9;
+}
+
+.grid-rowspan-10 {
+    grid-row-end: span 10;
 }

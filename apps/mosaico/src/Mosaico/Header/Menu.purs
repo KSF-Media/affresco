@@ -2,10 +2,12 @@ module Mosaico.Header.Menu where
 
 import Prelude
 
-import Data.Array (concat, cons, foldl, range)
-import Data.List.Lazy as List
+import Data.Array (concat, foldl, singleton, toUnfoldable)
 import Data.String.Common (trim)
-
+import Data.List ((:))
+import Data.List as List
+import Data.Tuple (uncurry)
+import Data.Tuple.Nested ((/\))
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component)
@@ -18,6 +20,24 @@ type Props =
   { visible :: Boolean
   }
 
+type MenuLayout = Array MenuLayoutElement
+
+data MenuLayoutElement = SectionElement Section
+                       | SeparatorElement String
+                       -- ^ The String-typed parameter is the BEM modifier to apply to the separator
+
+type Section =
+  { title :: String
+  , modifier :: String
+  , url :: String
+  , subsections :: Array Subsection
+  }
+
+type Subsection =
+  { title :: String
+  , url :: String
+  }
+
 menuComponent :: Component Props
 menuComponent = do
   component "Menu" \props -> React.do
@@ -27,102 +47,259 @@ render :: Self -> JSX
 render { props: { visible } } = DOM.div
   { className: menuClass <>
       if visible then
-        " " <> menuModifierClass
+        " " <> visibleMenuClass
       else
         mempty
-  , children: [ DOM.div
-                  { className: searchClass
-                  , children: [ DOM.text "search" ]
-                  }
+  , children: [ renderMenuLayout
               , DOM.div
-                  { className: menuContentClass <> " grid-row-2 grid-colspan-3"
-                  , children: sections
+                  { className: menuFooterClass
+                  , children:
+                      [ DOM.div
+                          { className: footerCaptionClass
+                          , children: [ DOM.text "ANDRA KSF-TIDNINGAR" ]
+                          }
+                      , logo vnLogoClass vnLogoImageClass "Västra Nyland"
+                      , logo onLogoClass onLogoImageClass "Östnyland"
+                      ]
                   }
               ]
   }
   where
-    sections :: Array JSX
-    sections = completeSections
+    menuLayout :: MenuLayout
+    menuLayout =  concat $ (((<$>) SectionElement) <$> [ topSections, middleSections, bottomSections ]) `merge` ((singleton <<< SeparatorElement) <$> [ "--top", "--center", "--bottom" ])
+
+    topSections = [ { title: "E-TIDNINGEN"
+                    , modifier: "--e-tidningen"
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "KUNDSERVICE"
+                    , modifier: "--kundservice"
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "ANNONSERA"
+                    , modifier: "--annonsera"
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "OTHER IMPORTANT"
+                    , modifier: "--other-important"
+                    , url: ""
+                    , subsections: []
+                    }
+                  ]
+
+    middleSections = [ { title: "STARTSIDAN"
+                       , modifier: "--startsidan"
+                       , url: ""
+                       , subsections: []
+                       }
+                     , { title: "SECTION 1"
+                       , modifier: "--section1"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Consectetur"
+                             , url: ""
+                             }
+                           , { title: "Ultrices"
+                             , url: ""
+                             }
+                           , { title: "Tempor"
+                             , url: ""
+                             }
+                           , { title: "Mollis"
+                             , url: ""
+                             }
+                           , { title: "Consectetur"
+                             , url: ""
+                             }
+                           , { title: "Lorem ipsum"
+                             , url: ""
+                             }
+                           ]
+                       }
+                     , { title: "SECTION 2"
+                       , modifier: "--section2"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Lorem"
+                             , url: ""
+                             }
+                           , { title: "Pellentesque"
+                             , url: ""
+                             }
+                           , { title: "Sollicitudin"
+                             , url: ""
+                             }
+                           , { title: "Ultrices"
+                             , url: ""
+                             }
+                           , { title: "Consectetur"
+                             , url: ""
+                             }
+                           ]
+                         }
+                     , { title: "SECTION 3"
+                       , modifier: "--section3"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Consectetur"
+                             , url: ""
+                             }
+                           , { title: "Mollis"
+                             , url: ""
+                             }
+                           , { title: "Tempor"
+                             , url: ""
+                             }
+                           , { title: "Ultrices"
+                             , url: ""
+                             }
+                           ]
+                         }
+                     , { title: "SECTION 4"
+                       , modifier: "--section4"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Lorem"
+                             , url: ""
+                             }
+                           , { title: "Pellentesque"
+                             , url: ""
+                             }
+                           , { title: "Tempor"
+                             , url: ""
+                             }
+                           , { title: "Consectetur"
+                             , url: ""
+                             }
+                           , { title: "Elit"
+                             , url: ""
+                             }
+                           ]
+                         }
+                     ]
+
+    bottomSections = [ { title: "KONTAKT"
+                       , modifier: "--kontakt"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Lorem"
+                             , url: ""
+                             }
+                           , { title: "Pellentesque"
+                             , url: ""
+                             }
+                           , { title: "Aliquet"
+                             , url: ""
+                             }
+                           , { title: "Ultrices"
+                             , url: ""
+                             }
+                           , { title: "Consectetur"
+                             , url: ""
+                             }
+                           ]
+                        }
+                     , { title: "ANNONSERA"
+                       , modifier: "--annonsera2"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Consectetur"
+                             , url: ""
+                             }
+                           , { title: "Ultrices"
+                             , url: ""
+                             }
+                           , { title: "Tempor"
+                             , url: ""
+                             }
+                           ]
+                        }
+                     , { title: "KUNDSERVICE"
+                       , modifier: "--kundservice2"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Lorem"
+                             , url: ""
+                             }
+                           , { title: "Pellentesque"
+                             , url: ""
+                             }
+                           , { title: "Sollicitudin"
+                             , url: ""
+                             }
+                           , { title: "Ultrices"
+                             , url: ""
+                             }
+                           ]
+                        }
+                     , { title: "OTHER"
+                       , modifier: "--other"
+                       , url: ""
+                       , subsections:
+                           [ { title: "Lorem"
+                             , url: ""
+                             }
+                           , { title: "Sollicitudin"
+                             , url: ""
+                             }
+                           , { title: "Ultrices"
+                             , url: ""
+                             }
+                           ]
+                        }
+                     ]
+
+    renderMenuLayout :: JSX
+    renderMenuLayout = DOM.div
+      { className: menuContentClass
+      , children: renderMenuLayoutElement <$> menuLayout
+      }
       where
-        -- produces the final array of sections
-        completeSections = concat <<< List.toUnfoldable $ List.toUnfoldable <$> withSeparators
-        -- append a separator to each list of sections
-        withSeparators = List.zipWith (<>) withSubsections separators
-        -- same structure as below, but the proper subsection array is now assigned to each section function
-        withSubsections = List.zipWith (List.zipWith ($)) withTitles subsections
-        -- same structure as below, but the proper title is now assigned to each section function
-        withTitles = List.zipWith (List.zipWith ($)) fixedRowsAndColumns sectionTitles
-        -- produces a list of lists, each list contains one row of section generating functions, eeach with row and column class arguments assigned:
-        -- [[defaultSection "grid-row-1" "grid-column-2", defaultSection "grid-row-1" "grid-column-3", ... ], [defaultSection "grid-row-2" "grid-column-2", ... ], ... ]
-        fixedRowsAndColumns = List.zipWith (<$>) fixedRows $ List.repeat gridColumns
-        -- Produces a list of section generating functions that have the row class argument assigned: [ defaultSection "grid-row-1", .. ]
-        fixedRows = List.zipWith ($) (List.fromFoldable [ defaultSection, defaultSection, greySection ]) gridRows
+        renderMenuLayoutElement :: MenuLayoutElement -> JSX
+        renderMenuLayoutElement (SectionElement section) = renderSection section
+        renderMenuLayoutElement (SeparatorElement modifier) = renderSeparator modifier
 
-        -- CSS classes for grid rows positions
-        gridRows = List.fromFoldable $ ((<>) "grid-row-" <<< show) <$> [ 1, 3, 5 ]
-        -- CSS classes for grid columns positions
-        gridColumns = List.fromFoldable $ ((<>) "grid-col-" <<< show) <$> range 2 6
+        renderSection :: Section -> JSX
+        renderSection { modifier, subsections, title } = DOM.div
+          { className: unwords [ sectionClass, sectionClass <> modifier ]
+          , children: [ DOM.div { className: sectionTitleClass
+                                , children: [ DOM.text title ]
+                                }
+                      ] <> (renderSubsection <$> subsections)
+          }
 
-        separators = List.fromFoldable $ List.singleton <<< separator <$> separatorRows
+        renderSubsection :: Subsection -> JSX
+        renderSubsection { title } = DOM.div
+          { className: subsectionClass
+          , children: [ DOM.text title ]
+          }
 
-        separatorRows = ((<>) "grid-row-" <<< show) <$> [ 2, 4, 6 ]
+        renderSeparator :: String -> JSX
+        renderSeparator modifier = DOM.hr { className: unwords [ separatorClass, separatorClass <> modifier ] }
 
-        sectionTitles = List.fromFoldable [ topSectionTitles, middleSectionTitles, bottomSectionTitles ]
-
-        topSectionTitles = List.fromFoldable ["E-TIDNINGEN", "KUNDERSVICE", "ANNONSERA", "ANNAT VIKTIGT"]
-        middleSectionTitles = List.fromFoldable ["STARTSIDAN", "OPINION", "KULTUR", "SPORT", "ANNAT"]
-        bottomSectionTitles = List.fromFoldable ["KONTAKT", "ANNONSERA", "KUNDSERVICE", "KUNDSERVICE"]
-
-        subsections =  List.fromFoldable [ topSubsections, middleSubsections, bottomSubsections ]
-
-        topSubsections = List.fromFoldable [[], [], [], []]
-
-        middleSubsections = List.fromFoldable [ ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              ]
-
-        bottomSubsections = List.fromFoldable [ ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              ]
-
-
-    defaultSection :: String -> String -> String  -> Array String -> JSX
-    defaultSection = section mempty
-
-    greySection :: String -> String -> String  -> Array String -> JSX
-    greySection = section [ graySectionClass ]
-
-    section :: Array String -> String -> String -> String -> Array String -> JSX
-    section modifiers rowClass columnClass name subsections = DOM.div
-      { className: unwords [ sectionClass, unwords modifiers, rowClass, columnClass ]
-      , children: DOM.a { className: sectionTitleClass
-                        , children: [ DOM.text name ]
-                        }  `cons` (subsection <$> subsections)
+    logo :: String -> String ->  String -> JSX
+    logo modifierClass imageModifierClass caption = DOM.div
+      { className: unwords [ logoClass, modifierClass ]
+      , children:
+          [ DOM.div
+              { className: unwords [ logoImageClass, imageModifierClass ]
+              }
+          , DOM.div
+              { className: unwords [ logoCaptionClass ]
+              , children: [ DOM.text caption ]
+              }
+          ]
       }
-
-    subsection :: String -> JSX
-    subsection name = DOM.a
-      { className: subsectionClass
-      , children: [ DOM.text name ]
-      }
-
-    separator :: String -> JSX
-    separator rowClass = DOM.hr { className: unwords [ separatorClass, rowClass, "grid-col-2", "grid-colspan-5"] }
-
-    unwords :: Array String -> String
-    unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty
 
     headerBlock = "mosaico-header"
 
     menuElement = "__menu"
     visibleModifier = "--visible"
     menuClass = headerBlock <> menuElement
-    menuModifierClass = menuClass <> visibleModifier
+    visibleMenuClass = menuClass <> visibleModifier
 
     searchElement = "__search"
     searchClass = headerBlock <> searchElement
@@ -130,10 +307,11 @@ render { props: { visible } } = DOM.div
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement
 
+    menuFooterElement = "__menu-footer"
+    menuFooterClass = headerBlock <> menuFooterElement
+
     sectionElement = "__section"
     sectionClass = headerBlock <> sectionElement
-    grayModifier = "--gray"
-    graySectionClass = sectionClass <> grayModifier
 
     sectionTitleElement = "__section-title"
     sectionTitleClass = headerBlock <> sectionTitleElement
@@ -143,3 +321,33 @@ render { props: { visible } } = DOM.div
 
     separatorElement = "__separator"
     separatorClass = headerBlock <> separatorElement
+
+    footerCaptionElement = "__footer-caption"
+    footerCaptionClass = headerBlock <> footerCaptionElement
+
+    logoElement =  "__footer-logo"
+    onLogoModifier = "--on"
+    vnLogoModifier = "--vn"
+    logoClass = headerBlock <> logoElement
+    onLogoClass = logoClass <> onLogoModifier
+    vnLogoClass = logoClass <> vnLogoModifier
+
+    logoImageElement = "__footer-logo-image"
+    logoImageClass = headerBlock <> logoImageElement
+    onLogoImageClass = logoImageClass <> onLogoModifier
+    vnLogoImageClass = logoImageClass <> vnLogoModifier
+
+    logoCaptionElement = "__footer-logo-caption"
+    logoCaptionClass = headerBlock <> logoCaptionElement
+
+merge :: forall a. Array a -> Array a -> Array a
+merge a b =
+  List.toUnfoldable <<< uncurry mergeList $ toUnfoldable a /\ toUnfoldable b
+  where
+    mergeList :: forall b. List.List b -> List.List b -> List.List b
+    mergeList xs List.Nil = xs
+    mergeList List.Nil ys = ys
+    mergeList (List.Cons x xs) (List.Cons y ys) = x : y : mergeList xs ys
+
+unwords :: Array String -> String
+unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty

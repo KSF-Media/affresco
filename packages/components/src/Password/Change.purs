@@ -19,13 +19,18 @@ import KSF.Tracking as Tracking
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, validateField, validatePassword, validatePasswordComparison, validateWithServerErrors)
 import React.Basic (JSX)
+import React.Basic.Events (handler)
 import React.Basic.Hooks as React
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, capture_)
 import React.Basic.Events as Events
 
-type Props = { code :: String }
+type Props =
+  { code :: String
+  , setChangeDone :: Effect Unit
+  , navToMain :: Effect Unit
+  }
 
 type PasswordReset =
   { password :: Maybe String
@@ -51,7 +56,7 @@ updatePasswordForm = do
         { serverErrors: mempty
         , formData: initialWrapperState
         }
-  component "PasswordReset" \ { code } -> React.do
+  component "PasswordReset" \ { code, navToMain, setChangeDone } -> React.do
     state /\ setState <- useState initialState
     let setWrapperState :: (AsyncWrapper.Progress PasswordReset -> AsyncWrapper.Progress PasswordReset) -> Effect Unit
         setWrapperState f = setState (\s -> s { formData = f s.formData })
@@ -60,7 +65,9 @@ updatePasswordForm = do
           liftEffect $ setWrapperState $ const $ AsyncWrapper.Loading pw
           res <- User.updateForgottenPassword code (Api.Password $ fromMaybe "" pw.password) (Api.Password $ fromMaybe "" pw.confirmPassword)
           liftEffect $ case res of
-            Right _ -> setWrapperState $ const $ AsyncWrapper.Success Nothing
+            Right _ -> do
+              setChangeDone
+              setWrapperState $ const $ AsyncWrapper.Success Nothing
             Left (User.InvalidFormFields errors) -> do
               liftEffect $ handleServerErrs errors
               setWrapperState $ const $ AsyncWrapper.Editing pw
@@ -72,11 +79,11 @@ updatePasswordForm = do
           traverse_ setFormInvalid $ Object.keys errs
         setFormInvalid "password" = setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` state.serverErrors }
         setFormInvalid _ = pure unit
-    pure $ renderForm submitPassword (setWrapperState $ const initialWrapperState)
+    pure $ renderForm navToMain submitPassword (setWrapperState $ const initialWrapperState)
       (setWrapperState <<< map) state
   where
-    renderForm :: (PasswordReset -> Effect Unit) -> Effect Unit -> ((PasswordReset -> PasswordReset) -> Effect Unit) -> State -> JSX
-    renderForm submitPassword resetForm setForm state =
+    renderForm :: Effect Unit -> (PasswordReset -> Effect Unit) -> Effect Unit -> ((PasswordReset -> PasswordReset) -> Effect Unit) -> State -> JSX
+    renderForm navToMain submitPassword resetForm setForm state =
       DOM.div
         { className: "password--reset"
         , children:
@@ -136,6 +143,7 @@ updatePasswordForm = do
                 [ DOM.a
                     { href: "/"
                     , children: [ DOM.text "Tillbaka till inloggningssidan" ]
+                    , onClick: handler preventDefault $ const navToMain
                     }
                 ]
             ]

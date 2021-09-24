@@ -11,9 +11,13 @@ let apps = ./apps.dhall
 
 let app-servers = ./app-servers.dhall
 
+let apps-to-cache =
+      Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
+
 let deploySteps =
         Actions.setupSteps
       # [ Actions.checkCIStep ]
+      # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Production apps

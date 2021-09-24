@@ -1,4 +1,6 @@
-window.dataLayer = window.dataLayer || [];
+if (typeof window !== "undefined") {
+  window.dataLayer = window.dataLayer || [];
+}
 
 exports.login_ = function (cusno, method, result) {
   dataLayer.push({ event: "login", cusno: cusno === null ? "" : cusno, method: method, result: result });

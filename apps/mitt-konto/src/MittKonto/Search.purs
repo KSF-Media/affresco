@@ -293,7 +293,7 @@ search = do
 
     searchQuery query setQuery submitSearch =
       DOM.div
-        { className: "search--query mitt-konto--container clearfix"
+        { className: "search--query mitt-konto--container"
         , children:
             [ DOM.span
                 { className: "mitt-konto--component-heading"
@@ -326,6 +326,7 @@ search = do
                 , onSubmit: Events.handler preventDefault
                     $ \_ -> submitSearch
                 }
+            , legend
             ]
         }
 
@@ -360,6 +361,15 @@ search = do
                             ]
                         }
                     ]
+      }
+
+    legend = DOM.div
+      { children:
+          [ DOM.div { className: "search--item-identity explainer" }
+          , DOM.text " = Janrain"
+          , DOM.div { className: "search--cusno explainer" }
+          , DOM.text " = Kayak"
+          ]
       }
 
     searchLoading spinner = DOM.div
@@ -414,7 +424,8 @@ search = do
          else mempty) <>
       (if (_.uuid <$> janrain) == (fst <$> actions.personaUserForm)
          then pure $ foldMap (interruptForm <<< snd) actions.personaUserForm
-         else mempty)
+         else mempty) <>
+      [ DOM.tr { className: "search--spacer", children: [ DOM.td_ [] ] } ]
 
     interruptForm form = DOM.tr_ [ DOM.td { colSpan: 9, children: [ form ] } ]
 
@@ -461,7 +472,7 @@ search = do
     renderFaro :: Effect Unit -> Effect Unit -> Boolean -> Boolean -> FaroUser TaggedSubscription -> Array JSX
     renderFaro loadSubs startCreateAccount standalone isEditingThis user =
       [ DOM.tr
-          { className: if standalone then "search--standalone-cusno" else "search--sub-cusno"
+          { className: if standalone then "search--cusno search--standalone" else "search--sub-cusno"
           , children:
               (if standalone
                  then [ td [ DOM.button
@@ -795,5 +806,5 @@ genericSuccess :: JSX
 genericSuccess =
   DOM.div
     { children:
-        [ DOM.div_ [ DOM.text "Operation lyckades" ] ]
+        [ DOM.div_ [ DOM.text "Åtgärden lyckades" ] ]
     }

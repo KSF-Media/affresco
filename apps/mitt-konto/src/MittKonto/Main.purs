@@ -2,20 +2,25 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Either (Either(..), either, hush)
+import Data.Either (Either(..), either, hush, isLeft)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
+import Data.Time.Duration (class Duration, Days(..), convertDuration)
 import Effect (Effect)
 import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
+import KSF.Api (AuthScope(..))
 import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
+import KSF.Timeout as Timeout
 import KSF.Tracking as Tracking
 import KSF.User as User
 import KSF.User.Login as Login
@@ -56,6 +61,8 @@ app = do
   creditCardUpdate <- Wrappers.routeWrapper router CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
   loginComponent <- Login.login
+  timeout <- Timeout.newTimer
+
   let initialState =
         { paper: KSF
         , adminMode: false
@@ -75,15 +82,41 @@ app = do
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
     route /\ setRoute <- useState' initialRoute
+    -- Display a nicer message to a user if they try to navigate back
+    -- after changing their password.
+    passwordChangeDone /\ setPasswordChangeDone <- useState' false
+    useEffectOnce $ pure do
+      Aff.launchAff_ $ Timeout.stopTimer timeout
+    let logout = do
+          router.pushState (unsafeToForeign {}) "/"
+          Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
+            User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
+            liftEffect do
+              logger.setUser Nothing
+              setState $ Types.setActiveUser Nothing
+        setUser :: forall a. Duration a => Maybe a -> User.User -> Effect Unit
+        setUser maybeDuration user = do
+          let duration = fromMaybe (convertDuration $ Days 1.0) maybeDuration
+          admin <- User.isAdminUser
+          setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
+          logger.setUser $ Just user
+          Aff.launchAff_ $ Timeout.startTimer duration timeout do
+            liftEffect logout
 
     useEffectOnce do
-      let attemptMagicLogin =
-            User.magicLogin Nothing \userResponse ->
-              case userResponse of
-                Right user -> do
-                  Tracking.login (Just user.cusno) "magic login" "success"
-                  setUser { state, setState } logger user
-                _ -> pure unit
+      let attemptMagicLogin = do
+            User.magicLogin Nothing $ hush >>> case _ of
+              Just user -> Aff.launchAff_ do
+                -- User logged in via old session but check that it
+                -- has sufficient scope for using Mitt Konto.
+                validScope <- User.hasScope user.uuid UserWrite
+                liftEffect $ case validScope of
+                  Just _ -> do
+                    Tracking.login (Just user.cusno) "magic login" "success"
+                    setUser validScope user
+                  Nothing -> do
+                    pure unit
+              Nothing -> pure unit
       Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
                 $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
       matchesWith routeParse (const setRoute) router
@@ -148,7 +181,12 @@ app = do
             , route: "/kreditkort/uppdatera"
             , routeFrom: "/"
             }
-        passwordResetView code = passwordReset { user: state.activeUser, code }
+        passwordResetView code = passwordReset { user: state.activeUser
+                                               , code
+                                               , passwordChangeDone
+                                               , setPasswordChangeDone
+                                               , navToMain: router.pushState (unsafeToForeign {}) "/"
+                                               }
         userContent = case route of
           MittKonto -> foldMap (Views.userView router self logger) state.activeUser
           Search -> guard state.adminMode searchView
@@ -158,27 +196,21 @@ app = do
           PasswordRecoveryCode code -> passwordResetView $ Just code
           CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno) state.activeUser
         content = if isNothing state.activeUser && needsLogin route
-                  then Views.loginView self (setUser self logger) logger
+                  then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
                   else userContent
-    pure $ render self logger router (foldMap Elements.loadingIndicator state.loading <> content) isPersonating
+    pure $ render self router (foldMap Elements.loadingIndicator state.loading <> content) logout isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-setUser :: Types.Self -> Sentry.Logger -> User.User -> Effect Unit
-setUser self logger user = do
-  admin <- User.isAdminUser
-  self.setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
-  logger.setUser $ Just user
-
-render :: Types.Self -> Sentry.Logger -> PushStateInterface -> JSX -> Boolean -> JSX
-render self@{ state } logger router content isPersonating =
+render :: Types.Self -> PushStateInterface -> JSX -> Effect Unit -> Boolean -> JSX
+render self@{ state } router content logout isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "") $
-    [ Views.navbarView self logger router isPersonating
-    , Helpers.classy DOM.div "mt3 mb4 clearfix"
+    [ Views.navbarView self router logout isPersonating
+    , Helpers.classy DOM.div "mitt-konto--main-container-container"
         [ foldMap Views.alertView state.alert
-        , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ Helpers.classy DOM.div "mitt-konto--container clearfix" [ content ]
+        , Helpers.classy DOM.div "mitt-konto--main-container"
+            [ Helpers.classy DOM.div "mitt-konto--container" [ content ]
             ]
         ]
     , Views.footerView

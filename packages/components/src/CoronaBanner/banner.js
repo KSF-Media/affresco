@@ -6,6 +6,17 @@ import "../../../../less/corona-banner.less";
 const LinkWrapper = ({ condition, wrapper, children }) => (condition ? wrapper(children) : children);
 
 const CoronaBanner = ({ newCases, hospitalised, deaths, vaccinated, vaccinatedPercentage, siteUrl, showLinks }) => {
+  const showNewCases = () => {
+    if (newCases && newCases > 0) {
+      return (
+        <div className="stat">
+          <div className="stat-value">{newCases}</div>
+          <div className="stat-label">nya fall</div>
+        </div>
+      )
+    }
+  } 
+
   const showVaccinated = () => {
     if (vaccinated && !vaccinatedPercentage) {
       return <div className="stat-value">{vaccinated} </div>;
@@ -43,12 +54,7 @@ const CoronaBanner = ({ newCases, hospitalised, deaths, vaccinated, vaccinatedPe
                 </h1>
                 <img className="virus-image" src={CoronaSvg} alt="" />
               </header>
-              {newCases && (
-                <div className="stat">
-                  <div className="stat-value">{newCases}</div>
-                  <div className="stat-label">nya fall</div>
-                </div>
-              )}
+              {showNewCases()}
               {hospitalised && (
                 <div className="stat mobile-hidden">
                   <div className="stat-value">{hospitalised}</div>

@@ -6,6 +6,7 @@ import Data.Array as Array
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
+import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error)
@@ -19,6 +20,7 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
+import Bottega.Models.Order (OrderSource(..))
 import Vetrina.Types (Product)
 
 foreign import appStore ::
@@ -28,6 +30,8 @@ foreign import appStore ::
 
 foreign import logo :: String
 
+foreign import addOnScroll :: Effect Unit
+
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
@@ -36,6 +40,7 @@ app = do
   component "HBL365" \_ -> React.do
     product /\ setProduct <- useState' Nothing
     useEffectOnce do
+      addOnScroll
       Aff.launchAff_ do
         liftEffect <<< setProduct <<< Just <<< map Array.singleton =<< getProduct
       pure $ pure unit
@@ -151,6 +156,7 @@ render product =
         , paymentMethods: [ User.CreditCard ]
         , loadingContainer: Just NewPurchase.descriptionBox
         , customNewPurchase: Just NewPurchase.render
+        , orderSource: PrenumereraSource -- TODO: find out if there is a more suitable value for this
         }
 
     imgLink href alt src =

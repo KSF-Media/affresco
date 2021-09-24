@@ -43,6 +43,7 @@ getArticle' u = do
     case a of
       Right (FullArticle a') -> pure a'
       Right (PreviewArticle a') -> pure a'
+      Right (ErrorArticle a') -> pure a'
       Left err -> throwError $ error $ "Failed to get article: " <> err
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
@@ -99,8 +100,7 @@ getArticle articleId auth = do
             -- TODO: Sentry and whatnot
             Console.warn "Did not find article preview from response!"
             pure $ Left "Parsing error"
-
-      | otherwise -> pure $ Left "Unexpected HTTP status"
+      | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
 
 getFrontpage :: Paper -> Aff (Array ArticleStub)
 getFrontpage paper = do

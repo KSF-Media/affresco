@@ -2,14 +2,17 @@ module Lettera.Models where
 
 import Prelude
 
+import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Argonaut.Core (Json, stringify)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
-import Data.Formatter.DateTime (unformat)
+import Data.Foldable (foldMap)
+import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (class Newtype, un)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.Time.Duration as Duration
@@ -23,17 +26,33 @@ import Simple.JSON as JSON
 data FullArticle
   = FullArticle Article
   | PreviewArticle Article
+  | ErrorArticle Article
 
 fromFullArticle :: FullArticle -> Article
 fromFullArticle (FullArticle a) = a
 fromFullArticle (PreviewArticle a) = a
+fromFullArticle (ErrorArticle a) = a
 
 isPreviewArticle :: FullArticle -> Boolean
 isPreviewArticle (PreviewArticle _) = true
 isPreviewArticle _ = false
 
+notFoundArticle :: FullArticle
+notFoundArticle = ErrorArticle
+  { title: "Hoppsan! Sidan eller artikeln hittades inte"
+  , body: []
+  , mainImage: Nothing
+  , tags: []
+  , uuid: "notfound"
+  , preamble: Nothing
+  , authors: []
+  , premium: false
+  , publishingTime: Nothing
+  , updateTime: Nothing
+  }
 
 newtype LocalDateTime = LocalDateTime DateTime
+derive instance newtypeLocalDateTime :: Newtype LocalDateTime _
 
 localizeArticleDateTimeString :: String -> String -> Effect (Maybe LocalDateTime)
 localizeArticleDateTimeString uuid dateTimeString =
@@ -95,10 +114,22 @@ type Article =
   | ArticleCommon
   }
 
+  
+
 type Author =
   { byline :: String
   , image  :: Maybe String
   }
+
+articleToJson :: Article -> Json
+articleToJson article =
+  encodeJson $
+    article
+      { publishingTime = formatLocalDateTime article.publishingTime
+      , updateTime     = formatLocalDateTime article.updateTime
+      }
+  where
+    formatLocalDateTime = foldMap (format dateTimeFormatter <<< un LocalDateTime)
 
 parseArticleWith :: forall a b. ReadForeign b => (b -> Effect a) -> Json -> Effect (Either String a)
 parseArticleWith parseFn articleResponse = do
@@ -112,6 +143,22 @@ parseArticleWith parseFn articleResponse = do
 
 parseArticle :: Json -> Effect (Either String Article)
 parseArticle = parseArticleWith fromJSArticle
+
+-- | An uneffecful function for parsing `Json` to an `Article`
+--   Note that `publishingTime` and `updateTime` are not localized here!
+--   Unless you have the correct times in the `Json`, the return value
+--   will have wrong timestamps
+parseArticleWithoutLocalizing :: Json -> (Either String Article)
+parseArticleWithoutLocalizing jsonArticle =
+  case JSON.readJSON $ stringify jsonArticle of
+    Right jsArticle ->
+      Right jsArticle { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
+                      , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+                      }
+    Left err ->
+      let parsingErrors = joinWith " " $ fromFoldable $ map renderForeignError err
+      in Left $ "Parsing error: " <> parsingErrors
+
 
 parseArticleStub :: Json -> Effect (Either String ArticleStub)
 parseArticleStub = parseArticleWith fromJSArticleStub
@@ -129,6 +176,7 @@ fromJSArticle jsArticle@{ uuid, publishingTime, updateTime } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime }
+
 
 type BodyElementJS =
   { html     :: Maybe String
