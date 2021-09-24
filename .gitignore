@@ -22,3 +22,4 @@ yarn-error.log
 .psc-ide-port
 .parcel-cache
 .log
+*.code-workspace
