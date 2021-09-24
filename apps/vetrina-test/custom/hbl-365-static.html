@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<!-- This is a custom build for something like vetrina, but not vetrina at all
+     It was designed for a specific campaign that we didn't want to process through vetrina -->
+<html lang="sv-FI">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Vetrina look-a-like</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="../../../less/Vetrina.less" />
+    <style>
+      .vetrina--product-information__checkmark {
+	background-image: url("https://cdn.ksfmedia.fi/assets/images/check-circle_hbl.svg") !important;
+      }
+      .vetrina--external-purchase-button__hbl {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	font-family: "Duplex Sans Titling", sans-serif;
+	font-weight: bold !important;
+	letter-spacing: 0.015em;
+	background: #f07e26;
+	color: white;
+	width: 100%;
+	border: none;
+	border-radius: 5px;
+	padding: 2x;
+	font-weight: 500;
+	margin-top: 2em;
+	max-width: 250px;
+	height: 3.5em;
+	cursor: pointer;
+	a {
+	  text-decoration: none;
+	  &:visited {
+	    color: white;
+	  }
+	}
+      }
+      .vetrina--login-callback {
+	color: #f07e26;
+      }
+      .vetrina--container {
+	grid-template-areas:
+	  ". headline ."
+	  "headline-image headline-image headline-image"
+	  ". login-link ."
+	  ". beef ."
+	  "product product product" !important;
+      }
+      .vetrina--headline-image {
+	grid-area: headline-image;
+	max-width: 600px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="vetrina--container">
+      <h1 class="vetrina--headline-HBL">
+	<div>Läs HBL digitalt för <span class="vetrina--price-headline">två veckor gratis</span></div>
+      </h1>
+      <img
+	class="vetrina--headline-image"
+	src="https://www.ksfmedia.fi/wp-content/uploads/2021/04/hbl365-product.png"
+      />
+      <span class="vetrina--login-link"
+	>Redan prenumerant?
+	<span class="vetrina--login-callback" onclick="window.ksfuser.showLogin()"
+	  >Logga in för att fortsätta läsa</span
+	></span
+      >
+      <div class="vetrina--form">
+	Med en HBL365 prenumeration får du tillgång till alla Premiumartiklar, e-tidningen och nyhetsapparna i två
+	veckor, helt gratis. Du binder dig inte till något, prenumerationen är tidsbunden.
+	<div class="vetrina--external-purchase-button__hbl">
+	  <a href="https://www.ksfmedia.fi/365-2" target="_blank">Läs 2 veckor gratis</a>
+	</div>
+      </div>
+
+      <div class="vetrina--product-container">
+	<div class="vetrina--product-information">
+	  <div class="vetrina--product-information__headline">
+	    <span class="vetrina--product-information__name">HBL 365</span
+	    ><span class="vetrina--product-information__description">Två veckor gratis</span
+	    ><span class="vetrina--product-information__arrow-down"></span>
+	  </div>
+	  <span class="vetrina--product-information__contents"
+	    ><strong class="vetrina--product-information__contents-name">Premium</strong
+	    ><span class="vetrina--product-information__contents-description">Alla artiklar på hbl.fi</span
+	    ><span class="vetrina--product-information__checkmark"></span></span
+	  ><span class="vetrina--product-information__contents"
+	    ><strong class="vetrina--product-information__contents-name">Nyhetsappen HBL Nyheter</strong
+	    ><span class="vetrina--product-information__contents-description"
+	      >Nyheter på mobilen och surfplattan, pushnotiser</span
+	    ><span class="vetrina--product-information__checkmark"></span></span
+	  ><span class="vetrina--product-information__contents"
+	    ><strong class="vetrina--product-information__contents-name">Digitalt månadsbrev</strong
+	    ><span class="vetrina--product-information__contents-description">Nyheter &amp; förmåner</span
+	    ><span class="vetrina--product-information__checkmark"></span
+	  ></span>
+	</div>
+      </div>
+    </div>
+  </body>
+</html>
