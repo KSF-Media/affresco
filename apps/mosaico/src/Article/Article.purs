@@ -16,6 +16,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Bottega.Models.Order (OrderSource(..))
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
@@ -164,7 +165,9 @@ render { props, state, setState } =
             }
         , DOM.ul
             { className: "mosaico-article__some"
-            , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+            , children: map mkShareIcon case state.article of
+                Just (ErrorArticle _) -> []
+                _                     -> [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
             }
         , DOM.div
             { className: "mosaico--article--body "
@@ -246,6 +249,7 @@ render { props, state, setState } =
         , customNewPurchase: Nothing
         , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
+        , orderSource: PaywallSource
         }
       where
         hblPremium =

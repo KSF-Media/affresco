@@ -1,5 +1,5 @@
-var googletag = googletag || {};
-var ksfDfp = {};
+window.googletag = googletag || {};
+window.ksfDfp = {};
 
 (function () {
   "use strict";
@@ -13,7 +13,7 @@ var ksfDfp = {};
 
   ksfDfp.getBannerWidth = function (banner) {
     var bannerWidth;
-    // banners sometimes has several heights and because of that we need to check how deep an array we are dealing with
+    // Banners sometimes have several heights, so we need to check how deep an array we are dealing with
     if (!Array.isArray(banner[1][0])) {
       // handle slots with only one height
       bannerWidth = banner[1][0];
@@ -23,52 +23,52 @@ var ksfDfp = {};
     }
     return bannerWidth;
   };
-  ksfDfp.onSwitch = true;
-  if (window.disableAds === true) {
-    // if the backend main settings kill switch is activated we show no ads. The onSwitch will silently leave all banners unloaded
-    ksfDfp.onSwitch = false;
+
+  ksfDfp.adsAreShown = true;
+  if (window.disableAds) {
+    ksfDfp.adsAreShown = false;
     console.log("We will not show ads on this page load!");
   }
-  if (ksfDfp.onSwitch) {
-    ksfDfp.activated = false;
-    ksfDfp.startUp = function () {
-      if (!ksfDfp.activated) {
-        ksfDfp.activated = true;
-        // activate display for all slots
-        var n = ksfDfp.numberOfSlots - 1;
-        var slotId = [];
-        var slotW = [];
-        var slotOK = [];
-        while (n > -1) {
-          // avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop only list. Should be reworked.
-          slotId[n] = ksfDfp.slots[n][0];
-          slotW[n] = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
-          slotOK[n] = false;
 
-          if (slotW[n] <= ksfDfp.w) {
-            slotOK[n] = true;
-          }
-          if (window.document.getElementById(slotId[n]) && slotOK[n]) {
-            ksfDfp.displayBanner(slotId[n]);
-          }
-          n = n - 1;
-        }
-      } else {
-        console.log("Already activated. Not running again!");
-      }
-    };
+  if (ksfDfp.adsAreShown) {
     ksfDfp.account = "/21664538223/";
-    ksfDfp.w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    ksfDfp.activated = false;
     ksfDfp.mobile = true; // app is all mobile
+    ksfDfp.width = Math.max(
+      document.documentElement.clientWidth,
+      window.innerWidth || 0
+    );
 
     // this var is available in KSF sites
     ksfDfp.site = "app"; // there is only one site in the app
     googletag.pubads().setTargeting("newspaper", ksfDfp.site);
     googletag.pubads().setTargeting("consent", 1);
 
-    ksfDfp.allPageSlots = [];
-    // the order of sizes should be the same as in dfp:s ad unit definition
-    // this array is used to block publication unless the display size is mobile
+    ksfDfp.startUp = function () {
+      if (!ksfDfp.activated) {
+        ksfDfp.activated = true;
+        // activate display for all slots
+        var slotIds = [];
+        var slotWidths = [];
+        var slotsAreOkay = [];
+        for (var i = 0; i < ksfDfp.numberOfSlots; i++) {
+          // Avoid pushing slots that are not to be filled. Due to timing issues with activeSlotsFlatArray I need to do a duplicate check here for width and presence in the desktop-only list. Should be reworked.
+          slotIds[i] = ksfDfp.slots[i][0];
+          slotWidths[i] = ksfDfp.getBannerWidth(ksfDfp.slots[i]);
+          slotsAreOkay[i] = false;
+          if (slotWidths[i] <= ksfDfp.width) {
+            slotsAreOkay[i] = true;
+          }
+          if (window.document.getElementById(slotIds[i]) && slotsAreOkay[i]) {
+            ksfDfp.displayBanner(slotIds[i]);
+          }
+        }
+      } else {
+        console.log("Already activated. Not running again!");
+      }
+    };
+
+    // The order of sizes should be the same as in dfp:s ad unit definition. This array is used to block publication unless the display size is mobile.
     ksfDfp.mobileOnlySlots = [
       [
         "MOBPARAD",
@@ -88,7 +88,6 @@ var ksfDfp = {};
           [300, 600],
         ],
       ],
-
       [
         "MOBNER",
         [
@@ -110,40 +109,47 @@ var ksfDfp = {};
       ],
     ];
 
+    ksfDfp.allPageSlots = [];
+
     // Slots that are not interstitials but need a header with a close button should be listed here. These guys need an enveloping extra div to be closed correctly.
     ksfDfp.closableAdSlots = [];
-    // load mobile only slot if the page load is mobile
+    // load mobile-only slot if the page load is mobile
     if (ksfDfp.mobile) {
       ksfDfp.allPageSlots = ksfDfp.mobileOnlySlots;
     }
 
     ksfDfp.slots = [];
     ksfDfp.slots = ksfDfp.allPageSlots;
-
     ksfDfp.numberOfSlots = ksfDfp.slots.length;
     ksfDfp.slotObjects = [];
+
     googletag.cmd.push(function () {
-      var n = ksfDfp.numberOfSlots - 1;
       var bannerWidthInstance;
       var bannerSizeList;
       // flat array of slots for quick checkup later
       ksfDfp.activeSlotsFlatArray = [];
-      while (n >= 0) {
-        // Check that the banner is smaller than the size of the screen. Also make sure that the slot is allowed on mobile, if the page load is mobile.
-        bannerWidthInstance = ksfDfp.getBannerWidth(ksfDfp.slots[n]);
 
-        if (bannerWidthInstance <= ksfDfp.w) {
-          ksfDfp.activeSlotsFlatArray.push(ksfDfp.slots[n][0]);
+      // stuck to decrementing i here, just in case the array created in this loop needs to stay in the same order. (I don't know yet if it does.)
+      for (var i = ksfDfp.numberOfSlots - 1; i >= 0; i--) {
+        // Check that the banner is smaller than the size of the screen. Also make sure that the slot is allowed on mobile, if the page load is mobile.
+        bannerWidthInstance = ksfDfp.getBannerWidth(ksfDfp.slots[i]);
+
+        if (bannerWidthInstance <= ksfDfp.width) {
+          ksfDfp.activeSlotsFlatArray.push(ksfDfp.slots[i][0]);
           // Array of banner heights, as some slots have several
-          bannerSizeList = ksfDfp.slots[n][1];
-          ksfDfp.slotObjects[ksfDfp.slots[n][0]] = googletag
-            .defineSlot(ksfDfp.account + ksfDfp.slots[n][0], bannerSizeList, ksfDfp.slots[n][0])
+          bannerSizeList = ksfDfp.slots[i][1];
+          ksfDfp.slotObjects[ksfDfp.slots[i][0]] = googletag
+            .defineSlot(
+              ksfDfp.account + ksfDfp.slots[i][0],
+              bannerSizeList,
+              ksfDfp.slots[i][0]
+            )
             .addService(googletag.pubads());
         } // slot size to screen comparison end of if
-        n -= 1;
       }
+
       // Send the users tracking banner consent choice to DFP
-      googletag.pubads().setRequestNonPersonalizedAds(1); // hard coded to no consent as we do not yet ask 20191029. 0 means consent, 1 means no tracking ads should be shown.This is used for Google ads.
+      googletag.pubads().setRequestNonPersonalizedAds(1); // Latest 2021-04-30. This is hard coded to no consent for now. This does get asked in the app already, but we are not yet making use of this by allowing personalised ads. 0 means consent, 1 means no tracking ads should be shown.
       googletag.pubads().collapseEmptyDivs();
       googletag.pubads().enableLazyLoad({
         fetchMarginPercent: 0.85, // Fetch slots within 0.5 viewports.
@@ -161,6 +167,7 @@ var ksfDfp = {};
           // show ad headline fitting to the ad format. Out of page slots should have a headline that allows viewers to close the ad
           // only show ad headline for ads that are actually supposed to render
           headerToShow = document.getElementById(contentUnitDiv);
+
           // show ad header or a special ad header for ads that require a close button
           if (ksfDfp.closableAdSlots.indexOf(contentUnitDiv) === -1) {
             headerToShow.insertAdjacentHTML(
@@ -173,7 +180,9 @@ var ksfDfp = {};
             );
             headerToShow.insertAdjacentHTML(
               "beforeend",
-              '<header class="ksfDFPadHeader ' + contentUnitDiv + '"><span>annons slut</span></header>'
+              '<header class="ksfDFPadHeader ' +
+                contentUnitDiv +
+                '"><span>annons slut</span></header>'
             );
           } else {
             headerToShow.insertAdjacentHTML(
@@ -195,13 +204,19 @@ var ksfDfp = {};
       divToClose.style.display = "none";
       return false;
     };
+
     ksfDfp.closeSlotAfterCallback = function (slot) {
       // this is used to close third party ad calls that has been abandoned and returned using a callback
       var divToClose = document.getElementById(slot);
       if (typeof divToClose !== "undefined" && divToClose != null) {
         divToClose.style.display = "none";
-        var headerToClose = document.getElementsByClassName("ksfDFPadHeader " + slot);
-        if (typeof headerToClose[0] !== "undefined" && headerToClose[0] != null) {
+        var headerToClose = document.getElementsByClassName(
+          "ksfDFPadHeader " + slot
+        );
+        if (
+          typeof headerToClose[0] !== "undefined" &&
+          headerToClose[0] != null
+        ) {
           var unclosed = headerToClose.length - 1;
           while (unclosed >= 0) {
             headerToClose[unclosed].style.display = "none";
