@@ -2,13 +2,14 @@
 
 .mosaico-header {
   &__menu {
+
+    grid-area: main;
     grid-template-rows: repeat(3, auto);
     grid-template-columns: 0.1fr 1fr 0.1fr;
 
     margin: -33px -30px -13px -30px;
 
     display: none;
-    z-index: 2;
     border: 1px solid @grey-slightlylight;
     border-radius: 1px;
     background-color: @white;

@@ -115,8 +115,8 @@ render { state: { menuVisible, menuComponent }, setState, props } =
                                               else
                                               mempty
                                           } ]
-                          , onClick: handler_ do
-                              setState \s -> s { menuVisible = not menuVisible }
+                          , onClick: handler_ $
+                              maybe (pure unit) (\r -> r.pushState (write {}) $ "/meny") props.router
                           }
                       ]
                    ]

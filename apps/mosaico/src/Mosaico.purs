@@ -59,7 +59,7 @@ type State =
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
   , headerComponent :: Header.Props -> JSX
-  , menuComponent :: JSX
+  , menuComponent :: Menu.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   , frontpageComponent :: Frontpage.Props -> JSX
@@ -172,7 +172,7 @@ getInitialValues = do
 
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
-  menuComponent       <- Menu.visibleMenuComponent
+  menuComponent       <- Menu.menuComponent
   loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
   frontpageComponent    <- Frontpage.frontpageComponent
@@ -229,63 +229,35 @@ render setState state router =
         , onClose: setState \s -> s { modalView = Nothing }
         }
     _ -> mempty
-  <> DOM.div
-       { className: "mosaico grid"
-       , children:
-           [ Header.topLine
-           , state.headerComponent { router }
-           , Header.mainSeparator
-           , case state.route of
-                 ArticlePage articleId
-                   | Just fullArticle <- state.article
-                   , article <- fromFullArticle fullArticle
-                   -- If we have this article already in `state`, let's pass that to `articleComponent`
-                   -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
-                   -- e.g. when a subscription is purchased or user logs in
-                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
-                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
-                 DraftPage -> renderArticle state.article (pure notFoundArticle) Nothing $
-                              fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
-                 Frontpage -> state.frontpageComponent
+  <> case state.route of
+       ArticlePage articleId
+         | Just fullArticle <- state.article
+         , article <- fromFullArticle fullArticle
+         -- If we have this article already in `state`, let's pass that to `articleComponent`
+         -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
+         -- e.g. when a subscription is purchased or user logs in
+         , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
+         | otherwise                 -> mosaicoLayoutNoAside $ renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
+       Frontpage -> state.frontpageComponent
                                 { frontpageArticles: state.frontpageArticles
                                 , onArticleClick: \article -> do
                                     setState \s -> s { clickedArticle = Just article }
                                     void $ Web.scroll 0 0 =<< Web.window
                                     router.pushState (write {}) $ "/artikel/" <> article.uuid
                                 }
-                 MenuPage -> state.menuComponent
-                 NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                 StaticPage _ -> case state.staticPage of
-                  Nothing -> DOM.text "laddar"
-                  Just (Right content) -> content
-                  Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                  Just (Left StaticPageOtherError) ->
-                    DOM.div
-                        { className: "mosaico--static-page-error"
-                        , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
-                        }
-           , DOM.footer
-               { className: "mosaico--footer"
-               , children:
-                  [ DOM.text "footer" ]
-               }
-           , case state.route of
-               Frontpage ->
-                 DOM.aside
-                   { className: "mosaico--aside"
-                   , children:
-                       [ state.mostReadListComponent
-                           { mostReadArticles: state.mostReadArticles
-                           , onClickHandler: \articleStub -> do
-                               setState _ { clickedArticle = Just articleStub }
-                               void $ Web.scroll 0 0 =<< Web.window
-                               router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
-                           }
-                       ]
-                   }
-               _ -> mempty
-           ]
-       }
+       NotFoundPage _ -> mosaicoDefaultLayout $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+       MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
+       DraftPage -> renderArticle state.article (pure notFoundArticle) Nothing $
+                    fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
+       StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
+         Nothing -> DOM.text "laddar"
+         Just (Right content) -> content
+         Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+         Just (Left StaticPageOtherError) ->
+           DOM.div
+             { className: "mosaico--static-page-error"
+             , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
+             }
   where
     affArticle :: String -> Aff FullArticle
     affArticle articleId = do
@@ -293,6 +265,31 @@ render setState state router =
       pure case a of
         Right article -> article
         Left _ -> notFoundArticle
+
+    mosaicoDefaultLayout :: JSX -> JSX
+    mosaicoDefaultLayout = flip mosaicoLayout true
+
+    mosaicoLayoutNoAside :: JSX -> JSX
+    mosaicoLayoutNoAside = flip mosaicoLayout false
+
+    mosaicoLayout :: JSX -> Boolean -> JSX
+    mosaicoLayout content showAside = DOM.div
+      { className: "mosaico grid"
+      , children:
+          [ Header.topLine
+          , state.headerComponent { router }
+          , Header.mainSeparator
+          , content
+          , DOM.footer
+              { className: "mosaico--footer"
+              , children: [ DOM.text "footer" ]
+              }
+          , guard showAside $ DOM.aside
+              { className: "mosaico--aside"
+              , children: [ renderMostreadList state setState router ]
+              }
+          ]
+      }
 
     renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> String -> JSX
     renderArticle maybeA affA aStub uuid =
