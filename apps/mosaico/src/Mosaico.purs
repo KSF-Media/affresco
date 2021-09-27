@@ -59,7 +59,7 @@ type State =
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
   , headerComponent :: Header.Props -> JSX
-  , menuComponent :: JSX
+  , menuComponent :: Menu.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   , frontpageComponent :: Frontpage.Props -> JSX
@@ -172,7 +172,7 @@ getInitialValues = do
 
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
-  menuComponent       <- Menu.visibleMenuComponent
+  menuComponent       <- Menu.menuComponent
   loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
   frontpageComponent    <- Frontpage.frontpageComponent
