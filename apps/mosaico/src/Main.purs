@@ -111,6 +111,7 @@ getArticle r@{ params: { uuid } } = do
               , onLogin: pure unit
               , user: Nothing
               , article: Just a
+              , uuid
               }
           mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX }
 
@@ -142,6 +143,7 @@ notFound { params: { path} } = do
           , onLogin: pure unit
           , user: Nothing
           , article: Just notFoundArticle
+          , uuid: ""
           }
 
   mosaico <- liftEffect MosaicoServer.app

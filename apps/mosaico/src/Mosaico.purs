@@ -85,7 +85,6 @@ mosaicoComponent initialValues props = React.do
   -- Listen for route changes and set state accordingly
   useEffectOnce $ locations (routeListener setState) initialValues.nav
   useEffect state.route do
-    Console.log "route changed"
     case state.route of
       Frontpage -> do
         if null state.articleList
@@ -187,10 +186,10 @@ render setState state router =
                    -- If we have this article already in `state`, let's pass that to `articleComponent`
                    -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
                    -- e.g. when a subscription is purchased or user logs in
-                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing
-                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle
+                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
+                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
                  Frontpage -> articleList state setState router
-                 NotFoundPage path -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing
+                 NotFoundPage path -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
            , DOM.footer
                { className: "mosaico--footer"
                , children: [ DOM.text "footer" ]
@@ -209,8 +208,8 @@ render setState state router =
         Right article -> article
         Left _ -> notFoundArticle
 
-    renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> JSX
-    renderArticle maybeA affA aStub =
+    renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> String -> JSX
+    renderArticle maybeA affA aStub uuid =
       state.articleComponent
         { affArticle: affA
         , brand: "hbl"
@@ -218,6 +217,7 @@ render setState state router =
         , articleStub: aStub
         , onLogin: setState \s -> s { modalView = Just LoginModal }
         , user: state.user
+        , uuid
         }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX
@@ -290,11 +290,10 @@ renderMostreadList state setState router =
         renderMostreadArticle a =
           DOM.li_
             [ DOM.a
-                {   
-                  onClick: handler_ do
-                  setState \s -> s { clickedArticle = Just a }
-                  void $ Web.scroll 0 0 =<< Web.window
-                  router.pushState (write {}) $ "/artikel/" <> a.uuid
+                { onClick: handler_ do
+                      setState \s -> s { clickedArticle = Just a }
+                      void $ Web.scroll 0 0 =<< Web.window
+                      router.pushState (write {}) $ "/artikel/" <> a.uuid
                 , children:
                     [ DOM.div
                         { className: "counter"
@@ -305,17 +304,18 @@ renderMostreadList state setState router =
                           , children:
                               [ DOM.h6_ [ DOM.text a.title ]
                               , DOM.div
-                                { className: "mosaico--article--meta"
-                                , children:
-                                    [ guard a.premium $
-                                        DOM.div
-                                          { className: "mosaico--article--premium background-hbl"
-                                          , children: [ DOM.text "premium" ]
-                                          }
-                                    ]
-                                }
+                                  { className: "mosaico--article--meta"
+                                  , children:
+                                      [ guard a.premium $
+                                          DOM.div
+                                            { className: "mosaico--article--premium background-hbl"
+                                            , children: [ DOM.text "premium" ]
+                                            }
+                                      ]
+                                  }
                               ]
                           }
                       ]
                   }
             ]
+

@@ -22,7 +22,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
+import Lettera.Models ( ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle )
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
@@ -47,6 +47,7 @@ type Props =
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
   , user :: Maybe User
+  , uuid :: String
   }
 
 type State =
@@ -77,7 +78,7 @@ articleComponent = do
           }
     state /\ setState <- useState initialState
 
-    useEffectOnce do
+    useEffect props.uuid do
       when (isNothing props.article) $ loadArticle setState props.affArticle
       pure mempty
 
