@@ -2,7 +2,6 @@ module Mosaico where
 
 import Prelude
 
-import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json)
 import Data.Array (null, head)
 import Data.Either (Either(..), either, hush)
@@ -16,7 +15,6 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
@@ -47,6 +45,7 @@ data ModalView = LoginModal
 type State =
   { article :: Maybe FullArticle
   , articleList :: Array ArticleStub
+  , mostreadList :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
   , route :: MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -93,6 +92,11 @@ mosaicoComponent initialValues props = React.do
         else setState \s -> s { article = Nothing }
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
+
+    Aff.launchAff_ do
+      mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+      liftEffect $ setState \s -> s { mostreadList = mostReadArticles }
+
     pure mempty
 
   pure $ render setState state initialValues.nav
@@ -123,6 +127,7 @@ getInitialValues = do
     { state:
         { article: Nothing
         , articleList: []
+        , mostreadList: []
         , affArticle: Nothing
         , route: initialRoute
         , clickedArticle: Nothing
@@ -178,16 +183,18 @@ render setState state router =
                    -- If we have this article already in `state`, let's pass that to `articleComponent`
                    -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
                    -- e.g. when a subscription is purchased or user logs in
-                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing
-                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle
+                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
+                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
                  Frontpage -> articleList state setState router
-                 NotFoundPage path -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing
+                 NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
            , DOM.footer
                { className: "mosaico--footer"
                , children: [ DOM.text "footer" ]
                }
            , DOM.aside
-               { className: "mosaico--aside" }
+              { className: "mosaico--aside"
+              , children: [ renderMostreadList state setState router ]
+              }
            ]
        }
   where
@@ -198,8 +205,8 @@ render setState state router =
         Right article -> article
         Left _ -> notFoundArticle
 
-    renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> JSX
-    renderArticle maybeA affA aStub =
+    renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> String -> JSX
+    renderArticle maybeA affA aStub uuid =
       state.articleComponent
         { affArticle: affA
         , brand: "hbl"
@@ -207,6 +214,7 @@ render setState state router =
         , articleStub: aStub
         , onLogin: setState \s -> s { modalView = Just LoginModal }
         , user: state.user
+        , uuid: Just uuid
         }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX
@@ -255,3 +263,56 @@ articleList state setState router =
               }
             ]
         }
+
+renderMostreadList :: State -> SetState -> PushStateInterface -> JSX
+renderMostreadList state setState router =
+  let
+    block = "mosaico-asidelist"
+  in
+    DOM.div
+      { className: block
+      , children:
+          [ DOM.h6
+              { className: block <> "--header color-hbl"
+              , children: [ DOM.text "Andra läser" ]
+              }
+          , DOM.ul
+              { className: block <> "__mostread"
+              , children: map renderMostreadArticle state.mostreadList
+              }
+          ]
+      }
+      where
+        renderMostreadArticle :: ArticleStub -> JSX
+        renderMostreadArticle a =
+          DOM.li_
+            [ DOM.a
+                { onClick: handler_ do
+                      setState \s -> s { clickedArticle = Just a }
+                      void $ Web.scroll 0 0 =<< Web.window
+                      router.pushState (write {}) $ "/artikel/" <> a.uuid
+                , children:
+                    [ DOM.div
+                        { className: "counter"
+                        , children: [ DOM.div { className: "background-hbl" } ]
+                        }
+                      , DOM.div
+                          { className: "list-article-liftup"
+                          , children:
+                              [ DOM.h6_ [ DOM.text a.title ]
+                              , DOM.div
+                                  { className: "mosaico--article--meta"
+                                  , children:
+                                      [ guard a.premium $
+                                          DOM.div
+                                            { className: "mosaico--article--premium background-hbl"
+                                            , children: [ DOM.text "premium" ]
+                                            }
+                                      ]
+                                  }
+                              ]
+                          }
+                      ]
+                  }
+            ]
+
