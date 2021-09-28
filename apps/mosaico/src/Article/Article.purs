@@ -47,7 +47,7 @@ type Props =
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
   , user :: Maybe User
-  , uuid :: String
+  , uuid :: Maybe String
   }
 
 type State =

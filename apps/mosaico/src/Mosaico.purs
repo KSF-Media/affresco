@@ -217,7 +217,7 @@ render setState state router =
         , articleStub: aStub
         , onLogin: setState \s -> s { modalView = Just LoginModal }
         , user: state.user
-        , uuid
+        , uuid: Just uuid
         }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX
