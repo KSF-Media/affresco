@@ -2,15 +2,19 @@ module Mosaico.Header where
 
 import Prelude
 
+import Data.Either (Either(..))
+import Data.Maybe (Maybe, maybe)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
+import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
+import Routing (match)
 import Routing.PushState (PushStateInterface)
-import Simple.JSON (write)
+import Simple.JSON (E, read, write)
 
 type Props = { router :: PushStateInterface }
 
@@ -116,7 +120,19 @@ render { state: { menuVisible, menuComponent }, setState, props } =
                                               mempty
                                           } ]
                           , onClick: handler_ $
-                              maybe (pure unit) (\r -> r.pushState (write {}) $ "/meny") props.router
+                              maybe (pure unit) (\r -> do
+                                locationState <- r.locationState
+                                case match routes locationState.pathname of
+                                  Right MenuPage -> do
+                                    let
+                                      eitherState :: E { previousPath :: String }
+                                      eitherState = read locationState.state
+                                    case eitherState of
+                                      Right state -> r.pushState (write { }) state.previousPath
+                                      Left _         -> pure unit
+                                  _              -> r.pushState (write { previousPath: locationState.pathname }) $ "/meny")
+                                props.router
+
                           }
                       ]
                    ]
