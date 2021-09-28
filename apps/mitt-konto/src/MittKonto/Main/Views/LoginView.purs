@@ -109,11 +109,11 @@ loginView self@{ state, setState } setUser logger =
 
     descriptionList :: JSX
     descriptionList = Helpers.classy DOM.div "list" $
-                        descriptionListItem <$> [ "göra addressändringar"
+                        descriptionListItem <$> [ "göra adressändringar"
                                                 , "göra uppehåll"
                                                 , "reklamera utebliven tidning"
                                                 , "uppdatera ditt kredit- eller bankkort"
-                                                , "visa din fakturor"
+                                                , "visa dina fakturor"
                                                 , "avsluta din prenumeration"
                                                 , "med mera ..."
                                                 ]
