@@ -247,6 +247,7 @@ render { props, state, setState } =
         , paper: Just HBL
         , paymentMethods: []
         , customNewPurchase: Nothing
+        , subscriptionExists: mempty
         , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
         , orderSource: PaywallSource

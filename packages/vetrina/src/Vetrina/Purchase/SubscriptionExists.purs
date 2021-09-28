@@ -9,6 +9,7 @@ import React.Basic.Events (handler_)
 
 type Props =
   { onClose :: Effect Unit
+  , extraMsg :: JSX
   }
 
 subscriptionExists :: Props -> JSX
@@ -20,6 +21,7 @@ subscriptionExists props =
            { className: "vetrina--headline"
            , children: [ DOM.text "Du har redan en prenumeration" ]
            }
+       , props.extraMsg
        , closeButton props
        ]
     }

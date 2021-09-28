@@ -63,6 +63,7 @@ type JSProps =
   , loadingContainer   :: Nullable (JSX -> JSX)
   , customNewPurchase  :: Nullable (JSX -> NewPurchase.State -> JSX)
   , orderSource        :: Nullable String
+  , subscriptionExists :: Nullable JSX
   }
 
 type Props =
@@ -78,6 +79,7 @@ type Props =
   , loadingContainer   :: Maybe (JSX -> JSX)
   , customNewPurchase  :: Maybe (JSX -> NewPurchase.State -> JSX)
   , orderSource        :: OrderSource
+  , subscriptionExists :: JSX
   }
 
 fromJSProps :: JSProps -> Props
@@ -102,6 +104,7 @@ fromJSProps jsProps =
   , loadingContainer: toMaybe jsProps.loadingContainer
   , customNewPurchase: toMaybe jsProps.customNewPurchase
   , orderSource: maybe UnknownSource toOrderSource $ toMaybe jsProps.orderSource
+  , subscriptionExists: fromMaybe mempty $ toMaybe jsProps.subscriptionExists
   }
 
 type State =
@@ -323,7 +326,9 @@ render self = vetrinaContainer self $
       case failure of
         SubscriptionExists ->
           Purchase.SubscriptionExists.subscriptionExists
-            { onClose: fromMaybe (pure unit) self.props.onClose }
+            { onClose: fromMaybe (pure unit) self.props.onClose
+            , extraMsg: self.props.subscriptionExists
+            }
         InsufficientAccount ->
           case self.state.user of
             Just u ->
