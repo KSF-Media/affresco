@@ -2,12 +2,11 @@ module Mosaico where
 
 import Prelude
 
-import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json)
 import Data.Array (null, head)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (oneOf)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
@@ -16,8 +15,6 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Console (log)
-import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
@@ -189,7 +186,7 @@ render setState state router =
                    , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
                    | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
                  Frontpage -> articleList state setState router
-                 NotFoundPage path -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+                 NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
            , DOM.footer
                { className: "mosaico--footer"
                , children: [ DOM.text "footer" ]

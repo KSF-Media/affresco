@@ -3,7 +3,6 @@ module Main where
 import Prelude
 
 import Data.Argonaut.Core (Json)
-import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.List as List
@@ -13,7 +12,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
 import Effect.Uncurried (EffectFn2, EffectFn3, runEffectFn2, runEffectFn3)
 import KSF.Api (Token(..), UserAuth)
 import Lettera as Lettera
@@ -120,7 +118,7 @@ getArticle r@{ params: { uuid } } = do
           >>= writeArticle (articleToJson $ fromFullArticle a) (isPreviewArticle a)
 
       pure $ Response.ok $ StringBody html
-    Left err ->
+    Left _ ->
       notFound { params: {path: List.fromFoldable ["artikel", uuid]} }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
@@ -132,7 +130,7 @@ frontpage _ = do
   pure $ TextHtml html
 
 notFound :: { params :: { path :: List String } } -> Aff (Response ResponseBody) 
-notFound { params: { path} } = do
+notFound _ = do
   htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
   articleComponent <- liftEffect Article.articleComponent
   let articleJSX =
