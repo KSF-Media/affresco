@@ -27,6 +27,7 @@
         [margin-left] @page-full-margin
         [logo] 1fr
         [logout-limpet] 1fr
+	[display-user] minmax(min-content, auto)
         [logout-button] minmax(min-content, auto)
         [margin-right]  @page-full-margin;
     grid-column-gap: 2em;
@@ -82,6 +83,18 @@
 
 .nav--logout-limpet {
     grid-column-start: logout-limpet;
+    justify-self: end;
+}
+
+.nav--nav-container {
+    .nav--display-user img {
+	width: 24px;
+	vertical-align: bottom;
+	margin-right: 5px;
+    }
+
+    font-weight: 400;
+    grid-column-start: display-user;
     justify-self: end;
 }
 
