@@ -1,7 +1,7 @@
 @import (reference) "../ksf-colors";
 
 .article {
-  grid-area: main;
+  grid-area: article;
   display: grid;
   grid-template-columns: 100px 1fr 100px;
   grid-template-areas:
@@ -15,9 +15,25 @@
   .image {
     grid-area: image;
   }
+
   .articlebody {
     grid-area: body;
+    display: grid;
+    @media (min-width: @breakpoint-3col) {
+      grid-template-columns: 1fr 300px;
+      grid-template-areas:
+        "articleauthors articlesidebar"
+        "articlebody articlesidebar";
+    }
   }
+
+  .mosaico--article--body {
+    grid-area: articlebody;
+  }
+  .mosaico-article-aside {
+    grid-area: articlesidebar;
+  }
+
   h1 {
     font: 700 1.92rem "Duplex Serif Web", serif;
     color: #333;
@@ -36,8 +52,6 @@
   }
   h4 {
     font: 600 1rem/1.5rem "Roboto", sans-serif;
-  }
-  &--meta {
   }
   &--premium {
     padding: 2px 5px;
@@ -75,6 +89,7 @@
 
 .mosaico--article-times-and-author {
   display: grid;
+  grid-area: articleauthors;
   grid-template-columns: auto auto;
   grid-template-rows: auto auto;
   border-style: solid;

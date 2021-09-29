@@ -175,16 +175,20 @@ render { props, state, setState } =
                               , foldMap articleTimestamps letteraArticle
                               ]
                           }
-                      , DOM.div
-                          { className: "mosaico--article--body "
-                          , children: case state.article of
-                            (Just (PreviewArticle _previewArticle)) ->
-                              paywallFade
-                              `cons` bodyWithAd
-                              `snoc` vetrina
-                            (Just (FullArticle _fullArticle)) ->
-                              bodyWithAd
-                            _ -> mempty
+                    , DOM.div
+                        { className: "mosaico--article--body "
+                        , children: case state.article of
+                          (Just (PreviewArticle _previewArticle)) ->
+                            paywallFade
+                            `cons` bodyWithAd
+                            `snoc` vetrina
+                          (Just (FullArticle _fullArticle)) ->
+                            bodyWithAd
+                          _ -> mempty
+                        }
+                    , DOM.div
+                        { className: "mosaico-article-aside"
+                        , children: []
                         }
                     ]
                 }
