@@ -19,4 +19,8 @@ routes = root *> oneOf
   , Frontpage <$end
   , MenuPage <$ lit "meny"
   , NotFoundPage <$> str
+<<<<<<< HEAD
   ]
+=======
+  ]
+>>>>>>> d1927e80 (Fix rebase issues)
