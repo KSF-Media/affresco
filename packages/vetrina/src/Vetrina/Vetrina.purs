@@ -24,7 +24,8 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (Package, PackageId)
+import KSF.Api.Package (PackageId)
+import KSF.Api.Subscription (Subscription, isSubscriptionStateCanceled)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
 import KSF.Paper (Paper)
@@ -442,7 +443,7 @@ mkPurchase self@{ state: { logger } } validForm affUser =
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
-    when (userHasPackage product.id $ map _.package user.subs)
+    when (userHasPackage product.id user.subs)
       $ except $ Left SubscriptionExists
 
     userEntitlements <- ExceptT getUserEntitlements
@@ -510,8 +511,10 @@ mkPurchase self@{ state: { logger } } validForm affUser =
               _ -> Nothing
         }
 
-userHasPackage :: PackageId -> Array Package -> Boolean
-userHasPackage packageId = Array.any (\p -> packageId == p.id)
+userHasPackage :: PackageId -> Array Subscription -> Boolean
+userHasPackage packageId = Array.any
+                           (\s -> packageId == s.package.id
+                                  && not (isSubscriptionStateCanceled s.state))
 
 isUserEntitled :: Set String -> Set String -> Boolean
 isUserEntitled accessEntitlements userEntitlements =
