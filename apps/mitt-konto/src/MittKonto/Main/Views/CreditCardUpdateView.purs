@@ -128,7 +128,7 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } 
       let newState = state { updateState = RegisterCreditCard url }
       liftEffect do
         setState \_ -> newState
-        setWrapperState _ { closeable = false }
+        setWrapperState _ { closeable = true }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
     Right { terminalUrl: Nothing } ->
       liftEffect do

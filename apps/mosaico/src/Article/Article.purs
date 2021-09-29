@@ -15,18 +15,18 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
+import Bottega.Models.Order (OrderSource(..))
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle, isPreviewArticle)
+import Lettera.Models ( ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle )
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
+import React.Basic.Hooks (Component, component, useEffect, useState, (/\))
 import React.Basic.Hooks as React
 
 type Self =
@@ -46,6 +46,7 @@ type Props =
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
   , user :: Maybe User
+  , uuid :: Maybe String
   }
 
 type State =
@@ -76,7 +77,7 @@ articleComponent = do
           }
     state /\ setState <- useState initialState
 
-    useEffectOnce do
+    useEffect props.uuid do
       when (isNothing props.article) $ loadArticle setState props.affArticle
       pure mempty
 
@@ -164,7 +165,9 @@ render { props, state, setState } =
             }
         , DOM.ul
             { className: "mosaico-article__some"
-            , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+            , children: map mkShareIcon case state.article of
+                Just (ErrorArticle _) -> []
+                _                     -> [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
             }
         , DOM.div
             { className: "mosaico--article--body "
@@ -244,8 +247,10 @@ render { props, state, setState } =
         , paper: Just HBL
         , paymentMethods: []
         , customNewPurchase: Nothing
+        , subscriptionExists: mempty
         , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
+        , orderSource: PaywallSource
         }
       where
         hblPremium =

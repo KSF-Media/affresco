@@ -1226,7 +1226,6 @@
 "@ksf-media/user@file:packages/user":
   version "0.3.2"
   dependencies:
-    basscss "^8.1.0"
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#40058b09b6d969390daaad6e58918b04129b1c16"
     react "^16.12"
@@ -2821,7 +2820,7 @@ basscss-typography@^3.0.4:
   resolved "https://registry.yarnpkg.com/basscss-typography/-/basscss-typography-3.0.4.tgz#ec946a2bad8dd1af97be9ea108ad4bb7be932464"
   integrity sha512-PMCxUfYPpAj8gQV8qI09lfNp7eWNrKtQFkCN2fZjLyReSY/wnw8QP8irpvbJ67vSEhlkA6ZP8j7vmTDoxkyu8g==
 
-basscss@^8.0.4, basscss@^8.1.0:
+basscss@^8.1.0:
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/basscss/-/basscss-8.1.0.tgz#ede4ed0a8a8433fa18edda90a90d2311d1223695"
   integrity sha512-SJ48HWDKqX1OnzeZgqwweFPVM98h0lNtvC+megWPCEJ1R6LIbx6dnj3rpCJueElVn9giWipZhoozMEBRAIlnUw==
@@ -7968,13 +7967,6 @@ purescript-installer@^0.2.0:
     tar "^4.4.6"
     which "^1.3.1"
     zen-observable "^0.8.14"
-
-purescript@^0.14.0:
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.14.0.tgz#0fd260d526159c7a15d74c0e6fb52294ae531c15"
-  integrity sha512-iTA1k8mwxHqrJp/K296g6omVfve5RCjnB5D6Up93PVtZdP66mCIqlOYC4hrLBHg2hgkk27xePDt5NUXKvH4ApQ==
-  dependencies:
-    purescript-installer "^0.2.0"
 
 purescript@^0.14.2:
   version "0.14.2"

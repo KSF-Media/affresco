@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Maybe (fromMaybe)
 import Data.Nullable (toMaybe)
+import HBL365.AnotherAccount (anotherAccount)
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
 import Vetrina.Purchase.NewPurchase as NewPurchase
@@ -20,7 +21,14 @@ render form state =
     _ -> descriptionBox $ fragment
            [ case state.accountStatus of
                 LoggedInAccount user ->
-                  DOM.text $ "Hej " <> fromMaybe user.email (toMaybe user.firstName)
+                  DOM.div
+                    { children:
+                        [ DOM.div_
+                            [ DOM.text $ "Hej " <> fromMaybe user.email (toMaybe user.firstName)
+                            ]
+                        , anotherAccount
+                        ]
+                    }
                 _ -> mempty
            , form
            ]
