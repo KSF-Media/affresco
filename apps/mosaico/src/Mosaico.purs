@@ -32,7 +32,6 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
-import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
