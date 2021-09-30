@@ -90,9 +90,26 @@ fullNav self@{ props } =
     , children:
         [ paperLogo props.paper
         , fromMaybe needHelp props.specialHelp
+        , showUser self
         , logoutButton self
         ]
     }
+
+showUser :: Self -> JSX
+showUser self@{ props: { activeUser } } =
+  foldMap displayUser activeUser
+  where
+    displayUser user =
+      DOM.div
+        { className: "nav--display-user"
+        , children:
+            [ DOM.img
+                { src: "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/icons/fa-user-circle-o.svg"
+                , alt: "User"
+                }
+            , DOM.text $ fromMaybe user.email $ Nullable.toMaybe user.firstName
+            ]
+        }
 
 logoutButton :: Self -> JSX
 logoutButton self@{ props: { activeUser } } =
