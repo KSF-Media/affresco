@@ -74,78 +74,77 @@ render { props: { visible } } = DOM.div
     menuLayout :: MenuLayout
     menuLayout =  concat $ (((<$>) SectionElement) <$> [ topSections, middleSections, bottomSections ]) `merge` ((singleton <<< SeparatorElement) <$> [ "--top", "--center", "--bottom" ])
 
-    topSections = [ { title: "E-TIDNINGEN"
-                    , modifier: "--e-tidningen"
-                    , url: ""
-                    , subsections: []
-                    }
-                  , { title: "KUNDSERVICE"
-                    , modifier: "--kundservice"
-                    , url: ""
-                    , subsections: []
-                    }
-                  , { title: "ANNONSERA"
-                    , modifier: "--annonsera"
-                    , url: ""
-                    , subsections: []
-                    }
-                  , { title: "OTHER IMPORTANT"
-                    , modifier: "--other-important"
-                    , url: ""
-                    , subsections: []
-                    }
-                  ]
-
-    middleSections = [ { title: "STARTSIDAN"
-                       , modifier: "--startsidan"
-                       , url: ""
-                       , subsections: []
-                       }
-                     , { title: "SECTION 1"
-                       , modifier: "--section1"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           , { title: "Mollis"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Lorem ipsum"
-                             , url: ""
-                             }
-                           ]
-                       }
-                     , { title: "SECTION 2"
-                       , modifier: "--section2"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Sollicitudin"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           ]
+    sections = [ { title: "STARTSIDAN"
+                 , modifier: "--startsidan"
+                 , url: ""
+                 , subsections: []
+                 }
+               , { title: "NYHETER"
+                   , modifier: "--section1"
+                   , url: ""
+                   , subsections:
+                       [ { title: "Finland"
+                         , url: ""
                          }
+                       , { title: "Huvustadsregionen"
+                         , url: ""
+                         }
+                       , { title: "Norden och världen"
+                         , url: ""
+                         }
+                       , { title: "Ekonomi"
+                         , url: ""
+                         }
+                       , { title: "Miljö och natur"
+                         , url: ""
+                         }
+                       ]
+                 }
+               , { title: "OPINION"
+                 , modifier: "--section2"
+                 , url: ""
+                 , subsections:
+                     [ { title: "Ledare"
+                       , url: ""
+                       }
+                     , { title: "Kolumner"
+                       , url: ""
+                       }
+                     , { title: "Debatt"
+                       , url: ""
+                       }
+                     , { title: "Krönikor"
+                       , url: ""
+                       }
+                     ]
+                 }
+               , { title: "KULTUR"
+                 , modifier: "--section2"
+                 , url: ""
+                 , subsections:
+                     [ { title: "Lorem"
+                       , url: ""
+                       }
+                     , { title: "Pellentesque"
+                       , url: ""
+                       }
+                     , { title: "Sollicitudin"
+                       , url: ""
+                       }
+                     , { title: "Ultrices"
+                       , url: ""
+                       }
+                     , { title: "Consectetur"
+                       , url: ""
+                       }
+                     ]
+                 }
+               ]
+
+    middleSections = [ 
+                     ]
+    
+                     
                      , { title: "SECTION 3"
                        , modifier: "--section3"
                        , url: ""
