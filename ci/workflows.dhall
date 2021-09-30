@@ -157,7 +157,8 @@ let mkUploadStep =
             { path = "build/${app.deployDir}"
             , destination =
                 merge
-                  { Staging = "deploy-previews/\${{ github.sha }}/${app.deployDir}"
+                  { Staging =
+                      "deploy-previews/\${{ github.sha }}/${app.deployDir}"
                   , Production = "ksf-frontends/${app.deployDir}"
                   }
                   env
@@ -314,7 +315,6 @@ let mkCleanAppEngineStep =
                 gcloud app versions delete '\$version' \
                   --service ${app.id} \
               done
-
             ''
         }
 
