@@ -19,12 +19,12 @@ let apps-to-cache =
 let steps =
         Actions.setupSteps Actions.Env.Staging
       # [ Actions.checkCIStep ]
-      # Actions.cacheSteps apps-to-cache
-      # Actions.buildSteps apps
-      # Actions.buildServerSteps app-servers
-      # Actions.uploadSteps Actions.Env.Staging apps
-      # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
-      # [ Actions.linkPreviewsStep apps app-servers previewUrl ]
+      --# Actions.cacheSteps apps-to-cache
+      --# Actions.buildSteps apps
+      --# Actions.buildServerSteps app-servers
+      --# Actions.uploadSteps Actions.Env.Staging apps
+      --# Actions.deployAppEngineSteps Actions.Env.Staging app-servers
+      --# [ Actions.linkPreviewsStep apps app-servers previewUrl ]
       # Actions.cleanAppEngineSteps Actions.Env.Staging app-servers
 
 in  { name = "previews"
