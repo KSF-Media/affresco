@@ -2,12 +2,12 @@ module MosaicoServer where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, JSX, component, useState, (/\))
 import React.Basic.Hooks as React
+import Routing.PushState (makeInterface, PushStateInterface )
 
 type Props =
   { mainContent :: JSX }
@@ -19,23 +19,24 @@ type State =
 
 app :: Component Props
 app = do
-  articleComponent    <- Article.articleComponent
-  headerComponent     <- Header.headerComponent
+  articleComponent <- Article.articleComponent
+  headerComponent  <- Header.headerComponent
+  emptyRouter <- makeInterface
   component "Mosaico" \props -> React.do
     let initialState =
           { articleComponent
           , headerComponent
           }
     state /\ _setState <- useState initialState
-    pure $ render state props
+    pure $ render emptyRouter state props
 
 
-render :: State -> Props -> JSX
-render state props = DOM.div
+render :: PushStateInterface -> State -> Props -> JSX
+render router state props = DOM.div
        { className: "mosaico grid"
        , children:
            [ Header.topLine
-           , state.headerComponent { router: Nothing }
+           , state.headerComponent { router }
            , Header.mainSeparator
            , props.mainContent
            , DOM.footer
