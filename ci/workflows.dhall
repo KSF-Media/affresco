@@ -311,7 +311,7 @@ let mkCleanAppEngineStep =
       \(env : Env) ->
       \(app : AppServer.Type) ->
         Step::{
-        , name = Some "Keep only 10 latest versions of: ${app.name}"
+        , name = Some "Keep only 10 latest versions of ${app.name}"
         , run = Some
             ''
               versions=$(gcloud app versions list \

@@ -42,7 +42,7 @@ jobs:
         run: |2
             make
             git diff --exit-code
-      - name: Keep only 10 latest versions of: App article server
+      - name: Keep only 10 latest versions of App article server
         run: |2
             versions=$(gcloud app versions list \
               --service app-article-server \
@@ -53,7 +53,7 @@ jobs:
               gcloud app versions delete '$version' \
                 --service app-article-server \
             done
-      - name: Keep only 10 latest versions of: Mosaico server
+      - name: Keep only 10 latest versions of Mosaico server
         run: |2
             versions=$(gcloud app versions list \
               --service mosaico-server \
