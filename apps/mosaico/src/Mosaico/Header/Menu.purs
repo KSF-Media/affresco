@@ -2,10 +2,15 @@ module Mosaico.Header.Menu where
 
 import Prelude
 
-import Data.Array (concat, cons, foldl, length, singleton, toUnfoldable)
-import Data.String.Common (trim)
+import Data.Array (concat, cons, foldl, intersperse, length, singleton, snoc, toUnfoldable)
+import Data.Foldable
+import Data.Foldable as Foldable
 import Data.List ((:))
 import Data.List as List
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Monoid
+import Data.Semigroup
+import Data.String.Common (trim)
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
@@ -21,15 +26,28 @@ type Props =
   { visible :: Boolean
   }
 
-type MenuLayout = Array MenuLayoutElement
-
-data MenuLayoutElement = SectionElement Section
-                       | SeparatorElement String
+data MenuLayoutElement = Section Section
+                       | Separator (Maybe String)
                        -- ^ The String-typed parameter is the BEM modifier to apply to the separator
+
+data MenuLayout a = Element a
+                  | Block (Array (MenuLayout a))
+
+instance semigroupMenuLayout :: (Semigroup a) => Semigroup (MenuLayout a) where
+  append (Block as) (Block bs) = Block $ as <> bs
+  append e (Block es) = Block $ e `cons` es
+  append (Block es) e  = Block $  es `snoc` e
+  append a b = Block [ a, b ]
+
+instance foldableMenuLayout :: Foldable MenuLayout where
+  foldMap f (Block as) = foldMap (foldMap f) as
+  foldMap f (Element a) = f a
+  foldr f = foldrDefault f
+  foldl f = foldlDefault f
 
 type Section =
   { title :: String
-  , modifier :: String
+  , modifier :: Maybe String
   , url :: String
   , subsections :: Array Subsection
   }
@@ -56,7 +74,7 @@ render { props: { visible } } = DOM.div
         " " <> visibleMenuClass
       else
         mempty
-  , children: [ renderMenuLayout
+  , children: [ menuContent
               , DOM.div
                   { className: menuFooterClass
                   , children:
@@ -71,16 +89,38 @@ render { props: { visible } } = DOM.div
               ]
   }
   where
-    menuLayout :: MenuLayout
-    menuLayout =  concat $ (((<$>) SectionElement) <$> [ topSections, middleSections, bottomSections ]) `merge` ((singleton <<< SeparatorElement) <$> [ "--top", "--center", "--bottom" ])
+    menuLayout :: MenuLayout MenuLayoutElement
+    menuLayout =  Block <<< (intersperse separator) $ [ topSections, stardsidan, nyheter, opinion, kultur, sport, bottomSections ]
+    separator = Element $ Separator Nothing
 
-    sections = [ { title: "STARTSIDAN"
-                 , modifier: "--startsidan"
+    topSections :: MenuLayout MenuLayoutElement
+    topSections = Block $ Element <<< Section <$>
+                  [ { title: "SÖK"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "E-TIDNINGEN"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "KUNDSERVICE"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  ]
+
+    stardsidan = Element <<< Section $
+                 { title: "STARTSIDAN"
+                 , modifier: Just "--startsidan"
                  , url: ""
                  , subsections: []
                  }
-               , { title: "NYHETER"
-                   , modifier: "--section1"
+    nyheter      = Element <<< Section $
+                   { title: "NYHETER"
+                   , modifier: Just "--section1"
                    , url: ""
                    , subsections:
                        [ { title: "Finland"
@@ -100,8 +140,9 @@ render { props: { visible } } = DOM.div
                          }
                        ]
                  }
-               , { title: "OPINION"
-                 , modifier: "--section2"
+    opinion    = Element <<< Section $
+                 { title: "OPINION"
+                 , modifier: Just "--section2"
                  , url: ""
                  , subsections:
                      [ { title: "Ledare"
@@ -118,165 +159,96 @@ render { props: { visible } } = DOM.div
                        }
                      ]
                  }
-               , { title: "KULTUR"
-                 , modifier: "--section2"
+    kultur    =  Element <<< Section $
+                 { title: "KULTUR"
+                 , modifier: Just "--section2"
                  , url: ""
                  , subsections:
-                     [ { title: "Lorem"
+                     [ { title: "Litteratur"
                        , url: ""
                        }
-                     , { title: "Pellentesque"
+                     , { title: "Musik"
                        , url: ""
                        }
-                     , { title: "Sollicitudin"
+                     , { title: "Scen"
                        , url: ""
                        }
-                     , { title: "Ultrices"
+                     , { title: "Konst"
                        , url: ""
                        }
-                     , { title: "Consectetur"
+                     , { title: "Film och TV"
                        , url: ""
                        }
                      ]
                  }
-               ]
-
-    middleSections = [ 
+    sport     =  Element <<< Section $
+                 { title: "SPORT"
+                 , modifier: Just "--section3"
+                 , url: ""
+                 , subsections:
+                     [ { title: "Sport"
+                       , url: ""
+                       }
+                     , { title: "Handboll"
+                       , url: ""
+                       }
+                     , { title: "Ishockey"
+                       , url: ""
+                       }
+                     , { title: "Fotboll"
+                       , url: ""
+                       }
+                     , { title: "Motorsport"
+                       , url: ""
+                       }
+                     , { title: "Friidrott"
+                       , url: ""
+                       }
+                     , { title: "Skidsport"
+                       , url: ""
+                       }
                      ]
-    
-                     
-                     , { title: "SECTION 3"
-                       , modifier: "--section3"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Mollis"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           ]
-                         }
-                     , { title: "SECTION 4"
-                       , modifier: "--section4"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Elit"
-                             , url: ""
-                             }
-                           ]
-                         }
-                     ]
+                 }
 
-    bottomSections = [ { title: "KONTAKT"
-                       , modifier: "--kontakt"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Aliquet"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           ]
-                        }
-                     , { title: "ANNONSERA"
-                       , modifier: "--annonsera2"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           ]
-                        }
-                     , { title: "KUNDSERVICE"
-                       , modifier: "--kundservice2"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Sollicitudin"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           ]
-                        }
-                     , { title: "OTHER"
-                       , modifier: "--other"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Sollicitudin"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           ]
-                        }
-                     ]
+    bottomSections :: MenuLayout MenuLayoutElement
+    bottomSections = Block $ Element <<< Section <$>
+                  [ { title: "KONTAKTA OSS"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "ANNONSERA"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "JOBBA HOS OSS"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  ]
 
-    renderMenuLayout :: JSX
-    renderMenuLayout = DOM.div
+    menuContent :: JSX
+    menuContent = DOM.div
       { className: menuContentClass
-      , children: renderMenuLayoutElement <$> menuLayout
+      , children: [ Foldable.foldMap renderMenuLayoutElement menuLayout ]
       }
       where
         renderMenuLayoutElement :: MenuLayoutElement -> JSX
-        renderMenuLayoutElement (SectionElement section) = renderSection section
-        renderMenuLayoutElement (SeparatorElement modifier) = renderSeparator modifier
+        renderMenuLayoutElement (Section section) = renderSection section
+        renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
         renderSection { modifier, subsections, title } = DOM.div
-          { className: unwords [ sectionClass, sectionClass <> modifier ]
+          { className: unwords [ sectionClass, sectionClass <> fromMaybe mempty modifier ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
                               DOM.div
                                 { className: sectionTitleClass
                                 , children: [ DOM.text title ]
-                                } `cons` 
+                                } `cons`
                                   if length subsections > 0 then
                                     [ DOM.div
                                         { className: sectionExpanderClass
@@ -286,7 +258,7 @@ render { props: { visible } } = DOM.div
                                   else
                                     []
                           }
-                      , DOM.div 
+                      , DOM.div
                           { className: subsectionsClass
                           , children: renderSubsection <$> subsections
                           }
@@ -299,8 +271,8 @@ render { props: { visible } } = DOM.div
           , children: [ DOM.text title ]
           }
 
-        renderSeparator :: String -> JSX
-        renderSeparator modifier = DOM.hr { className: unwords [ separatorClass, separatorClass <> modifier ] }
+        renderSeparator :: Maybe String -> JSX
+        renderSeparator modifier = DOM.hr { className: unwords [ separatorClass, separatorClass <> (fromMaybe mempty modifier) ] }
 
     logo :: String -> String ->  String -> JSX
     logo modifierClass imageModifierClass caption = DOM.div
