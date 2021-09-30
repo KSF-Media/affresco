@@ -13,7 +13,7 @@ import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (write)
 
-type Props = { router :: Maybe PushStateInterface }
+type Props = { router :: PushStateInterface }
 
 type Self =
   { state :: State
@@ -71,7 +71,7 @@ render { state: { menuVisible, menuComponent }, setState, props } =
         , menuComponent { visible: menuVisible }
         , DOM.div
             { className: block <> "__logo"
-            , onClick: handler_ $ maybe (pure unit) (\r -> r.pushState (write {}) $ "/") props.router
+            , onClick: handler_ $ props.router.pushState (write {}) "/"
             }
         , DOM.div
             { className: accountClass <>

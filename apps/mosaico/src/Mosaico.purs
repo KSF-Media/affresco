@@ -174,7 +174,7 @@ render setState state router =
        { className: "mosaico grid"
        , children:
            [ Header.topLine
-           , state.headerComponent { router: Just router }
+           , state.headerComponent { router }
            , Header.mainSeparator
            , case state.route of
                  ArticlePage articleId
@@ -315,4 +315,3 @@ renderMostreadList state setState router =
                       ]
                   }
             ]
-
