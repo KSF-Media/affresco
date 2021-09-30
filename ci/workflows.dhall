@@ -283,6 +283,41 @@ let linkPreviewsStep =
             }
         }
 
+let mkCleanAppEngineStep =
+      \(env : Env) ->
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Cleanup AppEngine versions"
+        , uses = Some "google-github-actions/setup-gcloud@master"
+        , `with` = toMap
+            { project_id =
+                merge
+                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
+                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+                  }
+                  env
+            , service_account_key =
+                merge
+                  { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
+                  , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+                  }
+                  env
+            }
+        , run = Some
+            ''
+              versions=\$(gcloud app versions list \
+                --service ${app.id} \
+                --sort-by '~VERSION.ID' \
+                --filter 'traffic_split = 0.0' \
+                --format 'value(VERSION.ID)' | sed 1,5d)
+              for version in $versions; do
+                gcloud app versions delete '\$version' \
+                  --service ${app.id} \
+              done
+
+            ''
+        }
+
 let refreshCDNSteps =
       \(cdnName : Text) ->
         [ Step::{
@@ -322,6 +357,10 @@ let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 let buildServerSteps =
       Prelude.List.map AppServer.Type Step.Type mkBuildServerStep
 
+let cleanAppEngineSteps =
+      \(env : Env) ->
+        Prelude.List.map AppServer.Type Step.Type (mkCleanAppEngineStep env)
+
 let cacheSteps = Prelude.List.map App.Type Step.Type mkCacheAppStep
 
 let hasLockfile
@@ -345,4 +384,5 @@ in  { Step
     , deployDispatchYamlStep
     , cacheSteps
     , hasLockfile
+    , cleanAppEngineSteps
     }

@@ -25,6 +25,7 @@ let steps =
       # Actions.uploadSteps Actions.Env.Staging apps
       # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
       # [ Actions.linkPreviewsStep apps app-servers previewUrl ]
+      # Actions.cleanAppEngineSteps Actions.Env.Staging app-servers
 
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]
