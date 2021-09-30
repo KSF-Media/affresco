@@ -64,48 +64,71 @@ let Step =
       }
 
 let setupSteps =
-      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
-      , Step::{
-        , name = Some "Setup node and yarn"
-        , uses = Some "actions/setup-node@v1"
-        , `with` = toMap { node-version = "12" }
-        }
-      , Step::{
-        , name = Some "Setup ruby"
-        , uses = Some "actions/setup-ruby@v1"
-        , `with` = toMap { ruby-version = "2.6" }
-        }
-      , Step::{
-        , uses = Some "cachix/install-nix-action@v12"
-        , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
-        }
-      , Step::{
-        , name = Some "Setup global build cache"
-        , uses = Some "actions/cache@v2"
-        , `with` = toMap
-            { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
-            , path =
-                ''
-                  **/node_modules
-                  **/.yarn-cache
-                  **/.cache
-                  ~/.npm
-                  ~/.cache/spago
-                  apps/elections/dist
-                  !build
-                  !build/*
-                  !build/**
-                ''
-            }
-        }
-      , Step::{
-        , run = Some
-            ''
-              yarn install --pure-lockfile --cache-folder=.yarn-cache
-              mkdir -p build
-            ''
-        }
-      ]
+      \(env : Env) ->
+        [ Step::{
+          , name = Some "Checkout repo"
+          , uses = Some "actions/checkout@v2"
+          }
+        , Step::{
+          , name = Some "Setup node and yarn"
+          , uses = Some "actions/setup-node@v1"
+          , `with` = toMap { node-version = "12" }
+          }
+        , Step::{
+          , name = Some "Setup ruby"
+          , uses = Some "actions/setup-ruby@v1"
+          , `with` = toMap { ruby-version = "2.6" }
+          }
+        , Step::{
+          , uses = Some "cachix/install-nix-action@v12"
+          , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
+          }
+        , Step::{
+          , name = Some "Setup Cloud SDK"
+          , uses = Some "google-github-actions/setup-gcloud@master"
+          , `with` = toMap
+              { project_id =
+                  merge
+                    { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
+                    , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+                    }
+                    env
+              , service_account_key =
+                  merge
+                    { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
+                    , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+                    }
+                    env
+              , export_default_credentials = "true"
+              }
+          }
+        , Step::{
+          , name = Some "Setup global build cache"
+          , uses = Some "actions/cache@v2"
+          , `with` = toMap
+              { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
+              , path =
+                  ''
+                    **/node_modules
+                    **/.yarn-cache
+                    **/.cache
+                    ~/.npm
+                    ~/.cache/spago
+                    apps/elections/dist
+                    !build
+                    !build/*
+                    !build/**
+                  ''
+              }
+          }
+        , Step::{
+          , run = Some
+              ''
+                yarn install --pure-lockfile --cache-folder=.yarn-cache
+                mkdir -p build
+              ''
+          }
+        ]
 
 let mkCacheAppStep =
       \(app : App.Type) ->
@@ -289,21 +312,6 @@ let mkCleanAppEngineStep =
       \(app : AppServer.Type) ->
         Step::{
         , name = Some "Cleanup AppEngine versions"
-        , uses = Some "google-github-actions/setup-gcloud@master"
-        , `with` = toMap
-            { project_id =
-                merge
-                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                  }
-                  env
-            , service_account_key =
-                merge
-                  { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-                  }
-                  env
-            }
         , run = Some
             ''
               versions=\$(gcloud app versions list \

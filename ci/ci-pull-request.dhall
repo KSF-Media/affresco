@@ -17,7 +17,7 @@ let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
 let steps =
-        Actions.setupSteps
+        Actions.setupSteps Actions.Env.Staging
       # [ Actions.checkCIStep ]
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
