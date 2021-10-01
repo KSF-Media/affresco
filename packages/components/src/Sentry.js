@@ -1,7 +1,12 @@
 exports.initSentry_ = function (sentryDsn) {
   var Sentry = require("@sentry/browser");
   if (sentryDsn && sentryDsn.length > 1) {
-    Sentry.init({ dsn: sentryDsn });
+    Sentry.init({ dsn: sentryDsn,
+                  beforeSend(event) {
+                    var debugBeforeSend=1;
+                    return event;
+		  }
+		});
     return Sentry;
   } else {
     console.warn("Could not setup Sentry, dsn is faulty. Look into your env variables.");
