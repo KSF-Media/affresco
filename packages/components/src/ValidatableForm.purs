@@ -32,6 +32,7 @@ type CommonContactInformation =
   , city          :: Maybe String
   , zipCode       :: Maybe String
   , countryCode   :: Maybe String
+  , phone         :: Maybe String
   }
 
 data CommonContactInformationFormField
@@ -41,6 +42,7 @@ data CommonContactInformationFormField
   | City
   | Zip
   | Country
+  | Phone
 
 derive instance eqCommonContactInformationFormField :: Eq CommonContactInformationFormField
 instance validatableFieldRegistrationFormField :: ValidatableField CommonContactInformationFormField where
@@ -51,6 +53,7 @@ instance validatableFieldRegistrationFormField :: ValidatableField CommonContact
     City          -> validateEmptyField City          "Stad krävs."      value
     Country       -> validateEmptyField Country       "Land krävs."      value
     Zip           -> validateZipCode field value
+    Phone         -> validatePhone field value
 
 emptyCommonContactInformation :: CommonContactInformation
 emptyCommonContactInformation =
@@ -60,6 +63,7 @@ emptyCommonContactInformation =
   , city: Nothing
   , zipCode: Nothing
   , countryCode: Nothing
+  , phone: Nothing
   }
 
 validateForm :: forall a b. ValidatedForm a b -> (Either (NonEmptyList (ValidationError a)) b -> Effect Unit) -> Effect Unit
