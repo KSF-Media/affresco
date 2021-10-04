@@ -4,7 +4,7 @@ if [[ $# -ne 1 ]]; then
     echo "Illegal number of parameters" >&2
     exit 2
 fi
-APP_ID = $1
+APP_ID=$1
 
 versions=$(gcloud app versions list \
                   --service $APP_ID \
