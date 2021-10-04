@@ -314,7 +314,7 @@ let mkCleanAppEngineStep =
         , name = Some "Keep only 10 latest versions of ${app.name}"
         , run = Some
             ''
-            ./ci/ae-cleanup.sh
+            ./ci/ae-cleanup.sh ${app.id}
             ''
         }
 

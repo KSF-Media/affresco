@@ -44,10 +44,10 @@ jobs:
             git diff --exit-code
       - name: Keep only 10 latest versions of App article server
         run: |
-          ./ci/ae-cleanup.sh
+          ./ci/ae-cleanup.sh app-article-server
       - name: Keep only 10 latest versions of Mosaico server
         run: |
-          ./ci/ae-cleanup.sh
+          ./ci/ae-cleanup.sh mosaico-server
 name: previews
 on:
   pull_request:
