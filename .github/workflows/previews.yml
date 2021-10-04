@@ -42,6 +42,183 @@ jobs:
         run: |2
             make
             git diff --exit-code
+      - name: Setup build cache for Mitt Konto
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
+          path: |
+            apps/mitt-konto/.spago
+            apps/mitt-konto/output
+      - name: "Setup build cache for Vetrina (for testing only)"
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
+          path: |
+            apps/vetrina-test/.spago
+            apps/vetrina-test/output
+      - name: Setup build cache for App article
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
+          path: |
+            apps/app-article/dist
+      - name: Setup build cache for Corona banner
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
+          path: |
+            apps/corona-banner/dist
+      - name: Setup build cache for HBL365
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
+          path: |
+            apps/hbl365/.spago
+            apps/hbl365/output
+      - name: Build Scripts
+        run: |2
+            ruby deploy.rb scripts
+            cp -R apps/scripts/dist build/scripts
+      - env:
+          MAINTENANCE_MODE: 'false'
+          PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+        name: Build Mitt Konto
+        run: |2
+            ruby deploy.rb mitt-konto
+            cp -R apps/mitt-konto/dist build/mitt-konto
+      - env:
+          NODE_ENV: development
+          SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
+        name: "Build Vetrina (for testing only)"
+        run: |2
+            ruby deploy.rb vetrina-test
+            cp -R apps/vetrina-test/dist build/vetrina-test
+      - env:
+          ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
+          ELECTION_TYPE: EU
+        name: "Build Elections (EU)"
+        run: |2
+            ruby deploy.rb elections
+            cp -R apps/elections/dist build/elections-eu
+      - env:
+          ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
+          ELECTION_TYPE: PARLIAMENT
+        name: "Build Elections (Parliament)"
+        run: |2
+            ruby deploy.rb elections
+            cp -R apps/elections/dist build/elections
+      - env:
+          HIDE_LOGIN_LINKS: 'true'
+          PRODUCTION_SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
+        name: Build App article
+        run: |2
+            ruby deploy.rb app-article
+            cp -R apps/app-article/dist build/app-article
+      - name: Build Corona banner
+        run: |2
+            ruby deploy.rb corona-banner
+            cp -R apps/corona-banner/dist build/corona-banner
+      - name: Build HBL365
+        run: |2
+            ruby deploy.rb hbl365
+            cp -R apps/hbl365/dist build/hbl365
+      - name: Build Server App article server
+        run: |2
+            ruby deploy.rb app-article-server
+            cp -R apps/app-article-server build/app-article-server
+      - name: Build Server Mosaico server
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico build/mosaico
+      - name: Upload Scripts
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/scripts"
+          parent: 'false'
+          path: build/scripts
+      - name: Upload Mitt Konto
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/mitt-konto"
+          parent: 'false'
+          path: build/mitt-konto
+      - name: "Upload Vetrina (for testing only)"
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/vetrina-test"
+          parent: 'false'
+          path: build/vetrina-test
+      - name: "Upload Elections (EU)"
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/elections-eu"
+          parent: 'false'
+          path: build/elections-eu
+      - name: "Upload Elections (Parliament)"
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/elections"
+          parent: 'false'
+          path: build/elections
+      - name: Upload App article
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/app-article"
+          parent: 'false'
+          path: build/app-article
+      - name: Upload Corona banner
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/corona-banner"
+          parent: 'false'
+          path: build/corona-banner
+      - name: Upload HBL365
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/hbl365"
+          parent: 'false'
+          path: build/hbl365
+      - id: deploy-app-article-server
+        name: Deploy App article server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          promote: 'false'
+          working_directory: build/app-article-server
+      - id: deploy-mosaico-server
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          promote: 'false'
+          working_directory: build/mosaico
+      - env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        name: Post preview links
+        uses: "unsplash/comment-on-pr@master"
+        with:
+          msg: |
+            Deploy previews are ready :sunglasses:
+            - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)
+            - [Mitt Konto](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mitt-konto/index.html)
+            - [Vetrina (for testing only)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-test/index.html)
+            - [Elections (EU)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections-eu/index.html)
+            - [Elections (Parliament)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections/index.html)
+            - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
+            - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
+            - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
+            - [App article server](${{ steps.deploy-app-article-server.outputs.url }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
+            - [Mosaico server](${{ steps.deploy-mosaico-server.outputs.url }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
       - name: Keep only 10 latest versions of App article server
         run: |
           ./ci/ae-cleanup.sh app-article-server
