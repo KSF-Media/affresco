@@ -1,7 +1,23 @@
+function vetrinaFilter(event) {
+  if (!event.request) {
+    return true;
+  }
+  const url = event.request.url;
+  if (url.match(/^https:\/\/www\.(hbl|vastranyland|ostnyland)\.fi\//) &&
+      (!event.tags || event.tags.appName != "vetrina")) {
+    return false;
+  }
+  return true;
+}
+
 exports.initSentry_ = function (sentryDsn) {
   var Sentry = require("@sentry/browser");
   if (sentryDsn && sentryDsn.length > 1) {
-    Sentry.init({ dsn: sentryDsn });
+    Sentry.init({ dsn: sentryDsn,
+                  beforeSend(event) {
+                    return vetrinaFilter(event) ? event : null;
+		  }
+		});
     return Sentry;
   } else {
     console.warn("Could not setup Sentry, dsn is faulty. Look into your env variables.");
