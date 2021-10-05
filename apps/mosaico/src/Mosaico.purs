@@ -237,7 +237,7 @@ articleList state setState router =
               , children:
                   [ DOM.div
                     { className: "list-article-image"
-                    , children:[ DOM.img { src: maybe mempty _.url  a.listImage } ]
+                    , children:[ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url  a.listImage } ]
                     }
                   , DOM.div
                     { className: "list-article-liftup"
