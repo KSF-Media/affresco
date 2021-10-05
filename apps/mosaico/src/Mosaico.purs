@@ -6,7 +6,7 @@ import Data.Argonaut.Core (Json)
 import Data.Array (null, head)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (oneOf)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
@@ -237,7 +237,7 @@ articleList state setState router =
               , children:
                   [ DOM.div
                     { className: "list-article-image"
-                    , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
+                    , children:[ DOM.img { src: maybe mempty _.url  a.listImage } ]
                     }
                   , DOM.div
                     { className: "list-article-liftup"
