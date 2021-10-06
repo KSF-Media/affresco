@@ -1,15 +1,15 @@
 module Mosaico.Header.Menu where
 
+import Data.Foldable
+import Data.Monoid
+import Data.Semigroup
 import Prelude
 
 import Data.Array (concat, cons, foldl, intersperse, length, singleton, snoc, toUnfoldable)
-import Data.Foldable
 import Data.Foldable as Foldable
 import Data.List ((:))
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Monoid
-import Data.Semigroup
 import Data.String.Common (trim)
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\))
@@ -30,20 +30,9 @@ data MenuLayoutElement = Section Section
                        | Separator (Maybe String)
                        -- ^ The String-typed parameter is the BEM modifier to apply to the separator
 
-data MenuLayout a = Element a
-                  | Block (Array (MenuLayout a))
+type MenuBlock = Array MenuLayoutElement
 
-instance semigroupMenuLayout :: (Semigroup a) => Semigroup (MenuLayout a) where
-  append (Block as) (Block bs) = Block $ as <> bs
-  append e (Block es) = Block $ e `cons` es
-  append (Block es) e  = Block $  es `snoc` e
-  append a b = Block [ a, b ]
-
-instance foldableMenuLayout :: Foldable MenuLayout where
-  foldMap f (Block as) = foldMap (foldMap f) as
-  foldMap f (Element a) = f a
-  foldr f = foldrDefault f
-  foldl f = foldlDefault f
+type MenuLayout = Array MenuBlock
 
 type Section =
   { title :: String
@@ -89,12 +78,27 @@ render { props: { visible } } = DOM.div
               ]
   }
   where
-    menuLayout :: MenuLayout MenuLayoutElement
-    menuLayout =  Block <<< (intersperse separator) $ [ topSections, stardsidan, nyheter, opinion, kultur, sport, bottomSections ]
-    separator = Element $ Separator Nothing
 
-    topSections :: MenuLayout MenuLayoutElement
-    topSections = Block $ Element <<< Section <$>
+    menuLayout :: MenuLayout
+    menuLayout = [ upperBlock, separatorBlock, middleBlock, separatorBlock, bottomBlock ]
+
+    upperBlock :: MenuBlock
+    upperBlock = topSections
+
+    middleBlock :: MenuBlock
+    middleBlock = (intersperse mobileOnlySeparator) $ [ stardsidan, nyheter, opinion, kultur, sport ]
+
+    bottomBlock :: MenuBlock
+    bottomBlock = bottomSections
+
+    separatorBlock :: MenuBlock
+    separatorBlock = [ separator ]
+
+    separator = Separator Nothing
+    mobileOnlySeparator = Separator $ Just mobileOnlySeparatorClass
+
+    topSections :: MenuBlock
+    topSections = Section <$>
                   [ { title: "SÖK"
                     , modifier: Nothing
                     , url: ""
@@ -112,13 +116,13 @@ render { props: { visible } } = DOM.div
                     }
                   ]
 
-    stardsidan = Element <<< Section $
+    stardsidan = Section $
                  { title: "STARTSIDAN"
                  , modifier: Just "--startsidan"
                  , url: ""
                  , subsections: []
                  }
-    nyheter      = Element <<< Section $
+    nyheter      = Section $
                    { title: "NYHETER"
                    , modifier: Just "--section1"
                    , url: ""
@@ -140,7 +144,7 @@ render { props: { visible } } = DOM.div
                          }
                        ]
                  }
-    opinion    = Element <<< Section $
+    opinion    = Section $
                  { title: "OPINION"
                  , modifier: Just "--section2"
                  , url: ""
@@ -159,7 +163,7 @@ render { props: { visible } } = DOM.div
                        }
                      ]
                  }
-    kultur    =  Element <<< Section $
+    kultur    =  Section $
                  { title: "KULTUR"
                  , modifier: Just "--section2"
                  , url: ""
@@ -181,7 +185,7 @@ render { props: { visible } } = DOM.div
                        }
                      ]
                  }
-    sport     =  Element <<< Section $
+    sport     =  Section $
                  { title: "SPORT"
                  , modifier: Just "--section3"
                  , url: ""
@@ -210,8 +214,8 @@ render { props: { visible } } = DOM.div
                      ]
                  }
 
-    bottomSections :: MenuLayout MenuLayoutElement
-    bottomSections = Block $ Element <<< Section <$>
+    bottomSections :: MenuBlock
+    bottomSections = Section <$>
                   [ { title: "KONTAKTA OSS"
                     , modifier: Nothing
                     , url: ""
@@ -232,9 +236,18 @@ render { props: { visible } } = DOM.div
     menuContent :: JSX
     menuContent = DOM.div
       { className: menuContentClass
-      , children: [ Foldable.foldMap renderMenuLayoutElement menuLayout ]
+      , children: [ renderMenuLayout menuLayout ]
       }
       where
+        renderMenuLayout :: MenuLayout -> JSX
+        renderMenuLayout layout = foldMap renderMenuBlock layout
+
+        renderMenuBlock :: MenuBlock -> JSX
+        renderMenuBlock block = DOM.div
+          { className: blockClass
+          , children: [ foldMap renderMenuLayoutElement block ]
+          }
+
         renderMenuLayoutElement :: MenuLayoutElement -> JSX
         renderMenuLayoutElement (Section section) = renderSection section
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
@@ -245,18 +258,11 @@ render { props: { visible } } = DOM.div
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
-                              DOM.div
-                                { className: sectionTitleClass
-                                , children: [ DOM.text title ]
-                                } `cons`
-                                  if length subsections > 0 then
-                                    [ DOM.div
-                                        { className: sectionExpanderClass
-                                        , children: [ ]
-                                        }
-                                    ]
-                                  else
-                                    []
+                              [ DOM.div
+                                 { className: sectionTitleClass
+                                 , children: [ DOM.text title ]
+                                 }
+                              ]
                           }
                       , DOM.div
                           { className: subsectionsClass
@@ -272,7 +278,7 @@ render { props: { visible } } = DOM.div
           }
 
         renderSeparator :: Maybe String -> JSX
-        renderSeparator modifier = DOM.hr { className: unwords [ separatorClass, separatorClass <> (fromMaybe mempty modifier) ] }
+        renderSeparator modifierClass = DOM.hr { className: unwords [ separatorClass, fromMaybe mempty modifierClass ] }
 
     logo :: String -> String ->  String -> JSX
     logo modifierClass imageModifierClass caption = DOM.div
@@ -301,6 +307,9 @@ render { props: { visible } } = DOM.div
     menuFooterElement = "__menu-footer"
     menuFooterClass = headerBlock <> menuFooterElement
 
+    blockElement = "__block"
+    blockClass = headerBlock <> blockElement
+
     sectionElement = "__section"
     sectionClass = headerBlock <> sectionElement
 
@@ -322,6 +331,9 @@ render { props: { visible } } = DOM.div
     separatorElement = "__separator"
     separatorClass = headerBlock <> separatorElement
 
+    mobileOnlyModifier = "--mobile-only"
+    mobileOnlySeparatorClass = separatorClass <> mobileOnlyModifier
+
     footerCaptionElement = "__footer-caption"
     footerCaptionClass = headerBlock <> footerCaptionElement
 
@@ -339,15 +351,6 @@ render { props: { visible } } = DOM.div
 
     logoCaptionElement = "__footer-logo-caption"
     logoCaptionClass = headerBlock <> logoCaptionElement
-
-merge :: forall a. Array a -> Array a -> Array a
-merge a b =
-  List.toUnfoldable <<< uncurry mergeList $ toUnfoldable a /\ toUnfoldable b
-  where
-    mergeList :: forall b. List.List b -> List.List b -> List.List b
-    mergeList xs List.Nil = xs
-    mergeList List.Nil ys = ys
-    mergeList (List.Cons x xs) (List.Cons y ys) = x : y : mergeList xs ys
 
 unwords :: Array String -> String
 unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty
