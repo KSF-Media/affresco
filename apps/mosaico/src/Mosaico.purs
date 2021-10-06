@@ -171,9 +171,7 @@ render setState state router =
         }
     _ -> mempty
   <> DOM.div
-       { className: case state.route of
-          ArticlePage _ -> "grid mosaico-article"
-          _             -> "grid mosaico-frontpage"  
+       { className: "mosaico grid"
        , children:
            [ Header.topLine
            , state.headerComponent { router }

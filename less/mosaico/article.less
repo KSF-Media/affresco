@@ -49,6 +49,8 @@
   }
   p {
     font: 300 1rem/1.5rem "Roboto", sans-serif;
+    margin-bottom: 1rem;
+    color: @dark-text;
   }
   h4 {
     font: 600 1rem/1.5rem "Roboto", sans-serif;
@@ -88,10 +90,15 @@
 }
 
 .mosaico--article-times-and-author {
-  display: grid;
-  grid-area: articleauthors;
-  grid-template-columns: auto auto;
-  grid-template-rows: auto auto;
+  // FIXME: Decide between grid and flex, after needed DOM tree structure changes
+  // display: grid;
+  // grid-area: articleauthors;
+  // grid-template-columns: auto auto auto;
+  // grid-template-rows: auto auto;
+  // grid-template-areas: 
+  //   "authorimage authorname  ."
+  //   "authorimage publishdate premium";
+  display: flex;
   border-style: solid;
   border-bottom-width: 1px;
   border-top-width: 1px;
@@ -105,7 +112,12 @@
   font-family: "Roboto";
 }
 
+.mosaico--author-image {
+  grid-area: authorimage;
+}
+
 .mosaico--article-authors {
+  grid-area: authorname;
   display: flex;
   flex-direction: column;
   font-size: 14px;
@@ -113,11 +125,12 @@
     margin-bottom: 0.5em;
   }
   .mosaico--article--premium {
-    display: table;
+    grid-area: premium;
   }
 }
 
 .mosaico--article-timestamps {
   font-size: 12px;
   text-align: right;
+  display: flex;
 }
