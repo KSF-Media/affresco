@@ -36,13 +36,6 @@
 
     row-gap: 1rem;
 
-    @media (min-width: @breakpoint-3col) {
-      display: grid;
-
-      grid-template-rows: repeat(6, auto);
-      grid-template-columns: 0.39fr repeat(5, 1fr) 0.39fr;
-    }
-
     margin-top: 50px;
   }
 
@@ -90,41 +83,6 @@
       flex-direction: column;
     }
 
-  }
-
-  &__section-header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  &__section-title {
-    font: 600 13px "Roboto", sans-serif;
-  }
-
-  &__section-expander {
-
-    margin-top: 1px;
-    width: 10px;
-    height: 10px;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 100%;
-    background-image: url("../images/chevron.svg");
-
-    @media (min-width: @breakpoint-3col) {
-      display: none;
-    }
-  }
-
-  &__subsections {
-    @media (max-width: @breakpoint-3col) {
-      display: none;
-
-      &--visible {
-        display: block;
-      }
-    }
   }
 
   &__subsection {

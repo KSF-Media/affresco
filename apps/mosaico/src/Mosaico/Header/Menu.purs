@@ -6,7 +6,6 @@ import Data.Semigroup
 import Prelude
 
 import Data.Array (concat, cons, foldl, intersperse, length, singleton, snoc, toUnfoldable)
-import Data.Foldable
 import Data.Foldable as Foldable
 import Data.List ((:))
 import Data.List as List
@@ -259,18 +258,11 @@ render { props: { visible } } = DOM.div
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
-                              DOM.div
-                                { className: sectionTitleClass
-                                , children: [ DOM.text title ]
-                                } `cons`
-                                  if length subsections > 0 then
-                                    [ DOM.div
-                                        { className: sectionExpanderClass
-                                        , children: [ ]
-                                        }
-                                    ]
-                                  else
-                                    []
+                              [ DOM.div
+                                 { className: sectionTitleClass
+                                 , children: [ DOM.text title ]
+                                 }
+                              ]
                           }
                       , DOM.div
                           { className: subsectionsClass
