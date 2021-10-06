@@ -6,7 +6,7 @@ import Data.Argonaut.Core (Json)
 import Data.Array (null, head)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (oneOf)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
@@ -176,7 +176,7 @@ render setState state router =
           _             -> "grid mosaico-frontpage"  
        , children:
            [ Header.topLine
-           , state.headerComponent { router: Just router }
+           , state.headerComponent { router }
            , Header.mainSeparator
            , case state.route of
                  ArticlePage articleId
@@ -242,7 +242,7 @@ articleList state setState router =
               , children:
                   [ DOM.div
                     { className: "list-article-image"
-                    , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
+                    , children:[ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url  a.listImage } ]
                     }
                   , DOM.div
                     { className: "list-article-liftup"
@@ -320,4 +320,3 @@ renderMostreadList state setState router =
                       ]
                   }
             ]
-

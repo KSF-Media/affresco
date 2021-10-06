@@ -15,7 +15,6 @@ You can edit this file as you like.
   , "control"
   , "effect"
   , "either"
-  , "exceptions"
   , "foldable-traversable"
   , "lists"
   , "maybe"
