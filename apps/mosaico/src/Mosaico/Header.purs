@@ -3,10 +3,7 @@ module Mosaico.Header where
 import Prelude
 
 import Data.Either (Either(..))
-<<<<<<< HEAD
-=======
 import Data.Maybe (Maybe, maybe)
->>>>>>> d0613f2a (Menu button redirect to previous page on close)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
