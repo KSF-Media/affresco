@@ -3,7 +3,6 @@ module Mosaico.Header where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe, maybe)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
@@ -43,7 +42,7 @@ headerComponent = do
     pure $ render { state, setState, props }
 
 render :: Self -> JSX
-render { state: { menuVisible, menuComponent }, setState, props } =
+render { state: { menuVisible, menuComponent }, props } =
   DOM.header
     { className: block
     , children:
@@ -120,7 +119,7 @@ render { state: { menuVisible, menuComponent }, setState, props } =
                                               mempty
                                           } ]
                           , onClick: handler_ $
-                              maybe (pure unit) (\r -> do
+                              (\r -> do
                                 locationState <- r.locationState
                                 case match routes locationState.pathname of
                                   Right MenuPage -> do
