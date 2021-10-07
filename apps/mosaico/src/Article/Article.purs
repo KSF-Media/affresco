@@ -312,4 +312,12 @@ render { props, state, setState } =
                     }
                 ]
             }
-        other -> DOM.p_ [ DOM.text $ show other ]
+        Footnote footnote -> DOM.p
+            { className: "footnote"
+            , children: [ DOM.text footnote ]
+            }
+        Quote quote -> DOM.q_ [ DOM.text quote ]
+        Question question -> DOM.p
+            { className: "question"
+            , children: [ DOM.text question ]
+            }
