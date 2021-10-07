@@ -8,7 +8,7 @@
     "cheerio": "^1.0.0-rc.10",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#40058b09b6d969390daaad6e58918b04129b1c16",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d8876dc53c39e6c80cdff363a8230deb944c6e73",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",

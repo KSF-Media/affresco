@@ -37,7 +37,7 @@ import KSF.Sentry as Sentry
 import KSF.User (User, UserError(UniqueViolation))
 import KSF.User as User
 import KSF.User.Cusno as Cusno
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validateFinnishZipCode, validateZipCode)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validatePhone, validateFinnishZipCode, validateZipCode)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -59,11 +59,13 @@ type State =
   { name :: Name
   , address :: Address
   , email :: Maybe String
+  , phone :: Maybe String
   , now :: Maybe Date
   , changeDate :: Maybe Date
   , editFields :: Set EditField
   , editName :: AsyncWrapper.Progress JSX
   , editEmail :: AsyncWrapper.Progress JSX
+  , editPhone :: AsyncWrapper.Progress JSX
   , editAddress :: AsyncWrapper.Progress JSX
   }
 
@@ -79,7 +81,7 @@ type Address =
   , city          :: Maybe String
   }
 
-data EditField = EditAddress | EditEmail | EditName
+data EditField = EditAddress | EditEmail | EditName | EditPhone
 derive instance eqEditField :: Eq EditField
 derive instance ordEditField :: Ord EditField
 
@@ -113,6 +115,12 @@ instance validatableFieldEmailFormFields :: ValidatableField EmailFormFields whe
   validateField field value _serverErrors = case field of
     Email -> validateEmailAddress field value
 
+data PhoneFormFields
+  = Phone
+instance validatableFieldPhoneFormFields :: ValidatableField PhoneFormFields where
+  validateField field value _serverErrors = case field of
+    Phone -> validatePhone field value
+
 derive instance eqEmailFormFields :: Eq EmailFormFields
 
 jsComponent :: React.Component Props
@@ -126,12 +134,14 @@ profile = make component
   { initialState:
       { name: { firstName: Nothing, lastName: Nothing }
       , email: Nothing
+      , phone: Nothing
       , address: { zipCode: Nothing, countryCode: Nothing, streetAddress: Nothing, city: Nothing }
       , now: Nothing
       , changeDate: Nothing
       , editFields: Set.empty
       , editName: Ready
       , editEmail: Ready
+      , editPhone: Ready
       , editAddress: Ready
       }
   , render
@@ -150,6 +160,7 @@ didMount self = do
   resetFields self EditEmail
   resetFields self EditAddress
   resetFields self EditName
+  resetFields self EditPhone
 
 render :: Self -> JSX
 render self@{ props: { profile: user } } =
@@ -164,6 +175,7 @@ render self@{ props: { profile: user } } =
               [ DescriptionList.descriptionList { definitions: visiblePendingAddressChanges } ]
           }
     , profileEmail
+    , profilePhone
     , DOM.div
         { id: "profile--display"
         , children:
@@ -216,6 +228,49 @@ render self@{ props: { profile: user } } =
             { definitions:
                 [ { term: "E-postadress:"
                   , description: [ DOM.text user.email ]
+                  }
+                ]
+            }
+
+    profilePhone =
+      AsyncWrapper.asyncWrapper
+        { wrapperState: self.state.editPhone
+        , readyView: profilePhoneReady
+        , editingView: \_ -> profilePhoneEditing
+        , loadingView: profilePhoneLoading
+        , successView: \_ -> profilePhoneReady
+        , errorView: editingError self EditPhone
+        }
+      where
+        profilePhoneReady = DOM.div
+          { className: "profile--profile-row"
+          , id: "profile--phone"
+          , children:
+              [ currentPhone
+              , changePhoneButton self
+              ]
+          }
+        profilePhoneEditing = DOM.div_
+          [ DescriptionList.descriptionList
+              { definitions:
+                  [ { term: "Telefonnummer:"
+                    , description: [ editPhone self ]
+                    }
+                  ]
+              }
+          ]
+        profilePhoneLoading spinner = DOM.div
+          { className: "profile--profile-row"
+          , children:
+              [ currentPhone
+              , spinner
+              ]
+          }
+        currentPhone =
+          DescriptionList.descriptionList
+            { definitions:
+                [ { term: "Telefonnummer:"
+                  , description: [ DOM.text $ fromMaybe "-" $ Nullable.toMaybe user.phone ]
                   }
                 ]
             }
@@ -329,6 +384,7 @@ editingError self fieldName errMessage =
                EditAddress -> self.setState _ { editAddress = AsyncWrapper.Ready }
                EditName    -> self.setState _ { editName    = AsyncWrapper.Ready }
                EditEmail   -> self.setState _ { editEmail   = AsyncWrapper.Ready }
+               EditPhone   -> self.setState _ { editPhone   = AsyncWrapper.Ready }
              }
          ]
      }
@@ -502,6 +558,53 @@ editEmail self =
                 Tracking.changeEmail self.props.profile.cusno "error: unexpected error when updating email"
     updateEmail _ = pure unit
 
+editPhone :: Self -> JSX
+editPhone self =
+  DOM.form
+    { className: "profile--edit-phone"
+    , children:
+        [ InputField.inputField
+            { type_: InputField.Text
+            , name: "phone"
+            , placeholder: "Telefonnummer"
+            , value: self.state.phone
+            , onChange: \newPhone -> self.setState _ { phone = newPhone }
+            , label: Just "Telefonnummer"
+            , validationError: inputFieldErrorMessage $ validateField Phone self.state.phone []
+            }
+        , submitButton
+        , DOM.div { className: "profile--submit-buttons", children: [ iconClose self EditPhone ] }
+        ]
+    , onSubmit: Events.handler preventDefault $ \_ -> submitNewPhone $ validatePhoneForm self.state.phone
+    }
+  where
+    submitButton = iconSubmit $ isValid (validatePhoneForm self.state.phone)
+
+    validatePhoneForm :: Maybe String -> ValidatedForm PhoneFormFields (Maybe String)
+    validatePhoneForm form =
+      validateField Phone form []
+
+    submitNewPhone :: ValidatedForm PhoneFormFields (Maybe String) -> Effect Unit
+    submitNewPhone = validation
+      (\_ -> Console.error "Could not submit phone.")
+      updatePhone
+
+    updatePhone :: Maybe String -> Effect Unit
+    updatePhone (Just phone) = do
+      self.setState _ { editPhone = Loading mempty }
+      Aff.launchAff_ do
+        newUser <- User.updateUser self.props.profile.uuid $ User.UpdatePhone { phone }
+        case newUser of
+          Right u -> liftEffect do
+            self.props.onUpdate u
+            self.setState _ { editEmail = Success Nothing }
+            Tracking.changePhone self.props.profile.cusno "success"
+          Left err -> liftEffect do
+            self.props.logger.error $ Error.userError $ show err
+            self.setState _ { editPhone = AsyncWrapper.Error "Det gick inte att updatera telefonnummer. Vänligen tak kontakt med kundservice." }
+            Tracking.changePhone self.props.profile.cusno "error: unexpected error when updating phone"
+    updatePhone _ = pure unit
+
 editName :: Self -> JSX
 editName self =
   DOM.form
@@ -631,6 +734,9 @@ changeEmailButton self = changeAttributeButton self EditEmail
 changeNameButton :: Self -> JSX
 changeNameButton self = changeAttributeButton self EditName
 
+changePhoneButton :: Self -> JSX
+changePhoneButton self = changeAttributeButton self EditPhone
+
 editButton :: String -> Self -> EditField -> JSX
 editButton buttonText self field =
   DOM.div
@@ -657,6 +763,7 @@ switchEditProgress :: Self -> EditField -> AsyncWrapper.Progress JSX -> Effect U
 switchEditProgress self EditName progress = self.setState _ { editName = progress }
 switchEditProgress self EditEmail progress = self.setState _ { editEmail = progress }
 switchEditProgress self EditAddress progress = self.setState _ { editAddress = progress }
+switchEditProgress self EditPhone progress = self.setState _ { editPhone = progress }
 
 isUpcomingPendingChange :: Maybe Date -> User.PendingAddressChange -> Boolean
 isUpcomingPendingChange Nothing _ = true
@@ -687,6 +794,9 @@ resetFields self EditName =
                   }
 resetFields self EditEmail =
   self.setState _ { email = Just self.props.profile.email }
+
+resetFields self EditPhone =
+  self.setState _ { phone = Nullable.toMaybe self.props.profile.phone }
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =
