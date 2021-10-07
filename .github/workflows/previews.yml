@@ -201,6 +201,7 @@ jobs:
         name: Post preview links
         uses: "unsplash/comment-on-pr@master"
         with:
+          check_for_duplicate_msg: 'false'
           msg: |
             Deploy previews are ready :sunglasses:
             - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)

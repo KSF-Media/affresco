@@ -280,6 +280,7 @@ let linkPreviewsStep =
                         renderAELink
                         appServers}
                     ''
+            , check_for_duplicate_msg = "false"
             }
         }
 
