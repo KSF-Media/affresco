@@ -1,8 +1,6 @@
-{ name =
-    "affresco-components"
+{ name = "affresco-apis"
 , dependencies =
     [ "effect"
-    , "affresco-apis"
     , "console"
     , "avar"
     , "aff"
@@ -10,9 +8,6 @@
     , "simple-ajax"
     , "formatters"
     , "datetime"
-    , "react-basic"
-    , "react-basic-classic"
-    , "react-basic-dom"
     , "psci-support"
     , "prelude"
     , "js-date"
@@ -27,8 +22,6 @@
     , "quickcheck"
     , "web-url"
     ]
-, packages =
-    ../../packages.dhall
-, sources =
-    [ "src/**/*.purs" ]
+, packages = ../../packages.dhall
+, sources = [ "src/**/*.purs" ]
 }

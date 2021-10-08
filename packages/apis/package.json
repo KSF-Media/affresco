@@ -1,0 +1,16 @@
+{
+  "name": "@affresco/apis",
+  "version": "0.1.1",
+  "description": "KSF Media API client libraries",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d8876dc53c39e6c80cdff363a8230deb944c6e73",
+
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff"
+  },
+  "scripts": {
+    "build-npm": "spago bundle-module -m OpenApiClient -t build.js && parcel build --no-source-maps -d build"
+  },
+  "files": [ "index.js" ]
+}
