@@ -1,6 +1,7 @@
 { name = "vetrina"
 , dependencies =
   [ "aff"
+  , "affresco-apis"
   , "affresco-components"
   , "affresco-user"
   , "arrays"

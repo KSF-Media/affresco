@@ -3,6 +3,7 @@
   [ "aff"
   , "aff-promise"
   , "affjax"
+  , "affresco-apis"
   , "affresco-components"
   , "argonaut-codecs"
   , "arrays"

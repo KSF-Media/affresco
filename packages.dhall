@@ -65,6 +65,7 @@ let additions =
       , affresco-test = ./packages/test/spago.dhall as Location
       , affresco-user = ./packages/user/spago.dhall as Location
       , affresco-vetrina = ./packages/vetrina/spago.dhall as Location
+      , affresco-apis = ./packages/apis/spago.dhall as Location
       }
 
 in  upstream // additions

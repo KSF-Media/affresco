@@ -5,6 +5,7 @@ You can edit this file as you like.
 { name = "mitt-konto"
 , dependencies =
   [ "aff"
+  , "affresco-apis"
   , "affresco-components"
   , "affresco-user"
   , "argonaut-codecs"
