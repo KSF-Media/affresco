@@ -1,6 +1,5 @@
 const config = {
-  // apiUrl: process.env.LETTERA_URL,
-  apiUrl: "https://lettera.api.ksfmedia.fi/v1",
+  apiUrl: process.env.LETTERA_URL,
 };
 
 export default config;
