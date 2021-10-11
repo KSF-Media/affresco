@@ -34,10 +34,8 @@ app.get("/article/:id", async (req, res) => {
   }
 });
 
-const foo = "https://lettera.api.ksfmedia.fi/v1"; // process.env.LETTERA_URL;
-
 async function renderArticle(articleId, res, authHeaders, queryParams, queryString) {
-  let articleReq = axios.get(foo + "/article/" + articleId, {
+  let articleReq = axios.get(process.env.LETTERA_URL + "/article/" + articleId, {
     headers: authHeaders,
     // Throw errors on any typical HTTP status code except 403, which is the response status of a preview article
     validateStatus: function (httpStatus) {
@@ -46,7 +44,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
   });
   const paper = queryParams.paper || "hbl";
   const darkModeEnabled = queryParams.mode === "dark";
-  const mostReadReq = axios.get(foo + "/mostread?paper=" + paper);
+  const mostReadReq = axios.get(process.env.LETTERA_URL + "/mostread?paper=" + paper);
 
   const requests = [articleReq, mostReadReq];
   // If we have a user id in the headers, let's fetch the user too
