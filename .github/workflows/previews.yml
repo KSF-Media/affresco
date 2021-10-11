@@ -225,7 +225,7 @@ jobs:
           ./ci/ae-cleanup.sh app-article-server
       - name: Keep only 10 latest versions of Mosaico server
         run: |
-          ./ci/ae-cleanup.sh mosaico-server
+          ./ci/ae-cleanup.sh mosaico
 name: previews
 on:
   pull_request:
