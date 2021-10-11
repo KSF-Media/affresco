@@ -83,7 +83,10 @@ class App extends Component {
     };
   }
   componentDidMount() {
-    if(isDarkModeOn())  document.body.classList.add('darkMode');
+    if (isDarkModeOn()) {
+      document.body.classList.add("darkMode");
+      document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
+    }
     if (localStorage.getItem("currentUser") !== null) {
       this.setState({ user: JSON.parse(localStorage.getItem("currentUser")) });
     }
