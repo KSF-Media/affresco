@@ -13,7 +13,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Console as Console
 import Effect.Uncurried (EffectFn2, EffectFn4, runEffectFn2, runEffectFn4)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
@@ -104,7 +103,6 @@ getArticle r@{ params: { uuid } } = do
   mosaico <- liftEffect MosaicoServer.app
   case article of
     Right a -> do
-      liftEffect $Console.log $ "title" <> (_.title $ fromFullArticle a)
       let articleJSX =
             articleComponent
               { brand: "hbl"
