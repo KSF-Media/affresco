@@ -302,7 +302,7 @@ render { props: { visible } } = DOM.div
     visibleMenuClass = menuClass <> visibleModifier
 
     searchElement = "__search"
-    searchClass = headerBlock <> searchElement
+    _searchClass = headerBlock <> searchElement
 
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement

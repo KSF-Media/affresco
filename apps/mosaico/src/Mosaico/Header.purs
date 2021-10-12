@@ -2,7 +2,6 @@ module Mosaico.Header where
 
 import Prelude
 
-import Data.Maybe (Maybe, maybe)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
 import React.Basic (JSX)
