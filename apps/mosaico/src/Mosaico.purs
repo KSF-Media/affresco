@@ -3,7 +3,7 @@ module Mosaico where
 import Prelude
 
 import Data.Argonaut.Core (Json)
-import Data.Array (null, head)
+import Data.Array (head, mapMaybe, null)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (oneOf)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -18,10 +18,11 @@ import Effect.Class.Console as Console
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), notFoundArticle, fromFullArticle, parseArticleWithoutLocalizing)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
+import Mosaico.MostReadList as MostReadList
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
@@ -53,13 +54,21 @@ type State =
   , articleComponent :: Article.Props -> JSX
   , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
+  , mostReadListComponent :: MostReadList.Props -> JSX
   , user :: Maybe User
   }
 
 type SetState = (State -> State) -> Effect Unit
 
-type Props = { article :: Maybe FullArticle }
-type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
+type Props =
+  { article :: Maybe FullArticle
+  , mostReadArticles :: Maybe (Array ArticleStub)
+  }
+type JSProps =
+  { article :: Nullable Json
+  , isPreview :: Nullable Boolean
+  , mostReadArticles :: Nullable (Array Json)
+  }
 
 routes :: Match MosaicoPage
 routes = root *> oneOf
@@ -123,6 +132,7 @@ getInitialValues = do
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
   loginModalComponent <- LoginModal.loginModal
+  mostReadListComponent <- MostReadList.mostReadListComponent
   pure
     { state:
         { article: Nothing
@@ -135,6 +145,7 @@ getInitialValues = do
         , articleComponent
         , headerComponent
         , loginModalComponent
+        , mostReadListComponent
         , user: Nothing
         }
     , nav
@@ -149,7 +160,8 @@ fromJSProps jsProps =
         | isPreview = PreviewArticle
         | otherwise = FullArticle
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
-  in { article }
+      mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
+  in { article, mostReadArticles }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -193,7 +205,15 @@ render setState state router =
                }
            , DOM.aside
               { className: "mosaico--aside"
-              , children: [ renderMostreadList state setState router ]
+              , children:
+                  [ state.mostReadListComponent
+                      { mostReadArticles: state.mostreadList
+                      , onClickHandler: \articleStub -> do
+                          setState \s -> s { clickedArticle = Just articleStub }
+                          void $ Web.scroll 0 0 =<< Web.window
+                          router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
+                      }
+                  ]
               }
            ]
        }
@@ -263,55 +283,3 @@ articleList state setState router =
               }
             ]
         }
-
-renderMostreadList :: State -> SetState -> PushStateInterface -> JSX
-renderMostreadList state setState router =
-  let
-    block = "mosaico-asidelist"
-  in
-    DOM.div
-      { className: block
-      , children:
-          [ DOM.h6
-              { className: block <> "--header color-hbl"
-              , children: [ DOM.text "Andra läser" ]
-              }
-          , DOM.ul
-              { className: block <> "__mostread"
-              , children: map renderMostreadArticle state.mostreadList
-              }
-          ]
-      }
-      where
-        renderMostreadArticle :: ArticleStub -> JSX
-        renderMostreadArticle a =
-          DOM.li_
-            [ DOM.a
-                { onClick: handler_ do
-                      setState \s -> s { clickedArticle = Just a }
-                      void $ Web.scroll 0 0 =<< Web.window
-                      router.pushState (write {}) $ "/artikel/" <> a.uuid
-                , children:
-                    [ DOM.div
-                        { className: "counter"
-                        , children: [ DOM.div { className: "background-hbl" } ]
-                        }
-                      , DOM.div
-                          { className: "list-article-liftup"
-                          , children:
-                              [ DOM.h6_ [ DOM.text a.title ]
-                              , DOM.div
-                                  { className: "mosaico--article--meta"
-                                  , children:
-                                      [ guard a.premium $
-                                          DOM.div
-                                            { className: "mosaico--article--premium background-hbl"
-                                            , children: [ DOM.text "premium" ]
-                                            }
-                                      ]
-                                  }
-                              ]
-                          }
-                      ]
-                  }
-            ]
