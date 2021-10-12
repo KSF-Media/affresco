@@ -18,8 +18,7 @@ type Props =
 
 mostReadListComponent :: Component Props
 mostReadListComponent = do
-  component "MostReadListComponent" \props -> React.do
-    pure $ render props
+  component "MostReadListComponent" (pure <<< render)
 
 render :: Props -> JSX
 render props =
