@@ -1,6 +1,4 @@
-exports.requireDotenv = function() {
-  require("dotenv").config();
-}
+require("dotenv").config();
 var cheerio = require("cheerio");
 
 // Writes mosaico html inside #app
