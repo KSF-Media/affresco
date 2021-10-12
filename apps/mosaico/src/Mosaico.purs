@@ -102,9 +102,13 @@ mosaicoComponent initialValues props = React.do
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
 
-    Aff.launchAff_ do
-      mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-      liftEffect $ setState \s -> s { mostreadList = mostReadArticles }
+    case props.mostReadArticles of
+      Just mostReads
+        | not $ null mostReads -> liftEffect $ setState \s -> s { mostreadList = mostReads }
+      _ ->
+        Aff.launchAff_ do
+          mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+          liftEffect $ setState \s -> s { mostreadList = mostReadArticles }
 
     pure mempty
 
