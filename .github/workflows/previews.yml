@@ -15,12 +15,6 @@ jobs:
       - uses: "cachix/install-nix-action@v12"
         with:
           nix_path: nixpkgs=channel:nixos-20.09
-      - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
-        with:
-          export_default_credentials: 'true'
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
-          service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - name: Setup global build cache
         uses: "actions/cache@v2"
         with:
@@ -220,12 +214,6 @@ jobs:
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
             - [App article server](${{ steps.deploy-app-article-server.outputs.url }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
             - [Mosaico server](${{ steps.deploy-mosaico-server.outputs.url }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
-      - name: Keep only 10 latest versions of App article server
-        run: |
-          ./ci/ae-cleanup.sh app-article-server
-      - name: Keep only 10 latest versions of Mosaico server
-        run: |
-          ./ci/ae-cleanup.sh mosaico
 name: previews
 on:
   pull_request:
