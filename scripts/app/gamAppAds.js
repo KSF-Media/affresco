@@ -11,6 +11,20 @@ window.ksfDfp = {};
     });
   };
 
+  const getUrlParam = () => {
+    return new URLSearchParams(window.location.search);
+  };
+  
+  const getBrandValueParam = () => {
+    let urlParams = getUrlParam();
+    if (urlParams.has("paper")) {
+      return urlParams.get("paper");
+    }
+    return "hbl";
+  };
+
+  const brandValueName = getBrandValueParam()
+
   ksfDfp.getBannerWidth = function (banner) {
     var bannerWidth;
     // Banners sometimes have several heights, so we need to check how deep an array we are dealing with
@@ -40,7 +54,13 @@ window.ksfDfp = {};
     );
 
     // this var is available in KSF sites
-    ksfDfp.site = "app"; // there is only one site in the app
+    if (brandValueName == "on") {
+      ksfDfp.site = "appON";
+    } else if (brandValueName == "vn") {
+      ksfDfp.site = "appVN";
+    } else {
+      ksfDfp.site = "appHBL";
+    }
     googletag.pubads().setTargeting("newspaper", ksfDfp.site);
     googletag.pubads().setTargeting("consent", 1);
 
