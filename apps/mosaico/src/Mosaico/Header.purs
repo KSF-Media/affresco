@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Maybe (Maybe, maybe)
+import Data.Monoid (guard)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
@@ -114,10 +115,7 @@ render { state: { menuVisible, menuComponent }, props } =
                           , children: [ DOM.div_ [ DOM.text "MENU" ]
                                       , DOM.div
                                           { className: iconClass <> " " <> menuIconClass <>
-                                              if menuVisible then
-                                              " " <> menuVisibleIconClass
-                                              else
-                                              mempty
+                                              (guard menuVisible $ " " <> menuVisibleIconClass)
                                           } ]
                           , onClick: handler_ $
                               (\r -> do
@@ -130,7 +128,7 @@ render { state: { menuVisible, menuComponent }, props } =
                                     case eitherState of
                                       Right state -> r.pushState (write { }) state.previousPath
                                       Left _         -> pure unit
-                                  _              -> r.pushState (write { previousPath: locationState.pathname }) $ "/meny")
+                                  _              -> r.pushState (write { previousPath: locationState.pathname }) "/meny")
                                 props.router
 
                           }
