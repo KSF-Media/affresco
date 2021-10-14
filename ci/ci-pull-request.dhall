@@ -20,12 +20,8 @@ let checkCISteps = Actions.checkCISteps
 
 let steps-gs =
         Actions.setupSteps Actions.Env.Staging
-      # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
-      # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Staging apps
-      # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
-      # Actions.cleanAppEngineSteps Actions.Env.Staging app-servers
 
 let steps-ae =
         Actions.setupSteps Actions.Env.Staging
@@ -35,16 +31,18 @@ let steps-ae =
 
 let previewLinks = [ Actions.linkPreviewsStep apps app-servers previewUrl ]
 
+let container = {image = "ksfmedia/diskho:gha-1.0", options = "--cpus 4"}
+
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]
     , jobs =
-      { check-ci = { runs-on = "ubuntu-latest", steps = checkCISteps }
+      { check-ci = { container = container, steps = checkCISteps }
       , deploy-gs =
-        { runs-on = "ubuntu-latest", steps = steps-gs, needs = "check-ci" }
+      { container = container, steps = steps-gs, needs = "check-ci" }
       , deploy-ae =
-        { runs-on = "ubuntu-latest", steps = steps-ae, needs = "check-ci" }
+      { container = container, steps = steps-ae, needs = "check-ci" }
       , previews =
-        { runs-on = "ubuntu-latest"
+      { container = container,
         , steps = previewLinks
         , needs = [ "deploy-gs", "deploy-ae" ]
         }
