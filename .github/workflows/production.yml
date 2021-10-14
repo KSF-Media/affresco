@@ -10,7 +10,18 @@ env:
   PRODUCTION_LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
   PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
 jobs:
-  deploy:
+  check-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: "cachix/install-nix-action@v12"
+        with:
+          nix_path: nixpkgs=channel:nixos-20.09
+      - name: Check CI script has been generated from Dhall
+        run: |2
+            make
+            git diff --exit-code
+  deploy-ae:
+    needs: check-ci
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -23,9 +34,6 @@ jobs:
         uses: "actions/setup-ruby@v1"
         with:
           ruby-version: '2.6'
-      - uses: "cachix/install-nix-action@v12"
-        with:
-          nix_path: nixpkgs=channel:nixos-20.09
       - name: Setup Cloud SDK
         uses: "google-github-actions/setup-gcloud@master"
         with:
@@ -49,10 +57,84 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Check CI script has been generated from Dhall
+      - name: Build Server App article server
         run: |2
-            make
-            git diff --exit-code
+            ruby deploy.rb app-article-server
+            cp -R apps/app-article-server build/app-article-server
+      - name: Build Server Mosaico server
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico build/mosaico
+      - id: deploy-app-article-server
+        name: Deploy App article server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/app-article-server
+      - id: deploy-mosaico-server
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/mosaico
+      - name: Generate AppEngine domain map
+        run: |2
+            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+      - name: Deploy AppEngine domain map
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          deliverables: dispatch.yaml
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          working_directory: build
+      - name: Keep only 10 latest versions of app-article-server
+        run: |
+          ./ci/ae-cleanup.sh app-article-server
+      - name: Keep only 10 latest versions of mosaico-server
+        run: |
+          ./ci/ae-cleanup.sh mosaico-server
+  deploy-gs:
+    needs: check-ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup node and yarn
+        uses: "actions/setup-node@v1"
+        with:
+          node-version: '12'
+      - name: Setup ruby
+        uses: "actions/setup-ruby@v1"
+        with:
+          ruby-version: '2.6'
+      - name: Setup Cloud SDK
+        uses: "google-github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+      - name: Setup global build cache
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-build-${{ hashFiles('yarn.lock')}}"
+          path: |2
+              **/node_modules
+              **/.yarn-cache
+              **/.cache
+              ~/.npm
+              ~/.cache/spago
+              apps/elections/dist
+              !build
+              !build/*
+              !build/**
+      - run: |2
+            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            mkdir -p build
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -133,14 +215,6 @@ jobs:
         run: |2
             ruby deploy.rb hbl365
             cp -R apps/hbl365/dist build/hbl365
-      - name: Build Server App article server
-        run: |2
-            ruby deploy.rb app-article-server
-            cp -R apps/app-article-server build/app-article-server
-      - name: Build Server Mosaico server
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -197,41 +271,8 @@ jobs:
           destination: ksf-frontends/hbl365
           parent: 'false'
           path: build/hbl365
-      - id: deploy-app-article-server
-        name: Deploy App article server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-          promote: 'true'
-          working_directory: build/app-article-server
-      - id: deploy-mosaico-server
-        name: Deploy Mosaico server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-          promote: 'true'
-          working_directory: build/mosaico
-      - name: Generate AppEngine domain map
-        run: |2
-            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
-            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
-      - name: Deploy AppEngine domain map
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          deliverables: dispatch.yaml
-          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-          working_directory: build
-      - name: Keep only 10 latest versions of app-article-server
-        run: |
-          ./ci/ae-cleanup.sh app-article-server
-      - name: Keep only 10 latest versions of mosaico-server
-        run: |
-          ./ci/ae-cleanup.sh mosaico-server
   refresh_cdn_app-article:
-    needs: deploy
+    needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
@@ -244,7 +285,7 @@ jobs:
         run: |2
             gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
   refresh_cdn_frontends:
-    needs: deploy
+    needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
@@ -257,7 +298,7 @@ jobs:
         run: |2
             gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
   refresh_cdn_mitt-konto:
-    needs: deploy
+    needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud

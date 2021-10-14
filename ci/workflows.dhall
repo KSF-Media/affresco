@@ -80,10 +80,6 @@ let setupSteps =
           , `with` = toMap { ruby-version = "2.6" }
           }
         , Step::{
-          , uses = Some "cachix/install-nix-action@v12"
-          , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
-          }
-        , Step::{
           , name = Some "Setup Cloud SDK"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
@@ -243,15 +239,20 @@ let deployDispatchYamlStep =
             }
         }
 
-let checkCIStep =
-      Step::{
-      , name = Some "Check CI script has been generated from Dhall"
-      , run = Some
-          ''
-            make
-            git diff --exit-code
-          ''
-      }
+let checkCISteps =
+      [ Step::{
+        , uses = Some "cachix/install-nix-action@v12"
+        , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
+        }
+      , Step::{
+        , name = Some "Check CI script has been generated from Dhall"
+        , run = Some
+            ''
+              make
+              git diff --exit-code
+            ''
+        }
+      ]
 
 let generateDispatchYamlStep =
       \(env : Env) ->
@@ -342,9 +343,10 @@ let refreshCDNSteps =
 
 let refreshCDNJob =
       \(cdnName : Text) ->
+      \(jobName : Text) ->
         { runs-on = "ubuntu-latest"
         , steps = refreshCDNSteps cdnName
-        , needs = "deploy"
+        , needs = jobName
         }
 
 let uploadSteps =
@@ -379,7 +381,7 @@ in  { Step
     , buildServerSteps
     , uploadSteps
     , deployAppEngineSteps
-    , checkCIStep
+    , checkCISteps
     , linkPreviewsStep
     , refreshCDNJob
     , generateDispatchYamlStep

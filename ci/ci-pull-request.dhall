@@ -16,18 +16,31 @@ let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
-let steps =
+let checkCISteps = Actions.checkCISteps
+
+let steps-gs =
         Actions.setupSteps Actions.Env.Staging
-      # [ Actions.checkCIStep ]
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Staging apps
       # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
-      # [ Actions.linkPreviewsStep apps app-servers previewUrl ]
       # Actions.cleanAppEngineSteps Actions.Env.Staging app-servers
+
+let steps-ae =
+        Actions.setupSteps Actions.Env.Staging
+      # Actions.buildServerSteps app-servers
+      # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
+      # Actions.cleanAppEngineSteps Actions.Env.Staging app-servers
+
+let previewLinks = [ Actions.linkPreviewsStep apps app-servers previewUrl ]
 
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]
-    , jobs.deploy = { runs-on = "ubuntu-latest", steps }
+    , jobs =
+      { check-ci = { runs-on = "ubuntu-latest", steps = checkCISteps }
+      , deploy-gs = { runs-on = "ubuntu-latest", steps-gs, needs = "check-ci" }
+      , deploy-ae = { runs-on = "ubuntu-latest", steps-ae, needs = "check-ci" }
+      , previews = { needs = [ "steps-gs", "steps-ae" ], previewLinks }
+      }
     }
