@@ -22,10 +22,7 @@ let steps-gs =
         Actions.setupSteps Actions.Env.Staging
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
-      # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Staging apps
-      # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
-      # Actions.cleanAppEngineSteps Actions.Env.Staging app-servers
 
 let steps-ae =
         Actions.setupSteps Actions.Env.Staging
