@@ -2,7 +2,6 @@ module Mosaico.Article where
 
 import Prelude
 
-import Bottega.Models.Order (OrderSource(..))
 import Control.Alt ((<|>))
 import Data.Array (cons, head, snoc)
 import Data.Array as Array
@@ -16,12 +15,13 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Bottega.Models.Order (OrderSource(..))
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, Author, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Lettera.Models ( ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle )
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
@@ -168,14 +168,13 @@ render { props, state, setState } =
             , DOM.div 
                 { className: "articlebody"
                 , children:
-                    [ foldMap (testDom <<< fromFullArticle) state.article
-{-                    [ DOM.div
-                        { className: "mosaico--article-times-and-author"
-                        , children:
-                            [ foldMap renderAuthors $ _.authors <$> letteraArticle
-                            , foldMap articleTimestamps letteraArticle
-                            ]
--}                          
+                    [ DOM.div
+                          { className: "mosaico--article-times-and-author"
+                          , children:
+                              [ foldMap renderAuthors $ _.authors <$> letteraArticle
+                              , foldMap articleTimestamps letteraArticle
+                              ]
+                          }
                     , DOM.div
                         { className: "mosaico--article--body "
                         , children: case state.article of
@@ -196,36 +195,6 @@ render { props, state, setState } =
         ]
     }
   where
---FIX ME!!! To do: resolve author image byline and timestamps
-    testDom :: Article -> JSX
-    testDom article =
-      DOM.div
-        { className: "mosaico--article-metabyline"
-        , children: 
-            [ DOM.div
-                { className: "mosaico--article-authors-image" }
-            , DOM.div 
-                { className: "mosaico--article-authors-timestamps" 
-                , children:
-                    [ DOM.div
-                        { className: "mosaico--article-authors"
-                        , children: [ DOM.text "author name"]
-                        }
-                    , DOM.div
-                        { className: "mosaico--article-timestamps"
-                        , children: 
-                        [ DOM.span_ [ DOM.text "pub date" ]
-                        , DOM.span_ [ DOM.text "upd date" ]
-                        ]
-                        }
-                    , DOM.span
-                        { className: "mosaico--article--premium background-hbl"
-                        , children: [ DOM.text "premium" ]
-                        }
-                    ]
-                }
-            ]
-        }
     renderAuthors :: Array Author -> JSX
     renderAuthors authors =
       DOM.div
@@ -241,7 +210,7 @@ render { props, state, setState } =
             { className: "mosaico--article--premium background-hbl"
             , children: [ DOM.text "premium" ]
             }
-    articleTimestamps :: Article -> JSX
+
     articleTimestamps { publishingTime, updateTime } =
       DOM.div
         { className: "mosaico--article-timestamps"
