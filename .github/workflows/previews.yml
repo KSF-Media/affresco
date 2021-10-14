@@ -220,12 +220,12 @@ jobs:
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
             - [App article server](${{ steps.deploy-app-article-server.outputs.url }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
             - [Mosaico server](${{ steps.deploy-mosaico-server.outputs.url }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
-      - name: Keep only 10 latest versions of App article server
+      - name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
-      - name: Keep only 10 latest versions of Mosaico server
+      - name: Keep only 10 latest versions of mosaico-server
         run: |
-          ./ci/ae-cleanup.sh mosaico
+          ./ci/ae-cleanup.sh mosaico-server
 name: previews
 on:
   pull_request:
