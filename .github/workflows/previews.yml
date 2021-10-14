@@ -281,8 +281,8 @@ jobs:
           ./ci/ae-cleanup.sh mosaico-server
   previews:
     needs:
-      - steps-gs
-      - steps-ae
+      - deploy-gs
+      - deploy-ae
     runs-on: ubuntu-latest
     steps:
       - env:

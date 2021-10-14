@@ -46,7 +46,7 @@ in  { name = "previews"
       , previews =
         { runs-on = "ubuntu-latest"
         , steps = previewLinks
-        , needs = [ "steps-gs", "steps-ae" ]
+        , needs = [ "deploy-gs", "deploy-ae" ]
         }
       }
     }
