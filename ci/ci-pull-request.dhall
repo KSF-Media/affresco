@@ -39,8 +39,10 @@ in  { name = "previews"
     , on.pull_request.branches = [ "master" ]
     , jobs =
       { check-ci = { runs-on = "ubuntu-latest", steps = checkCISteps }
-      , deploy-gs = { runs-on = "ubuntu-latest", steps-gs, needs = "check-ci" }
-      , deploy-ae = { runs-on = "ubuntu-latest", steps-ae, needs = "check-ci" }
+      , deploy-gs =
+        { runs-on = "ubuntu-latest", steps = steps-gs, needs = "check-ci" }
+      , deploy-ae =
+        { runs-on = "ubuntu-latest", steps = steps-ae, needs = "check-ci" }
       , previews = { needs = [ "steps-gs", "steps-ae" ], previewLinks }
       }
     }

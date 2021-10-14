@@ -12,7 +12,7 @@ jobs:
   deploy-ae:
     needs: check-ci
     runs-on: ubuntu-latest
-    steps-ae:
+    steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup node and yarn
@@ -79,7 +79,7 @@ jobs:
   deploy-gs:
     needs: check-ci
     runs-on: ubuntu-latest
-    steps-gs:
+    steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup node and yarn
