@@ -240,7 +240,8 @@ let deployDispatchYamlStep =
         }
 
 let checkCISteps =
-      [ Step::{
+      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
+      , Step::{
         , uses = Some "cachix/install-nix-action@v12"
         , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
         }
