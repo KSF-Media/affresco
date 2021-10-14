@@ -224,12 +224,12 @@ jobs:
           deliverables: dispatch.yaml
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           working_directory: build
-      - name: Keep only 10 latest versions of App article server
+      - name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
-      - name: Keep only 10 latest versions of Mosaico server
+      - name: Keep only 10 latest versions of mosaico-server
         run: |
-          ./ci/ae-cleanup.sh mosaico
+          ./ci/ae-cleanup.sh mosaico-server
   refresh_cdn_app-article:
     needs: deploy
     runs-on: ubuntu-latest

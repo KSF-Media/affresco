@@ -279,7 +279,8 @@ let linkPreviewsStep =
       \(previewUrl : Text) ->
         Step::{
         , name = Some "Post preview links"
-        , uses = Some "unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b"
+        , uses = Some
+            "unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b"
         , env = toMap { GITHUB_TOKEN = "\${{ secrets.GITHUB_TOKEN }}" }
         , `with` = toMap
             { msg =
@@ -312,10 +313,10 @@ let mkCleanAppEngineStep =
       \(env : Env) ->
       \(app : AppServer.Type) ->
         Step::{
-        , name = Some "Keep only 10 latest versions of ${app.name}"
+        , name = Some "Keep only 10 latest versions of ${app.id}"
         , run = Some
             ''
-            ./ci/ae-cleanup.sh ${app.deployDir}
+            ./ci/ae-cleanup.sh ${app.id}
             ''
         }
 
