@@ -22,8 +22,16 @@ export const getBrandValueParam = () => {
   if (urlParams.has("paper")) {
     return urlParams.get("paper");
   }
+
+  // This setting is used when testing to source the list of articles
+  // shown on the "dummy" front page in localhost.
+  // This page doesn't exist in the real apps,
+  // which have a natively built front page.
   return "hbl";
+  // return "on";
+  // return "vn";
 };
+
 export const getMode = () => {
   let urlParams = getUrlParam();
   if (urlParams.has("mode") && urlParams.get("mode") == "dark") {

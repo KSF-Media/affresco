@@ -7,7 +7,7 @@ import Data.Either (hush)
 import Data.Maybe (Maybe, isJust, isNothing)
 import Control.MonadPlus (guard)
 import Data.Traversable (traverse)
-import Effect.Exception (Error)
+import Effect.Exception (Error, message)
 import Foreign (Foreign, unsafeToForeign, readNullOrUndefined)
 import Foreign.Index as Foreign
 import Simple.JSON (class ReadForeign)
@@ -22,6 +22,12 @@ resourceConflictError :: Error -> Boolean
 resourceConflictError err = isJust $ do
   status <- err # errorField "status"
   guard $ status == 409
+
+loginExpiredError :: Error -> Boolean
+loginExpiredError err = isJust do
+  status <- err # errorField "status"
+  guard $ status == 403
+  guard $ message err == "login_token_expired"
 
 -- | Matches internal server error produced by superagent.
 --   Checks that it has `status` field that's 5XX.

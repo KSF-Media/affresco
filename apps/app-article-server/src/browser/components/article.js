@@ -22,6 +22,12 @@ class Article extends Component {
     };
   }
 
+  componentDidMount() {
+    if (this.props.darkModeEnabled) {
+      document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
+    }
+  }
+
   showHighResolutionImage = (imgSrc, caption) => {
     this.setState({
       isImageModalOpen: true,

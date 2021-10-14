@@ -11,7 +11,7 @@
     "@sentry/browser": "^6.2.1",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "create-react-class": "^15.6.3",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#40058b09b6d969390daaad6e58918b04129b1c16",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d8876dc53c39e6c80cdff363a8230deb944c6e73",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "uuid-validate": "^0.0.3"

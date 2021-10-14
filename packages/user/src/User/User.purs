@@ -130,6 +130,7 @@ data UserError =
   | LoginGoogleAuthInitError
   | LoginGoogleAuthInitErrorOrigin
   | LoginTokenInvalid
+  | LoginTokenExpired
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
   | RegistrationCusnoInUse ConflictingUser
@@ -209,6 +210,8 @@ createCusnoUser newCusnoUser = do
       | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
           Console.error errData.invalid_form_fields.description
           pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
       | otherwise -> do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
@@ -286,6 +289,8 @@ setCusno uuid cusno = do
     Left err
       | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
           pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
       | KSF.Error.badRequestError err -> do
           pure $ Left InvalidCusno
       | otherwise -> pure $ Left SomethingWentWrong
@@ -294,7 +299,10 @@ updatePassword :: UUID -> Api.Password -> Api.Password -> Aff (Either UserError 
 updatePassword uuid password confirmPassword = do
   eitherUser <- try $ Persona.updatePassword uuid password confirmPassword =<< requireToken
   case eitherUser of
-    Left err   -> pure $ Left $ UnexpectedError err
+    Left err
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
+      | otherwise -> pure $ Left $ UnexpectedError err
     Right user -> Right <$> fromPersonaUserWithCards user
 
 requestPasswordReset :: String -> Aff (Either String Unit)
