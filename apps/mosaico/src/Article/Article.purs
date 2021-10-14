@@ -202,14 +202,8 @@ render { props, state, setState } =
       DOM.div
         { className: "mosaico--article-metabyline"
         , children: 
-            [ foldMap 
-                (\authorImage -> DOM.div
-                  { className: "mosaico--article-authors-image"
-                  , style: DOM.css { backgroundImage: "url(" <> authorImage <> ")" }
-                  -- FIXME: Give image height and then remove children
-                  , children: [ DOM.text "img" ]
-                  })
-                (_.image =<< head article.authors)
+            [ DOM.div
+                { className: "mosaico--article-authors-image" }
             , DOM.div 
                 { className: "mosaico--article-authors-timestamps" 
                 , children:
