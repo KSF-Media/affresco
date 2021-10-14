@@ -43,6 +43,6 @@ in  { name = "previews"
         { runs-on = "ubuntu-latest", steps = steps-gs, needs = "check-ci" }
       , deploy-ae =
         { runs-on = "ubuntu-latest", steps = steps-ae, needs = "check-ci" }
-      , previews = { needs = [ "steps-gs", "steps-ae" ], previewLinks }
+      , previews = { needs = [ "steps-gs", "steps-ae" ], steps = previewLinks }
       }
     }
