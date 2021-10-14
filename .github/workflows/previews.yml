@@ -283,6 +283,7 @@ jobs:
     needs:
       - steps-gs
       - steps-ae
+    runs-on: ubuntu-latest
     steps:
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
