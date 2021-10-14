@@ -148,12 +148,12 @@ render { props, state, setState } =
             , children: [ DOM.text $ fromMaybe "" (head tags) ]
             }
         , DOM.h1
-            { className: "article__headline"
+            { className: "mosaico--article--title title"
             , children: [ DOM.text title ]
             }
         , foldMap renderImage mainImage
         , DOM.div
-            { className: "article__preamble"
+            { className: "mosaico--article--preamble"
             , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
             }
         , DOM.div
@@ -194,7 +194,7 @@ render { props, state, setState } =
         premiumBadge =
           guard (maybe false (_.premium <<< fromFullArticle) state.article)
           DOM.div
-            { className: "article__premium background-hbl"
+            { className: "mosaico--article--premium background-hbl"
             , children: [ DOM.text "premium" ]
             }
 
@@ -293,16 +293,16 @@ render { props, state, setState } =
       Right el -> case el of
         Html content -> DOM.p
           { dangerouslySetInnerHTML: { __html: content }
-          , className: block <> "__paragraph"
+          , className: "html"
           }
         Headline str -> DOM.h4
-          { className:  block <> "__subheadline"
+          { className: "headline"
           , children: [ DOM.text str ]
           }
         Image img -> renderImage img
         Box boxData ->
           DOM.div
-            { className: block <> "__factbox"
+            { className: "factbox"
             , children:
                 [ box
                     { headline: boxData.headline
@@ -313,16 +313,11 @@ render { props, state, setState } =
                 ]
             }
         Footnote footnote -> DOM.p
-            { className: block <> "__paragraph--footnote"
+            { className: "footnote"
             , children: [ DOM.text footnote ]
             }
-        Quote quote -> DOM.q
-            { className: block <> "__quote"
-            , children: [ DOM.text quote ]
-            }
+        Quote quote -> DOM.q_ [ DOM.text quote ]
         Question question -> DOM.p
-            { className: block <> "__paragraph--question"
+            { className: "question"
             , children: [ DOM.text question ]
             }
-      where
-        block = "article"
