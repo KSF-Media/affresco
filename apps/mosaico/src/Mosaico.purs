@@ -191,10 +191,13 @@ render setState state router =
                { className: "mosaico--footer"
                , children: [ DOM.text "footer" ]
                }
-           , DOM.aside
-              { className: "mosaico--aside"
-              , children: [ renderMostreadList state setState router ]
-              }
+           , case state.route of
+               Frontpage -> 
+                 DOM.aside
+                    { className: "mosaico--aside"
+                    , children: [ renderMostreadList state setState router ]
+                    }
+               _ -> mempty
            ]
        }
   where

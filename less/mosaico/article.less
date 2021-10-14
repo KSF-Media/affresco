@@ -1,6 +1,39 @@
 @import (reference) "../ksf-colors";
 
-.mosaico--article {
+.article {
+  grid-area: article;
+  display: grid;
+  grid-template-columns: 100px 1fr 100px;
+  grid-template-areas:
+    ".     head  ."
+    "image image image"
+    ".     body  body";
+
+  header {
+    grid-area: head;
+  }
+  .image {
+    grid-area: image;
+  }
+
+  .articlebody {
+    grid-area: body;
+    display: grid;
+    @media (min-width: @breakpoint-3col) {
+      grid-template-columns: 1fr 300px;
+      grid-template-areas:
+        "articleauthors articlesidebar"
+        "articlebody articlesidebar";
+    }
+  }
+
+  .mosaico--article--body {
+    grid-area: articlebody;
+  }
+  .mosaico-article-aside {
+    grid-area: articlesidebar;
+  }
+
   h1 {
     font: 700 1.92rem "Duplex Serif Web", serif;
     color: #333;
@@ -16,11 +49,11 @@
   }
   p {
     font: 300 1rem/1.5rem "Roboto", sans-serif;
+    margin-bottom: 1rem;
+    color: @dark-text;
   }
   h4 {
     font: 600 1rem/1.5rem "Roboto", sans-serif;
-  }
-  &--meta {
   }
   &--premium {
     padding: 2px 5px;
@@ -29,16 +62,18 @@
     text-transform: uppercase;
     font: 500 0.75rem "Roboto", sans-serif;
   }
-  &--preamble p {
-    font: 300 16px "Roboto", sans-serif;
-    line-height: 1.2rem;
-    @media (min-width: @breakpoint-2col) {
-      font-size: 1.25rem;
-      line-height: 1.5rem;
-    }
-    @media (min-width: @breakpoint-3col) {
-      font-size: 1.5rem;
-      line-height: 2rem;
+  &--preamble {
+    p {
+      font: 300 16px "Roboto", sans-serif;
+      line-height: 1.2rem;
+      @media (min-width: @breakpoint-2col) {
+        font-size: 1.25rem;
+        line-height: 1.5rem;
+      }
+      @media (min-width: @breakpoint-3col) {
+        font-size: 1.5rem;
+        line-height: 2rem;
+      }
     }
   }
 }
@@ -55,9 +90,15 @@
 }
 
 .mosaico--article-times-and-author {
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-template-rows: auto auto;
+  // FIXME: Decide between grid and flex, after needed DOM tree structure changes
+  // display: grid;
+  // grid-area: articleauthors;
+  // grid-template-columns: auto auto auto;
+  // grid-template-rows: auto auto;
+  // grid-template-areas: 
+  //   "authorimage authorname  ."
+  //   "authorimage publishdate premium";
+  display: flex;
   border-style: solid;
   border-bottom-width: 1px;
   border-top-width: 1px;
@@ -71,7 +112,12 @@
   font-family: "Roboto";
 }
 
+.mosaico--author-image {
+  grid-area: authorimage;
+}
+
 .mosaico--article-authors {
+  grid-area: authorname;
   display: flex;
   flex-direction: column;
   font-size: 14px;
@@ -79,11 +125,12 @@
     margin-bottom: 0.5em;
   }
   .mosaico--article--premium {
-    display: table;
+    grid-area: premium;
   }
 }
 
 .mosaico--article-timestamps {
   font-size: 12px;
   text-align: right;
+  display: flex;
 }
