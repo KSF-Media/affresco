@@ -70,6 +70,10 @@ let setupSteps =
           , uses = Some "actions/checkout@v2"
           }
         , Step::{
+          , uses = Some "cachix/install-nix-action@v12"
+          , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
+          }
+        , Step::{
           , name = Some "Setup node and yarn"
           , uses = Some "actions/setup-node@v1"
           , `with` = toMap { node-version = "12" }
