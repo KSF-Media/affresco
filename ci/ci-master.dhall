@@ -15,7 +15,7 @@ let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
 let deploySteps =
-        Actions.setupSteps
+        Actions.setupSteps Actions.Env.Production
       # [ Actions.checkCIStep ]
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
@@ -24,6 +24,7 @@ let deploySteps =
       # Actions.deployAppEngineSteps Actions.Env.Production app-servers
       # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
       # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
+      # Actions.cleanAppEngineSteps Actions.Env.Production app-servers
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto"
