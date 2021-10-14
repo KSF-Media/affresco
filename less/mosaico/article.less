@@ -1,7 +1,7 @@
 @import (reference) "../ksf-colors";
 
-.article {
-  &__headline {
+.mosaico--article {
+  h1 {
     font: 700 1.92rem "Duplex Serif Web", serif;
     color: #333;
     margin-top: 0.9375rem;
@@ -14,15 +14,13 @@
       font-size: 3.75rem;
     }
   }
-  &__paragraph {
+  p {
     font: 300 1rem/1.5rem "Roboto", sans-serif;
-    margin-bottom: 1.5rem;
-    &--question {
-      margin-bottom: 1rem;
+    &.question {
       font-size: 1.1rem;
       font-style: italic;
     }
-    &--footnote {
+    &.footnote {
       font-style: italic;
       color: @grey-mediumlight;
       &::before {
@@ -35,7 +33,7 @@
       }
     }
   }
-  &__quote {
+  q {
     display: block;
     margin: 30px auto;
     padding: 15px 30px;
@@ -51,19 +49,19 @@
       background-color: @hbl-orange; // TODO: deal with other site's colours
     }
   }
-  &__subheadline {
+  h4 {
     font: 600 1rem/1.5rem "Roboto", sans-serif;
   }
-  &__meta {
+  &--meta {
   }
-  &__premium {
+  &--premium {
     padding: 2px 5px;
     color: #fff;
     display: inline-block;
     text-transform: uppercase;
     font: 500 0.75rem "Roboto", sans-serif;
   }
-  &__preamble p {
+  &--preamble p {
     font: 300 16px "Roboto", sans-serif;
     line-height: 1.2rem;
     @media (min-width: @breakpoint-2col) {
