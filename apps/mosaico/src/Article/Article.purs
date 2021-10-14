@@ -195,7 +195,6 @@ render { props, state, setState } =
         ]
     }
   where
-    renderAuthors :: Array Author -> JSX
     renderAuthors authors =
       DOM.div
         { className: "mosaico--article-authors"
