@@ -36,6 +36,7 @@ import Web.HTML.Window (scroll) as Web
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
+  | DraftPage -- Ignore parameters on client side and just show server side content
   | ArticlePage String
   | NotFoundPage String
 derive instance eqR :: Eq MosaicoPage
@@ -63,7 +64,8 @@ type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
 
 routes :: Match MosaicoPage
 routes = root *> oneOf
-  [ ArticlePage <$> (lit "artikel" *> str)
+  [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
+  , ArticlePage <$> (lit "artikel" *> str)
   , Frontpage <$end
   , NotFoundPage <$> str
   ]
@@ -90,6 +92,7 @@ mosaicoComponent initialValues props = React.do
           liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
+      DraftPage -> pure unit
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
 
@@ -185,6 +188,8 @@ render setState state router =
                    -- e.g. when a subscription is purchased or user logs in
                    , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
                    | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
+                 DraftPage -> renderArticle state.article (pure notFoundArticle) Nothing $
+                              fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
                  Frontpage -> articleList state setState router
                  NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
            , DOM.footer

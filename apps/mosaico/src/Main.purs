@@ -3,7 +3,9 @@ module Main where
 import Prelude
 
 import Data.Argonaut.Core (Json)
+import Data.Array (cons)
 import Data.Either (Either(..))
+import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -12,10 +14,10 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Uncurried (EffectFn2, EffectFn3, runEffectFn2, runEffectFn3)
+import Effect.Uncurried (EffectFn2, EffectFn4, runEffectFn2, runEffectFn4)
 import KSF.Api (Token(..), UserAuth)
 import Lettera as Lettera
-import Lettera.Models (fromFullArticle, articleToJson, notFoundArticle, isPreviewArticle)
+import Lettera.Models (FullArticle, DraftParams, fromFullArticle, articleToJson, notFoundArticle, isPreviewArticle, isDraftArticle)
 import Mosaico.Article as Article
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -38,9 +40,9 @@ foreign import requireDotenv :: Effect Unit
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
 appendMosaico htmlTemplate content = runEffectFn2 appendMosaicoImpl htmlTemplate content
-foreign import writeArticleImpl :: EffectFn3 Json Boolean String String
-writeArticle :: Json -> Boolean -> String -> Effect String
-writeArticle article isPreviewArticle htmlTemplate = runEffectFn3 writeArticleImpl article isPreviewArticle htmlTemplate
+foreign import writeArticleImpl :: EffectFn4 Json Boolean Boolean String String
+writeArticle :: Json -> Boolean -> Boolean -> String -> Effect String
+writeArticle = runEffectFn4 writeArticleImpl
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -59,7 +61,13 @@ indexHtmlFileLocation = "./dist/client/index.html"
 spec ::
   Spec
     { routes ::
-         { getArticle ::
+         { getDraftArticle ::
+              GET "/artikel/draft/<aptomaId>/?dp-time=<time>&publicationId=<publication>&user=<user>&hash=<hash>"
+                { response :: ResponseBody
+                , params :: { aptomaId :: String }
+                , query :: DraftParams
+                }
+         , getArticle ::
               GET "/artikel/<uuid>"
                 { response :: ResponseBody
                 , params :: { uuid :: String }
@@ -87,15 +95,29 @@ spec = Spec
 
 main :: Effect Unit
 main = do
-  let handlers = { getArticle, assets, frontpage, notFound }
+  let handlers = { getDraftArticle, getArticle, assets, frontpage, notFound }
       guards = { credentials: getCredentials }
   Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+
+getDraftArticle
+  :: { params :: { aptomaId :: String }, query :: DraftParams }
+  -> Aff (Response ResponseBody)
+getDraftArticle { params: {aptomaId}, query } = do
+  article <- Lettera.getDraftArticle aptomaId query
+  renderArticle Nothing article
 
 getArticle
   :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } }
   -> Aff (Response ResponseBody)
 getArticle r@{ params: { uuid } } = do
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
+  renderArticle (Just uuid) article
+
+renderArticle
+  :: Maybe String
+  -> Either String FullArticle
+  -> Aff (Response ResponseBody)
+renderArticle uuid article = do
   htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
   articleComponent <- liftEffect Article.articleComponent
   mosaico <- liftEffect MosaicoServer.app
@@ -109,17 +131,17 @@ getArticle r@{ params: { uuid } } = do
               , onLogin: pure unit
               , user: Nothing
               , article: Just a
-              , uuid: Just uuid
+              , uuid
               }
           mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX }
 
       html <- liftEffect do
         appendMosaico htmlTemplate mosaicoString
-          >>= writeArticle (articleToJson $ fromFullArticle a) (isPreviewArticle a)
+          >>= writeArticle (articleToJson $ fromFullArticle a) (isPreviewArticle a) (isDraftArticle a)
 
       pure $ Response.ok $ StringBody html
     Left _ ->
-      notFound { params: {path: List.fromFoldable ["artikel", uuid]} }
+      notFound { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/client" path
