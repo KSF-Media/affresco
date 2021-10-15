@@ -45,20 +45,6 @@ jobs:
           export_default_credentials: 'true'
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-      - name: Setup global build cache
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-build-${{ hashFiles('yarn.lock')}}"
-          path: |2
-              **/node_modules
-              **/.yarn-cache
-              **/.cache
-              ~/.npm
-              ~/.cache/spago
-              apps/elections/dist
-              !build
-              !build/*
-              !build/**
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
@@ -88,7 +74,7 @@ jobs:
           working_directory: build/mosaico
       - name: Generate AppEngine domain map
         run: |2
-            nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+            npx 'dhall-to-yaml --omit-empty \
             <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
       - name: Deploy AppEngine domain map
         uses: "google-github-actions/deploy-appengine@main"
@@ -126,20 +112,6 @@ jobs:
           export_default_credentials: 'true'
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-      - name: Setup global build cache
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-build-${{ hashFiles('yarn.lock')}}"
-          path: |2
-              **/node_modules
-              **/.yarn-cache
-              **/.cache
-              ~/.npm
-              ~/.cache/spago
-              apps/elections/dist
-              !build
-              !build/*
-              !build/**
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
