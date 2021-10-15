@@ -36,11 +36,23 @@ let container = { image = "ksfmedia/diskho:gha-1.0", options = "--cpus 4" }
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]
     , jobs =
-      { check-ci = { container, steps = checkCISteps }
-      , deploy-gs = { container, steps = steps-gs, needs = "check-ci" }
-      , deploy-ae = { container, steps = steps-ae, needs = "check-ci" }
+      { check-ci =
+        { runs-on = "ubuntu-latest", container, steps = checkCISteps }
+      , deploy-gs =
+        { runs-on = "ubuntu-latest"
+        , container
+        , steps = steps-gs
+        , needs = "check-ci"
+        }
+      , deploy-ae =
+        { runs-on = "ubuntu-latest"
+        , container
+        , steps = steps-ae
+        , needs = "check-ci"
+        }
       , previews =
-        { container
+        { runs-on = "ubuntu-latest"
+        , container
         , steps = previewLinks
         , needs = [ "deploy-gs", "deploy-ae" ]
         }

@@ -3,6 +3,7 @@ jobs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 4"
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
@@ -18,6 +19,7 @@ jobs:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 4"
     needs: check-ci
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
@@ -76,6 +78,7 @@ jobs:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 4"
     needs: check-ci
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
@@ -209,6 +212,7 @@ jobs:
     needs:
       - deploy-gs
       - deploy-ae
+    runs-on: ubuntu-latest
     steps:
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
