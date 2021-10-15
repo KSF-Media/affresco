@@ -31,7 +31,7 @@ let steps-ae =
 
 let previewLinks = [ Actions.linkPreviewsStep apps app-servers previewUrl ]
 
-let container = { image = "ksfmedia/diskho:gha-0.1", options = "--cpus 4" }
+let container = { image = "ksfmedia/diskho:gha-0.1", options = "--cpus 2" }
 
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]

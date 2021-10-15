@@ -2,7 +2,7 @@ jobs:
   check-ci:
     container:
       image: ksfmedia/diskho:gha-0.1
-      options: "--cpus 4"
+      options: "--cpus 2"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -17,7 +17,7 @@ jobs:
   deploy-ae:
     container:
       image: ksfmedia/diskho:gha-0.1
-      options: "--cpus 4"
+      options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -76,7 +76,7 @@ jobs:
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-0.1
-      options: "--cpus 4"
+      options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -208,7 +208,7 @@ jobs:
   previews:
     container:
       image: ksfmedia/diskho:gha-0.1
-      options: "--cpus 4"
+      options: "--cpus 2"
     needs:
       - deploy-gs
       - deploy-ae
