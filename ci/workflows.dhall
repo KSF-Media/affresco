@@ -103,25 +103,6 @@ let setupSteps =
               }
           }
         , Step::{
-          , name = Some "Setup global build cache"
-          , uses = Some "actions/cache@v2"
-          , `with` = toMap
-              { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
-              , path =
-                  ''
-                    **/node_modules
-                    **/.yarn-cache
-                    **/.cache
-                    ~/.npm
-                    ~/.cache/spago
-                    apps/elections/dist
-                    !build
-                    !build/*
-                    !build/**
-                  ''
-              }
-          }
-        , Step::{
           , run = Some
               ''
                 yarn install --pure-lockfile --cache-folder=.yarn-cache
