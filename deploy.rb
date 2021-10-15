@@ -44,6 +44,7 @@ rescue Exception => e
 end
 
 puts "apps_json: '#{apps_json}'"
+puts "apps_servers_json: '#{apps_servers_json}'"
 apps_list = JSON.parse(apps_json)
 app_servers_list = JSON.parse(apps_servers_json)
 apps = apps_list.map{ |x| [x["deployDir"], x] }.to_h
