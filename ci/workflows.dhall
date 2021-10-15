@@ -248,12 +248,12 @@ let generateDispatchYamlStep =
             merge
               { Staging = Some
                   ''
-                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+                    npx 'dhall-to-yaml --omit-empty \
                     <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
                   ''
               , Production = Some
                   ''
-                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+                    npx 'dhall-to-yaml --omit-empty \
                     <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
                   ''
               }
