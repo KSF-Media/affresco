@@ -35,8 +35,8 @@ end
 apps_json = ""
 apps_servers_json = ""
 begin
-  apps_json = run_command("npx 'dhall-to-json <<< \"./ci/apps.dhall\"'")
-  apps_servers_json = run_command("npx 'dhall-to-json <<< \"./ci/app-servers.dhall\"'")
+  apps_json = run_command("npx dhall-to-json <<< \"./ci/apps.dhall\"")
+  apps_servers_json = run_command("npx dhall-to-json <<< \"./ci/app-servers.dhall\"")
 rescue Exception => e
   # FIXME: this is here because Netlify doesn't have nix-shell.
   # This is terrible and should be removed ASAP. Really.
