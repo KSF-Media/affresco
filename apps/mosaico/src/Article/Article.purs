@@ -168,7 +168,7 @@ render { props, state, setState } =
             , DOM.div 
                 { className: "articlebody"
                 , children:
-                    [ foldMap (testDom <<< fromFullArticle) state.article
+                    [ -- foldMap (testDom <<< fromFullArticle) state.article
 {-                    [ DOM.div
                         { className: "mosaico--article-times-and-author"
                         , children:
@@ -176,7 +176,7 @@ render { props, state, setState } =
                             , foldMap articleTimestamps letteraArticle
                             ]
 -}                          
-                    , DOM.div
+                    DOM.div
                         { className: "mosaico--article--body "
                         , children: case state.article of
                           (Just (PreviewArticle _previewArticle)) ->
@@ -362,4 +362,12 @@ render { props, state, setState } =
                     }
                 ]
             }
-        other -> DOM.p_ [ DOM.text $ show other ]
+        Footnote footnote -> DOM.p
+            { className: "footnote"
+            , children: [ DOM.text footnote ]
+            }
+        Quote quote -> DOM.q_ [ DOM.text quote ]
+        Question question -> DOM.p
+            { className: "question"
+            , children: [ DOM.text question ]
+            }

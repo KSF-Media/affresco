@@ -51,6 +51,38 @@
     font: 300 1rem/1.5rem "Roboto", sans-serif;
     margin-bottom: 1rem;
     color: @dark-text;
+    &.question {
+      font-size: 1.1rem;
+      font-style: italic;
+    }
+    &.footnote {
+      font-style: italic;
+      color: @grey-mediumlight;
+      &::before {
+        content: "";
+        display: block;
+        margin: 10px auto 5px 0;
+        width: 10%;
+        height: 2px;
+        background-color: @hbl-orange; // TODO: deal with other site's colours
+      }
+    }
+  }
+  q {
+    display: block;
+    margin: 30px auto;
+    padding: 15px 30px;
+    font: 1.5rem/1.5 "Duplex Serif Light Web", serif;
+    text-align: center;
+    color: @hbl-orange; // TODO: deal with other site's colours
+    &::before {
+      content: "";
+      display: block;
+      width: 20%;
+      height: 2px;
+      margin: 0 auto 15px auto;
+      background-color: @hbl-orange; // TODO: deal with other site's colours
+    }
   }
   h4 {
     font: 600 1rem/1.5rem "Roboto", sans-serif;
@@ -92,7 +124,7 @@
 .mosaico--article-times-and-author {
   // FIXME: Decide between grid and flex, after needed DOM tree structure changes
   // display: grid;
-  // grid-area: articleauthors;
+  grid-area: articleauthors;
   // grid-template-columns: auto auto auto;
   // grid-template-rows: auto auto;
   // grid-template-areas: 
