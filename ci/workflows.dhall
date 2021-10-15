@@ -70,20 +70,6 @@ let setupSteps =
           , uses = Some "actions/checkout@v2"
           }
         , Step::{
-          , uses = Some "cachix/install-nix-action@v12"
-          , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
-          }
-        , Step::{
-          , name = Some "Setup node and yarn"
-          , uses = Some "actions/setup-node@v1"
-          , `with` = toMap { node-version = "12" }
-          }
-        , Step::{
-          , name = Some "Setup ruby"
-          , uses = Some "actions/setup-ruby@v1"
-          , `with` = toMap { ruby-version = "2.6" }
-          }
-        , Step::{
           , name = Some "Setup Cloud SDK"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
