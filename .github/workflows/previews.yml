@@ -1,7 +1,7 @@
 jobs:
   check-ci:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-0.1
       options: "--cpus 4"
     runs-on: ubuntu-latest
     steps:
@@ -16,7 +16,7 @@ jobs:
             git diff --exit-code
   deploy-ae:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-0.1
       options: "--cpus 4"
     needs: check-ci
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
           ./ci/ae-cleanup.sh mosaico-server
   deploy-gs:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-0.1
       options: "--cpus 4"
     needs: check-ci
     runs-on: ubuntu-latest
@@ -207,7 +207,7 @@ jobs:
           path: build/hbl365
   previews:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-0.1
       options: "--cpus 4"
     needs:
       - deploy-gs
