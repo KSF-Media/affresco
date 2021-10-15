@@ -31,18 +31,16 @@ let steps-ae =
 
 let previewLinks = [ Actions.linkPreviewsStep apps app-servers previewUrl ]
 
-let container = {image = "ksfmedia/diskho:gha-1.0", options = "--cpus 4"}
+let container = { image = "ksfmedia/diskho:gha-1.0", options = "--cpus 4" }
 
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]
     , jobs =
-      { check-ci = { container = container, steps = checkCISteps }
-      , deploy-gs =
-      { container = container, steps = steps-gs, needs = "check-ci" }
-      , deploy-ae =
-      { container = container, steps = steps-ae, needs = "check-ci" }
+      { check-ci = { container, steps = checkCISteps }
+      , deploy-gs = { container, steps = steps-gs, needs = "check-ci" }
+      , deploy-ae = { container, steps = steps-ae, needs = "check-ci" }
       , previews =
-      { container = container,
+        { container
         , steps = previewLinks
         , needs = [ "deploy-gs", "deploy-ae" ]
         }
