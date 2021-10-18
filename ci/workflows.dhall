@@ -52,6 +52,8 @@ let Step =
           , run : Optional Text
           , `with` : Map Text Text
           , env : Map Text Text
+          , shell : Optional Text
+          , continue-on-error : Optional Bool
           }
       , default =
         { id = None Text
@@ -60,6 +62,8 @@ let Step =
         , run = None Text
         , `with` = [] : Map Text Text
         , env = [] : Map Text Text
+        , shell = None Text
+        , continue-on-error = None Bool
         }
       }
 
@@ -68,20 +72,6 @@ let setupSteps =
         [ Step::{
           , name = Some "Checkout repo"
           , uses = Some "actions/checkout@v2"
-          }
-        , Step::{
-          , name = Some "Setup node and yarn"
-          , uses = Some "actions/setup-node@v1"
-          , `with` = toMap { node-version = "12" }
-          }
-        , Step::{
-          , name = Some "Setup ruby"
-          , uses = Some "actions/setup-ruby@v1"
-          , `with` = toMap { ruby-version = "2.6" }
-          }
-        , Step::{
-          , uses = Some "cachix/install-nix-action@v12"
-          , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
           }
         , Step::{
           , name = Some "Setup Cloud SDK"
@@ -100,25 +90,6 @@ let setupSteps =
                     }
                     env
               , export_default_credentials = "true"
-              }
-          }
-        , Step::{
-          , name = Some "Setup global build cache"
-          , uses = Some "actions/cache@v2"
-          , `with` = toMap
-              { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
-              , path =
-                  ''
-                    **/node_modules
-                    **/.yarn-cache
-                    **/.cache
-                    ~/.npm
-                    ~/.cache/spago
-                    apps/elections/dist
-                    !build
-                    !build/*
-                    !build/**
-                  ''
               }
           }
         , Step::{
@@ -151,6 +122,7 @@ let mkBuildStep =
         Step::{
         , name = Some "Build ${app.name}"
         , env = app.env
+        , shell = Some "bash"
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
@@ -163,6 +135,7 @@ let mkBuildServerStep =
         Step::{
         , name = Some "Build Server ${app.name}"
         , env = app.env
+        , shell = Some "bash"
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
@@ -243,30 +216,33 @@ let deployDispatchYamlStep =
             }
         }
 
-let checkCIStep =
-      Step::{
-      , name = Some "Check CI script has been generated from Dhall"
-      , run = Some
-          ''
-            make
-            git diff --exit-code
-          ''
-      }
+let checkCISteps =
+      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
+      , Step::{
+        , name = Some "Check CI script has been generated from Dhall"
+        , run = Some
+            ''
+              make
+              git diff --exit-code
+            ''
+        }
+      ]
 
 let generateDispatchYamlStep =
       \(env : Env) ->
         Step::{
         , name = Some "Generate AppEngine domain map"
+        , shell = Some "bash"
         , run =
             merge
               { Staging = Some
                   ''
-                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+                    npx 'dhall-to-yaml --omit-empty \
                     <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
                   ''
               , Production = Some
                   ''
-                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
+                    npx 'dhall-to-yaml --omit-empty \
                     <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
                   ''
               }
@@ -279,7 +255,8 @@ let linkPreviewsStep =
       \(previewUrl : Text) ->
         Step::{
         , name = Some "Post preview links"
-        , uses = Some "unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b"
+        , uses = Some
+            "unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b"
         , env = toMap { GITHUB_TOKEN = "\${{ secrets.GITHUB_TOKEN }}" }
         , `with` = toMap
             { msg =
@@ -312,10 +289,11 @@ let mkCleanAppEngineStep =
       \(env : Env) ->
       \(app : AppServer.Type) ->
         Step::{
-        , name = Some "Keep only 10 latest versions of ${app.name}"
+        , name = Some "Keep only 10 latest versions of ${app.id}"
+        , continue-on-error = Some True
         , run = Some
             ''
-            ./ci/ae-cleanup.sh ${app.deployDir}
+            ./ci/ae-cleanup.sh ${app.id}
             ''
         }
 
@@ -341,9 +319,10 @@ let refreshCDNSteps =
 
 let refreshCDNJob =
       \(cdnName : Text) ->
+      \(jobName : Text) ->
         { runs-on = "ubuntu-latest"
         , steps = refreshCDNSteps cdnName
-        , needs = "deploy"
+        , needs = jobName
         }
 
 let uploadSteps =
@@ -376,9 +355,11 @@ in  { Step
     , setupSteps
     , buildSteps
     , buildServerSteps
+    , mkBuildServerStep
     , uploadSteps
     , deployAppEngineSteps
-    , checkCIStep
+    , mkAppEngineStep
+    , checkCISteps
     , linkPreviewsStep
     , refreshCDNJob
     , generateDispatchYamlStep
@@ -386,4 +367,5 @@ in  { Step
     , cacheSteps
     , hasLockfile
     , cleanAppEngineSteps
+    , mkCleanAppEngineStep
     }

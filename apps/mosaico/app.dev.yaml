@@ -1,5 +1,5 @@
 runtime: nodejs12
-service: mosaico
+service: mosaico-server
 entrypoint: node -e 'require("./output/Main/index").main()'
 env_variables:
   PERSONA_URL: "https://persona.api.ksfmedia.fi/v1"
