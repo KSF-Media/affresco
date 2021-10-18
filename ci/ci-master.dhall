@@ -9,33 +9,72 @@ let Actions = ./workflows.dhall
 
 let apps = ./apps.dhall
 
-let app-servers = ./app-servers.dhall
+let AE = ./app-servers.dhall
+
+let container = ./container.dhall
 
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
-let deploySteps =
+let checkCISteps = Actions.checkCISteps
+
+let steps-gs =
         Actions.setupSteps Actions.Env.Production
-      # [ Actions.checkCIStep ]
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
-      # Actions.buildServerSteps app-servers
       # Actions.uploadSteps Actions.Env.Production apps
-      # Actions.deployAppEngineSteps Actions.Env.Production app-servers
-      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
-      # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
-      # Actions.cleanAppEngineSteps Actions.Env.Production app-servers
+
+let steps-app-article =
+        Actions.setupSteps Actions.Env.Production
+      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Production
+            AE.servers.app-article-server
+        ]
+      # [ Actions.mkCleanAppEngineStep
+            Actions.Env.Production
+            AE.servers.app-article-server
+        ]
+
+let steps-mosaico =
+        Actions.setupSteps Actions.Env.Production
+      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Production AE.servers.mosaico ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
+        ]
 
 let refreshCDNJobs =
-      { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto"
-      , refresh_cdn_app-article = Actions.refreshCDNJob "app-article"
-      , refresh_cdn_frontends = Actions.refreshCDNJob "ksf-frontends-lb"
+      { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
+      , refresh_cdn_app-article =
+          Actions.refreshCDNJob "app-article" "deploy-gs"
+      , refresh_cdn_frontends =
+          Actions.refreshCDNJob "ksf-frontends-lb" "deploy-gs"
       }
 
 in  { name = "production"
     , on.push.branches = [ "master" ]
     , jobs =
-            { deploy = { runs-on = "ubuntu-latest", steps = deploySteps } }
+            { check-ci =
+              { runs-on = "ubuntu-latest", container, steps = checkCISteps }
+            , deploy-gs =
+              { runs-on = "ubuntu-latest"
+              , container
+              , steps = steps-gs
+              , needs = "check-ci"
+              }
+            , deploy-app-article =
+              { runs-on = "ubuntu-latest"
+              , container
+              , steps = steps-app-article
+              , needs = "check-ci"
+              }
+            , deploy-mosaico =
+              { runs-on = "ubuntu-latest"
+              , container
+              , steps = steps-mosaico
+              , needs = "check-ci"
+              }
+            }
         //  refreshCDNJobs
     , env =
       { PRODUCTION_FACEBOOK_APP_ID = "1742585382627694"

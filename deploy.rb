@@ -32,16 +32,8 @@ end
 
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
-apps_json = ""
-apps_servers_json = ""
-begin
-  apps_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'")
-  apps_servers_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/app-servers.dhall\"'")
-rescue Exception => e
-  # FIXME: this is here because Netlify doesn't have nix-shell.
-  # This is terrible and should be removed ASAP. Really.
-  apps_json = file = File.read('./temp-apps-deprecate-me-asap.json')
-end
+apps_json = run_command("/bin/bash -c 'npx dhall-to-json <<< ./ci/apps.dhall'")
+apps_servers_json = run_command("/bin/bash -c 'npx dhall-to-json <<< \"(./ci/app-servers.dhall)\".all'")
 
 apps_list = JSON.parse(apps_json)
 app_servers_list = JSON.parse(apps_servers_json)
