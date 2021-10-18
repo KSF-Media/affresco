@@ -53,7 +53,8 @@ jobs:
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/app-article-server
-      - name: Keep only 10 latest versions of app-article-server
+      - continue-on-error: true
+        name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
   deploy-gs:
@@ -249,7 +250,8 @@ jobs:
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/mosaico
-      - name: Keep only 10 latest versions of mosaico-server
+      - continue-on-error: true
+        name: Keep only 10 latest versions of mosaico-server
         run: |
           ./ci/ae-cleanup.sh mosaico-server
   refresh_cdn_app-article:

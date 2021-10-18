@@ -42,7 +42,8 @@ jobs:
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
           promote: 'false'
           working_directory: build/app-article-server
-      - name: Keep only 10 latest versions of app-article-server
+      - continue-on-error: true
+        name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
   deploy-gs:
@@ -63,6 +64,39 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
+      - name: Setup build cache for Mitt Konto
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
+          path: |
+            apps/mitt-konto/.spago
+            apps/mitt-konto/output
+      - name: "Setup build cache for Vetrina (for testing only)"
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
+          path: |
+            apps/vetrina-test/.spago
+            apps/vetrina-test/output
+      - name: Setup build cache for App article
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
+          path: |
+            apps/app-article/dist
+      - name: Setup build cache for Corona banner
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
+          path: |
+            apps/corona-banner/dist
+      - name: Setup build cache for HBL365
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
+          path: |
+            apps/hbl365/.spago
+            apps/hbl365/output
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -205,7 +239,8 @@ jobs:
           project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
           promote: 'false'
           working_directory: build/mosaico
-      - name: Keep only 10 latest versions of mosaico-server
+      - continue-on-error: true
+        name: Keep only 10 latest versions of mosaico-server
         run: |
           ./ci/ae-cleanup.sh mosaico-server
   previews:
