@@ -22,6 +22,7 @@ let checkCISteps = Actions.checkCISteps
 
 let steps-gs =
         Actions.setupSteps Actions.Env.Staging
+      # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Staging apps
 
