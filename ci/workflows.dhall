@@ -352,8 +352,10 @@ in  { Step
     , setupSteps
     , buildSteps
     , buildServerSteps
+    , mkBuildServerStep
     , uploadSteps
     , deployAppEngineSteps
+    , mkAppEngineStep
     , checkCISteps
     , linkPreviewsStep
     , refreshCDNJob
@@ -362,4 +364,5 @@ in  { Step
     , cacheSteps
     , hasLockfile
     , cleanAppEngineSteps
+    , mkCleanAppEngineStep
     }

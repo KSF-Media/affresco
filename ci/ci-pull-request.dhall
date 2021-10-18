@@ -9,7 +9,7 @@ let Actions = ./workflows.dhall
 
 let apps = ./apps.dhall
 
-let app-servers = ./app-servers.dhall
+let AE = ./app-servers.dhall
 
 let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
 
@@ -23,13 +23,25 @@ let steps-gs =
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Staging apps
 
-let steps-ae =
+let steps-app-article =
         Actions.setupSteps Actions.Env.Staging
-      # Actions.buildServerSteps app-servers
-      # Actions.deployAppEngineSteps Actions.Env.Staging app-servers
-      # Actions.cleanAppEngineSteps Actions.Env.Staging app-servers
+      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Staging
+            AE.servers.app-article-server
+        ]
+      # [ Actions.mkCleanAppEngineStep
+            Actions.Env.Staging
+            AE.servers.app-article-server
+        ]
 
-let previewLinks = [ Actions.linkPreviewsStep apps app-servers previewUrl ]
+let steps-mosaico =
+        Actions.setupSteps Actions.Env.Staging
+      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging AE.servers.mosaico ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.servers.mosaico ]
+
+let previewLinks = [ Actions.linkPreviewsStep apps AE.all previewUrl ]
 
 let container = { image = "ksfmedia/diskho:gha-0.1", options = "--cpus 2" }
 
@@ -44,16 +56,22 @@ in  { name = "previews"
         , steps = steps-gs
         , needs = "check-ci"
         }
-      , deploy-ae =
+      , deploy-app-article =
         { runs-on = "ubuntu-latest"
         , container
-        , steps = steps-ae
+        , steps = steps-app-article
+        , needs = "check-ci"
+        }
+      , deploy-mosaico =
+        { runs-on = "ubuntu-latest"
+        , container
+        , steps = steps-mosaico
         , needs = "check-ci"
         }
       , previews =
         { runs-on = "ubuntu-latest"
         , steps = previewLinks
-        , needs = [ "deploy-gs", "deploy-ae" ]
+        , needs = [ "deploy-gs", "deploy-mosaico", "deploy-app-article" ]
         }
       }
     }

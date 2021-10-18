@@ -9,7 +9,7 @@ let Actions = ./workflows.dhall
 
 let apps = ./apps.dhall
 
-let app-servers = ./app-servers.dhall
+let AE = ./app-servers.dhall
 
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
@@ -24,11 +24,11 @@ let deploySteps =
 
 let deployAESteps =
         Actions.setupSteps Actions.Env.Production
-      # Actions.buildServerSteps app-servers
-      # Actions.deployAppEngineSteps Actions.Env.Production app-servers
+      # Actions.buildServerSteps AE.all
+      # Actions.deployAppEngineSteps Actions.Env.Production AE.all
       # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
       # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
-      # Actions.cleanAppEngineSteps Actions.Env.Production app-servers
+      # Actions.cleanAppEngineSteps Actions.Env.Production AE.all
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
