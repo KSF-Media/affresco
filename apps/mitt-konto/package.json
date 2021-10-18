@@ -4,7 +4,6 @@
   "description": "A mitt konto frontend, allows customers to manage their subscriptions",
   "license": "MIT",
   "dependencies": {
-    "basscss": "^8.0.4",
     "create-react-class": "^15.6.3",
     "less": "^3.8.1",
     "react": ">=16.12",
@@ -17,6 +16,6 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "spago build && parcel build index.html --no-cache --public-url ./ && cp xd_receiver.html _redirects ./dist"
+    "build": "spago build && parcel build index.html --public-url ./ && cp xd_receiver.html _redirects ./dist"
   }
 }

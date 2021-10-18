@@ -2,6 +2,12 @@ let Prelude = ./Prelude.dhall
 
 let Map = Prelude.Map.Type
 
+let default = Prelude.Text.default
+
+let not = Prelude.Bool.not
+
+let null = Prelude.Optional.null
+
 let Env = < Staging | Production >
 
 let App =
@@ -10,8 +16,11 @@ let App =
           , deployDir : Text
           , name : Text
           , env : Map Text Text
+          , lockfile : Optional Text
+          , caches : Optional Text
           }
-      , default.env = [] : Map Text Text
+      , default =
+        { env = [] : Map Text Text, lockfile = None Text, caches = None Text }
       }
 
 let AppServer =
@@ -20,12 +29,19 @@ let AppServer =
           , buildDir : Text
           , deployDir : Text
           , name : Text
-          , previewUrl : Text
           , runtime : Text
           , entrypoint : Text
           , env : Map Text Text
+          , previewUrl : Text
+          , lockfile : Optional Text
+          , caches : Optional Text
           }
-      , default = { env = [] : Map Text Text, previewUrl = "" : Text }
+      , default =
+        { env = [] : Map Text Text
+        , previewUrl = ""
+        , lockfile = None Text
+        , caches = None Text
+        }
       }
 
 let Step =
@@ -48,29 +64,87 @@ let Step =
       }
 
 let setupSteps =
-      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
-      , Step::{
-        , name = Some "Setup node and yarn"
-        , uses = Some "actions/setup-node@v1"
-        , `with` = toMap { node-version = "12" }
-        }
-      , Step::{
-        , name = Some "Setup ruby"
-        , uses = Some "actions/setup-ruby@v1"
-        , `with` = toMap { ruby-version = "2.6" }
-        }
-      , Step::{
-        , uses = Some "cachix/install-nix-action@v12"
-        , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
-        }
-      , Step::{
-        , run = Some
-            ''
-              yarn install --pure-lockfile
-              mkdir -p build
-            ''
-        }
-      ]
+      \(env : Env) ->
+        [ Step::{
+          , name = Some "Checkout repo"
+          , uses = Some "actions/checkout@v2"
+          }
+        , Step::{
+          , name = Some "Setup node and yarn"
+          , uses = Some "actions/setup-node@v1"
+          , `with` = toMap { node-version = "12" }
+          }
+        , Step::{
+          , name = Some "Setup ruby"
+          , uses = Some "actions/setup-ruby@v1"
+          , `with` = toMap { ruby-version = "2.6" }
+          }
+        , Step::{
+          , uses = Some "cachix/install-nix-action@v12"
+          , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
+          }
+        , Step::{
+          , name = Some "Setup Cloud SDK"
+          , uses = Some "google-github-actions/setup-gcloud@master"
+          , `with` = toMap
+              { project_id =
+                  merge
+                    { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
+                    , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+                    }
+                    env
+              , service_account_key =
+                  merge
+                    { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
+                    , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+                    }
+                    env
+              , export_default_credentials = "true"
+              }
+          }
+        , Step::{
+          , name = Some "Setup global build cache"
+          , uses = Some "actions/cache@v2"
+          , `with` = toMap
+              { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
+              , path =
+                  ''
+                    **/node_modules
+                    **/.yarn-cache
+                    **/.cache
+                    ~/.npm
+                    ~/.cache/spago
+                    apps/elections/dist
+                    !build
+                    !build/*
+                    !build/**
+                  ''
+              }
+          }
+        , Step::{
+          , run = Some
+              ''
+                yarn install --pure-lockfile --cache-folder=.yarn-cache
+                mkdir -p build
+              ''
+          }
+        ]
+
+let mkCacheAppStep =
+      \(app : App.Type) ->
+        let caches = default app.caches
+
+        let lockfile = default app.lockfile
+
+        in  Step::{
+            , name = Some "Setup build cache for ${app.name}"
+            , uses = Some "actions/cache@v2"
+            , `with` = toMap
+                { path = caches
+                , key =
+                    "\${{ runner.os }}-${app.deployDir}-\${{ hashFiles('apps/${app.buildDir}/${lockfile}')}}"
+                }
+            }
 
 let mkBuildStep =
       \(app : App.Type) ->
@@ -80,7 +154,7 @@ let mkBuildStep =
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
-              mv apps/${app.buildDir}/dist build/${app.deployDir}
+              cp -R apps/${app.buildDir}/dist build/${app.deployDir}
             ''
         }
 
@@ -92,7 +166,7 @@ let mkBuildServerStep =
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
-              mv apps/${app.buildDir} build/${app.deployDir}
+              cp -R apps/${app.buildDir} build/${app.deployDir}
             ''
         }
 
@@ -106,7 +180,8 @@ let mkUploadStep =
             { path = "build/${app.deployDir}"
             , destination =
                 merge
-                  { Staging = "deploy-previews/\${{ github.sha }}/${app.deployDir}"
+                  { Staging =
+                      "deploy-previews/\${{ github.sha }}/${app.deployDir}"
                   , Production = "ksf-frontends/${app.deployDir}"
                   }
                   env
@@ -129,7 +204,7 @@ let mkAppEngineStep =
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = "true"
+            , promote = merge { Staging = "false", Production = "true" } env
             , project_id =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
@@ -204,7 +279,8 @@ let linkPreviewsStep =
       \(previewUrl : Text) ->
         Step::{
         , name = Some "Post preview links"
-        , uses = Some "unsplash/comment-on-pr@master"
+        , uses = Some
+            "unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b"
         , env = toMap { GITHUB_TOKEN = "\${{ secrets.GITHUB_TOKEN }}" }
         , `with` = toMap
             { msg =
@@ -229,7 +305,19 @@ let linkPreviewsStep =
                         renderAELink
                         appServers}
                     ''
+            , check_for_duplicate_msg = "false"
             }
+        }
+
+let mkCleanAppEngineStep =
+      \(env : Env) ->
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Keep only 10 latest versions of ${app.id}"
+        , run = Some
+            ''
+            ./ci/ae-cleanup.sh ${app.id}
+            ''
         }
 
 let refreshCDNSteps =
@@ -271,6 +359,16 @@ let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 let buildServerSteps =
       Prelude.List.map AppServer.Type Step.Type mkBuildServerStep
 
+let cleanAppEngineSteps =
+      \(env : Env) ->
+        Prelude.List.map AppServer.Type Step.Type (mkCleanAppEngineStep env)
+
+let cacheSteps = Prelude.List.map App.Type Step.Type mkCacheAppStep
+
+let hasLockfile
+    : App.Type -> Bool
+    = \(a : App.Type) -> not (null Text a.lockfile)
+
 in  { Step
     , Prelude
     , App
@@ -286,4 +384,7 @@ in  { Step
     , refreshCDNJob
     , generateDispatchYamlStep
     , deployDispatchYamlStep
+    , cacheSteps
+    , hasLockfile
+    , cleanAppEngineSteps
     }

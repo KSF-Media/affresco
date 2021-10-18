@@ -135,6 +135,8 @@ search = do
           result <- User.createCusnoUser newUser
           let setError err = setAccountData $ (map <<< map) (const $ AsyncWrapper.Error err)
           liftEffect $ case result of
+            Left User.LoginTokenExpired ->
+              setError expiredTokenMsg
             Left User.RegistrationEmailInUse ->
               setError "E-postadressen är redan i bruk."
             Left (User.RegistrationCusnoInUse conflicting) -> do
@@ -173,6 +175,8 @@ search = do
                   setPersonaUserEdit $ (map <<< map <<< mapSetCusno) $
                     const $ AsyncWrapper.Success Nothing
             case result of
+              Left User.LoginTokenExpired -> liftEffect do
+                setError expiredTokenMsg
               Left (User.RegistrationCusnoInUse conflicting) -> liftEffect do
                 setError $ "Kundnummer är redan i bruk."
                   <> foldMap (\x -> " (" <> x <> ")") conflicting.email
@@ -217,6 +221,9 @@ search = do
           Aff.launchAff_ do
             result <- User.updatePassword uuid pw pw
             liftEffect $ case result of
+              Left User.LoginTokenExpired ->
+                setPersonaUserEdit <<< map <<< map <<< mapPasswordControl $
+                const $ AsyncWrapper.Error expiredTokenMsg
               Left _ -> setPersonaUserEdit <<< map <<< map <<< mapPasswordControl $
                         const $ AsyncWrapper.Error ""
               Right _ -> setPersonaUserEdit $ (map <<< map <<< mapPasswordControl) $
@@ -293,7 +300,7 @@ search = do
 
     searchQuery query setQuery submitSearch =
       DOM.div
-        { className: "search--query mitt-konto--container clearfix"
+        { className: "search--query mitt-konto--container"
         , children:
             [ DOM.span
                 { className: "mitt-konto--component-heading"
@@ -547,6 +554,8 @@ search = do
                       ]
                   }
 
+    expiredTokenMsg = "Autentiseringstoken är för gammal. Vänligen logga in igen."
+
 data NewUserFields
   = EmailField
   | PasswordField
@@ -731,7 +740,7 @@ renderControlPassword resetPassword submitPassword cancel setState wrapperState 
     , editingView: render
     , loadingView: const $ DOM.div { className: "tiny-spinner" }
     , successView: const genericSuccess
-    , errorView: const $ genericError Nothing
+    , errorView: genericError <<< Just
     }
   where
     render :: EmailPassword -> JSX

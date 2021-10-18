@@ -4,6 +4,7 @@ import Prelude
 
 import Bottega (BottegaError(..))
 import Bottega.Models.PaymentMethod (toPaymentMethod)
+import Bottega.Models.Order (OrderSource(..), toOrderSource)
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array (any, filter, head, length, mapMaybe, null, take)
@@ -23,7 +24,8 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (Package, PackageId)
+import KSF.Api.Package (PackageId)
+import KSF.Api.Subscription (Subscription, isSubscriptionStateCanceled)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
 import KSF.Paper (Paper)
@@ -61,6 +63,8 @@ type JSProps =
   , paymentMethods     :: Nullable (Array String)
   , loadingContainer   :: Nullable (JSX -> JSX)
   , customNewPurchase  :: Nullable (JSX -> NewPurchase.State -> JSX)
+  , orderSource        :: Nullable String
+  , subscriptionExists :: Nullable JSX
   }
 
 type Props =
@@ -75,6 +79,8 @@ type Props =
   , paymentMethods     :: Array User.PaymentMethod
   , loadingContainer   :: Maybe (JSX -> JSX)
   , customNewPurchase  :: Maybe (JSX -> NewPurchase.State -> JSX)
+  , orderSource        :: OrderSource
+  , subscriptionExists :: JSX
   }
 
 fromJSProps :: JSProps -> Props
@@ -98,6 +104,8 @@ fromJSProps jsProps =
   , paymentMethods: foldMap (mapMaybe toPaymentMethod) $ toMaybe jsProps.paymentMethods
   , loadingContainer: toMaybe jsProps.loadingContainer
   , customNewPurchase: toMaybe jsProps.customNewPurchase
+  , orderSource: maybe UnknownSource toOrderSource $ toMaybe jsProps.orderSource
+  , subscriptionExists: fromMaybe mempty $ toMaybe jsProps.subscriptionExists
   }
 
 type State =
@@ -319,7 +327,9 @@ render self = vetrinaContainer self $
       case failure of
         SubscriptionExists ->
           Purchase.SubscriptionExists.subscriptionExists
-            { onClose: fromMaybe (pure unit) self.props.onClose }
+            { onClose: fromMaybe (pure unit) self.props.onClose
+            , extraMsg: self.props.subscriptionExists
+            }
         InsufficientAccount ->
           case self.state.user of
             Just u ->
@@ -433,14 +443,14 @@ mkPurchase self@{ state: { logger } } validForm affUser =
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
-    when (userHasPackage product.id $ map _.package user.subs)
+    when (userHasPackage product.id user.subs)
       $ except $ Left SubscriptionExists
 
     userEntitlements <- ExceptT getUserEntitlements
     when (isUserEntitled self.props.accessEntitlements userEntitlements)
       $ except $ Left SubscriptionExists
 
-    order <- ExceptT $ createOrder user product
+    order <- ExceptT $ createOrder user product self.props.orderSource
     paymentUrl <- ExceptT $ payOrder order paymentMethod
     liftEffect do
       LocalStorage.setItem "productId" product.id -- for analytics
@@ -501,8 +511,10 @@ mkPurchase self@{ state: { logger } } validForm affUser =
               _ -> Nothing
         }
 
-userHasPackage :: PackageId -> Array Package -> Boolean
-userHasPackage packageId = Array.any (\p -> packageId == p.id)
+userHasPackage :: PackageId -> Array Subscription -> Boolean
+userHasPackage packageId = Array.any
+                           (\s -> packageId == s.package.id
+                                  && not (isSubscriptionStateCanceled s.state))
 
 isUserEntitled :: Set String -> Set String -> Boolean
 isUserEntitled accessEntitlements userEntitlements =
@@ -549,14 +561,15 @@ loginToExistingAccount self (Just username) (Just password) = do
 loginToExistingAccount _ _ _ =
   pure $ Left $ FormFieldError [ EmailAddress, Password ]
 
-createOrder :: User -> Product -> Aff (Either OrderFailure Order)
-createOrder _ product = do
+createOrder :: User -> Product -> OrderSource -> Aff (Either OrderFailure Order)
+createOrder _ product orderSource = do
   -- TODO: fix period etc.
   let newOrder =
         { packageId: product.id
         , period: 1
         , payAmountCents: product.priceCents
         , campaignNo: map _.no product.campaign
+        , orderSource: Just orderSource
         }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of

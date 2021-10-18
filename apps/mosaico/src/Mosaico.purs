@@ -2,11 +2,11 @@ module Mosaico where
 
 import Prelude
 
-import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json)
 import Data.Array (null, head)
 import Data.Either (Either(..), either, hush)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Foldable (oneOf)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
@@ -15,11 +15,10 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Exception (error)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, parseArticleWithoutLocalizing)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), notFoundArticle, fromFullArticle, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
@@ -29,7 +28,7 @@ import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
-import Routing.Match (Match, lit, root, str)
+import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
@@ -38,6 +37,7 @@ import Web.HTML.Window (scroll) as Web
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
   | ArticlePage String
+  | NotFoundPage String
 derive instance eqR :: Eq MosaicoPage
 
 data ModalView = LoginModal
@@ -45,6 +45,7 @@ data ModalView = LoginModal
 type State =
   { article :: Maybe FullArticle
   , articleList :: Array ArticleStub
+  , mostreadList :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
   , route :: MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -60,16 +61,12 @@ type SetState = (State -> State) -> Effect Unit
 type Props = { article :: Maybe FullArticle }
 type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
 
-frontpageRoute :: Match MosaicoPage
-frontpageRoute = Frontpage <$ root
-
-articleRoute :: Match MosaicoPage
-articleRoute = ArticlePage <$> (lit "" *> lit "artikel" *> str)
-
 routes :: Match MosaicoPage
-routes =
-  articleRoute <|> frontpageRoute
-
+routes = root *> oneOf
+  [ ArticlePage <$> (lit "artikel" *> str)
+  , Frontpage <$end
+  , NotFoundPage <$> str
+  ]
 app :: Component Props
 app = do
   initialValues <- getInitialValues
@@ -94,6 +91,12 @@ mosaicoComponent initialValues props = React.do
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
       ArticlePage _articleId -> pure unit
+      NotFoundPage _path -> pure unit
+
+    Aff.launchAff_ do
+      mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+      liftEffect $ setState \s -> s { mostreadList = mostReadArticles }
+
     pure mempty
 
   pure $ render setState state initialValues.nav
@@ -124,6 +127,7 @@ getInitialValues = do
     { state:
         { article: Nothing
         , articleList: []
+        , mostreadList: []
         , affArticle: Nothing
         , route: initialRoute
         , clickedArticle: Nothing
@@ -170,7 +174,7 @@ render setState state router =
        { className: "mosaico grid"
        , children:
            [ Header.topLine
-           , state.headerComponent { router: Just router }
+           , state.headerComponent { router }
            , Header.mainSeparator
            , case state.route of
                  ArticlePage articleId
@@ -179,35 +183,42 @@ render setState state router =
                    -- If we have this article already in `state`, let's pass that to `articleComponent`
                    -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
                    -- e.g. when a subscription is purchased or user logs in
-                   , article.uuid == articleId -> renderArticle state setState (Just fullArticle) (affArticle articleId) Nothing
-                   | otherwise                 -> renderArticle state setState Nothing (affArticle articleId) state.clickedArticle
+                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
+                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
                  Frontpage -> articleList state setState router
+                 NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
            , DOM.footer
                { className: "mosaico--footer"
                , children: [ DOM.text "footer" ]
                }
-           , DOM.aside
-               { className: "mosaico--aside" }
+           , case state.route of
+               Frontpage -> 
+                 DOM.aside
+                    { className: "mosaico--aside"
+                    , children: [ renderMostreadList state setState router ]
+                    }
+               _ -> mempty
            ]
        }
+  where
+    affArticle :: String -> Aff FullArticle
+    affArticle articleId = do
+      a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
+      pure case a of
+        Right article -> article
+        Left _ -> notFoundArticle
 
-affArticle :: String -> Aff FullArticle
-affArticle articleId = do
-  a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-  case a of
-    Right article -> pure article
-    Left _ -> Aff.throwError $ error "Couldn't get article" -- TODO: handle properly
-
-renderArticle :: State -> SetState -> Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> JSX
-renderArticle state setState maybeA affA aStub =
-  state.articleComponent
-    { affArticle: affA
-    , brand: "hbl"
-    , article: maybeA
-    , articleStub: aStub
-    , onLogin: setState \s -> s { modalView = Just LoginModal }
-    , user: state.user
-    }
+    renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> String -> JSX
+    renderArticle maybeA affA aStub uuid =
+      state.articleComponent
+        { affArticle: affA
+        , brand: "hbl"
+        , article: maybeA
+        , articleStub: aStub
+        , onLogin: setState \s -> s { modalView = Just LoginModal }
+        , user: state.user
+        , uuid: Just uuid
+        }
 
 articleList :: State -> SetState -> PushStateInterface -> JSX
 articleList state setState router =
@@ -229,7 +240,7 @@ articleList state setState router =
               , children:
                   [ DOM.div
                     { className: "list-article-image"
-                    , children:[ DOM.img { src: fromMaybe "" $ map _.url a.listImage } ]
+                    , children:[ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url  a.listImage } ]
                     }
                   , DOM.div
                     { className: "list-article-liftup"
@@ -255,3 +266,55 @@ articleList state setState router =
               }
             ]
         }
+
+renderMostreadList :: State -> SetState -> PushStateInterface -> JSX
+renderMostreadList state setState router =
+  let
+    block = "mosaico-asidelist"
+  in
+    DOM.div
+      { className: block
+      , children:
+          [ DOM.h6
+              { className: block <> "--header color-hbl"
+              , children: [ DOM.text "Andra läser" ]
+              }
+          , DOM.ul
+              { className: block <> "__mostread"
+              , children: map renderMostreadArticle state.mostreadList
+              }
+          ]
+      }
+      where
+        renderMostreadArticle :: ArticleStub -> JSX
+        renderMostreadArticle a =
+          DOM.li_
+            [ DOM.a
+                { onClick: handler_ do
+                      setState \s -> s { clickedArticle = Just a }
+                      void $ Web.scroll 0 0 =<< Web.window
+                      router.pushState (write {}) $ "/artikel/" <> a.uuid
+                , children:
+                    [ DOM.div
+                        { className: "counter"
+                        , children: [ DOM.div { className: "background-hbl" } ]
+                        }
+                      , DOM.div
+                          { className: "list-article-liftup"
+                          , children:
+                              [ DOM.h6_ [ DOM.text a.title ]
+                              , DOM.div
+                                  { className: "mosaico--article--meta"
+                                  , children:
+                                      [ guard a.premium $
+                                          DOM.div
+                                            { className: "mosaico--article--premium background-hbl"
+                                            , children: [ DOM.text "premium" ]
+                                            }
+                                      ]
+                                  }
+                              ]
+                          }
+                      ]
+                  }
+            ]

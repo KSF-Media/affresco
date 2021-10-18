@@ -1,7 +1,41 @@
 @import (reference) '../less/ksf-variables';
 
+.grid--column-third {
+    width: calc(3/12 * 100%);
+}
+
 .grid--column-half {
     width: calc(6/12 * 100%);
+}
+
+.grid--column-10 {
+    width: calc(10/12 * 100%);
+}
+
+.grid--column-8 {
+    width: calc(8/12 * 100%);
+}
+
+.grid--column-4 {
+    width: calc(4/12 * 100%);
+}
+
+.grid--column-2 {
+    width: calc(2/12 * 100%);
+}
+
+.grid--row:before, .grid--row:after {
+    content: " ";
+    display: table;
+}
+
+.grid--row:after {
+    clear: both;
+}
+
+.grid--column {
+    float: left;
+    box-sizing: border-box;
 }
 
 .grid-col-1 {

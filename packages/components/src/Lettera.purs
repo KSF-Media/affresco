@@ -34,12 +34,16 @@ letteraArticleUrl = letteraBaseUrl <>  "/article/"
 letteraFrontPageUrl :: String
 letteraFrontPageUrl = letteraBaseUrl <> "/frontpage"
 
+letteraMostReadUrl :: String
+letteraMostReadUrl = letteraBaseUrl <> "/mostread/"
+
 getArticle' :: UUID -> Aff Article
 getArticle' u = do
   getArticle u Nothing >>= \a ->
     case a of
       Right (FullArticle a') -> pure a'
       Right (PreviewArticle a') -> pure a'
+      Right (ErrorArticle a') -> pure a'
       Left err -> throwError $ error $ "Failed to get article: " <> err
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
@@ -104,6 +108,29 @@ getFrontpage paper = do
   case frontpageResponse of
     Left err -> do
       Console.warn $ "Frontpage response failed to decode: " <> AX.printError err
+      pure mempty
+    Right response
+      | Just (responseArray :: Array Json) <- toArray response.body -> do
+        a <- liftEffect $ traverse parseArticleStub responseArray
+        pure $ foldl takeRights [] a
+        where
+          takeRights acc = either (const acc) (acc `snoc` _)
+      | otherwise -> do
+        Console.warn "Failed to read API response!"
+        pure mempty
+
+getMostRead :: Int -> Int -> String -> Paper -> Boolean -> Aff (Array ArticleStub)
+getMostRead start limit category paper onlySubscribers = do
+  mostReadResponse <- AX.get ResponseFormat.json (letteraMostReadUrl
+          <> "?start=" <> show start
+          <> "&limit=" <> show limit
+          <> "&category" <> category
+          <> "&paper=" <> Paper.toString paper
+          <> "&onlySubscribers=" <> show onlySubscribers
+  )
+  case mostReadResponse of
+    Left err -> do
+      Console.warn $ "MostRead response failed to decode: " <> AX.printError err
       pure mempty
     Right response
       | Just (responseArray :: Array Json) <- toArray response.body -> do

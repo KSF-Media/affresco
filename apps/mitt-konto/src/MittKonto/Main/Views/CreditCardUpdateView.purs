@@ -92,7 +92,7 @@ initialState =
 render :: Self -> AVar Unit -> JSX
 render self@{ setState, state: { asyncWrapperState, updateState }, props: { creditCards } } closed =
   asyncWrapper $ DOM.div
-    { className: "clearfix credit-card-update--container"
+    { className: "credit-card-update--container"
     , children:
         [ case updateState of
             ChooseCreditCard       -> Choice.choice
@@ -128,7 +128,7 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } 
       let newState = state { updateState = RegisterCreditCard url }
       liftEffect do
         setState \_ -> newState
-        setWrapperState _ { closeable = false }
+        setWrapperState _ { closeable = true }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
     Right { terminalUrl: Nothing } ->
       liftEffect do

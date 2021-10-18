@@ -207,10 +207,10 @@ render :: Types.Self -> PushStateInterface -> JSX -> Effect Unit -> Boolean -> J
 render self@{ state } router content logout isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "") $
     [ Views.navbarView self router logout isPersonating
-    , Helpers.classy DOM.div "mt3 mb4 clearfix"
+    , Helpers.classy DOM.div "mitt-konto--main-container-container"
         [ foldMap Views.alertView state.alert
-        , Helpers.classy DOM.div "mitt-konto--main-container col-10 lg-col-7 mx-auto"
-            [ Helpers.classy DOM.div "mitt-konto--container clearfix" [ content ]
+        , Helpers.classy DOM.div "mitt-konto--main-container"
+            [ Helpers.classy DOM.div "mitt-konto--container" [ content ]
             ]
         ]
     , Views.footerView
