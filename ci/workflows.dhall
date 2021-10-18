@@ -53,6 +53,7 @@ let Step =
           , `with` : Map Text Text
           , env : Map Text Text
           , shell : Optional Text
+          , continue-on-error : Optional Bool
           }
       , default =
         { id = None Text
@@ -62,6 +63,7 @@ let Step =
         , `with` = [] : Map Text Text
         , env = [] : Map Text Text
         , shell = None Text
+        , continue-on-error = None Bool
         }
       }
 
@@ -288,6 +290,7 @@ let mkCleanAppEngineStep =
       \(app : AppServer.Type) ->
         Step::{
         , name = Some "Keep only 10 latest versions of ${app.id}"
+        , continue-on-error = Some True
         , run = Some
             ''
             ./ci/ae-cleanup.sh ${app.id}
