@@ -12,7 +12,7 @@ env:
 jobs:
   check-ci:
     container:
-      image: ksfmedia/diskho:gha-0.1
+      image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +24,7 @@ jobs:
             git diff --exit-code
   deploy-app-article:
     container:
-      image: ksfmedia/diskho:gha-0.1
+      image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
@@ -59,7 +59,7 @@ jobs:
           ./ci/ae-cleanup.sh app-article-server
   deploy-gs:
     container:
-      image: ksfmedia/diskho:gha-0.1
+      image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
@@ -221,7 +221,7 @@ jobs:
           path: build/hbl365
   deploy-mosaico:
     container:
-      image: ksfmedia/diskho:gha-0.1
+      image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
