@@ -10,6 +10,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
+import Debug
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -30,15 +31,23 @@ import React.Basic.Hooks as React
 import Routing (match)
 import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
+import Affjax as AX
+import Affjax.ResponseFormat as AX
 import Simple.JSON (write)
 import Web.HTML (window) as Web
+import Web.HTML.Event.EventTypes (offline)
 import Web.HTML.Window (scroll) as Web
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
   | ArticlePage String
   | NotFoundPage String
+  | StaticPage MosaicoStaticPage
 derive instance eqR :: Eq MosaicoPage
+
+data MosaicoStaticPage 
+  = TermsAndConditionsPage
+derive instance eqStaticR :: Eq MosaicoStaticPage
 
 data ModalView = LoginModal
 
@@ -54,6 +63,7 @@ type State =
   , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , user :: Maybe User
+  , staticPage :: Maybe JSX
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -64,9 +74,16 @@ type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
 routes :: Match MosaicoPage
 routes = root *> oneOf
   [ ArticlePage <$> (lit "artikel" *> str)
+  , StaticPage <$> (lit "sida" *> staticRoutes)
   , Frontpage <$end
   , NotFoundPage <$> str
   ]
+  where
+    staticRoutes :: Match MosaicoStaticPage
+    staticRoutes = oneOf 
+      [ TermsAndConditionsPage <$ lit "bruksvillkor"
+
+      ]
 app :: Component Props
 app = do
   initialValues <- getInitialValues
@@ -92,6 +109,15 @@ mosaicoComponent initialValues props = React.do
         else setState \s -> s { article = Nothing }
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
+      StaticPage page -> Aff.launchAff_ do
+        liftEffect $ setState _ { staticPage = Nothing }
+        res <- AX.get AX.string "https://cdn.ksfmedia.fi/mosaico/static/terms-and-conditions.html"
+        liftEffect $ case res of
+          Right content -> setState _ { staticPage = Just $ DOM.div { dangerouslySetInnerHTML: { __html: content.body } } }
+          Left err -> do
+            traceM err
+            setState _ { staticPage = Just $ DOM.text "Oj! Något gick fel, ladda om sidan."}
+
 
     Aff.launchAff_ do
       mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
@@ -136,6 +162,7 @@ getInitialValues = do
         , headerComponent
         , loginModalComponent
         , user: Nothing
+        , staticPage: Nothing
         }
     , nav
     , locationState
@@ -173,7 +200,7 @@ render setState state router =
   <> DOM.div
        { className: "mosaico grid"
        , children:
-           [ Header.topLine
+           [ Header.topLine 
            , state.headerComponent { router }
            , Header.mainSeparator
            , case state.route of
@@ -187,9 +214,16 @@ render setState state router =
                    | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
                  Frontpage -> articleList state setState router
                  NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+                 StaticPage _ -> case state.staticPage of
+                  Nothing -> DOM.text "laddar"
+                  Just content -> content
            , DOM.footer
                { className: "mosaico--footer"
-               , children: [ DOM.text "footer" ]
+               , children: 
+                  [ DOM.text "footerfgdfggdggr"
+                  , DOM.a 
+                      { href: "/sida/bruksvillkor" 
+                        , children: [ DOM.text "asasdzpdijog"] } ]
                }
            , DOM.aside
               { className: "mosaico--aside"
