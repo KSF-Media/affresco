@@ -14,22 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        shell: bash
         uses: "actions/checkout@v2"
       - name: Check CI script has been generated from Dhall
         run: |2
             make
             git diff --exit-code
-        shell: bash
   deploy-ae:
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        shell: bash
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        shell: bash
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
@@ -38,7 +34,6 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-        shell: bash
       - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
@@ -51,7 +46,6 @@ jobs:
         shell: bash
       - id: deploy-app-article-server
         name: Deploy App article server
-        shell: bash
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
@@ -60,7 +54,6 @@ jobs:
           working_directory: build/app-article-server
       - id: deploy-mosaico-server
         name: Deploy Mosaico server
-        shell: bash
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
@@ -73,7 +66,6 @@ jobs:
             <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
         shell: bash
       - name: Deploy AppEngine domain map
-        shell: bash
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
@@ -83,20 +75,16 @@ jobs:
       - name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
-        shell: bash
       - name: Keep only 10 latest versions of mosaico-server
         run: |
           ./ci/ae-cleanup.sh mosaico-server
-        shell: bash
   deploy-gs:
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        shell: bash
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        shell: bash
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
@@ -105,9 +93,7 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-        shell: bash
       - name: Setup build cache for Mitt Konto
-        shell: bash
         uses: "actions/cache@v2"
         with:
           key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
@@ -115,7 +101,6 @@ jobs:
             apps/mitt-konto/.spago
             apps/mitt-konto/output
       - name: "Setup build cache for Vetrina (for testing only)"
-        shell: bash
         uses: "actions/cache@v2"
         with:
           key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
@@ -123,21 +108,18 @@ jobs:
             apps/vetrina-test/.spago
             apps/vetrina-test/output
       - name: Setup build cache for App article
-        shell: bash
         uses: "actions/cache@v2"
         with:
           key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
           path: |
             apps/app-article/dist
       - name: Setup build cache for Corona banner
-        shell: bash
         uses: "actions/cache@v2"
         with:
           key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
           path: |
             apps/corona-banner/dist
       - name: Setup build cache for HBL365
-        shell: bash
         uses: "actions/cache@v2"
         with:
           key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
@@ -200,7 +182,6 @@ jobs:
             cp -R apps/hbl365/dist build/hbl365
         shell: bash
       - name: Upload Scripts
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -208,7 +189,6 @@ jobs:
           parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -216,7 +196,6 @@ jobs:
           parent: 'false'
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -224,7 +203,6 @@ jobs:
           parent: 'false'
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -232,7 +210,6 @@ jobs:
           parent: 'false'
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -240,7 +217,6 @@ jobs:
           parent: 'false'
           path: build/elections
       - name: Upload App article
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -248,7 +224,6 @@ jobs:
           parent: 'false'
           path: build/app-article
       - name: Upload Corona banner
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -256,7 +231,6 @@ jobs:
           parent: 'false'
           path: build/corona-banner
       - name: Upload HBL365
-        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -268,7 +242,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        shell: bash
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
@@ -277,13 +250,11 @@ jobs:
       - name: "Invalidate CDN cache for 'app-article'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
-        shell: bash
   refresh_cdn_frontends:
     needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        shell: bash
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
@@ -292,13 +263,11 @@ jobs:
       - name: "Invalidate CDN cache for 'ksf-frontends-lb'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
-        shell: bash
   refresh_cdn_mitt-konto:
     needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        shell: bash
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
@@ -307,7 +276,6 @@ jobs:
       - name: "Invalidate CDN cache for 'mitt-konto'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"
-        shell: bash
 name: production
 on:
   push:

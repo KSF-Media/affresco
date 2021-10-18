@@ -61,7 +61,7 @@ let Step =
         , run = None Text
         , `with` = [] : Map Text Text
         , env = [] : Map Text Text
-        , shell = Some "bash"
+        , shell = None Text
         }
       }
 
@@ -120,6 +120,7 @@ let mkBuildStep =
         Step::{
         , name = Some "Build ${app.name}"
         , env = app.env
+        , shell = Some "bash"
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
@@ -132,6 +133,7 @@ let mkBuildServerStep =
         Step::{
         , name = Some "Build Server ${app.name}"
         , env = app.env
+        , shell = Some "bash"
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
@@ -228,6 +230,7 @@ let generateDispatchYamlStep =
       \(env : Env) ->
         Step::{
         , name = Some "Generate AppEngine domain map"
+        , shell = Some "bash"
         , run =
             merge
               { Staging = Some
