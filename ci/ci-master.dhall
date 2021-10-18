@@ -11,24 +11,37 @@ let apps = ./apps.dhall
 
 let AE = ./app-servers.dhall
 
+let container = ./container.dhall
+
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
 
-let deploySteps =
+let steps-gs =
         Actions.setupSteps Actions.Env.Production
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Production apps
 
-let deployAESteps =
+let steps-app-article =
         Actions.setupSteps Actions.Env.Production
-      # Actions.buildServerSteps AE.all
-      # Actions.deployAppEngineSteps Actions.Env.Production AE.all
-      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
-      # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
-      # Actions.cleanAppEngineSteps Actions.Env.Production AE.all
+      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Production
+            AE.servers.app-article-server
+        ]
+      # [ Actions.mkCleanAppEngineStep
+            Actions.Env.Production
+            AE.servers.app-article-server
+        ]
+
+let steps-mosaico =
+        Actions.setupSteps Actions.Env.Production
+      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Production AE.servers.mosaico ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
+        ]
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
@@ -41,15 +54,24 @@ let refreshCDNJobs =
 in  { name = "production"
     , on.push.branches = [ "master" ]
     , jobs =
-            { check-ci = { runs-on = "ubuntu-latest", steps = checkCISteps }
+            { check-ci =
+              { runs-on = "ubuntu-latest", container, steps = checkCISteps }
             , deploy-gs =
               { runs-on = "ubuntu-latest"
-              , steps = deploySteps
+              , container
+              , steps = steps-gs
               , needs = "check-ci"
               }
-            , deploy-ae =
+            , deploy-app-article =
               { runs-on = "ubuntu-latest"
-              , steps = deployAESteps
+              , container
+              , steps = steps-app-article
+              , needs = "check-ci"
+              }
+            , deploy-mosaico =
+              { runs-on = "ubuntu-latest"
+              , container
+              , steps = steps-mosaico
               , needs = "check-ci"
               }
             }

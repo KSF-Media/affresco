@@ -13,6 +13,8 @@ let AE = ./app-servers.dhall
 
 let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
 
+let container = ./container.dhall
+
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
@@ -42,8 +44,6 @@ let steps-mosaico =
       # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.servers.mosaico ]
 
 let previewLinks = [ Actions.linkPreviewsStep apps AE.all previewUrl ]
-
-let container = { image = "ksfmedia/diskho:gha-0.1", options = "--cpus 2" }
 
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]

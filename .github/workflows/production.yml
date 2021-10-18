@@ -11,6 +11,9 @@ env:
   PRODUCTION_PERSONA_URL: https://persona.api.ksfmedia.fi/v1
 jobs:
   check-ci:
+    container:
+      image: ksfmedia/diskho:gha-0.1
+      options: "--cpus 2"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -19,7 +22,10 @@ jobs:
         run: |2
             make
             git diff --exit-code
-  deploy-ae:
+  deploy-app-article:
+    container:
+      image: ksfmedia/diskho:gha-0.1
+      options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -39,11 +45,6 @@ jobs:
             ruby deploy.rb app-article-server
             cp -R apps/app-article-server build/app-article-server
         shell: bash
-      - name: Build Server Mosaico server
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico build/mosaico
-        shell: bash
       - id: deploy-app-article-server
         name: Deploy App article server
         uses: "google-github-actions/deploy-appengine@main"
@@ -52,33 +53,13 @@ jobs:
           project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
           promote: 'true'
           working_directory: build/app-article-server
-      - id: deploy-mosaico-server
-        name: Deploy Mosaico server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-          promote: 'true'
-          working_directory: build/mosaico
-      - name: Generate AppEngine domain map
-        run: |2
-            npx 'dhall-to-yaml --omit-empty \
-            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
-        shell: bash
-      - name: Deploy AppEngine domain map
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          deliverables: dispatch.yaml
-          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-          working_directory: build
       - name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
-      - name: Keep only 10 latest versions of mosaico-server
-        run: |
-          ./ci/ae-cleanup.sh mosaico-server
   deploy-gs:
+    container:
+      image: ksfmedia/diskho:gha-0.1
+      options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -237,6 +218,40 @@ jobs:
           destination: ksf-frontends/hbl365
           parent: 'false'
           path: build/hbl365
+  deploy-mosaico:
+    container:
+      image: ksfmedia/diskho:gha-0.1
+      options: "--cpus 2"
+    needs: check-ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup Cloud SDK
+        uses: "google-github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+      - run: |2
+            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            mkdir -p build
+      - name: Build Server Mosaico server
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico build/mosaico
+        shell: bash
+      - id: deploy-mosaico-server
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: "${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+          promote: 'true'
+          working_directory: build/mosaico
+      - name: Keep only 10 latest versions of mosaico-server
+        run: |
+          ./ci/ae-cleanup.sh mosaico-server
   refresh_cdn_app-article:
     needs: deploy-gs
     runs-on: ubuntu-latest
