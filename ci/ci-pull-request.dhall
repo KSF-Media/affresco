@@ -52,7 +52,6 @@ in  { name = "previews"
         }
       , previews =
         { runs-on = "ubuntu-latest"
-        , container
         , steps = previewLinks
         , needs = [ "deploy-gs", "deploy-ae" ]
         }

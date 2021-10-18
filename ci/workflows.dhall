@@ -52,6 +52,7 @@ let Step =
           , run : Optional Text
           , `with` : Map Text Text
           , env : Map Text Text
+          , shell : Optional Text
           }
       , default =
         { id = None Text
@@ -60,6 +61,7 @@ let Step =
         , run = None Text
         , `with` = [] : Map Text Text
         , env = [] : Map Text Text
+        , shell = Some "bash"
         }
       }
 

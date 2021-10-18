@@ -6,11 +6,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
+        shell: bash
         uses: "actions/checkout@v2"
       - name: Check CI script has been generated from Dhall
         run: |2
             make
             git diff --exit-code
+        shell: bash
   deploy-ae:
     container:
       image: ksfmedia/diskho:gha-0.1
@@ -19,8 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
+        shell: bash
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
+        shell: bash
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
@@ -29,16 +33,20 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
+        shell: bash
       - name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
             cp -R apps/app-article-server build/app-article-server
+        shell: bash
       - name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
             cp -R apps/mosaico build/mosaico
+        shell: bash
       - id: deploy-app-article-server
         name: Deploy App article server
+        shell: bash
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -47,6 +55,7 @@ jobs:
           working_directory: build/app-article-server
       - id: deploy-mosaico-server
         name: Deploy Mosaico server
+        shell: bash
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -56,9 +65,11 @@ jobs:
       - name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
+        shell: bash
       - name: Keep only 10 latest versions of mosaico-server
         run: |
           ./ci/ae-cleanup.sh mosaico-server
+        shell: bash
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-0.1
@@ -67,8 +78,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
+        shell: bash
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
+        shell: bash
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
@@ -77,10 +90,12 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
+        shell: bash
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
             cp -R apps/scripts/dist build/scripts
+        shell: bash
       - env:
           MAINTENANCE_MODE: 'false'
           PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
@@ -88,6 +103,7 @@ jobs:
         run: |2
             ruby deploy.rb mitt-konto
             cp -R apps/mitt-konto/dist build/mitt-konto
+        shell: bash
       - env:
           NODE_ENV: development
           SENTRY_DSN: "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
@@ -95,6 +111,7 @@ jobs:
         run: |2
             ruby deploy.rb vetrina-test
             cp -R apps/vetrina-test/dist build/vetrina-test
+        shell: bash
       - env:
           ELECTION_BACKEND_URL: https://elections-eu.api.ksfmedia.fi/v1
           ELECTION_TYPE: EU
@@ -102,6 +119,7 @@ jobs:
         run: |2
             ruby deploy.rb elections
             cp -R apps/elections/dist build/elections-eu
+        shell: bash
       - env:
           ELECTION_BACKEND_URL: https://election.api.ksfmedia.fi/v1
           ELECTION_TYPE: PARLIAMENT
@@ -109,6 +127,7 @@ jobs:
         run: |2
             ruby deploy.rb elections
             cp -R apps/elections/dist build/elections
+        shell: bash
       - env:
           HIDE_LOGIN_LINKS: 'true'
           PRODUCTION_SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
@@ -116,15 +135,19 @@ jobs:
         run: |2
             ruby deploy.rb app-article
             cp -R apps/app-article/dist build/app-article
+        shell: bash
       - name: Build Corona banner
         run: |2
             ruby deploy.rb corona-banner
             cp -R apps/corona-banner/dist build/corona-banner
+        shell: bash
       - name: Build HBL365
         run: |2
             ruby deploy.rb hbl365
             cp -R apps/hbl365/dist build/hbl365
+        shell: bash
       - name: Upload Scripts
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -132,6 +155,7 @@ jobs:
           parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -139,6 +163,7 @@ jobs:
           parent: 'false'
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -146,6 +171,7 @@ jobs:
           parent: 'false'
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -153,6 +179,7 @@ jobs:
           parent: 'false'
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -160,6 +187,7 @@ jobs:
           parent: 'false'
           path: build/elections
       - name: Upload App article
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -167,6 +195,7 @@ jobs:
           parent: 'false'
           path: build/app-article
       - name: Upload Corona banner
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -174,6 +203,7 @@ jobs:
           parent: 'false'
           path: build/corona-banner
       - name: Upload HBL365
+        shell: bash
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
           credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
@@ -181,9 +211,6 @@ jobs:
           parent: 'false'
           path: build/hbl365
   previews:
-    container:
-      image: ksfmedia/diskho:gha-0.1
-      options: "--cpus 2"
     needs:
       - deploy-gs
       - deploy-ae
@@ -192,6 +219,7 @@ jobs:
       - env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         name: Post preview links
+        shell: bash
         uses: "unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b"
         with:
           check_for_duplicate_msg: 'false'
