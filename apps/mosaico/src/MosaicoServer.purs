@@ -55,10 +55,7 @@ render router state props = DOM.div
            , DOM.footer
                { className: "mosaico--footer"
                , children: 
-                  [ DOM.text "footerarpert" 
-                  , DOM.a 
-                      { href: "/sida/bruksvillkor" 
-                      , children: [ DOM.text "asasdzpdijog"] } ]
+                  [ DOM.text "footer" ]
                }
            , DOM.aside
                { className: "mosaico--aside" }
