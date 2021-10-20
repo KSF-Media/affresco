@@ -3,11 +3,19 @@
 .article {
   grid-area: article;
   display: grid;
-  grid-template-columns: 100px 1fr 100px;
+  grid-template-columns: 1fr;
   grid-template-areas:
-    ".     head  ."
-    "image image image"
-    ".     body  body";
+    "head"
+    "image"
+    "body";
+
+  @media (min-width: @breakpoint-3col) {
+    grid-template-columns: 100px 1fr 100px;
+    grid-template-areas:
+      ".     head  ."
+      "image image image"
+      ".     body  body";
+  }
 
   header {
     grid-area: head;
@@ -19,10 +27,15 @@
   .articlebody {
     grid-area: body;
     display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "articlemetabyline"
+      "articlebody";
+
     @media (min-width: @breakpoint-3col) {
       grid-template-columns: 1fr 300px;
       grid-template-areas:
-        "articleauthors articlesidebar"
+        "articlemetabyline articlesidebar"
         "articlebody articlesidebar";
     }
   }
@@ -121,48 +134,58 @@
   border-bottom-width: 1px;
 }
 
-.mosaico--article-times-and-author {
+.mosaico--article-metabyline {
   // FIXME: Decide between grid and flex, after needed DOM tree structure changes
-  // display: grid;
-  grid-area: articleauthors;
-  // grid-template-columns: auto auto auto;
-  // grid-template-rows: auto auto;
-  // grid-template-areas: 
-  //   "authorimage authorname  ."
-  //   "authorimage publishdate premium";
-  display: flex;
+  display: grid;
+  grid-area: articlemetabyline;
+  grid-template-columns: 45px 1fr;
+  grid-template-rows: 42px;
+  grid-template-areas: 
+    "authorimage authorname";
   border-style: solid;
   border-bottom-width: 1px;
   border-top-width: 1px;
   border-left-width: 0;
   border-right-width: 0;
-  padding-top: 0.5em;
-  margin-top: 1.5em;
-  padding-bottom: 0.5em;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
   border-color: #dbd3d3;
   color: @grey-mediumlight;
   font-family: "Roboto";
 }
 
-.mosaico--author-image {
+.mosaico--article-authors-image {
   grid-area: authorimage;
+  background-size: 165%;
+  background-position: 40% 0%;
+}
+
+.mosaico--article-authors-and-timestamps {
+  align-self: center;
 }
 
 .mosaico--article-authors {
+  text-transform: uppercase;
   grid-area: authorname;
   display: flex;
   flex-direction: column;
-  font-size: 14px;
+  font-size: 0.9rem;
   *:not(:last-child) {
     margin-bottom: 0.5em;
   }
-  .mosaico--article--premium {
-    grid-area: premium;
-  }
+}
+
+.mosaico--article-premium {
+  color: white;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  text-align: center;
 }
 
 .mosaico--article-timestamps {
-  font-size: 12px;
-  text-align: right;
-  display: flex;
+  font-size: 0.6rem;
+  display: grid;
+  grid-gap: 5px;
+  grid-template-columns: auto 8fr 1fr;
+  align-items: center;
 }

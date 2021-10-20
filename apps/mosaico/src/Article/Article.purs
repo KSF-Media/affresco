@@ -197,11 +197,10 @@ render { props, state, setState } =
                 (\authorImage -> DOM.div
                   { className: "mosaico--article-authors-image"
                   , style: DOM.css { backgroundImage: "url(" <> authorImage <> ")" }
-                  , children: [ DOM.text "img" ]
                   })
                 (_.image =<< head article.authors)
             , DOM.div 
-                { className: "mosaico--article-authors-timestamps" 
+                { className: "mosaico--article-authors-and-timestamps" 
                 , children:
                     [ foldMap
                         (\authorName -> DOM.div
@@ -219,13 +218,13 @@ render { props, state, setState } =
                                   [ DOM.text $ " UPPDATERAD " <> formatArticleTime updateTime]
                                 )
                                 article.updateTime
+                              , guard article.premium $ DOM.span
+                                  { className: "mosaico--article-premium background-hbl"
+                                  , children: [ DOM.text "premium" ]
+                                  }
                               ]
                           })
                         article.publishingTime
-                    , guard article.premium $ DOM.span
-                        { className: "mosaico--article--premium background-hbl"
-                        , children: [ DOM.text "premium" ]
-                        }
                     ]
                 }
             ]
