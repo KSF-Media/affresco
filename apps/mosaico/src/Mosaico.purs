@@ -110,7 +110,7 @@ mosaicoComponent initialValues props = React.do
         liftEffect $ case res of
           Right content -> 
             setState _ { staticPage = Just $ case content.status of 
-              StatusCode 200 -> Right $ DOM.div { dangerouslySetInnerHTML: { __html: content.body } } 
+              StatusCode 200 -> Right $ DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: content.body } } 
               StatusCode 404 -> Left StaticPageNotFound
               _ -> Left StaticPageOtherError
             }
@@ -216,7 +216,11 @@ render setState state router =
                   Nothing -> DOM.text "laddar"
                   Just (Right content) -> content
                   Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                  Just (Left StaticPageOtherError) -> DOM.text "Oj! Något gick fel, ladda om sidan."
+                  Just (Left StaticPageOtherError) -> 
+                    DOM.div
+                        { className: "mosaico--static-page-error"
+                        , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
+                        }
            , DOM.footer
                { className: "mosaico--footer"
                , children: 
