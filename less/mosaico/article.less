@@ -135,13 +135,7 @@
 }
 
 .mosaico--article-metabyline {
-  // FIXME: Decide between grid and flex, after needed DOM tree structure changes
-  display: grid;
   grid-area: articlemetabyline;
-  grid-template-columns: 45px 1fr;
-  grid-template-rows: 42px;
-  grid-template-areas: 
-    "authorimage authorname";
   border-style: solid;
   border-bottom-width: 1px;
   border-top-width: 1px;
@@ -149,43 +143,32 @@
   border-right-width: 0;
   margin-top: 1rem;
   margin-bottom: 1.5rem;
-  border-color: #dbd3d3;
+  border-color: @hairline-color;
   color: @grey-mediumlight;
   font-family: "Roboto";
 }
 
-.mosaico--article-authors-image {
-  grid-area: authorimage;
-  background-size: 165%;
-  background-position: 40% 0%;
-}
-
 .mosaico--article-authors-and-timestamps {
-  align-self: center;
-}
-
-.mosaico--article-authors {
-  text-transform: uppercase;
-  grid-area: authorname;
-  display: flex;
-  flex-direction: column;
-  font-size: 0.9rem;
-  *:not(:last-child) {
-    margin-bottom: 0.5em;
+  padding: 8px 0;
+  @media (min-width: @breakpoint-2col) {
+    padding: 12px 0;
   }
 }
 
-.mosaico--article-premium {
-  color: white;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  text-align: center;
+.mosaico--article-author {
+  font-size: .8rem;
+  margin-bottom: 5px;
+  color: @dark-text;
+  font-weight: 500;
+  @media (min-width: @breakpoint-2col) {
+    font-size: .9rem;
+  }
 }
 
 .mosaico--article-timestamps {
-  font-size: 0.6rem;
-  display: grid;
-  grid-gap: 5px;
-  grid-template-columns: auto 8fr 1fr;
-  align-items: center;
+  margin-top: 10px;
+  font-size: .6rem;
+  @media (min-width: @breakpoint-2col) {
+    font-size: .75rem;
+  }
 }

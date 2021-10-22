@@ -193,21 +193,15 @@ render { props, state, setState } =
       DOM.div
         { className: "mosaico--article-metabyline"
         , children: 
-            [ foldMap 
-                (\authorImage -> DOM.div
-                  { className: "mosaico--article-authors-image"
-                  , style: DOM.css { backgroundImage: "url(" <> authorImage <> ")" }
-                  })
-                (_.image =<< head article.authors)
-            , DOM.div 
+            [ DOM.div 
                 { className: "mosaico--article-authors-and-timestamps" 
                 , children:
                     [ foldMap
                         (\authorName -> DOM.div
-                          { className: "mosaico--article-authors"
+                          { className: "mosaico--article-author"
                           , children: [ DOM.text authorName]
                           })
-                        (_.byline <$> head article.authors)
+                        (_.byline <$> article.authors)
                     , foldMap
                         (\(LocalDateTime publishingTime) -> DOM.div
                           { className: "mosaico--article-timestamps"
@@ -218,10 +212,6 @@ render { props, state, setState } =
                                   [ DOM.text $ " UPPDATERAD " <> formatArticleTime updateTime]
                                 )
                                 article.updateTime
-                              , guard article.premium $ DOM.span
-                                  { className: "mosaico--article-premium background-hbl"
-                                  , children: [ DOM.text "premium" ]
-                                  }
                               ]
                           })
                         article.publishingTime
