@@ -30,12 +30,11 @@ import React.Basic.Hooks as React
 import Routing (match)
 import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Affjax as AX
-import Affjax.ResponseFormat as AX
+import Affjax (get) as AX
+import Affjax.ResponseFormat (string) as AX
 import Affjax.StatusCode (StatusCode (..))
 import Simple.JSON (write)
 import Web.HTML (window) as Web
-import Web.HTML.Event.EventTypes (offline)
 import Web.HTML.Window (scroll) as Web
 
 data MosaicoPage
@@ -105,8 +104,8 @@ mosaicoComponent initialValues props = React.do
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
       StaticPage page -> Aff.launchAff_ do
-        liftEffect $ setState _ { staticPage = Nothing }
-        res <- AX.get AX.string $ "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
+        let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
+        res <- AX.get AX.string staticPageUrl
         liftEffect $ case res of
           Right content -> 
             setState _ { staticPage = Just $ case content.status of 
