@@ -55,6 +55,9 @@ instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
         , body: StringBody b
         }
 
+type Env =
+  { htmlTemplate :: String }
+
 indexHtmlFileLocation :: String
 indexHtmlFileLocation = "./dist/client/index.html"
 
@@ -85,7 +88,7 @@ spec ::
                 }
           , notFound ::
               GET "/<..path>"
-                { response :: ResponseBody 
+                { response :: ResponseBody
                 , params :: { path :: List String}
                 }
          }
@@ -95,30 +98,40 @@ spec = Spec
 
 main :: Effect Unit
 main = do
-  let handlers = { getDraftArticle, getArticle, assets, frontpage, notFound }
+  htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+  let env = { htmlTemplate }
+      handlers =
+        { getDraftArticle: getDraftArticle env
+        , getArticle: getArticle env
+        , assets
+        , frontpage
+        , notFound
+        }
       guards = { credentials: getCredentials }
   Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
 getDraftArticle
-  :: { params :: { aptomaId :: String }, query :: DraftParams }
+  :: Env
+  -> { params :: { aptomaId :: String }, query :: DraftParams }
   -> Aff (Response ResponseBody)
-getDraftArticle { params: {aptomaId}, query } = do
+getDraftArticle env { params: {aptomaId}, query } = do
   article <- Lettera.getDraftArticle aptomaId query
-  renderArticle Nothing article
+  renderArticle env Nothing article
 
 getArticle
-  :: { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } }
+  :: Env
+  -> { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } }
   -> Aff (Response ResponseBody)
-getArticle r@{ params: { uuid } } = do
+getArticle env r@{ params: { uuid } } = do
   article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
-  renderArticle (Just uuid) article
+  renderArticle env (Just uuid) article
 
 renderArticle
-  :: Maybe String
+  :: Env
+  -> Maybe String
   -> Either String FullArticle
   -> Aff (Response ResponseBody)
-renderArticle uuid article = do
-  htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+renderArticle { htmlTemplate } uuid article = do
   articleComponent <- liftEffect Article.articleComponent
   mosaico <- liftEffect MosaicoServer.app
   case article of
@@ -151,7 +164,7 @@ frontpage _ = do
   html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
   pure $ TextHtml html
 
-notFound :: { params :: { path :: List String } } -> Aff (Response ResponseBody) 
+notFound :: { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound _ = do
   htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
   articleComponent <- liftEffect Article.articleComponent
@@ -168,7 +181,7 @@ notFound _ = do
 
   mosaico <- liftEffect MosaicoServer.app
   let mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX }
- 
+
   html <- liftEffect $
     appendMosaico htmlTemplate mosaicoString
 
