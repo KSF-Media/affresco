@@ -309,7 +309,7 @@ articleList state setState router =
                     { className: "list-article-liftup"
                     , children:
                         [ DOM.div
-                          { className: "mosaico--tag color-hbl"
+                          { className: "mosaico-article__tag color-hbl"
                           , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
                           }
                         , DOM.h2_ [ DOM.text a.title ]

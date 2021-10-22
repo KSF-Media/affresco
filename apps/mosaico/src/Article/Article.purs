@@ -109,7 +109,7 @@ loadArticle setState affArticle = do
 renderImage :: Image -> JSX
 renderImage img =
   DOM.div
-    { className: "mosaico--article--image"
+    { className: "mosaico-article__image"
     , children:
         [ DOM.img
             { src: img.url
@@ -141,39 +141,44 @@ render { props, state, setState } =
         draftHeader = case state.article of
           Just (DraftArticle _) ->
             DOM.div
-              { className: "mosaico--article-draft"
+              { className: "mosaico-article--draft"
               , children: [ DOM.text "Förslag" ]
               }
           _ -> mempty
-    in DOM.div
-      { className: "article"
+    in DOM.article
+      { className: "mosaico-article"
       , children:
           [ DOM.header_
             [ draftHeader
             , DOM.h1
-                { className: "mosaico--article--title title"
+                { className: "mosaico-article__headline"
                 , children: [ DOM.text title ]
                 }
-            , DOM.div
-                { className: "mosaico--article--preamble"
-                , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
+            , DOM.section
+                { className: "mosaico-article__preamble"
+                , children: [ DOM.text $ fromMaybe mempty state.preamble ]
                 }
-            ,  DOM.div
-                { className: "mosaico--tag color-" <> props.brand
-                , children: [ DOM.text $ fromMaybe "" (head tags) ]
-                }
-            , DOM.ul
-                { className: "mosaico-article__some"
-                , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+            , DOM.section
+                { className: "mosaico-article__tag-n-share"
+                , children:
+                    [ DOM.div
+                        { className: "mosaico-article__tag color-" <> props.brand
+                        , children: [ DOM.text $ fromMaybe "" (head tags) ]
+                        }
+                    , DOM.ul
+                        { className: "mosaico-article__some"
+                        , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+                        }
+                    ]
                 }
             ]
-            , DOM.div
-                { className: "image"
-                , children: [ foldMap renderImage mainImage ]
-                }
-            , DOM.div 
-                { className: "articlebody"
-                , children:
+          , DOM.div
+              { className: "mosaico-article__main-image"
+              , children: [ foldMap renderImage mainImage ]
+              }
+          , DOM.div
+              { className: "mosaico-article__main"
+              , children:
                     [ foldMap (renderMetabyline <<< fromFullArticle) state.article
                     , DOM.div
                         { className: "mosaico--article--body "
@@ -189,12 +194,12 @@ render { props, state, setState } =
                           _ -> mempty
                         }
                     , DOM.div
-                        { className: "mosaico-article-aside"
+                        { className: "mosaico-article__aside"
                         , children: []
                         }
                     ]
-                }
-        ]
+              }
+          ]
     }
   where
     renderMetabyline :: Article -> JSX
@@ -228,6 +233,41 @@ render { props, state, setState } =
                 }
             ]
         }
+    -- renderAuthors :: Array Author -> JSX
+    -- renderAuthors authors =
+    --   DOM.div
+    --     { className: "mosaico--article-authors"
+    --     , children:
+    --         map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
+    --         `snoc` premiumBadge
+    --     }
+    --   where
+    --     premiumBadge =
+    --       guard (maybe false (_.premium <<< fromFullArticle) state.article)
+    --       DOM.div
+    --         { className: "article--premium background-hbl"
+    --         , children: [ DOM.text "premium" ]
+    --         }
+    -- articleTimestamps :: Article -> JSX
+    -- articleTimestamps { publishingTime, updateTime } =
+    --   DOM.div
+    --     { className: "mosaico--article-timestamps"
+    --     , children:
+    --         [ foldMap renderPublishingTime publishingTime
+    --         , foldMap renderUpdateTime updateTime
+    --         ]
+    --     }
+    --   where
+    --     renderPublishingTime (LocalDateTime time) =
+    --       DOM.div
+    --         { className: "mosaico--article-published-timestamp"
+    --         , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
+    --         }
+    --     renderUpdateTime (LocalDateTime time) =
+    --       DOM.div
+    --         { className: "mosaico--article-updated-timestamp"
+    --         , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
+    --         }
 
     mkShareIcon someName =
       DOM.li_
@@ -304,16 +344,19 @@ render { props, state, setState } =
       Right el -> case el of
         Html content -> DOM.p
           { dangerouslySetInnerHTML: { __html: content }
-          , className: "html"
+          , className: block <> " " <> block <> "__html"
           }
         Headline str -> DOM.h4
-          { className: "headline"
+          { className: block <> " " <> block <> "__subheadline"
           , children: [ DOM.text str ]
           }
-        Image img -> renderImage img
+        Image img -> DOM.div
+          { className: block
+          , children: [ renderImage img ]
+          }
         Box boxData ->
           DOM.div
-            { className: "factbox"
+            { className: block <> " " <> block <> "__factbox"
             , children:
                 [ box
                     { headline: boxData.headline
@@ -324,11 +367,16 @@ render { props, state, setState } =
                 ]
             }
         Footnote footnote -> DOM.p
-            { className: "footnote"
+            { className: block <> " " <> block <> "__footnote"
             , children: [ DOM.text footnote ]
             }
-        Quote quote -> DOM.q_ [ DOM.text quote ]
+        Quote quote -> DOM.q
+            { className: block <> " " <> block <> "__quote"
+            , children: [ DOM.text quote ]
+            }
         Question question -> DOM.p
-            { className: "question"
+            { className: block <> " " <> block <> "__question"
             , children: [ DOM.text question ]
             }
+      where
+        block = "article-element"
