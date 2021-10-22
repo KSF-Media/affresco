@@ -8,22 +8,12 @@
   grid-template-areas:
     "head"
     "main"
+    "article"
     "aside"
     "foot";
 
   @media (min-width: @breakpoint-1col-wide) {
     max-width: calc(100% - @page-margin);
-  }
-
-  @media (min-width: @breakpoint-2col) {
-    max-width: calc((@content-block * 2) + @block-padding);
-    grid-column-gap: @block-padding;
-    // don't use repeat, causes error
-    grid-template-columns: @content-block @content-block;
-    grid-template-areas:
-      "head head"
-      "main aside"
-      "foot foot";
   }
 
   @media (min-width: @breakpoint-3col) {
