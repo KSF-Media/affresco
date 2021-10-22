@@ -30,14 +30,19 @@ import React.Basic.Hooks as React
 import Routing (match)
 import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
+import Affjax (get) as AX
+import Affjax.ResponseFormat (string) as AX
+import Affjax.StatusCode (StatusCode (..))
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
+  | DraftPage -- Ignore parameters on client side and just show server side content
   | ArticlePage String
   | NotFoundPage String
+  | StaticPage String
 derive instance eqR :: Eq MosaicoPage
 
 data ModalView = LoginModal
@@ -54,19 +59,27 @@ type State =
   , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , user :: Maybe User
+  , staticPage :: Maybe (Either StaticPageError JSX) 
   }
 
 type SetState = (State -> State) -> Effect Unit
+
+data StaticPageError
+  = StaticPageNotFound
+  | StaticPageOtherError
 
 type Props = { article :: Maybe FullArticle }
 type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
 
 routes :: Match MosaicoPage
 routes = root *> oneOf
-  [ ArticlePage <$> (lit "artikel" *> str)
+  [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
+  , ArticlePage <$> (lit "artikel" *> str)
+  , StaticPage <$> (lit "sida" *> str)
   , Frontpage <$end
   , NotFoundPage <$> str
   ]
+
 app :: Component Props
 app = do
   initialValues <- getInitialValues
@@ -90,8 +103,21 @@ mosaicoComponent initialValues props = React.do
           liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
+      DraftPage -> pure unit
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
+      StaticPage page -> Aff.launchAff_ do
+        let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
+        res <- AX.get AX.string staticPageUrl
+        liftEffect $ case res of
+          Right content -> 
+            setState _ { staticPage = Just $ case content.status of 
+              StatusCode 200 -> Right $ DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: content.body } } 
+              StatusCode 404 -> Left StaticPageNotFound
+              _ -> Left StaticPageOtherError
+            }
+          Left _err -> setState _ { staticPage = Just $ Left StaticPageOtherError }
+
 
     Aff.launchAff_ do
       mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
@@ -136,6 +162,7 @@ getInitialValues = do
         , headerComponent
         , loginModalComponent
         , user: Nothing
+        , staticPage: Nothing
         }
     , nav
     , locationState
@@ -173,7 +200,7 @@ render setState state router =
   <> DOM.div
        { className: "mosaico grid"
        , children:
-           [ Header.topLine
+           [ Header.topLine 
            , state.headerComponent { router }
            , Header.mainSeparator
            , case state.route of
@@ -185,11 +212,23 @@ render setState state router =
                    -- e.g. when a subscription is purchased or user logs in
                    , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
                    | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
+                 DraftPage -> renderArticle state.article (pure notFoundArticle) Nothing $
+                              fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
                  Frontpage -> articleList state setState router
                  NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+                 StaticPage _ -> case state.staticPage of
+                  Nothing -> DOM.text "laddar"
+                  Just (Right content) -> content
+                  Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+                  Just (Left StaticPageOtherError) -> 
+                    DOM.div
+                        { className: "mosaico--static-page-error"
+                        , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
+                        }
            , DOM.footer
                { className: "mosaico--footer"
-               , children: [ DOM.text "footer" ]
+               , children: 
+                  [ DOM.text "footer" ]
                }
            , case state.route of
                Frontpage -> 

@@ -24,12 +24,15 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (Article, ArticleStub, FullArticle(..), parseArticle, parseArticleStub)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), DraftParams, fromFullArticle, parseArticle, parseArticleStub, parseDraftArticle)
 
 foreign import letteraBaseUrl :: String
 
 letteraArticleUrl :: String
 letteraArticleUrl = letteraBaseUrl <>  "/article/"
+
+letteraDraftUrl :: String
+letteraDraftUrl = letteraBaseUrl <> "/article/draft/"
 
 letteraFrontPageUrl :: String
 letteraFrontPageUrl = letteraBaseUrl <> "/frontpage"
@@ -41,9 +44,7 @@ getArticle' :: UUID -> Aff Article
 getArticle' u = do
   getArticle u Nothing >>= \a ->
     case a of
-      Right (FullArticle a') -> pure a'
-      Right (PreviewArticle a') -> pure a'
-      Right (ErrorArticle a') -> pure a'
+      Right a' -> pure $ fromFullArticle a'
       Left err -> throwError $ error $ "Failed to get article: " <> err
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
@@ -95,11 +96,32 @@ getArticle articleId auth = do
 
         case articlePreviewJson of
           Just articlePreview -> do
-            either Left (Right <<< PreviewArticle) <$> (liftEffect $ parseArticle articlePreview)
+            map PreviewArticle <$> (liftEffect $ parseArticle articlePreview)
           Nothing -> do
             -- TODO: Sentry and whatnot
             Console.warn "Did not find article preview from response!"
             pure $ Left "Parsing error"
+      | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+
+getDraftArticle :: String -> DraftParams -> Aff (Either String FullArticle)
+getDraftArticle aptomaId { time, publication, user, hash } = do
+  let request = AX.defaultRequest
+        { url = letteraDraftUrl <> aptomaId
+                <> "?time=" <> time
+                <> "&publication=" <> publication
+                <> "&user=" <> user
+                <> "&hash=" <> hash
+        , method = Left GET
+        , responseFormat = AX.json
+        }
+  articleResponse <- AX.request request
+  case articleResponse of
+    Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
+    Right response
+      | (StatusCode 200) <- response.status ->
+        map DraftArticle <$> (liftEffect $ parseDraftArticle response.body)
+      | (StatusCode 403) <- response.status ->
+        pure $ Left "Unauthorized"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
 
 getFrontpage :: Paper -> Aff (Array ArticleStub)
