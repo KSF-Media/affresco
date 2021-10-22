@@ -2,18 +2,15 @@
   display: grid;
   margin: 0 auto;
   min-height: 100%;
-  max-width: 300px;
-  grid-template-columns: 1fr;
+  min-width: 320px;
+  max-width: calc(100% - @page-margin);
+  grid-template-columns: minmax(0, 1fr);
   grid-row-gap: 8px;
   grid-template-areas:
     "head"
     "main"
     "aside"
     "foot";
-
-  @media (min-width: @breakpoint-1col-wide) {
-    max-width: calc(100% - @page-margin);
-  }
 
   @media (min-width: @breakpoint-2col) {
     max-width: calc((@content-block * 2) + @block-padding);
@@ -47,6 +44,15 @@
 }
 
 .mosaico--article-list {
+  grid-area: main;
+}
+
+.mosaico--static-page {
+  max-width: 100%;
+  grid-area: main;
+}
+
+.mosaico--static-page-error {
   grid-area: main;
 }
 

@@ -86,15 +86,9 @@ def setup_env(app)
       File.open("#{app['path']}/app.yaml", 'w') do |f|
         f.puts(YAML.dump(app_yaml))
       end
+      generate_production_dot_env(app, app_vars)
     else
-      puts "Generating .env.production"
-      File.open("#{app['path']}/.env.production", 'a') do |f|
-        app_vars.each do |v|
-          # Strip 'PRODUCTION_' from the variable name
-          env_var_name = v.sub(/^PRODUCTION_/, '')
-          f.puts("#{env_var_name}=#{ENV[v]}")
-        end
-      end
+      generate_production_dot_env(app, app_vars)
     end
     ENV['NODE_ENV'] = 'production'
   else
@@ -105,6 +99,16 @@ def setup_env(app)
   end
 end
 
+def generate_production_dot_env(app, app_vars)
+  puts "Generating .env.production"
+  File.open("#{app['path']}/.env.production", 'a') do |f|
+    app_vars.each do |v|
+      # Strip 'PRODUCTION_' from the variable name
+      env_var_name = v.sub(/^PRODUCTION_/, '')
+      f.puts("#{env_var_name}=#{ENV[v]}")
+    end
+  end
+end
 
 build_commands = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
