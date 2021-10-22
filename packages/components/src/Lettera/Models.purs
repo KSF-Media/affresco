@@ -26,16 +26,22 @@ import Simple.JSON as JSON
 data FullArticle
   = FullArticle Article
   | PreviewArticle Article
+  | DraftArticle Article
   | ErrorArticle Article
 
 fromFullArticle :: FullArticle -> Article
 fromFullArticle (FullArticle a) = a
 fromFullArticle (PreviewArticle a) = a
+fromFullArticle (DraftArticle a) = a
 fromFullArticle (ErrorArticle a) = a
 
 isPreviewArticle :: FullArticle -> Boolean
 isPreviewArticle (PreviewArticle _) = true
 isPreviewArticle _ = false
+
+isDraftArticle :: FullArticle -> Boolean
+isDraftArticle (DraftArticle _) = true
+isDraftArticle _ = false
 
 notFoundArticle :: FullArticle
 notFoundArticle = ErrorArticle
@@ -114,7 +120,14 @@ type Article =
   | ArticleCommon
   }
 
-  
+-- There's no DraftArticle type since that content is identical to
+-- what Article has.
+type JSDraftArticle =
+  { publishingTime :: Maybe String
+  , updateTime     :: Maybe String
+  | ArticleCommon
+  }
+
 
 type Author =
   { byline :: String
@@ -163,6 +176,9 @@ parseArticleWithoutLocalizing jsonArticle =
 parseArticleStub :: Json -> Effect (Either String ArticleStub)
 parseArticleStub = parseArticleWith fromJSArticleStub
 
+parseDraftArticle :: Json -> Effect (Either String Article)
+parseDraftArticle = parseArticleWith fromJSDraftArticle
+
 parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
 
@@ -170,6 +186,12 @@ fromJSArticleStub :: JSArticleStub -> Effect ArticleStub
 fromJSArticleStub jsStub@{ uuid, publishingTime } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   pure jsStub { publishingTime = localPublishingTime }
+
+fromJSDraftArticle :: JSDraftArticle -> Effect Article
+fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime } = do
+  localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
+  localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
+  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime }
 
 fromJSArticle :: JSArticle -> Effect Article
 fromJSArticle jsArticle@{ uuid, publishingTime, updateTime } = do
@@ -211,4 +233,11 @@ type Image =
   , thumb     :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
+  }
+
+type DraftParams =
+  { time        :: String
+  , publication :: String
+  , user        :: String
+  , hash        :: String
   }

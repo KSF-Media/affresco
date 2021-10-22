@@ -140,11 +140,19 @@ render { props, state, setState } =
         tags = fromMaybe mempty $ map _.tags letteraArticle <|> map _.tags props.articleStub
         mainImage = (_.mainImage =<< letteraArticle) <|> (_.listImage =<< props.articleStub)
         bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
+        draftHeader = case state.article of
+          Just (DraftArticle _) ->
+            DOM.div
+              { className: "mosaico--article-draft"
+              , children: [ DOM.text "Förslag" ]
+              }
+          _ -> mempty
     in DOM.div
       { className: "article"
       , children:
           [ DOM.header_
-            [ DOM.h1
+            [ draftHeader
+            , DOM.h1
                 { className: "mosaico--article--title title"
                 , children: [ DOM.text title ]
                 }
@@ -183,6 +191,8 @@ render { props, state, setState } =
                             paywallFade
                             `cons` bodyWithAd
                             `snoc` vetrina
+                          (Just (DraftArticle _draftArticle)) ->
+                            map renderElement state.body
                           (Just (FullArticle _fullArticle)) ->
                             bodyWithAd
                           _ -> mempty
