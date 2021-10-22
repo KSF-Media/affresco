@@ -12,17 +12,6 @@
     "aside"
     "foot";
 
-  @media (min-width: @breakpoint-2col) {
-    max-width: calc((@content-block * 2) + @block-padding);
-    grid-column-gap: @block-padding;
-    // don't use repeat, causes error
-    grid-template-columns: @content-block @content-block;
-    grid-template-areas:
-      "head head"
-      "main aside"
-      "foot foot";
-  }
-
   @media (min-width: @breakpoint-3col) {
     max-width: 100%;
     grid-template-rows: auto 85px auto auto auto 150px;
