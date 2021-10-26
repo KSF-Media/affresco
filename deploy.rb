@@ -32,16 +32,8 @@ end
 
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
-apps_json = ""
-apps_servers_json = ""
-begin
-  apps_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'")
-  apps_servers_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/app-servers.dhall\"'")
-rescue Exception => e
-  # FIXME: this is here because Netlify doesn't have nix-shell.
-  # This is terrible and should be removed ASAP. Really.
-  apps_json = file = File.read('./temp-apps-deprecate-me-asap.json')
-end
+apps_json = run_command("/bin/bash -c 'npx dhall-to-json <<< ./ci/apps.dhall'")
+apps_servers_json = run_command("/bin/bash -c 'npx dhall-to-json <<< \"(./ci/app-servers.dhall)\".all'")
 
 apps_list = JSON.parse(apps_json)
 app_servers_list = JSON.parse(apps_servers_json)
@@ -94,15 +86,9 @@ def setup_env(app)
       File.open("#{app['path']}/app.yaml", 'w') do |f|
         f.puts(YAML.dump(app_yaml))
       end
+      generate_production_dot_env(app, app_vars)
     else
-      puts "Generating .env.production"
-      File.open("#{app['path']}/.env.production", 'a') do |f|
-        app_vars.each do |v|
-          # Strip 'PRODUCTION_' from the variable name
-          env_var_name = v.sub(/^PRODUCTION_/, '')
-          f.puts("#{env_var_name}=#{ENV[v]}")
-        end
-      end
+      generate_production_dot_env(app, app_vars)
     end
     ENV['NODE_ENV'] = 'production'
   else
@@ -113,6 +99,16 @@ def setup_env(app)
   end
 end
 
+def generate_production_dot_env(app, app_vars)
+  puts "Generating .env.production"
+  File.open("#{app['path']}/.env.production", 'a') do |f|
+    app_vars.each do |v|
+      # Strip 'PRODUCTION_' from the variable name
+      env_var_name = v.sub(/^PRODUCTION_/, '')
+      f.puts("#{env_var_name}=#{ENV[v]}")
+    end
+  end
+end
 
 build_commands = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",

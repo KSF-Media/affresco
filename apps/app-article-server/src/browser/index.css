@@ -1,31 +1,16 @@
 @font-face {
-  font-family: "Duplex-Serif-Web-Bold";
-  src: url("assets/fonts/Duplex Serif Web-Bold.woff2");
-}
-
-@font-face {
-  font-family: "DuplexSerifSemiBold";
-  src: url("assets/fonts/Duplex-Serif-Semibold.otf");
-}
-
-@font-face {
-  font-family: "DuplexSerifBold";
-  src: url("assets/fonts/Duplex-Serif-Bold.otf");
-}
-
-@font-face {
   font-family: "Roboto";
-  src: url("assets/fonts/Roboto-Regular.ttf");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Regular.ttf");
 }
 
 @font-face {
   font-family: "Duplex Sans Bold";
-  src: url("assets/fonts/Duplex Sans-Bold.otf");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex%20Sans-Bold.otf");
 }
 
 @font-face {
   font-family: "Duplex Serif Bold";
-  src: url("assets/fonts/Duplex-Serif-Bold.otf");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Bold.otf");
 }
 
 :root {
@@ -83,7 +68,7 @@ h6 {
 .title {
   color: #333;
   line-height: 30px;
-  font-family: "DuplexSerifBold", sans-serif;
+  font-family: "Duplex Serif Bold", sans-serif;
   font-size: 2rem;
   letter-spacing: 0px;
 }
@@ -649,7 +634,7 @@ h6 {
 }
 
 .card-title {
-  font-family: "DuplexSerifBold", sans-serif;
+  font-family: "Duplex Serif Bold", sans-serif;
 }
 
 .article-premium-badge {

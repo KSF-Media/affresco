@@ -1,67 +1,67 @@
-.grid {
+.mosaico {
   display: grid;
-  &.mosaico {
-    margin: 0 auto;
-    min-height: 100%;
-    max-width: 300px;
-    grid-template-rows: 85px 1fr 150px;
-    grid-template-columns: 1fr;
-    grid-row-gap: 8px;
+  margin: 0 auto;
+  min-height: 100%;
+  min-width: 320px;
+  max-width: calc(100% - @page-margin);
+  grid-template-columns: minmax(0, 1fr);
+  grid-row-gap: 8px;
+  grid-template-areas:
+    "head"
+    "main"
+    "aside"
+    "foot";
+
+  @media (min-width: @breakpoint-2col) {
+    max-width: calc((@content-block * 2) + @block-padding);
+    grid-column-gap: @block-padding;
+    // don't use repeat, causes error
+    grid-template-columns: @content-block @content-block;
     grid-template-areas:
-      "head"
-      "main"
-      "aside"
-      "foot";
-
-    @media (min-width: @breakpoint-1col-wide) {
-      max-width: calc(100% - @page-margin);
-    }
-
-    @media (min-width: @breakpoint-2col) {
-      max-width: calc((@content-block * 2) + @block-padding);
-      grid-column-gap: @block-padding;
-      // don't use repeat, causes error
-      grid-template-columns: @content-block @content-block;
-      grid-template-areas:
-        "head head"
-        "main aside"
-        "foot foot";
-    }
-
-    @media (min-width: @breakpoint-3col) {
-      max-width: 100%;
-      grid-template-rows: auto 85px auto 1fr 150px;
-      // don't use repeat, causes error
-      grid-template-columns: 1fr @content-block @content-block @content-block 1fr;
-      grid-template-areas:
-        "line line line line line"
-        ". head head head ."
-        "separator separator separator separator separator"
-        ". main main aside ."
-        ". foot foot foot .";
-    }
-
-    .mosaico--header {
-      grid-area: head;
-      background: @grey-light;
-    }
-
-    .mosaico--article-list {
-      grid-area: main;
-    }
-
-    .mosaico--article {
-      grid-area: main;
-    }
-
-    .mosaico--footer {
-      grid-area: foot;
-      background: @grey-light;
-    }
-
-    .mosaico--aside {
-      grid-area: aside;
-      background: @grey-light;
-    }
+      "head head"
+      "main aside"
+      "foot foot";
   }
+
+  @media (min-width: @breakpoint-3col) {
+    max-width: 100%;
+    grid-template-rows: auto 85px auto auto auto 150px;
+    // don't use repeat, causes error
+    grid-template-columns: 1fr @content-block @content-block @content-block 1fr;
+    grid-template-areas:
+      "line line line line line"
+      ". head head head ."
+      "separator separator separator separator separator"
+      ". main main aside ."
+      ". article article article ."
+      ". foot foot foot .";
+  }
+}
+
+.mosaico--header {
+  grid-area: head;
+  background: @grey-light;
+}
+
+.mosaico--article-list {
+  grid-area: main;
+}
+
+.mosaico--static-page {
+  max-width: 100%;
+  grid-area: main;
+}
+
+.mosaico--static-page-error {
+  grid-area: main;
+}
+
+.mosaico--footer {
+  grid-area: foot;
+  background: @grey-light;
+}
+
+.mosaico--aside {
+  grid-area: aside;
+  background: @grey-light;
 }

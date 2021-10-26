@@ -61,7 +61,8 @@ render router state props = DOM.div
            , props.mainContent
            , DOM.footer
                { className: "mosaico--footer"
-               , children: [ DOM.text "footer" ]
+               , children: 
+                  [ DOM.text "footer" ]
                }
            , DOM.aside
                { className: "mosaico--aside"
