@@ -10,7 +10,13 @@ var Mosaico = require("../output/Mosaico/index.js").jsApp();
 
 function main() {
   rehydrateMarks().then(() => {
-    const mosaico = <Mosaico article={window.article || null} isPreview={window.isPreview || null} />;
+    const mosaico = (
+      <Mosaico
+	article={window.article || null}
+	isPreview={window.isPreview || null}
+	mostReadArticles={window.mostReadArticles || null}
+      />
+    );
     ReactDOM.hydrate(mosaico, document.getElementById("app"));
   });
 }

@@ -3,7 +3,7 @@ module Mosaico where
 import Prelude
 
 import Data.Argonaut.Core (Json)
-import Data.Array (null, head)
+import Data.Array (head, mapMaybe, null)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (oneOf)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -18,10 +18,11 @@ import Effect.Class.Console as Console
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), notFoundArticle, fromFullArticle, parseArticleWithoutLocalizing)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
+import Mosaico.MostReadList as MostReadList
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
@@ -58,8 +59,9 @@ type State =
   , articleComponent :: Article.Props -> JSX
   , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
+  , mostReadListComponent :: MostReadList.Props -> JSX
   , user :: Maybe User
-  , staticPage :: Maybe (Either StaticPageError JSX) 
+  , staticPage :: Maybe (Either StaticPageError JSX)
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -68,8 +70,15 @@ data StaticPageError
   = StaticPageNotFound
   | StaticPageOtherError
 
-type Props = { article :: Maybe FullArticle }
-type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
+type Props =
+  { article :: Maybe FullArticle
+  , mostReadArticles :: Maybe (Array ArticleStub)
+  }
+type JSProps =
+  { article :: Nullable Json
+  , isPreview :: Nullable Boolean
+  , mostReadArticles :: Nullable (Array Json)
+  }
 
 routes :: Match MosaicoPage
 routes = root *> oneOf
@@ -110,18 +119,22 @@ mosaicoComponent initialValues props = React.do
         let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
         res <- AX.get AX.string staticPageUrl
         liftEffect $ case res of
-          Right content -> 
-            setState _ { staticPage = Just $ case content.status of 
-              StatusCode 200 -> Right $ DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: content.body } } 
+          Right content ->
+            setState _ { staticPage = Just $ case content.status of
+              StatusCode 200 -> Right $ DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: content.body } }
               StatusCode 404 -> Left StaticPageNotFound
               _ -> Left StaticPageOtherError
             }
           Left _err -> setState _ { staticPage = Just $ Left StaticPageOtherError }
 
 
-    Aff.launchAff_ do
-      mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-      liftEffect $ setState \s -> s { mostreadList = mostReadArticles }
+    case props.mostReadArticles of
+      Just mostReads
+        | not $ null mostReads -> liftEffect $ setState \s -> s { mostreadList = mostReads }
+      _ ->
+        Aff.launchAff_ do
+          mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+          liftEffect $ setState \s -> s { mostreadList = mostReadArticles }
 
     pure mempty
 
@@ -149,6 +162,7 @@ getInitialValues = do
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
   loginModalComponent <- LoginModal.loginModal
+  mostReadListComponent <- MostReadList.mostReadListComponent
   pure
     { state:
         { article: Nothing
@@ -161,6 +175,7 @@ getInitialValues = do
         , articleComponent
         , headerComponent
         , loginModalComponent
+        , mostReadListComponent
         , user: Nothing
         , staticPage: Nothing
         }
@@ -176,7 +191,8 @@ fromJSProps jsProps =
         | isPreview = PreviewArticle
         | otherwise = FullArticle
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
-  in { article }
+      mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
+  in { article, mostReadArticles }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -200,7 +216,7 @@ render setState state router =
   <> DOM.div
        { className: "mosaico grid"
        , children:
-           [ Header.topLine 
+           [ Header.topLine
            , state.headerComponent { router }
            , Header.mainSeparator
            , case state.route of
@@ -220,22 +236,30 @@ render setState state router =
                   Nothing -> DOM.text "laddar"
                   Just (Right content) -> content
                   Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                  Just (Left StaticPageOtherError) -> 
+                  Just (Left StaticPageOtherError) ->
                     DOM.div
                         { className: "mosaico--static-page-error"
                         , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
                         }
            , DOM.footer
                { className: "mosaico--footer"
-               , children: 
+               , children:
                   [ DOM.text "footer" ]
                }
            , case state.route of
-               Frontpage -> 
+               Frontpage ->
                  DOM.aside
-                    { className: "mosaico--aside"
-                    , children: [ renderMostreadList state setState router ]
-                    }
+                   { className: "mosaico--aside"
+                   , children:
+                       [ state.mostReadListComponent
+                           { mostReadArticles: state.mostreadList
+                           , onClickHandler: \articleStub -> do
+                               setState _ { clickedArticle = Just articleStub }
+                               void $ Web.scroll 0 0 =<< Web.window
+                               router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
+                           }
+                       ]
+                   }
                _ -> mempty
            ]
        }
@@ -305,55 +329,3 @@ articleList state setState router =
               }
             ]
         }
-
-renderMostreadList :: State -> SetState -> PushStateInterface -> JSX
-renderMostreadList state setState router =
-  let
-    block = "mosaico-asidelist"
-  in
-    DOM.div
-      { className: block
-      , children:
-          [ DOM.h6
-              { className: block <> "--header color-hbl"
-              , children: [ DOM.text "Andra läser" ]
-              }
-          , DOM.ul
-              { className: block <> "__mostread"
-              , children: map renderMostreadArticle state.mostreadList
-              }
-          ]
-      }
-      where
-        renderMostreadArticle :: ArticleStub -> JSX
-        renderMostreadArticle a =
-          DOM.li_
-            [ DOM.a
-                { onClick: handler_ do
-                      setState \s -> s { clickedArticle = Just a }
-                      void $ Web.scroll 0 0 =<< Web.window
-                      router.pushState (write {}) $ "/artikel/" <> a.uuid
-                , children:
-                    [ DOM.div
-                        { className: "counter"
-                        , children: [ DOM.div { className: "background-hbl" } ]
-                        }
-                      , DOM.div
-                          { className: "list-article-liftup"
-                          , children:
-                              [ DOM.h6_ [ DOM.text a.title ]
-                              , DOM.div
-                                  { className: "mosaico--article--meta"
-                                  , children:
-                                      [ guard a.premium $
-                                          DOM.div
-                                            { className: "mosaico--article-premium background-hbl"
-                                            , children: [ DOM.text "premium" ]
-                                            }
-                                      ]
-                                  }
-                              ]
-                          }
-                      ]
-                  }
-            ]
