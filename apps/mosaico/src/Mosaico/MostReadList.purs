@@ -52,14 +52,13 @@ render props =
                     { className: "list-article-liftup"
                     , children:
                         [ DOM.h6_ [ DOM.text a.title ]
-                        , DOM.div
+                        , guard a.premium $ DOM.div
                             { className: "mosaico--article--meta"
                             , children:
-                                [ guard a.premium $
-                                    DOM.div
-                                      { className: "mosaico--article--premium background-hbl"
-                                      , children: [ DOM.text "premium" ]
-                                      }
+                                [ DOM.div
+                                    { className: "mosaico--article--premium background-hbl"
+                                    , children: [ DOM.text "premium" ]
+                                    }
                                 ]
                             }
                         ]
