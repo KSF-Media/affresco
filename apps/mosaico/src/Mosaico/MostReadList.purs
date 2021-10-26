@@ -56,7 +56,7 @@ render props =
                             { className: "mosaico--article--meta"
                             , children:
                                 [ DOM.div
-                                    { className: "mosaico--article--premium background-hbl"
+                                    { className: "mosaico--article-premium background-hbl"
                                     , children: [ DOM.text "premium" ]
                                     }
                                 ]
