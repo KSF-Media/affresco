@@ -9,7 +9,6 @@ You can edit this file as you like.
   , "affresco-components"
   , "affresco-user"
   , "affresco-vetrina"
-  , "argonaut-codecs"
   , "argonaut-core"
   , "arrays"
   , "console"
