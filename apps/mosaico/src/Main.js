@@ -9,15 +9,12 @@ exports.appendMosaicoImpl = function (HTML_TEMPLATE, a) {
 };
 
 // Writes article json to a window variable
-exports.writeArticleImpl = function (article, isPreviewArticle, mostReadArticles, HTML_TEMPLATE) {
+exports.writeArticleImpl = function (article, isPreviewArticle, mostReadArticles, isDraftArticle, HTML_TEMPLATE) {
   const $template = cheerio.load(HTML_TEMPLATE);
   const appendArticle = "<script>window.article=" + JSON.stringify(article) + "</script>";
   const appendIsPreview = "<script>window.isPreview=" + isPreviewArticle + "</script>";
-    const appendMostReadArticles = "<script>window.mostReadArticles=" + JSON.stringify(mostReadArticles) + "</script>";
-    const appendIsDraft = "<script>window.isDraft=" + isDraftArticle + "</script>";
-
-    $template("head").append(appendArticle + appendIsPreview + appendMostReadArticles + appendIsDraft);
-	exports.writeArticleImpl = function (article, isPreviewArticle, isDraftArticle, HTML_TEMPLATE) {
-
+  const appendMostReadArticles = "<script>window.mostReadArticles=" + JSON.stringify(mostReadArticles) + "</script>";
+  const appendIsDraft = "<script>window.isDraft=" + isDraftArticle + "</script>";
+  $template("head").append(appendArticle + appendIsPreview + appendMostReadArticles + appendIsDraft);
   return $template.html();
 };

@@ -70,8 +70,15 @@ data StaticPageError
   = StaticPageNotFound
   | StaticPageOtherError
 
-type Props = { article :: Maybe FullArticle }
-type JSProps = { article :: Nullable Json, isPreview :: Nullable Boolean }
+type Props =
+  { article :: Maybe FullArticle
+  , mostReadArticles :: Maybe (Array ArticleStub)
+  }
+type JSProps =
+  { article :: Nullable Json
+  , isPreview :: Nullable Boolean
+  , mostReadArticles :: Nullable (Array Json)
+  }
 
 routes :: Match MosaicoPage
 routes = root *> oneOf

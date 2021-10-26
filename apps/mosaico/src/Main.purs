@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Encode.Class (encodeJson)
-import Data.Array (cons)
+import Data.Array (cons, null)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.List (List)
@@ -42,7 +42,7 @@ appendMosaico :: String -> String -> Effect String
 appendMosaico htmlTemplate content = runEffectFn2 appendMosaicoImpl htmlTemplate content
 
 foreign import writeArticleImpl :: EffectFn5 Json Boolean Json Boolean String String
-writeArticle :: Json -> Boolean -> Json -> String -> Effect String
+writeArticle :: Json -> Boolean -> Json -> Boolean -> String -> Effect String
 writeArticle = runEffectFn5 writeArticleImpl
 
 newtype TextHtml = TextHtml String
@@ -117,7 +117,7 @@ getDraftArticle
   -> Aff (Response ResponseBody)
 getDraftArticle env { params: {aptomaId}, query } = do
   article <- Lettera.getDraftArticle aptomaId query
-  renderArticle env Nothing article
+  renderArticle env Nothing article mempty
 
 getArticle
   :: Env
@@ -134,7 +134,7 @@ renderArticle
   -> Either String FullArticle
   -> Array ArticleStub
   -> Aff (Response ResponseBody)
-renderArticle { htmlTemplate } uuid article = do
+renderArticle { htmlTemplate } uuid article mostReadArticles = do
   articleComponent <- liftEffect Article.articleComponent
   mosaico <- liftEffect MosaicoServer.app
   case article of
@@ -162,7 +162,8 @@ renderArticle { htmlTemplate } uuid article = do
 
       pure $ Response.ok $ StringBody html
     Left _ ->
-      notFound (Just mostReadArticles) { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
+      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+      in notFound maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/client" path
