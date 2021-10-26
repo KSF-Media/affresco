@@ -95,9 +95,17 @@
 
 .article-element {
   margin-bottom: 1rem;
+  font: 300 1rem/1.5rem "Roboto", sans-serif;
   &__html {
-    font: 300 1rem/1.5rem "Roboto", sans-serif;
     color: @dark-text;
+    a {
+      color: @dark-text;
+      text-decoration: none;
+      border-bottom: solid 1px @hbl-orange;
+      &:hover {
+        color: lighten(@dark-text, 20%);
+      }
+    }
   }
   &__question {
     font-size: 1.1rem;
