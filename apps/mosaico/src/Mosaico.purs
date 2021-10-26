@@ -254,7 +254,7 @@ render setState state router =
                        [ state.mostReadListComponent
                            { mostReadArticles: state.mostreadList
                            , onClickHandler: \articleStub -> do
-                               setState \s -> s { clickedArticle = Just articleStub }
+                               setState _ { clickedArticle = Just articleStub }
                                void $ Web.scroll 0 0 =<< Web.window
                                router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
                            }
