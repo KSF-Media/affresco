@@ -7,6 +7,8 @@
     <title>Vetrina look-a-like</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" type="text/css" href="../../../less/Vetrina.less" />
+  </head>
+  <body>
     <style>
       .vetrina--product-information__checkmark {
 	background-image: url("https://cdn.ksfmedia.fi/assets/images/check-circle_hbl.svg") !important;
@@ -23,18 +25,24 @@
 	width: 100%;
 	border: none;
 	border-radius: 5px;
-	padding: 2x;
+	padding: 2px;
 	font-weight: 500;
 	margin-top: 2em;
 	max-width: 250px;
 	height: 3.5em;
 	cursor: pointer;
       }
-      .vetrina--external-purchase-button__hbl > a {
-	text-decoration: none;
+
+      #vetrina-campaign-link-container > a {
+	text-decoration: none !important;
+	transition: none !important;
+	color: white !important;
       }
-      .vetrina--external-purchase-button__hbl > a:visited {
-	color: white;
+      #vetrina-campaign-link-container > a:visited {
+	color: white !important;
+      }
+      #vetrina-campaign-link-container > a:hover {
+	color: white !important;
       }
       .vetrina--login-callback {
 	color: #f07e26;
@@ -49,14 +57,12 @@
       }
       .vetrina--headline-image {
 	grid-area: headline-image;
-	max-width: 600px;
+	max-width: 100%;
       }
     </style>
-  </head>
-  <body>
     <div class="vetrina--container">
       <h1 class="vetrina--headline-HBL">
-	<div>Testa HBL digitalt för <span class="vetrina--price-headline">två veckor gratis</span></div>
+	<div>Testa HBL digitalt i <span class="vetrina--price-headline">två veckor gratis</span></div>
       </h1>
       <img class="vetrina--headline-image" src="https://cdn.ksfmedia.fi/assets/images/hbl-365-2-weeks-free.png" />
       <span class="vetrina--login-link"
@@ -68,11 +74,16 @@
       <div class="vetrina--form">
 	Med en HBL365 prenumeration får du tillgång till alla Premiumartiklar, e-tidningen och nyhetsapparna i två
 	veckor, helt gratis. Du binder dig inte till något, prenumerationen är tidsbunden.
-	<div class="vetrina--external-purchase-button__hbl">
-	  <a href="https://www.ksfmedia.fi/365-2" target="_blank">Läs 2 veckor gratis</a>
+	<div id="vetrina-campaign-link-container">
+	  <a
+	    id="campaign-link"
+	    class="vetrina--external-purchase-button__hbl"
+	    href="https://www.ksfmedia.fi/365-2"
+	    target="_blank"
+	    >Läs 2 veckor gratis</a
+	  >
 	</div>
       </div>
-
       <div class="vetrina--product-container">
 	<div class="vetrina--product-information">
 	  <div class="vetrina--product-information__headline">
@@ -111,5 +122,12 @@
 	</div>
       </div>
     </div>
+    <script>
+      const campaignLink = document.getElementById("campaign-link");
+      if (campaignLink) {
+	const campaignUrl = campaignLink.getAttribute("href");
+	campaignLink.setAttribute("href", campaignUrl + "?sourceArticle=" + window.location);
+      }
+    </script>
   </body>
 </html>
