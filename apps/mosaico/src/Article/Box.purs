@@ -30,29 +30,35 @@ box = make component
   , didMount: \self ->
       self.setState \_ -> { expanded: autoExpand self.props.content }
   , render: \self ->
-      DOM.div
-        { className: "mosaico--article--boxinfo border-" <> self.props.brand
+      DOM.section
+        { className: "boxinfo border-" <> self.props.brand
         , children:
-            [ DOM.div
-              { className: "boxinfo-header"
+            [ DOM.header
+              { className: "boxinfo__header"
               , children:
-                  [ DOM.h3_ [ DOM.text $ fold self.props.headline ]
-                  , DOM.h2_ [ DOM.text $ fold self.props.title ]
+                  [ DOM.h3
+                      { className: "boxinfo__label"
+                      , children: [ DOM.text $ fold self.props.headline ]
+                      }   
+                  , DOM.h2
+                      { className: "boxinfo__title"
+                      , children: [ DOM.text $ fold self.props.title ]
+                      }
                   ]
               }
             , DOM.div
-              { className: "boxinfo--body" <> guard self.state.expanded " expanded"
+              { className: "boxinfo__body" <> guard self.state.expanded "--expanded"
               , children:
                   [ DOM.div
-                    { className: "content"
+                    { className: "boxinfo-body__content"
                     , children: map (\p -> DOM.p { dangerouslySetInnerHTML: { __html: p } }) self.props.content
                     }
-                  , DOM.div { className: "fader" }
+                  , guard (not self.state.expanded) $ DOM.div { className: "boxinfo-body__fader" }
                   ]
               }
-            , DOM.div
+            , DOM.footer
               { onClick: capture_ $ self.setState \_ -> { expanded: not self.state.expanded }
-              , className: "boxinfo-toggle"
+              , className: "boxinfo__toggle"
               , children: guard (not self.state.expanded) $
                   [ DOM.a
                     { className: "color-" <> self.props.brand
