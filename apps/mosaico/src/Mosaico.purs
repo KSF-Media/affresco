@@ -294,7 +294,7 @@ articleList state setState router =
                           , children:
                               [ guard a.premium $
                                   DOM.div
-                                    { className: "mosaico--article--premium background-hbl"
+                                    { className: "mosaico--article-premium background-hbl"
                                     , children: [ DOM.text "premium" ]
                                     }
                               ]
@@ -347,7 +347,7 @@ renderMostreadList state setState router =
                                   , children:
                                       [ guard a.premium $
                                           DOM.div
-                                            { className: "mosaico--article--premium background-hbl"
+                                            { className: "mosaico--article-premium background-hbl"
                                             , children: [ DOM.text "premium" ]
                                             }
                                       ]

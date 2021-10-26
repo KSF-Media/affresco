@@ -3,11 +3,19 @@
 .article {
   grid-area: article;
   display: grid;
-  grid-template-columns: 100px 1fr 100px;
+  grid-template-columns: 1fr;
   grid-template-areas:
-    ".     head  ."
-    "image image image"
-    ".     body  body";
+    "head"
+    "image"
+    "body";
+
+  @media (min-width: @breakpoint-3col) {
+    grid-template-columns: 100px 1fr 100px;
+    grid-template-areas:
+      ".     head  ."
+      "image image image"
+      ".     body  body";
+  }
 
   header {
     grid-area: head;
@@ -19,10 +27,15 @@
   .articlebody {
     grid-area: body;
     display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "articlemetabyline"
+      "articlebody";
+
     @media (min-width: @breakpoint-3col) {
       grid-template-columns: 1fr 300px;
       grid-template-areas:
-        "articleauthors articlesidebar"
+        "articlemetabyline articlesidebar"
         "articlebody articlesidebar";
     }
   }
@@ -121,52 +134,45 @@
   border-bottom-width: 1px;
 }
 
-.mosaico--article-draft {
-  color: red;
-}
-
-.mosaico--article-times-and-author {
-  // FIXME: Decide between grid and flex, after needed DOM tree structure changes
-  // display: grid;
-  grid-area: articleauthors;
-  // grid-template-columns: auto auto auto;
-  // grid-template-rows: auto auto;
-  // grid-template-areas: 
-  //   "authorimage authorname  ."
-  //   "authorimage publishdate premium";
-  display: flex;
+.mosaico--article-metabyline {
+  grid-area: articlemetabyline;
   border-style: solid;
   border-bottom-width: 1px;
   border-top-width: 1px;
   border-left-width: 0;
   border-right-width: 0;
-  padding-top: 0.5em;
-  margin-top: 1.5em;
-  padding-bottom: 0.5em;
-  border-color: #dbd3d3;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  border-color: @hairline-color;
   color: @grey-mediumlight;
   font-family: "Roboto";
 }
 
-.mosaico--author-image {
-  grid-area: authorimage;
+.mosaico--article-draft {
+  color: red;
 }
 
-.mosaico--article-authors {
-  grid-area: authorname;
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
-  *:not(:last-child) {
-    margin-bottom: 0.5em;
+.mosaico--article-authors-and-timestamps {
+  padding: 8px 0;
+  @media (min-width: @breakpoint-2col) {
+    padding: 12px 0;
   }
-  .mosaico--article--premium {
-    grid-area: premium;
+}
+
+.mosaico--article-author {
+  font-size: .8rem;
+  margin-bottom: 5px;
+  color: @dark-text;
+  font-weight: 500;
+  @media (min-width: @breakpoint-2col) {
+    font-size: .9rem;
   }
 }
 
 .mosaico--article-timestamps {
-  font-size: 12px;
-  text-align: right;
-  display: flex;
+  margin-top: 10px;
+  font-size: .6rem;
+  @media (min-width: @breakpoint-2col) {
+    font-size: .75rem;
+  }
 }
