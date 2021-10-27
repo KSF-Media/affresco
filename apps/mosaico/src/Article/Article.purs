@@ -206,9 +206,9 @@ render { props, state, setState } =
     renderMetabyline article =
       DOM.div
         { className: "mosaico-article__metabyline"
-        , children: 
-            [ DOM.div 
-                { className: "mosaico-article__authors-and-timestamps" 
+        , children:
+            [ DOM.div
+                { className: "mosaico-article__authors-and-timestamps"
                 , children:
                     [ foldMap
                         (\authorName -> DOM.div
@@ -219,7 +219,7 @@ render { props, state, setState } =
                     , foldMap
                         (\(LocalDateTime publishingTime) -> DOM.div
                           { className: "mosaico-article__timestamps"
-                          , children: 
+                          , children:
                               [ DOM.span_ [ DOM.text $ formatArticleTime publishingTime]
                               , foldMap
                                 (\(LocalDateTime updateTime) -> DOM.span_
