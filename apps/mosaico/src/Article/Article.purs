@@ -181,7 +181,7 @@ render { props, state, setState } =
               , children:
                     [ foldMap (renderMetabyline <<< fromFullArticle) state.article
                     , DOM.div
-                        { className: "mosaico--article--body "
+                        { className: "mosaico-article__body "
                         , children: case state.article of
                           (Just (PreviewArticle _previewArticle)) ->
                             paywallFade
@@ -205,20 +205,20 @@ render { props, state, setState } =
     renderMetabyline :: Article -> JSX
     renderMetabyline article =
       DOM.div
-        { className: "mosaico--article-metabyline"
+        { className: "mosaico-article__metabyline"
         , children: 
             [ DOM.div 
-                { className: "mosaico--article-authors-and-timestamps" 
+                { className: "mosaico-article__authors-and-timestamps" 
                 , children:
                     [ foldMap
                         (\authorName -> DOM.div
-                          { className: "mosaico--article-author"
+                          { className: "mosaico-article__author"
                           , children: [ DOM.text authorName]
                           })
                         (_.byline <$> article.authors)
                     , foldMap
                         (\(LocalDateTime publishingTime) -> DOM.div
-                          { className: "mosaico--article-timestamps"
+                          { className: "mosaico-article__timestamps"
                           , children: 
                               [ DOM.span_ [ DOM.text $ formatArticleTime publishingTime]
                               , foldMap
@@ -233,41 +233,6 @@ render { props, state, setState } =
                 }
             ]
         }
-    -- renderAuthors :: Array Author -> JSX
-    -- renderAuthors authors =
-    --   DOM.div
-    --     { className: "mosaico--article-authors"
-    --     , children:
-    --         map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
-    --         `snoc` premiumBadge
-    --     }
-    --   where
-    --     premiumBadge =
-    --       guard (maybe false (_.premium <<< fromFullArticle) state.article)
-    --       DOM.div
-    --         { className: "article--premium background-hbl"
-    --         , children: [ DOM.text "premium" ]
-    --         }
-    -- articleTimestamps :: Article -> JSX
-    -- articleTimestamps { publishingTime, updateTime } =
-    --   DOM.div
-    --     { className: "mosaico--article-timestamps"
-    --     , children:
-    --         [ foldMap renderPublishingTime publishingTime
-    --         , foldMap renderUpdateTime updateTime
-    --         ]
-    --     }
-    --   where
-    --     renderPublishingTime (LocalDateTime time) =
-    --       DOM.div
-    --         { className: "mosaico--article-published-timestamp"
-    --         , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
-    --         }
-    --     renderUpdateTime (LocalDateTime time) =
-    --       DOM.div
-    --         { className: "mosaico--article-updated-timestamp"
-    --         , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
-    --         }
 
     mkShareIcon someName =
       DOM.li_

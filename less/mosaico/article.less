@@ -34,7 +34,7 @@
     grid-area: body;
     display: grid;
     grid-template-areas:
-      "articleauthors"
+      "articlemetabyline"
       "articlebody";
     @media (min-width: @breakpoint-2col) {
       grid-template-columns: 1fr 300px;
@@ -91,6 +91,58 @@
     justify-content: space-between;
     align-items: center;
   }
+  &__date {
+    border-top: red;
+    border-top-style: none;
+    border-top-width: medium;
+    border-top-width: 1px;
+    border-style: solid;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 1px;
+  }
+
+  &__metabyline {
+    grid-area: articlemetabyline;
+    border-style: solid;
+    border-bottom-width: 1px;
+    border-top-width: 1px;
+    border-left-width: 0;
+    border-right-width: 0;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    border-color: @hairline-color;
+    color: @grey-mediumlight;
+    font-family: "Roboto";
+    @media (min-width: @breakpoint-2col) {
+      margin-right: 30px;
+    }
+  }
+
+  &__authors-and-timestamps {
+    padding: 8px 0;
+    @media (min-width: @breakpoint-2col) {
+      padding: 12px 0;
+    }
+  }
+
+  &__author {
+    font-size: .8rem;
+    margin-bottom: 5px;
+    color: @dark-text;
+    font-weight: 500;
+    @media (min-width: @breakpoint-2col) {
+      font-size: .9rem;
+    }
+  }
+
+  &__timestamps {
+    margin-top: 10px;
+    font-size: .6rem;
+    @media (min-width: @breakpoint-2col) {
+      font-size: .75rem;
+    }
+  }
 }
 
 .article-element {
@@ -144,58 +196,9 @@
     margin-top: 30px;
     margin-bottom: 10px;
   }
-}
 
-.mosaico--article-date {
-  border-top: red;
-  border-top-style: none;
-  border-top-width: medium;
-  border-top-width: 1px;
-  border-style: solid;
-  border-left-width: 0;
-  border-right-width: 0;
-  border-bottom-width: 1px;
-}
-
-.mosaico--article-metabyline {
-  grid-area: articlemetabyline;
-  border-style: solid;
-  border-bottom-width: 1px;
-  border-top-width: 1px;
-  border-left-width: 0;
-  border-right-width: 0;
-  margin-top: 1rem;
-  margin-bottom: 1.5rem;
-  border-color: @hairline-color;
-  color: @grey-mediumlight;
-  font-family: "Roboto";
 }
 
 .mosaico--article-draft {
   color: red;
-}
-
-.mosaico--article-authors-and-timestamps {
-  padding: 8px 0;
-  @media (min-width: @breakpoint-2col) {
-    padding: 12px 0;
-  }
-}
-
-.mosaico--article-author {
-  font-size: .8rem;
-  margin-bottom: 5px;
-  color: @dark-text;
-  font-weight: 500;
-  @media (min-width: @breakpoint-2col) {
-    font-size: .9rem;
-  }
-}
-
-.mosaico--article-timestamps {
-  margin-top: 10px;
-  font-size: .6rem;
-  @media (min-width: @breakpoint-2col) {
-    font-size: .75rem;
-  }
 }
