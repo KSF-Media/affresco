@@ -318,7 +318,7 @@ articleList state setState router =
                           , children:
                               [ guard a.premium $
                                   DOM.div
-                                    { className: "mosaico--article-premium background-hbl"
+                                    { className: "premium-badge background-hbl"
                                     , children: [ DOM.text "premium" ]
                                     }
                               ]
