@@ -96,7 +96,7 @@ fullNav self@{ props } =
     }
 
 showUser :: Self -> JSX
-showUser self@{ props: { activeUser } } =
+showUser { props: { activeUser } } =
   foldMap displayUser activeUser
   where
     displayUser user =

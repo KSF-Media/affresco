@@ -2,12 +2,12 @@ module Lettera.Models where
 
 import Prelude
 
-import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Argonaut.Core (Json, stringify)
+import Data.Argonaut.Encode.Class (class EncodeJson, class GEncodeJson, encodeJson)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
-import Data.Foldable (foldMap)
+import Data.Foldable (class Foldable, foldMap)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate as JSDate
@@ -20,8 +20,12 @@ import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
 import KSF.Helpers (dateTimeFormatter)
+import Prim.Row (class Cons)
+import Prim.RowList (class RowToList, RowList)
+import Record (modify)
 import Simple.JSON (class ReadForeign)
 import Simple.JSON as JSON
+import Type.Prelude (Proxy(..))
 
 data FullArticle
   = FullArticle Article
@@ -128,7 +132,6 @@ type JSDraftArticle =
   | ArticleCommon
   }
 
-
 type Author =
   { byline :: String
   , image  :: Maybe String
@@ -138,11 +141,15 @@ articleToJson :: Article -> Json
 articleToJson article =
   encodeJson $
     article
-      { publishingTime = formatLocalDateTime article.publishingTime
-      , updateTime     = formatLocalDateTime article.updateTime
+      { publishingTime = foldMap formatLocalDateTime article.publishingTime
+      , updateTime     = foldMap formatLocalDateTime article.updateTime
       }
-  where
-    formatLocalDateTime = foldMap (format dateTimeFormatter <<< un LocalDateTime)
+
+articleStubToJson :: ArticleStub -> Json
+articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
+
+formatLocalDateTime :: LocalDateTime -> String
+formatLocalDateTime = format dateTimeFormatter <<< un LocalDateTime
 
 parseArticleWith :: forall a b. ReadForeign b => (b -> Effect a) -> Json -> Effect (Either String a)
 parseArticleWith parseFn articleResponse = do
@@ -162,12 +169,20 @@ parseArticle = parseArticleWith fromJSArticle
 --   Unless you have the correct times in the `Json`, the return value
 --   will have wrong timestamps
 parseArticleWithoutLocalizing :: Json -> (Either String Article)
-parseArticleWithoutLocalizing jsonArticle =
+parseArticleWithoutLocalizing =
+  parseArticlePure
+    \jsArticle -> jsArticle { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
+                            , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+                            }
+
+parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
+parseArticleStubWithoutLocalizing =
+  parseArticlePure (\jsStub -> jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime })
+
+parseArticlePure :: forall b a. ReadForeign b => (b -> a) -> Json -> (Either String a)
+parseArticlePure convertJSArticle jsonArticle =
   case JSON.readJSON $ stringify jsonArticle of
-    Right jsArticle ->
-      Right jsArticle { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
-                      , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
-                      }
+    Right jsArticle -> Right $ convertJSArticle jsArticle
     Left err ->
       let parsingErrors = joinWith " " $ fromFoldable $ map renderForeignError err
       in Left $ "Parsing error: " <> parsingErrors

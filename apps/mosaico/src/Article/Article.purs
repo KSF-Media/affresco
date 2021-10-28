@@ -5,12 +5,10 @@ import Prelude
 import Bottega.Models.Order (OrderSource(..))
 import Control.Alt ((<|>))
 import Data.Array (cons, head, snoc)
-import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
-import Data.Monoid (guard)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -21,7 +19,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, Author, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
@@ -176,15 +174,8 @@ render { props, state, setState } =
             , DOM.div 
                 { className: "articlebody"
                 , children:
-                    [ -- foldMap (testDom <<< fromFullArticle) state.article
-{-                    [ DOM.div
-                        { className: "mosaico--article-times-and-author"
-                        , children:
-                            [ foldMap renderAuthors $ _.authors <$> letteraArticle
-                            , foldMap articleTimestamps letteraArticle
-                            ]
--}                          
-                    DOM.div
+                    [ foldMap (renderMetabyline <<< fromFullArticle) state.article
+                    , DOM.div
                         { className: "mosaico--article--body "
                         , children: case state.article of
                           (Just (PreviewArticle _previewArticle)) ->
@@ -206,77 +197,37 @@ render { props, state, setState } =
         ]
     }
   where
---FIX ME!!! To do: resolve author image byline and timestamps
-    testDom :: Article -> JSX
-    testDom article =
+    renderMetabyline :: Article -> JSX
+    renderMetabyline article =
       DOM.div
         { className: "mosaico--article-metabyline"
         , children: 
-            [ foldMap 
-                (\authorImage -> DOM.div
-                  { className: "mosaico--article-authors-image"
-                  , style: DOM.css { backgroundImage: "url(" <> authorImage <> ")" }
-                  -- FIXME: Give image height and then remove children
-                  , children: [ DOM.text "img" ]
-                  })
-                (_.image =<< head article.authors)
-            , DOM.div 
-                { className: "mosaico--article-authors-timestamps" 
+            [ DOM.div 
+                { className: "mosaico--article-authors-and-timestamps" 
                 , children:
-                    [ DOM.div
-                        { className: "mosaico--article-authors"
-                        , children: [ DOM.text "author name"]
-                        }
-                    , DOM.div
-                        { className: "mosaico--article-timestamps"
-                        , children: 
-                        [ DOM.span_ [ DOM.text "pub date" ]
-                        , DOM.span_ [ DOM.text "upd date" ]
-                        ]
-                        }
-                    , DOM.span
-                        { className: "mosaico--article--premium background-hbl"
-                        , children: [ DOM.text "premium" ]
-                        }
+                    [ foldMap
+                        (\authorName -> DOM.div
+                          { className: "mosaico--article-author"
+                          , children: [ DOM.text authorName]
+                          })
+                        (_.byline <$> article.authors)
+                    , foldMap
+                        (\(LocalDateTime publishingTime) -> DOM.div
+                          { className: "mosaico--article-timestamps"
+                          , children: 
+                              [ DOM.span_ [ DOM.text $ formatArticleTime publishingTime]
+                              , foldMap
+                                (\(LocalDateTime updateTime) -> DOM.span_
+                                  [ DOM.text $ " UPPDATERAD " <> formatArticleTime updateTime]
+                                )
+                                article.updateTime
+                              ]
+                          })
+                        article.publishingTime
                     ]
                 }
             ]
         }
-    renderAuthors :: Array Author -> JSX
-    renderAuthors authors =
-      DOM.div
-        { className: "mosaico--article-authors"
-        , children:
-            map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
-            `snoc` premiumBadge
-        }
-      where
-        premiumBadge =
-          guard (maybe false (_.premium <<< fromFullArticle) state.article)
-          DOM.div
-            { className: "mosaico--article--premium background-hbl"
-            , children: [ DOM.text "premium" ]
-            }
-    articleTimestamps :: Article -> JSX
-    articleTimestamps { publishingTime, updateTime } =
-      DOM.div
-        { className: "mosaico--article-timestamps"
-        , children:
-            [ foldMap renderPublishingTime publishingTime
-            , foldMap renderUpdateTime updateTime
-            ]
-        }
-      where
-        renderPublishingTime (LocalDateTime time) =
-          DOM.div
-            { className: "mosaico--article-published-timestamp"
-            , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
-            }
-        renderUpdateTime (LocalDateTime time) =
-          DOM.div
-            { className: "mosaico--article-updated-timestamp"
-            , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
-            }
 
     mkShareIcon someName =
       DOM.li_
