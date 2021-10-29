@@ -18,3 +18,11 @@ exports.writeArticleImpl = function (article, isPreviewArticle, mostReadArticles
   $template("head").append(appendArticle + appendIsPreview + appendMostReadArticles + appendIsDraft);
   return $template.html();
 };
+
+exports.writeFrontpageImpl = function (frontpageArticles, mostReadArticles, HTML_TEMPLATE) {
+  const $template = cheerio.load(HTML_TEMPLATE);
+  const appendFrontpage = "<script>window.frontpageArticles=" + JSON.stringify(frontpageArticles) + "</script>";
+  const appendMostReadArticles = "<script>window.mostReadArticles=" + JSON.stringify(mostReadArticles) + "</script>";
+  $template("head").append(appendFrontpage + appendMostReadArticles);
+  return $template.html();
+};

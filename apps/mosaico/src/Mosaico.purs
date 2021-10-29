@@ -2,12 +2,14 @@ module Mosaico where
 
 import Prelude
 
+import Affjax (get) as AX
+import Affjax.ResponseFormat (string) as AX
+import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
-import Data.Array (head, mapMaybe, null)
+import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
-import Data.Foldable (oneOf)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Monoid (guard)
+import Data.Foldable (fold, oneOf)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -20,20 +22,17 @@ import KSF.User (User)
 import Lettera as Lettera
 import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
+import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
 import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Affjax (get) as AX
-import Affjax.ResponseFormat (string) as AX
-import Affjax.StatusCode (StatusCode (..))
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
@@ -50,8 +49,8 @@ data ModalView = LoginModal
 
 type State =
   { article :: Maybe FullArticle
-  , articleList :: Array ArticleStub
-  , mostreadList :: Array ArticleStub
+  , frontpageArticles :: Array ArticleStub
+  , mostReadArticles :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
   , route :: MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -60,6 +59,7 @@ type State =
   , headerComponent :: Header.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
+  , frontpageComponent :: Frontpage.Props -> JSX
   , user :: Maybe User
   , staticPage :: Maybe (Either StaticPageError JSX)
   }
@@ -73,11 +73,13 @@ data StaticPageError
 type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
+  , frontpageArticles :: Maybe (Array ArticleStub)
   }
 type JSProps =
   { article :: Nullable Json
   , isPreview :: Nullable Boolean
   , mostReadArticles :: Nullable (Array Json)
+  , frontpageArticles :: Nullable (Array Json)
   }
 
 routes :: Match MosaicoPage
@@ -99,17 +101,22 @@ mosaicoComponent
   -> Props
   -> Render Unit (UseEffect MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
-  state /\ setState <- useState initialValues.state { article = props.article }
+  state /\ setState <- useState initialValues.state
+                         { article = props.article
+                         , frontpageArticles = fold props.frontpageArticles
+                         , mostReadArticles = fold props.mostReadArticles
+                         }
 
   -- Listen for route changes and set state accordingly
   useEffectOnce $ locations (routeListener setState) initialValues.nav
   useEffect state.route do
     case state.route of
       Frontpage -> do
-        if null state.articleList
+        Console.log $ "aaa" <> show (null state.frontpageArticles)
+        if null state.frontpageArticles
         then Aff.launchAff_ do
           frontpage <- Lettera.getFrontpage HBL
-          liftEffect $ setState \s -> s { articleList = frontpage, article = Nothing }
+          liftEffect $ setState \s -> s { frontpageArticles = frontpage, article = Nothing }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
       DraftPage -> pure unit
@@ -130,11 +137,11 @@ mosaicoComponent initialValues props = React.do
 
     case props.mostReadArticles of
       Just mostReads
-        | not $ null mostReads -> liftEffect $ setState \s -> s { mostreadList = mostReads }
+        | not $ null mostReads -> liftEffect $ setState \s -> s { mostReadArticles = mostReads }
       _ ->
         Aff.launchAff_ do
           mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-          liftEffect $ setState \s -> s { mostreadList = mostReadArticles }
+          liftEffect $ setState \s -> s { mostReadArticles = mostReadArticles }
 
     pure mempty
 
@@ -159,15 +166,16 @@ getInitialValues = do
   locationState <- nav.locationState
   let initialRoute = either (const $ Frontpage) identity $ match routes locationState.path
 
-  articleComponent    <- Article.articleComponent
-  headerComponent     <- Header.headerComponent
-  loginModalComponent <- LoginModal.loginModal
+  articleComponent      <- Article.articleComponent
+  headerComponent       <- Header.headerComponent
+  loginModalComponent   <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
+  frontpageComponent    <- Frontpage.frontpageComponent
   pure
     { state:
         { article: Nothing
-        , articleList: []
-        , mostreadList: []
+        , frontpageArticles: []
+        , mostReadArticles: []
         , affArticle: Nothing
         , route: initialRoute
         , clickedArticle: Nothing
@@ -176,6 +184,7 @@ getInitialValues = do
         , headerComponent
         , loginModalComponent
         , mostReadListComponent
+        , frontpageComponent
         , user: Nothing
         , staticPage: Nothing
         }
@@ -192,7 +201,8 @@ fromJSProps jsProps =
         | otherwise = FullArticle
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
-  in { article, mostReadArticles }
+      frontpageArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageArticles
+  in { article, mostReadArticles, frontpageArticles }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -230,7 +240,13 @@ render setState state router =
                    | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
                  DraftPage -> renderArticle state.article (pure notFoundArticle) Nothing $
                               fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
-                 Frontpage -> articleList state setState router
+                 Frontpage -> state.frontpageComponent
+                                { frontpageArticles: state.frontpageArticles
+                                , onArticleClick: \article -> do
+                                    setState \s -> s { clickedArticle = Just article }
+                                    void $ Web.scroll 0 0 =<< Web.window
+                                    router.pushState (write {}) $ "/artikel/" <> article.uuid
+                                }
                  NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
                  StaticPage _ -> case state.staticPage of
                   Nothing -> DOM.text "laddar"
@@ -252,7 +268,7 @@ render setState state router =
                    { className: "mosaico--aside"
                    , children:
                        [ state.mostReadListComponent
-                           { mostReadArticles: state.mostreadList
+                           { mostReadArticles: state.mostReadArticles
                            , onClickHandler: \articleStub -> do
                                setState _ { clickedArticle = Just articleStub }
                                void $ Web.scroll 0 0 =<< Web.window
@@ -281,51 +297,4 @@ render setState state router =
         , onLogin: setState \s -> s { modalView = Just LoginModal }
         , user: state.user
         , uuid: Just uuid
-        }
-
-articleList :: State -> SetState -> PushStateInterface -> JSX
-articleList state setState router =
-  DOM.div
-    { className: "mosaico--article-list"
-    , children: map renderListArticle state.articleList
-    }
-  where
-    renderListArticle :: ArticleStub -> JSX
-    renderListArticle a =
-      DOM.div
-        { className: "mosaico--list-article list-article-default"
-        , children:
-            [ DOM.a
-              { onClick: handler_ do
-                    setState \s -> s { clickedArticle = Just a }
-                    void $ Web.scroll 0 0 =<< Web.window
-                    router.pushState (write {}) $ "/artikel/" <> a.uuid
-              , children:
-                  [ DOM.div
-                    { className: "list-article-image"
-                    , children:[ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url  a.listImage } ]
-                    }
-                  , DOM.div
-                    { className: "list-article-liftup"
-                    , children:
-                        [ DOM.div
-                          { className: "mosaico--tag color-hbl"
-                          , children: [ DOM.text $ fromMaybe "" (head a.tags) ]
-                          }
-                        , DOM.h2_ [ DOM.text a.title ]
-                        , DOM.div
-                          { className: "mosaico--article--meta"
-                          , children:
-                              [ guard a.premium $
-                                  DOM.div
-                                    { className: "mosaico--article-premium background-hbl"
-                                    , children: [ DOM.text "premium" ]
-                                    }
-                              ]
-                          }
-                        ]
-                    }
-                  ]
-              }
-            ]
         }
