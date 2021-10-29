@@ -78,9 +78,7 @@ def setup_env(app)
       app_yaml['runtime']       = app['runtime']
       app_yaml['service']       = app['id']
       app_yaml['entrypoint']    = app['entrypoint']
-      app_yaml['resources']     = {}
-      app_yaml['resources']['cpu'] = 2
-      app_yaml['resources']['memory_gb'] = 2.3
+      app_yaml['instance_class']= 'F4'
       app_yaml['env_variables'] = {}
       app_vars.each do |v|
         env_var_name = v.sub(/^PRODUCTION_/, '')
