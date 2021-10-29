@@ -112,7 +112,6 @@ mosaicoComponent initialValues props = React.do
   useEffect state.route do
     case state.route of
       Frontpage -> do
-        Console.log $ "aaa" <> show (null state.frontpageArticles)
         if null state.frontpageArticles
         then Aff.launchAff_ do
           frontpage <- Lettera.getFrontpage HBL
