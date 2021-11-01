@@ -15,12 +15,14 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Uncurried (EffectFn2, EffectFn5, runEffectFn2, runEffectFn5)
+import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, runEffectFn2, runEffectFn3, runEffectFn5)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson, articleToJson, fromFullArticle, isPreviewArticle, isDraftArticle, notFoundArticle)
 import Mosaico.Article as Article
+import Mosaico.Frontpage as Frontpage
+import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync as FS
@@ -44,6 +46,10 @@ appendMosaico htmlTemplate content = runEffectFn2 appendMosaicoImpl htmlTemplate
 foreign import writeArticleImpl :: EffectFn5 Json Boolean Json Boolean String String
 writeArticle :: Json -> Boolean -> Json -> Boolean -> String -> Effect String
 writeArticle = runEffectFn5 writeArticleImpl
+
+foreign import writeFrontpageImpl :: EffectFn3 Json Json String String
+writeFrontpage :: Json -> Json -> String -> Effect String
+writeFrontpage = runEffectFn3 writeFrontpageImpl
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -105,7 +111,7 @@ main = do
         { getDraftArticle: getDraftArticle env
         , getArticle: getArticle env
         , assets
-        , frontpage
+        , frontpage: frontpage env
         , notFound: notFound Nothing
         }
       guards = { credentials: getCredentials }
@@ -149,10 +155,9 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
               , article: Just a
               , uuid
               }
-          mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX, mostReadArticles }
+          mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
 
       html <- liftEffect do
-
         appendMosaico htmlTemplate mosaicoString
           >>= writeArticle
                 (articleToJson $ fromFullArticle a)
@@ -168,9 +173,28 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/client" path
 
-frontpage :: { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
-frontpage _ = do
-  html <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+frontpage { htmlTemplate } _ = do
+  articles <- Lettera.getFrontpage HBL
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  mosaico <- liftEffect MosaicoServer.app
+  frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  let mosaicoString =
+        DOM.renderToString
+        $ mosaico
+          { mainContent:
+              FrontpageContent
+              $ frontpageComponent
+                  { frontpageArticles: articles
+                  , onArticleClick: const $ pure unit
+                  }
+          , mostReadArticles
+          }
+  html <- liftEffect $
+          appendMosaico htmlTemplate mosaicoString
+          >>= writeFrontpage
+            (encodeJson $ map articleStubToJson articles)
+            (encodeJson $ map articleStubToJson mostReadArticles)
   pure $ TextHtml html
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
@@ -190,7 +214,7 @@ notFound mostReadList _ = do
           }
 
   mosaico <- liftEffect MosaicoServer.app
-  let mosaicoString = DOM.renderToString $ mosaico { mainContent: articleJSX, mostReadArticles }
+  let mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
   html <- liftEffect $
     appendMosaico htmlTemplate mosaicoString
 
