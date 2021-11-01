@@ -2,6 +2,9 @@ module Main where
 
 import Prelude
 
+import Affjax (get) as AX
+import Affjax.ResponseFormat (string) as AX
+import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (cons, null)
@@ -21,6 +24,7 @@ import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson, articleToJson, fromFullArticle, isPreviewArticle, isDraftArticle, notFoundArticle)
 import Mosaico.Article as Article
+import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
 import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
@@ -37,7 +41,8 @@ import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
-import React.Basic.DOM.Server as DOM
+import React.Basic.DOM (div) as DOM
+import React.Basic.DOM.Server (renderToString) as DOM
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
@@ -208,7 +213,35 @@ staticPage
   -> { params :: { pageName :: String }}
   -> Aff (Response ResponseBody)
 staticPage env { params: { pageName } } = do
-  
+  let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> pageName <> ".html"
+  res <- AX.get AX.string staticPageUrl
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  let pageContent = 
+        case res of 
+          Right pageContentResponse ->
+            case pageContentResponse.status of
+              StatusCode 200 -> 
+                Just $ DOM.div { className: "mosaico--static-page"
+                               , dangerouslySetInnerHTML: { __html: pageContentResponse.body } 
+                               }
+              StatusCode 404 -> Nothing 
+              _ -> Just Error.somethingWentWrong
+          Left _err -> Just Error.somethingWentWrong
+  case pageContent of
+    Just p -> do
+      mosaico <- liftEffect MosaicoServer.app
+      let mosaicoString =
+            DOM.renderToString
+            $ mosaico
+              { mainContent: StaticPageContent p
+              , mostReadArticles
+              }
+      html <- liftEffect $ appendMosaico env.htmlTemplate mosaicoString
+      pure $ Response.ok $ StringBody html
+    Nothing ->
+      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+      in notFound maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
+
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound mostReadList _ = do

@@ -22,6 +22,7 @@ import KSF.User (User)
 import Lettera as Lettera
 import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
+import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
@@ -251,11 +252,7 @@ render setState state router =
                   Nothing -> DOM.text "laddar"
                   Just (Right content) -> content
                   Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                  Just (Left StaticPageOtherError) ->
-                    DOM.div
-                        { className: "mosaico--static-page-error"
-                        , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
-                        }
+                  Just (Left StaticPageOtherError) -> Error.somethingWentWrong
            , DOM.footer
                { className: "mosaico--footer"
                , children:
