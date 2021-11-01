@@ -9,7 +9,7 @@ import Data.Argonaut.Core (Json)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, oneOf)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
