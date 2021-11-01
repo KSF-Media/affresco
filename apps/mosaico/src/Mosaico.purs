@@ -33,6 +33,7 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
+import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
@@ -238,7 +239,7 @@ render setState state router =
          -- e.g. when a subscription is purchased or user logs in
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
          | otherwise                 -> mosaicoLayoutNoAside $ renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
-       Frontpage -> state.frontpageComponent
+       Frontpage -> mosaicoDefaultLayout $ state.frontpageComponent
                                 { frontpageArticles: state.frontpageArticles
                                 , onArticleClick: \article -> do
                                     setState \s -> s { clickedArticle = Just article }
@@ -247,7 +248,7 @@ render setState state router =
                                 }
        NotFoundPage _ -> mosaicoDefaultLayout $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
        MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
-       DraftPage -> renderArticle state.article (pure notFoundArticle) Nothing $
+       DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
        StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
          Nothing -> DOM.text "laddar"
@@ -286,7 +287,15 @@ render setState state router =
               }
           , guard showAside $ DOM.aside
               { className: "mosaico--aside"
-              , children: [ renderMostreadList state setState router ]
+              , children:
+                  [ state.mostReadListComponent
+                      { mostReadArticles: state.mostReadArticles
+                      , onClickHandler: \articleStub -> do
+                          setState _ { clickedArticle = Just articleStub }
+                          void $ Web.scroll 0 0 =<< Web.window
+                          router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
+                      }
+                  ]
               }
           ]
       }

@@ -7,18 +7,14 @@
     grid-template-rows: repeat(3, auto);
     grid-template-columns: 0.1fr 1fr 0.1fr;
 
-    margin: -33px -30px -13px -30px;
-
     display: none;
-    border: 1px solid @grey-slightlylight;
     border-radius: 1px;
     background-color: @white;
 
     @media (min-width: @breakpoint-3col) {
       position: initial;
-      grid-column: 1 / span 3;
+      grid-column: 2 / span 3;
 
-      margin: -33px -30px -13px -30px;
     }
 
     &--visible {
@@ -120,7 +116,7 @@
   &__footer-caption {
 
     grid-row-start: 1;
-    grid-column: 1 / span 2;
+    grid-column: 2 / span 1;
 
     font: 600 13px "Roboto", sans-serif;
     color: @grey-mediumlight;
@@ -133,6 +129,7 @@
     display: grid;
 
     grid-template-rows: 55px auto;
+    justify-content: center;
 
     &--on {
       grid-row-start: 2;
