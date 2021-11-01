@@ -3,7 +3,6 @@ module Mosaico.Header where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe, maybe)
 import Data.Monoid (guard)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
