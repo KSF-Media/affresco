@@ -2,9 +2,6 @@ module Mosaico where
 
 import Prelude
 
-import Affjax (get) as AX
-import Affjax.ResponseFormat (string) as AX
-import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
@@ -27,6 +24,7 @@ import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
+import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
@@ -62,15 +60,10 @@ type State =
   , mostReadListComponent :: MostReadList.Props -> JSX
   , frontpageComponent :: Frontpage.Props -> JSX
   , user :: Maybe User
-  , staticPage :: Maybe (Either StaticPageError JSX)
+  , staticPage :: Maybe StaticPageResponse
   }
 
 type SetState = (State -> State) -> Effect Unit
-
-data StaticPageError
-  = StaticPageNotFound
-  | StaticPageOtherError
-
 type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
@@ -123,17 +116,8 @@ mosaicoComponent initialValues props = React.do
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
       StaticPage page -> Aff.launchAff_ do
-        let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
-        res <- AX.get AX.string staticPageUrl
-        liftEffect $ case res of
-          Right content ->
-            setState _ { staticPage = Just $ case content.status of
-              StatusCode 200 -> Right $ DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: content.body } }
-              StatusCode 404 -> Left StaticPageNotFound
-              _ -> Left StaticPageOtherError
-            }
-          Left _err -> setState _ { staticPage = Just $ Left StaticPageOtherError }
-
+        staticPage <- fetchStaticPage page
+        liftEffect $ setState _  { staticPage = Just staticPage }
 
     case props.mostReadArticles of
       Just mostReads
@@ -250,9 +234,11 @@ render setState state router =
                  NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
                  StaticPage _ -> case state.staticPage of
                   Nothing -> DOM.text "laddar"
-                  Just (Right content) -> content
-                  Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                  Just (Left StaticPageOtherError) -> Error.somethingWentWrong
+                  Just (StaticPageResponse page)  -> 
+                    DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page } }
+                  Just StaticPageNotFound -> 
+                    renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+                  Just StaticPageOtherError -> Error.somethingWentWrong
            , DOM.footer
                { className: "mosaico--footer"
                , children:
