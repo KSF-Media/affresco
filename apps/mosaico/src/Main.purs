@@ -93,6 +93,11 @@ spec ::
                 { response :: TextHtml
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , staticPage :: 
+              GET "/sida/<pageName>"
+                { response :: ResponseBody
+                , params :: { pageName :: String }
+                }
           , notFound ::
               GET "/<..path>"
                 { response :: ResponseBody
@@ -112,6 +117,7 @@ main = do
         , getArticle: getArticle env
         , assets
         , frontpage: frontpage env
+        , staticPage: staticPage env
         , notFound: notFound Nothing
         }
       guards = { credentials: getCredentials }
@@ -196,6 +202,13 @@ frontpage { htmlTemplate } _ = do
             (encodeJson $ map articleStubToJson articles)
             (encodeJson $ map articleStubToJson mostReadArticles)
   pure $ TextHtml html
+
+staticPage
+  :: Env
+  -> { params :: { pageName :: String }}
+  -> Aff (Response ResponseBody)
+staticPage env { params: { pageName } } = do
+  
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound mostReadList _ = do
