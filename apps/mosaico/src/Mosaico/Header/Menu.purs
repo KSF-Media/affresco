@@ -1,13 +1,19 @@
 module Mosaico.Header.Menu where
 
+import Data.Foldable
+import Data.Monoid
+import Data.Semigroup
 import Prelude
 
-import Data.Array (concat, foldl, singleton, toUnfoldable)
-import Data.String.Common (trim)
+import Data.Array (concat, cons, foldl, intersperse, length, singleton, snoc, toUnfoldable)
+import Data.Foldable as Foldable
 import Data.List ((:))
 import Data.List as List
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String.Common (trim)
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\))
+import Effect (Effect)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component)
@@ -20,15 +26,17 @@ type Props =
   { visible :: Boolean
   }
 
-type MenuLayout = Array MenuLayoutElement
-
-data MenuLayoutElement = SectionElement Section
-                       | SeparatorElement String
+data MenuLayoutElement = Section Section
+                       | Separator (Maybe String)
                        -- ^ The String-typed parameter is the BEM modifier to apply to the separator
+
+type MenuBlock = Array MenuLayoutElement
+
+type MenuLayout = Array MenuBlock
 
 type Section =
   { title :: String
-  , modifier :: String
+  , modifier :: Maybe String
   , url :: String
   , subsections :: Array Subsection
   }
@@ -43,6 +51,11 @@ menuComponent = do
   component "Menu" \props -> React.do
     pure $ render { props }
 
+visibleMenuComponent :: Effect JSX
+visibleMenuComponent = do
+  component <- menuComponent
+  pure $ component { visible: true }
+
 render :: Self -> JSX
 render { props: { visible } } = DOM.div
   { className: menuClass <>
@@ -50,7 +63,7 @@ render { props: { visible } } = DOM.div
         " " <> visibleMenuClass
       else
         mempty
-  , children: [ renderMenuLayout
+  , children: [ menuContent
               , DOM.div
                   { className: menuFooterClass
                   , children:
@@ -65,210 +78,197 @@ render { props: { visible } } = DOM.div
               ]
   }
   where
-    menuLayout :: MenuLayout
-    menuLayout =  concat $ (((<$>) SectionElement) <$> [ topSections, middleSections, bottomSections ]) `merge` ((singleton <<< SeparatorElement) <$> [ "--top", "--center", "--bottom" ])
 
-    topSections = [ { title: "E-TIDNINGEN"
-                    , modifier: "--e-tidningen"
+    menuLayout :: MenuLayout
+    menuLayout = [ upperBlock, separatorBlock, middleBlock, separatorBlock, bottomBlock ]
+
+    upperBlock :: MenuBlock
+    upperBlock = topSections
+
+    middleBlock :: MenuBlock
+    middleBlock = (intersperse mobileOnlySeparator) $ [ stardsidan, nyheter, opinion, kultur, sport ]
+
+    bottomBlock :: MenuBlock
+    bottomBlock = bottomSections
+
+    separatorBlock :: MenuBlock
+    separatorBlock = [ separator ]
+
+    separator = Separator Nothing
+    mobileOnlySeparator = Separator $ Just mobileOnlySeparatorClass
+
+    topSections :: MenuBlock
+    topSections = Section <$>
+                  [ { title: "SÖK"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "E-TIDNINGEN"
+                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "KUNDSERVICE"
-                    , modifier: "--kundservice"
-                    , url: ""
-                    , subsections: []
-                    }
-                  , { title: "ANNONSERA"
-                    , modifier: "--annonsera"
-                    , url: ""
-                    , subsections: []
-                    }
-                  , { title: "OTHER IMPORTANT"
-                    , modifier: "--other-important"
+                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   ]
 
-    middleSections = [ { title: "STARTSIDAN"
-                       , modifier: "--startsidan"
+    stardsidan = Section $
+                 { title: "STARTSIDAN"
+                 , modifier: Just "--startsidan"
+                 , url: ""
+                 , subsections: []
+                 }
+    nyheter      = Section $
+                   { title: "NYHETER"
+                   , modifier: Just "--section1"
+                   , url: ""
+                   , subsections:
+                       [ { title: "Finland"
+                         , url: ""
+                         }
+                       , { title: "Huvustadsregionen"
+                         , url: ""
+                         }
+                       , { title: "Norden och världen"
+                         , url: ""
+                         }
+                       , { title: "Ekonomi"
+                         , url: ""
+                         }
+                       , { title: "Miljö och natur"
+                         , url: ""
+                         }
+                       ]
+                 }
+    opinion    = Section $
+                 { title: "OPINION"
+                 , modifier: Just "--section2"
+                 , url: ""
+                 , subsections:
+                     [ { title: "Ledare"
                        , url: ""
-                       , subsections: []
                        }
-                     , { title: "SECTION 1"
-                       , modifier: "--section1"
+                     , { title: "Kolumner"
                        , url: ""
-                       , subsections:
-                           [ { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           , { title: "Mollis"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Lorem ipsum"
-                             , url: ""
-                             }
-                           ]
                        }
-                     , { title: "SECTION 2"
-                       , modifier: "--section2"
+                     , { title: "Debatt"
                        , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Sollicitudin"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           ]
-                         }
-                     , { title: "SECTION 3"
-                       , modifier: "--section3"
+                       }
+                     , { title: "Krönikor"
                        , url: ""
-                       , subsections:
-                           [ { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Mollis"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           ]
-                         }
-                     , { title: "SECTION 4"
-                       , modifier: "--section4"
-                       , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Elit"
-                             , url: ""
-                             }
-                           ]
-                         }
+                       }
                      ]
-
-    bottomSections = [ { title: "KONTAKT"
-                       , modifier: "--kontakt"
+                 }
+    kultur    =  Section $
+                 { title: "KULTUR"
+                 , modifier: Just "--section2"
+                 , url: ""
+                 , subsections:
+                     [ { title: "Litteratur"
                        , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Aliquet"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Consectetur"
-                             , url: ""
-                             }
-                           ]
-                        }
-                     , { title: "ANNONSERA"
-                       , modifier: "--annonsera2"
+                       }
+                     , { title: "Musik"
                        , url: ""
-                       , subsections:
-                           [ { title: "Consectetur"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           , { title: "Tempor"
-                             , url: ""
-                             }
-                           ]
-                        }
-                     , { title: "KUNDSERVICE"
-                       , modifier: "--kundservice2"
+                       }
+                     , { title: "Scen"
                        , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Pellentesque"
-                             , url: ""
-                             }
-                           , { title: "Sollicitudin"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           ]
-                        }
-                     , { title: "OTHER"
-                       , modifier: "--other"
+                       }
+                     , { title: "Konst"
                        , url: ""
-                       , subsections:
-                           [ { title: "Lorem"
-                             , url: ""
-                             }
-                           , { title: "Sollicitudin"
-                             , url: ""
-                             }
-                           , { title: "Ultrices"
-                             , url: ""
-                             }
-                           ]
-                        }
+                       }
+                     , { title: "Film och TV"
+                       , url: ""
+                       }
                      ]
+                 }
+    sport     =  Section $
+                 { title: "SPORT"
+                 , modifier: Just "--section3"
+                 , url: ""
+                 , subsections:
+                     [ { title: "Sport"
+                       , url: ""
+                       }
+                     , { title: "Handboll"
+                       , url: ""
+                       }
+                     , { title: "Ishockey"
+                       , url: ""
+                       }
+                     , { title: "Fotboll"
+                       , url: ""
+                       }
+                     , { title: "Motorsport"
+                       , url: ""
+                       }
+                     , { title: "Friidrott"
+                       , url: ""
+                       }
+                     , { title: "Skidsport"
+                       , url: ""
+                       }
+                     ]
+                 }
 
-    renderMenuLayout :: JSX
-    renderMenuLayout = DOM.div
+    bottomSections :: MenuBlock
+    bottomSections = Section <$>
+                  [ { title: "KONTAKTA OSS"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "ANNONSERA"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "JOBBA HOS OSS"
+                    , modifier: Nothing
+                    , url: ""
+                    , subsections: []
+                    }
+                  ]
+
+    menuContent :: JSX
+    menuContent = DOM.div
       { className: menuContentClass
-      , children: renderMenuLayoutElement <$> menuLayout
+      , children: [ renderMenuLayout menuLayout ]
       }
       where
+        renderMenuLayout :: MenuLayout -> JSX
+        renderMenuLayout layout = foldMap renderMenuBlock layout
+
+        renderMenuBlock :: MenuBlock -> JSX
+        renderMenuBlock block = DOM.div
+          { className: blockClass
+          , children: [ foldMap renderMenuLayoutElement block ]
+          }
+
         renderMenuLayoutElement :: MenuLayoutElement -> JSX
-        renderMenuLayoutElement (SectionElement section) = renderSection section
-        renderMenuLayoutElement (SeparatorElement modifier) = renderSeparator modifier
+        renderMenuLayoutElement (Section section) = renderSection section
+        renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
         renderSection { modifier, subsections, title } = DOM.div
-          { className: unwords [ sectionClass, sectionClass <> modifier ]
-          , children: [ DOM.div { className: sectionTitleClass
-                                , children: [ DOM.text title ]
-                                }
-                      ] <> (renderSubsection <$> subsections)
+          { className: unwords [ sectionClass, sectionClass <> fromMaybe mempty modifier ]
+          , children: [ DOM.div
+                          { className: sectionHeaderClass
+                          , children:
+                              [ DOM.div
+                                 { className: sectionTitleClass
+                                 , children: [ DOM.text title ]
+                                 }
+                              ]
+                          }
+                      , DOM.div
+                          { className: subsectionsClass
+                          , children: renderSubsection <$> subsections
+                          }
+                      ]
           }
 
         renderSubsection :: Subsection -> JSX
@@ -277,8 +277,8 @@ render { props: { visible } } = DOM.div
           , children: [ DOM.text title ]
           }
 
-        renderSeparator :: String -> JSX
-        renderSeparator modifier = DOM.hr { className: unwords [ separatorClass, separatorClass <> modifier ] }
+        renderSeparator :: Maybe String -> JSX
+        renderSeparator modifierClass = DOM.hr { className: unwords [ separatorClass, fromMaybe mempty modifierClass ] }
 
     logo :: String -> String ->  String -> JSX
     logo modifierClass imageModifierClass caption = DOM.div
@@ -307,17 +307,32 @@ render { props: { visible } } = DOM.div
     menuFooterElement = "__menu-footer"
     menuFooterClass = headerBlock <> menuFooterElement
 
+    blockElement = "__block"
+    blockClass = headerBlock <> blockElement
+
     sectionElement = "__section"
     sectionClass = headerBlock <> sectionElement
 
+    sectionHeaderElement = "__section-header"
+    sectionHeaderClass = headerBlock <> sectionHeaderElement
+
     sectionTitleElement = "__section-title"
     sectionTitleClass = headerBlock <> sectionTitleElement
+
+    sectionExpanderElement = "__section-expander"
+    sectionExpanderClass = headerBlock <> sectionExpanderElement
+
+    subsectionsElement = "__subsections"
+    subsectionsClass = headerBlock <> subsectionsElement
 
     subsectionElement = "__subsection"
     subsectionClass = headerBlock <> subsectionElement
 
     separatorElement = "__separator"
     separatorClass = headerBlock <> separatorElement
+
+    mobileOnlyModifier = "--mobile-only"
+    mobileOnlySeparatorClass = separatorClass <> mobileOnlyModifier
 
     footerCaptionElement = "__footer-caption"
     footerCaptionClass = headerBlock <> footerCaptionElement
@@ -336,15 +351,6 @@ render { props: { visible } } = DOM.div
 
     logoCaptionElement = "__footer-logo-caption"
     logoCaptionClass = headerBlock <> logoCaptionElement
-
-merge :: forall a. Array a -> Array a -> Array a
-merge a b =
-  List.toUnfoldable <<< uncurry mergeList $ toUnfoldable a /\ toUnfoldable b
-  where
-    mergeList :: forall b. List.List b -> List.List b -> List.List b
-    mergeList xs List.Nil = xs
-    mergeList List.Nil ys = ys
-    mergeList (List.Cons x xs) (List.Cons y ys) = x : y : mergeList xs ys
 
 unwords :: Array String -> String
 unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty

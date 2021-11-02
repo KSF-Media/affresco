@@ -8,8 +8,9 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
-import Data.Foldable (fold, oneOf)
+import Data.Foldable (fold)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -24,26 +25,19 @@ import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, n
 import Mosaico.Article as Article
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
+import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
+import Mosaico.Routes as Routes
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
-import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
-
-data MosaicoPage
-  = Frontpage -- Should take Paper as parameter
-  | DraftPage -- Ignore parameters on client side and just show server side content
-  | ArticlePage String
-  | NotFoundPage String
-  | StaticPage String
-derive instance eqR :: Eq MosaicoPage
 
 data ModalView = LoginModal
 
@@ -52,11 +46,12 @@ type State =
   , frontpageArticles :: Array ArticleStub
   , mostReadArticles :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
-  , route :: MosaicoPage
+  , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
   , headerComponent :: Header.Props -> JSX
+  , menuComponent :: Menu.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   , frontpageComponent :: Frontpage.Props -> JSX
@@ -82,15 +77,6 @@ type JSProps =
   , frontpageArticles :: Nullable (Array Json)
   }
 
-routes :: Match MosaicoPage
-routes = root *> oneOf
-  [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
-  , ArticlePage <$> (lit "artikel" *> str)
-  , StaticPage <$> (lit "sida" *> str)
-  , Frontpage <$end
-  , NotFoundPage <$> str
-  ]
-
 app :: Component Props
 app = do
   initialValues <- getInitialValues
@@ -99,7 +85,7 @@ app = do
 mosaicoComponent
   :: InitialValues
   -> Props
-  -> Render Unit (UseEffect MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
+  -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   state /\ setState <- useState initialValues.state
                          { article = props.article
@@ -111,17 +97,18 @@ mosaicoComponent initialValues props = React.do
   useEffectOnce $ locations (routeListener setState) initialValues.nav
   useEffect state.route do
     case state.route of
-      Frontpage -> do
+      Routes.Frontpage -> do
         if null state.frontpageArticles
         then Aff.launchAff_ do
           frontpage <- Lettera.getFrontpage HBL
           liftEffect $ setState \s -> s { frontpageArticles = frontpage, article = Nothing }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
-      DraftPage -> pure unit
-      ArticlePage _articleId -> pure unit
-      NotFoundPage _path -> pure unit
-      StaticPage page -> Aff.launchAff_ do
+      Routes.DraftPage -> pure unit
+      Routes.ArticlePage _articleId -> pure unit
+      Routes.MenuPage -> pure unit
+      Routes.NotFoundPage _path -> pure unit
+      Routes.StaticPage page -> Aff.launchAff_ do
         let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
         res <- AX.get AX.string staticPageUrl
         liftEffect $ case res of
@@ -148,7 +135,7 @@ mosaicoComponent initialValues props = React.do
 
 routeListener :: ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener setState _oldLoc location = do
-  case match routes location.pathname of
+  case match Routes.routes location.pathname of
     Right path -> setState _ { route = path }
     Left _     -> pure unit
 
@@ -156,18 +143,19 @@ type InitialValues =
   { state :: State
   , nav :: PushStateInterface
   , locationState :: LocationState
-  , initialRoute :: MosaicoPage
+  , initialRoute :: Routes.MosaicoPage
   }
 
 getInitialValues :: Effect InitialValues
 getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
-  let initialRoute = either (const $ Frontpage) identity $ match routes locationState.path
+  let initialRoute = either (const $ Routes.Frontpage) identity $ match Routes.routes locationState.path
 
-  articleComponent      <- Article.articleComponent
-  headerComponent       <- Header.headerComponent
-  loginModalComponent   <- LoginModal.loginModal
+  articleComponent    <- Article.articleComponent
+  headerComponent     <- Header.headerComponent
+  menuComponent       <- Menu.menuComponent
+  loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
   frontpageComponent    <- Frontpage.frontpageComponent
   pure
@@ -181,6 +169,7 @@ getInitialValues = do
         , modalView: Nothing
         , articleComponent
         , headerComponent
+        , menuComponent
         , loginModalComponent
         , mostReadListComponent
         , frontpageComponent
@@ -222,62 +211,35 @@ render setState state router =
         , onClose: setState \s -> s { modalView = Nothing }
         }
     _ -> mempty
-  <> DOM.div
-       { className: "mosaico grid"
-       , children:
-           [ Header.topLine
-           , state.headerComponent { router }
-           , Header.mainSeparator
-           , case state.route of
-                 ArticlePage articleId
-                   | Just fullArticle <- state.article
-                   , article <- fromFullArticle fullArticle
-                   -- If we have this article already in `state`, let's pass that to `articleComponent`
-                   -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
-                   -- e.g. when a subscription is purchased or user logs in
-                   , article.uuid == articleId -> renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
-                   | otherwise                 -> renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
-                 DraftPage -> renderArticle state.article (pure notFoundArticle) Nothing $
-                              fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
-                 Frontpage -> state.frontpageComponent
+  <> case state.route of
+       Routes.ArticlePage articleId
+         | Just fullArticle <- state.article
+         , article <- fromFullArticle fullArticle
+         -- If we have this article already in `state`, let's pass that to `articleComponent`
+         -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
+         -- e.g. when a subscription is purchased or user logs in
+         , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
+         | otherwise                 -> mosaicoLayoutNoAside $ renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
+       Routes.Frontpage -> mosaicoDefaultLayout $ state.frontpageComponent
                                 { frontpageArticles: state.frontpageArticles
                                 , onArticleClick: \article -> do
                                     setState \s -> s { clickedArticle = Just article }
                                     void $ Web.scroll 0 0 =<< Web.window
                                     router.pushState (write {}) $ "/artikel/" <> article.uuid
                                 }
-                 NotFoundPage _ -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                 StaticPage _ -> case state.staticPage of
-                  Nothing -> DOM.text "laddar"
-                  Just (Right content) -> content
-                  Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                  Just (Left StaticPageOtherError) ->
-                    DOM.div
-                        { className: "mosaico--static-page-error"
-                        , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
-                        }
-           , DOM.footer
-               { className: "mosaico--footer"
-               , children:
-                  [ DOM.text "footer" ]
-               }
-           , case state.route of
-               Frontpage ->
-                 DOM.aside
-                   { className: "mosaico--aside"
-                   , children:
-                       [ state.mostReadListComponent
-                           { mostReadArticles: state.mostReadArticles
-                           , onClickHandler: \articleStub -> do
-                               setState _ { clickedArticle = Just articleStub }
-                               void $ Web.scroll 0 0 =<< Web.window
-                               router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
-                           }
-                       ]
-                   }
-               _ -> mempty
-           ]
-       }
+       Routes.NotFoundPage _ -> mosaicoDefaultLayout $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+       Routes.MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
+       Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
+                    fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
+       Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
+         Nothing -> DOM.text "laddar"
+         Just (Right content) -> content
+         Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+         Just (Left StaticPageOtherError) ->
+           DOM.div
+             { className: "mosaico--static-page-error"
+             , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
+             }
   where
     affArticle :: String -> Aff FullArticle
     affArticle articleId = do
@@ -285,6 +247,39 @@ render setState state router =
       pure case a of
         Right article -> article
         Left _ -> notFoundArticle
+
+    mosaicoDefaultLayout :: JSX -> JSX
+    mosaicoDefaultLayout = flip mosaicoLayout true
+
+    mosaicoLayoutNoAside :: JSX -> JSX
+    mosaicoLayoutNoAside = flip mosaicoLayout false
+
+    mosaicoLayout :: JSX -> Boolean -> JSX
+    mosaicoLayout content showAside = DOM.div
+      { className: "mosaico grid"
+      , children:
+          [ Header.topLine
+          , state.headerComponent { router }
+          , Header.mainSeparator
+          , content
+          , DOM.footer
+              { className: "mosaico--footer"
+              , children: [ DOM.text "footer" ]
+              }
+          , guard showAside $ DOM.aside
+              { className: "mosaico--aside"
+              , children:
+                  [ state.mostReadListComponent
+                      { mostReadArticles: state.mostReadArticles
+                      , onClickHandler: \articleStub -> do
+                          setState _ { clickedArticle = Just articleStub }
+                          void $ Web.scroll 0 0 =<< Web.window
+                          router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
+                      }
+                  ]
+              }
+          ]
+      }
 
     renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> String -> JSX
     renderArticle maybeA affA aStub uuid =
