@@ -2,15 +2,19 @@ module Mosaico.Header where
 
 import Prelude
 
+import Data.Either (Either(..))
+import Data.Monoid (guard)
 import Effect (Effect)
 import Mosaico.Header.Menu as Menu
+import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
+import Routing (match)
 import Routing.PushState (PushStateInterface)
-import Simple.JSON (write)
+import Simple.JSON (E, read, write)
 
 type Props = { router :: PushStateInterface }
 
@@ -39,7 +43,7 @@ headerComponent = do
     pure $ render { state, setState, props }
 
 render :: Self -> JSX
-render { state: { menuVisible, menuComponent }, setState, props } =
+render { state: { menuVisible, menuComponent }, props } =
   DOM.header
     { className: block
     , children:
@@ -67,7 +71,6 @@ render { state: { menuVisible, menuComponent }, setState, props } =
                     ]
                 ]
             }
-        , menuComponent { visible: menuVisible }
         , DOM.div
             { className: block <> "__logo"
             , onClick: handler_ $ props.router.pushState (write {}) "/"
@@ -100,23 +103,35 @@ render { state: { menuVisible, menuComponent }, setState, props } =
                    mempty
                  else
                    [ searchButton ])
-                <> [ DOM.div
-                       { className: iconButtonClass <> " " <> menuButtonClass <>
-                           if menuVisible then
-                           " " <> menuVisibleIconButtonClass
-                           else
-                           mempty
-                       , children: [ DOM.div_ [ DOM.text "MENU" ]
-                                   , DOM.div
-                                       { className: iconClass <> " " <> menuIconClass <>
-                                           if menuVisible then
-                                           " " <> menuVisibleIconClass
-                                           else
-                                           mempty
-                                       } ]
-                       , onClick: handler_ do
-                           setState \s -> s { menuVisible = not menuVisible }
-                       }
+                <> [ DOM.div_
+                      [ menuComponent { visible: menuVisible }
+                      , DOM.div
+                          { className: iconButtonClass <> " " <> menuButtonClass <>
+                              if menuVisible then
+                              " " <> menuVisibleIconButtonClass
+                              else
+                              mempty
+                          , children: [ DOM.div_ [ DOM.text "MENU" ]
+                                      , DOM.div
+                                          { className: iconClass <> " " <> menuIconClass <>
+                                              (guard menuVisible $ " " <> menuVisibleIconClass)
+                                          } ]
+                          , onClick: handler_ $
+                              (\r -> do
+                                locationState <- r.locationState
+                                case match routes locationState.pathname of
+                                  Right MenuPage -> do
+                                    let
+                                      eitherState :: E { previousPath :: String }
+                                      eitherState = read locationState.state
+                                    case eitherState of
+                                      Right state -> r.pushState (write { }) state.previousPath
+                                      Left _         -> pure unit
+                                  _              -> r.pushState (write { previousPath: locationState.pathname }) "/meny")
+                                props.router
+
+                          }
+                      ]
                    ]
             }
         , DOM.div
