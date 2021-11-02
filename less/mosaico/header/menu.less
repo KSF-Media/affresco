@@ -11,10 +11,12 @@
     border-radius: 1px;
     background-color: @white;
 
-    @media (min-width: @breakpoint-3col) {
-      position: initial;
-      grid-column: 2 / span 3;
+    @media (min-width: @breakpoint-2col) {
+      grid-column: 1 / span 2;
+    }
 
+    @media (min-width: @breakpoint-3col) {
+      grid-column: 2 / span 3;
     }
 
     &--visible {
