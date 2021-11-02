@@ -8,7 +8,7 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
-import Data.Foldable (fold, oneOf)
+import Data.Foldable (fold)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
@@ -28,25 +28,16 @@ import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
+import Mosaico.Routes as Routes
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
-import Routing.Match (end, Match, lit, root, str)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
-
-data MosaicoPage
-  = Frontpage -- Should take Paper as parameter
-  | DraftPage -- Ignore parameters on client side and just show server side content
-  | ArticlePage String
-  | NotFoundPage String
-  | StaticPage String
-  | MenuPage
-derive instance eqR :: Eq MosaicoPage
 
 data ModalView = LoginModal
 
@@ -55,7 +46,7 @@ type State =
   , frontpageArticles :: Array ArticleStub
   , mostReadArticles :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
-  , route :: MosaicoPage
+  , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , articleComponent :: Article.Props -> JSX
@@ -86,16 +77,6 @@ type JSProps =
   , frontpageArticles :: Nullable (Array Json)
   }
 
-routes :: Match MosaicoPage
-routes = root *> oneOf
-  [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
-  , ArticlePage <$> (lit "artikel" *> str)
-  , StaticPage <$> (lit "sida" *> str)
-  , Frontpage <$end
-  , MenuPage <$ lit "meny"
-  , NotFoundPage <$> str
-  ]
-
 app :: Component Props
 app = do
   initialValues <- getInitialValues
@@ -104,7 +85,7 @@ app = do
 mosaicoComponent
   :: InitialValues
   -> Props
-  -> Render Unit (UseEffect MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
+  -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   state /\ setState <- useState initialValues.state
                          { article = props.article
@@ -116,18 +97,18 @@ mosaicoComponent initialValues props = React.do
   useEffectOnce $ locations (routeListener setState) initialValues.nav
   useEffect state.route do
     case state.route of
-      Frontpage -> do
+      Routes.Frontpage -> do
         if null state.frontpageArticles
         then Aff.launchAff_ do
           frontpage <- Lettera.getFrontpage HBL
           liftEffect $ setState \s -> s { frontpageArticles = frontpage, article = Nothing }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
-      DraftPage -> pure unit
-      ArticlePage _articleId -> pure unit
-      MenuPage -> pure unit
-      NotFoundPage _path -> pure unit
-      StaticPage page -> Aff.launchAff_ do
+      Routes.DraftPage -> pure unit
+      Routes.ArticlePage _articleId -> pure unit
+      Routes.MenuPage -> pure unit
+      Routes.NotFoundPage _path -> pure unit
+      Routes.StaticPage page -> Aff.launchAff_ do
         let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
         res <- AX.get AX.string staticPageUrl
         liftEffect $ case res of
@@ -154,7 +135,7 @@ mosaicoComponent initialValues props = React.do
 
 routeListener :: ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener setState _oldLoc location = do
-  case match routes location.pathname of
+  case match Routes.routes location.pathname of
     Right path -> setState _ { route = path }
     Left _     -> pure unit
 
@@ -162,14 +143,14 @@ type InitialValues =
   { state :: State
   , nav :: PushStateInterface
   , locationState :: LocationState
-  , initialRoute :: MosaicoPage
+  , initialRoute :: Routes.MosaicoPage
   }
 
 getInitialValues :: Effect InitialValues
 getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
-  let initialRoute = either (const $ Frontpage) identity $ match routes locationState.path
+  let initialRoute = either (const $ Routes.Frontpage) identity $ match Routes.routes locationState.path
 
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
@@ -231,7 +212,7 @@ render setState state router =
         }
     _ -> mempty
   <> case state.route of
-       ArticlePage articleId
+       Routes.ArticlePage articleId
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle
          -- If we have this article already in `state`, let's pass that to `articleComponent`
@@ -239,18 +220,18 @@ render setState state router =
          -- e.g. when a subscription is purchased or user logs in
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
          | otherwise                 -> mosaicoLayoutNoAside $ renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
-       Frontpage -> mosaicoDefaultLayout $ state.frontpageComponent
+       Routes.Frontpage -> mosaicoDefaultLayout $ state.frontpageComponent
                                 { frontpageArticles: state.frontpageArticles
                                 , onArticleClick: \article -> do
                                     setState \s -> s { clickedArticle = Just article }
                                     void $ Web.scroll 0 0 =<< Web.window
                                     router.pushState (write {}) $ "/artikel/" <> article.uuid
                                 }
-       NotFoundPage _ -> mosaicoDefaultLayout $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-       MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
-       DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
+       Routes.NotFoundPage _ -> mosaicoDefaultLayout $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+       Routes.MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
+       Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
-       StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
+       Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
          Nothing -> DOM.text "laddar"
          Just (Right content) -> content
          Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
