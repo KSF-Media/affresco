@@ -2,13 +2,10 @@ module Main where
 
 import Prelude
 
-import Affjax (get) as AX
-import Affjax.ResponseFormat (string) as AX
-import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (cons, null)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as List
@@ -26,6 +23,7 @@ import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson,
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
+import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage)
 import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -41,6 +39,7 @@ import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
+import React.Basic (JSX)
 import React.Basic.DOM (div) as DOM
 import React.Basic.DOM.Server (renderToString) as DOM
 
@@ -55,6 +54,10 @@ writeArticle = runEffectFn5 writeArticleImpl
 foreign import writeFrontpageImpl :: EffectFn3 Json Json String String
 writeFrontpage :: Json -> Json -> String -> Effect String
 writeFrontpage = runEffectFn3 writeFrontpageImpl
+
+foreign import writeStaticPageImpl :: EffectFn3 String String String String
+writeStaticPage :: String -> String -> String -> Effect String
+writeStaticPage = runEffectFn3 writeStaticPageImpl
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -213,35 +216,37 @@ staticPage
   -> { params :: { pageName :: String }}
   -> Aff (Response ResponseBody)
 staticPage env { params: { pageName } } = do
-  let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> pageName <> ".html"
-  res <- AX.get AX.string staticPageUrl
+  staticPageResponse <- fetchStaticPage pageName
   mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-  let pageContent = 
-        case res of 
-          Right pageContentResponse ->
-            case pageContentResponse.status of
-              StatusCode 200 -> 
-                Just $ DOM.div { className: "mosaico--static-page"
-                               , dangerouslySetInnerHTML: { __html: pageContentResponse.body } 
-                               }
-              StatusCode 404 -> Nothing 
-              _ -> Just Error.somethingWentWrong
-          Left _err -> Just Error.somethingWentWrong
-  case pageContent of
-    Just p -> do
+  case staticPageResponse of
+    StaticPageNotFound ->
+      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+      in notFound maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
+    p -> do
       mosaico <- liftEffect MosaicoServer.app
+      let staticPageContent :: Either JSX String
+          staticPageContent =  
+            case p of 
+              StaticPageResponse page -> Right page.pageContent
+              StaticPageOtherError -> Left Error.somethingWentWrong
+              StaticPageNotFound -> Left mempty
+      let staticPageJsx = 
+            case staticPageContent of 
+              Right pageContent -> 
+                DOM.div { className: "mosaico--static-page"
+                        , dangerouslySetInnerHTML: { __html: pageContent } 
+                        }
+              Left jsx -> jsx
       let mosaicoString =
             DOM.renderToString
             $ mosaico
-              { mainContent: StaticPageContent p
+              { mainContent: StaticPageContent staticPageJsx
               , mostReadArticles
               }
-      html <- liftEffect $ appendMosaico env.htmlTemplate mosaicoString
+      html <- liftEffect do
+        mosaicoTemplate <- appendMosaico env.htmlTemplate mosaicoString
+        writeStaticPage  pageName (either DOM.renderToString identity staticPageContent) mosaicoTemplate
       pure $ Response.ok $ StringBody html
-    Nothing ->
-      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
-
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound mostReadList _ = do

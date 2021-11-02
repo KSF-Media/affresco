@@ -24,7 +24,7 @@ import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage)
+import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
@@ -68,12 +68,14 @@ type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
   , frontpageArticles :: Maybe (Array ArticleStub)
+  , staticPageContent :: Maybe StaticPage
   }
 type JSProps =
   { article :: Nullable Json
   , isPreview :: Nullable Boolean
   , mostReadArticles :: Nullable (Array Json)
   , frontpageArticles :: Nullable (Array Json)
+  , staticPageContent :: Nullable StaticPage
   }
 
 routes :: Match MosaicoPage
@@ -99,6 +101,7 @@ mosaicoComponent initialValues props = React.do
                          { article = props.article
                          , frontpageArticles = fold props.frontpageArticles
                          , mostReadArticles = fold props.mostReadArticles
+                         , staticPage = map StaticPageResponse props.staticPageContent
                          }
 
   -- Listen for route changes and set state accordingly
@@ -115,9 +118,14 @@ mosaicoComponent initialValues props = React.do
       DraftPage -> pure unit
       ArticlePage _articleId -> pure unit
       NotFoundPage _path -> pure unit
-      StaticPage page -> Aff.launchAff_ do
-        staticPage <- fetchStaticPage page
-        liftEffect $ setState _  { staticPage = Just staticPage }
+      StaticPage page 
+        | Just (StaticPageResponse r) <- state.staticPage
+        , r.pageName == page
+        -> pure unit
+        | otherwise -> 
+          Aff.launchAff_ do
+            staticPage <- fetchStaticPage page
+            liftEffect $ setState _  { staticPage = Just staticPage }
 
     case props.mostReadArticles of
       Just mostReads
@@ -186,7 +194,8 @@ fromJSProps jsProps =
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
       frontpageArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageArticles
-  in { article, mostReadArticles, frontpageArticles }
+      staticPageContent = toMaybe jsProps.staticPageContent
+  in { article, mostReadArticles, frontpageArticles, staticPageContent }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -235,7 +244,7 @@ render setState state router =
                  StaticPage _ -> case state.staticPage of
                   Nothing -> DOM.text "laddar"
                   Just (StaticPageResponse page)  -> 
-                    DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page } }
+                    DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
                   Just StaticPageNotFound -> 
                     renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
                   Just StaticPageOtherError -> Error.somethingWentWrong

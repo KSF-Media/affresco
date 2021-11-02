@@ -9,9 +9,14 @@ import Effect.Aff (Aff)
 import Data.Either (Either(..))
 
 data StaticPageResponse
-  = StaticPageResponse String
+  = StaticPageResponse StaticPage
   | StaticPageNotFound
   | StaticPageOtherError
+
+type StaticPage = 
+  { pageName :: String
+  , pageContent :: String 
+  } 
   
 fetchStaticPage :: String -> Aff StaticPageResponse
 fetchStaticPage pageName = do
@@ -20,7 +25,7 @@ fetchStaticPage pageName = do
   pure $ case res of 
     Right pageContentResponse ->
       case pageContentResponse.status of
-        StatusCode 200 -> StaticPageResponse pageContentResponse.body
+        StatusCode 200 -> StaticPageResponse { pageName, pageContent: pageContentResponse.body }
         StatusCode 404 -> StaticPageNotFound
         _ -> StaticPageOtherError
     Left _err ->  StaticPageOtherError
