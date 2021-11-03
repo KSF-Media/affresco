@@ -16,6 +16,7 @@ function main() {
 	isPreview={window.isPreview || null}
 	mostReadArticles={window.mostReadArticles || null}
 	frontpageArticles={window.frontpageArticles || null}
+  staticPageContent={window.staticPageContent || null}
       />
     );
     ReactDOM.hydrate(mosaico, document.getElementById("app"));
