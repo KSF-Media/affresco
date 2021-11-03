@@ -2,10 +2,10 @@ module Main where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
-import Data.Argonaut.Encode.Class (encodeJson)
+import Data.Argonaut.Core as JSON
+import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as List
@@ -15,13 +15,16 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, runEffectFn2, runEffectFn3, runEffectFn5)
+import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson, articleToJson, fromFullArticle, isPreviewArticle, isDraftArticle, notFoundArticle)
+import Lettera.Models (ArticleStub, DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle)
 import Mosaico.Article as Article
+import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
+import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage)
 import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -37,19 +40,17 @@ import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
-import React.Basic.DOM.Server as DOM
+import React.Basic (JSX)
+import React.Basic.DOM (div) as DOM
+import React.Basic.DOM.Server (renderToString) as DOM
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
-appendMosaico htmlTemplate content = runEffectFn2 appendMosaicoImpl htmlTemplate content
+appendMosaico content htmlTemplate = runEffectFn2 appendMosaicoImpl content htmlTemplate
 
-foreign import writeArticleImpl :: EffectFn5 Json Boolean Json Boolean String String
-writeArticle :: Json -> Boolean -> Json -> Boolean -> String -> Effect String
-writeArticle = runEffectFn5 writeArticleImpl
-
-foreign import writeFrontpageImpl :: EffectFn3 Json Json String String
-writeFrontpage :: Json -> Json -> String -> Effect String
-writeFrontpage = runEffectFn3 writeFrontpageImpl
+foreign import appendHeadImpl :: EffectFn2 String String String
+appendHead :: String -> String -> Effect String
+appendHead = runEffectFn2 appendHeadImpl
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -93,6 +94,11 @@ spec ::
                 { response :: TextHtml
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , staticPage ::
+              GET "/sida/<pageName>"
+                { response :: ResponseBody
+                , params :: { pageName :: String }
+                }
           , notFound ::
               GET "/<..path>"
                 { response :: ResponseBody
@@ -112,6 +118,7 @@ main = do
         , getArticle: getArticle env
         , assets
         , frontpage: frontpage env
+        , staticPage: staticPage env
         , notFound: notFound Nothing
         }
       guards = { credentials: getCredentials }
@@ -158,12 +165,14 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
           mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
 
       html <- liftEffect do
-        appendMosaico htmlTemplate mosaicoString
-          >>= writeArticle
-                (articleToJson $ fromFullArticle a)
-                (isPreviewArticle a)
-                (encodeJson $ map articleStubToJson mostReadArticles)
-                (isDraftArticle a)
+        let windowVars  =
+              "<script>\
+                \window.article=" <> (encodeStringifyArticle $ fromFullArticle a) <> ";\
+                \window.isPreview=" <> (show $ isPreviewArticle a) <> ";\
+                \window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                \window.isDraft=" <> (show $ isDraftArticle a) <> ";\
+              \</script>"
+        appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
 
       pure $ Response.ok $ StringBody html
     Left _ ->
@@ -190,12 +199,57 @@ frontpage { htmlTemplate } _ = do
                   }
           , mostReadArticles
           }
-  html <- liftEffect $
-          appendMosaico htmlTemplate mosaicoString
-          >>= writeFrontpage
-            (encodeJson $ map articleStubToJson articles)
-            (encodeJson $ map articleStubToJson mostReadArticles)
+  html <- liftEffect do
+            let windowVars =
+                  "<script>\
+                     \window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                  \</script>"
+            appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
   pure $ TextHtml html
+
+staticPage
+  :: Env
+  -> { params :: { pageName :: String }}
+  -> Aff (Response ResponseBody)
+staticPage env { params: { pageName } } = do
+  staticPageResponse <- fetchStaticPage pageName
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  case staticPageResponse of
+    StaticPageNotFound ->
+      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+      in notFound maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
+    p -> do
+      mosaico <- liftEffect MosaicoServer.app
+      let staticPageContent :: Either JSX String
+          staticPageContent =
+            case p of
+              StaticPageResponse page -> Right page.pageContent
+              StaticPageOtherError -> Left Error.somethingWentWrong
+              StaticPageNotFound -> Left mempty
+      let staticPageJsx =
+            case staticPageContent of
+              Right pageContent ->
+                DOM.div { className: "mosaico--static-page"
+                        , dangerouslySetInnerHTML: { __html: pageContent }
+                        }
+              Left jsx -> jsx
+      let mosaicoString =
+            DOM.renderToString
+            $ mosaico
+              { mainContent: StaticPageContent staticPageJsx
+              , mostReadArticles
+              }
+      html <- liftEffect do
+        let staticPageString = JSON.stringify $ JSON.fromString $ either DOM.renderToString identity staticPageContent
+            staticPageObj = Object.singleton "pageName" pageName
+                            # Object.insert "pageContent" staticPageString
+                            # encodeJson
+                            # JSON.stringify
+        appendMosaico mosaicoString env.htmlTemplate
+          >>= appendHead ("<script>window.staticPageContent=" <> staticPageObj <> ";</script>")
+
+      pure $ Response.ok $ StringBody html
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound mostReadList _ = do
