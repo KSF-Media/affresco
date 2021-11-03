@@ -13,22 +13,22 @@ data StaticPageResponse
   | StaticPageNotFound
   | StaticPageOtherError
 
-type StaticPage = 
+type StaticPage =
   { pageName :: String
-  , pageContent :: String 
-  } 
-  
+  , pageContent :: String
+  }
+
 fetchStaticPage :: String -> Aff StaticPageResponse
 fetchStaticPage pageName = do
   let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> pageName <> ".html"
   res <- AX.get AX.string staticPageUrl
-  pure $ case res of 
+  pure $ case res of
     Right pageContentResponse ->
       case pageContentResponse.status of
         StatusCode 200 -> StaticPageResponse { pageName, pageContent: pageContentResponse.body }
         StatusCode 404 -> StaticPageNotFound
         _ -> StaticPageOtherError
     Left _err ->  StaticPageOtherError
-  
+
 
 
