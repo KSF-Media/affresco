@@ -9,6 +9,7 @@ import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Monoid (guard)
 import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -54,6 +55,7 @@ type State =
   , mainImage :: Maybe Image
   , tags :: Array String
   , preamble :: Maybe String
+  , premium :: Boolean
   }
 
 articleComponent :: Component Props
@@ -72,6 +74,8 @@ articleComponent = do
                          _.tags <$> props.articleStub
           , preamble: fold $ _.preamble <$> article <|>
                              _.preamble <$> props.articleStub
+          , premium: fromMaybe false $ _.premium <$> article <|>
+                                       _.premium <$> props.articleStub
           }
     state /\ setState <- useState initialState
 
@@ -104,6 +108,7 @@ loadArticle setState affArticle = do
                   , title = article.title
                   , tags = article.tags
                   , preamble = article.preamble
+                  , premium = article.premium
                   }
 
 renderImage :: Image -> JSX
@@ -162,8 +167,17 @@ render { props, state, setState } =
                 { className: "mosaico-article__tag-n-share"
                 , children:
                     [ DOM.div
-                        { className: "mosaico-article__tag color-" <> props.brand
-                        , children: [ DOM.text $ fromMaybe "" (head tags) ]
+                        { className: "mosaico-article__tag-n-premium"
+                        , children:
+                            [ DOM.div
+                                { className: "mosaico-article__tag color-" <> props.brand
+                                , children: [ DOM.text $ fromMaybe "" (head tags) ]
+                                }
+                            , guard state.premium $ DOM.div
+                                { className: "premium-badge background-" <> props.brand
+                                , children: [ DOM.text "Premium"]
+                                }
+                            ]
                         }
                     , DOM.ul
                         { className: "mosaico-article__some"
