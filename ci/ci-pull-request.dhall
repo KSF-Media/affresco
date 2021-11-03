@@ -61,12 +61,14 @@ in  { name = "previews"
         { runs-on = "ubuntu-latest"
         , container
         , steps = steps-app-article
+        , outputs.preview = "\${{ steps.deploy-app-article-server.outputs.url}}"
         , needs = "check-ci"
         }
       , deploy-mosaico =
         { runs-on = "ubuntu-latest"
         , container
         , steps = steps-mosaico
+        , outputs.preview = "\${{ steps.deploy-mosaico-server.outputs.url}}"
         , needs = "check-ci"
         }
       , previews =

@@ -16,6 +16,8 @@ jobs:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
     needs: check-ci
+    outputs:
+      preview: "${{ steps.deploy-app-article-server.outputs.url}}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -213,6 +215,8 @@ jobs:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
     needs: check-ci
+    outputs:
+      preview: "${{ steps.deploy-mosaico-server.outputs.url}}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -266,8 +270,8 @@ jobs:
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
             - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
-            - [App article server](${{ steps.deploy-app-article-server.outputs.url }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
-            - [Mosaico server](${{ steps.deploy-mosaico-server.outputs.url }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
+            - [App article server](${{ needs.deploy-app-article-server.preview }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
+            - [Mosaico server](${{ needs.deploy-mosaico-server.preview }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews
 on:
   pull_request:
