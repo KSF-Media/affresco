@@ -152,15 +152,14 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
           mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
 
       html <- liftEffect do
-        let articleElem  = "<script>window.article=" <> (encodeStringifyArticle $ fromFullArticle a) <> "</script>"
-            previewElem  = "<script>window.isPreview=" <> (show $ isPreviewArticle a) <> "</script>"
-            mostReadElem = "<script>window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> "</script>"
-            draftElem    = "<script>window.isDraft=" <> (show $ isDraftArticle a) <> "</script>"
-        appendMosaico mosaicoString htmlTemplate
-          >>= appendHead articleElem
-          >>= appendHead previewElem
-          >>= appendHead mostReadElem
-          >>= appendHead draftElem
+        let windowVars  =
+              "<script>\
+                \window.article=" <> (encodeStringifyArticle $ fromFullArticle a) <> ";\
+                \window.isPreview=" <> (show $ isPreviewArticle a) <> ";\
+                \window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                \window.isDraft=" <> (show $ isDraftArticle a) <> ";\
+              \</script>"
+        appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
 
       pure $ Response.ok $ StringBody html
     Left _ ->
@@ -188,11 +187,12 @@ frontpage { htmlTemplate } _ = do
           , mostReadArticles
           }
   html <- liftEffect do
-          let articlesElem = "<script>window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> "</script>"
-              mostReadElem = "<script>window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> "</script>"
-          appendMosaico mosaicoString htmlTemplate
-            >>= appendHead articlesElem
-            >>= appendHead mostReadElem
+            let windowVars =
+                  "<script>\
+                     \window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                  \</script>"
+            appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
   pure $ TextHtml html
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
