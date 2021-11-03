@@ -27,10 +27,12 @@ type State =
 data MainContent
   = ArticleContent JSX
   | FrontpageContent JSX
+  | StaticPageContent JSX
 
 fromMainContent :: MainContent -> JSX
 fromMainContent (ArticleContent jsx) = jsx
 fromMainContent (FrontpageContent jsx) = jsx
+fromMainContent (StaticPageContent jsx) = jsx
 
 app :: Component Props
 app = do
