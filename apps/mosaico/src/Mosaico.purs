@@ -2,9 +2,6 @@ module Mosaico where
 
 import Prelude
 
-import Affjax (get) as AX
-import Affjax.ResponseFormat (string) as AX
-import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
@@ -23,11 +20,13 @@ import KSF.User (User)
 import Lettera as Lettera
 import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
+import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
+import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import Mosaico.Routes as Routes
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -56,25 +55,22 @@ type State =
   , mostReadListComponent :: MostReadList.Props -> JSX
   , frontpageComponent :: Frontpage.Props -> JSX
   , user :: Maybe User
-  , staticPage :: Maybe (Either StaticPageError JSX)
+  , staticPage :: Maybe StaticPageResponse
   }
 
 type SetState = (State -> State) -> Effect Unit
-
-data StaticPageError
-  = StaticPageNotFound
-  | StaticPageOtherError
-
 type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
   , frontpageArticles :: Maybe (Array ArticleStub)
+  , staticPageContent :: Maybe StaticPage
   }
 type JSProps =
   { article :: Nullable Json
   , isPreview :: Nullable Boolean
   , mostReadArticles :: Nullable (Array Json)
   , frontpageArticles :: Nullable (Array Json)
+  , staticPageContent :: Nullable StaticPage
   }
 
 app :: Component Props
@@ -91,6 +87,7 @@ mosaicoComponent initialValues props = React.do
                          { article = props.article
                          , frontpageArticles = fold props.frontpageArticles
                          , mostReadArticles = fold props.mostReadArticles
+                         , staticPage = map StaticPageResponse props.staticPageContent
                          }
 
   -- Listen for route changes and set state accordingly
@@ -108,18 +105,14 @@ mosaicoComponent initialValues props = React.do
       Routes.ArticlePage _articleId -> pure unit
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
-      Routes.StaticPage page -> Aff.launchAff_ do
-        let staticPageUrl = "https://cdn.ksfmedia.fi/mosaico/static/" <> page <> ".html"
-        res <- AX.get AX.string staticPageUrl
-        liftEffect $ case res of
-          Right content ->
-            setState _ { staticPage = Just $ case content.status of
-              StatusCode 200 -> Right $ DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: content.body } }
-              StatusCode 404 -> Left StaticPageNotFound
-              _ -> Left StaticPageOtherError
-            }
-          Left _err -> setState _ { staticPage = Just $ Left StaticPageOtherError }
-
+      Routes.StaticPage page 
+        | Just (StaticPageResponse r) <- state.staticPage
+        , r.pageName == page
+        -> pure unit
+        | otherwise -> 
+          Aff.launchAff_ do
+            staticPage <- fetchStaticPage page
+            liftEffect $ setState _  { staticPage = Just staticPage }
 
     case props.mostReadArticles of
       Just mostReads
@@ -190,7 +183,8 @@ fromJSProps jsProps =
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
       frontpageArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageArticles
-  in { article, mostReadArticles, frontpageArticles }
+      staticPageContent = toMaybe jsProps.staticPageContent
+  in { article, mostReadArticles, frontpageArticles, staticPageContent }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -227,19 +221,18 @@ render setState state router =
                                     void $ Web.scroll 0 0 =<< Web.window
                                     router.pushState (write {}) $ "/artikel/" <> article.uuid
                                 }
+
        Routes.NotFoundPage _ -> mosaicoDefaultLayout $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
        Routes.MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
        Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
        Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
          Nothing -> DOM.text "laddar"
-         Just (Right content) -> content
-         Just (Left StaticPageNotFound) -> renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-         Just (Left StaticPageOtherError) ->
-           DOM.div
-             { className: "mosaico--static-page-error"
-             , children: [ DOM.text "Oj! Något gick fel, ladda om sidan." ]
-             }
+         Just (StaticPageResponse page)  -> 
+           DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
+         Just StaticPageNotFound -> 
+           renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+         Just StaticPageOtherError -> Error.somethingWentWrong
   where
     affArticle :: String -> Aff FullArticle
     affArticle articleId = do

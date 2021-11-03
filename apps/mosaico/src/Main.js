@@ -26,3 +26,11 @@ exports.writeFrontpageImpl = function (frontpageArticles, mostReadArticles, HTML
   $template("head").append(appendFrontpage + appendMostReadArticles);
   return $template.html();
 };
+
+exports.writeStaticPageImpl = function (pageName, pageContent, HTML_TEMPLATE) {
+  const $template = cheerio.load(HTML_TEMPLATE);
+  const staticPageContent = { pageName, pageContent };
+  const appendStaticPage = "<script>window.staticPageContent=" + JSON.stringify(staticPageContent) + "</script>";
+  $template("head").append(appendStaticPage);
+  return $template.html();
+}
