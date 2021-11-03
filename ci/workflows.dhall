@@ -251,7 +251,7 @@ let linkPreviewsStep =
 
                 let renderAELink =
                       \(app : AppServer.Type) ->
-                        "- [${app.name}](\${{ needs.deploy-${app.id}.preview }}/${app.previewUrl})"
+                        "- [${app.name}](\${{ needs.deploy-${app.id}.outputs.preview }}/${app.previewUrl})"
 
                 in  ''
                     Deploy previews are ready :sunglasses:
