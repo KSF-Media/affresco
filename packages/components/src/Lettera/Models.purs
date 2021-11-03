@@ -3,11 +3,11 @@ module Lettera.Models where
 import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
-import Data.Argonaut.Encode.Class (class EncodeJson, class GEncodeJson, encodeJson)
+import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
-import Data.Foldable (class Foldable, foldMap)
+import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate as JSDate
@@ -20,8 +20,6 @@ import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
 import KSF.Helpers (dateTimeFormatter)
-import Prim.Row (class Cons)
-import Prim.RowList (class RowToList, RowList)
 import Record (modify)
 import Simple.JSON (class ReadForeign)
 import Simple.JSON as JSON
