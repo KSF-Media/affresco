@@ -2,7 +2,7 @@ module Main where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
+import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (cons, null)
 import Data.Either (Either(..))
@@ -19,7 +19,7 @@ import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, runEffectFn2, runEffec
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson, articleToJson, fromFullArticle, isPreviewArticle, isDraftArticle, notFoundArticle)
+import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson, articleToJson, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle)
 import Mosaico.Article as Article
 import Mosaico.Frontpage as Frontpage
 import MosaicoServer (MainContent(..))
@@ -41,15 +41,11 @@ import React.Basic.DOM.Server as DOM
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
-appendMosaico htmlTemplate content = runEffectFn2 appendMosaicoImpl htmlTemplate content
+appendMosaico content htmlTemplate = runEffectFn2 appendMosaicoImpl content htmlTemplate
 
-foreign import writeArticleImpl :: EffectFn5 Json Boolean Json Boolean String String
-writeArticle :: Json -> Boolean -> Json -> Boolean -> String -> Effect String
-writeArticle = runEffectFn5 writeArticleImpl
-
-foreign import writeFrontpageImpl :: EffectFn3 Json Json String String
-writeFrontpage :: Json -> Json -> String -> Effect String
-writeFrontpage = runEffectFn3 writeFrontpageImpl
+foreign import appendHeadImpl :: EffectFn2 String String String
+appendHead :: String -> String -> Effect String
+appendHead = runEffectFn2 appendHeadImpl
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -158,12 +154,15 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
           mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
 
       html <- liftEffect do
-        appendMosaico htmlTemplate mosaicoString
-          >>= writeArticle
-                (articleToJson $ fromFullArticle a)
-                (isPreviewArticle a)
-                (encodeJson $ map articleStubToJson mostReadArticles)
-                (isDraftArticle a)
+        let articleElem  = "<script>window.article=" <> (encodeStringifyArticle $ fromFullArticle a) <> "</script>"
+            previewElem  = "<script>window.isPreview=" <> (show $ isPreviewArticle a) <> "</script>"
+            mostReadElem = "<script>window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> "</script>"
+            draftElem    = "<script>window.isDraft=" <> (show $ isDraftArticle a) <> "</script>"
+        appendMosaico mosaicoString htmlTemplate
+          >>= appendHead articleElem
+          >>= appendHead previewElem
+          >>= appendHead mostReadElem
+          >>= appendHead draftElem
 
       pure $ Response.ok $ StringBody html
     Left _ ->
@@ -190,11 +189,12 @@ frontpage { htmlTemplate } _ = do
                   }
           , mostReadArticles
           }
-  html <- liftEffect $
-          appendMosaico htmlTemplate mosaicoString
-          >>= writeFrontpage
-            (encodeJson $ map articleStubToJson articles)
-            (encodeJson $ map articleStubToJson mostReadArticles)
+  html <- liftEffect do
+          let articlesElem = "<script>window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> "</script>"
+              mostReadElem = "<script>window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> "</script>"
+          appendMosaico mosaicoString htmlTemplate
+            >>= appendHead articlesElem
+            >>= appendHead mostReadElem
   pure $ TextHtml html
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)

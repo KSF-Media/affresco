@@ -137,6 +137,13 @@ type Author =
   , image  :: Maybe String
   }
 
+-- TODO: Could be a type class
+encodeStringifyArticle :: Article -> String
+encodeStringifyArticle = stringify <<< encodeJson <<< articleToJson
+
+encodeStringifyArticleStubs :: Array ArticleStub -> String
+encodeStringifyArticleStubs = stringify <<< encodeJson <<< map articleStubToJson
+
 articleToJson :: Article -> Json
 articleToJson article =
   encodeJson $
