@@ -14,11 +14,3 @@ exports.appendHeadImpl = function (element, HTML_TEMPLATE) {
   $template("head").append(element);
   return $template.html();
 };
-
-exports.writeStaticPageImpl = function (pageName, pageContent, HTML_TEMPLATE) {
-  const $template = cheerio.load(HTML_TEMPLATE);
-  const staticPageContent = { pageName, pageContent };
-  const appendStaticPage = "<script>window.staticPageContent=" + JSON.stringify(staticPageContent) + "</script>";
-  $template("head").append(appendStaticPage);
-  return $template.html();
-}

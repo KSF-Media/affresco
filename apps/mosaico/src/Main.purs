@@ -2,6 +2,8 @@ module Main where
 
 import Prelude
 
+import Data.Argonaut.Core as JSON
+import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
@@ -14,6 +16,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
@@ -48,10 +51,6 @@ appendMosaico content htmlTemplate = runEffectFn2 appendMosaicoImpl content html
 foreign import appendHeadImpl :: EffectFn2 String String String
 appendHead :: String -> String -> Effect String
 appendHead = runEffectFn2 appendHeadImpl
-
-foreign import writeStaticPageImpl :: EffectFn3 String String String String
-writeStaticPage :: String -> String -> String -> Effect String
-writeStaticPage = runEffectFn3 writeStaticPageImpl
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -95,7 +94,7 @@ spec ::
                 { response :: TextHtml
                 , guards :: Guards ("credentials" : Nil)
                 }
-         , staticPage :: 
+         , staticPage ::
               GET "/sida/<pageName>"
                 { response :: ResponseBody
                 , params :: { pageName :: String }
@@ -223,16 +222,16 @@ staticPage env { params: { pageName } } = do
     p -> do
       mosaico <- liftEffect MosaicoServer.app
       let staticPageContent :: Either JSX String
-          staticPageContent =  
-            case p of 
+          staticPageContent =
+            case p of
               StaticPageResponse page -> Right page.pageContent
               StaticPageOtherError -> Left Error.somethingWentWrong
               StaticPageNotFound -> Left mempty
-      let staticPageJsx = 
-            case staticPageContent of 
-              Right pageContent -> 
+      let staticPageJsx =
+            case staticPageContent of
+              Right pageContent ->
                 DOM.div { className: "mosaico--static-page"
-                        , dangerouslySetInnerHTML: { __html: pageContent } 
+                        , dangerouslySetInnerHTML: { __html: pageContent }
                         }
               Left jsx -> jsx
       let mosaicoString =
@@ -242,8 +241,14 @@ staticPage env { params: { pageName } } = do
               , mostReadArticles
               }
       html <- liftEffect do
-        mosaicoTemplate <- appendMosaico env.htmlTemplate mosaicoString
-        writeStaticPage  pageName (either DOM.renderToString identity staticPageContent) mosaicoTemplate
+        let staticPageString = JSON.stringify $ JSON.fromString $ either DOM.renderToString identity staticPageContent
+            staticPageObj = Object.singleton "pageName" pageName
+                            # Object.insert "pageContent" staticPageString
+                            # encodeJson
+                            # JSON.stringify
+        appendMosaico mosaicoString env.htmlTemplate
+          >>= appendHead ("<script>window.staticPageContent=" <> staticPageObj <> ";</script>")
+
       pure $ Response.ok $ StringBody html
 
 notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
