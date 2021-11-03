@@ -531,7 +531,12 @@ facebookLogin self =
   guard (not $ Set.member Facebook self.props.disableSocialLogins)
     DOM.div
       { className: "login--some-disabled-note"
-      , children: [ DOM.text "It's disabled" ]
+      , children: [ DOM.text "Möjligheten att logga in med Facebook har tagits bort. Du kan logga in med den e-postadress som är kopplad till din Facebook, "
+                  , DOM.a
+                      { href: "https://www.hbl.fi/losenord/"
+                      , children: [ DOM.text "bara återställ lösenordet här." ]
+                      }
+                  ]
       }
 
 finalizeSomeAuth :: Self -> Either UserError User -> Aff Unit
