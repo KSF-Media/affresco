@@ -15,6 +15,8 @@ jobs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
+    env:
+      gcp-project-id: ksf-staging
     needs: check-ci
     outputs:
       preview: "${{ steps.deploy-app-article-server.outputs.url}}"
@@ -26,7 +28,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          project_id: "${{ env.gcp-project-id }}"
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
@@ -41,7 +43,7 @@ jobs:
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          project_id: "${{ env.gcp-project-id }}"
           promote: 'false'
           working_directory: build/app-article-server
       - continue-on-error: true
@@ -52,6 +54,8 @@ jobs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
+    env:
+      gcp-project-id: ksf-staging
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -61,7 +65,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          project_id: "${{ env.gcp-project-id }}"
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
@@ -214,6 +218,8 @@ jobs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
+    env:
+      gcp-project-id: ksf-staging
     needs: check-ci
     outputs:
       preview: "${{ steps.deploy-mosaico-server.outputs.url}}"
@@ -225,7 +231,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          project_id: "${{ env.gcp-project-id }}"
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
@@ -240,7 +246,7 @@ jobs:
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: "${{ secrets.GCP_STAGING_PROJECT_ID }}"
+          project_id: "${{ env.gcp-project-id }}"
           promote: 'false'
           working_directory: build/mosaico
       - continue-on-error: true

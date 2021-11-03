@@ -13,6 +13,8 @@ let AE = ./app-servers.dhall
 
 let container = ./container.dhall
 
+let gcp-project-id = "ksf-production"
+
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
@@ -58,18 +60,21 @@ in  { name = "production"
               { runs-on = "ubuntu-latest", container, steps = checkCISteps }
             , deploy-gs =
               { runs-on = "ubuntu-latest"
+              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-gs
               , needs = "check-ci"
               }
             , deploy-app-article =
               { runs-on = "ubuntu-latest"
+              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-app-article
               , needs = "check-ci"
               }
             , deploy-mosaico =
               { runs-on = "ubuntu-latest"
+              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-mosaico
               , needs = "check-ci"

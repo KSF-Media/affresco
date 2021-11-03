@@ -77,12 +77,7 @@ let setupSteps =
           , name = Some "Setup Cloud SDK"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
-              { project_id =
-                  merge
-                    { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                    , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                    }
-                    env
+              { project_id = "\${{ env.gcp-project-id }}"
               , service_account_key =
                   merge
                     { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -178,12 +173,7 @@ let mkAppEngineStep =
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
             , promote = merge { Staging = "false", Production = "true" } env
-            , project_id =
-                merge
-                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                  }
-                  env
+            , project_id = "\${{ env.gcp-project-id }}"
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -201,12 +191,7 @@ let deployDispatchYamlStep =
         , `with` = toMap
             { working_directory = "build"
             , deliverables = "dispatch.yaml"
-            , project_id =
-                merge
-                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                  }
-                  env
+            , project_id = "\${{ env.gcp-project-id }}"
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -303,7 +288,7 @@ let refreshCDNSteps =
           , name = Some "Install gcloud"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
-              { project_id = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+              { project_id = "ksf-production"
               , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
               , export_default_credentials = "true"
               }
