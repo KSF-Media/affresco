@@ -11,7 +11,7 @@ jobs:
         run: |2
             make
             git diff --exit-code
-  deploy-app-article:
+  deploy-app-article-server:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
@@ -214,7 +214,7 @@ jobs:
           destination: "deploy-previews/${{ github.sha }}/hbl365"
           parent: 'false'
           path: build/hbl365
-  deploy-mosaico:
+  deploy-mosaico-server:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
@@ -256,8 +256,8 @@ jobs:
   previews:
     needs:
       - deploy-gs
-      - deploy-mosaico
-      - deploy-app-article
+      - deploy-mosaico-server
+      - deploy-app-article-server
     runs-on: ubuntu-latest
     steps:
       - env:

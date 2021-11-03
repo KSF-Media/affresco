@@ -60,7 +60,7 @@ in  { name = "previews"
         , steps = steps-gs
         , needs = "check-ci"
         }
-      , deploy-app-article =
+      , deploy-app-article-server =
         { runs-on = "ubuntu-latest"
         , env.gcp-project-id = gcp-project-id
         , container
@@ -68,7 +68,7 @@ in  { name = "previews"
         , outputs.preview = "\${{ steps.deploy-app-article-server.outputs.url}}"
         , needs = "check-ci"
         }
-      , deploy-mosaico =
+      , deploy-mosaico-server =
         { runs-on = "ubuntu-latest"
         , env.gcp-project-id = gcp-project-id
         , container
@@ -79,7 +79,8 @@ in  { name = "previews"
       , previews =
         { runs-on = "ubuntu-latest"
         , steps = previewLinks
-        , needs = [ "deploy-gs", "deploy-mosaico", "deploy-app-article" ]
+        , needs =
+          [ "deploy-gs", "deploy-mosaico-server", "deploy-app-article-server" ]
         }
       }
     }
