@@ -9,7 +9,8 @@ import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -37,6 +38,7 @@ import Payload.Server as Payload
 import Payload.Server.Guards as Guards
 import Payload.Server.Handlers (File)
 import Payload.Server.Handlers as Handlers
+import Payload.Server.Status as Status
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
@@ -79,9 +81,9 @@ spec ::
                 , query :: DraftParams
                 }
          , getArticle ::
-              GET "/artikel/<uuid>"
+              GET "/artikel/<uuidOrSlug>"
                 { response :: ResponseBody
-                , params :: { uuid :: String }
+                , params :: { uuidOrSlug :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
          , assets ::
@@ -134,12 +136,26 @@ getDraftArticle env { params: {aptomaId}, query } = do
 
 getArticle
   :: Env
-  -> { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } }
+  -> { params :: { uuidOrSlug :: String }, guards :: { credentials :: Maybe UserAuth } }
   -> Aff (Response ResponseBody)
-getArticle env r@{ params: { uuid } } = do
-  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
-  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-  renderArticle env (Just uuid) article mostReadArticles
+getArticle env r@{ params: { uuidOrSlug } }
+  | Just uuid <- UUID.parseUUID uuidOrSlug = do
+      article <- Lettera.getArticle uuid r.guards.credentials
+      mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+      renderArticle env (Just uuidOrSlug) article mostReadArticles
+  | otherwise = do
+    article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials
+    case article of
+      Right a -> do
+        pure $ Response
+          { status: Status.found
+          , body: EmptyBody
+          , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> (_.uuid $ fromFullArticle a)]
+          }
+      Left _ -> do
+        mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+        let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+        notFound maybeMostRead { params: {path: List.fromFoldable ["artikel", uuidOrSlug]} }
 
 renderArticle
   :: Env

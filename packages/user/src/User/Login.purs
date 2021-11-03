@@ -9,6 +9,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Monoid (guard)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
@@ -523,56 +524,20 @@ googleLogin self =
 
     isGoogleDomainAllowed = not <<< contains (Pattern "Not a valid origin for the client")
 
+-- | The Facebook login is disabled. Instead of the button, we just
+--   show a text explaining it's gone
 facebookLogin :: Self -> JSX
 facebookLogin self =
-  if not $ Set.member Facebook self.props.disableSocialLogins
-    then someLoginButton
-      { className: "login--some-button login--some-button-fb"
-      , description: "Logga in med Facebook"
-      , onClick: onFacebookLogin
+  guard (not $ Set.member Facebook self.props.disableSocialLogins)
+    DOM.div
+      { className: "login--some-disabled-note"
+      , children: [ DOM.text "Möjligheten att logga in med Facebook har tagits bort. Du kan logga in med den e-postadress som är kopplad till din Facebook, "
+                  , DOM.a
+                      { href: "https://www.hbl.fi/losenord/"
+                      , children: [ DOM.text "bara återställ lösenordet här." ]
+                      }
+                  ]
       }
-    else mempty
-  where
-    onFacebookLogin :: Effect Unit
-    onFacebookLogin = self.props.onLogin do
-      sdk <- User.facebookSdk
-      FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
-      case authResponse of
-        Nothing -> liftEffect do
-          Facebook.Success.unsetFacebookSuccess
-          Log.error "Facebook login failed"
-          Tracking.login Nothing "facebook login" "error: Facebook login failed"
-        Just auth -> do
-          liftEffect Facebook.Success.setFacebookSuccess
-          fetchFacebookUser auth sdk
-      where
-        loginOptions :: FB.LoginOptions
-        loginOptions = FB.LoginOptions { scopes: map FB.Scope [ "public_profile", "email" ] }
-
-    -- | Fetches user info from Facebook and then Persona.
-    -- | Sets response to local storage and invokes `props.onUserFetch`.
-    fetchFacebookUser :: FB.AuthResponse -> FB.Sdk -> Aff Unit
-    fetchFacebookUser (FB.AuthResponse { accessToken }) sdk = do
-      FB.UserInfo { email: FB.UserEmail email } <-
-        FB.userInfo accessToken sdk
-          `catchError` \err -> do
-            -- Here we get an exception if the FB email is missing,
-            -- so we have to ask the user
-            liftEffect $ self.setState _ { errors { login = Just LoginFacebookEmailMissing } }
-            throwError err
-      failOnEmailMismatch self email
-      -- setting the email in the state to eventually send it from the merge view form
-      liftEffect $ self.setState _ { formEmail = Just email }
-      let (FB.AccessToken fbAccessToken) = accessToken
-
-      loginWithRetry (logUserIn email fbAccessToken) handleSuccess handleError handleFinish
-
-    logUserIn email fbAccessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
-    handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "facebook login" "success"
-    handleError _err = liftEffect $ Tracking.login Nothing "facebook login" "error: could not fetch user"
-    handleFinish user = do
-      finalizeSomeAuth self user
-      liftEffect $ self.props.onUserFetch user
 
 finalizeSomeAuth :: Self -> Either UserError User -> Aff Unit
 finalizeSomeAuth self = case _ of
