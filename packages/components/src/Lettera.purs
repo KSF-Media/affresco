@@ -34,6 +34,9 @@ letteraArticleUrl = letteraBaseUrl <>  "/article/"
 letteraDraftUrl :: String
 letteraDraftUrl = letteraBaseUrl <> "/article/draft/"
 
+letteraArticleSlugUrl :: String
+letteraArticleSlugUrl = letteraBaseUrl <> "/article/slug/"
+
 letteraFrontPageUrl :: String
 letteraFrontPageUrl = letteraBaseUrl <> "/frontpage"
 
@@ -54,9 +57,15 @@ getArticleAuth articleId = do
 
 -- TODO: Instead of String, use some sort of LetteraError or something
 getArticle :: UUID -> Maybe UserAuth -> Aff (Either String FullArticle)
-getArticle articleId auth = do
+getArticle articleId = getArticleWithUrl (letteraArticleUrl <> (toString articleId))
+
+getArticleWithSlug :: String -> Maybe UserAuth -> Aff (Either String FullArticle)
+getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug)
+
+getArticleWithUrl :: String -> Maybe UserAuth -> Aff (Either String FullArticle)
+getArticleWithUrl url auth = do
   let request = AX.defaultRequest
-        { url = letteraArticleUrl <> (toString articleId)
+        { url = url
         , method = Left GET
         , responseFormat = AX.json
         , headers =
