@@ -44,7 +44,7 @@ render props =
                     { className: "list-article-liftup"
                     , children:
                         [ DOM.div
-                          { className: "mosaico--tag color-hbl"
+                          { className: "mosaico-article__tag color-hbl"
                           , children: [ DOM.text $ fold (head a.tags) ]
                           }
                         , DOM.h2_ [ DOM.text a.title ]
@@ -53,7 +53,7 @@ render props =
                               { className: "mosaico--article--meta"
                               , children:
                                   [ DOM.div
-                                      { className: "mosaico--article-premium background-hbl"
+                                      { className: "premium-badge background-hbl"
                                       , children: [ DOM.text "premium" ]
                                       }
                                   ]
