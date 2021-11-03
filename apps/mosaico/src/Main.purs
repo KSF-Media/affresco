@@ -2,8 +2,6 @@ module Main where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, stringify)
-import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (cons, null)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
@@ -15,11 +13,11 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, runEffectFn2, runEffectFn3, runEffectFn5)
+import Effect.Uncurried (EffectFn2, runEffectFn2)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson, articleToJson, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle)
+import Lettera.Models (ArticleStub, DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle)
 import Mosaico.Article as Article
 import Mosaico.Frontpage as Frontpage
 import MosaicoServer (MainContent(..))
