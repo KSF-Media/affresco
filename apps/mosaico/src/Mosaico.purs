@@ -228,11 +228,11 @@ render setState state router =
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
        Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
          Nothing -> DOM.text "laddar"
-                  Just (StaticPageResponse page)  -> 
-                    DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
-                  Just StaticPageNotFound -> 
-                    renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-                  Just StaticPageOtherError -> Error.somethingWentWrong
+         Just (StaticPageResponse page)  -> 
+           DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
+         Just StaticPageNotFound -> 
+           renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+         Just StaticPageOtherError -> Error.somethingWentWrong
   where
     affArticle :: String -> Aff FullArticle
     affArticle articleId = do
