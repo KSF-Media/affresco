@@ -13,7 +13,7 @@ import Routing.PushState (PushStateInterface)
 import Simple.JSON (write)
 
 type Props =
-  { mainContent :: JSX
+  { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
   }
 
@@ -22,6 +22,15 @@ type State =
   , headerComponent :: Header.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   }
+
+
+data MainContent
+  = ArticleContent JSX
+  | FrontpageContent JSX
+
+fromMainContent :: MainContent -> JSX
+fromMainContent (ArticleContent jsx) = jsx
+fromMainContent (FrontpageContent jsx) = jsx
 
 app :: Component Props
 app = do
@@ -58,20 +67,23 @@ render router state props = DOM.div
            [ Header.topLine
            , state.headerComponent { router }
            , Header.mainSeparator
-           , props.mainContent
+           , fromMainContent props.mainContent
            , DOM.footer
                { className: "mosaico--footer"
-               , children: 
+               , children:
                   [ DOM.text "footer" ]
                }
-           , DOM.aside
-               { className: "mosaico--aside"
-               , children:
-                  [ state.mostReadListComponent
-                      { mostReadArticles: props.mostReadArticles
-                      , onClickHandler: const $ pure unit
-                      }
-                  ]
-               }
+           , case props.mainContent of
+                 FrontpageContent _ ->
+                   DOM.aside
+                     { className: "mosaico--aside"
+                     , children:
+                         [ state.mostReadListComponent
+                           { mostReadArticles: props.mostReadArticles
+                           , onClickHandler: const $ pure unit
+                           }
+                         ]
+                     }
+                 _ -> mempty
            ]
        }
