@@ -8,6 +8,7 @@ import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
+import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, snoc)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
@@ -24,7 +25,7 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (Article, ArticleStub, FullArticle(..), DraftParams, fromFullArticle, parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (Article, ArticleStub, Category(..), DraftParams, FullArticle(..), fromFullArticle, parseArticle, parseArticleStub, parseDraftArticle)
 
 foreign import letteraBaseUrl :: String
 
@@ -43,12 +44,8 @@ letteraFrontPageUrl = letteraBaseUrl <> "/frontpage"
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/mostread/"
 
-getArticle' :: UUID -> Aff Article
-getArticle' u = do
-  getArticle u Nothing >>= \a ->
-    case a of
-      Right a' -> pure $ fromFullArticle a'
-      Left err -> throwError $ error $ "Failed to get article: " <> err
+letteraCategoryUrl :: String
+letteraCategoryUrl = letteraBaseUrl <> "/categories"
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
@@ -172,3 +169,17 @@ getMostRead start limit category paper onlySubscribers = do
       | otherwise -> do
         Console.warn "Failed to read API response!"
         pure mempty
+
+getCategoryStructure :: Paper -> Aff (Array Category)
+getCategoryStructure p = do
+  c <- AX.get ResponseFormat.json $ letteraCategoryUrl <> "?paper=" <> Paper.toString p
+  case c of
+    Right r -> do
+      case toArray r.body of
+        Just res -> do
+          let a = map decodeJson res
+          pure $ foldl takeRights [] a
+        _ -> pure []
+    _ -> pure []
+
+takeRights acc = either (const acc) (acc `snoc` _)
