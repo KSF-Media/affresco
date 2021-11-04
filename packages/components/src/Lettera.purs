@@ -9,23 +9,22 @@ import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (foldl, snoc)
-import Data.Either (Either(..), either)
+import Data.Array (foldl, partition, snoc)
+import Data.Either (Either(..), either, isRight)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
-import Data.Traversable (traverse)
+import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
-import Effect.Aff (Aff, throwError)
+import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Exception (error)
 import Foreign.Object (lookup)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (Article, ArticleStub, Category(..), DraftParams, FullArticle(..), fromFullArticle, parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle(..), parseArticle, parseArticleStub, parseDraftArticle)
 
 foreign import letteraBaseUrl :: String
 
@@ -140,9 +139,7 @@ getFrontpage paper = do
     Right response
       | Just (responseArray :: Array Json) <- toArray response.body -> do
         a <- liftEffect $ traverse parseArticleStub responseArray
-        pure $ foldl takeRights [] a
-        where
-          takeRights acc = either (const acc) (acc `snoc` _)
+        pure $ takeRights a
       | otherwise -> do
         Console.warn "Failed to read API response!"
         pure mempty
@@ -163,23 +160,34 @@ getMostRead start limit category paper onlySubscribers = do
     Right response
       | Just (responseArray :: Array Json) <- toArray response.body -> do
         a <- liftEffect $ traverse parseArticleStub responseArray
-        pure $ foldl takeRights [] a
-        where
-          takeRights acc = either (const acc) (acc `snoc` _)
+        pure $ takeRights a
       | otherwise -> do
         Console.warn "Failed to read API response!"
         pure mempty
 
 getCategoryStructure :: Paper -> Aff (Array Category)
 getCategoryStructure p = do
-  c <- AX.get ResponseFormat.json $ letteraCategoryUrl <> "?paper=" <> Paper.toString p
-  case c of
-    Right r -> do
-      case toArray r.body of
-        Just res -> do
-          let a = map decodeJson res
-          pure $ foldl takeRights [] a
-        _ -> pure []
-    _ -> pure []
+  categoriesRes <- AX.get ResponseFormat.json $ letteraCategoryUrl <> "?paper=" <> Paper.toString p
+  case categoriesRes of
+    Right r
+      | Just (responseArray :: Array Json) <- toArray r.body -> do
+          let { no, yes: categories } = partition isRight $ map decodeJson responseArray
+          traverse_ (Console.warn <<< ("Could not parse category: " <> _) <<< show) $ takeLefts no
+          pure $ takeRights categories
+      | otherwise -> do
+        Console.warn "Expected category response to be an array, but got something else"
+        pure mempty
+    Left err -> do
+      Console.warn $ "Error while getting categories: " <> AX.printError err
+      pure mempty
 
-takeRights acc = either (const acc) (acc `snoc` _)
+
+takeRights :: forall a b. Array (Either b a) -> Array a
+takeRights =
+  let go acc = either (const acc) (acc `snoc` _)
+  in foldl go []
+
+takeLefts :: forall a b. Array (Either b a) -> Array b
+takeLefts =
+  let go acc = either (acc `snoc` _) (const acc)
+  in foldl go []
