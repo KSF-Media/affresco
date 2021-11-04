@@ -181,7 +181,6 @@ getCategoryStructure p = do
       Console.warn $ "Error while getting categories: " <> AX.printError err
       pure mempty
 
-
 takeRights :: forall a b. Array (Either b a) -> Array a
 takeRights =
   let go acc = either (const acc) (acc `snoc` _)
