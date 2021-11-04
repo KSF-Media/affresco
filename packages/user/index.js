@@ -4,7 +4,6 @@ require("./build/Button.css");
 require("./build/ksf-utils.css");
 require("./build/InputField.css");
 import { jsLoginForm, jsLogout, jsMagicLogin } from "./build.js";
-import "basscss/css/basscss-cp.css";
 
 module.exports = {
   Login: jsLoginForm,
