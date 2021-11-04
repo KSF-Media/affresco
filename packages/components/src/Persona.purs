@@ -157,8 +157,11 @@ updateForgottenPassword token password confirmPassword = do
   callApi accountApi "accountPasswordResetPost" [ unsafeToForeign updatePasswordData ] {}
 
 register :: NewUser -> Aff LoginResponse
-register newUser =
-  callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
+register newUser = do
+  let body = case newUser of
+        NewDigitalOnlyUser user -> unsafeToForeign user
+        NewPaperUser user -> unsafeToForeign user
+  callApi usersApi "usersPost" [ body ] {}
 
 type NewTemporaryUser =
   { emailAddress :: Email
@@ -493,7 +496,16 @@ type BaseUser =
   , hasCompletedRegistration :: Boolean
   )
 
-type NewUser =
+data NewUser =
+  NewDigitalOnlyUser
+  { firstName :: String
+  , lastName :: String
+  , emailAddress :: String
+  , password :: String
+  , confirmPassword :: String
+  , legalConsents :: Array LegalConsent
+  }
+  | NewPaperUser
   { firstName :: String
   , lastName :: String
   , emailAddress :: String
@@ -503,7 +515,6 @@ type NewUser =
   , zipCode :: String
   , city :: String
   , country :: String
-  , phone :: String
   , legalConsents :: Array LegalConsent
   }
 

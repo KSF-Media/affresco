@@ -110,7 +110,7 @@ validatePasswordLength field password
   | otherwise = invalid $ pure $ Invalid field "Lösenordet måste ha minst 6 tecken."
 
 validatePasswordComparison :: forall a. a -> a -> Maybe String -> Maybe String -> ValidatedForm a (Maybe String)
-validatePasswordComparison originalField _confirmField Nothing Nothing = notInitialized originalField
+validatePasswordComparison originalField _confirmField _ Nothing = notInitialized originalField
 validatePasswordComparison _ confirmField password confirmedPassword
   | Just pw <- password
   , Just confirmedPw <- confirmedPassword

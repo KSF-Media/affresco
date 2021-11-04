@@ -580,7 +580,8 @@ loginButton text =
 buySubscription :: JSX
 buySubscription =
   DOM.div
-    { children:
+    { id: "login--buy-subscription"
+    , children:
         [ DOM.text "Är du inte prenumerant? "
         , DOM.a
             { className: "login--important"

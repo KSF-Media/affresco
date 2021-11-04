@@ -1,0 +1,375 @@
+@import 'prenumerera/main';
+@import 'Button';
+@import 'Navbar';
+@import 'InputField';
+@import 'Login';
+@import 'Spinner';
+@import 'ksf-fonts';
+@import 'ksf-utils';
+@import 'ksf-variables';
+
+body {
+    font-size: 100%;
+    line-height: 1.4285;
+    box-sizing: border-box;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.container-fluid {
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.ksf-block {
+    padding-top: 50px;
+    padding-bottom: 90px;
+    margin-bottom: 30px;
+}
+
+.container {
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    @media (min-width: 768px) {
+	width: 750px;
+    }
+    @media (min-width: 992px) {
+	width: 970px;
+    }
+    @media (min-width: 1200px) {
+	width: 1170px;
+    }
+}
+
+.nav {
+    margin-bottom: 0;
+    padding-left: 0;
+    list-style: none;
+
+    > li {
+	display: block;
+	> a {
+	    position: relative;
+	    display: block;
+	}
+    }
+}
+
+.nav::before,.nav::after,.row::before {
+    content: " ";
+    display: table;
+}
+
+.nav::after,.row::after {
+    clear: both;
+}
+
+.nav-pills-brand {
+    position: relative;
+
+    li {
+	position: relative;
+    }
+
+    li:nth-child(n+2)::before:not(:last-child) {
+	content: "|";
+	position: absolute;
+	right: 0;
+	top: 1em;
+    }
+}
+
+.nav-pills {
+    > li {
+	float: left;
+	+ li {
+	    margin-left: 2px;
+	}
+    }
+
+    li.active {
+	.hbl {
+	    border-color: #f07e26;
+	}
+	.vn {
+	    border-color: #c90c0f;
+	}
+	.on {
+	    border-color: #518196;
+	}
+    }
+}
+
+.row {
+    margin-top: 15px;
+    margin-left: 15px;
+    margin-right: 15px;
+    clear: both;
+}
+
+.tab-content {
+    > .active {
+	display: block !important;
+    }
+
+    > .tab-pane {
+	display: none;
+    }
+}
+
+.text-center {
+    text-align: center;
+}
+
+.fade {
+    opacity: 0;
+    transition: opacity 0.15s linear;
+}
+
+.fade.in {
+    opacity: 1;
+}
+
+.nav-package {
+    margin-top: 0;
+}
+
+.btn {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    touch-action: manipulation;
+    cursor: pointer;
+    background-image: none;
+    white-space: nowrap;
+    user-select: none;
+}
+
+ul {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+p b, p strong {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+}
+
+.collapsed-nav--container,.nav--hamburger-container {
+    display: none;
+}
+
+.col-xs-3 {
+    width: 25%;
+    float: left;
+    position: relative;
+    min-height: 1px;
+}
+
+::before,::after {
+    box-sizing: border-box;
+}
+
+#ksf-identify-login .login-form {
+    width: 345px;
+}
+
+#ksf-identify-login .login-form > * {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    line-height: initial;
+}
+
+#ksf-identify-login .login-form > *:first-child {
+    padding-bottom: 1rem;
+}
+
+#ksf-identify-login .login-form > *:not(:first-child) {
+    margin-top: 0.5rem;
+}
+
+#ksf-identify-login .login--some-button-fb {
+    padding-bottom: 0.5rem;
+}
+
+#ksf-identify-login .login--login-social-media-text {
+    text-decoration: underline;
+}
+
+#login--buy-subscription {
+    display: none;
+}
+
+#ksf-registration-form .row {
+    clear: both;
+    margin-left: -15px;
+    margin-right: -15px;
+
+    > *:first-child {
+	padding-right: 30px;
+    }
+}
+
+#ksf-registration-form .row > * {
+    width: 50%;
+    float: left;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    @media @to-small {
+	width: 100%;
+    }
+}
+
+.janrain-api-container .janrain-api-form {
+    .input-field--container {
+	.input-field--input-label {
+	    font-weight: 700;
+	}
+
+	input {
+	    margin-top: 5px;
+	}
+    }
+
+    .input-field--invalid.input-field--emailaddress {
+	margin-bottom: 6ex;
+    }
+}
+
+#ksf-registration-form .submit-button {
+    width: 100%;
+}
+
+.ksf-main-container .ksf-identity {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ksf-main-container {
+    .payment-terminal {
+	background: white;
+	width: 100%;
+	min-width: 550px;
+	height: 440px;
+	border: none;
+	margin-left: auto;
+	margin-right: auto;
+	clear: both;
+    }
+    .payment-terminal.payment-terminal-msg {
+	text-align: center;
+    }
+}
+
+.ksf-main-container .spinner--loading-spinner {
+    background: white;
+    margin-top: 15rem;
+}
+
+.ksf-main-container .spinner--loading-spinner__with-message {
+    background: white;
+    margin-top: 15rem;
+
+    .spinner--loading-spinner {
+	margin-top: 0;
+    }
+}
+
+#ksf-accept-terms-form {
+    text-align: center;
+
+    .accept-terms--narrow {
+	width: 50%;
+	margin-left: auto;
+	margin-right: auto;
+    }
+    .accept-terms--wide {
+	.input-field--container {
+	    width: 50%;
+	    float: left;
+	    padding-left: 15px;
+	    padding-right: 15px;
+
+	    @media @to-small {
+		width: 100%;
+	    }
+	}
+    }
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1em;
+
+    @media @to-small {
+	width: 100%;
+    }
+
+    .price {
+	text-align: initial;
+    }
+
+    .input-checkbox--checkbox-container {
+	color: red;
+    }
+    .input-chekcbox--checkbox-container {
+	label {
+	    display: inline;
+	    font-weight: normal;
+	    font-size: 16px;
+	    line-height: 24px;
+	}
+    }
+}
+
+.ksf-main-container .confirm {
+    .confirm-greeting {
+	margin-bottom: 30px;
+	@media(min-width: 768px) {
+	    margin-left: 16.667%;
+	    width: 66.667%;
+	}
+	float: left;
+	clear: both;
+	text-align: center;
+    }
+
+    padding-top: 150px;
+    margin-left: auto;
+    margin-right: auto;
+
+    .order-summary {
+	clear: both;
+	margin-left: auto;
+	margin-right: auto;
+	@media(min-width: 768px) {
+	    width: 66.667%;
+	}
+    }
+}
+
+.ksf-block-special-customers {
+    .row {
+	width: 83.33%;
+    }
+}
+
+.ksf-package-group .btn-disabled {
+    width: 80%;
+    padding: 10px;
+    font: 700 1.25rem "Roboto", sans-serif;
+    border-radius: 5px;
+    margin: 30px 0 0 0;
+    @media screen and (max-width: @screen-xs-max){
+        &{
+            margin-bottom: 0;
+        }
+    }
+}

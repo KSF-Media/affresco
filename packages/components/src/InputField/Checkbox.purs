@@ -2,12 +2,16 @@ module KSF.InputField.Checkbox where
 
 import Prelude
 
+import Control.Alt ((<|>))
+import Data.Foldable (foldMap)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
-import Data.Nullable as Nullable
+import Data.Monoid (guard)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
+import Effect.Unsafe (unsafePerformEffect)
+import KSF.InputField (generateIdNumber)
 import Prim.Row (class Nub, class Union)
 import React.Basic (JSX)
 import React.Basic.Classic as React
@@ -15,7 +19,6 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetChecked)
 import React.Basic.Events (handler)
 import Record as Record
-import Unsafe.Coerce (unsafeCoerce)
 
 type Self = React.Self (Record Props) State
 
@@ -26,15 +29,19 @@ type Props =
   , checked         :: Boolean
   , onChange        :: Boolean -> Effect Unit
   , label           :: Maybe String
+  , labelJSX        :: Maybe JSX
   , required        :: Boolean
   , id              :: String
+  , checkboxFirst   :: Boolean
   )
 
 type OptionalProps =
   ( value           :: String
   , label           :: Maybe String
+  , labelJSX        :: Maybe JSX
   , required        :: Boolean
   , id              :: String
+  , checkboxFirst   :: Boolean
   )
 
 type State =
@@ -59,20 +66,20 @@ inputCheckbox props = React.make component
     defaultProps =
       { value: ""
       , label: Nothing
+      , labelJSX: Nothing
       , required: false
       , id: ""
+      , checkboxFirst: false
       }
 
 render :: Self -> JSX
 render { props } =
   DOM.div
     { className: "input-chekcbox--checkbox-container" <>
-        if isNothing props.label then " input-field--no-label" else ""
+        if isNothing props.label && isNothing props.labelJSX then " input-field--no-label" else ""
     , children:
         -- The final order of the children is defined in css!
-        [ case props.label of
-             Just label -> inputLabel { label, nameFor: props.name } props.required
-             _          -> mempty
+        [ guard (not props.checkboxFirst) inputLabel
         , DOM.input
             { type: show props.type_
             , name: props.name
@@ -80,22 +87,23 @@ render { props } =
             , checked: props.checked
             , onChange: handler targetChecked \maybeNewVal -> do
                 props.onChange $ fromMaybe false maybeNewVal
-            , id: if props.id == "" then unsafeCoerce Nullable.null else props.id
+            , id
             }
+        , guard props.checkboxFirst inputLabel
         ]
     }
-
-type InputLabel =
-  { label   :: String -- ^ What to show in UI
-  , nameFor :: String -- ^ Which input field this is for
-  }
-
-inputLabel :: InputLabel -> Boolean -> JSX
-inputLabel { label, nameFor} required =
-  DOM.label
-    { className: "input-field--input-label"
-    , children: if required
-                   then [ DOM.text $ label <> " *" ]
-                   else [ DOM.text label ]
-    , htmlFor: nameFor
-    }
+  where
+    id = case props.id of
+      "" -> case inputLabelContent of
+        Just _ -> props.name <> "-" <> show (unsafePerformEffect generateIdNumber)
+        _ -> ""
+      _ -> props.id
+    inputLabelContent = props.labelJSX <|>
+                        (map (\label -> DOM.text $ label <> if props.required then " *" else "") props.label)
+    inputLabel =
+      foldMap (\content ->
+                  DOM.label
+                    { className: "input-field--input-label"
+                    , children: [ content ]
+                    , htmlFor: id
+                    }) inputLabelContent

@@ -4,4 +4,5 @@ exports.papers = {
   on: require("../../../../images/logo-on.svg"),
   vn: require("../../../../images/logo-vn.svg"),
   ksf: require("../../../../images/logo-ksf.svg"),
+  junior: require("../../../../images/logo-junior.svg"),
 };

@@ -1,0 +1,42 @@
+.ksf-block-hbl365-promo {
+    background: #fb7e29;
+    color: white;
+    .ksf-block{
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+        background: transparent;
+    }
+    div.promo-image {
+        img {
+            width: 100%;
+        }
+        @media screen and (max-width: @screen-xs-max){
+            text-align: center;
+            img {
+                width: 50%;
+            }
+        }
+    }
+    .promo-form {
+        text-align: center;
+        margin: 4em 0;
+        @media screen and (max-width: @screen-lg-max){
+            margin: 2em 0;
+        }
+        .form-title {
+            font-size: 2em;
+        }
+        .form-info {
+            text-transform: uppercase;
+            margin: 1em 0;
+        }
+        .form-info-small {
+            font-size: 0.8em;
+            margin: 1em 0;
+        }
+        .input-group {
+            margin: 1em 0;
+        }
+    }
+}
