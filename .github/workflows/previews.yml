@@ -158,6 +158,11 @@ jobs:
             ruby deploy.rb hbl365
             cp -R apps/hbl365/dist build/hbl365
         shell: bash
+      - name: Build Prenumerera
+        run: |2
+            ruby deploy.rb prenumerera
+            cp -R apps/prenumerera/dist build/prenumerera
+        shell: bash
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -214,6 +219,13 @@ jobs:
           destination: "deploy-previews/${{ github.sha }}/hbl365"
           parent: 'false'
           path: build/hbl365
+      - name: Upload Prenumerera
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/prenumerera"
+          parent: 'false'
+          path: build/prenumerera
   deploy-mosaico-server:
     container:
       image: ksfmedia/diskho:gha-1.0
@@ -276,6 +288,7 @@ jobs:
             - [App article](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/app-article/index.html)
             - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
+            - [Prenumerera](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/prenumerera/index.html)
             - [App article server](${{ needs.deploy-app-article-server.outputs.preview }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
             - [Mosaico server](${{ needs.deploy-mosaico-server.outputs.preview }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews

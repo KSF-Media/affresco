@@ -31,10 +31,12 @@ type Props =
   , label           :: Maybe String
   , validationError :: Maybe String
   , disabled        :: Boolean
+  , extraClass      :: String
   )
 
 type DefaultProps =
   ( disabled        :: Boolean
+  , extraClass      :: String
   )
 
 type State =
@@ -58,6 +60,7 @@ inputField userProps = React.make component
     defaultProps :: Record DefaultProps
     defaultProps =
       { disabled: false
+      , extraClass: ""
       }
 
     didMount { props, setState } = when (isJust props.value) $
@@ -70,7 +73,9 @@ render :: Self -> JSX
 render self@{ props, state } =
   DOM.div
     { className: classNameFromInputType props.type_ <>
-        if isNothing props.label then " input-field--no-label" else ""
+        (if isNothing props.label then " input-field--no-label" else "") <>
+        (if isNothing props.validationError then "" else " input-field--invalid") <>
+        (if props.extraClass == "" then "" else " " <> props.extraClass)
     , children:
         -- The final order of the children is defined in css!
         [ case props.label of

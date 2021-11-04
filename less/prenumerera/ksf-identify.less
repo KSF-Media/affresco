@@ -1,0 +1,160 @@
+#ksf-identify {
+    margin: 2em 0;
+    &.loading {
+        .ksf-auth-wrapper {
+            pointer-events: none;
+            background-image: url('@{path-icons}/loader-gif.gif');
+            background-size: 32px 32px;
+            background-position: center;
+            background-repeat: no-repeat;
+            .ksf-auth-content {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+    }
+    .ksf-auth-wrapper {
+      .ksf-auth-header {
+          text-align: center;
+          margin-bottom: 30px;
+          .gift-disclaimer {
+            font-size: 14px;
+            margin: 10px auto;
+            max-width: 500px;
+          }
+      }
+      .ksf-auth-section {
+
+      }
+      .ksf-auth-content {
+            transition: opacity 0.3s;
+            img.logo {
+                display: none;
+                @media (max-width: @screen-xs-max) {
+                    display: inline-block;
+                    margin-bottom: 20px;
+                }
+            }
+      }
+      .status-placeholder{
+          min-height: 400px;
+          background-image: url('@{path-icons}/loader-gif.gif');
+          background-size: 32px 32px;
+          background-position: center;
+          background-repeat: no-repeat;
+      }
+      #ksf-some-login {
+        margin-top: 15px;
+        text-align: center;
+        display: block;
+      }
+      #ksf-some-login-toggle {
+        text-decoration: underline;
+      }
+      .no-account {
+        margin-top: 15px;
+        font-size: 22px;
+        text-align: center;
+        font-family: "Open Sans", "Roboto", sans-serif;
+        font-weight: bold;
+        a {
+          text-decoration: underline;
+          font-weight: 600;
+        }
+      }
+      #ksf-login-form {
+        .password-forgotten, .email-forgotten, .login-with-cusno-and-zip {
+          text-align: center;
+          font-family: "Open Sans", "Roboto", sans-serif;
+        }
+        form {
+          margin-bottom: 15px;
+        }
+        .password-forgotten {
+          font-size: 14px;
+          a {
+            text-decoration: underline;
+            font-weight: 600;
+          }
+        }
+        .email-forgotten {
+          font-size: 14px;
+          a {
+            text-decoration: underline;
+            font-weight: 600;
+          }
+        }
+        .login-with-cusno-and-zip {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid @hairline-color;
+        }
+        .logout-notice {
+          color: #208b16;
+          padding-top: 10px;
+          margin-top: 10px;
+          border-top: 1px solid #ccc;
+          font-weight: bold;
+          text-align: center;
+        }
+      }
+
+      #ksf-registration-form {
+        max-width: 100%;
+        position: relative;
+        form {
+          margin-bottom: 15px;
+          &.processing:after {
+            background-color: white;
+          }
+          .disclaimer {
+            margin-top: 15px;
+          }
+        }
+        .back-to-login {
+          position: absolute;
+          left: 170px;
+          bottom: 9px;
+          a {
+            text-decoration: underline;
+          }
+        }
+      }
+
+    #ksf-accept-terms-form {
+      text-align: center;
+      a {
+        text-decoration: underline;
+        font-weight: 500;
+      }
+      label{
+          display: inline;
+      }
+      input#send-accept-terms{
+          & + label{
+              content: ' ';
+              display: block;
+              font: 400 .75rem "Roboto", sans-serif;
+              height: 20px;
+              margin-top: 5px;
+          }
+      }
+      input#send-accept-terms:disabled{
+          opacity: .5;
+      }
+    }
+
+    #ksf-merge-accounts-form {
+      text-align: center;
+      p {
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        &.merge-failed {
+          color: @brand-danger;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
