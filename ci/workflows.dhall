@@ -77,7 +77,10 @@ let setupSteps =
           , name = Some "Setup Cloud SDK"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
-              { project_id = "\${{ env.gcp-project-id }}"
+              { project_id =
+                  merge
+                    { Staging = "ksf-staging", Production = "ksf-production" }
+                    env
               , service_account_key =
                   merge
                     { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -165,6 +168,7 @@ let mkUploadStep =
 
 let mkAppEngineStep =
       \(env : Env) ->
+      \(promote : Text) ->
       \(app : AppServer.Type) ->
         Step::{
         , id = Some "deploy-${app.id}"
@@ -172,8 +176,11 @@ let mkAppEngineStep =
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = merge { Staging = "false", Production = "true" } env
-            , project_id = "\${{ env.gcp-project-id }}"
+            , promote
+            , project_id =
+                merge
+                  { Staging = "ksf-staging", Production = "ksf-production" }
+                  env
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -191,7 +198,10 @@ let deployDispatchYamlStep =
         , `with` = toMap
             { working_directory = "build"
             , deliverables = "dispatch.yaml"
-            , project_id = "\${{ env.gcp-project-id }}"
+            , project_id =
+                merge
+                  { Staging = "ksf-staging", Production = "ksf-production" }
+                  env
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -315,7 +325,8 @@ let uploadSteps =
 
 let deployAppEngineSteps =
       \(env : Env) ->
-        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env)
+      \(promote : Text) ->
+        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
 
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 

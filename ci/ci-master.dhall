@@ -13,7 +13,7 @@ let AE = ./app-servers.dhall
 
 let container = ./container.dhall
 
-let gcp-project-id = "ksf-production"
+let promote = "true"
 
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
@@ -30,7 +30,13 @@ let steps-app-article =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
       # [ Actions.mkAppEngineStep
+            Actions.Env.Staging
+            promote
+            AE.servers.app-article-server
+        ]
+      # [ Actions.mkAppEngineStep
             Actions.Env.Production
+            promote
             AE.servers.app-article-server
         ]
       # [ Actions.mkCleanAppEngineStep
@@ -41,7 +47,13 @@ let steps-app-article =
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Production AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
+        ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Production
+            promote
+            AE.servers.mosaico
+        ]
       # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
         ]
 
@@ -60,21 +72,18 @@ in  { name = "production"
               { runs-on = "ubuntu-latest", container, steps = checkCISteps }
             , deploy-gs =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-gs
               , needs = "check-ci"
               }
             , deploy-app-article =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-app-article
               , needs = "check-ci"
               }
             , deploy-mosaico =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-mosaico
               , needs = "check-ci"
