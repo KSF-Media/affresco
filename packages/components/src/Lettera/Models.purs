@@ -16,7 +16,7 @@ import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, un)
 import Data.Show.Generic (genericShow)
-import Data.String (joinWith)
+import Data.String (joinWith, toLower)
 import Data.Time.Duration as Duration
 import Effect (Effect)
 import Effect.Class.Console as Console
@@ -278,7 +278,7 @@ toString Link = "link"
 instance categoryTypeDecodeJson :: DecodeJson CategoryType where
   decodeJson json = do
     categoryTypeString <- decodeJson json
-    case String.toLower categoryTypeString of
+    case toLower categoryTypeString of
       "feed"    -> Right Feed
       "webview" -> Right Webview
       "link"    -> Right Link

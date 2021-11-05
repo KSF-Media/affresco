@@ -2,7 +2,7 @@ module MosaicoServer where
 
 import Prelude
 
-import Lettera.Models (ArticleStub)
+import Lettera.Models (ArticleStub, Category(..))
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.MostReadList as MostReadList
@@ -15,6 +15,7 @@ import Simple.JSON (write)
 type Props =
   { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
+  , categoryStructure :: Array Category
   }
 
 type State =
@@ -22,7 +23,6 @@ type State =
   , headerComponent :: Header.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   }
-
 
 data MainContent
   = ArticleContent JSX
@@ -67,7 +67,7 @@ render router state props = DOM.div
        { className: "mosaico grid"
        , children:
            [ Header.topLine
-           , state.headerComponent { router }
+           , state.headerComponent { router, categoryStructure: props.categoryStructure }
            , Header.mainSeparator
            , fromMainContent props.mainContent
            , DOM.footer

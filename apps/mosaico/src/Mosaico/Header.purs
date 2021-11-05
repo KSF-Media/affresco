@@ -2,9 +2,12 @@ module Mosaico.Header where
 
 import Prelude
 
+import Data.Array (cons)
 import Data.Either (Either(..))
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
 import Effect (Effect)
+import Lettera.Models (Category(..))
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
@@ -16,7 +19,10 @@ import Routing (match)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (E, read, write)
 
-type Props = { router :: PushStateInterface }
+type Props =
+  { router :: PushStateInterface
+  , categoryStructure :: Array Category
+  }
 
 type Self =
   { state :: State
@@ -89,11 +95,15 @@ render { state: { menuVisible, menuComponent }, props } =
                 if menuVisible then
                   [ searchButton ]
                 else
-                  [ DOM.a_ [ DOM.text "OPINION" ]
-                  , DOM.a_ [ DOM.text "KULTUR" ]
-                  , DOM.a_ [ DOM.text "SPORT" ]
-                  , DOM.a_ [ DOM.text "ANNAT" ]
-                  ]
+                  DOM.a { onClick: handler_ $ props.router.pushState (write {}) $ "/ayooo", children: [ DOM.text "aaaa" ]} `cons`
+                  map ((\c -> DOM.a {
+                           onClick: handler_ $ props.router.pushState (write {}) $ "/" <> c.id, children: [ DOM.text c.label ]}) <<< unwrap) props.categoryStructure
+
+                  -- [ DOM.a_ [ DOM.text "OPINION" ]
+                  -- , DOM.a_ [ DOM.text "KULTUR" ]
+                  -- , DOM.a_ [ DOM.text "SPORT" ]
+                  -- , DOM.a_ [ DOM.text "ANNAT" ]
+                  -- ]
             }
 
         , DOM.div
@@ -119,7 +129,7 @@ render { state: { menuVisible, menuComponent }, props } =
                           , onClick: handler_ $
                               (\r -> do
                                 locationState <- r.locationState
-                                case match routes locationState.pathname of
+                                case match (routes props.categoryStructure) locationState.pathname of
                                   Right MenuPage -> do
                                     let
                                       eitherState :: E { previousPath :: String }
