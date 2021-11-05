@@ -94,15 +94,17 @@ renderPaperInvoice summary confirm =
             { className: "row"
             , children:
                 [ DOM.div
-                    { className: "confirm-greeting"
+                    { className: "confirm-greeting ksf-form-container"
                     , children:
                         [ DOM.h2_ [ DOM.text "Din prenumeration" ]
                         , DOM.p_ [ DOM.text "Granska uppgifterna nedan före du fortsätter" ]
                         , DOM.form
                             { onSubmit: handler preventDefault $ const confirm
+                            , className: "ksf-form"
                             , children:
                                 [ DOM.input
                                     { type: "submit"
+                                    , className: "submit-button"
                                     , value: "Godkänn"
                                     }
                                 ]
@@ -148,5 +150,10 @@ errMsg :: String -> JSX
 errMsg msg =
   DOM.div
     { className: "payment-terminal payment-terminal-msg"
-    , children: [ DOM.text msg ]
+    , children: [ DOM.div_ [ DOM.text msg ]
+                , DOM.div_
+                    [ DOM.a { href: "/", children: [ DOM.text "Tillbaka till startsidan" ] }
+                    , DOM.text "."
+                    ]
+                ]
     }
