@@ -53,7 +53,7 @@ jobs:
           project_id: ksf-staging
           promote: 'true'
           working_directory: build/app-article-server
-      - id: deploy-app-article-server
+      - id: deploy-app-article-server-production
         name: Deploy App article server
         uses: "google-github-actions/deploy-appengine@main"
         with:
@@ -270,7 +270,7 @@ jobs:
           project_id: ksf-staging
           promote: 'true'
           working_directory: build/mosaico
-      - id: deploy-mosaico-server
+      - id: deploy-mosaico-server-production
         name: Deploy Mosaico server
         uses: "google-github-actions/deploy-appengine@main"
         with:

@@ -171,7 +171,12 @@ let mkAppEngineStep =
       \(promote : Text) ->
       \(app : AppServer.Type) ->
         Step::{
-        , id = Some "deploy-${app.id}"
+        , id =
+            merge
+              { Staging = Some "deploy-${app.id}"
+              , Production = Some "deploy-${app.id}-production"
+              }
+              env
         , name = Some "Deploy ${app.name}"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
