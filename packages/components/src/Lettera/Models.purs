@@ -3,6 +3,8 @@ module Lettera.Models where
 import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
+import Data.Argonaut.Encode (class EncodeJson, encodeJson)
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
@@ -19,6 +21,7 @@ import Data.Time.Duration as Duration
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
+import Foreign.Object as Object
 import KSF.Helpers (dateTimeFormatter)
 import Record (modify)
 import Simple.JSON (class ReadForeign)
@@ -261,3 +264,51 @@ type DraftParams =
   , user        :: String
   , hash        :: String
   }
+
+data CategoryType
+  = Feed
+  | Webview
+  | Link
+
+toString :: CategoryType -> String
+toString Feed = "feed"
+toString Webview = "webview"
+toString Link = "link"
+
+instance categoryTypeDecodeJson :: DecodeJson CategoryType where
+  decodeJson json = do
+    categoryTypeString <- decodeJson json
+    case String.toLower categoryTypeString of
+      "feed"    -> Right Feed
+      "webview" -> Right Webview
+      "link"    -> Right Link
+      _         -> Left $ UnexpectedValue json
+
+newtype Category = Category
+  { id            :: String
+  , label         :: String
+  , type          :: CategoryType
+  , subCategories :: Array Category
+  , url           :: Maybe String
+  }
+
+instance categoryDecodeJson :: DecodeJson Category where
+  decodeJson json = do
+    categoryObj   <- decodeJson json
+    id            <- categoryObj .: "id"
+    label         <- categoryObj .: "label"
+    type_         <- categoryObj .: "type"
+    subCategories <- categoryObj .:? "subCategories" .!= mempty
+    url           <- categoryObj .:? "url"
+    pure $ Category { id, label, type: type_, subCategories, url }
+
+instance categoryEncodeJson :: EncodeJson Category where
+  encodeJson (Category c) = do
+    Object.singleton "id" (encodeJson c.id)
+    # Object.insert "label" (encodeJson c.label)
+    # Object.insert "type" (encodeJson $ toString c.type)
+    # Object.insert "subCategories" (encodeJson c.subCategories)
+    # Object.insert "url" (encodeJson c.url)
+    # encodeJson
+
+derive instance newtypeCategory :: Newtype Category _

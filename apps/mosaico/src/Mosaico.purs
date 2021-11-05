@@ -3,10 +3,11 @@ module Mosaico where
 import Prelude
 
 import Data.Argonaut.Core (Json)
+import Data.Argonaut.Decode (decodeJson)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
-import Data.Foldable (fold)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Foldable (fold, foldMap)
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
@@ -18,7 +19,7 @@ import Effect.Class.Console as Console
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
+import Lettera.Models (Article, ArticleStub, Category(..), FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -26,8 +27,8 @@ import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import Mosaico.Routes as Routes
+import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
@@ -56,6 +57,7 @@ type State =
   , frontpageComponent :: Frontpage.Props -> JSX
   , user :: Maybe User
   , staticPage :: Maybe StaticPageResponse
+  , categoryStructure :: Array Category
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -64,6 +66,7 @@ type Props =
   , mostReadArticles :: Maybe (Array ArticleStub)
   , frontpageArticles :: Maybe (Array ArticleStub)
   , staticPageContent :: Maybe StaticPage
+  , categoryStructure :: Array Category
   }
 type JSProps =
   { article :: Nullable Json
@@ -71,6 +74,7 @@ type JSProps =
   , mostReadArticles :: Nullable (Array Json)
   , frontpageArticles :: Nullable (Array Json)
   , staticPageContent :: Nullable StaticPage
+  , categoryStructure :: Nullable (Array Json)
   }
 
 app :: Component Props
@@ -90,8 +94,17 @@ mosaicoComponent initialValues props = React.do
                          , staticPage = map StaticPageResponse props.staticPageContent
                          }
 
-  -- Listen for route changes and set state accordingly
-  useEffectOnce $ locations (routeListener setState) initialValues.nav
+  useEffectOnce do
+    Aff.launchAff_ do
+      cats <- if null props.categoryStructure
+              then Lettera.getCategoryStructure HBL
+              else pure props.categoryStructure
+      liftEffect do
+        setState _ { categoryStructure = cats }
+        -- Listen for route changes and set state accordingly
+        void $ locations (routeListener cats setState) initialValues.nav
+    pure mempty
+
   useEffect state.route do
     case state.route of
       Routes.Frontpage -> do
@@ -105,11 +118,12 @@ mosaicoComponent initialValues props = React.do
       Routes.ArticlePage _articleId -> pure unit
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
-      Routes.StaticPage page 
+      Routes.CategoryPage _ -> pure unit
+      Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
         -> pure unit
-        | otherwise -> 
+        | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
             liftEffect $ setState _  { staticPage = Just staticPage }
@@ -126,9 +140,9 @@ mosaicoComponent initialValues props = React.do
 
   pure $ render setState state initialValues.nav
 
-routeListener :: ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
-routeListener setState _oldLoc location = do
-  case match Routes.routes location.pathname of
+routeListener :: Array Category -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
+routeListener c setState _oldLoc location = do
+  case match (Routes.routes c) location.pathname of
     Right path -> setState _ { route = path }
     Left _     -> pure unit
 
@@ -143,7 +157,7 @@ getInitialValues :: Effect InitialValues
 getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
-  let initialRoute = either (const $ Routes.Frontpage) identity $ match Routes.routes locationState.path
+  let initialRoute = either (const $ Routes.Frontpage) identity $ match (Routes.routes []) locationState.path
 
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
@@ -168,6 +182,7 @@ getInitialValues = do
         , frontpageComponent
         , user: Nothing
         , staticPage: Nothing
+        , categoryStructure: []
         }
     , nav
     , locationState
@@ -184,7 +199,11 @@ fromJSProps jsProps =
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
       frontpageArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageArticles
       staticPageContent = toMaybe jsProps.staticPageContent
-  in { article, mostReadArticles, frontpageArticles, staticPageContent }
+      -- Decoding errors are being hushed here, although if this
+      -- comes from `window.categoryStructure`, they should be
+      -- valid categories
+      categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
+  in { article, mostReadArticles, frontpageArticles, staticPageContent, categoryStructure }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -206,6 +225,7 @@ render setState state router =
         }
     _ -> mempty
   <> case state.route of
+       Routes.CategoryPage page -> DOM.h2_ [ DOM.text page ]
        Routes.ArticlePage articleId
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle
@@ -228,9 +248,9 @@ render setState state router =
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
        Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
          Nothing -> DOM.text "laddar"
-         Just (StaticPageResponse page)  -> 
+         Just (StaticPageResponse page)  ->
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
-         Just StaticPageNotFound -> 
+         Just StaticPageNotFound ->
            renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
          Just StaticPageOtherError -> Error.somethingWentWrong
   where
@@ -252,7 +272,10 @@ render setState state router =
       { className: "mosaico grid"
       , children:
           [ Header.topLine
-          , state.headerComponent { router }
+          , state.headerComponent
+              { router
+              , categoryStructure: state.categoryStructure
+              }
           , Header.mainSeparator
           , content
           , DOM.footer
