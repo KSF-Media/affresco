@@ -3,6 +3,7 @@ module Lettera.Models where
 import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
@@ -15,6 +16,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, un)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
+import Data.String as String
 import Data.Time.Duration as Duration
 import Effect (Effect)
 import Effect.Class.Console as Console
@@ -261,3 +263,35 @@ type DraftParams =
   , user        :: String
   , hash        :: String
   }
+
+data CategoryType
+  = Feed
+  | Webview
+  | Link
+
+instance categoryTypeDecodeJson :: DecodeJson CategoryType where
+  decodeJson json = do
+    categoryTypeString <- decodeJson json
+    case String.toLower categoryTypeString of
+      "feed"    -> Right Feed
+      "webview" -> Right Webview
+      "link"    -> Right Link
+      _         -> Left $ UnexpectedValue json
+
+newtype Category = Category
+  { id            :: String
+  , label         :: String
+  , type          :: CategoryType
+  , subCategories :: Array Category
+  , url           :: Maybe String
+  }
+
+instance categoryDecodeJson :: DecodeJson Category where
+  decodeJson json = do
+    categoryObj   <- decodeJson json
+    id            <- categoryObj .: "id"
+    label         <- categoryObj .: "label"
+    type_         <- categoryObj .: "type"
+    subCategories <- categoryObj .:? "subCategories" .!= mempty
+    url           <- categoryObj .:? "url"
+    pure $ Category { id, label, type: type_, subCategories, url }
