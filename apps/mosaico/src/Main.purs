@@ -287,7 +287,6 @@ staticPage env { params: { pageName } } = do
 
 notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound env mostReadList _ = do
-  htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
   mostReadArticles <- maybe (Lettera.getMostRead 0 10 "" HBL true) pure mostReadList
   articleComponent <- liftEffect Article.articleComponent
   let articleJSX =
@@ -309,7 +308,8 @@ notFound env mostReadList _ = do
                   , categoryStructure: env.categoryStructure
                   }
   html <- liftEffect $
-    appendMosaico htmlTemplate mosaicoString
+    appendMosaico env.htmlTemplate mosaicoString
+      >>= appendHead ("<script>window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";</script>")
 
   pure $ Response.notFound $ StringBody $ html
 

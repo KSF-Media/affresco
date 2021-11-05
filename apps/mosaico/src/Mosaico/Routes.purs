@@ -2,18 +2,15 @@ module Mosaico.Routes where
 
 import Prelude
 
-import Data.Array (any)
-import Data.Foldable (oneOf)
+import Data.Foldable (foldl, oneOf)
 import Data.List (List(..))
-import Data.Newtype (unwrap)
-import Data.NonEmpty (NonEmpty(..))
 import Data.Semiring.Free (free)
+import Data.Set as Set
 import Data.String (toLower)
-import Data.String.NonEmpty (NonEmptyString)
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Category(..))
-import Routing.Match (Match(..), end, lit, nonempty, root, str)
+import Routing.Match (Match(..), end, lit, root, str)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
 
@@ -29,21 +26,21 @@ derive instance eqR :: Eq MosaicoPage
 
 
 routes :: Array Category -> Match MosaicoPage
-routes c = root *> oneOf
+routes categories = root *> oneOf
   [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
   , Frontpage <$end
   , MenuPage <$ lit "meny"
-  , CategoryPage <$> asd
+  , CategoryPage <$> categoryRoute
   , NotFoundPage <$> str
   ]
   where
-    asd = Match \route ->
-      case route of
-        Cons (Path input) rs ->
-          if any ((\a -> toLower a.id == toLower input) <<< unwrap) c
-          then pure $ Tuple rs input
-          else invalid $ free ExpectedString
-        _ ->
-          invalid $ free ExpectedString
+    categoriesSet = foldl (\acc (Category c) -> Set.insert (toLower c.label) acc) Set.empty categories
+    categoryRoute =
+      let matchRoute route
+            | Cons (Path categoryRouteName) rs <- route
+            , Set.member (toLower categoryRouteName) categoriesSet
+            = pure $ Tuple rs categoryRouteName
+            | otherwise = invalid $ free $ Fail "Not a category"
+      in Match matchRoute
