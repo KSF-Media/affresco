@@ -15,6 +15,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
@@ -27,6 +28,10 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useState, (/\))
 import React.Basic.Hooks as React
+
+foreign import evalExternalScriptsImpl :: EffectFn1 (Array String) Unit
+evalExternalScripts :: Array String -> Effect Unit
+evalExternalScripts = runEffectFn1 evalExternalScriptsImpl
 
 type Self =
   { state :: State
@@ -101,6 +106,9 @@ loadArticle setState affArticle = do
     fullArticle <- affArticle
     let article = fromFullArticle fullArticle
     liftEffect do
+      -- We need to evaluate every external javascript Lettera gives us
+      -- This is to get embeds working
+      evalExternalScripts $ fold article.externalScripts
       setState \s -> s
                   { article = Just fullArticle
                   , body = map Record.toSum article.body

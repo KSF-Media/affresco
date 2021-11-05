@@ -59,6 +59,7 @@ notFoundArticle = ErrorArticle
   , premium: false
   , publishingTime: Nothing
   , updateTime: Nothing
+  , externalScripts: Nothing
   }
 
 newtype LocalDateTime = LocalDateTime DateTime
@@ -110,6 +111,7 @@ type ArticleCommon =
   , preamble  :: Maybe String
   , authors   :: Array Author
   , premium   :: Boolean
+  , externalScripts :: Maybe (Array String)
   )
 
 type JSArticle =
