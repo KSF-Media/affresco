@@ -15,6 +15,8 @@ let container = ./container.dhall
 
 let gcp-project-id = "ksf-production"
 
+let promote = "true"
+
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
@@ -31,6 +33,7 @@ let steps-app-article =
       # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Production
+            promote
             AE.servers.app-article-server
         ]
       # [ Actions.mkCleanAppEngineStep
@@ -41,7 +44,13 @@ let steps-app-article =
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Production AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
+        ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Production
+            promote
+            AE.servers.mosaico
+        ]
       # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
         ]
 

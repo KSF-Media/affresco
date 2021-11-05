@@ -165,6 +165,7 @@ let mkUploadStep =
 
 let mkAppEngineStep =
       \(env : Env) ->
+      \(promote : Text) ->
       \(app : AppServer.Type) ->
         Step::{
         , id = Some "deploy-${app.id}"
@@ -172,7 +173,7 @@ let mkAppEngineStep =
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = merge { Staging = "false", Production = "true" } env
+            , promote
             , project_id = "\${{ env.gcp-project-id }}"
             , credentials =
                 merge
@@ -315,7 +316,8 @@ let uploadSteps =
 
 let deployAppEngineSteps =
       \(env : Env) ->
-        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env)
+      \(promote : Text) ->
+        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
 
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 

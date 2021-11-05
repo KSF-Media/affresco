@@ -264,6 +264,14 @@ jobs:
         name: Deploy Mosaico server
         uses: "google-github-actions/deploy-appengine@main"
         with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: "${{ env.gcp-project-id }}"
+          promote: 'true'
+          working_directory: build/mosaico
+      - id: deploy-mosaico-server
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           project_id: "${{ env.gcp-project-id }}"
           promote: 'true'
