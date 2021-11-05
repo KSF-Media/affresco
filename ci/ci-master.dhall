@@ -13,8 +13,6 @@ let AE = ./app-servers.dhall
 
 let container = ./container.dhall
 
-let gcp-project-id = "ksf-production"
-
 let promote = "true"
 
 let apps-to-cache =
@@ -31,6 +29,11 @@ let steps-gs =
 let steps-app-article =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Staging
+            promote
+            AE.servers.app-article-server
+        ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Production
             promote
@@ -69,21 +72,18 @@ in  { name = "production"
               { runs-on = "ubuntu-latest", container, steps = checkCISteps }
             , deploy-gs =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-gs
               , needs = "check-ci"
               }
             , deploy-app-article =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-app-article
               , needs = "check-ci"
               }
             , deploy-mosaico =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-mosaico
               , needs = "check-ci"

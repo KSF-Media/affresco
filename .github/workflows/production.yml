@@ -26,8 +26,6 @@ jobs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
-    env:
-      gcp-project-id: ksf-production
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +35,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
@@ -51,8 +49,16 @@ jobs:
         name: Deploy App article server
         uses: "google-github-actions/deploy-appengine@main"
         with:
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: ksf-staging
+          promote: 'true'
+          working_directory: build/app-article-server
+      - id: deploy-app-article-server
+        name: Deploy App article server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           promote: 'true'
           working_directory: build/app-article-server
       - continue-on-error: true
@@ -63,8 +69,6 @@ jobs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
-    env:
-      gcp-project-id: ksf-production
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +78,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
@@ -239,8 +243,6 @@ jobs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
-    env:
-      gcp-project-id: ksf-production
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -250,7 +252,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
@@ -265,7 +267,7 @@ jobs:
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-staging
           promote: 'true'
           working_directory: build/mosaico
       - id: deploy-mosaico-server
@@ -273,7 +275,7 @@ jobs:
         uses: "google-github-actions/deploy-appengine@main"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           promote: 'true'
           working_directory: build/mosaico
       - continue-on-error: true
