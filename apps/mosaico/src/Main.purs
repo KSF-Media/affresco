@@ -21,7 +21,7 @@ import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle)
+import Lettera.Models (ArticleStub, DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -91,6 +91,12 @@ spec ::
                 { params :: { path :: List String }
                 , response :: File
                 }
+         , tagList ::
+              GET "/tagg/<tag>"
+                { response :: TextHtml
+                , params :: { tag :: String }
+                , guards :: Guards ("credentials" : Nil)
+                }
          , frontpage ::
               GET "/"
                 { response :: TextHtml
@@ -119,6 +125,7 @@ main = do
         { getDraftArticle: getDraftArticle env
         , getArticle: getArticle env
         , assets
+        , tagList: tagList env
         , frontpage: frontpage env
         , staticPage: staticPage env
         , notFound: notFound env Nothing
@@ -212,6 +219,7 @@ frontpage { htmlTemplate } _ = do
               $ frontpageComponent
                   { frontpageArticles: articles
                   , onArticleClick: const $ pure unit
+                  , onTagClick: const $ pure unit
                   }
           , mostReadArticles
           }
@@ -219,6 +227,35 @@ frontpage { htmlTemplate } _ = do
             let windowVars =
                   "<script>\
                      \window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                  \</script>"
+            appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
+  pure $ TextHtml html
+
+tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+tagList { htmlTemplate } { params: { tag } } = do
+  let tag' = uriComponentToTag tag
+  articles <- Lettera.getByTag 0 20 tag' HBL
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  mosaico <- liftEffect MosaicoServer.app
+  frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  let mosaicoString =
+        DOM.renderToString
+        $ mosaico
+          { mainContent:
+              TagListContent
+              $ frontpageComponent
+                  { frontpageArticles: articles
+                  , onArticleClick: const $ pure unit
+                  , onTagClick: const $ pure unit
+                  }
+          , mostReadArticles
+          }
+  html <- liftEffect do
+            let windowVars =
+                  "<script>\
+                     \window.tagListArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.tagListArticlesName=\"" <> tagToURIComponent tag' <> "\";\
                      \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
                   \</script>"
             appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars

@@ -18,7 +18,7 @@ import Effect.Class.Console as Console
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing)
+import Lettera.Models (Article, ArticleStub, FullArticle(..), Tag, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -44,6 +44,8 @@ type State =
   { article :: Maybe FullArticle
   , frontpageArticles :: Array ArticleStub
   , mostReadArticles :: Array ArticleStub
+  , tagArticlesName :: Maybe Tag
+  , tagArticles :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
   , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -64,6 +66,8 @@ type Props =
   , mostReadArticles :: Maybe (Array ArticleStub)
   , frontpageArticles :: Maybe (Array ArticleStub)
   , staticPageContent :: Maybe StaticPage
+  , tagArticlesName :: Maybe Tag
+  , tagArticles :: Maybe (Array ArticleStub)
   }
 type JSProps =
   { article :: Nullable Json
@@ -71,6 +75,8 @@ type JSProps =
   , mostReadArticles :: Nullable (Array Json)
   , frontpageArticles :: Nullable (Array Json)
   , staticPageContent :: Nullable StaticPage
+  , tagArticlesName :: Nullable String
+  , tagArticles :: Nullable (Array Json)
   }
 
 app :: Component Props
@@ -88,6 +94,8 @@ mosaicoComponent initialValues props = React.do
                          , frontpageArticles = fold props.frontpageArticles
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse props.staticPageContent
+                         , tagArticlesName = props.tagArticlesName
+                         , tagArticles = fold props.tagArticles
                          }
 
   -- Listen for route changes and set state accordingly
@@ -101,6 +109,17 @@ mosaicoComponent initialValues props = React.do
           liftEffect $ setState \s -> s { frontpageArticles = frontpage, article = Nothing }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
+      Routes.TagPage tag
+        | Just tag == state.tagArticlesName -> pure unit
+       | otherwise -> do
+            setState _ { tagArticlesName = Just tag
+                       , tagArticles = mempty
+                       }
+            Aff.launchAff_ do
+              byTag <- Lettera.getByTag 0 20 tag HBL
+              liftEffect $ setState _ { tagArticlesName = Just tag
+                                      , tagArticles = byTag
+                                      }
       Routes.DraftPage -> pure unit
       Routes.ArticlePage _articleId -> pure unit
       Routes.MenuPage -> pure unit
@@ -156,6 +175,8 @@ getInitialValues = do
         { article: Nothing
         , frontpageArticles: []
         , mostReadArticles: []
+        , tagArticlesName: Nothing
+        , tagArticles: []
         , affArticle: Nothing
         , route: initialRoute
         , clickedArticle: Nothing
@@ -184,7 +205,9 @@ fromJSProps jsProps =
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
       frontpageArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageArticles
       staticPageContent = toMaybe jsProps.staticPageContent
-  in { article, mostReadArticles, frontpageArticles, staticPageContent }
+      tagArticlesName = uriComponentToTag <$> toMaybe jsProps.tagArticlesName
+      tagArticles = mapMaybe (hush <<< parseArticleStubWithoutLocalizing) <$> toMaybe jsProps.tagArticles
+  in { article, mostReadArticles, frontpageArticles, staticPageContent, tagArticles, tagArticlesName }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -214,15 +237,9 @@ render setState state router =
          -- e.g. when a subscription is purchased or user logs in
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
          | otherwise                 -> mosaicoLayoutNoAside $ renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
-       Routes.Frontpage -> mosaicoDefaultLayout $ state.frontpageComponent
-                                { frontpageArticles: state.frontpageArticles
-                                , onArticleClick: \article -> do
-                                    setState \s -> s { clickedArticle = Just article }
-                                    void $ Web.scroll 0 0 =<< Web.window
-                                    router.pushState (write {}) $ "/artikel/" <> article.uuid
-                                }
-
+       Routes.Frontpage -> frontpage state.frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+       Routes.TagPage _ -> frontpage state.tagArticles
        Routes.MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
        Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
@@ -272,6 +289,19 @@ render setState state router =
                   ]
               }
           ]
+      }
+
+    onTagClick tag = do
+      void $ Web.scroll 0 0 =<< Web.window
+      router.pushState (write {}) $ "/tagg/" <> tagToURIComponent tag
+
+    frontpage frontpageArticles = mosaicoDefaultLayout $ state.frontpageComponent
+      { frontpageArticles
+      , onArticleClick: \article -> do
+          setState \s -> s { clickedArticle = Just article }
+          void $ Web.scroll 0 0 =<< Web.window
+          router.pushState (write {}) $ "/artikel/" <> article.uuid
+      , onTagClick
       }
 
     renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> String -> JSX
