@@ -11,18 +11,6 @@ jobs:
         run: |2
             make
             git diff --exit-code
-  debug:
-    container:
-      image: ksfmedia/diskho:gha-1.0
-      options: "--cpus 2"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate AppEngine domain map
-        run: |2
-            ls -lah
-            dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > dispatch.yaml
-            cat dispatch.yaml
-        shell: bash
   deploy-app-article-server:
     container:
       image: ksfmedia/diskho:gha-1.0
@@ -69,6 +57,17 @@ jobs:
       - deploy-app-article-server
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup Cloud SDK
+        uses: "google-github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: ksf-staging
+          service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
+      - run: |2
+            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            mkdir -p build
       - name: Generate AppEngine domain map
         run: |2
             ls -lah

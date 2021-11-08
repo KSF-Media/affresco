@@ -49,7 +49,8 @@ let steps-mosaico =
       # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.servers.mosaico ]
 
 let steps-dispatch =
-        [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
+        Actions.setupSteps Actions.Env.Staging
+      # [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
       # [ Actions.deployDispatchYamlStep Actions.Env.Staging ]
 
 let previewLinks = [ Actions.linkPreviewsStep apps AE.all previewUrl ]
@@ -59,11 +60,6 @@ in  { name = "previews"
     , jobs =
       { check-ci =
         { runs-on = "ubuntu-latest", container, steps = checkCISteps }
-      , debug =
-        { runs-on = "ubuntu-latest"
-        , container
-        , steps = [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
-        }
       , deploy-gs =
         { runs-on = "ubuntu-latest"
         , container

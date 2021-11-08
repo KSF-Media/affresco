@@ -58,7 +58,8 @@ let steps-mosaico =
         ]
 
 let steps-dispatch =
-        [ Actions.generateDispatchYamlStep Actions.Env.Production ]
+        Actions.setupSteps Actions.Env.Production
+      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
       # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
 
 let refreshCDNJobs =
