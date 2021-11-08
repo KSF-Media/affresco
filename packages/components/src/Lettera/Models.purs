@@ -4,11 +4,12 @@ import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
+import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
-import Data.Either (Either(..), hush)
-import Data.Foldable (foldMap)
+import Data.Either (Either(..), either, hush)
+import Data.Foldable (fold, foldMap, traverse_)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate as JSDate
@@ -17,13 +18,14 @@ import Data.Newtype (class Newtype, un)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.String as String
+import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
 import KSF.Helpers (dateTimeFormatter)
 import Record (modify)
-import Simple.JSON (class ReadForeign)
+import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 import Type.Prelude (Proxy(..))
 
@@ -102,6 +104,21 @@ type ArticleStub =
   | ArticleStubCommon
   }
 
+-- For representing HTML string with "<script>" tags.
+-- This exists because we need to do some extra steps
+-- when we decode/encode the thing
+newtype ExternalScript = ExternalScript String
+derive instance newtypeExternalScript :: Newtype ExternalScript _
+
+instance readForeignExternalScript :: ReadForeign ExternalScript where
+  readImpl f = do
+    script <- readImpl f
+    pure $ ExternalScript $ String.replaceAll (Pattern "<\\/script>") (Replacement "</script>") script
+
+instance encodeJsonExternalScript :: EncodeJson ExternalScript where
+  encodeJson (ExternalScript script) =
+    encodeJson $ String.replaceAll (Pattern "</script>") (Replacement "<\\/script>") script
+
 type ArticleCommon =
   ( title     :: String
   , body      :: Array BodyElementJS
@@ -111,7 +128,7 @@ type ArticleCommon =
   , preamble  :: Maybe String
   , authors   :: Array Author
   , premium   :: Boolean
-  , externalScripts :: Maybe (Array String)
+  , externalScripts :: Maybe (Array ExternalScript)
   )
 
 type JSArticle =
@@ -221,8 +238,7 @@ fromJSArticle :: JSArticle -> Effect Article
 fromJSArticle jsArticle@{ uuid, publishingTime, updateTime } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime }
-
+  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime}
 
 type BodyElementJS =
   { html     :: Maybe String

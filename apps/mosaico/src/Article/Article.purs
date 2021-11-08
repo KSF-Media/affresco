@@ -10,6 +10,7 @@ import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
 import Data.Set as Set
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
@@ -108,7 +109,7 @@ loadArticle articleProp setState affArticle = do
     Just a -> do
       -- We need to evaluate every external javascript Lettera gives us
       -- This is to get embeds working
-      liftEffect $ evalExternalScripts $ fold $ _.externalScripts $ fromFullArticle a
+      liftEffect $ evalExternalScripts $ map unwrap $ fold $ _.externalScripts $ fromFullArticle a
     Nothing -> Aff.launchAff_ do
       fullArticle <- affArticle
       let article = fromFullArticle fullArticle
@@ -122,7 +123,7 @@ loadArticle articleProp setState affArticle = do
                     , preamble = article.preamble
                     , premium = article.premium
                     }
-        evalExternalScripts $ fold article.externalScripts
+        evalExternalScripts $ map unwrap $ fold $ article.externalScripts
 
 renderImage :: Image -> JSX
 renderImage img =
