@@ -22,6 +22,7 @@ import Simple.JSON (E, read, write)
 type Props =
   { router :: PushStateInterface
   , categoryStructure :: Array Category
+  , onCategoryClick :: String -> Effect Unit
   }
 
 type Self =
@@ -97,7 +98,9 @@ render { state: { menuVisible, menuComponent }, props } =
                 else
                   DOM.a { onClick: handler_ $ props.router.pushState (write {}) $ "/ayooo", children: [ DOM.text "aaaa" ]} `cons`
                   map ((\c -> DOM.a {
-                           onClick: handler_ $ props.router.pushState (write {}) $ "/" <> c.id, children: [ DOM.text c.label ]}) <<< unwrap) props.categoryStructure
+                           onClick: handler_ $ do
+                              props.onCategoryClick c.id
+                              props.router.pushState (write {}) $ "/" <> c.id, children: [ DOM.text c.label ]}) <<< unwrap) props.categoryStructure
 
                   -- [ DOM.a_ [ DOM.text "OPINION" ]
                   -- , DOM.a_ [ DOM.text "KULTUR" ]

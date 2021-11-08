@@ -67,7 +67,10 @@ render router state props = DOM.div
        { className: "mosaico grid"
        , children:
            [ Header.topLine
-           , state.headerComponent { router, categoryStructure: props.categoryStructure }
+           , state.headerComponent { router
+                                   , categoryStructure: props.categoryStructure
+                                   , onCategoryClick: const $ pure unit
+                                   }
            , Header.mainSeparator
            , fromMainContent props.mainContent
            , DOM.footer

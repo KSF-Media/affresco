@@ -210,7 +210,7 @@ assets { params: { path } } = Handlers.directory "dist/client" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 frontpage env _ = do
-  articles <- Lettera.getFrontpage HBL
+  articles <- Lettera.getFrontpage HBL Nothing
   mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
   mosaico <- liftEffect MosaicoServer.app
   frontpageComponent <- liftEffect Frontpage.frontpageComponent

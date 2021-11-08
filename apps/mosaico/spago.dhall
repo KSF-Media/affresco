@@ -40,6 +40,7 @@ You can edit this file as you like.
   , "simple-json"
   , "strings"
   , "tuples"
+  , "unordered-collections"
   , "uuid"
   , "validation"
   , "web-events"

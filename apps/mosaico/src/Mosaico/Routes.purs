@@ -22,7 +22,7 @@ data MosaicoPage
   | StaticPage String
   | CategoryPage String
   | MenuPage
-derive instance eqR :: Eq MosaicoPage
+derive instance eqMosaicoPage :: Eq MosaicoPage
 
 
 routes :: Array Category -> Match MosaicoPage
@@ -30,7 +30,7 @@ routes categories = root *> oneOf
   [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
-  , Frontpage <$end
+  , Frontpage <$ end
   , MenuPage <$ lit "meny"
   , CategoryPage <$> categoryRoute
   , NotFoundPage <$> str

@@ -7,7 +7,9 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe(..), maybe, fromMaybe)
+import Data.HashMap (HashMap)
+import Data.HashMap as HashMap
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
@@ -58,6 +60,7 @@ type State =
   , user :: Maybe User
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
+  , frontpageFeeds :: HashMap (Maybe String) (Array ArticleStub)
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -110,15 +113,29 @@ mosaicoComponent initialValues props = React.do
       Routes.Frontpage -> do
         if null state.frontpageArticles
         then Aff.launchAff_ do
-          frontpage <- Lettera.getFrontpage HBL
-          liftEffect $ setState \s -> s { frontpageArticles = frontpage, article = Nothing }
+          frontpage <- Lettera.getFrontpage HBL Nothing
+          liftEffect $ setState \s -> s { frontpageArticles = frontpage
+                                        , article = Nothing
+                                        , frontpageFeeds = HashMap.insert Nothing frontpage s.frontpageFeeds
+                                        }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
       Routes.DraftPage -> pure unit
       Routes.ArticlePage _articleId -> pure unit
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
-      Routes.CategoryPage _ -> pure unit
+      Routes.CategoryPage category -> do
+        -- TODO: Loading spinner
+        case HashMap.lookup (Just category) state.frontpageFeeds of
+          Just feed -> setState _ { frontpageArticles = feed }
+          _ -> do
+            Aff.launchAff_ do
+              categoryFeed <- Lettera.getFrontpage HBL (Just category)
+              liftEffect $
+                setState \s -> s { frontpageArticles = categoryFeed
+                                 , article = Nothing
+                                 , frontpageFeeds = HashMap.insert (Just category) categoryFeed s.frontpageFeeds
+                                 }
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
@@ -183,6 +200,7 @@ getInitialValues = do
         , user: Nothing
         , staticPage: Nothing
         , categoryStructure: []
+        , frontpageFeeds: HashMap.empty
         }
     , nav
     , locationState
@@ -225,7 +243,14 @@ render setState state router =
         }
     _ -> mempty
   <> case state.route of
-       Routes.CategoryPage page -> DOM.h2_ [ DOM.text page ]
+       Routes.CategoryPage _category ->
+         mosaicoDefaultLayout $ state.frontpageComponent
+           { frontpageArticles: state.frontpageArticles
+           , onArticleClick: \article -> do
+               setState \s -> s { clickedArticle = Just article }
+               void $ Web.scroll 0 0 =<< Web.window
+               router.pushState (write {}) $ "/artikel/" <> article.uuid
+           }
        Routes.ArticlePage articleId
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle
@@ -275,6 +300,10 @@ render setState state router =
           , state.headerComponent
               { router
               , categoryStructure: state.categoryStructure
+              , onCategoryClick: \c ->
+                  case state.route of
+                    Routes.CategoryPage category | category == c -> pure unit
+                    _ -> setState _ { frontpageArticles = [] }
               }
           , Header.mainSeparator
           , content
