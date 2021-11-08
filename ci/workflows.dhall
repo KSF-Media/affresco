@@ -238,7 +238,6 @@ let generateDispatchYamlStep =
             merge
               { Staging = Some
                   ''
-                    ls -lah
                     dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > dispatch.yaml
                     cat dispatch.yaml
                   ''
