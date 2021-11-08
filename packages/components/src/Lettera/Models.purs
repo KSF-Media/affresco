@@ -115,6 +115,10 @@ instance readForeignExternalScript :: ReadForeign ExternalScript where
     script <- readImpl f
     pure $ ExternalScript $ String.replaceAll (Pattern "<\\/script>") (Replacement "</script>") script
 
+-- We need to be extra careful when writing <script> tags to the HTML template.
+-- Basically, we need an extra backslash before the closing tag, otherwise
+-- the DOM gets messed up.
+-- More info: https://stackoverflow.com/a/30231195
 instance encodeJsonExternalScript :: EncodeJson ExternalScript where
   encodeJson (ExternalScript script) =
     encodeJson $ String.replaceAll (Pattern "</script>") (Replacement "<\\/script>") script
