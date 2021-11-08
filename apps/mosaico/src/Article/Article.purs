@@ -379,6 +379,6 @@ render { props, state, setState } =
         block = "article-element"
         isDiv = isElem "<div"
         isBlockquote = isElem "<blockquote"
-        -- Does the sring start with wanted element
+        -- Does the string start with wanted element
         isElem elemName elemString =
           Just 0 == String.indexOf (Pattern elemName) elemString
