@@ -338,17 +338,11 @@ render { props, state, setState } =
         Html content ->
           -- Can't place div's under p's, so if div, create div.
           -- This is usually case with embeds
-          if isDiv content
-          then
-            DOM.div
-              { dangerouslySetInnerHTML: { __html: content }
-              , className: block <> " " <> block <> "__html"
-              }
-          else
-            DOM.p
-              { dangerouslySetInnerHTML: { __html: content }
-              , className: block <> " " <> block <> "__html"
-              }
+          let domFn = if isDiv content then DOM.div else DOM.p
+          in domFn
+             { dangerouslySetInnerHTML: { __html: content }
+             , className: block <> " " <> block <> "__html"
+             }
         Headline str -> DOM.h4
           { className: block <> " " <> block <> "__subheadline"
           , children: [ DOM.text str ]
