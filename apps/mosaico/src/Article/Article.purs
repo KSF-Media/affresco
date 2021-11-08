@@ -336,9 +336,9 @@ render { props, state, setState } =
       Left _   -> mempty
       Right el -> case el of
         Html content ->
-          -- Can't place div's under p's, so if div, create div.
+          -- Can't place div's or blockquotes under p's, so place them under div.
           -- This is usually case with embeds
-          let domFn = if isDiv content then DOM.div else DOM.p
+          let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
           in domFn
              { dangerouslySetInnerHTML: { __html: content }
              , className: block <> " " <> block <> "__html"
@@ -377,4 +377,8 @@ render { props, state, setState } =
             }
       where
         block = "article-element"
-        isDiv = (String.contains (Pattern "<div"))
+        isDiv = isElem "<div"
+        isBlockquote = isElem "<blockquote"
+        -- Does the sring start with wanted element
+        isElem elemName elemString =
+          Just 0 == String.indexOf (Pattern elemName) elemString
