@@ -3,11 +3,21 @@ exports.evalExternalScriptsImpl = function (scripts) {
     scripts.forEach((script) => {
       var dummy = document.createElement("div");
       dummy.innerHTML = script.trim();
-      try {
-	eval(dummy.firstChild.innerHTML);
-      } catch (err) {
-	console.warn("Failed to eval script:", err);
+      evalScript(dummy.firstChild.innerHTML);
+      const scriptSrc = dummy.firstChild.getAttribute("src");
+      if (scriptSrc) {
+	fetch(scriptSrc)
+	  .then((r) => r.text())
+	  .then(evalScript);
       }
     });
   }
 };
+
+function evalScript(s) {
+  try {
+    eval(s);
+  } catch (err) {
+    console.warn("Failed to eval script:", err);
+  }
+}
