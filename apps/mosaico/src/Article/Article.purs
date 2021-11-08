@@ -8,9 +8,11 @@ import Data.Array (cons, head, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Set as Set
+import Data.String as String
+import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -85,7 +87,7 @@ articleComponent = do
     state /\ setState <- useState initialState
 
     useEffect props.uuid do
-      when (isNothing props.article) $ loadArticle setState props.affArticle
+      loadArticle props.article setState props.affArticle
       pure mempty
 
     -- If user logs in / logs out, reload the article.
@@ -100,24 +102,27 @@ articleComponent = do
 
     pure $ render { state, setState, props }
 
-loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
-loadArticle setState affArticle = do
-  Aff.launchAff_ do
-    fullArticle <- affArticle
-    let article = fromFullArticle fullArticle
-    liftEffect do
+loadArticle :: Maybe FullArticle -> ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
+loadArticle articleProp setState affArticle = do
+  case articleProp of
+    Just a -> do
       -- We need to evaluate every external javascript Lettera gives us
       -- This is to get embeds working
-      evalExternalScripts $ fold article.externalScripts
-      setState \s -> s
-                  { article = Just fullArticle
-                  , body = map Record.toSum article.body
-                  , mainImage = article.mainImage
-                  , title = article.title
-                  , tags = article.tags
-                  , preamble = article.preamble
-                  , premium = article.premium
-                  }
+      liftEffect $ evalExternalScripts $ fold $ _.externalScripts $ fromFullArticle a
+    Nothing -> Aff.launchAff_ do
+      fullArticle <- affArticle
+      let article = fromFullArticle fullArticle
+      liftEffect do
+        setState \s -> s
+                    { article = Just fullArticle
+                    , body = map Record.toSum article.body
+                    , mainImage = article.mainImage
+                    , title = article.title
+                    , tags = article.tags
+                    , preamble = article.preamble
+                    , premium = article.premium
+                    }
+        evalExternalScripts $ fold article.externalScripts
 
 renderImage :: Image -> JSX
 renderImage img =
@@ -273,7 +278,7 @@ render { props, state, setState } =
 
     vetrina =
       Vetrina.vetrina
-        { onClose: Just $ loadArticle setState props.affArticle
+        { onClose: Just $ loadArticle props.article setState props.affArticle
         , onLogin: props.onLogin
         , products: Right [ hblPremium ]
         , unexpectedError: mempty
@@ -329,10 +334,20 @@ render { props, state, setState } =
     renderElement = case _ of
       Left _   -> mempty
       Right el -> case el of
-        Html content -> DOM.p
-          { dangerouslySetInnerHTML: { __html: content }
-          , className: block <> " " <> block <> "__html"
-          }
+        Html content ->
+          -- Can't place div's under p's, so if div, create div.
+          -- This is usually case with embeds
+          if isDiv content
+          then
+            DOM.div
+              { dangerouslySetInnerHTML: { __html: content }
+              , className: block <> " " <> block <> "__html"
+              }
+          else
+            DOM.p
+              { dangerouslySetInnerHTML: { __html: content }
+              , className: block <> " " <> block <> "__html"
+              }
         Headline str -> DOM.h4
           { className: block <> " " <> block <> "__subheadline"
           , children: [ DOM.text str ]
@@ -367,3 +382,4 @@ render { props, state, setState } =
             }
       where
         block = "article-element"
+        isDiv = (String.contains (Pattern "<div"))

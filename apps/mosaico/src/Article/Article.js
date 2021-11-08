@@ -5,7 +5,9 @@ exports.evalExternalScriptsImpl = function (scripts) {
       dummy.innerHTML = script.trim();
       try {
 	eval(dummy.firstChild.innerHTML);
-      } catch (err) {}
+      } catch (err) {
+	console.warn("Failed to eval script:", err);
+      }
     });
   }
 };
