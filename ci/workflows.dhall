@@ -203,8 +203,7 @@ let deployDispatchYamlStep =
         , name = Some "Deploy AppEngine domain map"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
-            { working_directory = "build"
-            , deliverables = "dispatch.yaml"
+            { deliverables = "dispatch.yaml"
             , project_id =
                 merge
                   { Staging = "ksf-staging", Production = "ksf-production" }
@@ -240,12 +239,12 @@ let generateDispatchYamlStep =
               { Staging = Some
                   ''
                     npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
+                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./dispatch.yaml
                   ''
               , Production = Some
                   ''
                     npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./dispatch.yaml
                   ''
               }
               env

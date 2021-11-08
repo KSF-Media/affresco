@@ -77,7 +77,7 @@ jobs:
       - name: Generate AppEngine domain map
         run: |2
             npx 'dhall-to-yaml --omit-empty \
-            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+            <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./dispatch.yaml
         shell: bash
       - name: Deploy AppEngine domain map
         uses: "google-github-actions/deploy-appengine@main"
@@ -85,7 +85,6 @@ jobs:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           deliverables: dispatch.yaml
           project_id: ksf-production
-          working_directory: build
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-1.0
