@@ -35,12 +35,14 @@ let AppServer =
           , previewUrl : Text
           , lockfile : Optional Text
           , caches : Optional Text
+          , domains : List Text
           }
       , default =
         { env = [] : Map Text Text
         , previewUrl = ""
         , lockfile = None Text
         , caches = None Text
+        , domains = [] : List Text
         }
       }
 
