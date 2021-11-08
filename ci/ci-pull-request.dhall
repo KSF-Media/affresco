@@ -59,6 +59,11 @@ in  { name = "previews"
     , jobs =
       { check-ci =
         { runs-on = "ubuntu-latest", container, steps = checkCISteps }
+      , debug =
+        { runs-on = "ubuntu-latest"
+        , container
+        , steps = [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
+        }
       , deploy-gs =
         { runs-on = "ubuntu-latest"
         , container
