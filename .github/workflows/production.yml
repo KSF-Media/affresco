@@ -77,6 +77,7 @@ jobs:
       - name: Generate AppEngine domain map
         run: |2
             dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production" > ./dispatch.yaml
+            cat dispatch.yaml
         shell: bash
       - name: Deploy AppEngine domain map
         uses: "google-github-actions/deploy-appengine@main"

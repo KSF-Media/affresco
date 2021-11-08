@@ -239,10 +239,12 @@ let generateDispatchYamlStep =
               { Staging = Some
                   ''
                     dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging" > ./dispatch.yaml
+                    cat dispatch.yaml
                   ''
               , Production = Some
                   ''
                     dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production" > ./dispatch.yaml
+                    cat dispatch.yaml
                   ''
               }
               env
