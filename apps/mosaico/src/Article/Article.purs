@@ -8,7 +8,7 @@ import Data.Array (cons, head, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Set as Set
@@ -20,7 +20,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Api.Package (CampaignLengthUnit(..))
-import KSF.Helpers (formatArticleTime)
+import KSF.Helpers (getTextContentFromHTMLString, formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
@@ -175,7 +175,7 @@ render { props, state, setState } =
                 }
             , DOM.section
                 { className: "mosaico-article__preamble"
-                , children: [ DOM.text $ fromMaybe mempty state.preamble ]
+                , children: [ DOM.text $ maybe mempty getTextContentFromHTMLString state.preamble ]
                 }
             , DOM.section
                 { className: "mosaico-article__tag-n-share"

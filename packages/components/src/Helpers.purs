@@ -15,6 +15,8 @@ import           Data.String             as String
 import           Data.Time               (Time (..))
 import           Partial.Unsafe          (unsafePartial)
 
+foreign import getTextContentFromHTMLString :: String -> String
+
 midnight :: Time
 midnight = unsafePartial $ fromJust $ Time <$> toEnum 0 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
 
