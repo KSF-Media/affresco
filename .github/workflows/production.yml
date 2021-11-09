@@ -22,7 +22,7 @@ jobs:
         run: |2
             make
             git diff --exit-code
-  deploy-app-article:
+  deploy-app-article-server:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
@@ -270,7 +270,7 @@ jobs:
           destination: ksf-frontends/prenumerera
           parent: 'false'
           path: build/prenumerera
-  deploy-mosaico:
+  deploy-mosaico-sever:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"

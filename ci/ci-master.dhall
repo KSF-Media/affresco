@@ -81,13 +81,13 @@ in  { name = "production"
               , steps = steps-gs
               , needs = "check-ci"
               }
-            , deploy-app-article =
+            , deploy-app-article-server =
               { runs-on = "ubuntu-latest"
               , container
               , steps = steps-app-article
               , needs = "check-ci"
               }
-            , deploy-mosaico =
+            , deploy-mosaico-sever =
               { runs-on = "ubuntu-latest"
               , container
               , steps = steps-mosaico
