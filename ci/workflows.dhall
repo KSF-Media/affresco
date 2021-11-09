@@ -143,6 +143,18 @@ let mkBuildServerStep =
             ''
         }
 
+let copyAppYamlForStaging =
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Copy app.yaml.dev to app.yaml"
+        , env = app.env
+        , shell = Some "bash"
+        , run = Some
+            ''
+            cp build/${app.deployDir}/app.dev.yaml build/${app.deployDir}/app.yaml
+            ''
+        }
+
 let mkUploadStep =
       \(env : Env) ->
       \(app : App.Type) ->
@@ -370,4 +382,5 @@ in  { Step
     , hasLockfile
     , cleanAppEngineSteps
     , mkCleanAppEngineStep
+    , copyAppYamlForStaging
     }
