@@ -7,7 +7,7 @@ import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
-import Data.List (List)
+import Data.List (List, intercalate)
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (Tuple(..))
@@ -16,6 +16,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
@@ -86,6 +87,11 @@ spec ::
                 , params :: { uuidOrSlug :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , assets ::
+              GET "/assets/<..path>"
+                { params :: { path :: List String }
+                , response :: File
+                }
          , frontpage ::
               GET "/"
                 { response :: TextHtml
@@ -113,6 +119,7 @@ main = do
       handlers =
         { getDraftArticle: getDraftArticle env
         , getArticle: getArticle env
+        , assets
         , frontpage: frontpage env
         , staticPage: staticPage env
         , notFound: notFound Nothing
@@ -189,6 +196,10 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
       in notFound maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
 
+assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
+assets { params: { path } } = do
+  Console.log $ "Fetching asset with internal route: " <> (intercalate "" path)
+  Handlers.directory "dist/client" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 frontpage { htmlTemplate } _ = do
