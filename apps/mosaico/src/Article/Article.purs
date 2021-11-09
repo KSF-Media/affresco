@@ -8,7 +8,7 @@ import Data.Array (cons, head, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Set as Set
@@ -24,7 +24,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle, isErrorArticle)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
@@ -177,28 +177,30 @@ render { props, state, setState } =
                 { className: "mosaico-article__preamble"
                 , children: [ DOM.text $ fromMaybe mempty state.preamble ]
                 }
-            , DOM.section
-                { className: "mosaico-article__tag-n-share"
-                , children:
-                    [ DOM.div
-                        { className: "mosaico-article__tag-n-premium"
-                        , children:
-                            [ DOM.div
-                                { className: "mosaico-article__tag color-" <> props.brand
-                                , children: [ DOM.text $ fromMaybe "" (head tags) ]
-                                }
-                            , guard state.premium $ DOM.div
-                                { className: "premium-badge background-" <> props.brand
-                                , children: [ DOM.text "Premium"]
-                                }
-                            ]
-                        }
-                    , DOM.ul
-                        { className: "mosaico-article__some"
-                        , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-                        }
-                    ]
-                }
+            -- We don't want to be able to share error articles
+            , guard (maybe false (not <<< isErrorArticle) state.article)
+                DOM.section
+                  { className: "mosaico-article__tag-n-share"
+                  , children:
+                      [ DOM.div
+                          { className: "mosaico-article__tag-n-premium"
+                          , children:
+                              [ DOM.div
+                                  { className: "mosaico-article__tag color-" <> props.brand
+                                  , children: [ DOM.text $ fromMaybe "" (head tags) ]
+                                  }
+                              , guard state.premium $ DOM.div
+                                  { className: "premium-badge background-" <> props.brand
+                                  , children: [ DOM.text "Premium"]
+                                  }
+                              ]
+                          }
+                      , DOM.ul
+                          { className: "mosaico-article__some"
+                          , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+                          }
+                      ]
+                  }
             ]
           , DOM.div
               { className: "mosaico-article__main-image"

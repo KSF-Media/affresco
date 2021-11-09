@@ -121,7 +121,7 @@ main = do
         , assets
         , frontpage: frontpage env
         , staticPage: staticPage env
-        , notFound: notFound Nothing
+        , notFound: notFound env Nothing
         }
       guards = { credentials: getCredentials }
   Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
@@ -155,7 +155,7 @@ getArticle env r@{ params: { uuidOrSlug } }
       Left _ -> do
         mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
         let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-        notFound maybeMostRead { params: {path: List.fromFoldable ["artikel", uuidOrSlug]} }
+        notFound env maybeMostRead { params: {path: List.fromFoldable ["artikel", uuidOrSlug]} }
 
 renderArticle
   :: Env
@@ -163,7 +163,7 @@ renderArticle
   -> Either String FullArticle
   -> Array ArticleStub
   -> Aff (Response ResponseBody)
-renderArticle { htmlTemplate } uuid article mostReadArticles = do
+renderArticle env@{ htmlTemplate } uuid article mostReadArticles = do
   articleComponent <- liftEffect Article.articleComponent
   mosaico <- liftEffect MosaicoServer.app
   case article of
@@ -193,7 +193,7 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
       pure $ Response.ok $ StringBody html
     Left _ ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
+      in notFound env maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/client" path
@@ -234,7 +234,7 @@ staticPage env { params: { pageName } } = do
   case staticPageResponse of
     StaticPageNotFound ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
+      in notFound env maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
     p -> do
       mosaico <- liftEffect MosaicoServer.app
       let staticPageContent :: Either JSX String
@@ -267,10 +267,8 @@ staticPage env { params: { pageName } } = do
 
       pure $ Response.ok $ StringBody html
 
-notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
-notFound mostReadList _ = do
-  htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
-  mostReadArticles <- maybe (Lettera.getMostRead 0 10 "" HBL true) pure mostReadList
+notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
+notFound { htmlTemplate } _ _ = do
   articleComponent <- liftEffect Article.articleComponent
   let articleJSX =
         articleComponent
@@ -284,10 +282,13 @@ notFound mostReadList _ = do
           }
 
   mosaico <- liftEffect MosaicoServer.app
-  let mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
-  html <- liftEffect $
-    appendMosaico htmlTemplate mosaicoString
-
+  let mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles: [] }
+  html <- liftEffect $ do
+    let windowVars  =
+              "<script>\
+                \window.article=" <> (encodeStringifyArticle $ fromFullArticle notFoundArticle) <> ";\
+              \</script>"
+    appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
   pure $ Response.notFound $ StringBody $ html
 
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
