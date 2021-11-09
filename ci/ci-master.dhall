@@ -57,6 +57,11 @@ let steps-mosaico =
       # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
         ]
 
+let steps-dispatch =
+        Actions.setupSteps Actions.Env.Production
+      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
+      # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
+
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
       , refresh_cdn_app-article =
@@ -87,6 +92,12 @@ in  { name = "production"
               , container
               , steps = steps-mosaico
               , needs = "check-ci"
+              }
+            , deploy-dispatch-yaml =
+              { runs-on = "ubuntu-latest"
+              , container
+              , steps = steps-dispatch
+              , needs = [ "deploy-mosaico-server", "deploy-app-article-server" ]
               }
             }
         //  refreshCDNJobs

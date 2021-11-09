@@ -35,12 +35,14 @@ let AppServer =
           , previewUrl : Text
           , lockfile : Optional Text
           , caches : Optional Text
+          , domains : List Text
           }
       , default =
         { env = [] : Map Text Text
         , previewUrl = ""
         , lockfile = None Text
         , caches = None Text
+        , domains = [] : List Text
         }
       }
 
@@ -201,8 +203,7 @@ let deployDispatchYamlStep =
         , name = Some "Deploy AppEngine domain map"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
-            { working_directory = "build"
-            , deliverables = "dispatch.yaml"
+            { deliverables = "dispatch.yaml"
             , project_id =
                 merge
                   { Staging = "ksf-staging", Production = "ksf-production" }
@@ -237,13 +238,13 @@ let generateDispatchYamlStep =
             merge
               { Staging = Some
                   ''
-                    npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > dispatch.yaml
+                    cat dispatch.yaml
                   ''
               , Production = Some
                   ''
-                    npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Production" > ./dispatch.yaml
+                    cat dispatch.yaml
                   ''
               }
               env

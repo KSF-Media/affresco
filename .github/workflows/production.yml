@@ -65,6 +65,37 @@ jobs:
         name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
+  deploy-dispatch-yaml:
+    container:
+      image: ksfmedia/diskho:gha-1.0
+      options: "--cpus 2"
+    needs:
+      - deploy-mosaico-server
+      - deploy-app-article-server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup Cloud SDK
+        uses: "google-github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: ksf-production
+          service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+      - run: |2
+            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            mkdir -p build
+      - name: Generate AppEngine domain map
+        run: |2
+            dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Production" > ./dispatch.yaml
+            cat dispatch.yaml
+        shell: bash
+      - name: Deploy AppEngine domain map
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          deliverables: dispatch.yaml
+          project_id: ksf-production
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-1.0
