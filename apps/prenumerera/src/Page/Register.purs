@@ -114,7 +114,7 @@ component = do
               update = flip (updateUser
                              initial.form.formData
                              (setFormData setRegisterData)
-                             (setCreateError true)
+                             (scrollToTop *> setCreateError true)
                              next) form
           maybe registerNew update user
         userCreate (Right u) = do

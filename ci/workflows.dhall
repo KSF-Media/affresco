@@ -35,12 +35,14 @@ let AppServer =
           , previewUrl : Text
           , lockfile : Optional Text
           , caches : Optional Text
+          , domains : List Text
           }
       , default =
         { env = [] : Map Text Text
         , previewUrl = ""
         , lockfile = None Text
         , caches = None Text
+        , domains = [] : List Text
         }
       }
 
@@ -77,7 +79,10 @@ let setupSteps =
           , name = Some "Setup Cloud SDK"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
-              { project_id = "\${{ env.gcp-project-id }}"
+              { project_id =
+                  merge
+                    { Staging = "ksf-staging", Production = "ksf-production" }
+                    env
               , service_account_key =
                   merge
                     { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -165,15 +170,24 @@ let mkUploadStep =
 
 let mkAppEngineStep =
       \(env : Env) ->
+      \(promote : Text) ->
       \(app : AppServer.Type) ->
         Step::{
-        , id = Some "deploy-${app.id}"
+        , id =
+            merge
+              { Staging = Some "deploy-${app.id}"
+              , Production = Some "deploy-${app.id}-production"
+              }
+              env
         , name = Some "Deploy ${app.name}"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = merge { Staging = "false", Production = "true" } env
-            , project_id = "\${{ env.gcp-project-id }}"
+            , promote
+            , project_id =
+                merge
+                  { Staging = "ksf-staging", Production = "ksf-production" }
+                  env
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -189,9 +203,11 @@ let deployDispatchYamlStep =
         , name = Some "Deploy AppEngine domain map"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
-            { working_directory = "build"
-            , deliverables = "dispatch.yaml"
-            , project_id = "\${{ env.gcp-project-id }}"
+            { deliverables = "dispatch.yaml"
+            , project_id =
+                merge
+                  { Staging = "ksf-staging", Production = "ksf-production" }
+                  env
             , credentials =
                 merge
                   { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
@@ -222,13 +238,13 @@ let generateDispatchYamlStep =
             merge
               { Staging = Some
                   ''
-                    npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > dispatch.yaml
+                    cat dispatch.yaml
                   ''
               , Production = Some
                   ''
-                    npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Production" > ./dispatch.yaml
+                    cat dispatch.yaml
                   ''
               }
               env
@@ -315,7 +331,8 @@ let uploadSteps =
 
 let deployAppEngineSteps =
       \(env : Env) ->
-        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env)
+      \(promote : Text) ->
+        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
 
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 

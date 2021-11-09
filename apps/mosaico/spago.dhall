@@ -20,6 +20,7 @@ You can edit this file as you like.
   , "foreign-object"
   , "lists"
   , "maybe"
+  , "newtype"
   , "node-buffer"
   , "node-fs"
   , "node-http"

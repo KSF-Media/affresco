@@ -105,7 +105,12 @@
                 content: '|';
                 position: absolute;
                 right: 0;
-                top: 1em;
+		@media (min-width: 768px) {
+                    top: 1em;
+		}
+		@media (max-width: 767px) {
+		    top: 1ex;
+		}
             }
         }
         &:nth-child(2) {
