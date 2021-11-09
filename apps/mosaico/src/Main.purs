@@ -86,11 +86,6 @@ spec ::
                 , params :: { uuidOrSlug :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
-         , assets ::
-              GET "/assets/<..path>"
-                { params :: { path :: List String }
-                , response :: File
-                }
          , frontpage ::
               GET "/"
                 { response :: TextHtml
@@ -118,7 +113,6 @@ main = do
       handlers =
         { getDraftArticle: getDraftArticle env
         , getArticle: getArticle env
-        , assets
         , frontpage: frontpage env
         , staticPage: staticPage env
         , notFound: notFound Nothing
@@ -195,8 +189,6 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
       in notFound maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
 
-assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: { path } } = Handlers.directory "dist/client" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 frontpage { htmlTemplate } _ = do
