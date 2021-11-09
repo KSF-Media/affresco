@@ -159,6 +159,7 @@ render product =
         , customNewPurchase: Just NewPurchase.render
         , orderSource: PrenumereraSource -- TODO: find out if there is a more suitable value for this
         , subscriptionExists: anotherAccount
+        , askAccountAlways: false
         }
 
     imgLink href alt src =

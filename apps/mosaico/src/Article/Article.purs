@@ -295,6 +295,7 @@ render { props, state, setState } =
         , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
         , orderSource: PaywallSource
+        , askAccountAlways: false
         }
       where
         hblPremium =
