@@ -55,6 +55,8 @@ foreign import appendHeadImpl :: EffectFn2 String String String
 appendHead :: String -> String -> Effect String
 appendHead = runEffectFn2 appendHeadImpl
 
+foreign import serverPort :: Int
+
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
   encodeResponse (Response res) = do
@@ -125,7 +127,7 @@ main = do
         , notFound: notFound Nothing
         }
       guards = { credentials: getCredentials }
-  Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+  Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = serverPort }) spec { handlers, guards }
 
 getDraftArticle
   :: Env
