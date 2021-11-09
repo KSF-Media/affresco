@@ -7,8 +7,8 @@ let Actions = ./workflows.dhall
 let apps = ./app-servers.dhall
 
 let Dispatch =
-      { Type = { url : Optional Text, service : Optional Text }
-      , default = { url = None Text, service = None Text }
+      { Type = { url : Optional Text, service : Optional Text}
+      , default = { url = None Text, service = None Text}
       }
 
 let mkDispatch =
@@ -28,13 +28,13 @@ let mkDispatchYaml =
                   app.domains
               # [ Dispatch::{
                   , service = Some app.id
-                  , url = Some "${app.id}.app.ksfmedia.fi"
+                  , url = Some "${app.id}.app.ksfmedia.fi/*"
                   }
                 ]
           , Staging =
             [ Dispatch::{
               , service = Some app.id
-              , url = Some "${app.id}.app-staging.ksfmedia.fi"
+              , url = Some "${app.id}.app-staging.ksfmedia.fi/*"
               }
             ]
           }
