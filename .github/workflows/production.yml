@@ -270,7 +270,7 @@ jobs:
           destination: ksf-frontends/prenumerera
           parent: 'false'
           path: build/prenumerera
-  deploy-mosaico-sever:
+  deploy-mosaico-server:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"

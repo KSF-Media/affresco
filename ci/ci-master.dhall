@@ -87,7 +87,7 @@ in  { name = "production"
               , steps = steps-app-article
               , needs = "check-ci"
               }
-            , deploy-mosaico-sever =
+            , deploy-mosaico-server =
               { runs-on = "ubuntu-latest"
               , container
               , steps = steps-mosaico
