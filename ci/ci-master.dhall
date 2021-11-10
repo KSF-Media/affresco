@@ -30,12 +30,13 @@ let steps-app-article =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
       # [ Actions.mkAppEngineStep
-            Actions.Env.Staging
+            Actions.Env.Production
             promote
             AE.servers.app-article-server
         ]
+      # [ Actions.copyAppYamlForStaging AE.servers.app-article-server ]
       # [ Actions.mkAppEngineStep
-            Actions.Env.Production
+            Actions.Env.Staging
             promote
             AE.servers.app-article-server
         ]
@@ -47,12 +48,13 @@ let steps-app-article =
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
-        ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Production
             promote
             AE.servers.mosaico
+        ]
+      # [ Actions.copyAppYamlForStaging AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
         ]
       # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
         ]
