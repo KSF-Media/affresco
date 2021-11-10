@@ -7,10 +7,35 @@ Note: When adding a new server please also update the list of all servers
 TODO: Figure out a way to generate all from servers.
 
 -}
-let Actions = ./workflows.dhall
+let Prelude = ./Prelude.dhall
+
+let Map = Prelude.Map.Type
+
+let AppServer =
+      { Type =
+          { id : Text
+          , buildDir : Text
+          , deployDir : Text
+          , name : Text
+          , runtime : Text
+          , entrypoint : Text
+          , env : Map Text Text
+          , previewUrl : Text
+          , lockfile : Optional Text
+          , caches : Optional Text
+          , domains : List Text
+          }
+      , default =
+        { env = [] : Map Text Text
+        , previewUrl = ""
+        , lockfile = None Text
+        , caches = None Text
+        , domains = [] : List Text
+        }
+      }
 
 let servers =
-      { app-article-server = Actions.AppServer::{
+      { app-article-server = AppServer::{
         , id = "app-article-server"
         , name = "App article server"
         , buildDir = "app-article-server"
@@ -19,7 +44,7 @@ let servers =
         , runtime = "nodejs12"
         , entrypoint = "node dist/server"
         }
-      , mosaico = Actions.AppServer::{
+      , mosaico = AppServer::{
         , id = "mosaico-server"
         , name = "Mosaico server"
         , buildDir = "mosaico"
@@ -36,4 +61,4 @@ let servers =
 
 let all = [ servers.app-article-server, servers.mosaico ]
 
-in  { servers, all }
+in  { servers, all, AppServer }

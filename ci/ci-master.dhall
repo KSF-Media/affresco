@@ -7,7 +7,11 @@ let Prelude = ./Prelude.dhall
 
 let Actions = ./workflows.dhall
 
-let apps = ./apps.dhall
+let A = ./apps.dhall
+
+let apps = A.apps
+
+let App = A.App
 
 let AE = ./app-servers.dhall
 
@@ -15,8 +19,7 @@ let container = ./container.dhall
 
 let promote = "true"
 
-let apps-to-cache =
-      Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
+let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
 

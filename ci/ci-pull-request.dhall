@@ -7,18 +7,21 @@ let Prelude = ./Prelude.dhall
 
 let Actions = ./workflows.dhall
 
-let apps = ./apps.dhall
+let A = ./apps.dhall
 
 let AE = ./app-servers.dhall
 
-let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
-
 let container = ./container.dhall
+
+let App = A.App
+
+let apps = A.apps
+
+let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
 
 let promote = "false"
 
-let apps-to-cache =
-      Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
+let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
 
