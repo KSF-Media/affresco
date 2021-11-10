@@ -49,6 +49,10 @@ isDraftArticle :: FullArticle -> Boolean
 isDraftArticle (DraftArticle _) = true
 isDraftArticle _ = false
 
+isErrorArticle :: FullArticle -> Boolean
+isErrorArticle (ErrorArticle _) = true
+isErrorArticle _ = false
+
 notFoundArticle :: FullArticle
 notFoundArticle = ErrorArticle
   { title: "Hoppsan! Sidan eller artikeln hittades inte"

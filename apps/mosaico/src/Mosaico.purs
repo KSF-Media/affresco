@@ -105,11 +105,11 @@ mosaicoComponent initialValues props = React.do
       Routes.ArticlePage _articleId -> pure unit
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
-      Routes.StaticPage page 
+      Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
         -> pure unit
-        | otherwise -> 
+        | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
             liftEffect $ setState _  { staticPage = Just staticPage }
@@ -222,15 +222,15 @@ render setState state router =
                                     router.pushState (write {}) $ "/artikel/" <> article.uuid
                                 }
 
-       Routes.NotFoundPage _ -> mosaicoDefaultLayout $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+       Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
        Routes.MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
        Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
        Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
          Nothing -> DOM.text "laddar"
-         Just (StaticPageResponse page)  -> 
+         Just (StaticPageResponse page)  ->
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
-         Just StaticPageNotFound -> 
+         Just StaticPageNotFound ->
            renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
          Just StaticPageOtherError -> Error.somethingWentWrong
   where
