@@ -9,7 +9,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -102,6 +102,12 @@ spec ::
                 { response :: TextHtml
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , scoredList ::
+              GET "/aktuell/<category>"
+                { response :: TextHtml
+                , params :: { category :: String }
+                , guards :: Guards ("credentials" : Nil)
+                }
          , staticPage ::
               GET "/sida/<pageName>"
                 { response :: ResponseBody
@@ -124,6 +130,7 @@ main = do
       handlers =
         { getDraftArticle: getDraftArticle env
         , getArticle: getArticle env
+        , scoredList: scoredList env
         , assets
         , tagList: tagList env
         , frontpage: frontpage env
@@ -204,6 +211,35 @@ renderArticle env@{ htmlTemplate } uuid article mostReadArticles = do
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/client" path
+
+scoredList :: Env -> { guards :: { credentials :: Maybe UserAuth }, params :: { category :: String } } -> Aff TextHtml
+scoredList { htmlTemplate } { params: { category } } = do
+  articles <- Lettera.getScoredList 0 20 category 1 HBL
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  mosaico <- liftEffect MosaicoServer.app
+  frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  let mosaicoString =
+        DOM.renderToString
+        $ mosaico
+          { mainContent:
+              ScoredListContent
+              $ frontpageComponent
+                  { frontpageArticles: articles
+                  , onArticleClick: const $ pure unit
+                  , onTagClick: const $ pure unit
+                  }
+          , mostReadArticles
+          }
+  html <- liftEffect do
+            let windowVars =
+                  "<script>\
+                     \window.scoredListArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.scoredListCategory=\"" <> category <> "\";\
+                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                  \</script>"
+            appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
+  pure $ TextHtml html
+
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 frontpage { htmlTemplate } _ = do
