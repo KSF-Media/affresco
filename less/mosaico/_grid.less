@@ -3,7 +3,7 @@
   margin: 0 auto;
   min-height: 100%;
   max-width: calc(100% - @page-margin);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr); //minmax used to prevent grid blowout on static pages
   grid-row-gap: 8px;
   grid-template-areas:
     "head"
@@ -33,11 +33,6 @@
 }
 
 .mosaico--article-list {
-  grid-area: main;
-}
-
-.mosaico--static-page {
-  max-width: 100%;
   grid-area: main;
 }
 

@@ -1,39 +1,16 @@
+@import (reference) "../../ksf-colors";
+
 .ksf-faq {
-  .accordion {
-    &__single {
-      &__hidden {
-        display: none; // this will never be shown
-        &:checked {
-          & ~ .accordion__single__answer {
-            max-height: 400px;
-            opacity: 1;
-            transform: translate(0, 0);
-            margin-top: 14px;
-          }
-          & ~ .accordion__single__question:after {
-            content: url(../images/chevron.svg);
-            transform: rotate(180deg);
-          }
-        }
-      }
-      &__answer {
-        margin-top: 0;
-        max-height: 0;
-        opacity: 0;
-        transform: translate(0, 50%);
-        transition: all .4s ease;
-        position: relative;
-      }
-      &__question {
-        text-transform: uppercase;
-        font-weight: normal;
-        &:after {
-          display: inline-block;
-          margin-left: 10px;
-          content: url(../images/chevron.svg);
-        }
-      }
-    }
+  h1 {
+    align-self: center;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  iframe[src*=youtube] {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
   }
 
 }
