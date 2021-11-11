@@ -71,6 +71,7 @@ import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
+import Data.String as String
 import Data.Time.Duration (Seconds(..))
 import Data.UUID (UUID)
 import Data.UUID as UUID
@@ -100,7 +101,7 @@ import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -732,7 +733,10 @@ callBottega f = do
       | Just (errData :: Bottega.InsufficientAccount) <- Api.Error.errorData err ->
           pure $ Left BottegaInsufficientAccount
       | otherwise ->
-          pure $ Left (BottegaUnexpectedError $ Error.message err)
+          let msg = Error.message err
+          in pure $ Left if String.take 7 msg == "Timeout"
+                           then BottegaTimeout
+                           else BottegaUnexpectedError msg
 
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages

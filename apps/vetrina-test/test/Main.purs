@@ -126,22 +126,22 @@ buyWithExistingCustomer :: Test
 buyWithExistingCustomer page email password = do
   log $ "We have to create a new account first, we can just call to Persona, email: " <> email
   logShow =<< Persona.register
-    { firstName: "Testi"
-    , lastName: "Testinen"
-    , emailAddress: email
-    , password: password
-    , confirmPassword: password
-    , streetAddress: "Mannerheimintie 18"
-    , zipCode: "00100"
-    , city: "Helsinki"
-    , country: "FI"
-    , phone: "1234567890"
-    , legalConsents: [{
-        dateAccepted: "2020-09-22T12:58:17.691Z",
-        consentId: "legal_acceptance_v1",
-        screenName: "legalAcceptanceScreen"
+    (Persona.NewPaperUser
+     { firstName: "Testi"
+     , lastName: "Testinen"
+     , emailAddress: email
+     , password: password
+     , confirmPassword: password
+     , streetAddress: "Mannerheimintie 18"
+     , zipCode: "00100"
+     , city: "Helsinki"
+     , country: "FI"
+     , legalConsents: [{
+         dateAccepted: "2020-09-22T12:58:17.691Z",
+         consentId: "legal_acceptance_v1",
+         screenName: "legalAcceptanceScreen"
       }]
-    }
+     })
   log "Then we can fill in the email we just registered"
   fillEmail email page
   loginExistingUser password page

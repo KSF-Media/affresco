@@ -35,12 +35,14 @@ let AppServer =
           , previewUrl : Text
           , lockfile : Optional Text
           , caches : Optional Text
+          , domains : List Text
           }
       , default =
         { env = [] : Map Text Text
         , previewUrl = ""
         , lockfile = None Text
         , caches = None Text
+        , domains = [] : List Text
         }
       }
 
@@ -79,9 +81,7 @@ let setupSteps =
           , `with` = toMap
               { project_id =
                   merge
-                    { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                    , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                    }
+                    { Staging = "ksf-staging", Production = "ksf-production" }
                     env
               , service_account_key =
                   merge
@@ -143,6 +143,18 @@ let mkBuildServerStep =
             ''
         }
 
+let copyAppYamlForStaging =
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Copy app.yaml.dev to app.yaml"
+        , env = app.env
+        , shell = Some "bash"
+        , run = Some
+            ''
+            cp build/${app.deployDir}/app.dev.yaml build/${app.deployDir}/app.yaml
+            ''
+        }
+
 let mkUploadStep =
       \(env : Env) ->
       \(app : App.Type) ->
@@ -170,19 +182,23 @@ let mkUploadStep =
 
 let mkAppEngineStep =
       \(env : Env) ->
+      \(promote : Text) ->
       \(app : AppServer.Type) ->
         Step::{
-        , id = Some "deploy-${app.id}"
+        , id =
+            merge
+              { Staging = Some "deploy-${app.id}"
+              , Production = Some "deploy-${app.id}-production"
+              }
+              env
         , name = Some "Deploy ${app.name}"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = merge { Staging = "false", Production = "true" } env
+            , promote
             , project_id =
                 merge
-                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                  }
+                  { Staging = "ksf-staging", Production = "ksf-production" }
                   env
             , credentials =
                 merge
@@ -199,13 +215,10 @@ let deployDispatchYamlStep =
         , name = Some "Deploy AppEngine domain map"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
-            { working_directory = "build"
-            , deliverables = "dispatch.yaml"
+            { deliverables = "dispatch.yaml"
             , project_id =
                 merge
-                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                  }
+                  { Staging = "ksf-staging", Production = "ksf-production" }
                   env
             , credentials =
                 merge
@@ -237,13 +250,13 @@ let generateDispatchYamlStep =
             merge
               { Staging = Some
                   ''
-                    npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > dispatch.yaml
+                    cat dispatch.yaml
                   ''
               , Production = Some
                   ''
-                    npx 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Production" > ./dispatch.yaml
+                    cat dispatch.yaml
                   ''
               }
               env
@@ -266,7 +279,7 @@ let linkPreviewsStep =
 
                 let renderAELink =
                       \(app : AppServer.Type) ->
-                        "- [${app.name}](\${{ steps.deploy-${app.id}.outputs.url }}/${app.previewUrl})"
+                        "- [${app.name}](\${{ needs.deploy-${app.id}.outputs.preview }}/${app.previewUrl})"
 
                 in  ''
                     Deploy previews are ready :sunglasses:
@@ -303,7 +316,7 @@ let refreshCDNSteps =
           , name = Some "Install gcloud"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
-              { project_id = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+              { project_id = "ksf-production"
               , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
               , export_default_credentials = "true"
               }
@@ -330,7 +343,8 @@ let uploadSteps =
 
 let deployAppEngineSteps =
       \(env : Env) ->
-        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env)
+      \(promote : Text) ->
+        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
 
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 
@@ -368,4 +382,5 @@ in  { Step
     , hasLockfile
     , cleanAppEngineSteps
     , mkCleanAppEngineStep
+    , copyAppYamlForStaging
     }

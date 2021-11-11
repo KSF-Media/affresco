@@ -3,6 +3,8 @@ module Lettera.Models where
 import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
+import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
@@ -12,16 +14,18 @@ import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, un)
+import Data.Newtype (class Newtype, un, unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
+import Data.String as String
+import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
 import KSF.Helpers (dateTimeFormatter)
 import Record (modify)
-import Simple.JSON (class ReadForeign)
+import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 import Type.Prelude (Proxy(..))
 
@@ -45,6 +49,10 @@ isDraftArticle :: FullArticle -> Boolean
 isDraftArticle (DraftArticle _) = true
 isDraftArticle _ = false
 
+isErrorArticle :: FullArticle -> Boolean
+isErrorArticle (ErrorArticle _) = true
+isErrorArticle _ = false
+
 notFoundArticle :: FullArticle
 notFoundArticle = ErrorArticle
   { title: "Hoppsan! Sidan eller artikeln hittades inte"
@@ -57,6 +65,7 @@ notFoundArticle = ErrorArticle
   , premium: false
   , publishingTime: Nothing
   , updateTime: Nothing
+  , externalScripts: Nothing
   }
 
 newtype LocalDateTime = LocalDateTime DateTime
@@ -85,40 +94,62 @@ type ArticleStubCommon =
   , uuid      :: String
   , preamble  :: Maybe String
   , listImage :: Maybe Image
-  , tags      :: Array String
   , premium   :: Boolean
   )
 
 type JSArticleStub =
   { publishingTime :: String
+  , tags           :: Array String
   | ArticleStubCommon
   }
 
 type ArticleStub =
   { publishingTime :: Maybe LocalDateTime
+  , tags           :: Array Tag
   | ArticleStubCommon
   }
+
+-- For representing HTML string with "<script>" tags.
+-- This exists because we need to do some extra steps
+-- when we decode/encode the thing
+newtype ExternalScript = ExternalScript String
+derive instance newtypeExternalScript :: Newtype ExternalScript _
+
+instance readForeignExternalScript :: ReadForeign ExternalScript where
+  readImpl f = do
+    script <- readImpl f
+    pure $ ExternalScript $ String.replaceAll (Pattern "<\\/script>") (Replacement "</script>") script
+
+-- We need to be extra careful when writing <script> tags to the HTML template.
+-- Basically, we need an extra backslash before the closing tag, otherwise
+-- the DOM gets messed up.
+-- More info: https://stackoverflow.com/a/30231195
+instance encodeJsonExternalScript :: EncodeJson ExternalScript where
+  encodeJson (ExternalScript script) =
+    encodeJson $ String.replaceAll (Pattern "</script>") (Replacement "<\\/script>") script
 
 type ArticleCommon =
   ( title     :: String
   , body      :: Array BodyElementJS
   , mainImage :: Maybe Image
-  , tags      :: Array String
   , uuid      :: String
   , preamble  :: Maybe String
   , authors   :: Array Author
   , premium   :: Boolean
+  , externalScripts :: Maybe (Array ExternalScript)
   )
 
 type JSArticle =
   { publishingTime :: String
   , updateTime     :: Maybe String
+  , tags           :: Array String
   | ArticleCommon
   }
 
 type Article =
   { publishingTime :: Maybe LocalDateTime
   , updateTime     :: Maybe LocalDateTime
+  , tags           :: Array Tag
   | ArticleCommon
   }
 
@@ -127,6 +158,7 @@ type Article =
 type JSDraftArticle =
   { publishingTime :: Maybe String
   , updateTime     :: Maybe String
+  , tags           :: Array String
   | ArticleCommon
   }
 
@@ -148,10 +180,11 @@ articleToJson article =
     article
       { publishingTime = foldMap formatLocalDateTime article.publishingTime
       , updateTime     = foldMap formatLocalDateTime article.updateTime
+      , tags           = map unwrap article.tags
       }
 
 articleStubToJson :: ArticleStub -> Json
-articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
+articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "tags") (map unwrap) <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
 
 formatLocalDateTime :: LocalDateTime -> String
 formatLocalDateTime = format dateTimeFormatter <<< un LocalDateTime
@@ -178,11 +211,14 @@ parseArticleWithoutLocalizing =
   parseArticlePure
     \jsArticle -> jsArticle { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
                             , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+                            , tags           = map Tag jsArticle.tags
                             }
 
 parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
-  parseArticlePure (\jsStub -> jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime })
+  parseArticlePure (\jsStub -> jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime
+                                      , tags           = map Tag jsStub.tags
+                                      })
 
 parseArticlePure :: forall b a. ReadForeign b => (b -> a) -> Json -> (Either String a)
 parseArticlePure convertJSArticle jsonArticle =
@@ -203,22 +239,21 @@ parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
 
 fromJSArticleStub :: JSArticleStub -> Effect ArticleStub
-fromJSArticleStub jsStub@{ uuid, publishingTime } = do
+fromJSArticleStub jsStub@{ uuid, publishingTime, tags } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
-  pure jsStub { publishingTime = localPublishingTime }
+  pure jsStub { publishingTime = localPublishingTime, tags = map Tag tags }
 
 fromJSDraftArticle :: JSDraftArticle -> Effect Article
-fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime } = do
+fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags } = do
   localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime }
+  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags }
 
 fromJSArticle :: JSArticle -> Effect Article
-fromJSArticle jsArticle@{ uuid, publishingTime, updateTime } = do
+fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime }
-
+  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags }
 
 type BodyElementJS =
   { html     :: Maybe String
@@ -261,3 +296,46 @@ type DraftParams =
   , user        :: String
   , hash        :: String
   }
+
+data CategoryType
+  = Feed
+  | Webview
+  | Link
+
+instance categoryTypeDecodeJson :: DecodeJson CategoryType where
+  decodeJson json = do
+    categoryTypeString <- decodeJson json
+    case String.toLower categoryTypeString of
+      "feed"    -> Right Feed
+      "webview" -> Right Webview
+      "link"    -> Right Link
+      _         -> Left $ UnexpectedValue json
+
+newtype Category = Category
+  { id            :: String
+  , label         :: String
+  , type          :: CategoryType
+  , subCategories :: Array Category
+  , url           :: Maybe String
+  }
+
+instance categoryDecodeJson :: DecodeJson Category where
+  decodeJson json = do
+    categoryObj   <- decodeJson json
+    id            <- categoryObj .: "id"
+    label         <- categoryObj .: "label"
+    type_         <- categoryObj .: "type"
+    subCategories <- categoryObj .:? "subCategories" .!= mempty
+    url           <- categoryObj .:? "url"
+    pure $ Category { id, label, type: type_, subCategories, url }
+
+newtype Tag = Tag String
+
+uriComponentToTag :: String -> Tag
+uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "-") (String.Replacement " ")
+
+tagToURIComponent :: Tag -> String
+tagToURIComponent = String.toLower <<< String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
+
+derive instance eqTag :: Eq Tag
+derive instance newtypeTag :: Newtype Tag _

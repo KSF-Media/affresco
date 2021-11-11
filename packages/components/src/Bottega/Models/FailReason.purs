@@ -18,6 +18,8 @@ derive instance genericFailReason :: Generic FailReason _
 instance showFailReason :: Show FailReason where
   show = genericShow
 
+derive instance eqFailReason :: Eq FailReason
+
 parseFailReason :: String -> FailReason
 parseFailReason reason =
   case reason of

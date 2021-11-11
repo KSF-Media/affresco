@@ -13,6 +13,8 @@ let AE = ./app-servers.dhall
 
 let container = ./container.dhall
 
+let promote = "true"
+
 let apps-to-cache =
       Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
 
@@ -29,6 +31,13 @@ let steps-app-article =
       # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Production
+            promote
+            AE.servers.app-article-server
+        ]
+      # [ Actions.copyAppYamlForStaging AE.servers.app-article-server ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Staging
+            promote
             AE.servers.app-article-server
         ]
       # [ Actions.mkCleanAppEngineStep
@@ -39,9 +48,21 @@ let steps-app-article =
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Production AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Production
+            promote
+            AE.servers.mosaico
+        ]
+      # [ Actions.copyAppYamlForStaging AE.servers.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
+        ]
       # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
         ]
+
+let steps-dispatch =
+        Actions.setupSteps Actions.Env.Production
+      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
+      # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
@@ -62,17 +83,23 @@ in  { name = "production"
               , steps = steps-gs
               , needs = "check-ci"
               }
-            , deploy-app-article =
+            , deploy-app-article-server =
               { runs-on = "ubuntu-latest"
               , container
               , steps = steps-app-article
               , needs = "check-ci"
               }
-            , deploy-mosaico =
+            , deploy-mosaico-server =
               { runs-on = "ubuntu-latest"
               , container
               , steps = steps-mosaico
               , needs = "check-ci"
+              }
+            , deploy-dispatch-yaml =
+              { runs-on = "ubuntu-latest"
+              , container
+              , steps = steps-dispatch
+              , needs = [ "deploy-mosaico-server", "deploy-app-article-server" ]
               }
             }
         //  refreshCDNJobs

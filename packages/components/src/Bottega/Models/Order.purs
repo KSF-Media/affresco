@@ -38,6 +38,8 @@ derive instance genericOrderState :: Generic OrderState _
 instance showOrderState :: Show OrderState where
   show = genericShow
 
+derive instance eqOrderState :: Eq OrderState
+
 parseOrderState :: String -> Maybe String -> OrderState
 parseOrderState state maybeFailReason =
     case state of

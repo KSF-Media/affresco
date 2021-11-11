@@ -3,7 +3,7 @@ module KSF.User.Login where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (catchError, throwError)
+import Control.Monad.Error.Class (throwError)
 import Data.Array as Array
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
@@ -23,14 +23,12 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField as InputField
 import KSF.Registration.Component as Registration
 import KSF.Tracking as Tracking
 import KSF.User (User, UserError(..))
 import KSF.User as User
-import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
 import KSF.ValidatableForm as Form
 import React.Basic (JSX)
@@ -580,7 +578,8 @@ loginButton text =
 buySubscription :: JSX
 buySubscription =
   DOM.div
-    { children:
+    { id: "login--buy-subscription"
+    , children:
         [ DOM.text "Är du inte prenumerant? "
         , DOM.a
             { className: "login--important"

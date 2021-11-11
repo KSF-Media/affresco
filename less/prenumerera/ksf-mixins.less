@@ -1,0 +1,297 @@
+.transition-properties(...){
+  -webkit-transition: @arguments;
+  -moz-transition: @arguments;
+  -o-transition: @arguments;
+  transition: @arguments;
+}
+.rotate-properties(...){
+  -ms-transform: rotate(@arguments); /* IE 9 */
+  -webkit-transform: rotate(@arguments); /* Chrome, Safari, Opera */
+  transform: rotate(@arguments);
+}
+.font-size(@smsize: 15, @lgsize: 16) {
+  font-size: @smsize*1px;
+  @media (min-width: @screen-sm-min) {
+    font-size: @lgsize*1px;
+  }
+}
+
+.appearance-properties (...) {
+  -webkit-appearance: @arguments;
+  -moz-appearance:    @arguments;
+  appearance:         @arguments;
+}
+
+.add-ajax-loader(@size: 50px) {
+  .ajax-loader {
+    width: @size;
+    height: @size;
+    margin: 20px auto;
+    background-image: url('@{path-icons}/loader-gif.gif');
+    background-repeat: no-repeat;
+    background-size: @size @size;
+  };
+}
+
+/** Create a balloon of the element with this mixin*/
+.balloon(@size: 50px, @bgColor: #1bb093, @color:inherit) {
+  @arrowSize: 10px;
+
+  position: relative;
+  background-color: @bgColor;
+
+  width: @size;
+  height: @size;
+  line-height: @size;
+
+  &:before {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0 - @arrowSize;
+    left: floor(@size / 2) - floor(@arrowSize / 2);
+    width: 0;
+    height: 0;
+
+    /** Create arrow */
+    border-top: @arrowSize solid transparent;
+    border-bottom: @arrowSize solid transparent;
+    border-left: @arrowSize solid @bgColor;
+  }
+}
+
+.changeBalloonColor(@bgColor: #1bb093, @color: inherit) {
+  background-color: @bgColor;
+
+  &:before {
+    border-left-color: @bgColor;
+  }
+}
+
+/** Create a custom styled select */
+.selectBox(@height: 40px, @textPadding: 15px, @arrowSize: 4px) {
+
+  .select-menu {
+    position: relative;
+    display: inline-block;
+    padding: 0 @height 0 0;
+    border: 1px solid @grey-warm-mediumlight;
+    border-radius: 0;
+    cursor: pointer;
+
+    &:after {
+      content: '';
+      display: block;
+      position: absolute;
+      bottom: floor(@height / 2) - @arrowSize;
+      right: floor(@height / 2) - @arrowSize;
+      width: 0;
+      height: 0;
+
+      /** Create arrow */
+      border-left: @arrowSize solid transparent;
+      border-right: @arrowSize solid transparent;
+      border-top: @arrowSize solid #000;
+    }
+
+    &.focus:after  {
+      /** Create arrow */
+      border-left: @arrowSize solid transparent;
+      border-right: @arrowSize solid transparent;
+      border-bottom: @arrowSize solid #000;
+      border-top: none;
+    }
+
+    select {
+      cursor: pointer;
+      padding: 0 @textPadding;
+      line-height: @height;
+      border: none;
+      border-right: 1px solid @grey-warm-mediumlight;
+      border-radius: 0;
+      box-shadow: none;
+      background-color: transparent;
+      background-image: none;
+
+      .appearance-properties(none);
+
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+}
+
+/** Create a custom styled sort select */
+.sortSelectBox(@font-size: 14px, @height:20px) {
+  @arrow-width: ceil(@font-size / 2) + 1;
+  @arrow-height: floor(@font-size / 2);
+
+  position: relative;
+  display: inline-block;
+  padding: 0 (@arrow-width * 2) 0 0;
+  line-height: @height;
+  font-size: @font-size;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+
+  &:after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: floor(@height - @font-size) - 1;
+    right: 0;
+    width: 0;
+    height: 0;
+
+    /** Create arrow */
+    border-left: @arrow-width solid transparent;
+    border-right: @arrow-width solid transparent;
+    border-top: @arrow-height solid @ksf-article-comments-color-primary;
+  }
+
+  &.focus:after  {
+    /** Create arrow when select is focused */
+    border-left: @arrow-width solid transparent;
+    border-right: @arrow-width solid transparent;
+    border-bottom: @arrow-height solid @ksf-article-comments-color-primary;
+    border-top: none;
+  }
+
+  select {
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: inherit;
+    font-weight: 600;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background-color: transparent;
+    background-image: none;
+
+    .appearance-properties(none);
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.makeKSFMediaObject(@objectWidth: 50px, @objectPadding: 15px) {
+
+  .media {
+    display: table;
+    width: 100%;
+  }
+
+  .media,
+  .media-body {
+    zoom: 1;
+  }
+
+  .media-body {
+    //width: 10000px;
+  }
+
+  .media-object {
+    display: block;
+    max-width: 100%;
+
+    // Fix collapse in webkit from max-width: 100% and display: table-cell.
+    &.img-thumbnail {
+      max-width: none;
+    }
+  }
+
+  .media-right,
+  .media > .pull-right {
+    padding-left: @objectPadding;
+    width: @objectWidth + @objectPadding;
+  }
+
+  .media-left,
+  .media > .pull-left {
+    padding-right: @objectPadding;
+    width: @objectWidth + @objectPadding;
+  }
+
+  .media-left,
+  .media-right,
+  .media-body {
+    display: table-cell;
+    vertical-align: top;
+  }
+
+  .media-middle {
+    vertical-align: middle;
+  }
+
+  .media-bottom {
+    vertical-align: bottom;
+  }
+
+  // Reset margins on headings for tighter default spacing
+  .media-heading {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+
+}
+
+.makeKSFMediaList(@dividerMargin: 25px, @dividerColor:#eee) {
+
+  // Media list variation
+  .media-list {
+    padding-left: 0;
+    list-style: none;
+
+    li.media {
+      margin-top: @dividerMargin;
+      border-top: 1px solid @dividerColor;
+      padding: @dividerMargin 0 0;
+    }
+  }
+}
+
+
+.isFetchMoreButton(@width: 250px, @btnColor: @accept, @color: #fff) {
+  display: block;
+  text-align: center;
+  margin: 15px auto;
+  color: @color;
+  background-color: @btnColor;
+  border: none;
+  padding: 10px 15px;
+  width: @width;
+  border-radius: 5px;
+}
+
+.vertical-gradient(@startColor, @endColor) {
+  background-color: @startColor;
+  background: -webkit-gradient(linear, left top, left bottom, from(@startColor), to(@endColor));
+  background: -webkit-linear-gradient(top, @startColor, @endColor);
+  background: -moz-linear-gradient(top, @startColor, @endColor);
+  background: -ms-linear-gradient(top, @startColor, @endColor);
+  background: -o-linear-gradient(top, @startColor, @endColor);
+  background: linear-gradient(top, @startColor, @endColor);
+}
+
+.vertical-gradient-three(@startColor, @midColor, @endColor) {
+  background-color: @startColor;
+  background: -webkit-gradient(linear, left top, left bottom, from(@startColor), to(@endColor));
+  background: -webkit-linear-gradient(top, @startColor, @midColor, @endColor);
+  background: -moz-linear-gradient(top, @startColor, @midColor, @endColor);
+  background: -ms-linear-gradient(top, @startColor, @midColor, @endColor);
+  background: -o-linear-gradient(top, @startColor, @midColor, @endColor);
+  background: linear-gradient(top, @startColor, @midColor, @endColor);
+}
+
+.touch-callout(@value) {
+  -webkit-touch-callout: @value; // iOS Safari
+  -webkit-user-select: @value;   // Chrome/Safari/Opera
+  -khtml-user-select: @value;    // Konqueror
+  -moz-user-select: @value;      // Firefox
+  -ms-user-select: @value;       // Internet Explorer/Edge
+  user-select: @value;
+}

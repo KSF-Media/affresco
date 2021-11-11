@@ -1,0 +1,112 @@
+.ksf-block{
+    background: #fff;
+    padding-top: 50px;
+    padding-bottom: 90px;
+    margin-bottom: 30px;
+    h3{
+        font-family: 'Duplex Sans Web';
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        word-spacing: 5px;
+        margin-top: 0;
+        color: @grey-mediumdark;
+    }
+    >h2, >h3{
+        text-align: center;
+    }
+    &.last{
+        padding-bottom: 0;
+    }
+}
+.narrow{
+  padding-left: 30px;
+  padding-right: 30px;
+}
+@media screen and (max-width: @screen-xs-max){
+    .ksf-block{
+        margin-left: -15px;
+        margin-right: -15px;
+    }
+}
+@media screen and (min-width: @screen-md-min){
+      &.narrow{
+        padding-left: 120px;
+        padding-right: 120px;
+      }
+}
+
+.ksf-block-heroproducts,
+.ksf-block-productmatrix{
+    min-height: 1000px;
+    background: @grey-light;
+    .ksf-block{
+        background: transparent;
+    }
+}
+
+.hero-text {
+    margin-bottom: 1em;
+    line-height: 2.2rem;
+    span {
+        border-bottom: 3px solid @hbl-orange;
+        body.öny &{
+            border-color: @on-blue;
+        }
+        body.vn &{
+            border-color: @vn-red;
+        }
+        body.ht &{
+            border-color: @ht-yellow;
+        }
+        body.ls &{
+            border-color: @ls-blue;
+        }
+    }
+}
+
+.ksf-block-hbl365{
+  background-color: @hbl-orange;
+  .ksf-block{
+    background-color: transparent;
+    background-image: url('https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/ipad-transparent.png');
+    background-size: 40%;
+    background-position: top left;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    margin-bottom: 0;
+    .hbl365-form{
+      padding: 90px 30px 90px 140px;
+      /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#f07e26+0,f07e26+100&0+0,1+20 */
+      background: -moz-linear-gradient(left, rgba(240,126,38,0) 0%, rgba(240,126,38,1) 20%, rgba(240,126,38,1) 100%); /* FF3.6-15 */
+      background: -webkit-linear-gradient(left, rgba(240,126,38,0) 0%,rgba(240,126,38,1) 20%,rgba(240,126,38,1) 100%); /* Chrome10-25,Safari5.1-6 */
+      background: linear-gradient(to right, rgba(240,126,38,0) 0%,rgba(240,126,38,1) 20%,rgba(240,126,38,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00f07e26', endColorstr='#f07e26',GradientType=1 ); /* IE6-9 */
+
+      float: right;
+      color: #fff;
+      .cta-text{
+        font-size: 2rem;
+      }
+      p.enter-your-email-text{
+        color: #fff;
+        font-size: 2rem;
+      }
+      form{
+        input{
+          color: @grey-medium;
+          font-weight: bold;
+          padding: 5px 5px 6px 5px;
+          border: 0;
+        }
+      }
+      p.already-registered-text{
+        margin-top: 15px;
+        color: #fff;
+        font-size: 1rem;
+      }
+    }
+  }
+}
