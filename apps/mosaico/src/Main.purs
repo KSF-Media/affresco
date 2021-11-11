@@ -190,7 +190,7 @@ renderArticle env uuid article mostReadArticles = do
                             }
 
       html <- liftEffect do
-        let windowVars  =
+        let windowVars =
               "<script>\
                 \window.article=" <> (encodeStringifyArticle $ fromFullArticle a) <> ";\
                 \window.isPreview=" <> (show $ isPreviewArticle a) <> ";\

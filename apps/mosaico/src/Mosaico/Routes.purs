@@ -7,6 +7,7 @@ import Data.List (List(..))
 import Data.Semiring.Free (free)
 import Data.Set as Set
 import Data.String (toLower)
+import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Category(..))
@@ -32,7 +33,7 @@ routes categories = root *> oneOf
   , StaticPage <$> (lit "sida" *> str)
   , Frontpage <$ end
   , MenuPage <$ lit "meny"
-  , CategoryPage <$> categoryRoute
+  , CategoryPage <<< toLower <$> categoryRoute
   , NotFoundPage <$> str
   ]
   where

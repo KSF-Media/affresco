@@ -2,7 +2,8 @@ module Mosaico.Header where
 
 import Prelude
 
-import Data.Array (cons)
+import Data.Array (cons, take)
+import Data.String as String
 import Data.Either (Either(..))
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
@@ -96,11 +97,10 @@ render { state: { menuVisible, menuComponent }, props } =
                 if menuVisible then
                   [ searchButton ]
                 else
-                  DOM.a { onClick: handler_ $ props.router.pushState (write {}) $ "/ayooo", children: [ DOM.text "aaaa" ]} `cons`
                   map ((\c -> DOM.a {
                            onClick: handler_ $ do
                               props.onCategoryClick c.id
-                              props.router.pushState (write {}) $ "/" <> c.id, children: [ DOM.text c.label ]}) <<< unwrap) props.categoryStructure
+                              props.router.pushState (write {}) $ "/" <> c.id, children: [ DOM.text $ String.toUpper c.label ]}) <<< unwrap) (take 5 props.categoryStructure)
 
                   -- [ DOM.a_ [ DOM.text "OPINION" ]
                   -- , DOM.a_ [ DOM.text "KULTUR" ]
