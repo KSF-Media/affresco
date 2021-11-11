@@ -10,7 +10,7 @@ import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
-import Data.Newtype (unwrap)
+import Data.Newtype (un, unwrap)
 import Data.Set as Set
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
@@ -24,7 +24,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle, isErrorArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
@@ -61,7 +61,7 @@ type State =
   , article :: Maybe FullArticle
   , title :: String
   , mainImage :: Maybe Image
-  , tags :: Array String
+  , tags :: Array Tag
   , preamble :: Maybe String
   , premium :: Boolean
   }
@@ -187,7 +187,7 @@ render { props, state, setState } =
                           , children:
                               [ DOM.div
                                   { className: "mosaico-article__tag color-" <> props.brand
-                                  , children: [ DOM.text $ fromMaybe "" (head tags) ]
+                                  , children: [ DOM.text $ maybe "" (un Tag) (head tags) ]
                                   }
                               , guard state.premium $ DOM.div
                                   { className: "premium-badge background-" <> props.brand
