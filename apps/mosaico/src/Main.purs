@@ -6,10 +6,12 @@ import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
 import Data.Either (Either(..), either)
-import Data.Foldable (foldMap)
+import Data.Foldable (foldMap, foldM)
+import Data.HashMap as HashMap
 import Data.List (List)
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
+import Data.String (Pattern(..), Replacement(..), replace)
 import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -66,7 +68,9 @@ instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
         }
 
 type Env =
-  { htmlTemplate :: String }
+  { htmlTemplate :: String
+  , staticPages :: HashMap.HashMap String String
+  }
 
 indexHtmlFileLocation :: String
 indexHtmlFileLocation = "./dist/client/index.html"
@@ -119,8 +123,15 @@ spec = Spec
 
 main :: Effect Unit
 main = do
+  staticPages  <- do
+    staticPageNames <- FS.readdir "./static/"
+    let makeMap acc staticPageFileName = do
+          pageContent <- FS.readTextFile UTF8 $ "./static/" <> staticPageFileName
+          let staticPageName = replace (Pattern ".html") (Replacement "") staticPageFileName
+          pure $ HashMap.insert staticPageName pageContent acc
+    foldM makeMap HashMap.empty staticPageNames
   htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
-  let env = { htmlTemplate }
+  let env = { htmlTemplate, staticPages }
       handlers =
         { getDraftArticle: getDraftArticle env
         , getArticle: getArticle env
@@ -261,12 +272,12 @@ tagList { htmlTemplate } { params: { tag } } = do
             appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
   pure $ TextHtml html
 
-staticPage
-  :: Env
-  -> { params :: { pageName :: String }}
-  -> Aff (Response ResponseBody)
+staticPage :: Env -> { params :: { pageName :: String }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName } } = do
-  staticPageResponse <- fetchStaticPage pageName
+  let staticPageResponse =
+        case HashMap.lookup pageName env.staticPages of
+          Just staticPageContent -> StaticPageResponse { pageName, pageContent: staticPageContent }
+          Nothing -> StaticPageNotFound
   mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
   case staticPageResponse of
     StaticPageNotFound ->
