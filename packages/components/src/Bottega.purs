@@ -64,11 +64,14 @@ type InsufficientAccount = ServerError
 -- TODO: Add more errors!
 data BottegaError
   = BottegaInsufficientAccount -- ^ Cannot create order due to missing account data
+  | BottegaTimeout
   | BottegaUnexpectedError String
 
 derive instance genericBottegaError :: Generic BottegaError _
 instance showBottegaError :: Show BottegaError where
   show = genericShow
+
+derive instance eqBottegaError :: Eq BottegaError
 
 bottegaErrorMessage :: BottegaError -> String
 bottegaErrorMessage (BottegaUnexpectedError errMsg) = errMsg

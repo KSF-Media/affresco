@@ -102,12 +102,12 @@ var hblPremium = {
     },
   ],
   campaign: {
-    length: 3,
-    priceEur: 19.9,
+    length: 1,
+    priceEur: 1,
     lengthUnit: "Month",
-    no: 4033,
-    name: "VÅR PRE 2020",
-    id: "VÅREN 2020",
+    no: 4071,
+    name: "FÖRSTA MÅNADEN FÖR 1 EURO",
+    id: "1MÅN1 EURO",
   },
 };
 

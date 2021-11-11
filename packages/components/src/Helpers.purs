@@ -80,5 +80,8 @@ formatEur :: Int -> String
 formatEur amountCent =
   let eurString = show $ toNumber amountCent / 100.0
   in case String.split (Pattern ".") eurString of
-    [euros, cents] -> euros <> "." <> (String.take 2 $ cents <> "0")
+    [euros, cents] -> euros <> "," <> (String.take 2 $ cents <> "0")
     _              -> eurString
+
+paperInvoiceCents :: Int
+paperInvoiceCents = 500

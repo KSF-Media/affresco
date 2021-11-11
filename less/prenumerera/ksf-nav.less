@@ -1,0 +1,174 @@
+.ksf-navbar{
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background-color: white;
+    transition: padding-top .3s, padding-bottom .3s;
+    border: none;
+    box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    border-radius: 0;
+    & > .container {
+        position: relative;
+        .navbar-brand{
+            margin-left: 0;
+            padding: 6px;
+            padding-left: 15px;
+            @media(min-width: @screen-sm-min){
+                padding-left: 0;
+            }
+            img.logo, svg.logo{
+                height: 38px;
+                display: none;
+                body.hbl &.hbl{
+                  display: inline-block;
+                }
+                body.vn &.vn{
+                  display: inline-block;
+                }
+                body.öny &.öny{
+                  display: inline-block;
+                }
+                body.junior &.junior{
+                  display: inline-block;
+                }
+                body.ls &.ls{
+                  display: inline-block;
+                }
+                &.src{
+                  display: inline-block;
+                }
+            }
+            // The logo should be centered only on mobile
+            @media(max-width: @screen-xs-max) {
+                &.center {
+                    float: none;
+                    position: relative;
+                    left: 1.6em; // align to the center counteracting the hamburger menu button size
+                    .logo {
+                        margin: 0 auto;
+                    }
+                }
+            }
+        }
+        .navbar-toggle {
+            // To prevent the brand link to hide the button
+            z-index: 1100;
+        }
+    }
+    &.condensed{
+        padding-top: 2px;
+        padding-bottom: 2px;
+    }
+
+    #support {
+        right: 15px;
+        float: right;
+        background-image: url('@{path-icons}/phone-symbol.svg');
+        background-size: 36px 36px;
+        background-repeat: no-repeat;
+        background-position: left center;
+        padding-top: 10px;
+        padding-left: 48px;
+        .support-title, .support-text {
+            font-size: 13px;
+        }
+    }
+    .navbar-nav {
+        overflow: hidden;
+        & > li > .navbar-link {
+            background: #fff;
+            color: @grey-warm-mid;
+            font-weight: 400;
+            margin-right: -15px;
+            margin-left: 15px;
+            position: relative;
+            img {
+                height: 24px;
+                vertical-align: bottom;
+                margin-right: 5px;
+            }
+            &.navbar-select {
+                padding-top: 9px;
+                padding-left: 15px;
+                // So that in mobile we get the select to span nicely the whole viewport with some margin
+
+                select {
+                    width: 100%;
+                    max-width: 100%;
+                    font-weight: 400;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    appearance: none;
+                    padding: 8px 36px 8px 8px;
+                    background: url('@{path-icons}/icon-triangle-down.svg') no-repeat @nude;
+                    background-position: right 24px center;
+                    background-size: 8px;
+                    border: none;
+                    border-radius: 5px;
+                    @media(max-width: @screen-xs-max) {
+                        width: calc(~'100% - 50px');
+                    }
+                }
+            }
+        }
+    }
+    .navbar-nav > li {
+        a {
+            //padding-top: 5px;
+        }
+        .navbar-link {
+            margin-right: 0;
+        }
+    }
+}
+@media screen and (max-width: @screen-xs-max){
+    .nav-pills.nav-plain-text{
+        text-align: center;
+        li{
+            display: inline-block;
+            float: none;
+            &:nth-child(n+2)::before{
+              content: '';
+            }
+            &:first-child{
+              display: block;
+              float: none;
+              text-align: center;
+              .choose{
+                margin-bottom: 0;
+              }
+            }
+            a{
+              margin: 0 0 15px 0;
+            }
+            + li{
+              margin-left: 5px;
+              border: 0;
+            }
+        }
+    }
+}
+
+.brandexclusive{
+    display: none;
+    body.hbl &.hbl{
+      display: block;
+    }
+    body.vn &.vn{
+      display: block;
+    }
+    body.öny &.öny{
+      display: block;
+    }
+    body.junior &.junior{
+      display: block;
+    }
+    body.ls &.ls{
+      display: block;
+    }
+}
+

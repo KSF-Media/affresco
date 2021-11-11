@@ -1,0 +1,416 @@
+/* TODO where is this button style used? afaik it is only used for the följ-button --Manne */
+button{
+    border-radius: 14px;
+    display: inline-block;
+    .default-ui-font();
+    text-transform: uppercase;
+    border: solid 1px @grey-mediumlight;
+    color: @grey-mediumlight;
+    background: transparent none;
+}
+a, a:hover, a:active, a:focus {
+    outline: 0;
+    text-decoration: none;
+}
+
+.button-base() {
+	font-size: 16px;
+	line-height: 16px;
+	letter-spacing: 0.015em;
+	padding: 12px;
+	border-radius: 2px;
+	text-transform: none;
+}
+
+.btn-primary {
+    .btn-accent;
+}
+
+.btn-secondary {
+	.button-base();
+	background-color: @button-color-secondary;
+	border: solid 1px @button-color-secondary;
+	color: white !important;
+	&:hover {
+		background-color: lighten(@button-color-secondary, 5%);
+	}
+	&:active {
+		background-color: darken(@button-color-secondary, 5%);
+	}
+}
+
+.btn-tertiary {
+	.button-base();
+	color: @grey-medium !important;
+	border: solid 1px #aab2bd;
+	background-color: white !important;
+	padding: 11px;
+	&:hover {
+		border: solid 1px #989b9f;
+		color: #333333;
+		background-color: white;
+	}
+
+	&:active {
+		background-color: darken(white, 10%) !important;
+	}
+}
+
+.btn-accent {
+	.button-base();
+	color: white !important;
+	border: none;
+  border: solid 1px @primary-accent;
+	background-color: @primary-accent;
+	&:hover {
+		background-color: lighten(@primary-accent, 5%);
+	}
+	&:active {
+		background-color: darken(@primary-accent, 5%);
+	}
+	body.vn & {
+		background-color: @vn-red;
+    border-color: @vn-red;
+		&:hover {
+			background-color: lighten(@vn-red, 5%);
+		}
+		&:active {
+			background-color: darken(@vn-red, 5%);
+		}
+	}
+	body.on & {
+		background-color: @on-blue;
+    border-color: @on-blue;
+		&:hover {
+			background-color: lighten(@on-blue, 5%);
+		}
+		&:active {
+			background-color: darken(@on-blue, 5%);
+		}
+	}
+}
+
+.btn-cta {
+	.button-base();
+	color: white !important;
+	border: none;
+
+	background-color: @button-color-primary;
+	&:hover {
+		background-color: lighten(@button-color-primary, 5%);
+	}
+	&:active {
+		background-color: darken(@button-color-primary, 5%);
+	}
+
+}
+
+.btn-disabled {
+
+	.button-base();
+	background-color: @grey-mediumlight;
+	border: solid 1px @grey-mediumlight;
+	color: white !important;
+	&:hover {
+		background-color: @grey-mediumlight;
+	}
+	&:active {
+		background-color: @grey-mediumlight;
+	}
+}
+
+.txt-cancel{
+    text-align: center;
+}
+.modal-container() {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 11200;
+    background-color: white;
+    display: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+	opacity: 0;
+	transition: opacity 0.3s;
+
+	.ksf-modal-header {
+		text-align: center;
+		margin-bottom: 30px;
+	}
+
+	.ksf-modal-wrapper {
+		opacity: 0;
+		transform: scale(0.3);
+		transition: transform 0.3s, opacity 0.3s;
+		background-color: white;
+		position: relative;
+		max-width: 600px;
+		width: 100%;
+		margin: 0 auto;
+		padding: 20px 50px 30px;
+		@media (max-width: @screen-xs-max) {
+			height: 100%;
+			overflow: auto;
+			-webkit-overflow-scrolling: touch;
+			padding: 50px 15px 30px;
+		}
+
+		.ksf-modal-content {
+			transition: opacity 0.3s;
+			img.logo {
+				display: none;
+				@media (max-width: @screen-xs-max) {
+					display: inline-block;
+					margin-bottom: 20px;
+				}
+			}
+		}
+
+		div.closer {
+			display: block;
+			position: absolute;
+			right: -40px;
+			top: -40px;
+			width: 25px;
+			height: 25px;
+			cursor: pointer;
+			padding: 20px;
+			background-image: url('@{path-icons}/icon-close-lg-white.svg');
+			background-size: 25px;
+			background-position: center;
+			background-repeat: no-repeat;
+			@media (max-width: @screen-xs-max) {
+				top: 20px;
+				right: 10px;
+				background-image: url('@{path-icons}/icon-close-lg.svg');
+			}
+		}
+	}
+
+	&.open {
+		display: block;
+	}
+
+	&.visible {
+		opacity: 1;
+
+		.ksf-modal-wrapper {
+			transform: scale(1,1);
+			opacity: 1;
+		}
+	}
+
+	&.loading {
+		.ksf-modal-wrapper {
+			pointer-events: none;
+			background-image: url('@{path-icons}/loader-gif.gif');
+			background-size: 32px 32px;
+			background-position: center;
+			background-repeat: no-repeat;
+			.ksf-modal-content {
+				opacity: 0;
+				visibility: hidden;
+			}
+		}
+	}
+
+    @media (min-width: @screen-sm-min) {
+        &.open {
+            background-color: rgba(0,0,0,0.6);
+            .flexbox-center();
+        }
+    }
+}
+
+.modal-content() {
+	position: relative;
+	backround-color: white;
+	max-width: 100%;
+	padding: 10px 15px;
+}
+
+body.modal-open {
+	overflow: hidden;
+	@media (max-width: @screen-xs-max) {
+		#header-nav-menus  {
+			pointer-events: none;
+		}
+	}
+}
+
+.ksf-some-button-group {
+	display: none;
+}
+
+.ksf-some-button {
+	display: block;
+	height: 40px;
+	line-height: 40px;
+	background-repeat: no-repeat;
+	color: white;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	-ms-appearance: none;
+	appearance: none;
+	border: none;
+	box-shadow: none;
+	padding: 0 30px 0 60px;
+	border-radius: 4px;
+	text-transform: none;
+	font-family: "Open Sans", "Roboto", sans-serif;
+	font-weight: 600;
+	width: 30%;
+	margin-top: 15px;
+	margin-left:auto;
+	margin-right:auto;
+
+	&.facebook {
+		background-color: @color-facebook;
+		background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 33 33" width="25" height="25" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g><path fill="white" d="M 17.996,32L 12,32 L 12,16 l-4,0 l0-5.514 l 4-0.002l-0.006-3.248C 11.993,2.737, 13.213,0, 18.512,0l 4.412,0 l0,5.515 l-2.757,0 c-2.063,0-2.163,0.77-2.163,2.209l-0.008,2.76l 4.959,0 l-0.585,5.514L 18,16L 17.996,32z"></path></g></svg>') !important;
+		background-size: 20px;
+		background-position: 20px center;
+		&:hover {
+			background-color: darken(@color-facebook, 5%);
+		}
+		&:active {
+			background-color: darken(@color-facebook, 5%);
+		}
+	}
+
+	&.google {
+		background-color: @color-googleplus;
+		background-image: url('data:image/svg+xml;utf8,<svg focusable="false" class="svg-icon svg-google-plus" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 24 24" enable-background="new 0 0 24 24" xml:space="preserve"><path fill="white" d="M23 11h-2V9h-2v2h-2v2h2v2h2v-2h2M8 11v2.4h4c-.2 1-1.2 3-4 3-2.4 0-4.3-2-4.3-4.4S5.6 7.6 8 7.6c1.4 0 2.3.6 2.8 1.1l1.9-1.8C11.5 5.7 9.9 5 8 5c-3.9 0-7 3.1-7 7s3.1 7 7 7c4 0 6.7-2.8 6.7-6.8 0-.5 0-.8-.1-1.2H8z"></path></svg>') !important;
+		background-size: 24px 20px;
+		background-position: 20px center;
+		&:hover {
+			background-color: darken(@color-googleplus, 5%);
+		}
+		&:active {
+			background-color: darken(@color-googleplus, 5%);
+		}
+	}
+
+	&+.ksf-some-button {
+		@media(max-width: @screen-xs-max) {
+			margin-top: 15px;
+		}
+	}
+}
+@media(max-width: @screen-xs-max) {
+    .ksf-some-button {
+        min-width: 280px;
+    }
+}
+.ksf-textinput-error() {
+	border: solid 1px @primary-accent;
+	background-color: lighten(@primary-accent, 20%);
+}
+
+.focus-outline() {
+	&:focus {
+		border: solid 1px #00698e;
+		outline: solid 1px #80b4c7;
+		outline-offset: 0px;
+	}
+}
+
+@color-input-border: #aab2bd;
+
+.ksf-textinput() {
+	.default-ui-font(16px, 300);
+	line-height: 16px;
+	padding: 6px;
+	border: solid 1px @color-input-border;
+	color: #333;
+	appearance: none;
+	-webkit-appearance: none;
+	border-radius: 0;
+	.focus-outline();
+	&:disabled {
+		background-color: #e6e9ed;
+		border: solid 1px #e6e9ed;
+		color: #888888;
+	}
+
+	&.error {
+		.ksf-textinput-error();
+	}
+}
+
+
+.ksf-selectinput() {
+	.default-ui-font(16px, 300);
+	border: solid 1px @color-input-border;
+	padding: 6px;
+	border-radius: 0px;
+	background-color: white;
+	vertical-align: middle;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	background: url('@{path-icons}/icon-triangle-down.svg') no-repeat white;
+	background-position: right 10px center;
+	background-size: 8px;
+	.focus-outline();
+	/*target Internet Explorer 9 and Internet Explorer 10:*/
+	@media (~"screen and (min-width: 0\0)") {
+	  & {
+	    background: none;
+	    padding: 5px;
+	  }
+	}
+}
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"]{
+  background: #fff;
+}
+
+.flexbox() {
+	display: -webkit-box;
+	display: -moz-box;
+	display: -ms-flexbox;
+	display: -webkit-flex;
+	display: flex;
+}
+
+.flexbox-row() {
+	.flexbox();
+	-webkit-justify-content: space-between;
+	-webkit-align-items: center;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.flexbox-center() {
+	.flexbox();
+	-webkit-justify-content: space-around;
+	-webkit-align-items: center;
+	justify-content: space-around;
+	align-items: center;
+}
+
+.flex(@values) {
+  -webkit-box-flex: @values;
+  -moz-box-flex:  @values;
+  -webkit-flex:  @values;
+  -ms-flex:  @values;
+  flex:  @values;
+}
+
+.order(@val) {
+  -webkit-box-ordinal-group: @val;
+  -moz-box-ordinal-group: @val;
+  -ms-flex-order: @val;
+  -webkit-order: @val;
+  order: @val;
+}
+
+.ksf-notice-message {
+    color: crimson;
+    padding: 10px;
+}

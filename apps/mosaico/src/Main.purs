@@ -2,24 +2,26 @@ module Main where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
-import Data.Argonaut.Encode.Class (encodeJson)
+import Data.Argonaut.Core as JSON
+import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn5, runEffectFn2, runEffectFn3, runEffectFn5)
+import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, DraftParams, FullArticle, articleStubToJson, articleToJson, fromFullArticle, isPreviewArticle, isDraftArticle, notFoundArticle)
+import Lettera.Models (ArticleStub, DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -38,6 +40,7 @@ import Payload.Server.Handlers (File)
 import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
+import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic (JSX)
 import React.Basic.DOM (div) as DOM
@@ -45,19 +48,11 @@ import React.Basic.DOM.Server (renderToString) as DOM
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
-appendMosaico htmlTemplate content = runEffectFn2 appendMosaicoImpl htmlTemplate content
+appendMosaico content htmlTemplate = runEffectFn2 appendMosaicoImpl content htmlTemplate
 
-foreign import writeArticleImpl :: EffectFn5 Json Boolean Json Boolean String String
-writeArticle :: Json -> Boolean -> Json -> Boolean -> String -> Effect String
-writeArticle = runEffectFn5 writeArticleImpl
-
-foreign import writeFrontpageImpl :: EffectFn3 Json Json String String
-writeFrontpage :: Json -> Json -> String -> Effect String
-writeFrontpage = runEffectFn3 writeFrontpageImpl
-
-foreign import writeStaticPageImpl :: EffectFn3 String String String String
-writeStaticPage :: String -> String -> String -> Effect String
-writeStaticPage = runEffectFn3 writeStaticPageImpl
+foreign import appendHeadImpl :: EffectFn2 String String String
+appendHead :: String -> String -> Effect String
+appendHead = runEffectFn2 appendHeadImpl
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -86,9 +81,9 @@ spec ::
                 , query :: DraftParams
                 }
          , getArticle ::
-              GET "/artikel/<uuid>"
+              GET "/artikel/<uuidOrSlug>"
                 { response :: ResponseBody
-                , params :: { uuid :: String }
+                , params :: { uuidOrSlug :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
          , assets ::
@@ -96,12 +91,18 @@ spec ::
                 { params :: { path :: List String }
                 , response :: File
                 }
+         , tagList ::
+              GET "/tagg/<tag>"
+                { response :: TextHtml
+                , params :: { tag :: String }
+                , guards :: Guards ("credentials" : Nil)
+                }
          , frontpage ::
               GET "/"
                 { response :: TextHtml
                 , guards :: Guards ("credentials" : Nil)
                 }
-         , staticPage :: 
+         , staticPage ::
               GET "/sida/<pageName>"
                 { response :: ResponseBody
                 , params :: { pageName :: String }
@@ -124,9 +125,10 @@ main = do
         { getDraftArticle: getDraftArticle env
         , getArticle: getArticle env
         , assets
+        , tagList: tagList env
         , frontpage: frontpage env
         , staticPage: staticPage env
-        , notFound: notFound Nothing
+        , notFound: notFound env Nothing
         }
       guards = { credentials: getCredentials }
   Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
@@ -141,12 +143,26 @@ getDraftArticle env { params: {aptomaId}, query } = do
 
 getArticle
   :: Env
-  -> { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } }
+  -> { params :: { uuidOrSlug :: String }, guards :: { credentials :: Maybe UserAuth } }
   -> Aff (Response ResponseBody)
-getArticle env r@{ params: { uuid } } = do
-  article <- Lettera.getArticle (fromMaybe UUID.emptyUUID $ UUID.parseUUID uuid) r.guards.credentials
-  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-  renderArticle env (Just uuid) article mostReadArticles
+getArticle env r@{ params: { uuidOrSlug } }
+  | Just uuid <- UUID.parseUUID uuidOrSlug = do
+      article <- Lettera.getArticle uuid r.guards.credentials
+      mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+      renderArticle env (Just uuidOrSlug) article mostReadArticles
+  | otherwise = do
+    article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials
+    case article of
+      Right a -> do
+        pure $ Response
+          { status: Status.found
+          , body: EmptyBody
+          , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> (_.uuid $ fromFullArticle a)]
+          }
+      Left _ -> do
+        mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+        let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+        notFound env maybeMostRead { params: {path: List.fromFoldable ["artikel", uuidOrSlug]} }
 
 renderArticle
   :: Env
@@ -154,7 +170,7 @@ renderArticle
   -> Either String FullArticle
   -> Array ArticleStub
   -> Aff (Response ResponseBody)
-renderArticle { htmlTemplate } uuid article mostReadArticles = do
+renderArticle env@{ htmlTemplate } uuid article mostReadArticles = do
   articleComponent <- liftEffect Article.articleComponent
   mosaico <- liftEffect MosaicoServer.app
   case article of
@@ -172,17 +188,19 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
           mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
 
       html <- liftEffect do
-        appendMosaico htmlTemplate mosaicoString
-          >>= writeArticle
-                (articleToJson $ fromFullArticle a)
-                (isPreviewArticle a)
-                (encodeJson $ map articleStubToJson mostReadArticles)
-                (isDraftArticle a)
+        let windowVars  =
+              "<script>\
+                \window.article=" <> (encodeStringifyArticle $ fromFullArticle a) <> ";\
+                \window.isPreview=" <> (show $ isPreviewArticle a) <> ";\
+                \window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                \window.isDraft=" <> (show $ isDraftArticle a) <> ";\
+              \</script>"
+        appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
 
       pure $ Response.ok $ StringBody html
     Left _ ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
+      in notFound env maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/client" path
@@ -201,14 +219,46 @@ frontpage { htmlTemplate } _ = do
               $ frontpageComponent
                   { frontpageArticles: articles
                   , onArticleClick: const $ pure unit
+                  , onTagClick: const $ pure unit
                   }
           , mostReadArticles
           }
-  html <- liftEffect $
-          appendMosaico htmlTemplate mosaicoString
-          >>= writeFrontpage
-            (encodeJson $ map articleStubToJson articles)
-            (encodeJson $ map articleStubToJson mostReadArticles)
+  html <- liftEffect do
+            let windowVars =
+                  "<script>\
+                     \window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                  \</script>"
+            appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
+  pure $ TextHtml html
+
+tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+tagList { htmlTemplate } { params: { tag } } = do
+  let tag' = uriComponentToTag tag
+  articles <- Lettera.getByTag 0 20 tag' HBL
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  mosaico <- liftEffect MosaicoServer.app
+  frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  let mosaicoString =
+        DOM.renderToString
+        $ mosaico
+          { mainContent:
+              TagListContent
+              $ frontpageComponent
+                  { frontpageArticles: articles
+                  , onArticleClick: const $ pure unit
+                  , onTagClick: const $ pure unit
+                  }
+          , mostReadArticles
+          }
+  html <- liftEffect do
+            let windowVars =
+                  "<script>\
+                     \window.tagListArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.tagListArticlesName=\"" <> tagToURIComponent tag' <> "\";\
+                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
+                  \</script>"
+            appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
   pure $ TextHtml html
 
 staticPage
@@ -221,20 +271,20 @@ staticPage env { params: { pageName } } = do
   case staticPageResponse of
     StaticPageNotFound ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
+      in notFound env maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
     p -> do
       mosaico <- liftEffect MosaicoServer.app
       let staticPageContent :: Either JSX String
-          staticPageContent =  
-            case p of 
+          staticPageContent =
+            case p of
               StaticPageResponse page -> Right page.pageContent
               StaticPageOtherError -> Left Error.somethingWentWrong
               StaticPageNotFound -> Left mempty
-      let staticPageJsx = 
-            case staticPageContent of 
-              Right pageContent -> 
+      let staticPageJsx =
+            case staticPageContent of
+              Right pageContent ->
                 DOM.div { className: "mosaico--static-page"
-                        , dangerouslySetInnerHTML: { __html: pageContent } 
+                        , dangerouslySetInnerHTML: { __html: pageContent }
                         }
               Left jsx -> jsx
       let mosaicoString =
@@ -244,14 +294,18 @@ staticPage env { params: { pageName } } = do
               , mostReadArticles
               }
       html <- liftEffect do
-        mosaicoTemplate <- appendMosaico env.htmlTemplate mosaicoString
-        writeStaticPage  pageName (either DOM.renderToString identity staticPageContent) mosaicoTemplate
+        let staticPageString = JSON.stringify $ JSON.fromString $ either DOM.renderToString identity staticPageContent
+            staticPageObj = Object.singleton "pageName" pageName
+                            # Object.insert "pageContent" staticPageString
+                            # encodeJson
+                            # JSON.stringify
+        appendMosaico mosaicoString env.htmlTemplate
+          >>= appendHead ("<script>window.staticPageContent=" <> staticPageObj <> ";</script>")
+
       pure $ Response.ok $ StringBody html
 
-notFound :: Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
-notFound mostReadList _ = do
-  htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
-  mostReadArticles <- maybe (Lettera.getMostRead 0 10 "" HBL true) pure mostReadList
+notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
+notFound { htmlTemplate } _ _ = do
   articleComponent <- liftEffect Article.articleComponent
   let articleJSX =
         articleComponent
@@ -265,10 +319,13 @@ notFound mostReadList _ = do
           }
 
   mosaico <- liftEffect MosaicoServer.app
-  let mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles }
-  html <- liftEffect $
-    appendMosaico htmlTemplate mosaicoString
-
+  let mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles: [] }
+  html <- liftEffect $ do
+    let windowVars  =
+              "<script>\
+                \window.article=" <> (encodeStringifyArticle $ fromFullArticle notFoundArticle) <> ";\
+              \</script>"
+    appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
   pure $ Response.notFound $ StringBody $ html
 
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)

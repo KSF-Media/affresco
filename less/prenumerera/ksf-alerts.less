@@ -1,0 +1,46 @@
+/* Alerts */
+
+div.alert{
+	background-color: white;
+	text-align: left;
+	font-size: 16px;
+	padding: 20px 20px 0px 20px;
+	margin: 30px auto 20px auto;
+	display: table;
+	border-bottom: solid 10px;
+	-webkit-box-shadow: 0px 0px 20px 5px rgba(0,0,0,0.15);
+	-moz-box-shadow: 0px 0px 20px 5px rgba(0,0,0,0.15);
+	box-shadow: 0px 0px 20px 5px rgba(0,0,0,0.15);
+	&.alert-success{
+    border-bottom-color: #268729;
+  }
+  &.alert-info{
+    border-bottom-color: #00698e;
+  }
+  &.alert-warning{
+    border-bottom-color: #ffd429;
+  }
+  &.alert-danger{
+    border-bottom-color: #e6492e;
+  }
+  &.alert-close-btn{
+    fill: red;
+  }
+  &.p{
+    padding-right: 20px;
+  }
+
+  p{
+    margin-bottom: 20px;
+  }
+}
+
+.close-x {
+	fill:grey;
+	float: right;
+	position: relative;
+	width: 16px;
+	height: 16px;
+	top: 0;
+	right: 0;
+}
