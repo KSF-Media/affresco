@@ -5,12 +5,12 @@ import Prelude
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Foldable (foldMap, foldM)
 import Data.HashMap as HashMap
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), Replacement(..), replace)
 import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
@@ -25,9 +25,7 @@ import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
-import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
-import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage)
 import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -44,7 +42,6 @@ import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
-import React.Basic (JSX)
 import React.Basic.DOM (div) as DOM
 import React.Basic.DOM.Server (renderToString) as DOM
 
@@ -274,30 +271,14 @@ tagList { htmlTemplate } { params: { tag } } = do
 
 staticPage :: Env -> { params :: { pageName :: String }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName } } = do
-  let staticPageResponse =
-        case HashMap.lookup pageName env.staticPages of
-          Just staticPageContent -> StaticPageResponse { pageName, pageContent: staticPageContent }
-          Nothing -> StaticPageNotFound
   mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-  case staticPageResponse of
-    StaticPageNotFound ->
-      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound env maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
-    p -> do
+  case HashMap.lookup pageName env.staticPages of
+    Just staticPageContent -> do
       mosaico <- liftEffect MosaicoServer.app
-      let staticPageContent :: Either JSX String
-          staticPageContent =
-            case p of
-              StaticPageResponse page -> Right page.pageContent
-              StaticPageOtherError -> Left Error.somethingWentWrong
-              StaticPageNotFound -> Left mempty
       let staticPageJsx =
-            case staticPageContent of
-              Right pageContent ->
-                DOM.div { className: "mosaico--static-page"
-                        , dangerouslySetInnerHTML: { __html: pageContent }
-                        }
-              Left jsx -> jsx
+            DOM.div { className: "mosaico--static-page"
+                    , dangerouslySetInnerHTML: { __html: staticPageContent }
+                    }
       let mosaicoString =
             DOM.renderToString
             $ mosaico
@@ -305,7 +286,7 @@ staticPage env { params: { pageName } } = do
               , mostReadArticles
               }
       html <- liftEffect do
-        let staticPageString = JSON.stringify $ JSON.fromString $ either DOM.renderToString identity staticPageContent
+        let staticPageString = JSON.stringify $ JSON.fromString $ DOM.renderToString staticPageJsx
             staticPageObj = Object.singleton "pageName" pageName
                             # Object.insert "pageContent" staticPageString
                             # encodeJson
@@ -314,6 +295,9 @@ staticPage env { params: { pageName } } = do
           >>= appendHead ("<script>window.staticPageContent=" <> staticPageObj <> ";</script>")
 
       pure $ Response.ok $ StringBody html
+    Nothing ->
+      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+      in notFound env maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
 
 notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound { htmlTemplate } _ _ = do
