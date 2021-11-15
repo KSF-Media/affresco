@@ -52,7 +52,7 @@ jobs:
         shell: bash
       - name: Generate app.yaml for app-article
         run: |
-          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall .ci/app-servers/app-article.dhall" > app.yaml
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/app-article.dhall" > app.yaml
           cat app.yaml
         shell: bash
       - id: deploy-app-article-server-production
@@ -317,7 +317,7 @@ jobs:
         shell: bash
       - name: Generate app.yaml for mosaico
         run: |
-          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall .ci/app-servers/mosaico.dhall" > app.yaml
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/mosaico.dhall" > app.yaml
           cat app.yaml
         shell: bash
       - id: deploy-mosaico-server-production
