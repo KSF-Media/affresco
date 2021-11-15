@@ -199,9 +199,7 @@ renderArticle { htmlTemplate } uuid article mostReadArticles = do
       in notFound maybeMostRead { params: {path: foldMap (List.fromFoldable <<< (_ `cons` ["artikel"])) uuid} }
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: { path } } = do
-  Console.log $ "Fetching asset with internal route: " <> (intercalate "" path)
-  Handlers.directory "dist/client" path
+assets { params: { path } } = Handlers.directory "dist/client" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 frontpage { htmlTemplate } _ = do
