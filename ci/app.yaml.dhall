@@ -6,8 +6,6 @@ let T = ./app-servers/AppServer.dhall
 
 let Map = Prelude.Map.Type
 
-let Env = < Staging | Production >
-
 let AppYaml =
       { Type =
           { runtime : Optional Text
@@ -26,7 +24,6 @@ let AppYaml =
       }
 
 let generate =
-      \(env : Env) ->
       \(app : T.AppServer.Type) ->
         AppYaml::{
         , runtime = Some app.runtime
