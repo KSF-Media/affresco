@@ -234,6 +234,18 @@ let generateDispatchYamlStep =
               env
         }
 
+let generateAppYaml =
+      \(app : Text) ->
+        Step::{
+        , name = Some "Generate app.yaml for ${app}"
+        , shell = Some "bash"
+        , run = Some
+            ''
+            dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall .ci/app-servers/${app}.dhall" > app.yaml
+            cat app.yaml
+            ''
+        }
+
 let linkPreviewsStep =
       \(apps : List App.Type) ->
       \(appServers : List AppServer.Type) ->
@@ -353,4 +365,5 @@ in  { Step
     , cleanAppEngineSteps
     , mkCleanAppEngineStep
     , copyAppYamlForStaging
+    , generateAppYaml
     }

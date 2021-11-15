@@ -37,30 +37,32 @@ let steps-gs =
 
 let steps-app-article =
         Actions.setupSteps Actions.Env.Staging
-      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
+      # [ Actions.mkBuildServerStep AE.app-article-server ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Staging
             promote
-            AE.servers.app-article-server
+            AE.app-article-server
         ]
-      # [ Actions.mkCleanAppEngineStep
-            Actions.Env.Staging
-            AE.servers.app-article-server
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.app-article-server
         ]
 
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Staging
-      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
-        ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.servers.mosaico ]
+      # [ Actions.mkBuildServerStep AE.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.mosaico ]
 
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Staging
       # [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
       # [ Actions.deployDispatchYamlStep Actions.Env.Staging ]
 
-let previewLinks = [ Actions.linkPreviewsStep apps AE.all previewUrl ]
+let previewLinks =
+      [ Actions.linkPreviewsStep
+          apps
+          (Prelude.Map.values Text AppServer.Type (toMap AE))
+          previewUrl
+      ]
 
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]

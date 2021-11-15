@@ -31,36 +31,32 @@ let steps-gs =
 
 let steps-app-article =
         Actions.setupSteps Actions.Env.Production
-      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
+      # [ Actions.mkBuildServerStep AE.app-article-server ]
+      # [ Actions.generateAppYaml "app-article" ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Production
             promote
-            AE.servers.app-article-server
+            AE.app-article-server
         ]
-      # [ Actions.copyAppYamlForStaging AE.servers.app-article-server ]
+      # [ Actions.copyAppYamlForStaging AE.app-article-server ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Staging
             promote
-            AE.servers.app-article-server
+            AE.app-article-server
         ]
       # [ Actions.mkCleanAppEngineStep
             Actions.Env.Production
-            AE.servers.app-article-server
+            AE.app-article-server
         ]
 
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Production
-      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep
-            Actions.Env.Production
-            promote
-            AE.servers.mosaico
-        ]
-      # [ Actions.copyAppYamlForStaging AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
-        ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
-        ]
+      # [ Actions.mkBuildServerStep AE.mosaico ]
+      # [ Actions.generateAppYaml "mosaico" ]
+      # [ Actions.mkAppEngineStep Actions.Env.Production promote AE.mosaico ]
+      # [ Actions.copyAppYamlForStaging AE.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.mosaico ]
 
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Production

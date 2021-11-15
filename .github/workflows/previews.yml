@@ -31,7 +31,10 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Build Server App article server
+      - env:
+          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+        name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
             cp -R apps/app-article-server build/app-article-server
@@ -273,7 +276,10 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Build Server Mosaico server
+      - env:
+          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+        name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
             cp -R apps/mosaico build/mosaico
