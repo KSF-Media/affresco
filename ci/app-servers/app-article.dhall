@@ -14,5 +14,8 @@ in  AppServer::{
     , env = toMap
         { PERSONA_URL = "https://persona.staging.ksfmedia.fi/v1"
         , LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v3"
+        , HIDE_LOGIN_LINKS = "true"
+        , SENTRY_DSN =
+            "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         }
     }
