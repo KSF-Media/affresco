@@ -40,10 +40,20 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Build Server App article server
+      - env:
+          HIDE_LOGIN_LINKS: 'true'
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
+        name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
             cp -R apps/app-article-server build/app-article-server
+        shell: bash
+      - name: Generate app.yaml for app-article
+        run: |
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall .ci/app-servers/app-article.dhall" > app.yaml
+          cat app.yaml
         shell: bash
       - id: deploy-app-article-server-production
         name: Deploy App article server
@@ -53,7 +63,12 @@ jobs:
           project_id: ksf-production
           promote: 'true'
           working_directory: build/app-article-server
-      - name: Copy app.yaml.dev to app.yaml
+      - env:
+          HIDE_LOGIN_LINKS: 'true'
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
+        name: Copy app.yaml.dev to app.yaml
         run: |
           cp build/app-article-server/app.dev.yaml build/app-article-server/app.yaml
         shell: bash
@@ -292,10 +307,18 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Build Server Mosaico server
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+        name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
             cp -R apps/mosaico build/mosaico
+        shell: bash
+      - name: Generate app.yaml for mosaico
+        run: |
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall .ci/app-servers/mosaico.dhall" > app.yaml
+          cat app.yaml
         shell: bash
       - id: deploy-mosaico-server-production
         name: Deploy Mosaico server
@@ -305,7 +328,10 @@ jobs:
           project_id: ksf-production
           promote: 'true'
           working_directory: build/mosaico
-      - name: Copy app.yaml.dev to app.yaml
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+        name: Copy app.yaml.dev to app.yaml
         run: |
           cp build/mosaico/app.dev.yaml build/mosaico/app.yaml
         shell: bash
