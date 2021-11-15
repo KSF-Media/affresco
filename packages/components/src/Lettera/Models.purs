@@ -298,7 +298,7 @@ instance categoryDecodeJson :: DecodeJson Category where
     id            <- categoryObj .: "id"
     label         <- categoryObj .: "label"
     type_         <- categoryObj .: "type"
-    subCategories <- categoryObj .:? "subCategories" .!= mempty
+    subCategories <- categoryObj .:? "subcategories" .!= mempty
     url           <- categoryObj .:? "url"
     pure $ Category { id, label, type: type_, subCategories, url }
 
