@@ -42,8 +42,8 @@ jobs:
             mkdir -p build
       - env:
           HIDE_LOGIN_LINKS: 'true'
-          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v3
-          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
           SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         name: Build Server App article server
         run: |2
@@ -65,8 +65,8 @@ jobs:
           working_directory: build/app-article-server
       - env:
           HIDE_LOGIN_LINKS: 'true'
-          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v3
-          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
           SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         name: Copy app.yaml.dev to app.yaml
         run: |
@@ -308,8 +308,8 @@ jobs:
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
       - env:
-          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v3
-          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
         name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
@@ -329,8 +329,8 @@ jobs:
           promote: 'true'
           working_directory: build/mosaico
       - env:
-          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v3
-          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
         name: Copy app.yaml.dev to app.yaml
         run: |
           cp build/mosaico/app.dev.yaml build/mosaico/app.yaml

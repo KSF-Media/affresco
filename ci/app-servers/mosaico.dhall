@@ -19,7 +19,7 @@ in  AppServer::{
           node -e "require('./output/Main/index').main()"
         ''
     , env = toMap
-        { PERSONA_URL = "https://persona.staging.ksfmedia.fi/v1"
-        , LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v3"
+        { PERSONA_URL = "https://persona.api.ksfmedia.fi/v1"
+        , LETTERA_URL = "https://lettera.api.ksfmedia.fi/v3"
         }
     }
