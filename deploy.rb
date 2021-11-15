@@ -32,11 +32,11 @@ end
 
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
-apps_json = run_command("/bin/bash -c 'npx dhall-to-json <<< ./ci/apps.dhall'")
-apps_servers_json = run_command("/bin/bash -c 'npx dhall-to-json <<< \"(./ci/app-servers.dhall)\".all'")
+apps_json = run_command("/bin/bash -c 'npx dhall-to-json <<< \"(./ci/apps.dhall).apps\"'")
+apps_servers_json = run_command("/bin/bash -c 'npx dhall-to-json <<< ./ci/app-servers.dhall'")
 
 apps_list = JSON.parse(apps_json)
-app_servers_list = JSON.parse(apps_servers_json)
+app_servers_list = JSON.parse(apps_servers_json).values
 apps = apps_list.map{ |x| [x["deployDir"], x] }.to_h
 apps.merge!(app_servers_list.map{ |x| [x["deployDir"], x] }.to_h)
 
