@@ -2,7 +2,7 @@ let Prelude = ./Prelude.dhall
 
 let A = ./apps.dhall
 
-let AS = ./app-servers.dhall
+let AS = ./app-servers/AppServer.dhall
 
 let Map = Prelude.Map.Type
 

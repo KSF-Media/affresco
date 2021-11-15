@@ -11,6 +11,10 @@ let A = ./apps.dhall
 
 let AE = ./app-servers.dhall
 
+let AS = ./app-servers/AppServer.dhall
+
+let AppServer = AS.AppServer
+
 let container = ./container.dhall
 
 let App = A.App
