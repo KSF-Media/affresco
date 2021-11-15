@@ -9,7 +9,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -195,7 +195,14 @@ renderArticle env@{ htmlTemplate } uuid article mostReadArticles = do
                 \window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> ";\
                 \window.isDraft=" <> (show $ isDraftArticle a) <> ";\
               \</script>"
-        appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars
+        let metaTags =
+              "\
+              \<meta property=\"og:type\" value=\"article\" />\
+              \<meta property=\"og:title\" value=" <> ( show $ _.title $ fromFullArticle a ) <> " />\
+              \<meta property=\"og:description\" value=" <> show ( fromMaybe mempty $ _.preamble $ fromFullArticle a ) <> " />\
+              \<meta property=\"og:image\" value=" <> ( show $ _.url $ ( fromMaybe mempty $ _.mainImage $ fromFullArticle a ) ) <> " />\
+              \"
+        appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars >>= appendHead metaTags
 
       pure $ Response.ok $ StringBody html
     Left _ ->
