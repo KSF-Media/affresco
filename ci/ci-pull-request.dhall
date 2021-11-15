@@ -38,6 +38,7 @@ let steps-gs =
 let steps-app-article =
         Actions.setupSteps Actions.Env.Staging
       # [ Actions.mkBuildServerStep AE.app-article-server ]
+      # [ Actions.copyAppYamlForStaging AE.app-article-server ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Staging
             promote
@@ -49,6 +50,7 @@ let steps-app-article =
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Staging
       # [ Actions.mkBuildServerStep AE.mosaico ]
+      # [ Actions.copyAppYamlForStaging AE.mosaico ]
       # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico ]
       # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.mosaico ]
 

@@ -71,32 +71,10 @@ def setup_env(app)
     app_vars.each do |v|
       abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
-    # For deploying things to gcloud app engine
-    if app.key?('runtime')
-      puts "Generating production app.yaml"
-      app_yaml                  = {}
-      app_yaml['runtime']       = app['runtime']
-      app_yaml['service']       = app['id']
-      app_yaml['entrypoint']    = app['entrypoint']
-      app_yaml['instance_class']= 'F4'
-      app_yaml['env_variables'] = {}
-      app_vars.each do |v|
-        env_var_name = v.sub(/^PRODUCTION_/, '')
-        app_yaml['env_variables']["#{env_var_name}"] = ENV[v]
-      end
-      File.open("#{app['path']}/app.yaml", 'w') do |f|
-        f.puts(YAML.dump(app_yaml))
-      end
-      generate_production_dot_env(app, app_vars)
-    else
-      generate_production_dot_env(app, app_vars)
-    end
+    generate_production_dot_env(app, app_vars)
     ENV['NODE_ENV'] = 'production'
   else
     ENV['NODE_ENV'] = 'development'
-    if app.key?('runtime')
-      run_command("cp #{app['path']}/app.dev.yaml #{app['path']}/app.yaml")
-    end
   end
 end
 
