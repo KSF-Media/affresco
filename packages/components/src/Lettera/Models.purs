@@ -8,13 +8,13 @@ import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (fromFoldable)
 import Data.DateTime (DateTime, adjust)
-import Data.Either (Either(..), either, hush)
-import Data.Foldable (fold, foldMap, traverse_)
+import Data.Either (Either(..), hush)
+import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (class Newtype, un)
+import Data.Newtype (class Newtype, un, unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.String as String
@@ -48,6 +48,10 @@ isPreviewArticle _ = false
 isDraftArticle :: FullArticle -> Boolean
 isDraftArticle (DraftArticle _) = true
 isDraftArticle _ = false
+
+isErrorArticle :: FullArticle -> Boolean
+isErrorArticle (ErrorArticle _) = true
+isErrorArticle _ = false
 
 notFoundArticle :: FullArticle
 notFoundArticle = ErrorArticle
@@ -90,17 +94,18 @@ type ArticleStubCommon =
   , uuid      :: String
   , preamble  :: Maybe String
   , listImage :: Maybe Image
-  , tags      :: Array String
   , premium   :: Boolean
   )
 
 type JSArticleStub =
   { publishingTime :: String
+  , tags           :: Array String
   | ArticleStubCommon
   }
 
 type ArticleStub =
   { publishingTime :: Maybe LocalDateTime
+  , tags           :: Array Tag
   | ArticleStubCommon
   }
 
@@ -127,7 +132,6 @@ type ArticleCommon =
   ( title     :: String
   , body      :: Array BodyElementJS
   , mainImage :: Maybe Image
-  , tags      :: Array String
   , uuid      :: String
   , preamble  :: Maybe String
   , authors   :: Array Author
@@ -138,12 +142,14 @@ type ArticleCommon =
 type JSArticle =
   { publishingTime :: String
   , updateTime     :: Maybe String
+  , tags           :: Array String
   | ArticleCommon
   }
 
 type Article =
   { publishingTime :: Maybe LocalDateTime
   , updateTime     :: Maybe LocalDateTime
+  , tags           :: Array Tag
   | ArticleCommon
   }
 
@@ -152,6 +158,7 @@ type Article =
 type JSDraftArticle =
   { publishingTime :: Maybe String
   , updateTime     :: Maybe String
+  , tags           :: Array String
   | ArticleCommon
   }
 
@@ -173,10 +180,11 @@ articleToJson article =
     article
       { publishingTime = foldMap formatLocalDateTime article.publishingTime
       , updateTime     = foldMap formatLocalDateTime article.updateTime
+      , tags           = map unwrap article.tags
       }
 
 articleStubToJson :: ArticleStub -> Json
-articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
+articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "tags") (map unwrap) <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
 
 formatLocalDateTime :: LocalDateTime -> String
 formatLocalDateTime = format dateTimeFormatter <<< un LocalDateTime
@@ -203,11 +211,14 @@ parseArticleWithoutLocalizing =
   parseArticlePure
     \jsArticle -> jsArticle { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
                             , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+                            , tags           = map Tag jsArticle.tags
                             }
 
 parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
-  parseArticlePure (\jsStub -> jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime })
+  parseArticlePure (\jsStub -> jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime
+                                      , tags           = map Tag jsStub.tags
+                                      })
 
 parseArticlePure :: forall b a. ReadForeign b => (b -> a) -> Json -> (Either String a)
 parseArticlePure convertJSArticle jsonArticle =
@@ -228,21 +239,21 @@ parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
 
 fromJSArticleStub :: JSArticleStub -> Effect ArticleStub
-fromJSArticleStub jsStub@{ uuid, publishingTime } = do
+fromJSArticleStub jsStub@{ uuid, publishingTime, tags } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
-  pure jsStub { publishingTime = localPublishingTime }
+  pure jsStub { publishingTime = localPublishingTime, tags = map Tag tags }
 
 fromJSDraftArticle :: JSDraftArticle -> Effect Article
-fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime } = do
+fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags } = do
   localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime }
+  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags }
 
 fromJSArticle :: JSArticle -> Effect Article
-fromJSArticle jsArticle@{ uuid, publishingTime, updateTime } = do
+fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime}
+  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags }
 
 type BodyElementJS =
   { html     :: Maybe String
@@ -317,3 +328,14 @@ instance categoryDecodeJson :: DecodeJson Category where
     subCategories <- categoryObj .:? "subCategories" .!= mempty
     url           <- categoryObj .:? "url"
     pure $ Category { id, label, type: type_, subCategories, url }
+
+newtype Tag = Tag String
+
+uriComponentToTag :: String -> Tag
+uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "-") (String.Replacement " ")
+
+tagToURIComponent :: Tag -> String
+tagToURIComponent = String.toLower <<< String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
+
+derive instance eqTag :: Eq Tag
+derive instance newtypeTag :: Newtype Tag _

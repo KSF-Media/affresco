@@ -17,6 +17,7 @@ function main() {
 	mostReadArticles={window.mostReadArticles || null}
 	frontpageArticles={window.frontpageArticles || null}
   staticPageContent={window.staticPageContent || null}
+	tagListArticles={window.tagListArticles || null}
       />
     );
     ReactDOM.hydrate(mosaico, document.getElementById("app"));
