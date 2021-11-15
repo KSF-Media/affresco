@@ -368,7 +368,7 @@ render { props, state, setState } =
             }
         Footnote footnote -> DOM.p
             { className: block <> " " <> block <> "__footnote"
-            , children: [ DOM.text footnote ]
+            , children: [ DOM.span_ [ DOM.text footnote ] ]
             }
         Quote quote -> DOM.q
             { className: block <> " " <> block <> "__quote"
