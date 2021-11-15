@@ -27,11 +27,13 @@ type State =
 data MainContent
   = ArticleContent JSX
   | FrontpageContent JSX
+  | TagListContent JSX
   | StaticPageContent JSX
 
 fromMainContent :: MainContent -> JSX
 fromMainContent (ArticleContent jsx) = jsx
 fromMainContent (FrontpageContent jsx) = jsx
+fromMainContent (TagListContent jsx) = jsx
 fromMainContent (StaticPageContent jsx) = jsx
 
 app :: Component Props
@@ -76,16 +78,19 @@ render router state props = DOM.div
                   [ DOM.text "footer" ]
                }
            , case props.mainContent of
-                 FrontpageContent _ ->
-                   DOM.aside
-                     { className: "mosaico--aside"
-                     , children:
-                         [ state.mostReadListComponent
-                           { mostReadArticles: props.mostReadArticles
-                           , onClickHandler: const $ pure unit
-                           }
-                         ]
-                     }
+                 FrontpageContent _ -> aside
+                 TagListContent _ -> aside
                  _ -> mempty
            ]
        }
+  where
+    aside =
+      DOM.aside
+        { className: "mosaico--aside"
+        , children:
+            [ state.mostReadListComponent
+                { mostReadArticles: props.mostReadArticles
+                , onClickHandler: const $ pure unit
+                }
+            ]
+        }
