@@ -12,7 +12,7 @@ import Data.List (List, intercalate)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
-import Data.String (Pattern(..), Replacement(..), replace, toLower)
+import Data.String (Pattern(..), Replacement(..), replace, replaceAll, toLower)
 import Data.String.Regex (Regex)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as Regex
@@ -27,10 +27,11 @@ import Effect.Class.Console as Console
 import Effect.Exception (throw)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
+import JSURI as URI
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub,Category(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -146,7 +147,7 @@ main = do
     htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
     categoryStructure <- Lettera.getCategoryStructure HBL
     categoryRegex <-
-      case Regex.regex "^\\/([\\w|-]+)\\b" Regex.ignoreCase of
+      case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
         Right r   -> pure r
         Left _err -> Aff.throwError $ Aff.error "Got weird regex, couldn't parse it. Server is now exploding. Please fix it."
     let env = { htmlTemplate, categoryStructure, categoryRegex }
@@ -390,10 +391,18 @@ getCredentials req = do
 parseCategory :: Env -> HTTP.Request -> Aff (Either Failure Category)
 parseCategory { categoryRegex, categoryStructure } req = do
   let url = HTTP.requestURL req
+      urlDecoded = fromMaybe url $ URI.decodeURIComponent url
       -- If route is kebab-cased, let's un kebab-case it
-      categoryRoute = toLower $ replace (Pattern "-") (Replacement "") $ fold $ NonEmptyArray.last =<< Regex.match categoryRegex url
+      categoryRoute = toLower $ replaceAll (Pattern "-") (Replacement "") $ fold $ NonEmptyArray.last =<< Regex.match categoryRegex urlDecoded
       -- Flatten out categories from the category structure
       categories = foldl (\acc (Category c) -> acc <> [Category c] <> c.subCategories) [] categoryStructure
-  case find ((_ == categoryRoute) <<< toLower <<< _.id <<< unwrap) categories of
+  case find (matchCategory categoryRoute) categories of
     Just c -> pure $ Right c
     _ -> pure $ Left (Forward "Did not match category")
+  where
+    -- Does match id or label? We are matching labels too, as id's don't usually contain any scandic letters
+    -- e.g. consider pair of id and label of NordenOchVarlden, Norden Och Världen.
+    -- This is because we wish to show the scandic characters in url, such as hbl.fi/norden-och-världen
+    matchCategory wantedCategory (Category c) =
+      wantedCategory == toLower c.id
+      || wantedCategory == (toLower $ replaceAll (Pattern " ") (Replacement "") c.label)
