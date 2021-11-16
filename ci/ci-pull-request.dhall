@@ -49,10 +49,11 @@ let steps-app-article =
 
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Staging
-      # [ Actions.mkBuildServerStep AE.mosaico ]
-      # [ Actions.copyAppYamlForStaging AE.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.mosaico ]
+      # [ Actions.mkBuildServerStep AE.mosaico-server ]
+      # [ Actions.copyAppYamlForStaging AE.mosaico-server ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico-server
+        ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.mosaico-server ]
 
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Staging

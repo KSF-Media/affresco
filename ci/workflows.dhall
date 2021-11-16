@@ -222,7 +222,7 @@ let generateDispatchYamlStep =
             merge
               { Staging = Some
                   ''
-                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > ./dispatch.yaml
                     cat dispatch.yaml
                   ''
               , Production = Some
@@ -235,13 +235,13 @@ let generateDispatchYamlStep =
         }
 
 let generateAppYaml =
-      \(app : Text) ->
+      \(app : AppServer.Type) ->
         Step::{
-        , name = Some "Generate app.yaml for ${app}"
+        , name = Some "Generate app.yaml for ${app.id}"
         , shell = Some "bash"
         , run = Some
             ''
-            dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/${app}.dhall" > app.yaml
+            dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/${app.id}.dhall" > ./build/${app.deployDir}/app.yaml
             cat app.yaml
             ''
         }
@@ -329,6 +329,18 @@ let deployAppEngineSteps =
       \(env : Env) ->
       \(promote : Text) ->
         Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
+
+let aeSteps =
+      \(env : Env) ->
+      \(app : AppServer.Type) ->
+      \(promote : Text) ->
+          setupSteps env
+        # [ mkBuildServerStep app ]
+        # [ generateAppYaml app ]
+        # [ mkAppEngineStep env promote app ]
+        # [ copyAppYamlForStaging app ]
+        # [ mkAppEngineStep Env.Staging promote app ]
+        # [ mkCleanAppEngineStep env app ]
 
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 

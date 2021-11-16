@@ -32,7 +32,7 @@ let steps-gs =
 let steps-app-article =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.mkBuildServerStep AE.app-article-server ]
-      # [ Actions.generateAppYaml "app-article" ]
+      # [ Actions.generateAppYaml AE.app-article-server ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Production
             promote
@@ -51,12 +51,18 @@ let steps-app-article =
 
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Production
-      # [ Actions.mkBuildServerStep AE.mosaico ]
-      # [ Actions.generateAppYaml "mosaico" ]
-      # [ Actions.mkAppEngineStep Actions.Env.Production promote AE.mosaico ]
-      # [ Actions.copyAppYamlForStaging AE.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.mosaico ]
+      # [ Actions.mkBuildServerStep AE.mosaico-server ]
+      # [ Actions.generateAppYaml AE.mosaico-server ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Production
+            promote
+            AE.mosaico-server
+        ]
+      # [ Actions.copyAppYamlForStaging AE.mosaico-server ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico-server
+        ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.mosaico-server
+        ]
 
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Production
