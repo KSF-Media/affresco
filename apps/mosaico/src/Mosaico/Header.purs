@@ -3,16 +3,17 @@ module Mosaico.Header where
 import Prelude
 
 import Data.Array (cons, take)
-import Data.String as String
 import Data.Either (Either(..))
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.String as String
 import Effect (Effect)
 import Lettera.Models (Category(..))
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
@@ -97,16 +98,8 @@ render { state: { menuVisible, menuComponent }, props } =
                 if menuVisible then
                   [ searchButton ]
                 else
-                  map ((\c -> DOM.a {
-                           onClick: handler_ $ do
-                              props.onCategoryClick c.id
-                              props.router.pushState (write {}) $ "/" <> c.id, children: [ DOM.text $ String.toUpper c.label ]}) <<< unwrap) (take 5 props.categoryStructure)
-
-                  -- [ DOM.a_ [ DOM.text "OPINION" ]
-                  -- , DOM.a_ [ DOM.text "KULTUR" ]
-                  -- , DOM.a_ [ DOM.text "SPORT" ]
-                  -- , DOM.a_ [ DOM.text "ANNAT" ]
-                  -- ]
+                  -- FIXME: TAKE EVERY CATEGORY
+                  map mkCategory (take 5 props.categoryStructure)
             }
 
         , DOM.div
@@ -157,7 +150,14 @@ render { state: { menuVisible, menuComponent }, props } =
         ]
     }
   where
-
+    mkCategory (Category category) =
+      let categoryLower = String.toLower category.id
+      in DOM.a { href: "/" <> categoryLower
+               , onClick: capture_ $ do
+                   props.onCategoryClick categoryLower
+                   props.router.pushState (write {}) $ "/" <> categoryLower
+               , children: [ DOM.text $ String.toUpper category.label ]
+               }
     searchButton :: JSX
     searchButton = DOM.div
                     { className: iconButtonClass <> " " <> searchButtonClass <>
