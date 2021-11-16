@@ -242,7 +242,7 @@ let generateAppYaml =
         , run = Some
             ''
             dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/${app.id}.dhall" > ./build/${app.deployDir}/app.yaml
-            cat app.yaml
+            cat ./build/${app.deployDir}/app.yaml
             ''
         }
 
