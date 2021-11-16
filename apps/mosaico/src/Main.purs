@@ -4,18 +4,27 @@ import Prelude
 
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
-import Data.Array (cons, null)
-import Data.Either (Either(..), either)
-import Data.Foldable (foldMap)
+import Data.Array (cons, find, foldl, null)
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Either (Either(..), either, fromLeft, fromRight)
+import Data.Foldable (fold, foldMap)
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Newtype (unwrap)
+import Data.String (Pattern(..), Replacement(..), replace, toLower)
+import Data.String.Regex (Regex)
+import Data.String.Regex as Regex
+import Data.String.Regex.Flags as Regex
+import Data.Traversable (traverse_)
 import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
+import Effect.Exception (throw)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
@@ -33,7 +42,7 @@ import Node.FS.Sync as FS
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
-import Payload.ResponseTypes (Failure, Response(..), ResponseBody(..))
+import Payload.ResponseTypes (Failure(..), Response(..), ResponseBody(..))
 import Payload.Server as Payload
 import Payload.Server.Guards as Guards
 import Payload.Server.Handlers (File)
@@ -68,6 +77,7 @@ instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
 type Env =
   { htmlTemplate :: String
   , categoryStructure :: Array Category
+  , categoryRegex :: Regex
   }
 
 indexHtmlFileLocation :: String
@@ -103,13 +113,22 @@ spec ::
                 { response :: ResponseBody
                 , params :: { pageName :: String }
                 }
+          , categoryPage ::
+              GET "/<categoryName>"
+                { response :: ResponseBody
+                , params :: { categoryName :: String }
+                , guards :: Guards ("category" : Nil)
+                }
           , notFound ::
               GET "/<..path>"
                 { response :: ResponseBody
                 , params :: { path :: List String}
                 }
          }
-    , guards :: { credentials :: Maybe UserAuth }
+    , guards ::
+         { credentials :: Maybe UserAuth
+         , category :: Category
+         }
     }
 spec = Spec
 
@@ -118,16 +137,21 @@ main = do
   Aff.launchAff_ do
     htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
     categoryStructure <- Lettera.getCategoryStructure HBL
-    let env = { htmlTemplate, categoryStructure }
+    categoryRegex <-
+      case Regex.regex "^\\/([\\w|-]+)\\b" Regex.ignoreCase of
+        Right r   -> pure r
+        Left _err -> Aff.throwError $ Aff.error "Got weird regex, couldn't parse it. Server is now exploding. Please fix it."
+    let env = { htmlTemplate, categoryStructure, categoryRegex }
         handlers =
           { getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
           , assets
           , frontpage: frontpage env
           , staticPage: staticPage env
+          , categoryPage: categoryPage env
           , notFound: notFound env Nothing
           }
-        guards = { credentials: getCredentials }
+        guards = { credentials: getCredentials, category: parseCategory env }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
 getDraftArticle
@@ -285,6 +309,10 @@ staticPage env { params: { pageName } } = do
 
       pure $ Response.ok $ StringBody html
 
+categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category } } -> Aff (Response ResponseBody)
+categoryPage env { params: { categoryName } } = do
+  pure $ Response.ok $ StringBody "got a category"
+
 notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound env mostReadList _ = do
   mostReadArticles <- maybe (Lettera.getMostRead 0 10 "" HBL true) pure mostReadList
@@ -321,3 +349,14 @@ getCredentials req = do
         userId <- UUID.parseUUID =<< Headers.lookup "Auth-User" headers
         pure { authToken, userId }
   pure tokens
+
+parseCategory :: Env -> HTTP.Request -> Aff (Either Failure Category)
+parseCategory { categoryRegex, categoryStructure } req = do
+  let url = HTTP.requestURL req
+      -- If route is kebab-cased, let's un kebab-case it
+      categoryRoute = toLower $ replace (Pattern "-") (Replacement "") $ fold $ NonEmptyArray.last =<< Regex.match categoryRegex url
+      -- Flatten out categories from the category structure
+      categories = foldl (\acc (Category c) -> acc <> [Category c] <> c.subCategories) [] categoryStructure
+  case find ((_ == categoryRoute) <<< toLower <<< _.id <<< unwrap) categories of
+    Just c -> pure $ Right c
+    _ -> pure $ Left (Forward "Did not match category")
