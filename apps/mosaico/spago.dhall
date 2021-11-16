@@ -19,6 +19,7 @@ You can edit this file as you like.
   , "exceptions"
   , "foldable-traversable"
   , "foreign-object"
+  , "js-uri"
   , "lists"
   , "maybe"
   , "newtype"
