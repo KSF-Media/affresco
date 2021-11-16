@@ -5,10 +5,10 @@ import Prelude
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (foldMap, foldM)
 import Data.HashMap as HashMap
-import Data.List (List)
+import Data.List (List, intercalate)
 import Data.List as List
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), Replacement(..), replace)
@@ -18,6 +18,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Console
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
@@ -52,6 +53,8 @@ appendMosaico content htmlTemplate = runEffectFn2 appendMosaicoImpl content html
 foreign import appendHeadImpl :: EffectFn2 String String String
 appendHead :: String -> String -> Effect String
 appendHead = runEffectFn2 appendHeadImpl
+
+foreign import serverPort :: Int
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -139,7 +142,7 @@ main = do
         , notFound: notFound env Nothing
         }
       guards = { credentials: getCredentials }
-  Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+  Aff.launchAff_ $ Payload.startGuarded (Payload.defaultOpts { port = serverPort }) spec { handlers, guards }
 
 getDraftArticle
   :: Env

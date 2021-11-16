@@ -2,13 +2,13 @@ let Prelude = ./Prelude.dhall
 
 let Env = < Staging | Production >
 
-let Actions = ./workflows.dhall
+let T = ./app-servers/AppServer.dhall
 
 let apps = ./app-servers.dhall
 
 let Dispatch =
-      { Type = { url : Optional Text, service : Optional Text}
-      , default = { url = None Text, service = None Text}
+      { Type = { url : Optional Text, service : Optional Text }
+      , default = { url = None Text, service = None Text }
       }
 
 let mkDispatch =
@@ -18,7 +18,7 @@ let mkDispatch =
 
 let mkDispatchYaml =
       \(env : Env) ->
-      \(app : Actions.AppServer.Type) ->
+      \(app : T.AppServer.Type) ->
         merge
           { Production =
                 Prelude.List.map
@@ -44,10 +44,10 @@ let generate =
       \(env : Env) ->
         { dispatch =
             Prelude.List.concatMap
-              Actions.AppServer.Type
+              T.AppServer.Type
               Dispatch.Type
               (mkDispatchYaml env)
-              apps.all
+              (Prelude.Map.values Text T.AppServer.Type (toMap apps))
         }
 
 in  generate

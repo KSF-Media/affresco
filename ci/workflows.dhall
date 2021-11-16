@@ -1,5 +1,9 @@
 let Prelude = ./Prelude.dhall
 
+let A = ./apps.dhall
+
+let AS = ./app-servers/AppServer.dhall
+
 let Map = Prelude.Map.Type
 
 let default = Prelude.Text.default
@@ -10,41 +14,9 @@ let null = Prelude.Optional.null
 
 let Env = < Staging | Production >
 
-let App =
-      { Type =
-          { buildDir : Text
-          , deployDir : Text
-          , name : Text
-          , env : Map Text Text
-          , lockfile : Optional Text
-          , caches : Optional Text
-          }
-      , default =
-        { env = [] : Map Text Text, lockfile = None Text, caches = None Text }
-      }
+let AppServer = AS.AppServer
 
-let AppServer =
-      { Type =
-          { id : Text
-          , buildDir : Text
-          , deployDir : Text
-          , name : Text
-          , runtime : Text
-          , entrypoint : Text
-          , env : Map Text Text
-          , previewUrl : Text
-          , lockfile : Optional Text
-          , caches : Optional Text
-          , domains : List Text
-          }
-      , default =
-        { env = [] : Map Text Text
-        , previewUrl = ""
-        , lockfile = None Text
-        , caches = None Text
-        , domains = [] : List Text
-        }
-      }
+let App = A.App
 
 let Step =
       { Type =
@@ -262,6 +234,18 @@ let generateDispatchYamlStep =
               env
         }
 
+let generateAppYaml =
+      \(app : Text) ->
+        Step::{
+        , name = Some "Generate app.yaml for ${app}"
+        , shell = Some "bash"
+        , run = Some
+            ''
+            dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/${app}.dhall" > app.yaml
+            cat app.yaml
+            ''
+        }
+
 let linkPreviewsStep =
       \(apps : List App.Type) ->
       \(appServers : List AppServer.Type) ->
@@ -363,8 +347,6 @@ let hasLockfile
 
 in  { Step
     , Prelude
-    , App
-    , AppServer
     , Env
     , setupSteps
     , buildSteps
@@ -383,4 +365,5 @@ in  { Step
     , cleanAppEngineSteps
     , mkCleanAppEngineStep
     , copyAppYamlForStaging
+    , generateAppYaml
     }
