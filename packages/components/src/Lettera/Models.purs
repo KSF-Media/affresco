@@ -12,12 +12,14 @@ import Data.Either (Either(..), hush)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
+import Data.Hashable (class Hashable, hash)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith, toLower)
 import Data.String as String
+import Data.String.Extra (kebabCase) as String
 import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
 import Effect (Effect)
@@ -317,9 +319,33 @@ instance categoryTypeDecodeJson :: DecodeJson CategoryType where
       "link"    -> Right Link
       _         -> Left $ UnexpectedValue json
 
+newtype CategoryLabel = CategoryLabel String
+derive instance newtypeCategoryLabel :: Newtype CategoryLabel _
+
+-- (CategoryLabel "Norden Och Världen") is equal to (CategoryLabel "norden-och-världen")
+instance eqCategoryLabel :: Eq CategoryLabel where
+  eq (CategoryLabel a) (CategoryLabel b) =
+    a == b
+    || normalize a == normalize b
+    where
+      normalize = toLower <<< removeKebabCase <<< removeWhitespace
+      removeKebabCase = String.replaceAll (Pattern "-") (Replacement "")
+      removeWhitespace = String.replaceAll (Pattern " ") (Replacement "")
+
+-- Kebab cases a label
+-- E.g. "Norden Och Världen" -> "norden-och-världen"
+instance showCategoryLabel :: Show CategoryLabel where
+  show (CategoryLabel a) = toLower $ String.kebabCase a
+
+instance ordCategoryLabel :: Ord CategoryLabel where
+  compare a b = compare (show a) (show b)
+
+instance hashableCategoryLabel :: Hashable CategoryLabel where
+  hash (CategoryLabel a) = hash a
+
 newtype Category = Category
   { id            :: String
-  , label         :: String
+  , label         :: CategoryLabel
   , type          :: CategoryType
   , subCategories :: Array Category
   , url           :: Maybe String
@@ -329,7 +355,7 @@ instance categoryDecodeJson :: DecodeJson Category where
   decodeJson json = do
     categoryObj   <- decodeJson json
     id            <- categoryObj .: "id"
-    label         <- categoryObj .: "label"
+    label         <- CategoryLabel <$> categoryObj .: "label"
     type_         <- categoryObj .: "type"
     subCategories <- categoryObj .:? "subcategories" .!= mempty
     url           <- categoryObj .:? "url"
@@ -338,7 +364,7 @@ instance categoryDecodeJson :: DecodeJson Category where
 instance categoryEncodeJson :: EncodeJson Category where
   encodeJson (Category c) = do
     Object.singleton "id" (encodeJson c.id)
-    # Object.insert "label" (encodeJson c.label)
+    # Object.insert "label" (encodeJson $ unwrap c.label)
     # Object.insert "type" (encodeJson $ toString c.type)
     # Object.insert "subCategories" (encodeJson c.subCategories)
     # Object.insert "url" (encodeJson c.url)
