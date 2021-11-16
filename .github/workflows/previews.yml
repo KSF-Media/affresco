@@ -84,7 +84,7 @@ jobs:
             mkdir -p build
       - name: Generate AppEngine domain map
         run: |2
-            dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > dispatch.yaml
+            dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > ./dispatch.yaml
             cat dispatch.yaml
         shell: bash
       - name: Deploy AppEngine domain map
