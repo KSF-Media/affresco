@@ -18,6 +18,7 @@ function main() {
 	frontpageArticles={window.frontpageArticles || null}
 	staticPageContent={window.staticPageContent || null}
 	categoryStructure={window.categoryStructure || null}
+	tagListArticles={window.tagListArticles || null}
       />
     );
     ReactDOM.hydrate(mosaico, document.getElementById("app"));

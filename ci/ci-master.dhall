@@ -7,16 +7,19 @@ let Prelude = ./Prelude.dhall
 
 let Actions = ./workflows.dhall
 
-let apps = ./apps.dhall
+let A = ./apps.dhall
+
+let apps = A.apps
+
+let App = A.App
 
 let AE = ./app-servers.dhall
 
 let container = ./container.dhall
 
-let gcp-project-id = "ksf-production"
+let promote = "true"
 
-let apps-to-cache =
-      Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
+let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
 
@@ -28,22 +31,37 @@ let steps-gs =
 
 let steps-app-article =
         Actions.setupSteps Actions.Env.Production
-      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
+      # [ Actions.mkBuildServerStep AE.app-article-server ]
+      # [ Actions.generateAppYaml "app-article" ]
       # [ Actions.mkAppEngineStep
             Actions.Env.Production
-            AE.servers.app-article-server
+            promote
+            AE.app-article-server
+        ]
+      # [ Actions.copyAppYamlForStaging AE.app-article-server ]
+      # [ Actions.mkAppEngineStep
+            Actions.Env.Staging
+            promote
+            AE.app-article-server
         ]
       # [ Actions.mkCleanAppEngineStep
             Actions.Env.Production
-            AE.servers.app-article-server
+            AE.app-article-server
         ]
 
 let steps-mosaico =
         Actions.setupSteps Actions.Env.Production
-      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Production AE.servers.mosaico ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
-        ]
+      # [ Actions.mkBuildServerStep AE.mosaico ]
+      # [ Actions.generateAppYaml "mosaico" ]
+      # [ Actions.mkAppEngineStep Actions.Env.Production promote AE.mosaico ]
+      # [ Actions.copyAppYamlForStaging AE.mosaico ]
+      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico ]
+      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.mosaico ]
+
+let steps-dispatch =
+        Actions.setupSteps Actions.Env.Production
+      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
+      # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
@@ -60,24 +78,27 @@ in  { name = "production"
               { runs-on = "ubuntu-latest", container, steps = checkCISteps }
             , deploy-gs =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-gs
               , needs = "check-ci"
               }
-            , deploy-app-article =
+            , deploy-app-article-server =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-app-article
               , needs = "check-ci"
               }
-            , deploy-mosaico =
+            , deploy-mosaico-server =
               { runs-on = "ubuntu-latest"
-              , env.gcp-project-id = gcp-project-id
               , container
               , steps = steps-mosaico
               , needs = "check-ci"
+              }
+            , deploy-dispatch-yaml =
+              { runs-on = "ubuntu-latest"
+              , container
+              , steps = steps-dispatch
+              , needs = [ "deploy-mosaico-server", "deploy-app-article-server" ]
               }
             }
         //  refreshCDNJobs

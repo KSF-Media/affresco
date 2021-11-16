@@ -8,25 +8,33 @@ import Data.Array (cons, head, snoc)
 import Data.Either (Either(..))
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
+import Data.Newtype (un, unwrap)
 import Data.Set as Set
+import Data.String as String
+import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffect, useState, (/\))
 import React.Basic.Hooks as React
+
+foreign import evalExternalScriptsImpl :: EffectFn1 (Array String) Unit
+evalExternalScripts :: Array String -> Effect Unit
+evalExternalScripts = runEffectFn1 evalExternalScriptsImpl
 
 type Self =
   { state :: State
@@ -53,7 +61,7 @@ type State =
   , article :: Maybe FullArticle
   , title :: String
   , mainImage :: Maybe Image
-  , tags :: Array String
+  , tags :: Array Tag
   , preamble :: Maybe String
   , premium :: Boolean
   }
@@ -80,7 +88,7 @@ articleComponent = do
     state /\ setState <- useState initialState
 
     useEffect props.uuid do
-      when (isNothing props.article) $ loadArticle setState props.affArticle
+      loadArticle props.article setState props.affArticle
       pure mempty
 
     -- If user logs in / logs out, reload the article.
@@ -95,21 +103,27 @@ articleComponent = do
 
     pure $ render { state, setState, props }
 
-loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
-loadArticle setState affArticle = do
-  Aff.launchAff_ do
-    fullArticle <- affArticle
-    let article = fromFullArticle fullArticle
-    liftEffect do
-      setState \s -> s
-                  { article = Just fullArticle
-                  , body = map Record.toSum article.body
-                  , mainImage = article.mainImage
-                  , title = article.title
-                  , tags = article.tags
-                  , preamble = article.preamble
-                  , premium = article.premium
-                  }
+loadArticle :: Maybe FullArticle -> ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
+loadArticle articleProp setState affArticle = do
+  case articleProp of
+    Just a -> do
+      -- We need to evaluate every external javascript Lettera gives us
+      -- This is to get embeds working
+      liftEffect $ evalExternalScripts $ map unwrap $ fold $ _.externalScripts $ fromFullArticle a
+    Nothing -> Aff.launchAff_ do
+      fullArticle <- affArticle
+      let article = fromFullArticle fullArticle
+      liftEffect do
+        setState \s -> s
+                    { article = Just fullArticle
+                    , body = map Record.toSum article.body
+                    , mainImage = article.mainImage
+                    , title = article.title
+                    , tags = article.tags
+                    , preamble = article.preamble
+                    , premium = article.premium
+                    }
+        evalExternalScripts $ map unwrap $ fold $ article.externalScripts
 
 renderImage :: Image -> JSX
 renderImage img =
@@ -163,28 +177,30 @@ render { props, state, setState } =
                 { className: "mosaico-article__preamble"
                 , children: [ DOM.text $ fromMaybe mempty state.preamble ]
                 }
-            , DOM.section
-                { className: "mosaico-article__tag-n-share"
-                , children:
-                    [ DOM.div
-                        { className: "mosaico-article__tag-n-premium"
-                        , children:
-                            [ DOM.div
-                                { className: "mosaico-article__tag color-" <> props.brand
-                                , children: [ DOM.text $ fromMaybe "" (head tags) ]
-                                }
-                            , guard state.premium $ DOM.div
-                                { className: "premium-badge background-" <> props.brand
-                                , children: [ DOM.text "Premium"]
-                                }
-                            ]
-                        }
-                    , DOM.ul
-                        { className: "mosaico-article__some"
-                        , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-                        }
-                    ]
-                }
+            -- We don't want to be able to share error articles
+            , guard (maybe false (not <<< isErrorArticle) state.article)
+                DOM.section
+                  { className: "mosaico-article__tag-n-share"
+                  , children:
+                      [ DOM.div
+                          { className: "mosaico-article__tag-n-premium"
+                          , children:
+                              [ DOM.div
+                                  { className: "mosaico-article__tag color-" <> props.brand
+                                  , children: [ DOM.text $ maybe "" (un Tag) (head tags) ]
+                                  }
+                              , guard state.premium $ DOM.div
+                                  { className: "premium-badge background-" <> props.brand
+                                  , children: [ DOM.text "Premium"]
+                                  }
+                              ]
+                          }
+                      , DOM.ul
+                          { className: "mosaico-article__some"
+                          , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+                          }
+                      ]
+                  }
             ]
           , DOM.div
               { className: "mosaico-article__main-image"
@@ -265,7 +281,7 @@ render { props, state, setState } =
 
     vetrina =
       Vetrina.vetrina
-        { onClose: Just $ loadArticle setState props.affArticle
+        { onClose: Just $ loadArticle props.article setState props.affArticle
         , onLogin: props.onLogin
         , products: Right [ hblPremium ]
         , unexpectedError: mempty
@@ -281,6 +297,7 @@ render { props, state, setState } =
         , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
         , orderSource: PaywallSource
+        , askAccountAlways: false
         }
       where
         hblPremium =
@@ -321,10 +338,14 @@ render { props, state, setState } =
     renderElement = case _ of
       Left _   -> mempty
       Right el -> case el of
-        Html content -> DOM.p
-          { dangerouslySetInnerHTML: { __html: content }
-          , className: block <> " " <> block <> "__html"
-          }
+        Html content ->
+          -- Can't place div's or blockquotes under p's, so place them under div.
+          -- This is usually case with embeds
+          let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
+          in domFn
+             { dangerouslySetInnerHTML: { __html: content }
+             , className: block <> " " <> block <> "__html"
+             }
         Headline str -> DOM.h4
           { className: block <> " " <> block <> "__subheadline"
           , children: [ DOM.text str ]
@@ -359,3 +380,8 @@ render { props, state, setState } =
             }
       where
         block = "article-element"
+        isDiv = isElem "<div"
+        isBlockquote = isElem "<blockquote"
+        -- Does the string start with wanted element
+        isElem elemName elemString =
+          Just 0 == String.indexOf (Pattern elemName) elemString

@@ -8,7 +8,7 @@ import Data.Array (cons, find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), either, fromLeft, fromRight)
 import Data.Foldable (fold, foldMap)
-import Data.List (List)
+import Data.List (List, intercalate)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
@@ -30,7 +30,7 @@ import Foreign.Object as Object
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryType, DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle)
+import Lettera.Models (ArticleStub,Category(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -62,6 +62,8 @@ appendMosaico content htmlTemplate = runEffectFn2 appendMosaicoImpl content html
 foreign import appendHeadImpl :: EffectFn2 String String String
 appendHead :: String -> String -> Effect String
 appendHead = runEffectFn2 appendHeadImpl
+
+foreign import serverPort :: Int
 
 newtype TextHtml = TextHtml String
 instance encodeResponsePlainHtml :: EncodeResponse TextHtml where
@@ -102,6 +104,12 @@ spec ::
               GET "/assets/<..path>"
                 { params :: { path :: List String }
                 , response :: File
+                }
+         , tagList ::
+              GET "/tagg/<tag>"
+                { response :: TextHtml
+                , params :: { tag :: String }
+                , guards :: Guards ("credentials" : Nil)
                 }
          , frontpage ::
               GET "/"
@@ -147,6 +155,7 @@ main = do
           , getArticle: getArticle env
           , assets
           , frontpage: frontpage env
+          , tagList: tagList env
           , staticPage: staticPage env
           , categoryPage: categoryPage env
           , notFound: notFound env Nothing
@@ -246,6 +255,7 @@ frontpage env _ = do
               $ frontpageComponent
                   { frontpageArticles: articles
                   , onArticleClick: const $ pure unit
+                  , onTagClick: const $ pure unit
                   }
           , mostReadArticles
           , categoryStructure: env.categoryStructure
@@ -256,6 +266,36 @@ frontpage env _ = do
                      \window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> ";\
                      \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
                      \window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";\
+                  \</script>"
+            appendMosaico mosaicoString env.htmlTemplate >>= appendHead windowVars
+  pure $ TextHtml html
+
+tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+tagList env { params: { tag } } = do
+  let tag' = uriComponentToTag tag
+  articles <- Lettera.getByTag 0 20 tag' HBL
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  mosaico <- liftEffect MosaicoServer.app
+  frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  let mosaicoString =
+        DOM.renderToString
+        $ mosaico
+          { mainContent:
+              TagListContent
+              $ frontpageComponent
+                  { frontpageArticles: articles
+                  , onArticleClick: const $ pure unit
+                  , onTagClick: const $ pure unit
+                  }
+          , categoryStructure: env.categoryStructure
+          , mostReadArticles
+          }
+  html <- liftEffect do
+            let windowVars =
+                  "<script>\
+                     \window.tagListArticles=" <> encodeStringifyArticleStubs articles <> ";\
+                     \window.tagListArticlesName=\"" <> tagToURIComponent tag' <> "\";\
+                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
                   \</script>"
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead windowVars
   pure $ TextHtml html
@@ -315,7 +355,6 @@ categoryPage env { params: { categoryName } } = do
 
 notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound env mostReadList _ = do
-  mostReadArticles <- maybe (Lettera.getMostRead 0 10 "" HBL true) pure mostReadList
   articleComponent <- liftEffect Article.articleComponent
   let articleJSX =
         articleComponent
@@ -329,16 +368,14 @@ notFound env mostReadList _ = do
           }
 
   mosaico <- liftEffect MosaicoServer.app
-  let mosaicoString =
-        DOM.renderToString
-        $ mosaico { mainContent: ArticleContent articleJSX
-                  , mostReadArticles
-                  , categoryStructure: env.categoryStructure
-                  }
-  html <- liftEffect $
-    appendMosaico env.htmlTemplate mosaicoString
-      >>= appendHead ("<script>window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";</script>")
-
+  let mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles: [], categoryStructure: env.categoryStructure }
+  html <- liftEffect $ do
+    let windowVars  =
+              "<script>\
+                \window.article=" <> (encodeStringifyArticle $ fromFullArticle notFoundArticle) <> ";\
+                \window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";\
+              \</script>"
+    appendMosaico mosaicoString env.htmlTemplate >>= appendHead windowVars
   pure $ Response.notFound $ StringBody $ html
 
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)

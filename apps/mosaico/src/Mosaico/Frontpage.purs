@@ -3,19 +3,22 @@ module Mosaico.Frontpage where
 import Prelude
 
 import Data.Array (head)
-import Data.Foldable (fold)
+import Data.Foldable (foldMap)
 import Data.Maybe (maybe)
 import Data.Monoid (guard)
+import Data.Newtype (un)
 import Effect (Effect)
-import Lettera.Models (ArticleStub)
+import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler_)
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler, handler_)
 import React.Basic.Hooks (Component, component)
 
 type Props =
   { frontpageArticles :: Array ArticleStub
   , onArticleClick :: ArticleStub -> Effect Unit
+  , onTagClick :: Tag -> Effect Unit
   }
 
 frontpageComponent :: Component Props
@@ -45,7 +48,8 @@ render props =
                     , children:
                         [ DOM.div
                           { className: "mosaico-article__tag color-hbl"
-                          , children: [ DOM.text $ fold (head a.tags) ]
+                          , onClick: handler preventDefault $ const $ foldMap props.onTagClick $ head a.tags
+                          , children: [ DOM.text $ foldMap (un Tag) (head a.tags) ]
                           }
                         , DOM.h2_ [ DOM.text a.title ]
                         , guard a.premium $

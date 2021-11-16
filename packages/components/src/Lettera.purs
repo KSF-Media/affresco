@@ -14,6 +14,7 @@ import Data.Either (Either(..), either, isRight)
 import Data.Foldable (foldMap)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
+import Data.Newtype (un)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
@@ -25,9 +26,10 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 
 foreign import letteraBaseUrl :: String
+foreign import encodeURIComponent :: String -> String
 
 letteraArticleUrl :: String
 letteraArticleUrl = letteraBaseUrl <>  "/article/"
@@ -46,6 +48,9 @@ letteraMostReadUrl = letteraBaseUrl <> "/mostread/"
 
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
+
+letteraTagUrl :: String
+letteraTagUrl = letteraBaseUrl <> "/tag/"
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
@@ -166,6 +171,24 @@ getMostRead start limit category paper onlySubscribers = do
       | Just (responseArray :: Array Json) <- toArray response.body -> do
         a <- liftEffect $ traverse parseArticleStub responseArray
         pure $ takeRights a
+      | otherwise -> do
+        Console.warn "Failed to read API response!"
+        pure mempty
+
+getByTag :: Int -> Int -> Tag -> Paper -> Aff (Array ArticleStub)
+getByTag start limit tag paper = do
+  byTagResponse <- AX.get ResponseFormat.json (letteraTagUrl <> encodeURIComponent(un Tag tag)
+                                               <> "?start=" <> show start
+                                               <> "&limit=" <> show limit
+                                               <> "&paper=" <> Paper.toString paper
+                                              )
+  case byTagResponse of
+    Left err -> do
+      Console.warn $ "GetByTag response failed to decode: " <> AX.printError err
+      pure mempty
+    Right response
+      | Just (responseArray :: Array Json) <- toArray response.body -> do
+        liftEffect $ takeRights <$> traverse parseArticleStub responseArray
       | otherwise -> do
         Console.warn "Failed to read API response!"
         pure mempty

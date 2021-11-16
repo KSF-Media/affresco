@@ -22,12 +22,10 @@ jobs:
         run: |2
             make
             git diff --exit-code
-  deploy-app-article:
+  deploy-app-article-server:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
-    env:
-      gcp-project-id: ksf-production
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -37,34 +35,90 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Build Server App article server
+      - env:
+          HIDE_LOGIN_LINKS: 'true'
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
+        name: Build Server App article server
         run: |2
             ruby deploy.rb app-article-server
             cp -R apps/app-article-server build/app-article-server
+        shell: bash
+      - name: Generate app.yaml for app-article
+        run: |
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/app-article.dhall" > app.yaml
+          cat app.yaml
+        shell: bash
+      - id: deploy-app-article-server-production
+        name: Deploy App article server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: ksf-production
+          promote: 'true'
+          working_directory: build/app-article-server
+      - env:
+          HIDE_LOGIN_LINKS: 'true'
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
+        name: Copy app.yaml.dev to app.yaml
+        run: |
+          cp build/app-article-server/app.dev.yaml build/app-article-server/app.yaml
         shell: bash
       - id: deploy-app-article-server
         name: Deploy App article server
         uses: "google-github-actions/deploy-appengine@main"
         with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: "${{ env.gcp-project-id }}"
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: ksf-staging
           promote: 'true'
           working_directory: build/app-article-server
       - continue-on-error: true
         name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
+  deploy-dispatch-yaml:
+    container:
+      image: ksfmedia/diskho:gha-1.0
+      options: "--cpus 2"
+    needs:
+      - deploy-mosaico-server
+      - deploy-app-article-server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: "actions/checkout@v2"
+      - name: Setup Cloud SDK
+        uses: "google-github-actions/setup-gcloud@master"
+        with:
+          export_default_credentials: 'true'
+          project_id: ksf-production
+          service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+      - run: |2
+            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            mkdir -p build
+      - name: Generate AppEngine domain map
+        run: |2
+            dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Production" > ./dispatch.yaml
+            cat dispatch.yaml
+        shell: bash
+      - name: Deploy AppEngine domain map
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          deliverables: dispatch.yaml
+          project_id: ksf-production
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
-    env:
-      gcp-project-id: ksf-production
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +128,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
@@ -235,12 +289,10 @@ jobs:
           destination: ksf-frontends/prenumerera
           parent: 'false'
           path: build/prenumerera
-  deploy-mosaico:
+  deploy-mosaico-server:
     container:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
-    env:
-      gcp-project-id: ksf-production
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -250,22 +302,45 @@ jobs:
         uses: "google-github-actions/setup-gcloud@master"
         with:
           export_default_credentials: 'true'
-          project_id: "${{ env.gcp-project-id }}"
+          project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Build Server Mosaico server
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+        name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
             cp -R apps/mosaico build/mosaico
+        shell: bash
+      - name: Generate app.yaml for mosaico
+        run: |
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/mosaico.dhall" > app.yaml
+          cat app.yaml
+        shell: bash
+      - id: deploy-mosaico-server-production
+        name: Deploy Mosaico server
+        uses: "google-github-actions/deploy-appengine@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          project_id: ksf-production
+          promote: 'true'
+          working_directory: build/mosaico
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+        name: Copy app.yaml.dev to app.yaml
+        run: |
+          cp build/mosaico/app.dev.yaml build/mosaico/app.yaml
         shell: bash
       - id: deploy-mosaico-server
         name: Deploy Mosaico server
         uses: "google-github-actions/deploy-appengine@main"
         with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: "${{ env.gcp-project-id }}"
+          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          project_id: ksf-staging
           promote: 'true'
           working_directory: build/mosaico
       - continue-on-error: true

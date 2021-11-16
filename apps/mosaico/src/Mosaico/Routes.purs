@@ -14,6 +14,8 @@ import Lettera.Models (Category(..))
 import Routing.Match (Match(..), end, lit, root, str)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
+import Data.Foldable (oneOf)
+import Lettera.Models (Tag, uriComponentToTag)
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -22,6 +24,7 @@ data MosaicoPage
   | NotFoundPage String
   | StaticPage String
   | CategoryPage String
+  | TagPage Tag
   | MenuPage
 derive instance eqMosaicoPage :: Eq MosaicoPage
 
@@ -31,7 +34,8 @@ routes categories = root *> oneOf
   [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
-  , Frontpage <$ end
+  , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
+  , Frontpage <$end
   , MenuPage <$ lit "meny"
   , CategoryPage <<< toLower <$> categoryRoute
   , NotFoundPage <$> str

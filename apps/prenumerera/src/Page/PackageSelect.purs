@@ -90,7 +90,7 @@ renderSelectPaper selected papers fade setPaper =
     , children:
         [ DOM.li_ [ DOM.div
                       { className: "choose"
-                      , children: [ DOM.text "Välj tidning" ]
+                      , children: [ DOM.text "Välj tidning:" ]
                       }
                   ]
         ] <> map renderPaper papers
