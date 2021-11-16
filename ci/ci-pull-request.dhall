@@ -29,31 +29,24 @@ let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
 
+let mkAeSteps =
+      \(env : Actions.Env) ->
+      \(app : AppServer.Type) ->
+          Actions.setupSteps env
+        # [ Actions.mkBuildServerStep app ]
+        # [ Actions.copyAppYamlForStaging app ]
+        # [ Actions.mkAppEngineStep env promote app ]
+        # [ Actions.mkCleanAppEngineStep env app ]
+
 let steps-gs =
         Actions.setupSteps Actions.Env.Staging
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Staging apps
 
-let steps-app-article =
-        Actions.setupSteps Actions.Env.Staging
-      # [ Actions.mkBuildServerStep AE.app-article-server ]
-      # [ Actions.copyAppYamlForStaging AE.app-article-server ]
-      # [ Actions.mkAppEngineStep
-            Actions.Env.Staging
-            promote
-            AE.app-article-server
-        ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.app-article-server
-        ]
+let steps-app-article = mkAeSteps Actions.Env.Staging AE.app-article-server
 
-let steps-mosaico =
-        Actions.setupSteps Actions.Env.Staging
-      # [ Actions.mkBuildServerStep AE.mosaico-server ]
-      # [ Actions.copyAppYamlForStaging AE.mosaico-server ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.mosaico-server
-        ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.mosaico-server ]
+let steps-mosaico = mkAeSteps Actions.Env.Staging AE.mosaico-server
 
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Staging

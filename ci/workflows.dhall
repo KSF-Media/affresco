@@ -330,18 +330,6 @@ let deployAppEngineSteps =
       \(promote : Text) ->
         Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
 
-let aeSteps =
-      \(env : Env) ->
-      \(app : AppServer.Type) ->
-      \(promote : Text) ->
-          setupSteps env
-        # [ mkBuildServerStep app ]
-        # [ generateAppYaml app ]
-        # [ mkAppEngineStep env promote app ]
-        # [ copyAppYamlForStaging app ]
-        # [ mkAppEngineStep Env.Staging promote app ]
-        # [ mkCleanAppEngineStep env app ]
-
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 
 let buildServerSteps =
