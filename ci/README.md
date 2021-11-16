@@ -35,6 +35,10 @@ The global environment variables (i.e. the ones shared by more than one app)
 should go in every workflow's `env` key, while the ones belonging to a single app
 should go in the `apps.dhall` file.
 
+### AppEngine env vars
+
+All env vars needed by an AppEngine app should be defined in `.ci/app-servers/<appname>.dhall`
+
 ## Build caching
 
 We globally cache all `node_modules`, `.yarn-cache` and `.cache` folders keyed to the hash of the global yarn.lock
@@ -67,9 +71,10 @@ In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
 
 ## Adding a new App Engine App
 
-1. Edit the [`app-servers.dhall`](./app-servers.dhall) file to add the new app details
-2. Create a `app.dev.yaml` to the root of your app (look for examples from other apps)
-3. You'll find the production app deployed at https://${sevice-name}-dot-ksf-production.ey.r.appspot.com
+1. Create a new `<appname>.dhall` in `.ci/app-servers/` and add it to the record in app-servers.dhall
+2. Configure the settings for the new app (You can use any of the other AE apps as an example)
+3. Create a `app.dev.yaml` to the root of your app (look for examples from other apps)
+4. You'll find the production app deployed at https://${sevice-name}-dot-ksf-production.ey.r.appspot.com
 
 ### Maintenance Mode
 
