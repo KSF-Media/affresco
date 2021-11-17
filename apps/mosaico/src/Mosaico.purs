@@ -271,7 +271,7 @@ render setState state router =
          mosaicoDefaultLayout $ state.frontpageComponent
            { frontpageArticles: state.frontpageArticles
            , onArticleClick: \article -> do
-               setState \s -> s { clickedArticle = Just article }
+               setState _ { clickedArticle = Just article }
                void $ Web.scroll 0 0 =<< Web.window
                router.pushState (write {}) $ "/artikel/" <> article.uuid
            , onTagClick
