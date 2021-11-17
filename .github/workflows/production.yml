@@ -50,10 +50,10 @@ jobs:
             ruby deploy.rb app-article-server
             cp -R apps/app-article-server build/app-article-server
         shell: bash
-      - name: Generate app.yaml for app-article
+      - name: Generate app.yaml for app-article-server
         run: |
-          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/app-article.dhall" > app.yaml
-          cat app.yaml
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/app-article-server.dhall" > ./build/app-article-server/app.yaml
+          cat ./build/app-article-server/app.yaml
         shell: bash
       - id: deploy-app-article-server-production
         name: Deploy App article server
@@ -315,10 +315,10 @@ jobs:
             ruby deploy.rb mosaico
             cp -R apps/mosaico build/mosaico
         shell: bash
-      - name: Generate app.yaml for mosaico
+      - name: Generate app.yaml for mosaico-server
         run: |
-          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/mosaico.dhall" > app.yaml
-          cat app.yaml
+          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/mosaico-server.dhall" > ./build/mosaico/app.yaml
+          cat ./build/mosaico/app.yaml
         shell: bash
       - id: deploy-mosaico-server-production
         name: Deploy Mosaico server
