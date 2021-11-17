@@ -406,11 +406,10 @@ parseCategory :: Env -> HTTP.Request -> Aff (Either Failure Category)
 parseCategory { categoryRegex, categoryStructure } req = do
   let url = HTTP.requestURL req
       urlDecoded = fromMaybe url $ URI.decodeURIComponent url
-      -- If route is kebab-cased, let's un kebab-case it
-      categoryRoute = toLower $ replaceAll (Pattern "-") (Replacement "") $ fold $ NonEmptyArray.last =<< Regex.match categoryRegex urlDecoded
+      categoryRoute = CategoryLabel $ fold $ NonEmptyArray.last =<< Regex.match categoryRegex urlDecoded
       -- Flatten out categories from the category structure
       categories = foldl (\acc (Category c) -> acc <> [Category c] <> c.subCategories) [] categoryStructure
-  case find ((_ == CategoryLabel categoryRoute) <<< _.label <<< unwrap) categories of
+  case find ((_ == categoryRoute) <<< _.label <<< unwrap) categories of
     Just c -> pure $ Right c
     _ -> pure $ Left (Forward "Did not match category")
 
