@@ -44,6 +44,7 @@ You can edit this file as you like.
   , "strings-extra"
   , "tuples"
   , "unordered-collections"
+  , "unsafe-coerce"
   , "uuid"
   , "validation"
   , "web-events"
