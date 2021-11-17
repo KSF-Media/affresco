@@ -40,11 +40,7 @@ routes categories = root *> oneOf
   , NotFoundPage <$> str
   ]
   where
-    categoriesSet cats = foldl (\acc (Category c) ->
-                                 let wat = Set.insert c.label acc
-                                     yolo = Set.union wat (categoriesSet c.subCategories)
-                                 in yolo
-                               ) Set.empty cats
+    categoriesSet cats = foldl (\acc (Category c) -> Set.insert c.label acc # Set.union (categoriesSet c.subCategories)) Set.empty cats
     categoryRoute =
       let matchRoute route
             | Cons (Path categoryRouteName) rs <- route
