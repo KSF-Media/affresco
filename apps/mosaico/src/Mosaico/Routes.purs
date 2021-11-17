@@ -13,6 +13,7 @@ data MosaicoPage
   | NotFoundPage String
   | StaticPage String
   | TagPage Tag
+  | ListScoredPage String
   | MenuPage
 derive instance eqR :: Eq MosaicoPage
 
@@ -23,6 +24,7 @@ routes = root *> oneOf
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
+  , ListScoredPage <$> (lit "aktuell" *> str)
   , Frontpage <$end
   , MenuPage <$ lit "meny"
   , NotFoundPage <$> str

@@ -46,6 +46,8 @@ type State =
   , mostReadArticles :: Array ArticleStub
   , tagArticlesName :: Maybe Tag
   , tagArticles :: Array ArticleStub
+  , scoredListCategory :: Maybe String
+  , scoredListArticles :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
   , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -68,6 +70,8 @@ type Props =
   , staticPageContent :: Maybe StaticPage
   , tagArticlesName :: Maybe Tag
   , tagArticles :: Maybe (Array ArticleStub)
+  , scoredListCategory :: Maybe String
+  , scoredListArticles :: Maybe (Array ArticleStub)
   }
 type JSProps =
   { article :: Nullable Json
@@ -77,6 +81,8 @@ type JSProps =
   , staticPageContent :: Nullable StaticPage
   , tagArticlesName :: Nullable String
   , tagArticles :: Nullable (Array Json)
+  , scoredListCategory :: Nullable String
+  , scoredListArticles :: Nullable (Array Json)
   }
 
 app :: Component Props
@@ -96,12 +102,25 @@ mosaicoComponent initialValues props = React.do
                          , staticPage = map StaticPageResponse props.staticPageContent
                          , tagArticlesName = props.tagArticlesName
                          , tagArticles = fold props.tagArticles
+                         , scoredListCategory = props.scoredListCategory
+                         , scoredListArticles = fold props.scoredListArticles
                          }
 
   -- Listen for route changes and set state accordingly
   useEffectOnce $ locations (routeListener setState) initialValues.nav
   useEffect state.route do
     case state.route of
+      Routes.ListScoredPage category
+        | Just category == state.scoredListCategory -> pure unit
+        | otherwise -> do
+            setState _ { scoredListCategory = Just category
+                       , scoredListArticles = mempty
+                       }
+            Aff.launchAff_ do
+              scoredList <- Lettera.getScoredList 0 20 category 1 HBL
+              liftEffect $ setState _ { scoredListCategory = Just category
+                                      , scoredListArticles = scoredList
+                                      }
       Routes.Frontpage -> do
         if null state.frontpageArticles
         then Aff.launchAff_ do
@@ -177,6 +196,8 @@ getInitialValues = do
         , mostReadArticles: []
         , tagArticlesName: Nothing
         , tagArticles: []
+        , scoredListCategory: Nothing
+        , scoredListArticles: []
         , affArticle: Nothing
         , route: initialRoute
         , clickedArticle: Nothing
@@ -207,7 +228,9 @@ fromJSProps jsProps =
       staticPageContent = toMaybe jsProps.staticPageContent
       tagArticlesName = uriComponentToTag <$> toMaybe jsProps.tagArticlesName
       tagArticles = mapMaybe (hush <<< parseArticleStubWithoutLocalizing) <$> toMaybe jsProps.tagArticles
-  in { article, mostReadArticles, frontpageArticles, staticPageContent, tagArticles, tagArticlesName }
+      scoredListCategory = toMaybe jsProps.scoredListCategory
+      scoredListArticles = mapMaybe (hush <<< parseArticleStubWithoutLocalizing) <$> toMaybe jsProps.scoredListArticles
+  in { article, mostReadArticles, frontpageArticles, staticPageContent, tagArticles, tagArticlesName, scoredListCategory, scoredListArticles }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -229,6 +252,7 @@ render setState state router =
         }
     _ -> mempty
   <> case state.route of
+       Routes.ListScoredPage _category -> frontpage state.scoredListArticles
        Routes.ArticlePage articleId
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle

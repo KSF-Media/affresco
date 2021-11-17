@@ -45,6 +45,9 @@ letteraFrontPageUrl = letteraBaseUrl <> "/frontpage"
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/mostread/"
 
+letteraScoredUrl :: String
+letteraScoredUrl = letteraBaseUrl <> "/scored"
+
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
 
@@ -180,6 +183,26 @@ getByTag start limit tag paper = do
   case byTagResponse of
     Left err -> do
       Console.warn $ "GetByTag response failed to decode: " <> AX.printError err
+      pure mempty
+    Right response
+      | Just (responseArray :: Array Json) <- toArray response.body -> do
+        liftEffect $ takeRights <$> traverse parseArticleStub responseArray
+      | otherwise -> do
+        Console.warn "Failed to read API response!"
+        pure mempty
+
+getScoredList :: Int -> Int -> String -> Int -> Paper -> Aff (Array ArticleStub)
+getScoredList start limit category preset paper = do
+  scoredListResponse <- AX.get ResponseFormat.json (letteraScoredUrl
+          <> "/" <> show preset
+          <> "?start=" <> show start
+          <> "&limit=" <> show limit
+          <> "&category=" <> category
+          <> "&paper=" <> Paper.toString paper
+  )
+  case scoredListResponse of
+    Left err -> do
+      Console.warn $ "ScoredList response failed to decode: " <> AX.printError err
       pure mempty
     Right response
       | Just (responseArray :: Array Json) <- toArray response.body -> do
