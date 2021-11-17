@@ -8,7 +8,7 @@ import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String as String
 import Effect (Effect)
-import Lettera.Models (Category(..))
+import Lettera.Models (Category(..), CategoryLabel(..))
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
@@ -24,7 +24,7 @@ import Simple.JSON (E, read, write)
 type Props =
   { router :: PushStateInterface
   , categoryStructure :: Array Category
-  , onCategoryClick :: String -> Effect Unit
+  , onCategoryClick :: CategoryLabel -> Effect Unit
   }
 
 type Self =
@@ -132,7 +132,7 @@ render { state: { menuVisible, menuComponent }, props } =
                                       eitherState = read locationState.state
                                     case eitherState of
                                       Right state -> r.pushState (write { }) state.previousPath
-                                      Left _         -> pure unit
+                                      Left _      -> pure unit
                                   _              -> r.pushState (write { previousPath: locationState.pathname }) "/meny")
                                 props.router
 
@@ -151,13 +151,12 @@ render { state: { menuVisible, menuComponent }, props } =
     }
   where
     mkCategory (Category category) =
-      let categoryLower = String.toLower category.id
-      in DOM.a { href: "/" <> categoryLower
-               , onClick: capture_ $ do
-                   props.onCategoryClick categoryLower
-                   props.router.pushState (write {}) $ "/" <> categoryLower
-               , children: [ DOM.text $ String.toUpper category.label ]
-               }
+      DOM.a { href: "/" <> show category.label
+            , onClick: capture_ $ do
+                  props.onCategoryClick category.label
+                  props.router.pushState (write {}) $ "/" <> show category.label
+            , children: [ DOM.text $ String.toUpper $ unwrap category.label ]
+            }
     searchButton :: JSX
     searchButton = DOM.div
                     { className: iconButtonClass <> " " <> searchButtonClass <>

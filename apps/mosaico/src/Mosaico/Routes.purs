@@ -3,6 +3,7 @@ module Mosaico.Routes where
 import Prelude
 
 import Data.Foldable (foldl, oneOf)
+import Data.Foldable (oneOf)
 import Data.List (List(..))
 import Data.Semiring.Free (free)
 import Data.Set as Set
@@ -10,12 +11,11 @@ import Data.String (toLower)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
-import Lettera.Models (Category(..))
+import Lettera.Models (Category(..), CategoryLabel(..))
+import Lettera.Models (Tag, uriComponentToTag)
 import Routing.Match (Match(..), end, lit, root, str)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
-import Data.Foldable (oneOf)
-import Lettera.Models (Tag, uriComponentToTag)
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -23,11 +23,10 @@ data MosaicoPage
   | ArticlePage String
   | NotFoundPage String
   | StaticPage String
-  | CategoryPage String
+  | CategoryPage CategoryLabel
   | TagPage Tag
   | MenuPage
 derive instance eqMosaicoPage :: Eq MosaicoPage
-
 
 routes :: Array Category -> Match MosaicoPage
 routes categories = root *> oneOf
@@ -35,17 +34,21 @@ routes categories = root *> oneOf
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
-  , Frontpage <$end
+  , Frontpage <$ end
   , MenuPage <$ lit "meny"
-  , CategoryPage <<< toLower <$> categoryRoute
+  , CategoryPage <<< CategoryLabel <$> categoryRoute
   , NotFoundPage <$> str
   ]
   where
-    categoriesSet = foldl (\acc (Category c) -> Set.insert (toLower c.label) acc) Set.empty categories
+    categoriesSet cats = foldl (\acc (Category c) ->
+                                 let wat = Set.insert c.label acc
+                                     yolo = Set.union wat (categoriesSet c.subCategories)
+                                 in yolo
+                               ) Set.empty cats
     categoryRoute =
       let matchRoute route
             | Cons (Path categoryRouteName) rs <- route
-            , Set.member (toLower categoryRouteName) categoriesSet
+            , Set.member (CategoryLabel categoryRouteName) (categoriesSet categories)
             = pure $ Tuple rs categoryRouteName
             | otherwise = invalid $ free $ Fail "Not a category"
       in Match matchRoute

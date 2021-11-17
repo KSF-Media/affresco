@@ -21,7 +21,7 @@ import Effect.Class.Console as Console
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..),Category(..), Tag, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
+import Lettera.Models (Article, ArticleStub, Category, CategoryLabel, FullArticle(..), Tag, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -62,7 +62,7 @@ type State =
   , user :: Maybe User
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
-  , frontpageFeeds :: HashMap (Maybe String) (Array ArticleStub)
+  , frontpageFeeds :: HashMap (Maybe CategoryLabel) (Array ArticleStub)
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -103,6 +103,7 @@ mosaicoComponent initialValues props = React.do
                          , staticPage = map StaticPageResponse props.staticPageContent
                          , tagArticlesName = props.tagArticlesName
                          , tagArticles = fold props.tagArticles
+                         , categoryStructure = props.categoryStructure
                          }
 
   useEffectOnce do
@@ -130,7 +131,7 @@ mosaicoComponent initialValues props = React.do
         else setState \s -> s { article = Nothing }
       Routes.TagPage tag
         | Just tag == state.tagArticlesName -> pure unit
-       | otherwise -> do
+        | otherwise -> do
             setState _ { tagArticlesName = Just tag
                        , tagArticles = mempty
                        }
@@ -149,7 +150,7 @@ mosaicoComponent initialValues props = React.do
           Just feed -> setState _ { frontpageArticles = feed }
           _ -> do
             Aff.launchAff_ do
-              categoryFeed <- Lettera.getFrontpage HBL (Just category)
+              categoryFeed <- Lettera.getFrontpage HBL (Just $ show category)
               liftEffect $
                 setState \s -> s { frontpageArticles = categoryFeed
                                  , article = Nothing

@@ -325,8 +325,7 @@ derive instance newtypeCategoryLabel :: Newtype CategoryLabel _
 -- (CategoryLabel "Norden Och Världen") is equal to (CategoryLabel "norden-och-världen")
 instance eqCategoryLabel :: Eq CategoryLabel where
   eq (CategoryLabel a) (CategoryLabel b) =
-    a == b
-    || normalize a == normalize b
+    a == b || normalize a == normalize b
     where
       normalize = toLower <<< removeKebabCase <<< removeWhitespace
       removeKebabCase = String.replaceAll (Pattern "-") (Replacement "")
@@ -366,7 +365,7 @@ instance categoryEncodeJson :: EncodeJson Category where
     Object.singleton "id" (encodeJson c.id)
     # Object.insert "label" (encodeJson $ unwrap c.label)
     # Object.insert "type" (encodeJson $ toString c.type)
-    # Object.insert "subCategories" (encodeJson c.subCategories)
+    # Object.insert "subcategories" (encodeJson c.subCategories)
     # Object.insert "url" (encodeJson c.url)
     # encodeJson
 
