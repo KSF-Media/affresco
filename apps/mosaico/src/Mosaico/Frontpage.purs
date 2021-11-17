@@ -8,7 +8,7 @@ import Data.Maybe (maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un)
 import Effect (Effect)
-import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Lettera.Models (ArticleStub, Tag(..))
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
