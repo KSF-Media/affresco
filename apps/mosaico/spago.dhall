@@ -41,6 +41,7 @@ You can edit this file as you like.
   , "semirings"
   , "simple-json"
   , "strings"
+  , "strings-extra"
   , "tuples"
   , "unordered-collections"
   , "uuid"
