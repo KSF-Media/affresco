@@ -6,32 +6,30 @@ import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Either (Either(..), either, fromLeft, fromRight)
+import Data.Either (Either(..), either)
 import Data.Foldable (fold, foldMap)
 import Data.List (List, intercalate)
 import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
-import Data.String (Pattern(..), Replacement(..), replace, replaceAll, toLower)
+import Data.String (Pattern(..), Replacement(..), replaceAll, toLower)
 import Data.String.Regex (Regex)
-import Data.String.Regex as Regex
-import Data.String.Regex.Flags as Regex
-import Data.Traversable (traverse_)
+import Data.String.Regex (match, regex) as Regex
+import Data.String.Regex.Flags (ignoreCase) as Regex
 import Data.Tuple (Tuple(..))
+import Data.Tuple.Nested ((/\))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Console
-import Effect.Exception (throw)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
 import JSURI as URI
 import KSF.Api (Token(..), UserAuth)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -225,14 +223,13 @@ renderArticle env uuid article mostReadArticles = do
 
       html <- liftEffect do
         let windowVars =
-              "<script>\
-                \window.article=" <> (encodeStringifyArticle $ fromFullArticle a) <> ";\
-                \window.isPreview=" <> (show $ isPreviewArticle a) <> ";\
-                \window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> ";\
-                \window.isDraft=" <> (show $ isDraftArticle a) <> ";\
-                \window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";\
-              \</script>"
-        appendMosaico mosaicoString env.htmlTemplate >>= appendHead windowVars
+              [ "article"           /\ (encodeStringifyArticle $ fromFullArticle a)
+              , "isPreview"         /\ (show $ isPreviewArticle a)
+              , "mostReadArticles"  /\ (encodeStringifyArticleStubs mostReadArticles)
+              , "isDraft"           /\ (show $ isDraftArticle a)
+              , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+              ]
+        appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
 
       pure $ Response.ok $ StringBody html
     Left _ ->
@@ -263,12 +260,11 @@ frontpage env _ = do
           }
   html <- liftEffect do
             let windowVars =
-                  "<script>\
-                     \window.frontpageArticles=" <> encodeStringifyArticleStubs articles <> ";\
-                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
-                     \window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";\
-                  \</script>"
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead windowVars
+                  [ "frontpageArticles" /\ encodeStringifyArticleStubs articles
+                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  ]
+            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
@@ -293,12 +289,11 @@ tagList env { params: { tag } } = do
           }
   html <- liftEffect do
             let windowVars =
-                  "<script>\
-                     \window.tagListArticles=" <> encodeStringifyArticleStubs articles <> ";\
-                     \window.tagListArticlesName=\"" <> tagToURIComponent tag' <> "\";\
-                     \window.mostReadArticles="  <> encodeStringifyArticleStubs mostReadArticles <> ";\
-                  \</script>"
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead windowVars
+                  [ "tagListArticles"     /\ encodeStringifyArticleStubs articles
+                  , "tagListArticlesName" /\ tagToURIComponent tag'
+                  , "mostReadArticles"    /\ encodeStringifyArticleStubs mostReadArticles
+                  ]
+            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
 
 staticPage
@@ -341,21 +336,41 @@ staticPage env { params: { pageName } } = do
                             # encodeJson
                             # JSON.stringify
             windowVars =
-              "<script>\
-                \window.staticPageContent=" <> staticPageObj <> ";\
-                \window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";\
-              \</script>"
+              [ "staticPageContent" /\ staticPageObj
+              , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+              ]
         appendMosaico mosaicoString env.htmlTemplate
-          >>= appendHead windowVars
+          >>= appendHead (mkWindowVariables windowVars)
 
       pure $ Response.ok $ StringBody html
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category } } -> Aff (Response ResponseBody)
 categoryPage env { params: { categoryName } } = do
-  pure $ Response.ok $ StringBody "got a category"
+  mosaico <- liftEffect MosaicoServer.app
+  frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  articles <- Lettera.getFrontpage HBL (Just categoryName)
+  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  let mosaicoString = DOM.renderToString
+                          $ mosaico
+                            { mainContent: FrontpageContent $ frontpageComponent
+                                { frontpageArticles: articles
+                                , onArticleClick: const $ pure unit
+                                , onTagClick: const $ pure unit
+                                }
+                            , mostReadArticles
+                            , categoryStructure: env.categoryStructure
+                            }
+  html <- liftEffect do
+            let windowVars =
+                  [ "frontpageArticles" /\ encodeStringifyArticleStubs articles
+                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  ]
+            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  pure $ Response.ok $ StringBody html
 
 notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
-notFound env mostReadList _ = do
+notFound env _ _ = do
   articleComponent <- liftEffect Article.articleComponent
   let articleJSX =
         articleComponent
@@ -371,12 +386,11 @@ notFound env mostReadList _ = do
   mosaico <- liftEffect MosaicoServer.app
   let mosaicoString = DOM.renderToString $ mosaico { mainContent: ArticleContent articleJSX, mostReadArticles: [], categoryStructure: env.categoryStructure }
   html <- liftEffect $ do
-    let windowVars  =
-              "<script>\
-                \window.article=" <> (encodeStringifyArticle $ fromFullArticle notFoundArticle) <> ";\
-                \window.categoryStructure=" <> (JSON.stringify $ encodeJson env.categoryStructure) <> ";\
-              \</script>"
-    appendMosaico mosaicoString env.htmlTemplate >>= appendHead windowVars
+    let windowVars =
+          [ "article" /\ (encodeStringifyArticle $ fromFullArticle notFoundArticle)
+          , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+          ]
+    appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ Response.notFound $ StringBody $ html
 
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
@@ -396,13 +410,11 @@ parseCategory { categoryRegex, categoryStructure } req = do
       categoryRoute = toLower $ replaceAll (Pattern "-") (Replacement "") $ fold $ NonEmptyArray.last =<< Regex.match categoryRegex urlDecoded
       -- Flatten out categories from the category structure
       categories = foldl (\acc (Category c) -> acc <> [Category c] <> c.subCategories) [] categoryStructure
-  case find (matchCategory categoryRoute) categories of
+  case find ((_ == CategoryLabel categoryRoute) <<< _.label <<< unwrap) categories of
     Just c -> pure $ Right c
     _ -> pure $ Left (Forward "Did not match category")
-  where
-    -- Does match id or label? We are matching labels too, as id's don't usually contain any scandic letters
-    -- e.g. consider pair of id and label of NordenOchVarlden, Norden Och Världen.
-    -- This is because we wish to show the scandic characters in url, such as hbl.fi/norden-och-världen
-    matchCategory wantedCategory (Category c) =
-      wantedCategory == toLower c.id
-      || wantedCategory == (toLower $ replaceAll (Pattern " ") (Replacement "") c.label)
+
+mkWindowVariables :: Array (Tuple String String) -> String
+mkWindowVariables vars =
+  let jsVars = map (\(name /\ value) -> "window." <> name <> "=" <> value <> ";") vars
+  in "<script>" <> intercalate "" jsVars <> "</script>"
