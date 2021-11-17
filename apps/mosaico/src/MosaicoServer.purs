@@ -2,7 +2,7 @@ module MosaicoServer where
 
 import Prelude
 
-import Lettera.Models (ArticleStub, Category(..))
+import Lettera.Models (ArticleStub, Category)
 import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.MostReadList as MostReadList

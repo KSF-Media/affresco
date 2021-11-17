@@ -2,17 +2,13 @@ module Mosaico.Routes where
 
 import Prelude
 
-import Data.Foldable (foldl, oneOf)
-import Data.Foldable (oneOf)
+import Data.Foldable (foldl, oneOf, oneOf)
 import Data.List (List(..))
 import Data.Semiring.Free (free)
 import Data.Set as Set
-import Data.String (toLower)
-import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
-import Lettera.Models (Category(..), CategoryLabel(..))
-import Lettera.Models (Tag, uriComponentToTag)
+import Lettera.Models (Category(..), CategoryLabel(..), Tag, uriComponentToTag)
 import Routing.Match (Match(..), end, lit, root, str)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))

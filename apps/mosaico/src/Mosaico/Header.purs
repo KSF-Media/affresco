@@ -2,13 +2,12 @@ module Mosaico.Header where
 
 import Prelude
 
-import Data.Array (cons, take)
 import Data.Either (Either(..))
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String as String
 import Effect (Effect)
-import Lettera.Models (Category(..), CategoryLabel(..))
+import Lettera.Models (Category(..), CategoryLabel)
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
