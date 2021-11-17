@@ -145,6 +145,7 @@ main = do
     htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
     categoryStructure <- Lettera.getCategoryStructure HBL
     categoryRegex <-
+      -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
       case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
         Right r   -> pure r
         Left _err -> Aff.throwError $ Aff.error "Got weird regex, couldn't parse it. Server is now exploding. Please fix it."
