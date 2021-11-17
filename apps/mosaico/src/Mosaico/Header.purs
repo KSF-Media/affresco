@@ -98,8 +98,7 @@ render { state: { menuVisible, menuComponent }, props } =
                 if menuVisible then
                   [ searchButton ]
                 else
-                  -- FIXME: TAKE EVERY CATEGORY
-                  map mkCategory (take 5 props.categoryStructure)
+                  map mkCategory props.categoryStructure
             }
 
         , DOM.div
