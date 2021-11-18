@@ -7,6 +7,6 @@ Note: When adding a new server please also update the list of all servers
 TODO: Figure out a way to generate all from servers.
 
 -}
-{ app-article-server = ./app-servers/app-article.dhall
-, mosaico = ./app-servers/mosaico.dhall
+{ app-article-server = ./app-servers/app-article-server.dhall
+, mosaico-server = ./app-servers/mosaico-server.dhall
 }
