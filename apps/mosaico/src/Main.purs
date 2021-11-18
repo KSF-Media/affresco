@@ -141,18 +141,17 @@ spec = Spec
 
 main :: Effect Unit
 main = do
-  Aff.launchAff_ do
-    staticPages  <- do
+  staticPages  <- do
       staticPageNames <- FS.readdir "./static/"
       let makeMap acc staticPageFileName = do
             pageContent <- FS.readTextFile UTF8 $ "./static/" <> staticPageFileName
             let staticPageName = replace (Pattern ".html") (Replacement "") staticPageFileName
             pure $ HashMap.insert staticPageName pageContent acc
       foldM makeMap HashMap.empty staticPageNames
-
-    htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
+  htmlTemplate <- FS.readTextFile UTF8 indexHtmlFileLocation
+  Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure HBL
-     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
+    -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
     let categoryRegex = unsafeCoerce $ Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages }
         handlers =
