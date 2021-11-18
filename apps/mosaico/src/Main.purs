@@ -6,10 +6,10 @@ import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, null)
 import Data.Either (Either(..), either)
-import Data.Foldable (foldMap)
+import Data.Foldable (fold, foldMap)
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -43,8 +43,9 @@ import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import React.Basic (JSX)
-import React.Basic.DOM (div) as DOM
-import React.Basic.DOM.Server (renderToString) as DOM
+import React.Basic (fragment) as DOM
+import React.Basic.DOM (div, meta) as DOM
+import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
@@ -195,13 +196,13 @@ renderArticle env@{ htmlTemplate } uuid article mostReadArticles = do
                 \window.mostReadArticles=" <> encodeStringifyArticleStubs mostReadArticles <> ";\
                 \window.isDraft=" <> (show $ isDraftArticle a) <> ";\
               \</script>"
-        let metaTags =
-              "\
-              \<meta property=\"og:type\" value=\"article\" />\
-              \<meta property=\"og:title\" value=" <> ( show $ _.title $ fromFullArticle a ) <> " />\
-              \<meta property=\"og:description\" value=" <> show ( fromMaybe mempty $ _.preamble $ fromFullArticle a ) <> " />\
-              \<meta property=\"og:image\" value=" <> ( show $ _.url $ ( fromMaybe mempty $ _.mainImage $ fromFullArticle a ) ) <> " />\
-              \"
+            metaTags = DOM.renderToStaticMarkup $
+              DOM.fragment
+                [ DOM.meta { property: "og:type", content: "article" }
+                , DOM.meta { property: "og:title", content: _.title $ fromFullArticle a }
+                , DOM.meta { property: "og:description", content: fold <$> _.preamble $ fromFullArticle a }
+                , DOM.meta { property: "og:image", content: _.url $ ( fold <$> _.mainImage $ fromFullArticle a ) }
+                ]
         appendMosaico mosaicoString htmlTemplate >>= appendHead windowVars >>= appendHead metaTags
 
       pure $ Response.ok $ StringBody html
