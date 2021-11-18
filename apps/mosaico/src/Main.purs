@@ -7,11 +7,13 @@ import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), either)
-import Data.Foldable (fold, foldMap)
+import Data.Foldable (fold, foldM, foldMap)
+import Data.HashMap as HashMap
 import Data.List (List, intercalate)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
+import Data.String (Pattern(..), Replacement(..), replace)
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
 import Data.String.Regex.Flags (ignoreCase) as Regex
@@ -30,9 +32,7 @@ import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
-import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
-import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage)
 import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -49,7 +49,6 @@ import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
-import React.Basic (JSX)
 import React.Basic.DOM (div) as DOM
 import React.Basic.DOM.Server (renderToString) as DOM
 import Unsafe.Coerce (unsafeCoerce)
@@ -79,6 +78,7 @@ type Env =
   { htmlTemplate :: String
   , categoryStructure :: Array Category
   , categoryRegex :: Regex
+  , staticPages :: HashMap.HashMap String String
   }
 
 indexHtmlFileLocation :: String
@@ -141,12 +141,19 @@ spec = Spec
 
 main :: Effect Unit
 main = do
+  staticPages  <- do
+      staticPageNames <- FS.readdir "./static/"
+      let makeMap acc staticPageFileName = do
+            pageContent <- FS.readTextFile UTF8 $ "./static/" <> staticPageFileName
+            let staticPageName = replace (Pattern ".html") (Replacement "") staticPageFileName
+            pure $ HashMap.insert staticPageName pageContent acc
+      foldM makeMap HashMap.empty staticPageNames
+  htmlTemplate <- FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
-    htmlTemplate <- liftEffect $ FS.readTextFile UTF8 indexHtmlFileLocation
     categoryStructure <- Lettera.getCategoryStructure HBL
-     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
+    -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
     let categoryRegex = unsafeCoerce $ Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase
-    let env = { htmlTemplate, categoryStructure, categoryRegex }
+    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages }
         handlers =
           { getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
@@ -294,32 +301,16 @@ tagList env { params: { tag } } = do
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
 
-staticPage
-  :: Env
-  -> { params :: { pageName :: String }}
-  -> Aff (Response ResponseBody)
+staticPage :: Env -> { params :: { pageName :: String }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName } } = do
-  staticPageResponse <- fetchStaticPage pageName
   mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-  case staticPageResponse of
-    StaticPageNotFound ->
-      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound env maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
-    p -> do
+  case HashMap.lookup pageName env.staticPages of
+    Just staticPageContent -> do
       mosaico <- liftEffect MosaicoServer.app
-      let staticPageContent :: Either JSX String
-          staticPageContent =
-            case p of
-              StaticPageResponse page -> Right page.pageContent
-              StaticPageOtherError -> Left Error.somethingWentWrong
-              StaticPageNotFound -> Left mempty
       let staticPageJsx =
-            case staticPageContent of
-              Right pageContent ->
-                DOM.div { className: "mosaico--static-page"
-                        , dangerouslySetInnerHTML: { __html: pageContent }
-                        }
-              Left jsx -> jsx
+            DOM.div { className: "mosaico--static-page"
+                    , dangerouslySetInnerHTML: { __html: staticPageContent }
+                    }
       let mosaicoString =
             DOM.renderToString
             $ mosaico
@@ -328,7 +319,7 @@ staticPage env { params: { pageName } } = do
               , categoryStructure: env.categoryStructure
               }
       html <- liftEffect do
-        let staticPageString = JSON.stringify $ JSON.fromString $ either DOM.renderToString identity staticPageContent
+        let staticPageString = JSON.stringify $ JSON.fromString $ DOM.renderToString staticPageJsx
             staticPageObj = Object.singleton "pageName" pageName
                             # Object.insert "pageContent" staticPageString
                             # encodeJson
@@ -341,6 +332,9 @@ staticPage env { params: { pageName } } = do
           >>= appendHead (mkWindowVariables windowVars)
 
       pure $ Response.ok $ StringBody html
+    Nothing ->
+      let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
+      in notFound env maybeMostRead { params: {path: List.fromFoldable ["sida", pageName]} }
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category } } -> Aff (Response ResponseBody)
 categoryPage env { params: { categoryName } } = do
