@@ -11,7 +11,7 @@
   display: grid;
 
   grid-template-rows: @logo-size-mobile;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 15% 1fr 15%;
 
   @media (min-width: @breakpoint-3col) {
     grid-template-rows: 1fr 55px 1fr;
@@ -107,6 +107,11 @@
 
     gap: 6%;
     justify-content: center;
+
+    a, a:hover, a:focus, a:active {
+	text-decoration: none;
+	color: inherit;
+    }
 
     @media (min-width: @breakpoint-3col) {
       display: flex;

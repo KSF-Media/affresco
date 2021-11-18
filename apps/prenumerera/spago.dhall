@@ -1,14 +1,16 @@
 { name = "prenumerera"
 , dependencies =
-  [ "effect"
-  , "aff"
-  , "prelude"
+  [ "aff"
   , "affresco-components"
   , "affresco-user"
+  , "effect"
+  , "ordered-collections"
+  , "prelude"
   , "react-basic"
   , "react-basic-hooks"
   , "routing"
-  , "ordered-collections"
+  , "strings-extra"
+  , "unordered-collections"
   ]
 , packages = ../../packages.dhall
 , sources = [ "src/**/*.purs" ]

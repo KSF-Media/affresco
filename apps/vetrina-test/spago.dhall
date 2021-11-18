@@ -10,7 +10,9 @@
   , "psci-support"
   , "react-basic"
   , "react-basic-classic"
+  , "strings-extra"
   , "test-unit"
+  , "unordered-collections"
   ]
 , packages = ../../packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

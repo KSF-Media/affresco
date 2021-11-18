@@ -3,9 +3,12 @@ module Mosaico where
 import Prelude
 
 import Data.Argonaut.Core (Json)
+import Data.Argonaut.Decode (decodeJson)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
-import Data.Foldable (fold)
+import Data.Foldable (fold, foldMap)
+import Data.HashMap (HashMap)
+import Data.HashMap as HashMap
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
@@ -18,7 +21,7 @@ import Effect.Class.Console as Console
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, FullArticle(..), Tag, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
+import Lettera.Models (Article, ArticleStub, Category, CategoryLabel, FullArticle(..), Tag, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -26,8 +29,8 @@ import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import Mosaico.Routes as Routes
+import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
@@ -58,6 +61,8 @@ type State =
   , frontpageComponent :: Frontpage.Props -> JSX
   , user :: Maybe User
   , staticPage :: Maybe StaticPageResponse
+  , categoryStructure :: Array Category
+  , frontpageFeeds :: HashMap (Maybe CategoryLabel) (Array ArticleStub)
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -66,6 +71,7 @@ type Props =
   , mostReadArticles :: Maybe (Array ArticleStub)
   , frontpageArticles :: Maybe (Array ArticleStub)
   , staticPageContent :: Maybe StaticPage
+  , categoryStructure :: Array Category
   , tagArticlesName :: Maybe Tag
   , tagArticles :: Maybe (Array ArticleStub)
   }
@@ -75,6 +81,7 @@ type JSProps =
   , mostReadArticles :: Nullable (Array Json)
   , frontpageArticles :: Nullable (Array Json)
   , staticPageContent :: Nullable StaticPage
+  , categoryStructure :: Nullable (Array Json)
   , tagArticlesName :: Nullable String
   , tagArticles :: Nullable (Array Json)
   }
@@ -96,22 +103,35 @@ mosaicoComponent initialValues props = React.do
                          , staticPage = map StaticPageResponse props.staticPageContent
                          , tagArticlesName = props.tagArticlesName
                          , tagArticles = fold props.tagArticles
+                         , categoryStructure = props.categoryStructure
                          }
 
-  -- Listen for route changes and set state accordingly
-  useEffectOnce $ locations (routeListener setState) initialValues.nav
+  useEffectOnce do
+    Aff.launchAff_ do
+      cats <- if null props.categoryStructure
+              then Lettera.getCategoryStructure HBL
+              else pure props.categoryStructure
+      liftEffect do
+        setState _ { categoryStructure = cats }
+        -- Listen for route changes and set state accordingly
+        void $ locations (routeListener cats setState) initialValues.nav
+    pure mempty
+
   useEffect state.route do
     case state.route of
       Routes.Frontpage -> do
         if null state.frontpageArticles
         then Aff.launchAff_ do
-          frontpage <- Lettera.getFrontpage HBL
-          liftEffect $ setState \s -> s { frontpageArticles = frontpage, article = Nothing }
+          frontpage <- Lettera.getFrontpage HBL Nothing
+          liftEffect $ setState \s -> s { frontpageArticles = frontpage
+                                        , article = Nothing
+                                        , frontpageFeeds = HashMap.insert Nothing frontpage s.frontpageFeeds
+                                        }
         -- Set article to Nothing to prevent flickering of old article
         else setState \s -> s { article = Nothing }
       Routes.TagPage tag
         | Just tag == state.tagArticlesName -> pure unit
-       | otherwise -> do
+        | otherwise -> do
             setState _ { tagArticlesName = Just tag
                        , tagArticles = mempty
                        }
@@ -124,6 +144,18 @@ mosaicoComponent initialValues props = React.do
       Routes.ArticlePage _articleId -> pure unit
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
+      Routes.CategoryPage category -> do
+        -- TODO: Loading spinner
+        case HashMap.lookup (Just category) state.frontpageFeeds of
+          Just feed -> setState _ { frontpageArticles = feed }
+          _ -> do
+            Aff.launchAff_ do
+              categoryFeed <- Lettera.getFrontpage HBL (Just $ show category)
+              liftEffect $
+                setState \s -> s { frontpageArticles = categoryFeed
+                                 , article = Nothing
+                                 , frontpageFeeds = HashMap.insert (Just category) categoryFeed s.frontpageFeeds
+                                 }
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
@@ -145,9 +177,9 @@ mosaicoComponent initialValues props = React.do
 
   pure $ render setState state initialValues.nav
 
-routeListener :: ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
-routeListener setState _oldLoc location = do
-  case match Routes.routes location.pathname of
+routeListener :: Array Category -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
+routeListener c setState _oldLoc location = do
+  case match (Routes.routes c) location.pathname of
     Right path -> setState _ { route = path }
     Left _     -> pure unit
 
@@ -162,7 +194,7 @@ getInitialValues :: Effect InitialValues
 getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
-  let initialRoute = either (const $ Routes.Frontpage) identity $ match Routes.routes locationState.path
+  let initialRoute = either (const $ Routes.Frontpage) identity $ match (Routes.routes []) locationState.path
 
   articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
@@ -189,6 +221,8 @@ getInitialValues = do
         , frontpageComponent
         , user: Nothing
         , staticPage: Nothing
+        , categoryStructure: []
+        , frontpageFeeds: HashMap.empty
         }
     , nav
     , locationState
@@ -205,9 +239,13 @@ fromJSProps jsProps =
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
       frontpageArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageArticles
       staticPageContent = toMaybe jsProps.staticPageContent
+      -- Decoding errors are being hushed here, although if this
+      -- comes from `window.categoryStructure`, they should be
+      -- valid categories
+      categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
       tagArticlesName = uriComponentToTag <$> toMaybe jsProps.tagArticlesName
       tagArticles = mapMaybe (hush <<< parseArticleStubWithoutLocalizing) <$> toMaybe jsProps.tagArticles
-  in { article, mostReadArticles, frontpageArticles, staticPageContent, tagArticles, tagArticlesName }
+  in { article, mostReadArticles, frontpageArticles, staticPageContent, categoryStructure, tagArticles, tagArticlesName }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -229,6 +267,15 @@ render setState state router =
         }
     _ -> mempty
   <> case state.route of
+       Routes.CategoryPage _category ->
+         mosaicoDefaultLayout $ state.frontpageComponent
+           { frontpageArticles: state.frontpageArticles
+           , onArticleClick: \article -> do
+               setState _ { clickedArticle = Just article }
+               void $ Web.scroll 0 0 =<< Web.window
+               router.pushState (write {}) $ "/artikel/" <> article.uuid
+           , onTagClick
+           }
        Routes.ArticlePage articleId
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle
@@ -269,7 +316,14 @@ render setState state router =
       { className: "mosaico grid"
       , children:
           [ Header.topLine
-          , state.headerComponent { router }
+          , state.headerComponent
+              { router
+              , categoryStructure: state.categoryStructure
+              , onCategoryClick: \c ->
+                  case state.route of
+                    Routes.CategoryPage category | category == c -> pure unit
+                    _ -> setState _ { frontpageArticles = [] }
+              }
           , Header.mainSeparator
           , content
           , DOM.footer
