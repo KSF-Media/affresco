@@ -37,8 +37,10 @@ You can edit this file as you like.
   , "routing"
   , "routing-duplex"
   , "strings"
+  , "strings-extra"
   , "transformers"
   , "tuples"
+  , "unordered-collections"
   , "uuid"
   , "validation"
   ]

@@ -4,11 +4,15 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
+import Data.String as String
 import Effect (Effect)
+import Lettera.Models (Category(..), CategoryLabel)
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
@@ -16,7 +20,11 @@ import Routing (match)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (E, read, write)
 
-type Props = { router :: PushStateInterface }
+type Props =
+  { router :: PushStateInterface
+  , categoryStructure :: Array Category
+  , onCategoryClick :: CategoryLabel -> Effect Unit
+  }
 
 type Self =
   { state :: State
@@ -89,11 +97,7 @@ render { state: { menuVisible, menuComponent }, props } =
                 if menuVisible then
                   [ searchButton ]
                 else
-                  [ DOM.a_ [ DOM.text "OPINION" ]
-                  , DOM.a_ [ DOM.text "KULTUR" ]
-                  , DOM.a_ [ DOM.text "SPORT" ]
-                  , DOM.a_ [ DOM.text "ANNAT" ]
-                  ]
+                  map mkCategory props.categoryStructure
             }
 
         , DOM.div
@@ -119,14 +123,14 @@ render { state: { menuVisible, menuComponent }, props } =
                           , onClick: handler_ $
                               (\r -> do
                                 locationState <- r.locationState
-                                case match routes locationState.pathname of
+                                case match (routes props.categoryStructure) locationState.pathname of
                                   Right MenuPage -> do
                                     let
                                       eitherState :: E { previousPath :: String }
                                       eitherState = read locationState.state
                                     case eitherState of
                                       Right state -> r.pushState (write { }) state.previousPath
-                                      Left _         -> pure unit
+                                      Left _      -> pure unit
                                   _              -> r.pushState (write { previousPath: locationState.pathname }) "/meny")
                                 props.router
 
@@ -144,7 +148,13 @@ render { state: { menuVisible, menuComponent }, props } =
         ]
     }
   where
-
+    mkCategory (Category category) =
+      DOM.a { href: "/" <> show category.label
+            , onClick: capture_ $ do
+                  props.onCategoryClick category.label
+                  props.router.pushState (write {}) $ "/" <> show category.label
+            , children: [ DOM.text $ String.toUpper $ unwrap category.label ]
+            }
     searchButton :: JSX
     searchButton = DOM.div
                     { className: iconButtonClass <> " " <> searchButtonClass <>
