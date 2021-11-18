@@ -1,16 +1,26 @@
 @import (reference) "../../ksf-colors";
 
-.ksf-faq {
-  h1 {
+.static-page__faq {
+  .faq__headline {
     align-self: center;
     margin-top: 20px;
     margin-bottom: 10px;
   }
 
-  iframe[src*=youtube] {
+  .faq__question {
+    margin-top: 10px;
+    cursor: pointer;
+  }
+
+  .faq__answer-video {
     display: block;
     margin: 0 auto;
     max-width: 100%;
+  }
+
+  .answer {
+    display: none;
+    position: absolute;
   }
 
 }
