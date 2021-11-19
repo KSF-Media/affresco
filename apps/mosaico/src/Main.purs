@@ -235,13 +235,15 @@ renderArticle env uuid article mostReadArticles = do
               , "isDraft"           /\ (show $ isDraftArticle a)
               , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
               ]
-            metaTags = DOM.renderToStaticMarkup $
-              DOM.fragment
-                [ DOM.meta { property: "og:type", content: "article" }
-                , DOM.meta { property: "og:title", content: _.title $ fromFullArticle a }
-                , DOM.meta { property: "og:description", content: fold <$> _.preamble $ fromFullArticle a }
-                , DOM.meta { property: "og:image", content: _.url $ ( fold <$> _.mainImage $ fromFullArticle a ) }
-                ]
+            metaTags =
+              let a' = fromFullArticle a
+              in DOM.renderToStaticMarkup $
+                  DOM.fragment
+                    [ DOM.meta { property: "og:type", content: "article" }
+                    , DOM.meta { property: "og:title", content: _.title $ a' }
+                    , DOM.meta { property: "og:description", content: fold <$> _.preamble $ a' }
+                    , DOM.meta { property: "og:image", content: _.url $ ( fold <$> _.mainImage $ a' ) }
+                    ]
         appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars) >>= appendHead metaTags
 
       pure $ Response.ok $ StringBody html
