@@ -108,7 +108,13 @@ render { state: { menuVisible, menuComponent }, props } =
                  else
                    [ searchButton ])
                 <> [ DOM.div_
-                      [ menuComponent { visible: menuVisible }
+                      [ menuComponent
+                          { visible: menuVisible
+                          , categoryStructure: props.categoryStructure
+                          , onCategoryClick: \categoryLabel _url -> do
+                               props.onCategoryClick categoryLabel
+                               writeCategoryRoute categoryLabel
+                          }
                       , DOM.div
                           { className: iconButtonClass <> " " <> menuButtonClass <>
                               if menuVisible then
@@ -139,11 +145,7 @@ render { state: { menuVisible, menuComponent }, props } =
                    ]
             }
         , DOM.div
-            { className: menuOverlayClass <>
-                           if menuVisible then
-                             " " <> visibleMenuOverlayClass
-                           else
-                             mempty
+            { className: menuOverlayClass <> guard menuVisible (" " <> visibleMenuOverlayClass)
             }
         ]
     }
@@ -152,9 +154,13 @@ render { state: { menuVisible, menuComponent }, props } =
       DOM.a { href: "/" <> show category.label
             , onClick: capture_ $ do
                   props.onCategoryClick category.label
-                  props.router.pushState (write {}) $ "/" <> show category.label
+                  writeCategoryRoute category.label
             , children: [ DOM.text $ String.toUpper $ unwrap category.label ]
             }
+
+    writeCategoryRoute categoryLabel =
+      props.router.pushState (write {}) $ "/" <> show categoryLabel
+
     searchButton :: JSX
     searchButton = DOM.div
                     { className: iconButtonClass <> " " <> searchButtonClass <>

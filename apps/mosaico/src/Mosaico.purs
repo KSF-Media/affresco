@@ -119,16 +119,17 @@ mosaicoComponent initialValues props = React.do
 
   useEffect state.route do
     case state.route of
-      Routes.Frontpage -> do
-        if null state.frontpageArticles
-        then Aff.launchAff_ do
-          frontpage <- Lettera.getFrontpage HBL Nothing
-          liftEffect $ setState \s -> s { frontpageArticles = frontpage
-                                        , article = Nothing
-                                        , frontpageFeeds = HashMap.insert Nothing frontpage s.frontpageFeeds
-                                        }
-        -- Set article to Nothing to prevent flickering of old article
-        else setState \s -> s { article = Nothing }
+      Routes.Frontpage
+        -- Do we already have the front page feed?
+        | Just f <- HashMap.lookup Nothing state.frontpageFeeds -> setState _ { frontpageArticles = f }
+        -- If no, fetch from Lettera
+        | otherwise ->
+          Aff.launchAff_ do
+            frontpage <- Lettera.getFrontpage HBL Nothing
+            liftEffect $ setState \s -> s { frontpageArticles = frontpage
+                                          , article = Nothing
+                                          , frontpageFeeds = HashMap.insert Nothing frontpage s.frontpageFeeds
+                                          }
       Routes.TagPage tag
         | Just tag == state.tagArticlesName -> pure unit
         | otherwise -> do
@@ -287,7 +288,15 @@ render setState state router =
        Routes.Frontpage -> frontpage state.frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
        Routes.TagPage _ -> frontpage state.tagArticles
-       Routes.MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
+       Routes.MenuPage ->
+         mosaicoLayoutNoAside
+         $ state.menuComponent
+             { visible: true
+             , categoryStructure: state.categoryStructure
+             , onCategoryClick: \categoryLabel url -> do
+                 onCategoryClick categoryLabel
+                 router.pushState (write {}) url
+             }
        Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
        Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
@@ -319,10 +328,7 @@ render setState state router =
           , state.headerComponent
               { router
               , categoryStructure: state.categoryStructure
-              , onCategoryClick: \c ->
-                  case state.route of
-                    Routes.CategoryPage category | category == c -> pure unit
-                    _ -> setState _ { frontpageArticles = [] }
+              , onCategoryClick
               }
           , Header.mainSeparator
           , content
@@ -344,6 +350,11 @@ render setState state router =
               }
           ]
       }
+
+    onCategoryClick c =
+      case state.route of
+        Routes.CategoryPage category | category == c -> pure unit
+        _ -> setState _ { frontpageArticles = [] }
 
     onTagClick tag = do
       void $ Web.scroll 0 0 =<< Web.window
