@@ -6,7 +6,7 @@ import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Foldable (fold, foldM, foldMap)
 import Data.HashMap as HashMap
 import Data.List (List, intercalate)
@@ -274,7 +274,7 @@ frontpage env _ = do
   pure $ TextHtml html
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
-tagList env@{ htmlTemplate } { params: { tag } } = do
+tagList env { params: { tag } } = do
   let tag' = uriComponentToTag tag
   articles <- Lettera.getByTag 0 20 tag' HBL
   mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
