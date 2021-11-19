@@ -24,11 +24,12 @@ import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, component, useEffect, useState, (/\))
 import React.Basic.Hooks as React
 
@@ -52,6 +53,7 @@ type Props =
   , article :: Maybe FullArticle
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
+  , onTagClick :: Tag -> EventHandler
   , user :: Maybe User
   , uuid :: Maybe String
   }
@@ -185,10 +187,7 @@ render { props, state, setState } =
                       [ DOM.div
                           { className: "mosaico-article__tag-n-premium"
                           , children:
-                              [ DOM.div
-                                  { className: "mosaico-article__tag color-" <> props.brand
-                                  , children: [ DOM.text $ maybe "" (un Tag) (head tags) ]
-                                  }
+                              [ foldMap renderTag $ head tags
                               , guard state.premium $ DOM.div
                                   { className: "premium-badge background-" <> props.brand
                                   , children: [ DOM.text "Premium"]
@@ -262,6 +261,14 @@ render { props, state, setState } =
                     ]
                 }
             ]
+        }
+
+    renderTag tag =
+      DOM.a
+        { className: "mosaico-article__tag color-" <> props.brand
+        , children: [ DOM.text $ (un Tag) tag ]
+        , href: "/tagg/" <> tagToURIComponent tag
+        , onClick: props.onTagClick tag
         }
 
     mkShareIcon someName =

@@ -33,6 +33,7 @@ import Mosaico.Routes as Routes
 import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
@@ -48,6 +49,7 @@ type State =
   , frontpageArticles :: Array ArticleStub
   , mostReadArticles :: Array ArticleStub
   , tagArticlesName :: Maybe Tag
+  , tagArticlesLoading :: Boolean
   , tagArticles :: Array ArticleStub
   , affArticle :: Maybe (Aff Article)
   , route :: Routes.MosaicoPage
@@ -102,6 +104,7 @@ mosaicoComponent initialValues props = React.do
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse props.staticPageContent
                          , tagArticlesName = props.tagArticlesName
+                         , tagArticlesLoading = false
                          , tagArticles = fold props.tagArticles
                          , categoryStructure = props.categoryStructure
                          }
@@ -134,11 +137,13 @@ mosaicoComponent initialValues props = React.do
         | otherwise -> do
             setState _ { tagArticlesName = Just tag
                        , tagArticles = mempty
+                       , tagArticlesLoading = true
                        }
             Aff.launchAff_ do
               byTag <- Lettera.getByTag 0 20 tag HBL
               liftEffect $ setState _ { tagArticlesName = Just tag
                                       , tagArticles = byTag
+                                      , tagArticlesLoading = false
                                       }
       Routes.DraftPage -> pure unit
       Routes.ArticlePage _articleId -> pure unit
@@ -208,6 +213,7 @@ getInitialValues = do
         , frontpageArticles: []
         , mostReadArticles: []
         , tagArticlesName: Nothing
+        , tagArticlesLoading: false
         , tagArticles: []
         , affArticle: Nothing
         , route: initialRoute
@@ -286,7 +292,10 @@ render setState state router =
          | otherwise                 -> mosaicoLayoutNoAside $ renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
        Routes.Frontpage -> frontpage state.frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
-       Routes.TagPage _ -> frontpage state.tagArticles
+       Routes.TagPage _ ->
+         if state.tagArticlesLoading || (not $ null state.tagArticles)
+           then frontpage state.tagArticles
+           else renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
        Routes.MenuPage -> mosaicoLayoutNoAside $ state.menuComponent { visible: true }
        Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
                     fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
@@ -345,7 +354,7 @@ render setState state router =
           ]
       }
 
-    onTagClick tag = do
+    onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) $ "/tagg/" <> tagToURIComponent tag
 
@@ -366,6 +375,7 @@ render setState state router =
         , article: maybeA
         , articleStub: aStub
         , onLogin: setState \s -> s { modalView = Just LoginModal }
+        , onTagClick
         , user: state.user
         , uuid: Just uuid
         }
