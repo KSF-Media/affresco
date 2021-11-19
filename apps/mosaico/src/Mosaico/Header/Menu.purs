@@ -38,7 +38,6 @@ type MenuLayout = Array MenuBlock
 
 type Section =
   { title :: String
-  , modifier :: Maybe String
   , url :: String
   , subsections :: Array Subsection
   }
@@ -79,7 +78,7 @@ render { props } = DOM.div
     upperBlock = topSections
 
     middleBlock :: MenuBlock
-    middleBlock = (intersperse mobileOnlySeparator) $ snd $ foldl mkSection (0 /\ []) props.categoryStructure
+    middleBlock = (intersperse mobileOnlySeparator) $ foldl mkSection [] props.categoryStructure
 
     bottomBlock :: MenuBlock
     bottomBlock = bottomSections
@@ -93,48 +92,41 @@ render { props } = DOM.div
     topSections :: MenuBlock
     topSections = Section <$>
                   [ { title: "SÖK"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "E-TIDNINGEN"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "KUNDSERVICE"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   ]
 
-    mkSection (n /\ acc) (Category c) =
+    mkSection acc (Category c) =
       let mkSubsection (Category subc) =
             { title: subc.label, url: "/" <> show subc.label }
           section =
             Section $
               { title: toUpper $ unwrap c.label
-              , modifier: Just $ "--section" <> show n
               , url: "/" <> show c.label
               , subsections: map mkSubsection c.subCategories
               }
-      in ((n + 1) /\ acc `snoc` section)
+      in acc `snoc` section
 
     bottomSections :: MenuBlock
     bottomSections = Section <$>
                   [ { title: "KONTAKTA OSS"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "ANNONSERA"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "JOBBA HOS OSS"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
@@ -160,8 +152,8 @@ render { props } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection { modifier, subsections, title } = DOM.div
-          { className: unwords [ sectionClass, sectionClass <> fromMaybe mempty modifier ]
+        renderSection { subsections, title } = DOM.div
+          { className: unwords [ sectionClass, sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
