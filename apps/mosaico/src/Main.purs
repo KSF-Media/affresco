@@ -49,8 +49,9 @@ import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
-import React.Basic.DOM (div) as DOM
-import React.Basic.DOM.Server (renderToString) as DOM
+import React.Basic (fragment) as DOM
+import React.Basic.DOM (div, meta) as DOM
+import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
@@ -235,7 +236,16 @@ renderArticle env uuid article mostReadArticles = do
               , "isDraft"           /\ (show $ isDraftArticle a)
               , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
               ]
-        appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+            metaTags =
+              let a' = fromFullArticle a
+              in DOM.renderToStaticMarkup $
+                  DOM.fragment
+                    [ DOM.meta { property: "og:type", content: "article" }
+                    , DOM.meta { property: "og:title", content: a'.title }
+                    , DOM.meta { property: "og:description", content: fold a'.preamble }
+                    , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
+                    ]
+        appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars) >>= appendHead metaTags
 
       pure $ Response.ok $ StringBody html
     Left _ ->
