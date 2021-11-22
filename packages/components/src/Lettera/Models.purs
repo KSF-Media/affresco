@@ -379,5 +379,7 @@ uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "-") (String.Repla
 tagToURIComponent :: Tag -> String
 tagToURIComponent = String.toLower <<< String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
 
-derive instance eqTag :: Eq Tag
+instance eqTag :: Eq Tag where
+  eq (Tag a) (Tag b) = String.toLower a == String.toLower b
+
 derive instance newtypeTag :: Newtype Tag _

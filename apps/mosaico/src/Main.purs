@@ -107,7 +107,7 @@ spec ::
                 }
          , tagList ::
               GET "/tagg/<tag>"
-                { response :: TextHtml
+                { response :: ResponseBody
                 , params :: { tag :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
@@ -216,6 +216,7 @@ renderArticle env uuid article mostReadArticles = do
               , affArticle: pure a
               , articleStub: Nothing
               , onLogin: pure unit
+              , onTagClick: const mempty
               , user: Nothing
               , article: Just a
               , uuid
@@ -268,7 +269,7 @@ frontpage env _ = do
               $ frontpageComponent
                   { frontpageArticles: articles
                   , onArticleClick: const $ pure unit
-                  , onTagClick: const $ pure unit
+                  , onTagClick: const mempty
                   }
           , mostReadArticles
           , categoryStructure: env.categoryStructure
@@ -282,34 +283,37 @@ frontpage env _ = do
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
 
-tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
+tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
   let tag' = uriComponentToTag tag
   articles <- Lettera.getByTag 0 20 tag' HBL
   mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
   mosaico <- liftEffect MosaicoServer.app
-  frontpageComponent <- liftEffect Frontpage.frontpageComponent
-  let mosaicoString =
-        DOM.renderToString
-        $ mosaico
-          { mainContent:
-              TagListContent
-              $ frontpageComponent
+  if null articles
+    then notFound env (Just mostReadArticles) { params: { path: List.fromFoldable [ "tagg", tag ] } }
+    else do
+    frontpageComponent <- liftEffect Frontpage.frontpageComponent
+    let mosaicoString =
+          DOM.renderToString
+          $ mosaico
+            { mainContent:
+                TagListContent
+                $ frontpageComponent
                   { frontpageArticles: articles
                   , onArticleClick: const $ pure unit
-                  , onTagClick: const $ pure unit
+                  , onTagClick: const mempty
                   }
-          , categoryStructure: env.categoryStructure
-          , mostReadArticles
-          }
-  html <- liftEffect do
-            let windowVars =
-                  [ "tagListArticles"     /\ encodeStringifyArticleStubs articles
-                  , "tagListArticlesName" /\ tagToURIComponent tag'
-                  , "mostReadArticles"    /\ encodeStringifyArticleStubs mostReadArticles
-                  ]
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ TextHtml html
+            , categoryStructure: env.categoryStructure
+            , mostReadArticles
+            }
+    html <- liftEffect do
+              let windowVars =
+                    [ "tagListArticles"     /\ encodeStringifyArticleStubs articles
+                    , "tagListArticlesName" /\ tagToURIComponent tag'
+                    , "mostReadArticles"    /\ encodeStringifyArticleStubs mostReadArticles
+                    ]
+              appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+    pure $ Response.ok $ StringBody html
 
 staticPage :: Env -> { params :: { pageName :: String }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName } } = do
@@ -357,7 +361,7 @@ categoryPage env { params: { categoryName } } = do
                             { mainContent: FrontpageContent $ frontpageComponent
                                 { frontpageArticles: articles
                                 , onArticleClick: const $ pure unit
-                                , onTagClick: const $ pure unit
+                                , onTagClick: const mempty
                                 }
                             , mostReadArticles
                             , categoryStructure: env.categoryStructure
@@ -380,6 +384,7 @@ notFound env _ _ = do
           , affArticle: pure notFoundArticle
           , articleStub: Nothing
           , onLogin: pure unit
+          , onTagClick: const mempty
           , user: Nothing
           , article: Just notFoundArticle
           , uuid: Nothing

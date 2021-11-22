@@ -89,10 +89,6 @@
     align-self: center;
     grid-column-start: 1;
 
-    &--menu-visible {
-      z-index: 2;
-    }
-
     @media (min-width: @breakpoint-3col) {
       grid-row-start: 3;
       align-self: stretch;
@@ -109,8 +105,8 @@
     justify-content: center;
 
     a, a:hover, a:focus, a:active {
-	text-decoration: none;
-	color: inherit;
+      text-decoration: none;
+      color: inherit;
     }
 
     @media (min-width: @breakpoint-3col) {
@@ -161,9 +157,6 @@
     }
     &--search {
       background-image: url("../images/icon-search.svg");
-    }
-    &--menu-visible {
-      background-image: url("../images/icon-close-lg.svg");
     }
   }
 }
