@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<!-- This is a custom build for something like vetrina, but not vetrina at all
+     It was designed for a specific campaign that we didn't want to process through vetrina -->
+<html lang="sv-FI">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Vetrina look-a-like</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="../../../less/Vetrina.less" />
+  </head>
+  <body>
+    <style>
+      .vetrina--product-information__checkmark {
+	background-image: url("https://cdn.ksfmedia.fi/assets/images/check-circle_hbl.svg") !important;
+      }
+      .vetrina--external-purchase-button__hbl {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-family: "Duplex Sans Titling", sans-serif;
+	font-weight: bold !important;
+	letter-spacing: 0.015em;
+	background: #e98822;
+	color: white;
+	width: 100%;
+	border: none;
+	border-radius: 5px;
+	padding: 2px;
+	font-weight: 500;
+	margin-top: 2em;
+	max-width: 250px;
+	height: 3.5em;
+	cursor: pointer;
+      }
+
+      #vetrina-campaign-link-container > a {
+	text-decoration: none !important;
+	transition: none !important;
+	color: white !important;
+      }
+      #vetrina-campaign-link-container > a:visited {
+	color: white !important;
+      }
+      #vetrina-campaign-link-container > a:hover {
+	color: white !important;
+      }
+      .vetrina--login-callback {
+	color: #f07e26;
+      }
+      .vetrina--container {
+	grid-template-areas:
+	  ". headline ."
+	  "headline-image headline-image headline-image"
+	  ". login-link ."
+	  ". beef ."
+	  "product product product" !important;
+      }
+      .vetrina--headline-image {
+	grid-area: headline-image;
+	max-width: 100%;
+      }
+    </style>
+    <div class="vetrina--container">
+      <h1 class="vetrina--headline-HBL">
+	<div>HBL Digital 3 månader + gåvokort till Svenska teatern  <span class="vetrina--price-headline">29 €</span></div>
+      </h1>
+      <img class="vetrina--headline-image" src="https://cdn.ksfmedia.fi/assets/images/hbl-svenskis-paket.png" />
+      <span class="vetrina--login-link"
+	>Redan prenumerant?
+	<span class="vetrina--login-callback" onclick="window.ksfuser.showLogin()"
+	  >Logga in för att fortsätta läsa</span
+	></span
+      >
+      <div class="vetrina--form">
+	Med en HBL Digital prenumeration  får du tillgång till alla Premiumartiklar, e-tidningen och nyhetsapparna. Prenumerationen är tidsbunden.
+	<div id="vetrina-campaign-link-container">
+	  <a
+	    id="campaign-link"
+	    class="vetrina--external-purchase-button__hbl"
+	    href="https://www.ksfmedia.fi/julkampanj"
+	    target="_blank"
+	    >Köp nu</a
+	  >
+	</div>
+      </div>
+      <div class="vetrina--product-container">
+	<div class="vetrina--product-information">
+	  <div class="vetrina--product-information__headline">
+	    <span class="vetrina--product-information__name">HBL Digital</span
+	    ><span class="vetrina--product-information__description">HBL Digital 3 månader + gåvokort till Svenska teatern</span>
+	  </div>
+	  <span class="vetrina--product-information__contents">
+	    <strong class="vetrina--product-information__contents-name">E-tidningsappen HBL 365</strong>
+	    <span class="vetrina--product-information__contents-description"
+	      >E-tidningarna HBL, Västra Nyland, Östnyland och digitala korsord</span
+	    >
+	    <span class="vetrina--product-information__checkmark"></span>
+	  </span>
+	  <span class="vetrina--product-information__contents">
+	    <strong class="vetrina--product-information__contents-name">E-tidningar på dator</strong>
+	    <span class="vetrina--product-information__contents-description">HBL, Västra Nyland, Östnyland</span>
+	    <span class="vetrina--product-information__checkmark"></span>
+	  </span>
+	  <span class="vetrina--product-information__contents">
+	    <strong class="vetrina--product-information__contents-name">Nyhetsappar</strong>
+	    <span class="vetrina--product-information__contents-description">HBL Nyheter, VN Nyheter, ÖN Nyheter</span>
+	    <span class="vetrina--product-information__checkmark"></span>
+	  </span>
+	  <span class="vetrina--product-information__contents">
+	    <strong class="vetrina--product-information__contents-name">Premium</strong>
+	    <span class="vetrina--product-information__contents-description"
+	      >Alla artiklar på hbl.fi, vastranyland.fi, ostnyland.fi</span
+	    >
+	    <span class="vetrina--product-information__checkmark"></span>
+	  </span>
+	  <span class="vetrina--product-information__contents">
+	    <strong class="vetrina--product-information__contents-name">Digitalt månadsbrev</strong>
+	    <span class="vetrina--product-information__contents-description">Nyheter & förmåner</span>
+	    <span class="vetrina--product-information__checkmark"></span>
+	  </span>
+	</div>
+      </div>
+    </div>
+    <script>
+      const campaignLink = document.getElementById("campaign-link");
+      if (campaignLink) {
+	const campaignUrl = campaignLink.getAttribute("href");
+	campaignLink.setAttribute("href", campaignUrl + "?sourceArticle=" + window.location);
+      }
+    </script>
+  </body>
+</html>
