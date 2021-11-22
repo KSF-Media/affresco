@@ -240,7 +240,7 @@ renderArticle env uuid article mostReadArticles = do
               in DOM.renderToStaticMarkup $
                   DOM.fragment
                     [ DOM.meta { property: "og:type", content: "article" }
-                    , DOM.meta { property: "og:title", content: _.title $ a' }
+                    , DOM.meta { property: "og:title", content: a'.title }
                     , DOM.meta { property: "og:description", content: fold <$> _.preamble $ a' }
                     , DOM.meta { property: "og:image", content: _.url $ ( fold <$> _.mainImage $ a' ) }
                     ]
