@@ -7,7 +7,6 @@
     grid-template-rows: repeat(3, auto);
     grid-template-columns: 0.1fr 1fr 0.1fr;
 
-    display: none;
     border-radius: 1px;
     background-color: @white;
 
@@ -17,10 +16,6 @@
 
     @media (min-width: @breakpoint-3col) {
       grid-column: 2 / span 3;
-    }
-
-    &--visible {
-      display: grid;
     }
   }
 
@@ -55,8 +50,10 @@
       display: flex;
       flex-direction: column;
     }
-
-
+    a, a:hover, a:focus, a:active {
+      text-decoration: none;
+      color: inherit;
+    }
   }
 
   &__section-header {
@@ -94,9 +91,9 @@
     width: 100%;
 
       &--mobile-only {
-        @media (min-width: @breakpoint-3col) {
-          display: none;
-        }
+	@media (min-width: @breakpoint-3col) {
+	  display: none;
+	}
       }
 
   }
@@ -168,22 +165,5 @@
     color: @grey-mediumlight;
 
     justify-self: center;
-  }
-
-  &__menu-overlay {
-    display: none;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.94);
-    z-index: 1;
-
-    &--visible {
-      display: block;
-    }
   }
 }
