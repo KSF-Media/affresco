@@ -5,12 +5,9 @@ import Prelude
 import Data.Array (foldl, intersperse, snoc)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (toUpper)
 import Data.String.Common (trim)
-import Data.Tuple (snd)
-import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
@@ -23,8 +20,7 @@ type Self =
   }
 
 type Props =
-  { visible :: Boolean
-  , categoryStructure :: Array Category
+  { categoryStructure :: Array Category
   , onCategoryClick :: CategoryLabel -> String -> Effect Unit
   }
 
@@ -54,7 +50,7 @@ menuComponent = do
 
 render :: Self -> JSX
 render { props } = DOM.div
-  { className: menuClass <> guard props.visible (" " <> visibleMenuClass)
+  { className: menuClass
   , children: [ menuContent
               , DOM.div
                   { className: menuFooterClass
@@ -153,7 +149,7 @@ render { props } = DOM.div
 
         renderSection :: Section -> JSX
         renderSection { subsections, title } = DOM.div
-          { className: unwords [ sectionClass, sectionClass ]
+          { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
@@ -202,9 +198,7 @@ render { props } = DOM.div
     headerBlock = "mosaico-header"
 
     menuElement = "__menu"
-    visibleModifier = "--visible"
     menuClass = headerBlock <> menuElement
-    visibleMenuClass = menuClass <> visibleModifier
 
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement

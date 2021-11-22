@@ -300,8 +300,7 @@ render setState state router =
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ state.menuComponent
-             { visible: true
-             , categoryStructure: state.categoryStructure
+             { categoryStructure: state.categoryStructure
              , onCategoryClick: \categoryLabel url -> do
                  onCategoryClick categoryLabel
                  router.pushState (write {}) url
