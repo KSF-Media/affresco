@@ -12,9 +12,7 @@ in  AppServer::{
     , entrypoint = "node dist/server"
     , instance_class = Some "F4"
     , env = toMap
-        { PERSONA_URL = "https://persona.api.ksfmedia.fi/v1"
-        , LETTERA_URL = "https://lettera.api.ksfmedia.fi/v3"
-        , HIDE_LOGIN_LINKS = "true"
+        { HIDE_LOGIN_LINKS = "true"
         , SENTRY_DSN =
             "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         }
