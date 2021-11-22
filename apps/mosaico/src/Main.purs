@@ -6,7 +6,7 @@ import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Foldable (fold, foldM, foldMap)
 import Data.HashMap as HashMap
 import Data.List (List, intercalate)

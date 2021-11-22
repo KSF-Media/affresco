@@ -73,9 +73,9 @@
           appen "HBL Nyheter" och installera. Du hittar nu appen på din hemskärm.
         </p>
         <p class="faq__answer faq__answer--open answer"><strong>Så tar du HBL 365 i bruk med iOS:</strong></p>
-        <iframe class="faq__answer faq__answer--open answer faq__answer faq__answer--open answer-video"
-          width="560" height="315" src="https://www.youtube.com/embed/UGFkG0zCfxE" title="Instruktionsvideo"
-          frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        <iframe class="faq__answer faq__answer--open answer faq__answer faq__answer--open answer-video" width="560"
+          height="315" src="https://www.youtube.com/embed/UGFkG0zCfxE" title="Instruktionsvideo" frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen="allowfullscreen">
         </iframe>
         <p class="faq__answer faq__answer--open answer"><strong>Android-enheter:</strong> Öppna Play
@@ -84,9 +84,9 @@
           appen "HBL Nyheter". Tryck på "Installera". Du hittar nu appen i din applista.
         </p>
         <p class="faq__answer faq__answer--open answer"><strong>Så tar du HBL 365 i bruk med Android:</strong></p>
-        <iframe class="faq__answer faq__answer--open answer faq__answer faq__answer--open answer-video"
-          width="560" height="315" src="https://www.youtube.com/embed/_K2osRIZo1c" title="Instruktionsvideo"
-          frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        <iframe class="faq__answer faq__answer--open answer faq__answer faq__answer--open answer-video" width="560"
+          height="315" src="https://www.youtube.com/embed/_K2osRIZo1c" title="Instruktionsvideo" frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen="allowfullscreen"></iframe>
       </div>
       <div class="faq__qa">
@@ -162,9 +162,8 @@
         <p class="faq__answer faq__answer--open answer">
           <strong>HBL 365 / iOS:</strong> I appens nedre kant finns alternativet "Logga in".
         </p>
-        <iframe class="faq__answer faq__answer--open answer faq__answer faq__answer--open answer-video"
-          width="560" height="315" src="https://www.youtube.com/embed/McF0XxMQ3dY" title="Instruktionsvideo"
-          frameborder="0"
+        <iframe class="faq__answer faq__answer--open answer faq__answer faq__answer--open answer-video" width="560"
+          height="315" src="https://www.youtube.com/embed/McF0XxMQ3dY" title="Instruktionsvideo" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen="allowfullscreen">
         </iframe>
@@ -352,7 +351,8 @@
         </p>
       </div>
       <div class="faq__qa qa__premium">
-        <button class="faq__question question">Jag har glömt mitt lösenord och kan inte logga in. Vad ska jag göra?</button>
+        <button class="faq__question question">Jag har glömt mitt lösenord och kan inte logga in. Vad ska jag
+          göra?</button>
         <p class="faq__answer faq__answer--open answer">Du kan ändra ditt lösenord <a
             href="https://konto.ksfmedia.fi/#lösenord">här</a>.
         </p>
@@ -370,19 +370,20 @@
   </div>
 </div>
 <script>
-  var questions = document.getElementsByClassName("question");
+  var questions = document.getElementsByClassName("faq__question");
   var i;
 
   for (i = 0; i < questions.length; i++) {
-  questions[i].addEventListener("click", function() {
-    this.classList.toggle("active");
+    questions[i].addEventListener("click", function () {
+      console.log("button clicked");
+      this.classList.toggle("active");
 
-    var answer = this.nextElementSibling;
-    if (answer.style.display === "block") {
-      answer.style.display = "none";
-    } else {
-      answer.style.display = "block";
-    }
-  });
-}
+      var answer = this.nextElementSibling;
+      if (answer.style.display === "block") {
+        answer.style.display = "none";
+      } else {
+        answer.style.display = "block";
+      }
+    });
+  };
 </script>
