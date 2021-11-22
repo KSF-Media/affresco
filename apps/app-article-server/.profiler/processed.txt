@@ -1,0 +1,552 @@
+Statistical profiling result from isolate-0x30bcef0-2313057-v8.log, (379 ticks, 1 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+    176   46.4%          /home/skug/.nvm/versions/node/v12.22.1/bin/node
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+      2    0.5%    1.0%  LazyCompile: *<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:9113
+      1    0.3%    0.5%  LazyCompile: *getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      1    0.3%    0.5%  LazyCompile: *_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      1    0.3%    0.5%  LazyCompile: *Vt /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:3771
+
+ [C++]:
+   ticks  total  nonlib   name
+     73   19.3%   36.0%  epoll_pwait
+     30    7.9%   14.8%  node::native_module::NativeModuleEnv::CompileFunction(v8::FunctionCallbackInfo<v8::Value> const&)
+     26    6.9%   12.8%  node::contextify::ContextifyContext::CompileFunction(v8::FunctionCallbackInfo<v8::Value> const&)
+     11    2.9%    5.4%  __GI___libc_write
+      4    1.1%    2.0%  node::crypto::SecureContext::AddRootCerts(v8::FunctionCallbackInfo<v8::Value> const&)
+      3    0.8%    1.5%  void node::Buffer::(anonymous namespace)::StringSlice<(node::encoding)1>(v8::FunctionCallbackInfo<v8::Value> const&)
+      3    0.8%    1.5%  node::binding::GetInternalBinding(v8::FunctionCallbackInfo<v8::Value> const&)
+      3    0.8%    1.5%  fwrite
+      3    0.8%    1.5%  __memcmp_avx2_movbe
+      3    0.8%    1.5%  __futex_abstimed_wait_common64
+      3    0.8%    1.5%  __GI___libc_malloc
+      2    0.5%    1.0%  v8::internal::AstValueFactory::GetString(unsigned int, bool, v8::internal::Vector<unsigned char const>)
+      2    0.5%    1.0%  unlink_chunk.constprop.0
+      2    0.5%    1.0%  std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)
+      2    0.5%    1.0%  cfree@GLIBC_2.2.5
+      2    0.5%    1.0%  __memcpy_avx_unaligned_erms
+      1    0.3%    0.5%  v8::internal::Zone::New(unsigned long)
+      1    0.3%    0.5%  v8::internal::Variable* v8::internal::Scope::Lookup<(v8::internal::Scope::ScopeLookupMode)1>(v8::internal::VariableProxy*, v8::internal::Scope*, v8::internal::Scope*, v8::internal::Scope*, bool)
+      1    0.3%    0.5%  v8::internal::Variable* v8::internal::Scope::Lookup<(v8::internal::Scope::ScopeLookupMode)0>(v8::internal::VariableProxy*, v8::internal::Scope*, v8::internal::Scope*, v8::internal::Scope*, bool)
+      1    0.3%    0.5%  v8::internal::StringSearch<unsigned char, unsigned char>::LinearSearch(v8::internal::StringSearch<unsigned char, unsigned char>*, v8::internal::Vector<unsigned char const>, int)
+      1    0.3%    0.5%  v8::internal::Scope::AllocateVariablesRecursively()
+      1    0.3%    0.5%  v8::internal::Scope::AllocateScopeInfosRecursively(v8::internal::Isolate*, v8::internal::MaybeHandle<v8::internal::ScopeInfo>)
+      1    0.3%    0.5%  v8::internal::(anonymous namespace)::ProbeInstantiationsCache(v8::internal::Isolate*, v8::internal::Handle<v8::internal::NativeContext>, int, v8::internal::(anonymous namespace)::CachingMode)
+      1    0.3%    0.5%  v8::Function::NewInstance(v8::Local<v8::Context>, int, v8::Local<v8::Value>*) const
+      1    0.3%    0.5%  std::ostream::sentry::sentry(std::ostream&)
+      1    0.3%    0.5%  std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+      1    0.3%    0.5%  node::fs::Read(v8::FunctionCallbackInfo<v8::Value> const&)
+      1    0.3%    0.5%  node::crypto::SSLWrap<node::TLSWrap>::GetPeerCertificate(v8::FunctionCallbackInfo<v8::Value> const&)
+      1    0.3%    0.5%  node::cares_wrap::(anonymous namespace)::GetAddrInfo(v8::FunctionCallbackInfo<v8::Value> const&)
+      1    0.3%    0.5%  node::EnvGetter(v8::Local<v8::Name>, v8::PropertyCallbackInfo<v8::Value> const&)
+      1    0.3%    0.5%  node::Buffer::(anonymous namespace)::CreateFromString(v8::FunctionCallbackInfo<v8::Value> const&)
+      1    0.3%    0.5%  node::Buffer::(anonymous namespace)::ByteLengthUtf8(v8::FunctionCallbackInfo<v8::Value> const&)
+      1    0.3%    0.5%  node::(anonymous namespace)::Parser::Execute(v8::FunctionCallbackInfo<v8::Value> const&)
+      1    0.3%    0.5%  int std::__int_to_char<char, unsigned long>(char*, unsigned long, char const*, std::_Ios_Fmtflags, bool)
+      1    0.3%    0.5%  epoll_ctl
+      1    0.3%    0.5%  _int_free
+      1    0.3%    0.5%  __pthread_cond_signal
+      1    0.3%    0.5%  __memcpy_avx_unaligned
+      1    0.3%    0.5%  __lll_lock_wait
+      1    0.3%    0.5%  __libc_read
+      1    0.3%    0.5%  __GI__IO_file_xsputn
+
+ [Summary]:
+   ticks  total  nonlib   name
+      5    1.3%    2.5%  JavaScript
+    197   52.0%   97.0%  C++
+     14    3.7%    6.9%  GC
+    176   46.4%          Shared libraries
+      1    0.3%          Unaccounted
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+     80   42.1%   21.1%  node::task_queue::RunMicrotasks(v8::FunctionCallbackInfo<v8::Value> const&)
+     74   38.9%   19.5%  v8::internal::Builtin_HandleApiCall(int, unsigned long*, v8::internal::Isolate*)
+      8    4.2%    2.1%  __GI___libc_write
+      3    1.6%    0.8%  __memcmp_avx2_movbe
+      2    1.1%    0.5%  v8::internal::AstValueFactory::GetString(unsigned int, bool, v8::internal::Vector<unsigned char const>)
+      2    1.1%    0.5%  unlink_chunk.constprop.0
+      2    1.1%    0.5%  cfree@GLIBC_2.2.5
+      2    1.1%    0.5%  __GI___libc_malloc
+      1    0.5%    0.3%  v8::internal::Zone::New(unsigned long)
+      1    0.5%    0.3%  v8::internal::Variable* v8::internal::Scope::Lookup<(v8::internal::Scope::ScopeLookupMode)1>(v8::internal::VariableProxy*, v8::internal::Scope*, v8::internal::Scope*, v8::internal::Scope*, bool)
+      1    0.5%    0.3%  v8::internal::Variable* v8::internal::Scope::Lookup<(v8::internal::Scope::ScopeLookupMode)0>(v8::internal::VariableProxy*, v8::internal::Scope*, v8::internal::Scope*, v8::internal::Scope*, bool)
+      1    0.5%    0.3%  v8::internal::StringSearch<unsigned char, unsigned char>::LinearSearch(v8::internal::StringSearch<unsigned char, unsigned char>*, v8::internal::Vector<unsigned char const>, int)
+      1    0.5%    0.3%  v8::internal::Scope::AllocateVariablesRecursively()
+      1    0.5%    0.3%  v8::internal::Scope::AllocateScopeInfosRecursively(v8::internal::Isolate*, v8::internal::MaybeHandle<v8::internal::ScopeInfo>)
+      1    0.5%    0.3%  v8::internal::Builtin_ObjectDefineProperty(int, unsigned long*, v8::internal::Isolate*)
+      1    0.5%    0.3%  v8::internal::Builtin_JsonParse(int, unsigned long*, v8::internal::Isolate*)
+      1    0.5%    0.3%  std::ostream::sentry::sentry(std::ostream&)
+      1    0.5%    0.3%  std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)
+      1    0.5%    0.3%  std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+      1    0.5%    0.3%  node::EnvGetter(v8::Local<v8::Name>, v8::PropertyCallbackInfo<v8::Value> const&)
+      1    0.5%    0.3%  fwrite
+      1    0.5%    0.3%  _int_free
+      1    0.5%    0.3%  __pthread_cond_signal
+      1    0.5%    0.3%  __memcpy_avx_unaligned
+      1    0.5%    0.3%  __GI__IO_file_xsputn
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+    176   46.4%  /home/skug/.nvm/versions/node/v12.22.1/bin/node
+     84   47.7%    /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      9   10.7%      LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      9  100.0%        LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      2   22.2%          LazyCompile: ~parcelRequire.zTA8../preprocessor /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:425:23
+      2  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      2   22.2%          LazyCompile: ~parcelRequire.hPiK../db.json /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:95:23
+      2  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1   11.1%          LazyCompile: ~parcelRequire.qzRc../types.json /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:193:23
+      1  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1   11.1%          LazyCompile: ~parcelRequire.jQlE../lib/express /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:237:224
+      1  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1   11.1%          LazyCompile: ~parcelRequire.ik9S../../utils /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:319:52
+      1  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1   11.1%          LazyCompile: ~parcelRequire.dU8E.react /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:647:23
+      1  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1   11.1%          LazyCompile: ~parcelRequire.WBQn.bytes /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:83:23
+      1  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      4    4.8%      /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      2   50.0%        LazyCompile: ~i /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:390:508
+      2  100.0%          LazyCompile: ~parcelRequire.nLpT../maps/xml.json /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:389:133
+      2  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1   25.0%        LazyCompile: ~te /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:7262
+      1  100.0%          LazyCompile: ~re /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:7433
+      1  100.0%            LazyCompile: ~ne /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:8538
+      1   25.0%        LazyCompile: ~n /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:176:159
+      1  100.0%          LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:176:1995
+      1  100.0%            /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      3    3.6%      LazyCompile: ~getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      3  100.0%        LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      3  100.0%          LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      3  100.0%            LazyCompile: ~exports.parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:464:152
+      2    2.4%      LazyCompile: ~request https.js:283:17
+      2  100.0%        LazyCompile: ~_._performRequest /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:302:4466
+      2  100.0%          LazyCompile: ~_ /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:302:558
+      2  100.0%            LazyCompile: ~value /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:302:1067
+      2    2.4%      LazyCompile: ~c /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:39126
+      2  100.0%        LazyCompile: ~Cn /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:39021
+      2  100.0%          LazyCompile: ~r.render /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:46249
+      2  100.0%            LazyCompile: ~r.read /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:45034
+      2    2.4%      LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      2  100.0%        LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      2  100.0%          LazyCompile: ~exports.parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:464:152
+      2  100.0%            LazyCompile: ~o /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:468:246
+      2    2.4%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:48511
+      2  100.0%        LazyCompile: ~qt /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:5297
+      2  100.0%          LazyCompile: ~Ta /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:48345
+      2  100.0%            LazyCompile: ~Ln /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:9926
+      1    1.2%      LazyCompile: ~xe /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:12113
+      1  100.0%        LazyCompile: ~lf /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:42576
+      1  100.0%          LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:37560
+      1  100.0%            LazyCompile: ~Ln /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:9926
+      1    1.2%      LazyCompile: ~writevGeneric internal/stream_base_commons.js:118:23
+      1  100.0%        LazyCompile: ~Socket._writev net.js:793:36
+      1  100.0%          LazyCompile: ~clearBuffer _stream_writable.js:497:21
+      1  100.0%            LazyCompile: ~Writable.uncork _stream_writable.js:328:37
+      1    1.2%      LazyCompile: ~writeHead _http_server.js:243:19
+      1  100.0%        LazyCompile: ~_implicitHeader _http_server.js:238:68
+      1  100.0%          LazyCompile: ~write_ _http_outgoing.js:639:16
+      1  100.0%            LazyCompile: ~end _http_outgoing.js:738:45
+      1    1.2%      LazyCompile: ~w /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:476:1616
+      1  100.0%        LazyCompile: ~x /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:516:3149
+      1  100.0%          LazyCompile: ~h /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:522:669
+      1  100.0%            LazyCompile: ~s /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:530:510
+      1    1.2%      LazyCompile: ~urlParse url.js:151:18
+      1  100.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:306:727
+      1  100.0%          /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1  100.0%            LazyCompile: ~module.exports /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:306:696
+      1    1.2%      LazyCompile: ~st /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:26517
+      1  100.0%        LazyCompile: ~_processToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11288
+      1  100.0%          LazyCompile: ~_processInputToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11670
+      1  100.0%            LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      1    1.2%      LazyCompile: ~setupListenHandle net.js:1269:27
+      1  100.0%        LazyCompile: ~listenInCluster net.js:1354:25
+      1  100.0%          LazyCompile: ~Server.listen net.js:1396:35
+      1  100.0%            LazyCompile: ~v.listen /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:210:4745
+      1    1.2%      LazyCompile: ~setImmediate timers.js:277:22
+      1  100.0%        LazyCompile: ~onSocketCloseDestroySSL _tls_wrap.js:630:33
+      1  100.0%          LazyCompile: ~<anonymous> net.js:673:24
+      1  100.0%            LazyCompile: ~done _tls_wrap.js:559:16
+      1    1.2%      LazyCompile: ~resolve path.js:973:10
+      1  100.0%        LazyCompile: ~patchProcessObject internal/bootstrap/pre_execution.js:78:28
+      1  100.0%          LazyCompile: ~prepareMainThreadExecution internal/bootstrap/pre_execution.js:17:36
+      1  100.0%            Eval: ~<anonymous> internal/main/run_main_module.js:1:1
+      1    1.2%      LazyCompile: ~resetSocketTimeout _http_server.js:784:28
+      1  100.0%        LazyCompile: ~parserOnIncoming _http_server.js:716:26
+      1  100.0%          LazyCompile: ~parserOnHeadersComplete _http_common.js:77:33
+      1    1.2%      LazyCompile: ~realpathSync fs.js:1568:22
+      1  100.0%        LazyCompile: ~toRealPath internal/modules/cjs/loader.js:335:20
+      1  100.0%          LazyCompile: ~tryFile internal/modules/cjs/loader.js:326:17
+      1  100.0%            LazyCompile: ~tryExtensions internal/modules/cjs/loader.js:342:23
+      1    1.2%      LazyCompile: ~readableAddChunk _stream_readable.js:221:26
+      1  100.0%        LazyCompile: ~Readable.push _stream_readable.js:212:35
+      1  100.0%          LazyCompile: ~onStreamRead internal/stream_base_commons.js:165:22
+      1    1.2%      LazyCompile: ~r.renderDOM /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:49237
+      1  100.0%        LazyCompile: ~r.render /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:46249
+      1  100.0%          LazyCompile: ~r.read /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:45034
+      1  100.0%            LazyCompile: ~exports.renderToString /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:55006
+      1    1.2%      LazyCompile: ~qt /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:37218
+      1  100.0%        LazyCompile: ~r.read /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:45034
+      1  100.0%          LazyCompile: ~exports.renderToString /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:55006
+      1  100.0%            LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:654:758
+      1    1.2%      LazyCompile: ~parserOnMessageComplete _http_common.js:141:33
+      1    1.2%      LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      1  100.0%        LazyCompile: ~exports.parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:464:152
+      1  100.0%          LazyCompile: ~o /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:468:246
+      1  100.0%            LazyCompile: ~u /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:470:219
+      1    1.2%      LazyCompile: ~parcelRequire.vvcZ /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:599:23
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.HKbM../cjs/scheduler.production.min.js /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:601:23
+      1    1.2%      LazyCompile: ~parcelRequire.p792.entities/lib/decode_codepoint /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:377:23
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.gpLh../Tokenizer /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:379:177
+      1    1.2%      LazyCompile: ~parcelRequire.kqfw.react /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:565:117
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.rqh0.react /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:567:53
+      1    1.2%      LazyCompile: ~parcelRequire.j0B7.safe-buffer /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:207:60
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.HDix.finalhandler /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:209:191
+      1    1.2%      LazyCompile: ~parcelRequire.bEdn /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:93:23
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.hPiK../db.json /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:95:23
+      1    1.2%      LazyCompile: ~parcelRequire.RTVv.tslib /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:535:110
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.UOvh.cheerio /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:537:107
+      1    1.2%      LazyCompile: ~parcelRequire.OtXs.react /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:249:60
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.i1z6../cjs/react-dom-server.node.production.min.js /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:251:60
+      1    1.2%      LazyCompile: ~parcelRequire.N523.object-assign /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:243:45
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.ccIB../cjs/react.production.min.js /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:245:45
+      1    1.2%      LazyCompile: ~parcelRequire.Focm.express /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:653:23
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~parcelRequire.sShK /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:23
+      1  100.0%            Eval: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:1
+      1    1.2%      LazyCompile: ~p.escapeString /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:462:2335
+      1  100.0%        LazyCompile: ~_serializeTextNode /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:462:1748
+      1  100.0%          LazyCompile: ~_serializeChildNodes /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:462:448
+      1  100.0%            LazyCompile: ~_serializeElement /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:462:819
+      1    1.2%      LazyCompile: ~once events.js:433:44
+      1  100.0%        LazyCompile: ~Readable.pipe _stream_readable.js:633:35
+      1  100.0%          LazyCompile: ~E.stream /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:200:9093
+      1  100.0%            LazyCompile: ~E.send /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:200:7399
+      1    1.2%      LazyCompile: ~o /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:466:289
+      1  100.0%        LazyCompile: ~exports.createElement /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:466:962
+      1  100.0%          LazyCompile: ~_insertElement /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:9515
+      1  100.0%            LazyCompile: ~Ue /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:23229
+      1    1.2%      LazyCompile: ~nativeModuleRequire internal/bootstrap/loaders.js:297:29
+      1  100.0%        Eval: ~<anonymous> _http_agent.js:1:1
+      1  100.0%          LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1  100.0%            LazyCompile: ~nativeModuleRequire internal/bootstrap/loaders.js:297:29
+      1    1.2%      LazyCompile: ~listOnTimeout internal/timers.js:502:25
+      1  100.0%        LazyCompile: ~processTimers internal/timers.js:482:25
+      1    1.2%      LazyCompile: ~initializeCJSLoader internal/bootstrap/pre_execution.js:404:29
+      1  100.0%        LazyCompile: ~prepareMainThreadExecution internal/bootstrap/pre_execution.js:17:36
+      1  100.0%          Eval: ~<anonymous> internal/main/run_main_module.js:1:1
+      1    1.2%      LazyCompile: ~i /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:294:1070
+      1  100.0%        LazyCompile: ~parcelRequire.M4ID.has-flag /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:293:23
+      1  100.0%          LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%            LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1    1.2%      LazyCompile: ~exports.createElement /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:466:962
+      1  100.0%        LazyCompile: ~Z /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:16533
+      1  100.0%          LazyCompile: ~$ /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:16883
+      1  100.0%            LazyCompile: ~Ue /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:23229
+      1    1.2%      LazyCompile: ~emitLookup net.js:1043:46
+      1  100.0%        LazyCompile: ~onlookup dns.js:64:18
+      1    1.2%      LazyCompile: ~e /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:386:254
+      1  100.0%        LazyCompile: ~parcelRequire.Cv4O.domelementtype /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:385:46
+      1  100.0%          LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%            LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1    1.2%      LazyCompile: ~e /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:18:54
+      1  100.0%        LazyCompile: ~parcelRequire.wJvl../codes.json /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:17:23
+      1  100.0%          LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%            LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1    1.2%      LazyCompile: ~a /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:570:721
+      1  100.0%        LazyCompile: ~c /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:39126
+      1  100.0%          LazyCompile: ~Cn /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:39021
+      1  100.0%            LazyCompile: ~r.render /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:46249
+      1    1.2%      LazyCompile: ~_appendCommentNode /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:10173
+      1  100.0%        LazyCompile: ~ne /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:17181
+      1  100.0%          LazyCompile: ~_processToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11288
+      1  100.0%            LazyCompile: ~_processInputToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11670
+      1    1.2%      LazyCompile: ~_appendCharToCurrentCharacterToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:7006
+      1  100.0%        LazyCompile: ~_emitCodePoint /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:7220
+      1  100.0%          LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:9113
+      1  100.0%            LazyCompile: ~getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      1    1.2%      LazyCompile: ~_addListener events.js:342:22
+      1  100.0%        LazyCompile: ~addListener events.js:404:58
+      1  100.0%          Eval: ~<anonymous> internal/bootstrap/switches/is_main_thread.js:1:1
+      1    1.2%      LazyCompile: ~Socket net.js:267:16
+      1  100.0%        LazyCompile: ~onconnection net.js:1529:22
+      1    1.2%      LazyCompile: ~Readable.removeAllListeners _stream_readable.js:919:49
+      1  100.0%        LazyCompile: ~_dump _http_incoming.js:283:49
+      1  100.0%          LazyCompile: ~resOnFinish _http_server.js:671:21
+      1  100.0%            LazyCompile: ~onFinish _http_outgoing.js:733:18
+      1    1.2%      LazyCompile: ~Ln /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:9926
+      1  100.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:10
+      1  100.0%          LazyCompile: ~parcelRequire.ne3S /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:333:43
+      1  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1    1.2%      LazyCompile: ~J /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:5318
+      1  100.0%        LazyCompile: ~Ue /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:15244
+      1  100.0%          LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:562:1253
+      1  100.0%            /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1    1.2%      LazyCompile: ~IncomingMessage _http_incoming.js:41:25
+      1  100.0%        LazyCompile: ~parserOnHeadersComplete _http_common.js:77:33
+      1    1.2%      LazyCompile: ~Ht /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:35934
+      1  100.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:37120
+      1  100.0%          LazyCompile: ~Wt /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:36649
+      1  100.0%            LazyCompile: ~r.renderDOM /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:49237
+      1    1.2%      LazyCompile: ~He /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:21711
+      1  100.0%        LazyCompile: ~st /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:26517
+      1  100.0%          LazyCompile: ~_processToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11288
+      1  100.0%            LazyCompile: ~_processInputToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11670
+      1    1.2%      LazyCompile: ~<anonymous> fs.js:167:10
+      1    1.2%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:612:59
+      1  100.0%        LazyCompile: ~parcelRequire.XOiy.react /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:611:121
+      1  100.0%          LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%            LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1    1.2%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:612:26480
+      1  100.0%        /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1  100.0%          LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:612:26457
+      1  100.0%            /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1    1.2%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:524:5214
+      1  100.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:524:980
+      1  100.0%          LazyCompile: ~s /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:474:436
+      1  100.0%            LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:524:862
+      1    1.2%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:67496
+      1  100.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:28251
+      1  100.0%          LazyCompile: ~He /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:17996
+      1  100.0%            LazyCompile: ~Ln /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:9926
+      1    1.2%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:28251
+      1  100.0%        LazyCompile: ~yu /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:21993
+      1  100.0%          LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:46642
+      1  100.0%            LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:334:27868
+      1    1.2%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:316:781
+      1  100.0%        LazyCompile: ~g /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:258:1423
+      1  100.0%          LazyCompile: ~module.exports /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:316:63
+      1  100.0%            LazyCompile: ~a.<computed> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:320:1528
+      1    1.2%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:18540
+      1  100.0%        /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1  100.0%          LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:18517
+      1  100.0%            /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1    1.2%      LazyCompile: ~$ /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:16883
+      1  100.0%        LazyCompile: ~Ot /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:30289
+      1  100.0%          LazyCompile: ~_processToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11288
+      1  100.0%            LazyCompile: ~_processInputToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11670
+      1    1.2%      LazyCompile: *getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      1  100.0%        LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      1  100.0%          LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      1  100.0%            LazyCompile: ~exports.parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:464:152
+      1    1.2%      Eval: ~<anonymous> internal/util/types.js:1:1
+      1  100.0%        LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1  100.0%          LazyCompile: ~nativeModuleRequire internal/bootstrap/loaders.js:297:29
+      1  100.0%            Eval: ~<anonymous> internal/util/inspect.js:1:1
+      1    1.2%      Eval: ~<anonymous> internal/console/constructor.js:1:1
+      1  100.0%        LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1  100.0%          LazyCompile: ~nativeModuleRequire internal/bootstrap/loaders.js:297:29
+      1  100.0%            Eval: ~<anonymous> internal/console/global.js:1:1
+      1    1.2%      Eval: ~<anonymous> _http_common.js:1:1
+      1  100.0%        LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1  100.0%          LazyCompile: ~nativeModuleRequire internal/bootstrap/loaders.js:297:29
+      1  100.0%            Eval: ~<anonymous> _http_client.js:1:1
+      2    1.1%    LazyCompile: ~wn /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:38568
+      2  100.0%      LazyCompile: ~r.renderDOM /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:49237
+      2  100.0%        LazyCompile: ~r.render /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:46249
+      2  100.0%          LazyCompile: ~r.read /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:45034
+      2  100.0%            LazyCompile: ~exports.renderToString /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:55006
+      2    1.1%    LazyCompile: ~re /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:7433
+      2  100.0%      LazyCompile: ~ne /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:8538
+      2  100.0%        LazyCompile: ~toArray /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:244:17816
+      2  100.0%          LazyCompile: ~r.renderDOM /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:49237
+      2  100.0%            LazyCompile: ~r.render /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:46249
+      2    1.1%    LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      2  100.0%      LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1   50.0%        LazyCompile: ~parcelRequire.kZ5L../stringify /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:115:39
+      1  100.0%          LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%            LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1   50.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:580:59
+      1  100.0%          LazyCompile: ~parcelRequire.LIiI.object-assign /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:579:58
+      1  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      2    1.1%    LazyCompile: ~exports.appendChild /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:466:1540
+      2  100.0%      LazyCompile: ~_attachElementToTree /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:9206
+      2  100.0%        LazyCompile: ~_insertElement /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:9515
+      1   50.0%          LazyCompile: ~Ue /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:23229
+      1  100.0%            LazyCompile: ~st /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:26517
+      1   50.0%          LazyCompile: ~He /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:21711
+      1  100.0%            LazyCompile: ~st /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:26517
+      2    1.1%    LazyCompile: ~d /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:388:569
+      2  100.0%      /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      2  100.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:388:815
+      2  100.0%          LazyCompile: ~parcelRequire.z742../maps/entities.json /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:387:62
+      2  100.0%            LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      2    1.1%    LazyCompile: ~advance /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:422:1162
+      2  100.0%      LazyCompile: ~_consume /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:5040
+      2  100.0%        LazyCompile: ~getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      2  100.0%          LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      1   50.0%            LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      1   50.0%            LazyCompile: ~parse /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6063
+      2    1.1%    LazyCompile: ~a /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:430:643
+      1   50.0%      LazyCompile: ~hasInButtonScope /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:430:4850
+      1  100.0%        LazyCompile: ~Se /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:21812
+      1  100.0%          LazyCompile: ~st /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:26517
+      1  100.0%            LazyCompile: ~_processToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11288
+      1   50.0%      LazyCompile: *hasInButtonScope /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:430:4850
+      1  100.0%        LazyCompile: ~He /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:21711
+      1  100.0%          LazyCompile: ~st /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:26517
+      1  100.0%            LazyCompile: *_processToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:11288
+      2    1.1%    LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      2  100.0%      LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      2  100.0%        LazyCompile: ~exports.parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:464:152
+      2  100.0%          LazyCompile: ~o /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:468:246
+      2  100.0%            LazyCompile: ~u /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:470:219
+      2    1.1%    LazyCompile: ~_emitCurrentCharacterToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:6794
+      2  100.0%      LazyCompile: *<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:9113
+      2  100.0%        LazyCompile: *getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      2  100.0%          LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      2  100.0%            LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      2    1.1%    LazyCompile: ~Readable.on _stream_readable.js:872:33
+      1   50.0%      LazyCompile: ~once events.js:433:44
+      1  100.0%        LazyCompile: ~clearBuffer _stream_writable.js:497:21
+      1  100.0%          LazyCompile: ~Writable.uncork _stream_writable.js:328:37
+      1  100.0%            LazyCompile: ~_flushOutput _http_outgoing.js:848:63
+      1   50.0%      LazyCompile: ~TLSSocket._init _tls_wrap.js:655:37
+      1  100.0%        LazyCompile: ~TLSSocket _tls_wrap.js:445:19
+      1  100.0%          LazyCompile: ~connect _tls_wrap.js:1561:35
+      1  100.0%            LazyCompile: ~createConnection https.js:100:26
+      2    1.1%    LazyCompile: ~E.setHeader /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:200:9570
+      2  100.0%      LazyCompile: ~E.send /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:200:7399
+      2  100.0%        LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:200:8418
+      2  100.0%          LazyCompile: ~<anonymous> fs.js:167:10
+      2    1.1%    LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:17372
+      2  100.0%      LazyCompile: *getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      2  100.0%        LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      2  100.0%          LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      2  100.0%            LazyCompile: ~exports.parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:464:152
+      2    1.1%    LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:11031
+      2  100.0%      LazyCompile: ~Ce /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:10968
+      2  100.0%        LazyCompile: ~Ee /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:11371
+      2  100.0%          LazyCompile: ~Re /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:11406
+      2  100.0%            LazyCompile: ~wn /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:250:38568
+      2    1.1%    LazyCompile: *_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      2  100.0%      LazyCompile: ~parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6209
+      2  100.0%        LazyCompile: ~exports.parseFragment /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:464:152
+      2  100.0%          LazyCompile: ~o /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:468:246
+      2  100.0%            LazyCompile: ~u /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:470:219
+
+     73   19.3%  epoll_pwait
+
+     30    7.9%  node::native_module::NativeModuleEnv::CompileFunction(v8::FunctionCallbackInfo<v8::Value> const&)
+     30  100.0%    v8::internal::Builtin_HandleApiCall(int, unsigned long*, v8::internal::Isolate*)
+     30  100.0%      LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+     27   90.0%        LazyCompile: ~nativeModuleRequire internal/bootstrap/loaders.js:297:29
+      4   14.8%          Eval: ~<anonymous> internal/bootstrap/node.js:1:1
+      2    7.4%          Eval: ~<anonymous> tls.js:1:1
+      2  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      2    7.4%          Eval: ~<anonymous> stream.js:1:1
+      2  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      2    7.4%          Eval: ~<anonymous> internal/source_map/source_map_cache.js:1:1
+      2  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          LazyCompile: ~setupPrepareStackTrace internal/bootstrap/node.js:252:32
+      1  100.0%            Eval: ~<anonymous> internal/bootstrap/node.js:1:1
+      1    3.7%          LazyCompile: ~setupBuffer internal/bootstrap/node.js:330:21
+      1  100.0%            Eval: ~<anonymous> internal/bootstrap/node.js:1:1
+      1    3.7%          LazyCompile: ~initializeCJSLoader internal/bootstrap/pre_execution.js:404:29
+      1  100.0%            LazyCompile: ~prepareMainThreadExecution internal/bootstrap/pre_execution.js:17:36
+      1    3.7%          LazyCompile: ~get fs.js:2070:8
+      1  100.0%            /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1    3.7%          Eval: ~<anonymous> net.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> internal/timers.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> internal/process/esm_loader.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> internal/modules/esm/loader.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> internal/modules/cjs/loader.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> internal/crypto/keygen.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> internal/cluster/master.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> internal/child_process.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> http.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> fs.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> events.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> crypto.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      1    3.7%          Eval: ~<anonymous> buffer.js:1:1
+      1  100.0%            LazyCompile: ~compileForInternalLoader internal/bootstrap/loaders.js:264:27
+      3   10.0%        LazyCompile: ~compileForPublicLoader internal/bootstrap/loaders.js:213:25
+      3  100.0%          LazyCompile: ~loadNativeModule internal/modules/cjs/helpers.js:22:26
+      3  100.0%            LazyCompile: ~Module._load internal/modules/cjs/loader.js:648:24
+
+     26    6.9%  node::contextify::ContextifyContext::CompileFunction(v8::FunctionCallbackInfo<v8::Value> const&)
+     26  100.0%    v8::internal::Builtin_HandleApiCall(int, unsigned long*, v8::internal::Isolate*)
+     26  100.0%      LazyCompile: ~wrapSafe internal/modules/cjs/loader.js:899:18
+     26  100.0%        LazyCompile: ~Module._compile internal/modules/cjs/loader.js:953:37
+     26  100.0%          LazyCompile: ~Module._extensions..js internal/modules/cjs/loader.js:1008:37
+     26  100.0%            LazyCompile: ~Module.load internal/modules/cjs/loader.js:851:33
+
+     11    2.9%  __GI___libc_write
+      8   72.7%    /home/skug/.nvm/versions/node/v12.22.1/bin/node
+      1   12.5%      LazyCompile: ~value internal/console/constructor.js:243:20
+      1  100.0%        LazyCompile: ~log internal/console/constructor.js:342:6
+      1  100.0%          node::inspector::(anonymous namespace)::InspectorConsoleCall(v8::FunctionCallbackInfo<v8::Value> const&)
+      1  100.0%            LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:654:2203
+      1   12.5%      LazyCompile: ~parcelRequire.pn9B../validate.js /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:341:42
+      1  100.0%        LazyCompile: ~f /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:137
+      1  100.0%          LazyCompile: ~p /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:1:533
+      1  100.0%            LazyCompile: ~parcelRequire.LeJK../rng.js /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:343:45
+      1   12.5%      LazyCompile: ~i /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:12:376
+      1  100.0%        LazyCompile: ~exports.setCharset /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:208:1975
+      1  100.0%          LazyCompile: ~j.send /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:232:1699
+      1  100.0%            LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:654:758
+      1   12.5%      LazyCompile: ~d /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:160:944
+      1  100.0%        LazyCompile: ~_ /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:160:2337
+      1  100.0%          LazyCompile: ~h.handle /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:160:2155
+      1  100.0%            LazyCompile: ~v.handle /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:210:2055
+      1   12.5%      LazyCompile: ~createSocket _http_agent.js:290:53
+      1  100.0%        LazyCompile: ~addRequest _http_agent.js:219:49
+      1  100.0%          LazyCompile: ~ClientRequest _http_client.js:85:23
+      1  100.0%            LazyCompile: ~request https.js:283:17
+      1   12.5%      LazyCompile: ~Socket.connect net.js:929:36
+      1  100.0%        LazyCompile: ~connect _tls_wrap.js:1561:35
+      1  100.0%          LazyCompile: ~createConnection https.js:100:26
+      1  100.0%            LazyCompile: ~createSocket _http_agent.js:290:53
+      1   12.5%      LazyCompile: ~Module._load internal/modules/cjs/loader.js:648:24
+      1  100.0%        LazyCompile: ~executeUserEntryPoint internal/modules/run_main.js:53:31
+      1  100.0%          Eval: ~<anonymous> internal/main/run_main_module.js:1:1
+      1   12.5%      LazyCompile: ~<anonymous> /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:9523
+      1  100.0%        LazyCompile: ~getNextToken /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:426:4482
+      1  100.0%          LazyCompile: ~_runParsingLoop /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:7324
+      1  100.0%            LazyCompile: ~parse /home/skug/Projects/KSF/github/affresco/apps/app-article-server/dist/server/index.js:460:6063
+
+      4    1.1%  node::crypto::SecureContext::AddRootCerts(v8::FunctionCallbackInfo<v8::Value> const&)
+      4  100.0%    v8::internal::Builtin_HandleApiCall(int, unsigned long*, v8::internal::Isolate*)
+      4  100.0%      LazyCompile: ~createSecureContext _tls_common.js:94:59
+      4  100.0%        LazyCompile: ~connect _tls_wrap.js:1561:35
+      4  100.0%          LazyCompile: ~createConnection https.js:100:26
+      4  100.0%            LazyCompile: ~createSocket _http_agent.js:290:53
+

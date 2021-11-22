@@ -1,0 +1,9 @@
+:quit
+:type env
+:let env = {A = "a", B = "b", C = "c"}
+:help
+help
+:type {A = "a", B = "b", C = "c"}
+{A = "a", B = "b", C = "c"}
+env = {A = "a", B = "b", C = "c"}
+let env = {A = "a", B = "b", C = "c"}
