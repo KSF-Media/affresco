@@ -242,8 +242,8 @@ renderArticle env uuid article mostReadArticles = do
                   DOM.fragment
                     [ DOM.meta { property: "og:type", content: "article" }
                     , DOM.meta { property: "og:title", content: a'.title }
-                    , DOM.meta { property: "og:description", content: fold <$> _.preamble $ a' }
-                    , DOM.meta { property: "og:image", content: _.url $ ( fold <$> _.mainImage $ a' ) }
+                    , DOM.meta { property: "og:description", content: fold a'.preamble }
+                    , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
                     ]
         appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars) >>= appendHead metaTags
 
