@@ -1224,7 +1224,7 @@
     react-dom "^16.5.2"
 
 "@ksf-media/user@file:packages/user":
-  version "0.3.2"
+  version "0.4.1"
   dependencies:
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff"
     persona "https://github.com/KSF-Media/persona-javascript-client.git#d8876dc53c39e6c80cdff363a8230deb944c6e73"
@@ -2820,7 +2820,7 @@ basscss-typography@^3.0.4:
   resolved "https://registry.yarnpkg.com/basscss-typography/-/basscss-typography-3.0.4.tgz#ec946a2bad8dd1af97be9ea108ad4bb7be932464"
   integrity sha512-PMCxUfYPpAj8gQV8qI09lfNp7eWNrKtQFkCN2fZjLyReSY/wnw8QP8irpvbJ67vSEhlkA6ZP8j7vmTDoxkyu8g==
 
-basscss@^8.1.0:
+basscss@^8.0.4, basscss@^8.1.0:
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/basscss/-/basscss-8.1.0.tgz#ede4ed0a8a8433fa18edda90a90d2311d1223695"
   integrity sha512-SJ48HWDKqX1OnzeZgqwweFPVM98h0lNtvC+megWPCEJ1R6LIbx6dnj3rpCJueElVn9giWipZhoozMEBRAIlnUw==
