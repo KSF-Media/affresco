@@ -103,7 +103,7 @@ const ArticleDetails = (props) => {
                       );
                     })
                   : null}
-                {props.premium || true ? (
+                {props.premium ? (
                   <div className="article-info">
                     <ArticleType articleTypeDetails={props.articleTypeDetails} /> <PremiumBadge paper={props.paper} />
                   </div>
