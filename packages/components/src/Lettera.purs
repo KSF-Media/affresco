@@ -7,6 +7,7 @@ import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
+import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
@@ -101,7 +102,7 @@ getArticleWithUrl url auth = do
           -}
         let articlePreviewJson =
               (toObject response.body)
-                 >>= lookup "not_entitled"
+                 >>= (\x -> lookup "not_entitled_v4" x <|> lookup "not_entitled" x)
                  >>= toObject
                  >>= lookup "articlePreview"
 
