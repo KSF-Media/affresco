@@ -91,7 +91,7 @@ const ArticleDetails = (props) => {
                         </div>
                       );
                     })
-                  : ""}
+                  : null}
               </div>
               <div className={"col-5"} style={{ paddingLeft: "0px" }}>
                 {props.authors != null
@@ -102,19 +102,15 @@ const ArticleDetails = (props) => {
                         </div>
                       );
                     })
-                  : ""}
-                {props.premium ? (
+                  : null}
+                {props.premium || true ? (
                   <div className="article-info">
                     <ArticleType articleTypeDetails={props.articleTypeDetails} /> <PremiumBadge paper={props.paper} />
                   </div>
-                ) : (
-                  ""
-                )}
+                ) : null}
               </div>
             </Fragment>
-          ) : (
-            ""
-          )}
+          ) : null}
 
           {!isCategoryOpinion() ? (
             <div className={"col-7"} style={{ paddingLeft: "0px" }}>
@@ -128,20 +124,14 @@ const ArticleDetails = (props) => {
                     );
                   })}
                 </div>
-              ) : (
-                ""
-              )}
+              ) : null}
               {props.premium ? (
                 <div className="article-info">
-                  <ArticleType articleTypeDetails={props.articleTypeDetails} /> <PremiumBadge />
+                  <ArticleType articleTypeDetails={props.articleTypeDetails} /> <PremiumBadge paper={props.paper} />
                 </div>
-              ) : (
-                ""
-              )}
+              ) : null}
             </div>
-          ) : (
-            ""
-          )}
+          ) : null}
 
           <div className="col-5 pubDate text-right" style={{ paddingLeft: "0px", paddingRight: "0px" }}>
             <div>Pub. {newPublishingDate}</div>

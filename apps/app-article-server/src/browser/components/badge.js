@@ -1,7 +1,7 @@
 import React from "react";
 
-const PremiumBadge = (props) => {
-  return <span className={`premiumBadge brandBg-${props.paper}`}>PREMIUM</span>;
+const PremiumBadge = ({ paper }) => {
+  return <span className={`premiumBadge brandBg-${paper}`}>PREMIUM</span>;
 };
 
 export default PremiumBadge;
