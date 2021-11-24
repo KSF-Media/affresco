@@ -138,6 +138,7 @@ type BodyElementJS =
   , footnote :: Maybe String
   , question :: Maybe String
   , quote    :: Maybe String
+  , ad       :: Maybe String
   }
 
 data BodyElement
@@ -148,6 +149,7 @@ data BodyElement
   | Footnote String
   | Question String
   | Quote String
+  | Ad String
 derive instance bodyElementGeneric :: Generic BodyElement _
 instance bodyElementShow :: Show BodyElement where show = genericShow
 

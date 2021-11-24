@@ -3,9 +3,9 @@ module Mosaico.Article where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (cons, head, snoc)
+import Data.Array (cons, head, insertAt, length, snoc, partition, (!!))
 import Data.Array as Array
-import Data.Either (Either(..))
+import Data.Either (Either(..), fromRight, isRight)
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -134,7 +134,9 @@ render { props, state, setState } =
         title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
         tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
         mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
-        bodyWithAd = Ad.insertIntoBody adBox $ map renderElement state.body
+        bodyWithAd = map renderElement
+          <<< insertAdsIntoBodyText articleMiddle1Desktop articleMiddle2Desktop
+          <<< removeBodyErrors $ state.body 
     in DOM.div
       { className: "mosaico--article"
       , children:
@@ -242,8 +244,8 @@ render { props, state, setState } =
             , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
             }
 
-    adBox =
-        Ad.ad { contentUnit: "JATTEBOX" }
+    articleMiddle1Desktop = "article_middle_1_desktop"
+    articleMiddle2Desktop = "article_middle_2_desktop"
 
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
@@ -298,12 +300,9 @@ render { props, state, setState } =
               ]
           }
 
-    -- TODO: maybe we don't want to deal at all with the error cases
-    -- and we want to throw them away?
-    renderElement :: Either String BodyElement -> JSX
-    renderElement = case _ of
-      Left _   -> mempty
-      Right el -> case el of
+    renderElement :: BodyElement -> JSX
+    renderElement el = 
+      case el of
         Html content -> DOM.p
           { dangerouslySetInnerHTML: { __html: content }
           , className: "html"
@@ -325,4 +324,37 @@ render { props, state, setState } =
                     }
                 ]
             }
+        Ad contentUnit ->
+          Ad.ad {
+            contentUnit
+          }
         other -> DOM.p_ [ DOM.text $ show other ]
+
+    insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement  
+    insertAdsIntoBodyText contentUnit1 contentUnit2 body =
+      let ad1 = Ad contentUnit1
+          ad2 = Ad contentUnit2
+      in if elements > 15
+        then fromMaybe body $ do
+          bodyWithAd <- insertAt (findAdSpace body $ elements/3) ad1 body
+          insertAt (findAdSpace bodyWithAd $ 2 * elements/3) ad2 bodyWithAd
+        else if elements > 6
+          then fromMaybe body $ insertAt (findAdSpace body $ elements/2) ad1 body
+          else body `snoc` ad1
+      where
+        elements = length body
+        findAdSpace :: Array BodyElement -> Int -> Int
+        findAdSpace body' i 
+          | i > elements = elements
+          | otherwise    = case body' !! (i-1) of
+            Just (Html _) -> case body' !! i of
+              Just (Html _) -> i
+              _             -> findAdSpace body' (i+1)
+            _             -> findAdSpace body' (i+1)
+
+    removeBodyErrors :: Array (Either String BodyElement) -> Array BodyElement
+    removeBodyErrors body = 
+      let partitioned = partition isRight body
+      in removeEither <$> partitioned.yes
+      where
+        removeEither = fromRight (Html "")
