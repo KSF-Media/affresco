@@ -206,20 +206,16 @@ renderArticle
   -> Array ArticleStub
   -> Aff (Response ResponseBody)
 renderArticle env uuid article mostReadArticles = do
-  articleComponent <- liftEffect Article.articleComponent
   mosaico <- liftEffect MosaicoServer.app
   case article of
     Right a -> do
       let articleJSX =
-            articleComponent
+            Article.render
               { brand: "hbl"
-              , affArticle: pure a
-              , articleStub: Nothing
+              , article: Right a
               , onLogin: pure unit
+              , onPaywallEvent: pure unit
               , onTagClick: const mempty
-              , user: Nothing
-              , article: Just a
-              , uuid
               }
           mosaicoString = DOM.renderToString
                           $ mosaico
@@ -377,17 +373,13 @@ categoryPage env { params: { categoryName } } = do
 
 notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List String } } -> Aff (Response ResponseBody)
 notFound env _ _ = do
-  articleComponent <- liftEffect Article.articleComponent
   let articleJSX =
-        articleComponent
+        Article.render
           { brand: "hbl"
-          , affArticle: pure notFoundArticle
-          , articleStub: Nothing
+          , article: Right notFoundArticle
           , onLogin: pure unit
+          , onPaywallEvent: pure unit
           , onTagClick: const mempty
-          , user: Nothing
-          , article: Just notFoundArticle
-          , uuid: Nothing
           }
 
   mosaico <- liftEffect MosaicoServer.app
