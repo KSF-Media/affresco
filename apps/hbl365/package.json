@@ -5,7 +5,6 @@
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
-    "basscss": "^8.0.4",
     "create-react-class": "^15.6.3",
     "less": "^3.8.1",
     "react": ">=15.5",
@@ -13,8 +12,8 @@
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build": "spago build && parcel build index.html --no-cache --public-url ./",
+    "build": "spago build && parcel build index.html --public-url ./ --no-source-maps",
     "wait-for-parcel": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8000/\"); sleep(1)}'",
-    "test": "spago build && yarn install && yarn start & yarn wait-for-parcel && spago test"
+    "test": "spago build && yarn install --cache-folder ../../.yarn-cache && yarn start & yarn wait-for-parcel && spago test"
   }
 }

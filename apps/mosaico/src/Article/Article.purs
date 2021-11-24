@@ -2,6 +2,7 @@ module Mosaico.Article where
 
 import Prelude
 
+import Bottega.Models.Order (OrderSource(..))
 import Control.Alt ((<|>))
 import Data.Array (cons, head, insertAt, length, snoc, partition, (!!))
 import Data.Array as Array
@@ -10,32 +11,32 @@ import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
+import Data.Newtype (un, unwrap)
 import Data.Set as Set
+import Data.String as String
+import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
-import Lettera.Models (ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), fromFullArticle)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, (/\))
+import React.Basic.Events (EventHandler)
+import React.Basic.Hooks (Component, component, useEffect, useState, (/\))
 import React.Basic.Hooks as React
 
-
-foreign import someIcons ::
-  { facebook :: String
-  , twitter :: String
-  , linkedin :: String
-  , mail :: String
-  , whatsapp :: String
-  }
+foreign import evalExternalScriptsImpl :: EffectFn1 (Array String) Unit
+evalExternalScripts :: Array String -> Effect Unit
+evalExternalScripts = runEffectFn1 evalExternalScriptsImpl
 
 type Self =
   { state :: State
@@ -46,9 +47,16 @@ type Self =
 type Props =
   { brand :: String
   , affArticle :: Aff FullArticle
+  -- ^ `affArticle` is needed always, even if we get the `article`.
+  --   In the case it's a premium article and the customer has no subscription,
+  --   we need to load the article again after they make the purchase.
+  --   You can think `affArticle` being the Lettera call to get the article.
+  , article :: Maybe FullArticle
   , articleStub :: Maybe ArticleStub
   , onLogin :: Effect Unit
+  , onTagClick :: Tag -> EventHandler
   , user :: Maybe User
+  , uuid :: Maybe String
   }
 
 type State =
@@ -56,57 +64,74 @@ type State =
   , article :: Maybe FullArticle
   , title :: String
   , mainImage :: Maybe Image
-  , tags :: Array String
+  , tags :: Array Tag
   , preamble :: Maybe String
+  , premium :: Boolean
   }
 
 articleComponent :: Component Props
 articleComponent = do
   component "Article" \props -> React.do
+    let article = fromFullArticle <$> props.article
     let initialState =
-          { body: []
-          , article: Nothing
-          , title: maybe mempty (\articleStub -> articleStub.title) props.articleStub
+          { body: foldMap (map Record.toSum) $ _.body <$> article
+          , article: props.article
+          , title: fold $ _.title <$> article <|>
+                          _.title <$> props.articleStub
           , mainImage: do
               articleStub <- props.articleStub
               articleStub.listImage
-          , tags: maybe mempty (\articleStub -> articleStub.tags) props.articleStub
-          -- , preamble: maybe Nothing (\articleStub -> articleStub.preamble) props.articleStub
-          , preamble: (\articleStub -> articleStub.preamble) =<< props.articleStub
+          , tags: fold $ _.tags <$> article <|>
+                         _.tags <$> props.articleStub
+          , preamble: fold $ _.preamble <$> article <|>
+                             _.preamble <$> props.articleStub
+          , premium: fromMaybe false $ _.premium <$> article <|>
+                                       _.premium <$> props.articleStub
           }
     state /\ setState <- useState initialState
 
-    useEffectOnce do
-      loadArticle setState props.affArticle
+    useEffect props.uuid do
+      loadArticle props.article setState props.affArticle
       pure mempty
 
     -- If user logs in / logs out, reload the article.
     -- NOTE: We simply compare the email attribute of `User`
     -- as not every attribute of `User` implements `Eq`
-    useEffect (_.email <$> props.user) do
-      loadArticle setState props.affArticle
-      pure mempty
+    -- TODO: Should probably be state.user, right?
+    -- TODO: Actually, this should probably live some place else
+    --       Leaving the code for reference until the whole thing is resolved
+    -- useEffect (_.email <$> props.user) do
+    --   loadArticle setState props.affArticle
+    --   pure mempty
 
     pure $ render { state, setState, props }
 
-loadArticle :: ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
-loadArticle setState affArticle =
-  Aff.launchAff_ do
-    a <- affArticle
-    let realArticle = fromFullArticle a
-    liftEffect $ setState \s -> s
-      { article = Just a
-      , body = map Record.toSum $ _.body $ fromFullArticle a
-      , mainImage = realArticle.mainImage
-      , title = realArticle.title
-      , tags = realArticle.tags
-      , preamble = realArticle.preamble
-      }
+loadArticle :: Maybe FullArticle -> ((State -> State) -> Effect Unit) -> Aff FullArticle -> Effect Unit
+loadArticle articleProp setState affArticle = do
+  case articleProp of
+    Just a -> do
+      -- We need to evaluate every external javascript Lettera gives us
+      -- This is to get embeds working
+      liftEffect $ evalExternalScripts $ map unwrap $ fold $ _.externalScripts $ fromFullArticle a
+    Nothing -> Aff.launchAff_ do
+      fullArticle <- affArticle
+      let article = fromFullArticle fullArticle
+      liftEffect do
+        setState \s -> s
+                    { article = Just fullArticle
+                    , body = map Record.toSum article.body
+                    , mainImage = article.mainImage
+                    , title = article.title
+                    , tags = article.tags
+                    , preamble = article.preamble
+                    , premium = article.premium
+                    }
+        evalExternalScripts $ map unwrap $ fold $ article.externalScripts
 
 renderImage :: Image -> JSX
 renderImage img =
   DOM.div
-    { className: "mosaico--article--image"
+    { className: "mosaico-article__image"
     , children:
         [ DOM.img
             { src: img.url
@@ -131,118 +156,132 @@ renderImage img =
 render :: Self -> JSX
 render { props, state, setState } =
     let letteraArticle = map fromFullArticle state.article
-        title = fromMaybe mempty $ map _.title props.articleStub <|> map _.title letteraArticle
-        tags = fromMaybe mempty $ map _.tags props.articleStub <|> map _.tags letteraArticle
-        mainImage = (_.listImage =<< props.articleStub) <|> (_.mainImage =<< letteraArticle)
+        title = fromMaybe mempty $ map _.title letteraArticle <|> map _.title props.articleStub
+        tags = fromMaybe mempty $ map _.tags letteraArticle <|> map _.tags props.articleStub
+        mainImage = (_.mainImage =<< letteraArticle) <|> (_.listImage =<< props.articleStub)
         bodyWithAd = map renderElement
           <<< insertAdsIntoBodyText articleMiddle1Desktop articleMiddle2Desktop
-          <<< removeBodyErrors $ state.body 
-    in DOM.div
-      { className: "mosaico--article"
+          <<< removeBodyErrors $ state.body
+        draftHeader = case state.article of
+          Just (DraftArticle _) ->
+            DOM.div
+              { className: "mosaico-article--draft"
+              , children: [ DOM.text "Förslag" ]
+              }
+          _ -> mempty
+    in DOM.article
+      { className: "mosaico-article"
       , children:
-        [ DOM.div
-            { className: "mosaico--tag color-" <> props.brand
-            , children: [ DOM.text $ fromMaybe "" (head tags) ]
-            }
-        , DOM.h1
-            { className: "mosaico--article--title title"
-            , children: [ DOM.text title ]
-            }
-        , foldMap renderImage mainImage
-        , DOM.div
-          { className: "mosaico--article--preamble"
-          , children: [ DOM.p_ [ DOM.text $ fromMaybe mempty state.preamble ] ]
-          }
-        , DOM.div
-            { className: "mosaico--article-times-and-author"
-            , children:
-                [ foldMap renderAuthors $ _.authors <$> letteraArticle
-                , foldMap articleTimestamps letteraArticle
-                ]
-            }
-        , DOM.ul
-            { className: "mosaico-article__some"
-            , children:
-              [ DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.facebook } ]
+          [ DOM.header_
+            [ draftHeader
+            , DOM.h1
+                { className: "mosaico-article__headline"
+                , children: [ DOM.text title ]
+                }
+            , DOM.section
+                { className: "mosaico-article__preamble"
+                , children: [ DOM.text $ fromMaybe mempty state.preamble ]
+                }
+            -- We don't want to be able to share error articles
+            , guard (maybe false (not <<< isErrorArticle) state.article)
+                DOM.section
+                  { className: "mosaico-article__tag-n-share"
+                  , children:
+                      [ DOM.div
+                          { className: "mosaico-article__tag-n-premium"
+                          , children:
+                              [ foldMap renderTag $ head tags
+                              , guard state.premium $ DOM.div
+                                  { className: "premium-badge background-" <> props.brand
+                                  , children: [ DOM.text "Premium"]
+                                  }
+                              ]
+                          }
+                      , DOM.ul
+                          { className: "mosaico-article__some"
+                          , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+                          }
+                      ]
                   }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.twitter } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.linkedin } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.whatsapp } ]
-                  }
-                ]
-              , DOM.li_
-                [ DOM.a
-                  { href: "#"
-                  , children: [ DOM.img { src: someIcons.mail } ]
-                  }
-                ]
-              ]
-            }
-        , DOM.div
-            { className: "mosaico--article--body "
-            , children: case state.article of
-              (Just (PreviewArticle _previewArticle)) ->
-                paywallFade
-                `cons` bodyWithAd
-                `snoc` vetrina
-              (Just (FullArticle _fullArticle)) ->
-                bodyWithAd
-              _ -> mempty
-          }
-      ]
+            ]
+          , DOM.div
+              { className: "mosaico-article__main-image"
+              , children: [ foldMap renderImage mainImage ]
+              }
+          , DOM.div
+              { className: "mosaico-article__main"
+              , children:
+                    [ foldMap (renderMetabyline <<< fromFullArticle) state.article
+                    , DOM.div
+                        { className: "mosaico-article__body "
+                        , children: case state.article of
+                          (Just (PreviewArticle _previewArticle)) ->
+                            paywallFade
+                            `cons` bodyWithAd
+                            `snoc` vetrina
+                          (Just (DraftArticle _draftArticle)) ->
+                            map renderElement state.body
+                          (Just (FullArticle _fullArticle)) ->
+                            bodyWithAd
+                          _ -> mempty
+                        }
+                    , DOM.div
+                        { className: "mosaico-article__aside"
+                        , children: []
+                        }
+                    ]
+              }
+          ]
     }
   where
-    renderAuthors authors =
+    renderMetabyline :: Article -> JSX
+    renderMetabyline article =
       DOM.div
-        { className: "mosaico--article-authors"
+        { className: "mosaico-article__metabyline"
         , children:
-            map (DOM.span_ <<< Array.singleton <<< DOM.text <<< _.byline) authors
-            `snoc` premiumBadge
-        }
-      where
-        premiumBadge =
-          guard (maybe false (_.premium <<< fromFullArticle) state.article)
-          DOM.div
-            { className: "mosaico--article--premium background-hbl"
-            , children: [ DOM.text "premium" ]
-            }
-
-    articleTimestamps { publishingTime, updateTime } =
-      DOM.div
-        { className: "mosaico--article-timestamps"
-        , children:
-            [ foldMap renderPublishingTime publishingTime
-            , foldMap renderUpdateTime updateTime
+            [ DOM.div
+                { className: "mosaico-article__authors-and-timestamps"
+                , children:
+                    [ foldMap
+                        (\authorName -> DOM.div
+                          { className: "mosaico-article__author"
+                          , children: [ DOM.text authorName]
+                          })
+                        (_.byline <$> article.authors)
+                    , foldMap
+                        (\(LocalDateTime publishingTime) -> DOM.div
+                          { className: "mosaico-article__timestamps"
+                          , children:
+                              [ DOM.span_ [ DOM.text $ formatArticleTime publishingTime]
+                              , foldMap
+                                (\(LocalDateTime updateTime) -> DOM.span_
+                                  [ DOM.text $ " UPPDATERAD " <> formatArticleTime updateTime]
+                                )
+                                article.updateTime
+                              ]
+                          })
+                        article.publishingTime
+                    ]
+                }
             ]
         }
-      where
-        renderPublishingTime (LocalDateTime time) =
-          DOM.div
-            { className: "mosaico--article-published-timestamp"
-            , children: [ DOM.text $ "Pub. " <> formatArticleTime time ]
+
+    renderTag tag =
+      DOM.a
+        { className: "mosaico-article__tag color-" <> props.brand
+        , children: [ DOM.text $ (un Tag) tag ]
+        , href: "/tagg/" <> tagToURIComponent tag
+        , onClick: props.onTagClick tag
+        }
+
+    mkShareIcon someName =
+      DOM.li_
+        [ DOM.a
+            { href: "#"
+            , children: [ DOM.span {} ]
+            , className: "mosaico-article__some--" <> someName
             }
-        renderUpdateTime (LocalDateTime time) =
-          DOM.div
-            { className: "mosaico--article-updated-timestamp"
-            , children: [ DOM.text $ "Uppd. " <> formatArticleTime time ]
-            }
+        ]
 
     articleMiddle1Desktop = "article_middle_1_desktop"
     articleMiddle2Desktop = "article_middle_2_desktop"
@@ -252,7 +291,7 @@ render { props, state, setState } =
 
     vetrina =
       Vetrina.vetrina
-        { onClose: Just $ loadArticle setState props.affArticle
+        { onClose: Just $ loadArticle props.article setState props.affArticle
         , onLogin: props.onLogin
         , products: Right [ hblPremium ]
         , unexpectedError: mempty
@@ -264,8 +303,11 @@ render { props, state, setState } =
         , paper: Just HBL
         , paymentMethods: []
         , customNewPurchase: Nothing
+        , subscriptionExists: mempty
         , loadingContainer: Nothing
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
+        , orderSource: PaywallSource
+        , askAccountAlways: false
         }
       where
         hblPremium =
@@ -303,18 +345,25 @@ render { props, state, setState } =
     renderElement :: BodyElement -> JSX
     renderElement el = 
       case el of
-        Html content -> DOM.p
-          { dangerouslySetInnerHTML: { __html: content }
-          , className: "html"
-          }
+        Html content ->
+          -- Can't place div's or blockquotes under p's, so place them under div.
+          -- This is usually case with embeds
+          let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
+          in domFn
+             { dangerouslySetInnerHTML: { __html: content }
+             , className: block <> " " <> block <> "__html"
+             }
         Headline str -> DOM.h4
-          { className: "headline"
+          { className: block <> " " <> block <> "__subheadline"
           , children: [ DOM.text str ]
           }
-        Image img -> renderImage img
+        Image img -> DOM.div
+          { className: block
+          , children: [ renderImage img ]
+          }
         Box boxData ->
           DOM.div
-            { className: "factbox"
+            { className: block <> " " <> block <> "__factbox"
             , children:
                 [ box
                     { headline: boxData.headline
@@ -328,7 +377,26 @@ render { props, state, setState } =
           Ad.ad {
             contentUnit
           }
-        other -> DOM.p_ [ DOM.text $ show other ]
+        Footnote footnote -> DOM.p
+            { className: block <> " " <> block <> "__footnote"
+            , children: [ DOM.text footnote ]
+            }
+        Quote quote -> DOM.q
+            { className: block <> " " <> block <> "__quote"
+            , children: [ DOM.text quote ]
+            }
+        Question question -> DOM.p
+            { className: block <> " " <> block <> "__question"
+            , children: [ DOM.text question ]
+            }
+      where
+        block = "article-element"
+        isDiv = isElem "<div"
+        isBlockquote = isElem "<blockquote"
+        -- Does the string start with wanted element
+        isElem elemName elemString =
+          Just 0 == String.indexOf (Pattern elemName) elemString
+        
 
     insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement  
     insertAdsIntoBodyText contentUnit1 contentUnit2 body =

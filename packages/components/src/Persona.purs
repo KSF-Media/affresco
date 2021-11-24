@@ -25,7 +25,7 @@ import Effect.Now as Now
 import Foreign (Foreign, unsafeToForeign, unsafeFromForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
-import KSF.Api (InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
+import KSF.Api (AuthScope(..), InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
 import KSF.Api.Error (ServerError)
@@ -83,6 +83,7 @@ updateUser uuid update auth = do
   let body = case update of
         UpdateName names          -> unsafeToForeign names
         UpdateEmail email -> unsafeToForeign email
+        UpdatePhone phone -> unsafeToForeign phone
         UpdateAddress { countryCode, zipCode, streetAddress, startDate } ->
           unsafeToForeign
             { address:
@@ -96,6 +97,7 @@ updateUser uuid update auth = do
           unsafeToForeign
             { firstName: userInfo.firstName
             , lastName: userInfo.lastName
+            , phone: toNullable $ userInfo.phone
             , address:
                 { streetAddress: userInfo.streetAddress
                 , zipCode: userInfo.zipCode
@@ -155,8 +157,11 @@ updateForgottenPassword token password confirmPassword = do
   callApi accountApi "accountPasswordResetPost" [ unsafeToForeign updatePasswordData ] {}
 
 register :: NewUser -> Aff LoginResponse
-register newUser =
-  callApi usersApi "usersPost" [ unsafeToForeign newUser ] {}
+register newUser = do
+  let body = case newUser of
+        NewDigitalOnlyUser user -> unsafeToForeign user
+        NewPaperUser user -> unsafeToForeign user
+  callApi usersApi "usersPost" [ body ] {}
 
 type NewTemporaryUser =
   { emailAddress :: Email
@@ -198,6 +203,19 @@ registerCusno newUser@{ cusno } auth = do
     ( authHeaders UUID.emptyUUID auth )
   when newUser.sendReset $ requestPasswordReset newUser.email
   pure response
+
+hasScope :: UUID -> AuthScope -> UserAuth -> Aff Number
+hasScope uuid authScope auth = do
+  callApi usersApi "usersUuidScopeGet"
+    [ unsafeToForeign uuid
+    , unsafeToForeign scope
+    ] $
+    ( authHeaders uuid auth )
+  where
+    scope = case authScope of
+      UserRead -> "UserRead"
+      UserWrite -> "UserWrite"
+      UserPassword -> "UserPassword"
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
@@ -344,6 +362,7 @@ type LoginDataSso =
 data UserUpdate
   = UpdateName { firstName :: String, lastName :: String }
   | UpdateEmail { email :: String }
+  | UpdatePhone { phone :: String }
   | UpdateAddress { countryCode :: String
                   , zipCode :: String
                   , streetAddress :: String
@@ -355,6 +374,7 @@ data UserUpdate
                , countryCode :: String
                , zipCode :: String
                , streetAddress :: String
+               , phone :: Maybe String
                , startDate :: Maybe Date
                }
   | DeletePendingAddressChanges
@@ -467,6 +487,7 @@ type BaseUser =
   , firstName :: Nullable String
   , lastName :: Nullable String
   , address :: Nullable Address
+  , phone :: Nullable String
   , cusno :: Cusno
   , subs :: Array Subscription
   , consent :: Array GdprConsent
@@ -475,7 +496,16 @@ type BaseUser =
   , hasCompletedRegistration :: Boolean
   )
 
-type NewUser =
+data NewUser =
+  NewDigitalOnlyUser
+  { firstName :: String
+  , lastName :: String
+  , emailAddress :: String
+  , password :: String
+  , confirmPassword :: String
+  , legalConsents :: Array LegalConsent
+  }
+  | NewPaperUser
   { firstName :: String
   , lastName :: String
   , emailAddress :: String
@@ -485,7 +515,6 @@ type NewUser =
   , zipCode :: String
   , city :: String
   , country :: String
-  , phone :: String
   , legalConsents :: Array LegalConsent
   }
 

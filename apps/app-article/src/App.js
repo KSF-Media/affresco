@@ -83,7 +83,10 @@ class App extends Component {
     };
   }
   componentDidMount() {
-    if(isDarkModeOn())  document.body.classList.add('darkMode');
+    if (isDarkModeOn()) {
+      document.body.classList.add("darkMode");
+      document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
+    }
     if (localStorage.getItem("currentUser") !== null) {
       this.setState({ user: JSON.parse(localStorage.getItem("currentUser")) });
     }
@@ -249,7 +252,7 @@ class App extends Component {
               category: article.articleType,
               preamble: article.preamble,
               body: article.body,
-              relatedArticles: article.relatedArticles,
+              relatedArticles: article.relatedArticles || [],
               publishingTime: article.publishingTime,
               updateTime: article.updateTime,
               shareUrl: article.shareUrl,
@@ -297,7 +300,7 @@ class App extends Component {
               preamble: data.not_entitled.articlePreview.preamble,
               premium: data.not_entitled.articlePreview.premium,
               body: data.not_entitled.articlePreview.body,
-              relatedArticles: data.not_entitled.articlePreview.relatedArticles,
+              relatedArticles: data.not_entitled.articlePreview.relatedArticles || [],
               publishingTime: data.not_entitled.articlePreview.publishingTime,
               updateTime: data.not_entitled.articlePreview.updateTime,
               shareUrl: data.not_entitled.articlePreview.shareUrl,
@@ -323,7 +326,7 @@ class App extends Component {
               premium: data.premium,
               preamble: data.preamble,
               body: data.body,
-              relatedArticles: data.relatedArticles,
+              relatedArticles: data.relatedArticles || [],
               publishingTime: data.publishingTime,
               updateTime: data.updateTime,
               shareUrl: data.shareUrl,

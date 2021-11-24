@@ -1,4 +1,6 @@
-window.dataLayer = window.dataLayer || [];
+if (typeof window !== "undefined") {
+  window.dataLayer = window.dataLayer || [];
+}
 
 exports.login_ = function (cusno, method, result) {
   dataLayer.push({ event: "login", cusno: cusno === null ? "" : cusno, method: method, result: result });
@@ -80,6 +82,10 @@ exports.changeEmail_ = function (cusno, result) {
 
 exports.changeAddress_ = function (cusno, result) {
   dataLayer.push({ event: "changeAddress", cusno: cusno, result: result });
+};
+
+exports.changePhone_ = function (cusno, result) {
+  dataLayer.push({ event: "changePhone", cusno: cusno, result: result });
 };
 
 exports.deletePendingAddressChanges_ = function (cusno, result) {

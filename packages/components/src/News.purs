@@ -47,12 +47,12 @@ render (Just (Right [])) = Nothing
 render (Just (Left _)) = Nothing
 render Nothing = Just $
   DOM.div
-    { className: "news--container clearfix"
+    { className: "news--container"
     , children: [ DOM.div { className: "tiny-spinner", children: [] } ]
     }
 render (Just (Right xs)) = Just $
   DOM.div
-    { className: "news--container clearfix"
+    { className: "news--container"
     , children:
         [ DOM.dl_ $ map renderNewsItem xs ]
     }

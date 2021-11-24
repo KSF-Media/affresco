@@ -26,7 +26,7 @@ function showLogin(e) {
 
   // For Ios
   try {
-    Window.webkit.messageHandlers.showLogin.postMessage("");
+    window.webkit.messageHandlers.showLogin.postMessage("");
   } catch (err) {
     // we might have a crash when Ios webkit bridge is not registered
   }

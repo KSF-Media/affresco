@@ -1,0 +1,86 @@
+
+.ksf-block-footer {
+  background-color: @footer-background;
+  padding: 60px 0;
+  text-align: center;
+  @media(max-width: @screen-sm-max) {
+    padding: 30px 0;
+  }
+  #footer-links {
+    margin: 0;
+    padding: 0;
+    li {
+      margin: 0 0 30px 0;
+      padding: 0;
+      list-style: none;
+      display: inline-block;
+      a {
+        display: block;
+        padding: 0 30px;
+        text-decoration: underline;
+        color: @link-color-footer;
+        &:hover {
+          color: black;
+        }
+      }
+    }
+  }
+
+  #brands {
+    margin: 0 0 60px 0;
+    @media(max-width: @screen-xs-max) {
+      margin: 0 0 30px 0;
+    }
+    img {
+      width: 64px;
+      width: 64px;
+      margin: 0 5px;
+      @media(max-width: @screen-xs-max) {
+        width: 45px;
+        height: 45px;
+      }
+    }
+  }
+
+  #in-cooperation-with {
+    img {
+      margin-top: 20px;
+      height: 45px;
+      width: 274px;
+      @media(max-width: @screen-xs-max) {
+        width: auto;
+        height: 35px;
+      }
+    }
+    margin-bottom: 60px;
+    @media(max-width: @screen-sm-max) {
+      margin-bottom: 30px;
+    }
+  }
+
+  #ksf {
+    position: relative;
+    padding-top: 8px;
+    #ksf-infos {
+      font-size: 24px;
+      text-align: center;
+      .separator {
+        display: inline-block;
+        margin: 0 20px;
+        @media(max-width: @screen-sm-max) {
+          display: block;
+          height: 0;
+          visibility: hidden;
+        }
+      }
+      margin-bottom: 50px;
+      @media(max-width: @screen-sm-max) {
+        margin-bottom: 25px;
+      }
+    }
+    img {
+      width: 158px;
+      height: 83px
+    }
+  }
+}

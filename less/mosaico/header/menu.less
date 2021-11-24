@@ -1,48 +1,83 @@
 @import (reference) "../../ksf-colors";
-@import (reference) "../../ksf-grid";
 
 .mosaico-header {
   &__menu {
+
+    grid-area: main;
     grid-template-rows: repeat(3, auto);
     grid-template-columns: 0.1fr 1fr 0.1fr;
-    grid-row-start: 4;
-    grid-column: 1 / span 3;
 
-    margin: -33px -30px -13px -30px;
-
-    display: none;
-    z-index: 2;
-    border: 1px solid @grey-slightlylight;
     border-radius: 1px;
     background-color: @white;
 
-    &--visible {
-      display: grid;
+    @media (min-width: @breakpoint-2col) {
+      grid-column: 1 / span 2;
+    }
+
+    @media (min-width: @breakpoint-3col) {
+      grid-column: 2 / span 3;
     }
   }
 
   &__menu-content {
-    display: grid;
+    grid-row-start: 2;
+    grid-column-start: 2;
 
-    grid-template-rows: repeat(6, auto);
-    grid-template-columns: 0.39fr repeat(5, 1fr) 0.39fr;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
 
     row-gap: 1rem;
 
     margin-top: 50px;
   }
 
-  &__section {
+  &__block {
     display: flex;
     flex-direction: column;
+    justify-content: space-around;
 
-    &--gray {
-      color: @grey-medium;
+    row-gap: 1rem;
+
+    @media (min-width: @breakpoint-3col) {
+      flex-direction: row;
     }
+  }
+
+  &__section {
+
+    @media (min-width: @breakpoint-3col) {
+      display: flex;
+      flex-direction: column;
+    }
+    a, a:hover, a:focus, a:active {
+      text-decoration: none;
+      color: inherit;
+    }
+  }
+
+  &__section-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
   }
 
   &__section-title {
     font: 600 13px "Roboto", sans-serif;
+  }
+
+  &__subsections {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: row;
+
+    @media (min-width: @breakpoint-3col) {
+      display: flex;
+      flex-direction: column;
+    }
+
   }
 
   &__subsection {
@@ -54,20 +89,34 @@
     height: 1px;
     background-color: @grey-slightlylight;
     width: 100%;
+
+      &--mobile-only {
+	@media (min-width: @breakpoint-3col) {
+	  display: none;
+	}
+      }
+
   }
 
   &__menu-footer {
     display: grid;
 
     grid-template-rows: auto auto;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr 1fr 1fr;
     row-gap: 8px;
     column-gap: 0px;
+
+    grid-row-start: 3;
+    grid-column-start: 2;
 
     margin-bottom: 30px;
   }
 
   &__footer-caption {
+
+    grid-row-start: 1;
+    grid-column: 2 / span 1;
+
     font: 600 13px "Roboto", sans-serif;
     color: @grey-mediumlight;
 
@@ -79,12 +128,26 @@
     display: grid;
 
     grid-template-rows: 55px auto;
+    justify-content: center;
+
+    &--on {
+      grid-row-start: 2;
+      grid-column-start: 3;
+    }
+
+    &--vn {
+      grid-row-start: 2;
+      grid-column-start: 1;
+    }
   }
 
   &__footer-logo-image {
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 55px;
+    background-size: 100%;
+    width: 55px;
+    height: width;
+    grid-row-start: 1;
 
     &--on {
       background-image: url("../images/logo-on.svg");
@@ -96,26 +159,11 @@
   }
 
   &__footer-logo-caption {
+    grid-row-start: 2;
+
     font: 400 13px "Roboto", sans-serif;
     color: @grey-mediumlight;
 
     justify-self: center;
-  }
-
-  &__menu-overlay {
-    display: none;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.94);
-    z-index: 1;
-
-    &--visible {
-      display: block;
-    }
   }
 }

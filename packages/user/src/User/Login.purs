@@ -3,12 +3,13 @@ module KSF.User.Login where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (catchError, throwError)
+import Control.Monad.Error.Class (throwError)
 import Data.Array as Array
 import Data.Either (Either(..), either)
-import Data.Foldable (foldMap, surround)
+import Data.Foldable (foldMap)
 import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Monoid (guard)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
@@ -22,14 +23,12 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import Facebook.Sdk as FB
 import KSF.Button.Component as Button
 import KSF.InputField as InputField
 import KSF.Registration.Component as Registration
 import KSF.Tracking as Tracking
 import KSF.User (User, UserError(..))
 import KSF.User as User
-import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
 import KSF.ValidatableForm as Form
 import React.Basic (JSX)
@@ -300,13 +299,21 @@ renderLogin self =
 renderLoginForm :: Self -> JSX
 renderLoginForm self =
   DOM.div
-    { className: "login-form pt2"
+    { className: "login-form"
     , children:
         [ foldMap formatErrorMessage self.state.errors.social
         , loginForm
         , if hideLoginLinks
           then mempty
-          else forgotPassword <> forgotEmail <> buySubscription
+          else
+            DOM.div
+              { className: "login--loginLinks"
+              , children:
+                  [ forgotPassword
+                  , forgotEmail
+                  , buySubscription
+                  ]
+              }
         , socialLogins
         ]
     }
@@ -320,7 +327,7 @@ renderLoginForm self =
       where
         loginWithSocial =
           DOM.span
-            { className: "login--login-social-media-text underline"
+            { className: "login--login-social-media-text"
             , children: [ DOM.text "Logga in med Facebook eller Google" ]
             , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
             }
@@ -334,7 +341,6 @@ renderLoginForm self =
     loginForm =
       DOM.form
         { onSubmit: Events.handler preventDefault $ \_ -> onLogin self $ loginFormValidations self
-        , className: "pb2"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
@@ -423,7 +429,7 @@ renderMerge self@{ props } mergeInfo =
     cancelButton :: JSX
     cancelButton =
       DOM.div
-        { className: "underline center"
+        { className: "login--cancel"
         , key: "cancelButton" -- this is here because otherwise React mixes it up with another link
         , children:
           [ DOM.a
@@ -442,7 +448,7 @@ renderMerge self@{ props } mergeInfo =
     mergeAccountForm =
       DOM.form
         { onSubmit
-        , className: "pt2 pb2"
+        , className: "login--merge-account"
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
@@ -474,7 +480,7 @@ googleLogin self =
   if not $ Set.member Google self.props.disableSocialLogins
     then
       someLoginButton
-        { className: "login--some-button-google"
+        { className: "login--some-button login--some-button-google"
         , description: "Logga in med Google"
         , onClick: Google.loadGapi { onSuccess: onGoogleLogin, onFailure: onGoogleFailure }
         }
@@ -516,56 +522,20 @@ googleLogin self =
 
     isGoogleDomainAllowed = not <<< contains (Pattern "Not a valid origin for the client")
 
+-- | The Facebook login is disabled. Instead of the button, we just
+--   show a text explaining it's gone
 facebookLogin :: Self -> JSX
 facebookLogin self =
-  if not $ Set.member Facebook self.props.disableSocialLogins
-    then someLoginButton
-      { className: "login--some-button-fb"
-      , description: "Logga in med Facebook"
-      , onClick: onFacebookLogin
+  guard (not $ Set.member Facebook self.props.disableSocialLogins)
+    DOM.div
+      { className: "login--some-disabled-note"
+      , children: [ DOM.text "Möjligheten att logga in med Facebook har tagits bort. Du kan logga in med den e-postadress som är kopplad till din Facebook, "
+                  , DOM.a
+                      { href: "https://www.hbl.fi/losenord/"
+                      , children: [ DOM.text "bara återställ lösenordet här." ]
+                      }
+                  ]
       }
-    else mempty
-  where
-    onFacebookLogin :: Effect Unit
-    onFacebookLogin = self.props.onLogin do
-      sdk <- User.facebookSdk
-      FB.StatusInfo { authResponse } <- FB.login loginOptions sdk
-      case authResponse of
-        Nothing -> liftEffect do
-          Facebook.Success.unsetFacebookSuccess
-          Log.error "Facebook login failed"
-          Tracking.login Nothing "facebook login" "error: Facebook login failed"
-        Just auth -> do
-          liftEffect Facebook.Success.setFacebookSuccess
-          fetchFacebookUser auth sdk
-      where
-        loginOptions :: FB.LoginOptions
-        loginOptions = FB.LoginOptions { scopes: map FB.Scope [ "public_profile", "email" ] }
-
-    -- | Fetches user info from Facebook and then Persona.
-    -- | Sets response to local storage and invokes `props.onUserFetch`.
-    fetchFacebookUser :: FB.AuthResponse -> FB.Sdk -> Aff Unit
-    fetchFacebookUser (FB.AuthResponse { accessToken }) sdk = do
-      FB.UserInfo { email: FB.UserEmail email } <-
-        FB.userInfo accessToken sdk
-          `catchError` \err -> do
-            -- Here we get an exception if the FB email is missing,
-            -- so we have to ask the user
-            liftEffect $ self.setState _ { errors { login = Just LoginFacebookEmailMissing } }
-            throwError err
-      failOnEmailMismatch self email
-      -- setting the email in the state to eventually send it from the merge view form
-      liftEffect $ self.setState _ { formEmail = Just email }
-      let (FB.AccessToken fbAccessToken) = accessToken
-
-      loginWithRetry (logUserIn email fbAccessToken) handleSuccess handleError handleFinish
-
-    logUserIn email fbAccessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token fbAccessToken) User.Facebook
-    handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "facebook login" "success"
-    handleError _err = liftEffect $ Tracking.login Nothing "facebook login" "error: could not fetch user"
-    handleFinish user = do
-      finalizeSomeAuth self user
-      liftEffect $ self.props.onUserFetch user
 
 finalizeSomeAuth :: Self -> Either UserError User -> Aff Unit
 finalizeSomeAuth self = case _ of
@@ -587,7 +557,7 @@ someLoginButton ::
   -> JSX
 someLoginButton { className, description, onClick } =
   DOM.div
-  { className: className <> surround " " additionalClasses
+  { className: className
   , children:
     [ Button.button
         { description
@@ -596,8 +566,6 @@ someLoginButton { className, description, onClick } =
         }
     ]
   }
-  where
-    additionalClasses = [ "pb1" ]
 
 loginButton :: String -> JSX
 loginButton text =
@@ -610,11 +578,11 @@ loginButton text =
 buySubscription :: JSX
 buySubscription =
   DOM.div
-    { className: "center"
+    { id: "login--buy-subscription"
     , children:
         [ DOM.text "Är du inte prenumerant? "
         , DOM.a
-            { className: "underline"
+            { className: "login--important"
             , href: "https://prenumerera.ksfmedia.fi/"
             , children: [ DOM.text "Köp en prenumeration!" ]
             }
@@ -624,8 +592,7 @@ buySubscription =
 forgotPassword :: JSX
 forgotPassword =
   DOM.div
-    { className: "center mb1"
-    , children:
+    { children:
       [ DOM.text "Glömt lösenordet? "
         , DOM.a
             { href: "https://www.hbl.fi/losenord/"
@@ -637,11 +604,10 @@ forgotPassword =
 forgotEmail :: JSX
 forgotEmail =
   DOM.div
-    { className: "center mb1"
-    , children:
+    { children:
       [ DOM.text "Glömt din e-post? "
       , DOM.a
-          { className: "underline center mb1"
+          { className: "login--important"
           , href: "https://www.hbl.fi/kundservice/"
           , children: [ DOM.text "Ta kontakt med vår kundtjänst!" ]
           }
@@ -651,7 +617,7 @@ forgotEmail =
 formatErrorMessage :: UserError -> JSX
 formatErrorMessage err =
   DOM.div
-    { className: "login--error-msg pb1"
+    { className: "login--error-msg"
     , children: [ errorMsg ]
     }
   where

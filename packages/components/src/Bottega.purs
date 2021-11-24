@@ -3,6 +3,7 @@ module Bottega where
 import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
+import Bottega.Models.Order (fromOrderSource)
 import Data.Array (mapMaybe)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
@@ -63,25 +64,30 @@ type InsufficientAccount = ServerError
 -- TODO: Add more errors!
 data BottegaError
   = BottegaInsufficientAccount -- ^ Cannot create order due to missing account data
+  | BottegaTimeout
   | BottegaUnexpectedError String
 
 derive instance genericBottegaError :: Generic BottegaError _
 instance showBottegaError :: Show BottegaError where
   show = genericShow
 
+derive instance eqBottegaError :: Eq BottegaError
+
 bottegaErrorMessage :: BottegaError -> String
 bottegaErrorMessage (BottegaUnexpectedError errMsg) = errMsg
 bottegaErrorMessage e = show e
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
-createOrder { userId, authToken } newOrder@{ campaignNo } =
-  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo } ] { authorization, authUser }
+createOrder { userId, authToken } newOrder@{ campaignNo, orderSource } =
+  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource } ] { authorization, authUser }
   where
     -- NOTE/REMINDER: We don't want send Maybes to the server,
     -- as they will be sent as objects
     nullableCampaignNo = toNullable campaignNo
+    nullableOrderSource = toNullable $ map fromOrderSource orderSource
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
+
 
 getOrder :: UserAuth -> OrderNumber -> Aff Order
 getOrder { userId, authToken } orderNumber = do

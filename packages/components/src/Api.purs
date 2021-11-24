@@ -14,6 +14,8 @@ newtype Password = Password String
 
 data InvalidateCache = InvalidateCache
 
+data AuthScope = UserRead | UserWrite | UserPassword
+
 invalidateCacheHeader :: InvalidateCache -> String
 invalidateCacheHeader _ = "max-age=0"
 

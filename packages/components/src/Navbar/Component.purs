@@ -30,7 +30,6 @@ type Props =
   { paper :: Paper
   , specialHelp :: Maybe JSX
   , activeUser :: Maybe User
-  , logoutWrapper :: Maybe (JSX -> JSX)
   , logout :: Effect Unit
   }
 
@@ -38,7 +37,6 @@ type JSProps =
   { paperCode :: String
   , specialHelp :: Nullable JSX
   , activeUser :: Nullable User
-  , logoutWrapper :: Nullable (JSX -> JSX)
   , onLogout :: Effect Unit
   }
 
@@ -47,16 +45,16 @@ fromJSProps jsProps =
   { paper
   , specialHelp: Nullable.toMaybe jsProps.specialHelp
   , activeUser: Nullable.toMaybe jsProps.activeUser
-  , logoutWrapper: Nullable.toMaybe jsProps.logoutWrapper
   , logout: jsProps.onLogout
   }
   where
     paper =
       case String.toUpper jsProps.paperCode of
-        "HBL"  -> HBL
-        "ON"   -> ON
-        "VN"   -> VN
-        _      -> KSF
+        "HBL"    -> HBL
+        "ON"     -> ON
+        "VN"     -> VN
+        "JUNIOR" -> JUNIOR
+        _        -> KSF
 
 type State =
   { collapsedNavVisibility :: Visibility  }
@@ -93,24 +91,40 @@ fullNav self@{ props } =
     , children:
         [ paperLogo props.paper
         , fromMaybe needHelp props.specialHelp
+        , showUser self
         , logoutButton self
         ]
     }
 
+showUser :: Self -> JSX
+showUser { props: { activeUser } } =
+  foldMap displayUser activeUser
+  where
+    displayUser user =
+      DOM.div
+        { className: "nav--display-user"
+        , children:
+            [ DOM.img
+                { src: "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/icons/fa-user-circle-o.svg"
+                , alt: "User"
+                }
+            , DOM.text $ fromMaybe user.email $ Nullable.toMaybe user.firstName
+            ]
+        }
+
 logoutButton :: Self -> JSX
-logoutButton self@{ props: { activeUser, logoutWrapper } } =
+logoutButton self@{ props: { activeUser } } =
   foldMap button activeUser
   where
     button _user =
-      fromMaybe identity logoutWrapper $
-        DOM.div
-          { className: "nav--logout-button"
-          , onClick: Event.handler_ onLogout
-          , children:
-              [ DOM.img { src: icons.signOut }
-              , DOM.div_ [ DOM.text "Logga ut" ]
-              ]
-          }
+      DOM.div
+        { className: "nav--logout-button"
+        , onClick: Event.handler_ onLogout
+        , children:
+            [ DOM.img { src: icons.signOut }
+            , DOM.div_ [ DOM.text "Logga ut" ]
+            ]
+        }
     onLogout = do
       self.props.logout
       self.setState _ { collapsedNavVisibility = Hidden }
@@ -164,7 +178,8 @@ hamburgerButton self =
 paperLogoUrl :: Paper -> String
 paperLogoUrl paper =
   case paper of
-    HBL  -> papers.hbl
-    ON   -> papers.on
-    VN   -> papers.vn
-    KSF  -> papers.ksf
+    HBL    -> papers.hbl
+    ON     -> papers.on
+    VN     -> papers.vn
+    KSF    -> papers.ksf
+    JUNIOR -> papers.junior

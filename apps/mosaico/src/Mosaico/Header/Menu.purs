@@ -2,12 +2,17 @@ module Mosaico.Header.Menu where
 
 import Prelude
 
-import Data.Array (concat, cons, foldl, range)
-import Data.List.Lazy as List
+import Data.Array (foldl, intersperse, snoc)
+import Data.Foldable (foldMap)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Newtype (unwrap)
+import Data.String (toUpper)
 import Data.String.Common (trim)
-
+import Effect (Effect)
+import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Hooks (Component, component)
 
 type Self =
@@ -15,7 +20,27 @@ type Self =
   }
 
 type Props =
-  { visible :: Boolean
+  { categoryStructure :: Array Category
+  , onCategoryClick :: CategoryLabel -> String -> Effect Unit
+  }
+
+data MenuLayoutElement = Section Section
+                       | Separator (Maybe String)
+                       -- ^ The String-typed parameter is the BEM modifier to apply to the separator
+
+type MenuBlock = Array MenuLayoutElement
+
+type MenuLayout = Array MenuBlock
+
+type Section =
+  { title :: String
+  , url :: String
+  , subsections :: Array Subsection
+  }
+
+type Subsection =
+  { title :: CategoryLabel
+  , url :: String
   }
 
 menuComponent :: Component Props
@@ -24,129 +49,156 @@ menuComponent = do
     pure $ render { props }
 
 render :: Self -> JSX
-render { props: { visible } } = DOM.div
-  { className: menuClass <>
-      if visible then
-        " " <> visibleMenuClass
-      else
-        mempty
-  , children: [ DOM.div
-                  { className: menuContentClass <> " grid-row-2 grid-col-2"
-                  , children: sections
-                  }
+render { props } = DOM.div
+  { className: menuClass
+  , children: [ menuContent
               , DOM.div
-                  { className: menuFooterClass <> " grid-row-3 grid-col-2"
+                  { className: menuFooterClass
                   , children:
                       [ DOM.div
-                          { className: footerCaptionClass <> " grid-row-1 grid-col-2 grid-colspan-2"
+                          { className: footerCaptionClass
                           , children: [ DOM.text "ANDRA KSF-TIDNINGAR" ]
                           }
-                      , logo "grid-row-2" "grid-col-2" vnLogoImageClass "Västra Nyland"
-                      , logo "grid-row-2" "grid-col-3" onLogoImageClass "Östnyland"
+                      , logo vnLogoClass vnLogoImageClass "Västra Nyland"
+                      , logo onLogoClass onLogoImageClass "Östnyland"
                       ]
                   }
               ]
   }
   where
-    sections :: Array JSX
-    sections = completeSections
+
+    menuLayout :: MenuLayout
+    menuLayout = [ upperBlock, separatorBlock, middleBlock, separatorBlock, bottomBlock ]
+
+    upperBlock :: MenuBlock
+    upperBlock = topSections
+
+    middleBlock :: MenuBlock
+    middleBlock = (intersperse mobileOnlySeparator) $ foldl mkSection [] props.categoryStructure
+
+    bottomBlock :: MenuBlock
+    bottomBlock = bottomSections
+
+    separatorBlock :: MenuBlock
+    separatorBlock = [ separator ]
+
+    separator = Separator Nothing
+    mobileOnlySeparator = Separator $ Just mobileOnlySeparatorClass
+
+    topSections :: MenuBlock
+    topSections = Section <$>
+                  [ { title: "SÖK"
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "E-TIDNINGEN"
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "KUNDSERVICE"
+                    , url: ""
+                    , subsections: []
+                    }
+                  ]
+
+    mkSection acc (Category c) =
+      let mkSubsection (Category subc) =
+            { title: subc.label, url: "/" <> show subc.label }
+          section =
+            Section $
+              { title: toUpper $ unwrap c.label
+              , url: "/" <> show c.label
+              , subsections: map mkSubsection c.subCategories
+              }
+      in acc `snoc` section
+
+    bottomSections :: MenuBlock
+    bottomSections = Section <$>
+                  [ { title: "KONTAKTA OSS"
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "ANNONSERA"
+                    , url: ""
+                    , subsections: []
+                    }
+                  , { title: "JOBBA HOS OSS"
+                    , url: ""
+                    , subsections: []
+                    }
+                  ]
+
+    menuContent :: JSX
+    menuContent = DOM.div
+      { className: menuContentClass
+      , children: [ renderMenuLayout menuLayout ]
+      }
       where
-        -- produces the final array of sections
-        completeSections = concat <<< List.toUnfoldable $ List.toUnfoldable <$> withSeparators
-        -- append a separator to each list of sections
-        withSeparators = List.zipWith (<>) withSubsections separators
-        -- same structure as below, but the proper subsection array is now assigned to each section function
-        withSubsections = List.zipWith (List.zipWith ($)) withTitles subsections
-        -- same structure as below, but the proper title is now assigned to each section function
-        withTitles = List.zipWith (List.zipWith ($)) fixedRowsAndColumns sectionTitles
-        -- produces a list of lists, each list contains one row of section-generating functions, each with row and column class arguments assigned:
-        -- [[defaultSection "grid-row-1" "grid-column-2", defaultSection "grid-row-1" "grid-column-3", ... ], [defaultSection "grid-row-2" "grid-column-2", ... ], ... ]
-        fixedRowsAndColumns = List.zipWith (<$>) fixedRows $ List.repeat gridColumns
-        -- Produces a list of section-generating functions that have the row class argument assigned: [ defaultSection "grid-row-1", .. ]
-        fixedRows = List.zipWith ($) (List.fromFoldable [ defaultSection, defaultSection, defaultSection ]) gridRows
+        renderMenuLayout :: MenuLayout -> JSX
+        renderMenuLayout layout = foldMap renderMenuBlock layout
 
-        -- CSS classes for grid rows positions
-        gridRows = List.fromFoldable $ ((<>) "grid-row-" <<< show) <$> [ 1, 3, 5 ]
-        -- CSS classes for grid columns positions
-        gridColumns = List.fromFoldable $ ((<>) "grid-col-" <<< show) <$> range 2 6
+        renderMenuBlock :: MenuBlock -> JSX
+        renderMenuBlock block = DOM.div
+          { className: blockClass
+          , children: [ foldMap renderMenuLayoutElement block ]
+          }
 
-        separators = List.fromFoldable $ List.singleton <<< separator <$> separatorRows
+        renderMenuLayoutElement :: MenuLayoutElement -> JSX
+        renderMenuLayoutElement (Section section) = renderSection section
+        renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
-        separatorRows = ((<>) "grid-row-" <<< show) <$> [ 2, 4, 6 ]
+        renderSection :: Section -> JSX
+        renderSection { subsections, title } = DOM.div
+          { className: unwords [ sectionClass ]
+          , children: [ DOM.div
+                          { className: sectionHeaderClass
+                          , children:
+                              [ DOM.div
+                                 { className: sectionTitleClass
+                                 , children: [ DOM.text title ]
+                                 }
+                              ]
+                          }
+                      , DOM.div
+                          { className: subsectionsClass
+                          , children: renderSubsection <$> subsections
+                          }
+                      ]
+          }
 
-        sectionTitles = List.fromFoldable [ topSectionTitles, middleSectionTitles, bottomSectionTitles ]
+        renderSubsection :: Subsection -> JSX
+        renderSubsection { title, url } = DOM.div
+          { className: subsectionClass
+          , children:
+              [ DOM.a
+                  { href: url
+                  , children: [ DOM.text $ unwrap title ]
+                  , onClick: capture_ $ props.onCategoryClick title url
+                  }
+              ]
+          }
 
-        topSectionTitles = List.fromFoldable ["E-TIDNINGEN", "KUNDERSVICE", "ANNONSERA", "ANNAT VIKTIGT"]
-        middleSectionTitles = List.fromFoldable ["STARTSIDAN", "OPINION", "KULTUR", "SPORT", "ANNAT"]
-        bottomSectionTitles = List.fromFoldable ["KONTAKT", "ANNONSERA", "KUNDSERVICE", "ANNAT"]
+        renderSeparator :: Maybe String -> JSX
+        renderSeparator modifierClass = DOM.hr { className: unwords [ separatorClass, fromMaybe mempty modifierClass ] }
 
-        subsections =  List.fromFoldable [ topSubsections, middleSubsections, bottomSubsections ]
-
-        topSubsections = List.fromFoldable [[], [], [], []]
-
-        middleSubsections = List.fromFoldable [ ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              ]
-
-        bottomSubsections = List.fromFoldable [ ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              , ["Lorem", "Pellentesque", "Aliquet", "Utrices"]
-                                              ]
-
-
-    defaultSection :: String -> String -> String  -> Array String -> JSX
-    defaultSection = section mempty
-
-    greySection :: String -> String -> String -> Array String -> JSX
-    greySection = section [ graySectionClass ]
-
-    section :: Array String -> String -> String -> String -> Array String -> JSX
-    section modifiers rowClass columnClass name subsections = DOM.div
-      { className: unwords [ sectionClass, unwords modifiers, rowClass, columnClass ]
-      , children: DOM.a { className: sectionTitleClass
-                        , children: [ DOM.text name ]
-                        }  `cons` (subsection <$> subsections)
-      }
-
-    subsection :: String -> JSX
-    subsection name = DOM.a
-      { className: subsectionClass
-      , children: [ DOM.text name ]
-      }
-
-    separator :: String -> JSX
-    separator rowClass = DOM.hr { className: unwords [ separatorClass, rowClass, "grid-col-1", "grid-colspan-7"] }
-
-    logo :: String -> String -> String -> String -> JSX
-    logo rowClass colClass imageModifierClass caption = DOM.div
-      { className: unwords [ logoClass, rowClass, colClass ]
-      , children: 
+    logo :: String -> String ->  String -> JSX
+    logo modifierClass imageModifierClass caption = DOM.div
+      { className: unwords [ logoClass, modifierClass ]
+      , children:
           [ DOM.div
-              { className: unwords [ logoImageClass, imageModifierClass, " grid-row-1" ]
+              { className: unwords [ logoImageClass, imageModifierClass ]
               }
           , DOM.div
-              { className: unwords [ logoCaptionClass, " grid-row-2" ]
+              { className: unwords [ logoCaptionClass ]
               , children: [ DOM.text caption ]
               }
           ]
       }
 
-    unwords :: Array String -> String
-    unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty
-
     headerBlock = "mosaico-header"
 
     menuElement = "__menu"
-    visibleModifier = "--visible"
     menuClass = headerBlock <> menuElement
-    visibleMenuClass = menuClass <> visibleModifier
-
-    searchElement = "__search"
-    searchClass = headerBlock <> searchElement
 
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement
@@ -154,13 +206,20 @@ render { props: { visible } } = DOM.div
     menuFooterElement = "__menu-footer"
     menuFooterClass = headerBlock <> menuFooterElement
 
+    blockElement = "__block"
+    blockClass = headerBlock <> blockElement
+
     sectionElement = "__section"
     sectionClass = headerBlock <> sectionElement
-    grayModifier = "--gray"
-    graySectionClass = sectionClass <> grayModifier
+
+    sectionHeaderElement = "__section-header"
+    sectionHeaderClass = headerBlock <> sectionHeaderElement
 
     sectionTitleElement = "__section-title"
     sectionTitleClass = headerBlock <> sectionTitleElement
+
+    subsectionsElement = "__subsections"
+    subsectionsClass = headerBlock <> subsectionsElement
 
     subsectionElement = "__subsection"
     subsectionClass = headerBlock <> subsectionElement
@@ -168,18 +227,26 @@ render { props: { visible } } = DOM.div
     separatorElement = "__separator"
     separatorClass = headerBlock <> separatorElement
 
+    mobileOnlyModifier = "--mobile-only"
+    mobileOnlySeparatorClass = separatorClass <> mobileOnlyModifier
+
     footerCaptionElement = "__footer-caption"
     footerCaptionClass = headerBlock <> footerCaptionElement
 
     logoElement =  "__footer-logo"
+    onLogoModifier = "--on"
+    vnLogoModifier = "--vn"
     logoClass = headerBlock <> logoElement
+    onLogoClass = logoClass <> onLogoModifier
+    vnLogoClass = logoClass <> vnLogoModifier
 
     logoImageElement = "__footer-logo-image"
     logoImageClass = headerBlock <> logoImageElement
-    onLogoModifier = "--on"
-    vnLogoModifier = "--vn"
     onLogoImageClass = logoImageClass <> onLogoModifier
     vnLogoImageClass = logoImageClass <> vnLogoModifier
 
     logoCaptionElement = "__footer-logo-caption"
     logoCaptionClass = headerBlock <> logoCaptionElement
+
+unwords :: Array String -> String
+unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty

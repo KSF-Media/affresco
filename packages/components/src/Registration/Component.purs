@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
-import Data.Array (cons)
+import Data.Array (cons, elem)
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
 import Data.List.NonEmpty (all)
@@ -20,7 +20,7 @@ import Foreign.Object as Object
 import KSF.CountryDropDown (defaultCountryDropDown)
 import KSF.InputField as InputField
 import KSF.User as User
-import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validatePhone, validateWithServerErrors, validateZipCode)
+import KSF.ValidatableForm (class ValidatableField, ValidatedForm, ValidationError(..), inputFieldErrorMessage, isNotInitialized, noValidation, removeServerErrors, validateEmailAddress, validateEmptyField, validateField, validatePassword, validatePasswordComparison, validateWithServerErrors, validateFinnishZipCode, validateZipCode)
 import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.Classic (make)
@@ -39,6 +39,7 @@ type Props =
 type State =
   { serverErrors :: Array (ValidationError RegistrationInputField)
   , formData :: FormData
+  , digitalOnly :: Boolean
   }
 
 type FormData =
@@ -48,7 +49,6 @@ type FormData =
   , city            :: Maybe String
   , country         :: Maybe String
   , zipCode         :: Maybe String
-  , phone           :: Maybe String
   , emailAddress    :: Maybe String
   , password        :: Maybe String
   , confirmPassword :: Maybe String
@@ -59,9 +59,8 @@ data RegistrationInputField
   | LastName
   | StreetAddress
   | City
-  | Zip
+  | Zip (Maybe String)
   | Country
-  | Phone
   | EmailAddress
   | Password
   | ConfirmPassword (Maybe String)
@@ -73,8 +72,9 @@ instance validatableFieldRegistrationInputField :: ValidatableField Registration
     StreetAddress                              -> validateEmptyField StreetAddress "Adress krävs." value
     City                                       -> validateEmptyField City "Stad krävs." value
     Country                                    -> validateEmptyField Country "Land krävs." value
-    Zip                                        -> validateZipCode field value
-    Phone                                      -> validatePhone field value
+    (Zip country)                              -> if country `elem` [ Just "FI", Just "AX", Just "SE" ]
+                                                    then validateFinnishZipCode field value
+                                                    else validateZipCode field value
     EmailAddress                               -> validateWithServerErrors serverErrors EmailAddress value validateEmailAddress
     Password                                   -> validateWithServerErrors serverErrors Password value validatePassword
     confirmPw@(ConfirmPassword originalPassword) -> validatePasswordComparison Password confirmPw originalPassword value
@@ -90,13 +90,14 @@ render self = registrationForm
   [ DOM.div
       { className: "registration--container"
       , children:
-          [ firstNameInput self, lastNameInput self
-          , streetAddressInput self, cityInput self
-          , zipCodeInput self, countryInput self
-          , phoneInput self, emailAddressInput self
-          , passwordInput self, confirmPasswordInput self
-          , confirm self
-          ]
+          (map (\x -> x self.state self.setState)
+            [ inputField FirstName, inputField LastName
+            , inputField StreetAddress, inputField City
+            , inputField (Zip self.state.formData.country), inputField Country
+            , inputField EmailAddress
+            , inputField Password, inputField (ConfirmPassword self.state.formData.password)
+            ]
+          ) <> [ confirm self ]
       }
   ]
   where
@@ -104,7 +105,7 @@ render self = registrationForm
     registrationForm children =
       DOM.form
         { children: formTitle `cons` children
-        , onSubmit: handler preventDefault $ (\_ -> submitForm self $ formValidations self)
+        , onSubmit: handler preventDefault $ (\_ -> submitForm self.state self.setState self.props.onRegister $ formValidations self.state)
         }
       where
         formTitle = DOM.h1 { className: "registration--form-title", children: [ DOM.text "Skapa ditt konto" ] }
@@ -118,119 +119,102 @@ initialState =
       , city:                Nothing
       , country:             Just "FI"
       , zipCode:             Nothing
-      , phone:               Nothing
       , emailAddress:        Nothing
       , password:            Nothing
       , confirmPassword:     Nothing
       }
   , serverErrors: []
+  , digitalOnly: false
   }
 
-firstNameInput :: Self -> JSX
-firstNameInput self@{ state: { formData }} = InputField.inputField
+inputField :: RegistrationInputField -> State -> ((State -> State) -> Effect Unit) -> JSX
+
+inputField FirstName { formData } setState = InputField.inputField
   { type_: InputField.Text
   , label: Just "Förnamn"
   , name: "firstName"
   , placeholder: "Förnamn"
-  , onChange: (\val -> self.setState _ { formData { firstName = val } })
+  , onChange: (\val -> setState _ { formData { firstName = val } })
   , validationError: inputFieldErrorMessage $ validateField FirstName formData.firstName []
   , value: formData.firstName
   }
 
-lastNameInput :: Self -> JSX
-lastNameInput self@{ state: { formData }} = InputField.inputField
+inputField LastName { formData } setState = InputField.inputField
   { type_: InputField.Text
   , label: Just "Efternamn"
   , name: "lastName"
   , placeholder: "Efternamn"
-  , onChange: (\val -> self.setState _ { formData { lastName = val }})
+  , onChange: (\val -> setState _ { formData { lastName = val } })
   , validationError: inputFieldErrorMessage $ validateField LastName formData.lastName []
   , value: formData.lastName
   }
 
-streetAddressInput :: Self -> JSX
-streetAddressInput self@{ state: { formData }} = InputField.inputField
+inputField StreetAddress { formData } setState = InputField.inputField
   { type_: InputField.Text
   , label: Just "Adress"
   , name: "streetAddress"
   , placeholder: "Adress"
-  , onChange: (\val -> self.setState _ { formData { streetAddress = val } })
+  , onChange: (\val -> setState _ { formData { streetAddress = val } })
   , validationError: inputFieldErrorMessage $ validateField StreetAddress formData.streetAddress []
   , value: formData.streetAddress
   }
 
-cityInput :: Self -> JSX
-cityInput self@{ state: { formData }} = InputField.inputField
+inputField City { formData } setState = InputField.inputField
   { type_: InputField.Text
   , label: Just "Stad"
   , name: "city"
   , placeholder: "Stad"
-  , onChange: (\val -> self.setState _ { formData { city = val } })
+  , onChange: (\val -> setState _ { formData { city = val } })
   , validationError: inputFieldErrorMessage $ validateField City formData.city []
   , value: formData.city
   }
 
-zipCodeInput :: Self -> JSX
-zipCodeInput self@{ state: { formData }} = InputField.inputField
+inputField (Zip _) { formData } setState = InputField.inputField
   { type_: InputField.Text
   , label: Just "Postnummer"
   , name: "zipCode"
   , placeholder: "Postnummer"
-  , onChange: (\val -> self.setState _ { formData { zipCode = val } })
-  , validationError: inputFieldErrorMessage $ validateField Zip formData.zipCode []
+  , onChange: (\val -> setState _ { formData { zipCode = val } })
+  , validationError: inputFieldErrorMessage $ validateField (Zip formData.country) formData.zipCode []
   , value: formData.zipCode
   }
 
-countryInput :: Self -> JSX
-countryInput self@{ state: { formData }} =
-  defaultCountryDropDown (\val -> self.setState _ { formData { country = val } }) formData.country
+inputField Country { formData } setState =
+  defaultCountryDropDown (\val -> setState _ { formData { country = val } }) formData.country
 
-phoneInput :: Self -> JSX
-phoneInput self@{ state: { formData }} = InputField.inputField
-  { type_: InputField.Text
-  , label: Just "Telefon"
-  , name: "phone"
-  , placeholder: "Telefon"
-  , onChange: (\val -> self.setState _ { formData { phone = val } })
-  , validationError: inputFieldErrorMessage $ validateField Phone formData.phone []
-  , value: formData.phone
-  }
-
-emailAddressInput :: Self -> JSX
-emailAddressInput self@{ state: { formData }} = InputField.inputField
+inputField EmailAddress { formData, serverErrors } setState = InputField.inputField
   { type_: InputField.Email
+  , extraClass: "input-field--emailaddress"
   , label: Just "E-postadress"
   , name: "emailAddress"
   , placeholder: "E-postadress"
-  , onChange: (\val -> self.setState _ { formData { emailAddress = val }
-                                         -- Clear server errors of EmailAddress when typing
-                                       , serverErrors = removeServerErrors EmailAddress self.state.serverErrors
-                                       })
-  , validationError: inputFieldErrorMessage $ validateField EmailAddress formData.emailAddress self.state.serverErrors
+  , onChange: (\val -> setState _ { formData { emailAddress = val }
+                                    -- Clear server errors of EmailAddress when typing
+                                  , serverErrors = removeServerErrors EmailAddress serverErrors
+                                  })
+  , validationError: inputFieldErrorMessage $ validateField EmailAddress formData.emailAddress serverErrors
   , value: formData.emailAddress
   }
 
-passwordInput :: Self -> JSX
-passwordInput self@{ state: { formData, serverErrors }} = InputField.inputField
+inputField Password { formData, serverErrors } setState = InputField.inputField
     { placeholder: "Lösenord (minst 6 tecken)"
     , type_: InputField.Password
     , label: Just "Lösenord"
     , name: "password"
-    , onChange: \val -> self.setState _ { formData { password = val }
-                                         -- Clear server errors of Password when typing
-                                        , serverErrors = removeServerErrors Password self.state.serverErrors
-                                        }
+    , onChange: \val -> setState _ { formData { password = val }
+                                     -- Clear server errors of Password when typing
+                                   , serverErrors = removeServerErrors Password serverErrors
+                                   }
     , value: formData.password
     , validationError: inputFieldErrorMessage $ validateField Password formData.password serverErrors
     }
 
-confirmPasswordInput :: Self -> JSX
-confirmPasswordInput self@{ state: { formData }} = InputField.inputField
+inputField (ConfirmPassword _) { formData } setState = InputField.inputField
     { placeholder: "Bekräfta lösenord"
     , type_: InputField.Password
     , label: Just "Bekräfta lösenord"
     , name: "confirmPassword"
-    , onChange: \val -> self.setState _ { formData { confirmPassword = val } }
+    , onChange: \val -> setState _ { formData { confirmPassword = val } }
     , value: formData.confirmPassword
     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword formData.password) formData.confirmPassword []
     }
@@ -274,7 +258,7 @@ confirm self =
       | not isFormInvalid = mempty
       | otherwise =
           DOM.div
-            { className: "registration--invalid-form-generic-message mt2"
+            { className: "registration--invalid-form-generic-message"
             , children: [ DOM.text "Alla obligatoriska fält är inte korrekt ifyllda, kontrollera uppgifterna." ]
             }
 
@@ -282,7 +266,7 @@ confirm self =
     confirmButton =
       DOM.input
         { type: "submit"
-        , className: "registration--create-button mt2"
+        , className: "registration--create-button"
         , disabled: isFormInvalid
         , value: "Skapa konto"
         }
@@ -290,8 +274,7 @@ confirm self =
     cancelText :: JSX
     cancelText =
       DOM.div
-        { className: "mt2"
-        , children:
+        { children:
             [ DOM.text "Eller "
             , DOM.a
                 { href: ""
@@ -302,18 +285,18 @@ confirm self =
         }
 
     isFormInvalid
-      | Left errs <- toEither $ formValidations self
+      | Left errs <- toEither $ formValidations self.state
       = not $ all isNotInitialized errs
       | otherwise = false
 
-submitForm :: Self -> ValidatedForm RegistrationInputField FormData -> Effect Unit
-submitForm self@{ state: { formData } } = validation
+submitForm :: State -> ((State -> State) -> Effect Unit) -> (Aff User.User -> Effect Unit) -> ValidatedForm RegistrationInputField FormData -> Effect Unit
+submitForm state@{ formData } setState onRegister = validation
   (\_   -> do
       -- Show validation errors to user (if not shown):
       -- As we don't show error messages when an input field is InvalidNotinitialized (when the value is Nothing),
       -- let's set all of the Nothing values to Just empty strings to vizualise errors to the user, when the submit button is clicked.
       -- We need to do this, because we don't want to show validation errors straight when the user comes to the registration page.
-      self.setState _
+      setState _
         { formData
             { firstName       = formData.firstName       <|> Just ""
             , lastName        = formData.lastName        <|> Just ""
@@ -321,7 +304,7 @@ submitForm self@{ state: { formData } } = validation
             , city            = formData.city            <|> Just ""
             , zipCode         = formData.zipCode         <|> Just ""
             , country         = formData.country         <|> Just ""
-            , phone           = formData.phone           <|> Just ""
+            , emailAddress    = formData.emailAddress    <|> Just ""
             , password        = formData.password        <|> Just ""
             , confirmPassword = formData.confirmPassword <|> Just ""
             }
@@ -332,12 +315,12 @@ submitForm self@{ state: { formData } } = validation
     createUser nowISO validForm
   where
     createUser date form
-      | Just user <- mkNewUser form date = self.props.onRegister do
+      | Just user <- mkNewUser state.digitalOnly form date = onRegister do
           createdUser <- User.createUser user
           case createdUser of
             Right u -> pure u
             Left User.RegistrationEmailInUse -> do
-              liftEffect $ self.setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` self.state.serverErrors }
+              liftEffect $ setState _ { serverErrors = InvalidEmailInUse EmailAddress emailInUseMsg `cons` state.serverErrors }
               throwError $ error "email in use"
             Left (User.InvalidFormFields errors) -> do
               liftEffect $ handleServerErrs errors
@@ -367,12 +350,12 @@ submitForm self@{ state: { formData } } = validation
           -- is for example the language used (e.g. Swedish for Finnish users).
           -- Also, the error might be gibberish.
           case key of
-            "emailAddress" -> self.setState _ { serverErrors = Invalid EmailAddress "Ogiltig E-postadress." `cons` self.state.serverErrors }
-            "password"     -> self.setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` self.state.serverErrors }
+            "emailAddress" -> setState _ { serverErrors = Invalid EmailAddress "Ogiltig E-postadress." `cons` state.serverErrors }
+            "password"     -> setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` state.serverErrors }
             _              -> pure unit
 
-mkNewUser :: FormData -> String -> Maybe Persona.NewUser
-mkNewUser f nowISO =
+mkNewUser :: Boolean -> FormData -> String -> Maybe Persona.NewUser
+mkNewUser false f nowISO = map Persona.NewPaperUser $
   { firstName: _
   , lastName: _
   , emailAddress: _
@@ -382,7 +365,6 @@ mkNewUser f nowISO =
   , city: _
   , zipCode: _
   , country: _
-  , phone: _
   , legalConsents:
       [ { consentId: "legal_acceptance_v1"
         , screenName: "legalAcceptanceScreen"
@@ -399,28 +381,47 @@ mkNewUser f nowISO =
   <*> f.city
   <*> f.zipCode
   <*> f.country
-  <*> f.phone
 
-formValidations :: Self -> ValidatedForm RegistrationInputField FormData
-formValidations self@{ state: { formData } } =
+mkNewUser true f nowISO = map Persona.NewDigitalOnlyUser $
+  { firstName: _
+  , lastName: _
+  , emailAddress: _
+  , password: _
+  , confirmPassword: _
+  , legalConsents:
+      [ { consentId: "legal_acceptance_v1"
+        , screenName: "legalAcceptanceScreen"
+        , dateAccepted: nowISO
+        }
+      ]
+  }
+  <$> f.firstName
+  <*> f.lastName
+  <*> f.emailAddress
+  <*> f.password
+  <*> f.confirmPassword
+
+formValidations :: State -> ValidatedForm RegistrationInputField FormData
+formValidations state@{ formData } =
   { firstName: _
   , lastName: _
   , streetAddress: _
   , city: _
   , country: _
   , zipCode: _
-  , phone: _
   , emailAddress: _
   , password: _
   , confirmPassword: _
   }
   <$> validateField FirstName formData.firstName []
   <*> validateField LastName formData.lastName []
-  <*> validateField StreetAddress formData.streetAddress []
-  <*> validateField City formData.city []
-  <*> validateField Country formData.country []
-  <*> validateField Zip formData.zipCode []
-  <*> validateField Phone formData.phone []
-  <*> validateField EmailAddress formData.emailAddress self.state.serverErrors
-  <*> validateField Password formData.password self.state.serverErrors
+  <*> (validateIf (not state.digitalOnly) $ validateField StreetAddress) formData.streetAddress
+  <*> (validateIf (not state.digitalOnly) $ validateField City) formData.city
+  <*> (validateIf (not state.digitalOnly) $ validateField Country) formData.country
+  <*> (validateIf (not state.digitalOnly) $ validateField (Zip formData.country)) formData.zipCode
+  <*> validateField EmailAddress formData.emailAddress state.serverErrors
+  <*> validateField Password formData.password state.serverErrors
   <*> validateField (ConfirmPassword formData.password) formData.confirmPassword []
+  where
+    validateIf false _ = noValidation
+    validateIf _ f = flip f []

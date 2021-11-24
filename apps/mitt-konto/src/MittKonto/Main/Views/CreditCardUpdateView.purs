@@ -5,7 +5,7 @@ import Prelude
 import Bottega (BottegaError, bottegaErrorMessage)
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -92,7 +92,7 @@ initialState =
 render :: Self -> AVar Unit -> JSX
 render self@{ setState, state: { asyncWrapperState, updateState }, props: { creditCards } } closed =
   asyncWrapper $ DOM.div
-    { className: "clearfix credit-card-update--container"
+    { className: "credit-card-update--container"
     , children:
         [ case updateState of
             ChooseCreditCard       -> Choice.choice
@@ -113,7 +113,7 @@ render self@{ setState, state: { asyncWrapperState, updateState }, props: { cred
         { wrapperState: asyncWrapperState
         , readyView: content
         , editingView: identity
-        , successView: \msg -> WrapperElements.successWrapper msg
+        , successView: fromMaybe mempty
         , errorView: \err -> WrapperElements.errorWrapper onTryAgain err
         , loadingView: identity
         }
@@ -128,7 +128,7 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } 
       let newState = state { updateState = RegisterCreditCard url }
       liftEffect do
         setState \_ -> newState
-        setWrapperState _ { closeable = false }
+        setWrapperState _ { closeable = true }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
     Right { terminalUrl: Nothing } ->
       liftEffect do
@@ -196,7 +196,7 @@ onLoading { setState } = setState _ { asyncWrapperState = AsyncWrapper.Loading m
 
 onSuccess :: Self -> Effect Unit
 onSuccess { setState, props: { setWrapperState } } = do
-  setState _ { asyncWrapperState = AsyncWrapper.Success $ Just "Betalningsinformationen har uppdaterats. Du styrs strax tillbaka till kontosidan." }
+  setState _ { asyncWrapperState = AsyncWrapper.Success $ Just $ WrapperElements.successWrapper Nothing "Betalningsinformationen har uppdaterats. Du styrs strax tillbaka till kontosidan." }
   setWrapperState _ { closeable = true
                     , closeAutomatically = Delayed 5000.0
                     }

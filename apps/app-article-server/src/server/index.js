@@ -44,9 +44,8 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
   });
   const paper = queryParams.paper || "hbl";
   const darkModeEnabled = queryParams.mode === "dark";
-  const mostReadReq = axios.get(process.env.LETTERA_URL + "/mostread?paper=" + paper);
 
-  const requests = [articleReq, mostReadReq];
+  const requests = [articleReq];
   // If we have a user id in the headers, let's fetch the user too
   if (_.has(authHeaders, "authuser") && _.has(authHeaders, "authorization")) {
     requests.push(
@@ -73,8 +72,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	  article = _.get(articleResponse, "not_entitled.articlePreview");
 	  isPreviewArticle = true;
 	}
-	const mostReadArticles = responses[1].data;
-	const user = _.get(responses[2], "data");
+	const user = _.get(responses[1], "data");
 
 	const articleJSX = (
 	  <Article
@@ -91,7 +89,6 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	    authors={article.authors}
 	    premium={article.premium}
 	    isPreview={isPreviewArticle}
-	    mostReadArticles={mostReadArticles}
 	    fontSize={queryParams.fontSize}
 	    darkModeEnabled={queryParams.mode === "dark"}
 	    queryString={queryString}
@@ -100,7 +97,6 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	);
 
 	const updatedArticle = _.merge(article, {
-	  mostReadArticles: mostReadArticles,
 	  isPreview: isPreviewArticle,
 	  fontSize: queryParams.fontSize,
 	  darkModeEnabled: queryParams.mode === "dark",

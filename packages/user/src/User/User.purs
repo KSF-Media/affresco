@@ -23,6 +23,7 @@ module KSF.User
   , requestPasswordReset
   , startPasswordReset
   , updateForgottenPassword
+  , hasScope
   , pauseSubscription
   , editSubscriptionPause
   , unpauseSubscription
@@ -70,6 +71,8 @@ import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
+import Data.String as String
+import Data.Time.Duration (Seconds(..))
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -83,7 +86,7 @@ import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
-import KSF.Api (InvalidateCache, UserAuth)
+import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
 import KSF.Api.Address (Address) as Address
 import KSF.Api.Error as Api.Error
@@ -98,7 +101,7 @@ import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -128,6 +131,7 @@ data UserError =
   | LoginGoogleAuthInitError
   | LoginGoogleAuthInitErrorOrigin
   | LoginTokenInvalid
+  | LoginTokenExpired
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
   | RegistrationCusnoInUse ConflictingUser
@@ -207,6 +211,8 @@ createCusnoUser newCusnoUser = do
       | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
           Console.error errData.invalid_form_fields.description
           pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
       | otherwise -> do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
@@ -284,6 +290,8 @@ setCusno uuid cusno = do
     Left err
       | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
           pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
       | KSF.Error.badRequestError err -> do
           pure $ Left InvalidCusno
       | otherwise -> pure $ Left SomethingWentWrong
@@ -292,7 +300,10 @@ updatePassword :: UUID -> Api.Password -> Api.Password -> Aff (Either UserError 
 updatePassword uuid password confirmPassword = do
   eitherUser <- try $ Persona.updatePassword uuid password confirmPassword =<< requireToken
   case eitherUser of
-    Left err   -> pure $ Left $ UnexpectedError err
+    Left err
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
+      | otherwise -> pure $ Left $ UnexpectedError err
     Right user -> Right <$> fromPersonaUserWithCards user
 
 requestPasswordReset :: String -> Aff (Either String Unit)
@@ -549,6 +560,13 @@ requireToken =
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
+hasScope :: UUID -> AuthScope -> Aff (Maybe Seconds)
+hasScope uuid scope = do
+  res <- try $ Persona.hasScope uuid scope =<< requireToken
+  case res of
+    Left _ -> pure Nothing
+    Right s -> pure $ Just $ Seconds s
+
 pauseSubscription
   :: UUID
   -> Subsno
@@ -715,7 +733,10 @@ callBottega f = do
       | Just (errData :: Bottega.InsufficientAccount) <- Api.Error.errorData err ->
           pure $ Left BottegaInsufficientAccount
       | otherwise ->
-          pure $ Left (BottegaUnexpectedError $ Error.message err)
+          let msg = Error.message err
+          in pure $ Left if String.take 7 msg == "Timeout"
+                           then BottegaTimeout
+                           else BottegaUnexpectedError msg
 
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages

@@ -146,22 +146,50 @@ h2.mitt-konto--heading {
   }
 }
 
+.mitt-konto--main-container-container {
+    margin-top: 2rem;
+    margin-bottom: 4rem;
+}
+
+.mitt-konto--main-container-container:before, .mitt-konto--main-container-container:after, .mitt-konto--main-container:before, .mitt-konto--main-container:after {
+    content: " ";
+    display: table;
+}
+
+.mitt-konto--main-container:after, .mitt-konto--main-container-container:after {
+    clear: both;
+}
+
 .mitt-konto--main-container {
   @media @to-xsmall {
     width: 100% !important;
   }
+  @media @to-large {
+    width: 83%;
+  }
+  width: 58.33%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .mitt-konto--container {
   position: relative;
+  clear: both
 }
 
 .mitt-konto--loading {
   position: absolute;
+  display: flex;
   width: 100%;
   height: 100%;
+  align-items: center;
   background: @grey-light;
   z-index: @loading;
+  .mitt-konto--loading-image-container {
+      clear: both;
+      margin-left: auto;
+      margin-right: auto;
+  }
   .mitt-konto--loading-image {
     background-image: url('../images/loader-gif.gif');
     background-size: 32px 32px;
@@ -192,6 +220,10 @@ h2.mitt-konto--heading {
   p:last-child {
     margin-bottom: 0;
   }
+}
+
+.mitt-konto--cancel-subscription-icon-container {
+    margin-top: 1rem;
 }
 
 .mitt-konto--cancel-subscription-icon {
@@ -298,4 +330,53 @@ h2.mitt-konto--heading {
 
 .mitt-konto--personating {
   background-color: palegoldenrod;
+}
+
+.mitt-konto--date-picker-container {
+    margin-bottom: 1rem;
+}
+
+.mitt-konto--form-submit-container {
+    margin-top: 1rem;
+}
+
+.mitt-konto--form-submit-container:before, .mitt-konto--form-submit-container:after {
+    content: " ";
+    display: table;
+}
+
+.mitt-konto--form-submit-container:after {
+    clear: both;
+}
+
+.mitt-konto--column {
+    float: left;
+    box-sizing: border-box;
+    width: 50%;
+    @media @to-medium {
+	width: 100%;
+    }
+}
+
+.mitt-konto--alert {
+    width: 33.33%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.news--container {
+    clear: both;
+}
+
+.mitt-konto--closable-row {
+    >*:first-child {
+	width: 91.6%;
+	float: left;
+	box-sizing: border-box;
+    }
+    >*:last-child {
+	width: 8.3%;
+	display: flex;
+    }
 }

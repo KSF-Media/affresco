@@ -1,0 +1,107 @@
+/* Progressindicator */
+ul#progressIndicator {
+  list-style: none;
+  border: solid 1px #a69e9a;
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 2em 0;
+  @media(max-width: @screen-sm-max) {
+    margin: 0;
+  }
+  @media(max-width: @screen-xs-max) {
+    margin: 0;
+  }
+  li {
+    list-style: none;
+    color: #a69e9a;
+    padding: 0;
+    font-size: 13px;
+    text-align: center;
+    height: 48px;
+    line-height: 48px;
+    background: #fff url("@{path-icons}/bg_progress.png") top right no-repeat;
+    &.checked {
+      span.nr {
+        position: relative;
+        &:after {
+          content: "";
+          display: block;
+          height: 17px;
+          width: 17px;
+          border-radius: 17px;
+          background: #a69e9a url("@{path-icons}/new/icons/icon-checkmark-white.png") center center no-repeat;
+          background-size: 10px 7px;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+      }
+    }
+    &.active {
+      color: #fff;
+      background: #a69e9a url("@{path-icons}/bg_progress_active.png") top right no-repeat;
+      span.tail {
+        margin-left: -16px;
+        width: 16px;
+        height: 48px;
+        float: left;
+        background: #a69e9a url("@{path-icons}/tail.png") top left no-repeat;
+      }
+      span.nr{
+        background: #fff;
+        color: #a69e9a;
+      }
+    }
+    &.last{
+      background: #fff;
+      &.active {
+        background: #a69e9a;
+      }
+    }
+    span.desc{
+      display: inline;
+      position: relative;
+      top: 1px;
+    }
+    span.nr{
+      border-radius: 17px;
+      color: #FFF;
+      background: #a69e9a none repeat scroll 0% 0%;
+      width: 17px;
+      height: 17px;
+      display: inline-block;
+      text-align: center;
+      line-height: 17px;
+      margin-right: 10px;
+      margin-left: -15px;
+      font-weight: 400;
+    }
+  }
+  @media(max-width: @screen-xs-max) {
+    border: none;
+    li {
+      display: none;
+      background: transparent;
+      height: auto;
+      span.tail, span.desc, span.nr {
+        display: none;
+      }
+      &.active {
+        display: block;
+        width: 100%;
+        margin: 18px 0 0 0;
+        span.nr {
+          color: @dark-text;
+          display: block;
+          border-radius: 0;
+          width: 100%;
+          margin: 0;
+          &:after {
+            content: " / 4";
+          }
+        }
+      }
+    }
+  }
+}

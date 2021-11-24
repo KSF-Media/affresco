@@ -52,3 +52,66 @@
     }
   }
 }
+
+.mosaico-asidelist {
+
+  &--header {
+    font: bold 1.125rem "Roboto", sans-serif;
+    text-transform: uppercase;
+    margin: 0 10px;
+  }
+
+  &__mostread {
+    @counter-size: 30px;
+    counter-reset: listcounter;
+    border-bottom: solid 1px @hairline-color;
+
+    li {
+      counter-increment: listcounter;
+      margin: 0 10px;
+      padding: 10px 0;
+      border-bottom: dotted 1px @hairline-color;
+
+      > a {
+        cursor: pointer;
+        display: flex;
+        text-decoration: none;
+  
+        .counter {
+          flex-basis: @counter-size;
+          flex-shrink: 0;
+          margin-right: 10px;
+  
+          > div {
+            width: @counter-size;
+            height: @counter-size;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &::after {
+              content: counter(listcounter);
+              font-weight: 500;
+              font-size: 1rem;
+              color: #fff;
+            }
+          }
+        }
+
+        .list-article-liftup {
+
+          h6 {
+            font: bold 0.9rem/1.125rem "Roboto", sans-serif;
+            color: @grey-warm-mid;
+          }
+
+          .premium-badge {
+            transform: scale(.85);
+            transform-origin: left;
+          }
+        }
+      }
+    }
+  }
+}

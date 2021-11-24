@@ -8,15 +8,29 @@
       padding: 5px;
       margin: 0;
       display: block;
-      img {
-        width: 20px;
-        height: 20px;
+      span {
+	width: 20px;
+	height: 20px;
+	display: block;
+	background-repeat: no-repeat;
+	background-size: contain;
       }
     }
     &:first-of-type {
       a {
-        padding-left: 0;
+	padding-left: 0;
       }
     }
   }
+
+  &--facebook { .mk-some-icon("../images/icon-facebook.svg") }
+  &--twitter  { .mk-some-icon("../images/icon-twitter.svg") }
+  &--linkedin { .mk-some-icon("../images/icon-linkedin.svg") }
+  &--whatsapp { .mk-some-icon("../images/icon-whatsapp.svg") }
+  &--mail     { .mk-some-icon("../images/icon-mail.svg") }
+}
+
+.mk-some-icon(@image) {
+    span { background-image: url(@image) }
+
 }
