@@ -3,7 +3,6 @@ module MosaicoServer where
 import Prelude
 
 import Lettera.Models (ArticleStub, Category)
-import Mosaico.Article as Article
 import Mosaico.Header as Header
 import Mosaico.MostReadList as MostReadList
 import React.Basic.DOM as DOM
@@ -19,8 +18,7 @@ type Props =
   }
 
 type State =
-  { articleComponent :: Article.Props -> JSX
-  , headerComponent :: Header.Props -> JSX
+  { headerComponent :: Header.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   }
 
@@ -38,7 +36,6 @@ fromMainContent (StaticPageContent jsx) = jsx
 
 app :: Component Props
 app = do
-  articleComponent <- Article.articleComponent
   headerComponent  <- Header.headerComponent
   mostReadListComponent <- MostReadList.mostReadListComponent
   let (emptyRouter :: PushStateInterface) =
@@ -56,8 +53,7 @@ app = do
         }
   component "Mosaico" \props -> React.do
     let initialState =
-          { articleComponent
-          , headerComponent
+          { headerComponent
           , mostReadListComponent
           }
     state /\ _setState <- useState initialState
