@@ -8,96 +8,14 @@
 	<title>Vetrina look-a-like</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link rel="stylesheet" type="text/css" href="../../../less/Vetrina.less" />
-	<style>
-		.vetrina--product-information__checkmark {
-			background-image: url("https://cdn.ksfmedia.fi/assets/images/check-circle_hbl.svg") !important;
-		}
-
-		.vetrina--external-purchase-button__hbl {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			font-family: "Duplex Sans Titling", sans-serif;
-			font-weight: bold !important;
-			letter-spacing: 0.015em;
-			background: #e98822;
-			color: white;
-			width: 100%;
-			border: none;
-			border-radius: 5px;
-			padding: 2px;
-			font-weight: 500;
-			margin-top: 2em;
-			max-width: 250px;
-			height: 3.5em;
-			cursor: pointer;
-		}
-
-		#vetrina-campaign-link-container {
-			display: flex;
-			justify-content: center;
-		}
-		#vetrina-campaign-link-container>a {
-			text-decoration: none !important;
-			transition: none !important;
-			color: white !important;
-		}
-
-		#vetrina-campaign-link-container>a:visited {
-			color: white !important;
-		}
-
-		#vetrina-campaign-link-container>a:hover {
-			color: white !important;
-		}
-
-		.vetrina--login-link {
-			text-align: center;
-		}
-
-		.vetrina--login-callback {
-			color: #f07e26;
-		}
-
-		.vetrina--container {
-			grid-template-columns: 1fr minmax(auto, 600px) 1fr;
-			grid-template-areas:
-				"headline-image headline-image headline-image"
-				". headline ."
-				". login-link ."
-				". beef ."
-				"product product product" !important;
-			background-color: #03156C;
-			color: white;
-			padding-top: 0;
-		}
-
-		.vetrina--headline-HBL {
-			color: white;
-			font-family: "Duplex Serif Bold", serif;
-			text-align: center;
-		}
-
-		.vetrina--headline-image {
-			grid-area: headline-image;
-			justify-self: center;
-			max-width: 100%;
-		}
-
-		.vetrina--form {
-			text-align: center;
-		}
-
-		.vetrina--product-container {
-			color: #141414;
-		}
-	</style>
+	<link rel="stylesheet" type="text/css" href="./hbl-digital-static.less" />
 </head>
 
 <body>
 	<div class="vetrina--container">
 		<h1 class="vetrina--headline-HBL">
-			<div>HBL Digital 3 månader + gåvokort till Svenska teatern <span class="vetrina--price-headline">29 €</span>
+			<div>HBL Digital <br class="hide"> 3 månader + gåvokort till Svenska teatern <span
+					class="vetrina--price-headline">29 €</span>
 			</div>
 		</h1>
 		<img class="vetrina--headline-image" src="https://cdn.ksfmedia.fi/assets/images/hbl-svenskis-paket.png" />
