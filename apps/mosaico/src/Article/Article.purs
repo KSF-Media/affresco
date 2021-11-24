@@ -5,7 +5,6 @@ import Prelude
 import Bottega.Models.Order (OrderSource(..))
 import Control.Alt ((<|>))
 import Data.Array (cons, head, insertAt, length, snoc, partition, (!!))
-import Data.Array as Array
 import Data.Either (Either(..), fromRight, isRight)
 import Data.Foldable (fold, foldMap)
 import Data.Generic.Rep.RecordToSum as Record
@@ -159,9 +158,10 @@ render { props, state, setState } =
         title = fromMaybe mempty $ map _.title letteraArticle <|> map _.title props.articleStub
         tags = fromMaybe mempty $ map _.tags letteraArticle <|> map _.tags props.articleStub
         mainImage = (_.mainImage =<< letteraArticle) <|> (_.listImage =<< props.articleStub)
+        bodyWithoutErrors = removeBodyErrors $ state.body
+        bodyWithoutAd = map renderElement bodyWithoutErrors
         bodyWithAd = map renderElement
-          <<< insertAdsIntoBodyText articleMiddle1Desktop articleMiddle2Desktop
-          <<< removeBodyErrors $ state.body
+          <<< insertAdsIntoBodyText articleMiddle1Desktop articleMiddle2Desktop $ bodyWithoutErrors
         draftHeader = case state.article of
           Just (DraftArticle _) ->
             DOM.div
@@ -220,7 +220,7 @@ render { props, state, setState } =
                             `cons` bodyWithAd
                             `snoc` vetrina
                           (Just (DraftArticle _draftArticle)) ->
-                            map renderElement state.body
+                            bodyWithoutAd
                           (Just (FullArticle _fullArticle)) ->
                             bodyWithAd
                           _ -> mempty
