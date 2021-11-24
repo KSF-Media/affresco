@@ -51,6 +51,7 @@ class Article extends Component {
   render() {
     return (
       <div className="article">
+				<div id="article_middle_2_desktop"></div>
 	{this.state.isImageModalOpen && (
 	  <Lightbox
 	    mainSrc={this.state.modalImage + "&width=1200"}

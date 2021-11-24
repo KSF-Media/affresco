@@ -42,18 +42,53 @@
     </script>
     <!--End Google Tag Manager-->
     <!--Start Google Ad-->
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
       var ksf = {};
       ksf.settings = {};
       ksf.settings.brand = {};
       ksf.settings.brand.id = "hbl";
     </script>
-    <script async src="https://script.ksfmedia.fi/app/gamAppAds.min.js"></script>
+    
+    <script
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    ></script>
+    <script>
+      window.googletag = window.googletag || { cmd: [] };
+      window.googletag.cmd.push(function () {
+        googletag.pubads().setTargeting("Test", "mosaico_test");
+        googletag
+          .defineSlot(
+            "/21664538223/mosaico/article_middle_1_desktop",
+            [468, 400],
+            "article_middle_1_desktop"
+          )
+          .addService(googletag.pubads());
+        googletag
+          .defineSlot(
+            "/21664538223/mosaico/article_middle_2_desktop",
+            [468, 400],
+            "article_middle_2_desktop"
+          )
+          .addService(googletag.pubads());
+        googletag
+          .defineSlot(
+            "/21664538223/mosaico/article_bottom_desktop",
+            [620, 891],
+            "article_bottom_desktop"
+          )
+          .addService(googletag.pubads());
+        // googletag.display("/21664538223/mosaico/article_middle_1_desktop");
+        // googletag.display("/21664538223/mosaico/article_middle_2_desktop");
+        // googletag.display("/21664538223/mosaico/article_bottom_desktop");
+        googletag.pubads().enableSingleRequest();
+        googletag.pubads().collapseEmptyDivs();
+        googletag.enableServices();
+      });
+    </script>
     <!--End Google Ad-->
-    <script async src="https://apis.google.com/js/platform.js"></script>
-    <script async src="analytics.js"></script>
-    <script async src="ads.js"></script>
+    <script src="https://apis.google.com/js/platform.js"></script>
+    <script src="analytics.js"></script>
   </head>
   <body>
     <noscript
@@ -77,5 +112,12 @@
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
     <script src="./index.js"></script>
+    <script>
+      googletag.cmd.push(function () {
+        googletag.display("article_middle_1_desktop");
+        googletag.display("article_middle_2_desktop");
+        googletag.display("article_bottom_desktop");
+      });
+    </script>
   </body>
 </html>
