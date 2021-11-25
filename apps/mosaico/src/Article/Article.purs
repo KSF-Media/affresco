@@ -412,13 +412,12 @@ render { props, state, setState } =
       where
         elements = length body
         findAdSpace :: Array BodyElement -> Int -> Int
-        findAdSpace body' i 
+        findAdSpace body' i
           | i > elements = elements
-          | otherwise    = case body' !! (i-1) of
-            Just (Html _) -> case body' !! i of
-              Just (Html _) -> i
-              _             -> findAdSpace body' (i+1)
-            _             -> findAdSpace body' (i+1)
+          | Just (Html _) <- body' !! (i-1)
+          , Just (Html _) <- body' !! (i) 
+          = i
+          | otherwise = findAdSpace body' (i+1)
 
     removeBodyErrors :: Array (Either String BodyElement) -> Array BodyElement
     removeBodyErrors body = 
