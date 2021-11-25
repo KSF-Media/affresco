@@ -277,6 +277,7 @@ data BodyElement
   | Footnote String
   | Question String
   | Quote String
+  -- Note that Ad does NOT come from Lettera, but was added here to make smart ad placement possible
   | Ad String
 derive instance bodyElementGeneric :: Generic BodyElement _
 instance bodyElementShow :: Show BodyElement where show = genericShow
