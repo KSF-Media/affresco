@@ -34,8 +34,6 @@ let mkAeSteps =
         # [ Actions.mkBuildServerStep app ]
         # [ Actions.generateAppYaml app ]
         # [ Actions.mkAppEngineStep env promote app ]
-        # [ Actions.copyAppYamlForStaging app ]
-        # [ Actions.mkAppEngineStep Actions.Env.Staging promote app ]
         # [ Actions.mkCleanAppEngineStep env app ]
 
 let steps-gs =

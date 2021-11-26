@@ -63,23 +63,6 @@ jobs:
           project_id: ksf-production
           promote: 'true'
           working_directory: build/app-article-server
-      - env:
-          HIDE_LOGIN_LINKS: 'true'
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
-          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
-          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
-        name: Copy app.yaml.dev to app.yaml
-        run: |
-          cp build/app-article-server/app.dev.yaml build/app-article-server/app.yaml
-        shell: bash
-      - id: deploy-app-article-server
-        name: Deploy App article server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: ksf-staging
-          promote: 'true'
-          working_directory: build/app-article-server
       - continue-on-error: true
         name: Keep only 10 latest versions of app-article-server
         run: |
@@ -323,18 +306,6 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           project_id: ksf-production
-          promote: 'true'
-          working_directory: build/mosaico
-      - name: Copy app.yaml.dev to app.yaml
-        run: |
-          cp build/mosaico/app.dev.yaml build/mosaico/app.yaml
-        shell: bash
-      - id: deploy-mosaico-server
-        name: Deploy Mosaico server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: ksf-staging
           promote: 'true'
           working_directory: build/mosaico
       - continue-on-error: true
