@@ -1,12 +1,23 @@
-let Actions = ./workflows.dhall
+let Prelude = ./Prelude.dhall
+
+let Map = Prelude.Map.Type
+
+let App =
+      { Type =
+          { buildDir : Text
+          , deployDir : Text
+          , name : Text
+          , env : Map Text Text
+          , lockfile : Optional Text
+          , caches : Optional Text
+          }
+      , default =
+        { env = [] : Map Text Text, lockfile = None Text, caches = None Text }
+      }
 
 let apps =
-        [ Actions.App::{
-          , name = "Scripts"
-          , buildDir = "scripts"
-          , deployDir = "scripts"
-          }
-        , Actions.App::{
+        [ App::{ name = "Scripts", buildDir = "scripts", deployDir = "scripts" }
+        , App::{
           , name = "Mitt Konto"
           , buildDir = "mitt-konto"
           , deployDir = "mitt-konto"
@@ -22,7 +33,7 @@ let apps =
               apps/mitt-konto/output
               ''
           }
-        , Actions.App::{
+        , App::{
           , name = "Vetrina (for testing only)"
           , buildDir = "vetrina-test"
           , deployDir = "vetrina-test"
@@ -38,7 +49,7 @@ let apps =
               apps/vetrina-test/output
               ''
           }
-        , Actions.App::{
+        , App::{
           , name = "Elections (EU)"
           , buildDir = "elections"
           , deployDir = "elections-eu"
@@ -47,7 +58,7 @@ let apps =
               , ELECTION_TYPE = "EU"
               }
           }
-        , Actions.App::{
+        , App::{
           , name = "Elections (Parliament)"
           , buildDir = "elections"
           , deployDir = "elections"
@@ -56,7 +67,7 @@ let apps =
               , ELECTION_TYPE = "PARLIAMENT"
               }
           }
-        , Actions.App::{
+        , App::{
           , name = "App article"
           , buildDir = "app-article"
           , deployDir = "app-article"
@@ -71,7 +82,7 @@ let apps =
               apps/app-article/dist
               ''
           }
-        , Actions.App::{
+        , App::{
           , name = "Corona banner"
           , buildDir = "corona-banner"
           , deployDir = "corona-banner"
@@ -81,7 +92,7 @@ let apps =
               apps/corona-banner/dist
               ''
           }
-        , Actions.App::{
+        , App::{
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
@@ -92,12 +103,12 @@ let apps =
               apps/hbl365/output
               ''
           }
-        , Actions.App::{
+        , App::{
           , name = "Prenumerera"
           , buildDir = "prenumerera"
           , deployDir = "prenumerera"
           }
         ]
-      : List Actions.App.Type
+      : List App.Type
 
-in  apps
+in  { apps, App }

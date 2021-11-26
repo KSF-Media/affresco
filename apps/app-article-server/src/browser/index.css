@@ -842,3 +842,98 @@ html iframe {
 .premiumSection.darkMode > .login-form.pt2 .center {
   color: white;
 }
+
+.title-xs {
+  line-height: 38px !important;
+  font-size: 2rem !important;
+}
+
+.title-sm {
+  line-height: 40px !important;
+  font-size: 2.2rem !important;
+}
+
+.title-md {
+  line-height: 44px !important;
+  font-size: 2.35rem !important;
+}
+
+.title-lg {
+  line-height: 44px !important;
+  font-size: 2.45rem !important;
+}
+
+.title-xl {
+  line-height: 44px !important;
+  font-size: 2.6rem !important;
+}
+
+.additional-xs {
+  line-height: 1.2 !important;
+  font-size: 1.1rem !important;
+}
+
+.additional-sm {
+  line-height: 1.2 !important;
+  font-size: 1.15rem !important;
+}
+
+.additional-md {
+  line-height: 1.2 !important;
+  font-size: 1.2rem !important;
+}
+
+.additional-lg {
+  line-height: 1.2 !important;
+  font-size: 1.3rem !important;
+}
+
+.additional-xl {
+  line-height: 1.2 !important;
+  font-size: 1.6rem !important;
+}
+
+.content-xs {
+  line-height: 1.5 !important;
+  font-size: 1.1rem !important;
+}
+
+.content-sm {
+  line-height: 1.5 !important;
+  font-size: 1.15rem !important;
+}
+
+.content-md {
+  line-height: 1.5 !important;
+  font-size: 1.2rem !important;
+}
+
+.content-lg {
+  line-height: 1.5 !important;
+  font-size: 1.3rem !important;
+}
+
+.content-xl {
+  line-height: 1.5 !important;
+  font-size: 1.6rem !important;
+}
+
+.caption-xs {
+  font-size: 0.9rem !important;
+}
+
+.caption-sm {
+  font-size: 1rem !important;
+}
+
+.caption-md {
+  font-size: 1.2rem !important;
+}
+
+.caption-lg {
+  font-size: 1.2rem !important;
+}
+
+.caption-xl {
+  font-size: 1.2rem !important;
+}

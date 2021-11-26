@@ -7,10 +7,12 @@ import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
+import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
 import Data.Either (Either(..), either, isRight)
+import Data.Foldable (foldMap)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
@@ -100,7 +102,7 @@ getArticleWithUrl url auth = do
           -}
         let articlePreviewJson =
               (toObject response.body)
-                 >>= lookup "not_entitled"
+                 >>= (\x -> lookup "not_entitled_v4" x <|> lookup "not_entitled" x)
                  >>= toObject
                  >>= lookup "articlePreview"
 
@@ -134,9 +136,13 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
         pure $ Left "Unauthorized"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
 
-getFrontpage :: Paper -> Aff (Array ArticleStub)
-getFrontpage paper = do
-  frontpageResponse <- AX.get ResponseFormat.json (letteraFrontPageUrl <> "?paper=" <> Paper.toString paper)
+getFrontpage :: Paper -> Maybe String -> Aff (Array ArticleStub)
+getFrontpage paper categoryId = do
+  let letteraUrl =
+        letteraFrontPageUrl
+        <> "?paper=" <> Paper.toString paper
+        <> foldMap ("&category=" <> _) categoryId
+  frontpageResponse <- AX.get ResponseFormat.json letteraUrl
   case frontpageResponse of
     Left err -> do
       Console.warn $ "Frontpage response failed to decode: " <> AX.printError err
