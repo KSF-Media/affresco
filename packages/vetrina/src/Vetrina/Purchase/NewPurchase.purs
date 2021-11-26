@@ -14,6 +14,7 @@ import Data.Nullable (toMaybe)
 import Data.Tuple as Tuple
 import Data.Validation.Semigroup (toEither, invalid, validation)
 import Effect (Effect)
+import Foreign.Object as Object
 import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
@@ -175,6 +176,9 @@ title self =
     headline child =
       DOM.h1
         { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
+        , _data: Object.fromFoldable $ case self.props.accountStatus of
+                   NewAccount -> mempty
+                   _          -> [ Tuple.Tuple "existing-account" "1" ]
         , children: [ child ]
         }
 

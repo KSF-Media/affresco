@@ -7,6 +7,8 @@ import Data.Foldable (foldMap)
 import Data.Maybe (fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un)
+import Data.Tuple (Tuple(..))
+import Foreign.Object as Object
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -34,6 +36,9 @@ render props =
       DOM.div
         { className: "mosaico--list-article list-article-default"
         , onClick: props.onArticleClick a
+        , _data: Object.fromFoldable [ Tuple "premium" $ if a.premium then "1" else "0"
+                                     , Tuple "uuid" $ a.uuid
+                                     ]
         , children:
             [ DOM.span
                 { children:
