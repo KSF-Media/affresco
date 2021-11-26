@@ -1,3 +1,6 @@
+// This file is currently unused at 2021-11-26, but could be put back into use,
+// or at least its logic might be useful as a reference,
+// when adding the "ad in the middle of an article" (MOBMITT) ad slot back.
 /* The purpose of this function is to place ad slots in page text. It will try to space them out avoiding images, news graphics, iframes etc.
     It will not place slots in articles with less than 4 paragraphs. If no good paragraphs are found, the slots are placed after the text. It will allow <b>, <a href> and <i> within paragraphs. Other tags will disqualify that paragraph. Note that this function will call the main ads script on completion. This should prevent timing issues, no ads are loaded till all paragraphs are rolled out and inspected.
     The script depends on the article text residing in an element with the id 'content'.

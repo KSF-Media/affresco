@@ -205,7 +205,6 @@ class Content extends Component {
   }
 
   render() {
-    this.props.body.splice(this.props.body.length/2, 0, {html: '<div id="article_middle_1_desktop"></div>'})
     return (
       <div className={"row"}>
         <div
@@ -213,11 +212,13 @@ class Content extends Component {
           id={"content"}
           style={_.merge({ wordWrap: "break-word" }, this.contentStyles())}
         >
+          <div id="MOBPARAD"></div>
           {this.props.body != null
             ? this.props.body.map((block, key) => {
                 return this.conditionalRendering(block, key);
               })
             : ""}
+          <div id="MOBNER"></div>
         </div>
       </div>
     );
