@@ -14,7 +14,6 @@ import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
