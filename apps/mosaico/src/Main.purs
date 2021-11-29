@@ -3,6 +3,8 @@ module Main where
 import Prelude
 
 import Data.Argonaut.Core as JSON
+import Data.Argonaut.Core (Json, stringify)
+
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -13,6 +15,7 @@ import Data.List (List, intercalate)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
+import Data.Nullable (Nullable, toNullable)
 import Data.String (Pattern(..), Replacement(..), replace)
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
@@ -273,11 +276,21 @@ frontpage env _ = do
   html <- liftEffect do
             let windowVars =
                   [ "frontpageArticles" /\ encodeStringifyArticleStubs articles
+                  , "frontpageFeed" /\  (stringify $ encodeJson $ { feedPage: (Nothing :: Maybe String)
+                                                              , feedType: "categoryfeed"
+                                                              , feedContent: encodeStringifyArticleStubs articles
+                                                              })
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ]
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
+
+mkArticleFeed
+  :: { feedPage :: Maybe String, feedType :: String, feedContent :: String }
+  -> { feedPage :: Nullable String, feedType :: Nullable String, feedContent :: Nullable String }
+mkArticleFeed feed =
+  { feedPage: toNullable feed.feedPage, feedType: toNullable $ Just feed.feedType, feedContent: toNullable $ Just feed.feedContent }
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
