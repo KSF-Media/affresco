@@ -62,8 +62,8 @@
         return "hbl";
       };
 
-      const brandValueName = getBrandValueParam()
-      let appToTarget = ""
+      const brandValueName = getBrandValueParam();
+      let appToTarget = "";
 
       if (brandValueName == "on") {
         appToTarget = "appON";
@@ -72,6 +72,8 @@
       } else {
         appToTarget = "appHBL";
       }
+
+      const mobparadContainer = document.getElementById("MOBPARAD");
 
       window.googletag = window.googletag || { cmd: [] };
       window.googletag.cmd.push(function () {
