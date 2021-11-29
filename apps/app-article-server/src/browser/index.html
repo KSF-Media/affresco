@@ -49,8 +49,6 @@
       ksf.settings.brand = {};
       ksf.settings.brand.id = "hbl";
     </script>
-
-    <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
       const getUrlParam = () => {
         return new URLSearchParams(window.location.search);
@@ -65,6 +63,7 @@
       };
 
       const brandValueName = getBrandValueParam()
+      let appToTarget = ""
 
       if (brandValueName == "on") {
         appToTarget = "appON";
