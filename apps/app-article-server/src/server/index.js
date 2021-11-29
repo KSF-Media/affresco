@@ -12,8 +12,6 @@ import generateHtml from "./generateHtml";
 import Article from "../browser/components/article";
 import ErrorPage from "../browser/components/error";
 
-require("dotenv").config();
-
 app.use("/dist", express.static(`${__dirname}/../client`));
 
 app.get("/article/:id", async (req, res) => {
