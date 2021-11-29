@@ -218,6 +218,7 @@ class Content extends Component {
                 return this.conditionalRendering(block, key);
               })
             : ""}
+          <div id="MOBNER"></div>
         </div>
       </div>
     );
