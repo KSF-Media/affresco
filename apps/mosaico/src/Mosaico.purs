@@ -9,7 +9,7 @@ import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.UUID as UUID
@@ -21,7 +21,7 @@ import Effect.Class.Console as Console
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, Category, CategoryLabel, FullArticle(..), Tag, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category, CategoryLabel, FullArticle(..), Tag, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -51,11 +51,9 @@ type State =
   , tagArticlesName :: Maybe Tag
   , tagArticlesLoading :: Boolean
   , tagArticles :: Array ArticleStub
-  , affArticle :: Maybe (Aff Article)
   , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
-  , articleComponent :: Article.Props -> JSX
   , headerComponent :: Header.Props -> JSX
   , menuComponent :: Menu.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
@@ -109,6 +107,17 @@ mosaicoComponent initialValues props = React.do
                          , categoryStructure = props.categoryStructure
                          }
 
+  let loadArticle articleId = Aff.launchAff_ do
+        case UUID.parseUUID articleId of
+          Nothing -> liftEffect $ setState _ { article = Nothing }
+          Just uuid -> do
+            eitherArticle <- Lettera.getArticleAuth uuid
+            liftEffect case eitherArticle of
+              Right article -> do
+                Article.evalEmbeds $ fromFullArticle article
+                setState _ { article = Just article }
+              Left _ -> setState _ { article = Nothing }
+
   useEffectOnce do
     Aff.launchAff_ do
       cats <- if null props.categoryStructure
@@ -146,8 +155,12 @@ mosaicoComponent initialValues props = React.do
                                       , tagArticles = byTag
                                       , tagArticlesLoading = false
                                       }
+      -- Always uses server side provided article
       Routes.DraftPage -> pure unit
-      Routes.ArticlePage _articleId -> pure unit
+      Routes.ArticlePage articleId
+        | (isPreviewArticle <$> state.article) == Just true -> loadArticle articleId
+        | Just articleId == ((_.uuid <<< fromFullArticle) <$> state.article) -> pure unit
+        | otherwise -> loadArticle articleId
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
       Routes.CategoryPage category -> do
@@ -181,7 +194,7 @@ mosaicoComponent initialValues props = React.do
 
     pure mempty
 
-  pure $ render setState state initialValues.nav
+  pure $ render setState state initialValues.nav $ maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
 
 routeListener :: Array Category -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
@@ -202,7 +215,6 @@ getInitialValues = do
   locationState <- nav.locationState
   let initialRoute = either (const $ Routes.Frontpage) identity $ match (Routes.routes []) locationState.path
 
-  articleComponent    <- Article.articleComponent
   headerComponent     <- Header.headerComponent
   menuComponent       <- Menu.menuComponent
   loginModalComponent <- LoginModal.loginModal
@@ -216,11 +228,9 @@ getInitialValues = do
         , tagArticlesName: Nothing
         , tagArticlesLoading: false
         , tagArticles: []
-        , affArticle: Nothing
         , route: initialRoute
         , clickedArticle: Nothing
         , modalView: Nothing
-        , articleComponent
         , headerComponent
         , menuComponent
         , loginModalComponent
@@ -259,14 +269,16 @@ jsApp = do
   initialValues <- getInitialValues
   React.reactComponent "Mosaico" $ mosaicoComponent initialValues <<< fromJSProps
 
-render :: SetState -> State -> PushStateInterface -> JSX
-render setState state router =
+render :: SetState -> State -> PushStateInterface -> Effect Unit -> JSX
+render setState state router onPaywallEvent =
   case state.modalView of
     Just LoginModal ->
       state.loginModalComponent
         { onUserFetch: \user ->
            case user of
-             Right u -> setState \s -> s { modalView = Nothing, user = Just u }
+             Right u -> do
+               setState _ { modalView = Nothing, user = Just u }
+               onPaywallEvent
              Left _err ->
                -- TODO: Handle properly
                Console.error $ "Login error " <> show _err
@@ -287,16 +299,15 @@ render setState state router =
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle
          -- If we have this article already in `state`, let's pass that to `articleComponent`
-         -- NOTE: We still need to also pass `affArticle` if there's any need to reload the article
-         -- e.g. when a subscription is purchased or user logs in
-         , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Just fullArticle) (affArticle articleId) Nothing articleId
-         | otherwise                 -> mosaicoLayoutNoAside $ renderArticle Nothing (affArticle articleId) state.clickedArticle articleId
+         , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
+         | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
+         | otherwise                 -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.Frontpage -> frontpage state.frontpageArticles
-       Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+       Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage _ ->
          if state.tagArticlesLoading || (not $ null state.tagArticles)
            then frontpage state.tagArticles
-           else renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+           else renderArticle (Right notFoundArticle)
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ state.menuComponent
@@ -305,23 +316,16 @@ render setState state router =
                  onCategoryClick categoryLabel
                  router.pushState (write {}) url
              }
-       Routes.DraftPage -> mosaicoLayoutNoAside $ renderArticle state.article (pure notFoundArticle) Nothing $
-                    fromMaybe (show UUID.emptyUUID) (_.uuid <<< fromFullArticle <$> state.article)
+       Routes.DraftPage -> mosaicoLayoutNoAside
+         $ renderArticle $ maybe (Right notFoundArticle) Right state.article
        Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
          Nothing -> DOM.text "laddar"
          Just (StaticPageResponse page)  ->
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound ->
-           renderArticle (Just notFoundArticle) (pure notFoundArticle) Nothing ""
+           renderArticle (Right notFoundArticle)
          Just StaticPageOtherError -> Error.somethingWentWrong
   where
-    affArticle :: String -> Aff FullArticle
-    affArticle articleId = do
-      a <- Lettera.getArticleAuth (fromMaybe UUID.emptyUUID $ UUID.parseUUID articleId)
-      pure case a of
-        Right article -> article
-        Left _ -> notFoundArticle
-
     mosaicoDefaultLayout :: JSX -> JSX
     mosaicoDefaultLayout = flip mosaicoLayout true
 
@@ -377,15 +381,12 @@ render setState state router =
       , onTagClick
       }
 
-    renderArticle :: Maybe FullArticle -> Aff FullArticle -> Maybe ArticleStub -> String -> JSX
-    renderArticle maybeA affA aStub uuid =
-      state.articleComponent
-        { affArticle: affA
-        , brand: "hbl"
-        , article: maybeA
-        , articleStub: aStub
+    renderArticle :: Either ArticleStub FullArticle -> JSX
+    renderArticle article =
+      Article.render
+        { brand: "hbl"
+        , article
         , onLogin: setState \s -> s { modalView = Just LoginModal }
+        , onPaywallEvent
         , onTagClick
-        , user: state.user
-        , uuid: Just uuid
         }

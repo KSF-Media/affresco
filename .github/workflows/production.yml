@@ -1,7 +1,7 @@
 env:
   PRODUCTION_BOTTEGA_URL: https://bottega.api.ksfmedia.fi/v1
   PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi
-  PRODUCTION_FACEBOOK_APP_ID: '1742585382627694'
+  PRODUCTION_FACEBOOK_APP_ID: '894000011480431'
   PRODUCTION_GOOGLE_CLIENT_ID: "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
   PRODUCTION_JANRAIN_FLOW_VERSION: '20201223120649370442'
   PRODUCTION_JANRAIN_LOGIN_CLIENT_ID: jzbqvf3p68e8hje6wrzhezk98m8qndmz
@@ -42,6 +42,8 @@ jobs:
             mkdir -p build
       - env:
           HIDE_LOGIN_LINKS: 'true'
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
+          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
           SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         name: Build Server App article server
         run: |2
@@ -59,21 +61,6 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           project_id: ksf-production
-          promote: 'true'
-          working_directory: build/app-article-server
-      - env:
-          HIDE_LOGIN_LINKS: 'true'
-          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
-        name: Copy app.yaml.dev to app.yaml
-        run: |
-          cp build/app-article-server/app.dev.yaml build/app-article-server/app.yaml
-        shell: bash
-      - id: deploy-app-article-server
-        name: Deploy App article server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: ksf-staging
           promote: 'true'
           working_directory: build/app-article-server
       - continue-on-error: true
@@ -319,18 +306,6 @@ jobs:
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           project_id: ksf-production
-          promote: 'true'
-          working_directory: build/mosaico
-      - name: Copy app.yaml.dev to app.yaml
-        run: |
-          cp build/mosaico/app.dev.yaml build/mosaico/app.yaml
-        shell: bash
-      - id: deploy-mosaico-server
-        name: Deploy Mosaico server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: ksf-staging
           promote: 'true'
           working_directory: build/mosaico
       - continue-on-error: true

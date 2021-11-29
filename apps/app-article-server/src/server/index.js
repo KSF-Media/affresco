@@ -51,6 +51,9 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     requests.push(
       axios.get(process.env.PERSONA_URL + "/users/" + authHeaders.authuser, {
 	headers: { authorization: authHeaders.authorization },
+	validateStatus: function (httpStatus) {
+	  return httpStatus < 400 || httpStatus === 403;
+	},
       })
     );
   }
@@ -60,7 +63,6 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     .then(
       axios.spread((...responses) => {
 	const articleResponse = responses[0].data;
-
 	let article;
 	let isPreviewArticle;
 	// If the response.data is an article already, meaning we can find the article id (uuid) there, great! We have an article
@@ -111,10 +113,12 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     .catch((errors) => {
       const markup = ReactDOM.renderToString(<ErrorPage message={"Artikeln kunde inte hämtas!"} />);
       const html = generateHtml(markup);
+      // We might get some other error as well here, so let's log that also
+      const errorMessage = _.get(errors, "response.data") || errors;
       console.warn("Failed to fetch article!", {
 	url: _.get(errors, "response.config.url"),
 	status: _.get(errors, "response.status"),
-	message: _.get(errors, "response.data"),
+	message: errorMessage,
       });
       res.send(html);
     });
