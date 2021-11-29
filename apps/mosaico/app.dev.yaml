@@ -1,6 +1,6 @@
 runtime: nodejs12
 service: mosaico-server
-entrypoint: node -e 'require("./output/Main/index").main()'
+entrypoint: node -r dotenv/config -e 'require("./output/Main/index").main()'
 handlers:
   - url: /assets
     static_dir: dist/client
