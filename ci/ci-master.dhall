@@ -7,18 +7,34 @@ let Prelude = ./Prelude.dhall
 
 let Actions = ./workflows.dhall
 
-let apps = ./apps.dhall
+let A = ./apps.dhall
+
+let apps = A.apps
+
+let App = A.App
 
 let AE = ./app-servers.dhall
+
+let AS = ./app-servers/AppServer.dhall
+
+let AppServer = AS.AppServer
 
 let container = ./container.dhall
 
 let promote = "true"
 
-let apps-to-cache =
-      Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
+let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
+
+let mkAeSteps =
+      \(env : Actions.Env) ->
+      \(app : AppServer.Type) ->
+          Actions.setupSteps env
+        # [ Actions.mkBuildServerStep app ]
+        # [ Actions.generateAppYaml app ]
+        # [ Actions.mkAppEngineStep env promote app ]
+        # [ Actions.mkCleanAppEngineStep env app ]
 
 let steps-gs =
         Actions.setupSteps Actions.Env.Production
@@ -26,38 +42,9 @@ let steps-gs =
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Production apps
 
-let steps-app-article =
-        Actions.setupSteps Actions.Env.Production
-      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
-      # [ Actions.mkAppEngineStep
-            Actions.Env.Production
-            promote
-            AE.servers.app-article-server
-        ]
-      # [ Actions.copyAppYamlForStaging AE.servers.app-article-server ]
-      # [ Actions.mkAppEngineStep
-            Actions.Env.Staging
-            promote
-            AE.servers.app-article-server
-        ]
-      # [ Actions.mkCleanAppEngineStep
-            Actions.Env.Production
-            AE.servers.app-article-server
-        ]
+let steps-app-article = mkAeSteps Actions.Env.Production AE.app-article-server
 
-let steps-mosaico =
-        Actions.setupSteps Actions.Env.Production
-      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep
-            Actions.Env.Production
-            promote
-            AE.servers.mosaico
-        ]
-      # [ Actions.copyAppYamlForStaging AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
-        ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Production AE.servers.mosaico
-        ]
+let steps-mosaico = mkAeSteps Actions.Env.Production AE.mosaico-server
 
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Production
@@ -104,7 +91,7 @@ in  { name = "production"
             }
         //  refreshCDNJobs
     , env =
-      { PRODUCTION_FACEBOOK_APP_ID = "1742585382627694"
+      { PRODUCTION_FACEBOOK_APP_ID = "894000011480431"
       , PRODUCTION_GOOGLE_CLIENT_ID =
           "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
       , PRODUCTION_JANRAIN_FLOW_VERSION = "20201223120649370442"

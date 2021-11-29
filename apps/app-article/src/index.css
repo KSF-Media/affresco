@@ -32,7 +32,7 @@
     --color-caption: #686868;
     --color-border: #dbd3d3;
     --color-article-date: #6c6c6c;
-  }
+}
   
 [data-theme="dark"] {
     --color-caption: #dbdbdb;

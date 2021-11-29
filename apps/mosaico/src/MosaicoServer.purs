@@ -2,8 +2,7 @@ module MosaicoServer where
 
 import Prelude
 
-import Lettera.Models (ArticleStub)
-import Mosaico.Article as Article
+import Lettera.Models (ArticleStub, Category)
 import Mosaico.Header as Header
 import Mosaico.MostReadList as MostReadList
 import React.Basic.DOM as DOM
@@ -15,14 +14,13 @@ import Simple.JSON (write)
 type Props =
   { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
+  , categoryStructure :: Array Category
   }
 
 type State =
-  { articleComponent :: Article.Props -> JSX
-  , headerComponent :: Header.Props -> JSX
+  { headerComponent :: Header.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   }
-
 
 data MainContent
   = ArticleContent JSX
@@ -38,7 +36,6 @@ fromMainContent (StaticPageContent jsx) = jsx
 
 app :: Component Props
 app = do
-  articleComponent <- Article.articleComponent
   headerComponent  <- Header.headerComponent
   mostReadListComponent <- MostReadList.mostReadListComponent
   let (emptyRouter :: PushStateInterface) =
@@ -56,8 +53,7 @@ app = do
         }
   component "Mosaico" \props -> React.do
     let initialState =
-          { articleComponent
-          , headerComponent
+          { headerComponent
           , mostReadListComponent
           }
     state /\ _setState <- useState initialState
@@ -69,7 +65,10 @@ render router state props = DOM.div
        { className: "mosaico grid"
        , children:
            [ Header.topLine
-           , state.headerComponent { router }
+           , state.headerComponent { router
+                                   , categoryStructure: props.categoryStructure
+                                   , onCategoryClick: const $ pure unit
+                                   }
            , Header.mainSeparator
            , fromMainContent props.mainContent
            , DOM.footer

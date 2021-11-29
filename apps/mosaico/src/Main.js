@@ -14,3 +14,7 @@ exports.appendHeadImpl = function (element, HTML_TEMPLATE) {
   $template("head").append(element);
   return $template.html();
 };
+
+// Server Port
+exports.serverPort = process.env.PORT;
+

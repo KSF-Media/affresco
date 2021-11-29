@@ -12,17 +12,20 @@ import Data.Either (Either(..), hush)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
+import Data.Hashable (class Hashable, hash)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.Show.Generic (genericShow)
-import Data.String (joinWith)
-import Data.String as String
+import Data.String (joinWith, toLower)
+import Data.String (Pattern(..), Replacement(..), replaceAll, toLower) as String
+import Data.String.Extra (kebabCase) as String
 import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
+import Foreign.Object as Object
 import KSF.Helpers (dateTimeFormatter)
 import Record (modify)
 import Simple.JSON (class ReadForeign, readImpl)
@@ -302,18 +305,46 @@ data CategoryType
   | Webview
   | Link
 
+toString :: CategoryType -> String
+toString Feed = "feed"
+toString Webview = "webview"
+toString Link = "link"
+
 instance categoryTypeDecodeJson :: DecodeJson CategoryType where
   decodeJson json = do
     categoryTypeString <- decodeJson json
-    case String.toLower categoryTypeString of
+    case toLower categoryTypeString of
       "feed"    -> Right Feed
       "webview" -> Right Webview
       "link"    -> Right Link
       _         -> Left $ UnexpectedValue json
 
+newtype CategoryLabel = CategoryLabel String
+derive instance newtypeCategoryLabel :: Newtype CategoryLabel _
+
+-- (CategoryLabel "Norden Och Världen") is equal to (CategoryLabel "norden-och-världen")
+instance eqCategoryLabel :: Eq CategoryLabel where
+  eq (CategoryLabel a) (CategoryLabel b) =
+    a == b || normalize a == normalize b
+    where
+      normalize = toLower <<< removeKebabCase <<< removeWhitespace
+      removeKebabCase = String.replaceAll (Pattern "-") (Replacement "")
+      removeWhitespace = String.replaceAll (Pattern " ") (Replacement "")
+
+-- Kebab cases a label
+-- E.g. "Norden Och Världen" -> "norden-och-världen"
+instance showCategoryLabel :: Show CategoryLabel where
+  show (CategoryLabel a) = toLower $ String.kebabCase a
+
+instance ordCategoryLabel :: Ord CategoryLabel where
+  compare a b = compare (show a) (show b)
+
+instance hashableCategoryLabel :: Hashable CategoryLabel where
+  hash (CategoryLabel a) = hash a
+
 newtype Category = Category
   { id            :: String
-  , label         :: String
+  , label         :: CategoryLabel
   , type          :: CategoryType
   , subCategories :: Array Category
   , url           :: Maybe String
@@ -323,11 +354,22 @@ instance categoryDecodeJson :: DecodeJson Category where
   decodeJson json = do
     categoryObj   <- decodeJson json
     id            <- categoryObj .: "id"
-    label         <- categoryObj .: "label"
+    label         <- CategoryLabel <$> categoryObj .: "label"
     type_         <- categoryObj .: "type"
-    subCategories <- categoryObj .:? "subCategories" .!= mempty
+    subCategories <- categoryObj .:? "subcategories" .!= mempty
     url           <- categoryObj .:? "url"
     pure $ Category { id, label, type: type_, subCategories, url }
+
+instance categoryEncodeJson :: EncodeJson Category where
+  encodeJson (Category c) = do
+    Object.singleton "id" (encodeJson c.id)
+    # Object.insert "label" (encodeJson $ unwrap c.label)
+    # Object.insert "type" (encodeJson $ toString c.type)
+    # Object.insert "subcategories" (encodeJson c.subCategories)
+    # Object.insert "url" (encodeJson c.url)
+    # encodeJson
+
+derive instance newtypeCategory :: Newtype Category _
 
 newtype Tag = Tag String
 
@@ -337,5 +379,7 @@ uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "-") (String.Repla
 tagToURIComponent :: Tag -> String
 tagToURIComponent = String.toLower <<< String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
 
-derive instance eqTag :: Eq Tag
+instance eqTag :: Eq Tag where
+  eq (Tag a) (Tag b) = String.toLower a == String.toLower b
+
 derive instance newtypeTag :: Newtype Tag _

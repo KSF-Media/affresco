@@ -8,17 +8,16 @@ import Data.Maybe (maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un)
 import Effect (Effect)
-import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Lettera.Models (ArticleStub, Tag(..))
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (EventHandler, handler_)
 import React.Basic.Hooks (Component, component)
 
 type Props =
   { frontpageArticles :: Array ArticleStub
   , onArticleClick :: ArticleStub -> Effect Unit
-  , onTagClick :: Tag -> Effect Unit
+  , onTagClick :: Tag -> EventHandler
   }
 
 frontpageComponent :: Component Props
@@ -48,7 +47,7 @@ render props =
                     , children:
                         [ DOM.div
                           { className: "mosaico-article__tag color-hbl"
-                          , onClick: handler preventDefault $ const $ foldMap props.onTagClick $ head a.tags
+                          , onClick: foldMap props.onTagClick $ head a.tags
                           , children: [ DOM.text $ foldMap (un Tag) (head a.tags) ]
                           }
                         , DOM.h2_ [ DOM.text a.title ]

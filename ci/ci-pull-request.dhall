@@ -7,20 +7,36 @@ let Prelude = ./Prelude.dhall
 
 let Actions = ./workflows.dhall
 
-let apps = ./apps.dhall
+let A = ./apps.dhall
 
 let AE = ./app-servers.dhall
 
-let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
+let AS = ./app-servers/AppServer.dhall
+
+let AppServer = AS.AppServer
 
 let container = ./container.dhall
 
+let App = A.App
+
+let apps = A.apps
+
+let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
+
 let promote = "false"
 
-let apps-to-cache =
-      Prelude.List.filter Actions.App.Type Actions.hasLockfile apps
+let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
+
+let mkAeSteps =
+      \(env : Actions.Env) ->
+      \(app : AppServer.Type) ->
+          Actions.setupSteps env
+        # [ Actions.mkBuildServerStep app ]
+        # [ Actions.copyAppYamlForStaging app ]
+        # [ Actions.mkAppEngineStep env promote app ]
+        # [ Actions.mkCleanAppEngineStep env app ]
 
 let steps-gs =
         Actions.setupSteps Actions.Env.Staging
@@ -28,32 +44,21 @@ let steps-gs =
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Staging apps
 
-let steps-app-article =
-        Actions.setupSteps Actions.Env.Staging
-      # [ Actions.mkBuildServerStep AE.servers.app-article-server ]
-      # [ Actions.mkAppEngineStep
-            Actions.Env.Staging
-            promote
-            AE.servers.app-article-server
-        ]
-      # [ Actions.mkCleanAppEngineStep
-            Actions.Env.Staging
-            AE.servers.app-article-server
-        ]
+let steps-app-article = mkAeSteps Actions.Env.Staging AE.app-article-server
 
-let steps-mosaico =
-        Actions.setupSteps Actions.Env.Staging
-      # [ Actions.mkBuildServerStep AE.servers.mosaico ]
-      # [ Actions.mkAppEngineStep Actions.Env.Staging promote AE.servers.mosaico
-        ]
-      # [ Actions.mkCleanAppEngineStep Actions.Env.Staging AE.servers.mosaico ]
+let steps-mosaico = mkAeSteps Actions.Env.Staging AE.mosaico-server
 
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Staging
       # [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
       # [ Actions.deployDispatchYamlStep Actions.Env.Staging ]
 
-let previewLinks = [ Actions.linkPreviewsStep apps AE.all previewUrl ]
+let previewLinks =
+      [ Actions.linkPreviewsStep
+          apps
+          (Prelude.Map.values Text AppServer.Type (toMap AE))
+          previewUrl
+      ]
 
 in  { name = "previews"
     , on.pull_request.branches = [ "master" ]

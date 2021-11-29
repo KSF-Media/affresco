@@ -3,12 +3,15 @@ module Mosaico.Header where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Monoid (guard)
+import Data.Newtype (unwrap)
+import Data.String as String
 import Effect (Effect)
+import Lettera.Models (Category(..), CategoryLabel)
 import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, component, useState, (/\))
 import React.Basic.Hooks as React
@@ -16,7 +19,11 @@ import Routing (match)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (E, read, write)
 
-type Props = { router :: PushStateInterface }
+type Props =
+  { router :: PushStateInterface
+  , categoryStructure :: Array Category
+  , onCategoryClick :: CategoryLabel -> Effect Unit
+  }
 
 type Self =
   { state :: State
@@ -25,8 +32,7 @@ type Self =
   }
 
 type State =
-  { menuVisible :: Boolean
-  , menuComponent :: Menu.Props -> JSX
+  { menuComponent :: Menu.Props -> JSX
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -35,15 +41,12 @@ headerComponent :: Component Props
 headerComponent = do
   menuComponent <- Menu.menuComponent
   component "Header" \props -> React.do
-    let initialState =
-          { menuVisible: false
-          , menuComponent
-          }
+    let initialState = { menuComponent }
     state /\ setState <- useState initialState
     pure $ render { state, setState, props }
 
 render :: Self -> JSX
-render { state: { menuVisible, menuComponent }, props } =
+render { props } =
   DOM.header
     { className: block
     , children:
@@ -76,82 +79,58 @@ render { state: { menuVisible, menuComponent }, props } =
             , onClick: handler_ $ props.router.pushState (write {}) "/"
             }
         , DOM.div
-            { className: accountClass <>
-                if menuVisible then
-                  " " <> menuVisibleAccountClass
-                else
-                  mempty
+            { className: accountClass
             , children: [ DOM.text "NAME" ]
             }
         , DOM.nav
             { className: block <> "__center-links"
-            , children:
-                if menuVisible then
-                  [ searchButton ]
-                else
-                  [ DOM.a_ [ DOM.text "OPINION" ]
-                  , DOM.a_ [ DOM.text "KULTUR" ]
-                  , DOM.a_ [ DOM.text "SPORT" ]
-                  , DOM.a_ [ DOM.text "ANNAT" ]
-                  ]
+            , children: map mkCategory props.categoryStructure
             }
 
         , DOM.div
             { className: block <> "__right-buttons"
             , children:
-                (if menuVisible then
-                   mempty
-                 else
-                   [ searchButton ])
-                <> [ DOM.div_
-                      [ menuComponent { visible: menuVisible }
-                      , DOM.div
-                          { className: iconButtonClass <> " " <> menuButtonClass <>
-                              if menuVisible then
-                              " " <> menuVisibleIconButtonClass
-                              else
-                              mempty
-                          , children: [ DOM.div_ [ DOM.text "MENU" ]
-                                      , DOM.div
-                                          { className: iconClass <> " " <> menuIconClass <>
-                                              (guard menuVisible $ " " <> menuVisibleIconClass)
-                                          } ]
-                          , onClick: handler_ $
-                              (\r -> do
-                                locationState <- r.locationState
-                                case match routes locationState.pathname of
-                                  Right MenuPage -> do
-                                    let
-                                      eitherState :: E { previousPath :: String }
-                                      eitherState = read locationState.state
-                                    case eitherState of
-                                      Right state -> r.pushState (write { }) state.previousPath
-                                      Left _         -> pure unit
-                                  _              -> r.pushState (write { previousPath: locationState.pathname }) "/meny")
-                                props.router
+                [ searchButton
+                , DOM.div
+                    { className: iconButtonClass <> " " <> menuButtonClass
+                    , children: [ DOM.div_ [ DOM.text "MENU" ]
+                                , DOM.div { className: iconClass <> " " <> menuIconClass }
+                                ]
+                    , onClick: handler_ $
+                        (\r -> do
+                          locationState <- r.locationState
+                          case match (routes props.categoryStructure) locationState.pathname of
+                            Right MenuPage -> do
+                              let
+                                eitherState :: E { previousPath :: String }
+                                eitherState = read locationState.state
+                              case eitherState of
+                                Right state -> r.pushState (write { }) state.previousPath
+                                Left _      -> pure unit
+                            _              -> r.pushState (write { previousPath: locationState.pathname }) "/meny")
+                          props.router
 
-                          }
-                      ]
-                   ]
-            }
-        , DOM.div
-            { className: menuOverlayClass <>
-                           if menuVisible then
-                             " " <> visibleMenuOverlayClass
-                           else
-                             mempty
+                    }
+
+                ]
             }
         ]
     }
   where
+    mkCategory (Category category) =
+      DOM.a { href: "/" <> show category.label
+            , onClick: capture_ $ do
+                  props.onCategoryClick category.label
+                  writeCategoryRoute category.label
+            , children: [ DOM.text $ String.toUpper $ unwrap category.label ]
+            }
+
+    writeCategoryRoute categoryLabel =
+      props.router.pushState (write {}) $ "/" <> show categoryLabel
 
     searchButton :: JSX
     searchButton = DOM.div
-                    { className: iconButtonClass <> " " <> searchButtonClass <>
-                        if menuVisible then
-                          " " <> menuVisibleIconButtonClass
-                        else
-                          mempty
+                    { className: iconButtonClass <> " " <> searchButtonClass
                     , children: [ DOM.div_ [ DOM.text "SÖK" ]
                                 , DOM.div { className: iconClass <> " " <> searchIconClass }
                                 ]
@@ -159,11 +138,8 @@ render { state: { menuVisible, menuComponent }, props } =
 
     block = "mosaico-header"
 
-    menuVisibleModifier = "--menu-visible"
-
     accountElement = "__account"
     accountClass = block <> accountElement
-    menuVisibleAccountClass = accountClass <> menuVisibleModifier
 
     searchModifier = "--search"
     menuModifier = "--menu"
@@ -172,18 +148,11 @@ render { state: { menuVisible, menuComponent }, props } =
     iconButtonClass = block <> iconButtonElement
     searchButtonClass = iconButtonClass <> searchModifier
     menuButtonClass = iconButtonClass <> menuModifier
-    menuVisibleIconButtonClass = iconButtonClass <> menuVisibleModifier
 
     iconElement = "__icon"
     iconClass = block <> iconElement
     searchIconClass = iconClass <> searchModifier
     menuIconClass = iconClass <> menuModifier
-    menuVisibleIconClass = iconClass <> menuVisibleModifier
-
-    menuOverlayElement = "__menu-overlay"
-    menuOverlayClass = block <> menuOverlayElement
-    visibleModifier = "--visible"
-    visibleMenuOverlayClass = menuOverlayClass <> visibleModifier
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX
