@@ -18,6 +18,7 @@ import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.Paper as Paper
+import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
@@ -61,6 +62,7 @@ type Props =
   , onLogin :: Effect Unit
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
+  , user :: Maybe User
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -228,6 +230,7 @@ render props =
       Vetrina.vetrina
         { onClose: Just props.onPaywallEvent
         , onLogin: props.onLogin
+        , user: props.user
         , products: Right case props.paper of
             HBL -> [ hblPremium ]
             ON -> [ onPremium ]

@@ -276,7 +276,8 @@ render setState state router onPaywallEvent =
                setState _ { modalView = Nothing, user = Just u }
                onPaywallEvent
                Aff.launchAff_ Auth.setMosaicoAuthCookies
-             Left _err ->
+             Left _err -> do
+               onPaywallEvent
                -- TODO: Handle properly
                Console.error $ "Login error " <> show _err
         , onClose: setState \s -> s { modalView = Nothing }
@@ -387,6 +388,7 @@ render setState state router onPaywallEvent =
         { paper: mosaicoPaper
         , article
         , onLogin: setState \s -> s { modalView = Just LoginModal }
+        , user: state.user
         , onPaywallEvent
         , onTagClick
         }

@@ -62,7 +62,7 @@ type JSProps =
   , paper              :: Nullable String
   , paymentMethods     :: Nullable (Array String)
   , loadingContainer   :: Nullable (JSX -> JSX)
-  , customNewPurchase  :: Nullable (JSX -> NewPurchase.State -> JSX)
+  , customNewPurchase  :: Nullable (JSX -> AccountStatus -> JSX)
   , orderSource        :: Nullable String
   , subscriptionExists :: Nullable JSX
   , askAccountAlways   :: Nullable Boolean
@@ -72,6 +72,8 @@ type Props =
    -- If onClose is Nothing, the final button in `Completed` view will not be shown
   { onClose            :: Maybe (Effect Unit)
   , onLogin            :: Effect Unit
+  -- Used to signal from the outside that user status has changed
+  , user               :: Maybe User
   , products           :: Either Error (Array Product)
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
@@ -79,7 +81,7 @@ type Props =
   , paper              :: Maybe Paper
   , paymentMethods     :: Array User.PaymentMethod
   , loadingContainer   :: Maybe (JSX -> JSX)
-  , customNewPurchase  :: Maybe (JSX -> NewPurchase.State -> JSX)
+  , customNewPurchase  :: Maybe (JSX -> AccountStatus -> JSX)
   , orderSource        :: OrderSource
   , subscriptionExists :: JSX
   , askAccountAlways   :: Boolean
@@ -89,6 +91,7 @@ fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { onClose: toMaybe jsProps.onClose
   , onLogin: fromMaybe (pure unit) $ toMaybe jsProps.onLogin
+  , user: Nothing
   , products:
       let productError = error "Did not get any valid products in props!"
       in case toMaybe jsProps.products of
@@ -199,6 +202,9 @@ didMount self = do
         if length paymentMethods == 1
         then head paymentMethods
         else Nothing
+  foldMap (\user -> self.setState _ { user = Just user
+                                    , accountStatus = LoggedInAccount user
+                                    }) self.props.user
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
   Aff.launchAff_ do
@@ -361,7 +367,7 @@ render self = vetrinaContainer self $
   where
     onRetry = self.setState _ { purchaseState = NewPurchase }
     newPurchase = Purchase.NewPurchase.newPurchase
-      { accountStatus: self.state.accountStatus
+      { accountStatus: maybe self.state.accountStatus LoggedInAccount self.props.user
       , products: self.state.products
       , errorMessage : Nothing
       , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
@@ -374,6 +380,7 @@ render self = vetrinaContainer self $
       , paymentMethod: self.state.paymentMethod
       , paymentMethods: self.state.paymentMethods
       , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
+      , onEmailChange: self.setState _ { accountStatus = NewAccount }
       , customRender: self.props.customNewPurchase
       }
 

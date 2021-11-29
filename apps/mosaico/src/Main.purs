@@ -231,6 +231,7 @@ renderArticle env uuid article mostReadArticles = do
               { paper: mosaicoPaper
               , article: Right a
               , onLogin: pure unit
+              , user: Nothing
               , onPaywallEvent: pure unit
               , onTagClick: const mempty
               }
@@ -399,6 +400,7 @@ notFound env _ _ = do
           { paper: mosaicoPaper
           , article: Right notFoundArticle
           , onLogin: pure unit
+          , user: Nothing
           , onPaywallEvent: pure unit
           , onTagClick: const mempty
           }
