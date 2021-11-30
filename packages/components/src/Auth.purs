@@ -2,12 +2,17 @@ module KSF.Auth where
 
 import Prelude
 
+import Affjax (defaultRequest, request) as AX
+import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
+import Data.Either (Either(..))
+import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
 import Data.Traversable (for_, traverse_)
 import Data.UUID as UUID
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Exception (throw)
 import KSF.Api (UserAuth)
@@ -43,3 +48,29 @@ requireToken =
   loadToken >>= case _ of
     Nothing -> liftEffect $ throw "Did not find uuid/token in local storage."
     Just loginResponse -> pure loginResponse
+
+setMosaicoAuthCookies :: Aff Unit
+setMosaicoAuthCookies = do
+  auth <- loadToken
+  case auth of
+    Nothing -> pure unit
+    Just { userId, authToken } -> do
+      let request = AX.defaultRequest
+            { url = "/api/authCookie"
+            , method = Left POST
+            , headers =
+                [ AX.RequestHeader "AuthUser" $ UUID.toString userId
+                , AX.RequestHeader "Authorization" (Api.oauthToken authToken)
+                ]
+            }
+      _ <- AX.request request
+      pure unit
+
+deleteMosaicoAuthCookies :: Aff Unit
+deleteMosaicoAuthCookies = do
+  let request = AX.defaultRequest
+                  { url = "/api/authCookie"
+                  , method = Left DELETE
+                  }
+  _ <- AX.request request
+  pure unit

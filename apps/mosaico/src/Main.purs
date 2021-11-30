@@ -2,6 +2,7 @@ module Main where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, find, foldl, null)
@@ -11,9 +12,10 @@ import Data.Foldable (fold, foldM, foldMap)
 import Data.HashMap as HashMap
 import Data.List (List, intercalate)
 import Data.List as List
+import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
-import Data.String (Pattern(..), Replacement(..), replace)
+import Data.String (Pattern(..), Replacement(..), split, replace)
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
 import Data.String.Regex.Flags (ignoreCase) as Regex
@@ -27,7 +29,7 @@ import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
 import JSURI as URI
-import KSF.Api (Token(..), UserAuth)
+import KSF.Api (Token(..), UserAuth, parseToken)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
@@ -48,7 +50,7 @@ import Payload.Server.Handlers as Handlers
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
-import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
+import Payload.Spec (type (:), DELETE, GET, POST, Guards, Spec(Spec), Nil)
 import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
@@ -127,6 +129,15 @@ spec ::
                 , params :: { categoryName :: String }
                 , guards :: Guards ("category" : Nil)
                 }
+          , setAuthCookie ::
+              POST "/api/authCookie"
+                { response :: ResponseBody
+                , guards :: Guards ("credentials" : Nil)
+                }
+          , deleteAuthCookie ::
+              DELETE "/api/authCookie"
+                { response :: ResponseBody
+                }
           , notFound ::
               GET "/<..path>"
                 { response :: ResponseBody
@@ -163,6 +174,8 @@ main = do
           , tagList: tagList env
           , staticPage: staticPage env
           , categoryPage: categoryPage env
+          , setAuthCookie: setAuthCookie
+          , deleteAuthCookie: deleteAuthCookie
           , notFound: notFound env Nothing
           }
         guards = { credentials: getCredentials, category: parseCategory env }
@@ -180,11 +193,12 @@ getArticle
   :: Env
   -> { params :: { uuidOrSlug :: String }, guards :: { credentials :: Maybe UserAuth } }
   -> Aff (Response ResponseBody)
-getArticle env r@{ params: { uuidOrSlug } }
+getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
   | Just uuid <- UUID.parseUUID uuidOrSlug = do
       article <- Lettera.getArticle uuid r.guards.credentials
       mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
-      renderArticle env (Just uuidOrSlug) article mostReadArticles
+      setCredentials credentials
+        <$> renderArticle env (Just uuidOrSlug) article mostReadArticles
   | otherwise = do
     article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials
     case article of
@@ -392,14 +406,45 @@ notFound env _ _ = do
     appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ Response.notFound $ StringBody $ html
 
+setAuthCookie :: { guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
+setAuthCookie { guards: { credentials } } =
+  setCredentials credentials <$> pure (Response.ok EmptyBody)
+
+deleteAuthCookie :: {} -> Aff (Response ResponseBody)
+deleteAuthCookie {} =
+  pure $ Response
+    { status: Status.ok
+    , body: EmptyBody
+    , headers: Headers.fromFoldable [ Tuple "Set-Cookie" "CombinedAuth=; Secure; SameSite=Strict; HttpOnly; Path=/; Max-age=0" ]
+    }
+
+-- Payload 0.4.0 can't do multiple Set-Cookie headers
+setCredentials :: forall a. Maybe UserAuth -> Response a -> Response a
+setCredentials Nothing response = response
+setCredentials (Just { authToken, userId }) (Response response@{ headers }) = Response
+  response { headers = Headers.set "Set-Cookie" cookies headers }
+  where
+    cookies = "CombinedAuth=" <> (\(Token t) -> t) authToken <> "|" <> UUID.toString userId <>
+              "; Secure; SameSite=Strict; HttpOnly; Path=/; Max-Age=31536000"
+
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
 getCredentials req = do
   headers <- Guards.headers req
-  let tokens = do
-        authToken <- Token <$> Headers.lookup "Authorization" headers
-        userId <- UUID.parseUUID =<< Headers.lookup "Auth-User" headers
-        pure { authToken, userId }
-  pure tokens
+  cookies <- Guards.cookies req
+  pure $
+    (do
+        authToken <- parseToken =<< Headers.lookup "Authorization" headers
+        userId <- UUID.parseUUID =<< Headers.lookup "AuthUser" headers
+        pure { authToken, userId }) <|>
+    (do
+        combined <- Map.lookup "CombinedAuth" cookies
+        authToken /\ userId <- case split (Pattern "|") combined of
+          [a, u] -> do
+            userId <- UUID.parseUUID u
+            -- Cookie token value is without prefix
+            Just $ (Token a) /\ userId
+          _ -> Nothing
+        pure { authToken, userId })
 
 parseCategory :: Env -> HTTP.Request -> Aff (Either Failure Category)
 parseCategory { categoryRegex, categoryStructure } req = do

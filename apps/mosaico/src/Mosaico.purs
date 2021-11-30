@@ -18,6 +18,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import KSF.Auth as Auth
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
@@ -279,6 +280,7 @@ render setState state router onPaywallEvent =
              Right u -> do
                setState _ { modalView = Nothing, user = Just u }
                onPaywallEvent
+               Aff.launchAff_ Auth.setMosaicoAuthCookies
              Left _err ->
                -- TODO: Handle properly
                Console.error $ "Login error " <> show _err
