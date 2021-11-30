@@ -93,9 +93,9 @@ type JSProps =
   , tagArticlesName :: Nullable String
   , tagArticles :: Nullable (Array Json)
   , initialFrontpageFeed :: Nullable { feedType    :: Nullable String
-                              , feedPage    :: Nullable String
-                              , feedContent :: Nullable String
-                              }
+                                     , feedPage    :: Nullable String
+                                     , feedContent :: Nullable String
+                                     }
   }
 
 data ArticleFeed
@@ -298,21 +298,12 @@ fromJSProps jsProps =
           f <- toMaybe feed.feedType
           case String.toLower f of
             "categoryfeed" -> Just $ CategoryFeed (map CategoryLabel feedPage)
-            "tagfeed" -> map (TagFeed <<< Tag) feedPage
-            _ -> Nothing
-        let feedContent = fold do
-          --    _ <- Debug.trace ("aaa1") (\_ -> Just "")
-              f <- toMaybe feed.feedContent
-
-              let j = jsonParser f
-              _ <- Debug.trace ("jsoni " <> (show (either (const $ false) (isArray) j))) (\_ -> Just "")
-              jj <- either (\_ -> Just [jsonEmptyArray]) toArray j
-              -- a <- toArray j
-              _ <- Debug.trace ("aaa3" <> unsafeCoerce jj) (\_ -> Just "")
-              pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) jj
-        -- Alt.guard (not $ null feedContent)
-    --    ff <- toMaybe feed.feedContent
-      --  _ <- Debug.trace ("asd" <> (unsafeCoerce $ Foreign.readArray ff)) (\_ -> Just "")
+            "tagfeed"      -> map (TagFeed <<< Tag) feedPage
+            _              -> Nothing
+        feedContent <- do
+          content <- toMaybe feed.feedContent >>= (jsonParser >>> hush) >>= toArray
+          Alt.guard (not $ null content)
+          pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) content
         pure $ HashMap.singleton feedType feedContent
 
       staticPageContent = toMaybe jsProps.staticPageContent
