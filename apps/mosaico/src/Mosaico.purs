@@ -2,10 +2,12 @@ module Mosaico where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
+import Control.Alternative as Alt
+import Data.Argonaut.Core (Json, toArray, fromString, isArray,jsonEmptyArray)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (mapMaybe, null)
-import Data.Either (Either(..), either, hush)
+import Data.Argonaut.Parser (jsonParser)
+import Data.Array (mapMaybe, null, head, length)
+import Data.Either (Either(..), either, hush, isRight, fromRight)
 import Data.Foldable (fold, foldMap)
 import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
@@ -15,11 +17,13 @@ import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.String as String
 import Data.UUID as UUID
+import Debug as Debug
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Foreign as Foreign
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
@@ -43,6 +47,7 @@ import Routing.PushState (LocationState, PushStateInterface, locations, makeInte
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
+import Unsafe.Coerce (unsafeCoerce)
 
 data ModalView = LoginModal
 
@@ -76,7 +81,7 @@ type Props =
   , categoryStructure :: Array Category
   , tagArticlesName :: Maybe Tag
   , tagArticles :: Maybe (Array ArticleStub)
-  , frontpageFeed :: HashMap ArticleFeed (Array ArticleStub)
+  , initialFrontpageFeed :: HashMap ArticleFeed (Array ArticleStub)
   }
 type JSProps =
   { article :: Nullable Json
@@ -87,9 +92,9 @@ type JSProps =
   , categoryStructure :: Nullable (Array Json)
   , tagArticlesName :: Nullable String
   , tagArticles :: Nullable (Array Json)
-  , frontpageFeed :: Nullable { feedType    :: Nullable String
+  , initialFrontpageFeed :: Nullable { feedType    :: Nullable String
                               , feedPage    :: Nullable String
-                              , feedContent :: Nullable (Array Json)
+                              , feedContent :: Nullable String
                               }
   }
 
@@ -122,6 +127,7 @@ mosaicoComponent initialValues props = React.do
                          -- , tagArticlesLoading = false
                          -- , tagArticles = fold props.tagArticles
                          , categoryStructure = props.categoryStructure
+                         , frontpageFeeds = props.initialFrontpageFeed
                     --     , mainArticleFeed = fold props.mainArticleFeed
                          }
 
@@ -137,6 +143,10 @@ mosaicoComponent initialValues props = React.do
               Left _ -> setState _ { article = Nothing }
 
   useEffectOnce do
+    -- Console.log $ "wat " <> (show $ HashMap.keys props.frontpageFeed)
+    -- Console.log $ "FEED z " <> (show $ length $ fromMaybe (unsafeCoerce ["aaa", "a", "a"]) $ HashMap.lookup (CategoryFeed Nothing) props.frontpageFeed)
+
+    -- Console.log $ "FEED 1 " <> (maybe "nope" (_.title) (head =<< HashMap.lookup (CategoryFeed Nothing) props.frontpageFeed))
     Aff.launchAff_ do
       cats <- if null props.categoryStructure
               then Lettera.getCategoryStructure HBL
@@ -151,9 +161,9 @@ mosaicoComponent initialValues props = React.do
     case state.route of
       Routes.Frontpage
         -- Do we already have the front page feed?
-        | Just f <- HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds -> setState _ { frontpageArticles = f }
+        | Just f <- HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds -> pure unit
         -- If no, fetch from Lettera
-        | otherwise ->
+        | otherwise -> do
           Aff.launchAff_ do
             frontpage <- Lettera.getFrontpage HBL Nothing
             liftEffect $ setState \s -> s { frontpageArticles = frontpage
@@ -282,7 +292,7 @@ fromJSProps jsProps =
 
       frontpageFeed :: Maybe (HashMap ArticleFeed (Array ArticleStub))
       frontpageFeed = do --map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageFeed
-        feed <- toMaybe jsProps.frontpageFeed
+        feed <- toMaybe jsProps.initialFrontpageFeed
         let feedPage = toMaybe feed.feedPage
         feedType <- do
           f <- toMaybe feed.feedType
@@ -290,8 +300,20 @@ fromJSProps jsProps =
             "categoryfeed" -> Just $ CategoryFeed (map CategoryLabel feedPage)
             "tagfeed" -> map (TagFeed <<< Tag) feedPage
             _ -> Nothing
-        feedContent <- toMaybe feed.feedContent
-        pure $ HashMap.singleton feedType $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) feedContent
+        let feedContent = fold do
+          --    _ <- Debug.trace ("aaa1") (\_ -> Just "")
+              f <- toMaybe feed.feedContent
+
+              let j = jsonParser f
+              _ <- Debug.trace ("jsoni " <> (show (either (const $ false) (isArray) j))) (\_ -> Just "")
+              jj <- either (\_ -> Just [jsonEmptyArray]) toArray j
+              -- a <- toArray j
+              _ <- Debug.trace ("aaa3" <> unsafeCoerce jj) (\_ -> Just "")
+              pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) jj
+        -- Alt.guard (not $ null feedContent)
+    --    ff <- toMaybe feed.feedContent
+      --  _ <- Debug.trace ("asd" <> (unsafeCoerce $ Foreign.readArray ff)) (\_ -> Just "")
+        pure $ HashMap.singleton feedType feedContent
 
       staticPageContent = toMaybe jsProps.staticPageContent
       -- Decoding errors are being hushed here, although if this
@@ -300,7 +322,7 @@ fromJSProps jsProps =
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
       tagArticlesName = uriComponentToTag <$> toMaybe jsProps.tagArticlesName
       tagArticles = mapMaybe (hush <<< parseArticleStubWithoutLocalizing) <$> toMaybe jsProps.tagArticles
-  in { article, mostReadArticles, frontpageFeed: fromMaybe HashMap.empty frontpageFeed, staticPageContent, categoryStructure, tagArticles, tagArticlesName }
+  in { article, mostReadArticles, initialFrontpageFeed: fromMaybe HashMap.empty frontpageFeed, staticPageContent, categoryStructure, tagArticles, tagArticlesName }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
