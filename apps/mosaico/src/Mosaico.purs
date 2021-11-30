@@ -53,7 +53,6 @@ data ModalView = LoginModal
 
 type State =
   { article :: Maybe FullArticle
-  , frontpageArticles :: Array ArticleStub
   , mostReadArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -148,17 +147,15 @@ mosaicoComponent initialValues props = React.do
         | otherwise -> do
           Aff.launchAff_ do
             frontpage <- Lettera.getFrontpage HBL Nothing
-            liftEffect $ setState \s -> s { frontpageArticles = frontpage
-                                          , article = Nothing
+            liftEffect $ setState \s -> s { article = Nothing
                                           , frontpageFeeds = HashMap.insert (CategoryFeed Nothing) frontpage s.frontpageFeeds
                                           }
       Routes.TagPage tag ->
         case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
-          Just feed -> setState _ { frontpageArticles = feed }
+          Just feed -> pure unit -- setState _ { frontpageArticles = feed }
           Nothing   -> Aff.launchAff_ do
             tagFeed <- Lettera.getByTag 0 20 tag HBL
-            liftEffect $ setState \s -> s { frontpageArticles = tagFeed
-                                          , frontpageFeeds = HashMap.insert (TagFeed tag) tagFeed s.frontpageFeeds
+            liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert (TagFeed tag) tagFeed s.frontpageFeeds
                                           }
       -- Always uses server side provided article
       Routes.DraftPage -> pure unit
@@ -171,13 +168,12 @@ mosaicoComponent initialValues props = React.do
       Routes.CategoryPage category -> do
         -- TODO: Loading spinner
         case HashMap.lookup (CategoryFeed (Just category)) state.frontpageFeeds of
-          Just feed -> setState _ { frontpageArticles = feed }
+          Just feed -> pure unit -- setState _ { frontpageArticles = feed }
           _ -> do
             Aff.launchAff_ do
               categoryFeed <- Lettera.getFrontpage HBL (Just $ show category)
               liftEffect $
-                setState \s -> s { frontpageArticles = categoryFeed
-                                 , article = Nothing
+                setState \s -> s { article = Nothing
                                  , frontpageFeeds = HashMap.insert (CategoryFeed (Just category)) categoryFeed s.frontpageFeeds
                                  }
       Routes.StaticPage page
@@ -228,7 +224,6 @@ getInitialValues = do
   pure
     { state:
         { article: Nothing
-        , frontpageArticles: []
         , mostReadArticles: []
         , route: initialRoute
         , clickedArticle: Nothing
@@ -382,7 +377,7 @@ render setState state router onPaywallEvent =
     onCategoryClick c =
       case state.route of
         Routes.CategoryPage category | category == c -> pure unit
-        _ -> setState _ { frontpageArticles = [] }
+        _ -> pure unit -- setState _ { frontpageArticles = [] }
 
     onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window
