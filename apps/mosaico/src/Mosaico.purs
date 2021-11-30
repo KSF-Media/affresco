@@ -55,9 +55,6 @@ type State =
   { article :: Maybe FullArticle
   , frontpageArticles :: Array ArticleStub
   , mostReadArticles :: Array ArticleStub
-  -- , tagArticlesName :: Maybe Tag
-  -- , tagArticlesLoading :: Boolean
-  -- , tagArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
@@ -69,29 +66,23 @@ type State =
   , user :: Maybe User
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
-  , frontpageFeeds :: HashMap ArticleFeed (Array ArticleStub) -- HashMap (Maybe CategoryLabel) (Array ArticleStub)
+  , frontpageFeeds :: HashMap ArticleFeed (Array ArticleStub)
   }
 
 type SetState = (State -> State) -> Effect Unit
 type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
-  -- , frontpageArticles :: Maybe (Array ArticleStub)
   , staticPageContent :: Maybe StaticPage
   , categoryStructure :: Array Category
-  , tagArticlesName :: Maybe Tag
-  , tagArticles :: Maybe (Array ArticleStub)
   , initialFrontpageFeed :: HashMap ArticleFeed (Array ArticleStub)
   }
 type JSProps =
   { article :: Nullable Json
   , isPreview :: Nullable Boolean
   , mostReadArticles :: Nullable (Array Json)
-  -- , frontpageArticles :: Nullable (Array Json)
   , staticPageContent :: Nullable StaticPage
   , categoryStructure :: Nullable (Array Json)
-  , tagArticlesName :: Nullable String
-  , tagArticles :: Nullable (Array Json)
   , initialFrontpageFeed :: Nullable { feedType    :: Nullable String
                                      , feedPage    :: Nullable String
                                      , feedContent :: Nullable String
@@ -120,15 +111,10 @@ mosaicoComponent
 mosaicoComponent initialValues props = React.do
   state /\ setState <- useState initialValues.state
                          { article = props.article
-                        -- , frontpageArticles = fold props.frontpageArticles
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse props.staticPageContent
-                         -- , tagArticlesName = props.tagArticlesName
-                         -- , tagArticlesLoading = false
-                         -- , tagArticles = fold props.tagArticles
                          , categoryStructure = props.categoryStructure
                          , frontpageFeeds = props.initialFrontpageFeed
-                    --     , mainArticleFeed = fold props.mainArticleFeed
                          }
 
   let loadArticle articleId = Aff.launchAff_ do
@@ -143,10 +129,6 @@ mosaicoComponent initialValues props = React.do
               Left _ -> setState _ { article = Nothing }
 
   useEffectOnce do
-    -- Console.log $ "wat " <> (show $ HashMap.keys props.frontpageFeed)
-    -- Console.log $ "FEED z " <> (show $ length $ fromMaybe (unsafeCoerce ["aaa", "a", "a"]) $ HashMap.lookup (CategoryFeed Nothing) props.frontpageFeed)
-
-    -- Console.log $ "FEED 1 " <> (maybe "nope" (_.title) (head =<< HashMap.lookup (CategoryFeed Nothing) props.frontpageFeed))
     Aff.launchAff_ do
       cats <- if null props.categoryStructure
               then Lettera.getCategoryStructure HBL
@@ -178,18 +160,6 @@ mosaicoComponent initialValues props = React.do
             liftEffect $ setState \s -> s { frontpageArticles = tagFeed
                                           , frontpageFeeds = HashMap.insert (TagFeed tag) tagFeed s.frontpageFeeds
                                           }
-        -- | Just tag == state.tagArticlesName -> pure unit
-        -- | otherwise -> do
-        --     setState _ { tagArticlesName = Just tag
-        --                , tagArticles = mempty
-        --                , tagArticlesLoading = true
-        --                }
-        --     Aff.launchAff_ do
-        --       byTag <- Lettera.getByTag 0 20 tag HBL
-        --       liftEffect $ setState _ { tagArticlesName = Just tag
-        --                               , tagArticles = byTag
-        --                               , tagArticlesLoading = false
-        --                               }
       -- Always uses server side provided article
       Routes.DraftPage -> pure unit
       Routes.ArticlePage articleId
@@ -260,9 +230,6 @@ getInitialValues = do
         { article: Nothing
         , frontpageArticles: []
         , mostReadArticles: []
-        -- , tagArticlesName: Nothing
-        -- , tagArticlesLoading: false
-        -- , tagArticles: []
         , route: initialRoute
         , clickedArticle: Nothing
         , modalView: Nothing
@@ -311,9 +278,7 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
-      tagArticlesName = uriComponentToTag <$> toMaybe jsProps.tagArticlesName
-      tagArticles = mapMaybe (hush <<< parseArticleStubWithoutLocalizing) <$> toMaybe jsProps.tagArticles
-  in { article, mostReadArticles, initialFrontpageFeed: fromMaybe HashMap.empty frontpageFeed, staticPageContent, categoryStructure, tagArticles, tagArticlesName }
+  in { article, mostReadArticles, initialFrontpageFeed: fromMaybe HashMap.empty frontpageFeed, staticPageContent, categoryStructure }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -359,9 +324,6 @@ render setState state router onPaywallEvent =
          | Just tagFeed <- HashMap.lookup (TagFeed tag) state.frontpageFeeds
          -> frontpage tagFeed
          | otherwise -> renderArticle (Right notFoundArticle)
-         -- if state.tagArticlesLoading || (not $ null state.tagArticles)
-         --   then frontpage state.tagArticles
-         --   else renderArticle (Right notFoundArticle)
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ state.menuComponent
