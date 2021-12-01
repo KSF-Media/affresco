@@ -33,6 +33,7 @@ import KSF.Api (Token(..), UserAuth, parseToken)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
+import Mosaico.Header.Menu as Menu
 import Mosaico.Article as Article
 import Mosaico.Frontpage as Frontpage
 import MosaicoServer (MainContent(..))
@@ -118,6 +119,9 @@ spec ::
                 { response :: TextHtml
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , menu ::
+              GET "/meny"
+                { response :: TextHtml }
          , staticPage ::
               GET "/sida/<pageName>"
                 { response :: ResponseBody
@@ -292,6 +296,25 @@ frontpage env _ = do
                   ]
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
+
+menu :: Env -> Aff TextHtml
+menu env = do
+  mosaico <- liftEffect MosaicoServer.app
+  menuComponent <- liftEffect Menu.menuComponent
+  let mosaicoString =
+        DOM.renderToString
+        $ mosaico
+          { mainContent:
+            MenuContent
+            $ menuComponent
+                { categoryStructure: env.categoryStructure
+                , onCategoryClick: (\_ _ -> mempty)
+                }
+            , mostReadArticles: []
+            , categoryStructure: env.categoryStructure
+          }
+  -- TODO: Make this a full HTML document
+  pure $ TextHtml mosaicoString
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
