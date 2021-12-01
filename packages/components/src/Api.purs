@@ -2,6 +2,8 @@ module KSF.Api where
 
 import Prelude
 
+import Data.Maybe (Maybe)
+import Data.String as String
 import Data.UUID (UUID)
 import Simple.JSON (class ReadForeign, class WriteForeign)
 
@@ -21,6 +23,9 @@ invalidateCacheHeader _ = "max-age=0"
 
 oauthToken :: Token -> String
 oauthToken (Token token) = "OAuth " <> token
+
+parseToken :: String -> Maybe Token
+parseToken = map Token <<< String.stripPrefix (String.Pattern "OAuth ")
 
 type UserAuth =
   { userId    :: UUID

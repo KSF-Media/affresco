@@ -347,7 +347,8 @@ renderLoginForm self =
                 { type_: InputField.Text
                 , placeholder: "E-postadress"
                 , label: Just "E-postadress"
-                , name: "accountEmail"
+                , name: "username"
+                , autoComplete: "username"
                 , value: Nothing
                 , onChange: \email -> self.setState _ { formEmail = email }
                 , validationError:
@@ -358,7 +359,8 @@ renderLoginForm self =
                 { type_: InputField.Password
                 , placeholder: "Lösenord"
                 , label: Just "Lösenord"
-                , name: "accountPassword"
+                , name: "password"
+                , autoComplete: "current-password"
                 , value: Nothing
                 , onChange: \pw -> self.setState _ { formPassword = pw }
                 , validationError:
