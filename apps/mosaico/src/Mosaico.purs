@@ -362,7 +362,7 @@ render setState state router onPaywallEvent =
     onCategoryClick c =
       case state.route of
         Routes.CategoryPage category | category == c -> pure unit
-        _ -> pure unit -- setState _ { frontpageArticles = [] }
+        _ -> pure unit
 
     onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window
