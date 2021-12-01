@@ -3,31 +3,29 @@ module Mosaico where
 import Prelude
 
 import Control.Alternative as Alt
-import Data.Argonaut.Core (Json, toArray, fromString, isArray,jsonEmptyArray)
+import Data.Argonaut.Core (Json, toArray)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
-import Data.Array (mapMaybe, null, head, length)
-import Data.Either (Either(..), either, hush, isRight, fromRight)
+import Data.Array (mapMaybe, null)
+import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
 import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.String as String
 import Data.UUID as UUID
-import Debug as Debug
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Foreign as Foreign
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category, CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category, CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -47,7 +45,6 @@ import Routing.PushState (LocationState, PushStateInterface, locations, makeInte
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
-import Unsafe.Coerce (unsafeCoerce)
 
 data ModalView = LoginModal
 
@@ -138,25 +135,21 @@ mosaicoComponent initialValues props = React.do
         void $ locations (routeListener cats setState) initialValues.nav
     pure mempty
 
+  let setFrontpage feedName =
+        case HashMap.lookup feedName state.frontpageFeeds of
+          Nothing -> Aff.launchAff_ do
+            let letteraFn =
+                  case feedName of
+                    TagFeed t -> Lettera.getByTag 0 20 t HBL
+                    CategoryFeed c -> Lettera.getFrontpage HBL (map unwrap c)
+            feed <- letteraFn
+            liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds }
+          Just _ -> pure unit
+
   useEffect state.route do
     case state.route of
-      Routes.Frontpage
-        -- Do we already have the front page feed?
-        | Just f <- HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds -> pure unit
-        -- If no, fetch from Lettera
-        | otherwise -> do
-          Aff.launchAff_ do
-            frontpage <- Lettera.getFrontpage HBL Nothing
-            liftEffect $ setState \s -> s { article = Nothing
-                                          , frontpageFeeds = HashMap.insert (CategoryFeed Nothing) frontpage s.frontpageFeeds
-                                          }
-      Routes.TagPage tag ->
-        case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
-          Just feed -> pure unit -- setState _ { frontpageArticles = feed }
-          Nothing   -> Aff.launchAff_ do
-            tagFeed <- Lettera.getByTag 0 20 tag HBL
-            liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert (TagFeed tag) tagFeed s.frontpageFeeds
-                                          }
+      Routes.Frontpage -> setFrontpage (CategoryFeed Nothing)
+      Routes.TagPage tag -> setFrontpage (TagFeed tag)
       -- Always uses server side provided article
       Routes.DraftPage -> pure unit
       Routes.ArticlePage articleId
@@ -165,17 +158,7 @@ mosaicoComponent initialValues props = React.do
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
-      Routes.CategoryPage category -> do
-        -- TODO: Loading spinner
-        case HashMap.lookup (CategoryFeed (Just category)) state.frontpageFeeds of
-          Just feed -> pure unit -- setState _ { frontpageArticles = feed }
-          _ -> do
-            Aff.launchAff_ do
-              categoryFeed <- Lettera.getFrontpage HBL (Just $ show category)
-              liftEffect $
-                setState \s -> s { article = Nothing
-                                 , frontpageFeeds = HashMap.insert (CategoryFeed (Just category)) categoryFeed s.frontpageFeeds
-                                 }
+      Routes.CategoryPage category -> setFrontpage (CategoryFeed (Just category))
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
@@ -315,10 +298,12 @@ render setState state router onPaywallEvent =
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.Frontpage -> frontpage $ fold $ HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.TagPage tag
-         | Just tagFeed <- HashMap.lookup (TagFeed tag) state.frontpageFeeds
-         -> frontpage tagFeed
-         | otherwise -> renderArticle (Right notFoundArticle)
+       Routes.TagPage tag ->
+         case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
+           Just tagFeed
+             | not $ null tagFeed -> frontpage tagFeed
+             | otherwise -> mosaicoDefaultLayout $ renderArticle (Right notFoundArticle)
+           Nothing -> mosaicoDefaultLayout mempty -- TODO: Loading spinner
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ state.menuComponent
