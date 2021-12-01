@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Argonaut.Core as JSON
+import Data.Argonaut.Core (stringify)
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (cons, find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -25,6 +26,7 @@ import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
+import Effect.Exception (throw)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
@@ -54,7 +56,6 @@ import Payload.Spec (type (:), DELETE, GET, POST, Guards, Spec(Spec), Nil)
 import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
-import Unsafe.Coerce (unsafeCoerce)
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
@@ -164,7 +165,9 @@ main = do
   Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure HBL
     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
-    let categoryRegex = unsafeCoerce $ Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase
+    categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
+      Right r -> pure r
+      Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages }
         handlers =
           { getDraftArticle: getDraftArticle env
@@ -286,12 +289,16 @@ frontpage env _ = do
           }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageArticles" /\ encodeStringifyArticleStubs articles
+                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" articles
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ]
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
+
+mkArticleFeed :: Maybe String -> String -> Array ArticleStub -> String
+mkArticleFeed feedPage feedType feedContent =
+  stringify $ encodeJson { feedPage, feedType, feedContent: encodeStringifyArticleStubs feedContent }
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
@@ -318,9 +325,9 @@ tagList env { params: { tag } } = do
             }
     html <- liftEffect do
               let windowVars =
-                    [ "tagListArticles"     /\ encodeStringifyArticleStubs articles
-                    , "tagListArticlesName" /\ tagToURIComponent tag'
-                    , "mostReadArticles"    /\ encodeStringifyArticleStubs mostReadArticles
+                    [ "frontpageFeed"     /\ mkArticleFeed (Just $ tagToURIComponent tag') "tagfeed" articles
+                    , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                    , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                     ]
               appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
     pure $ Response.ok $ StringBody html
@@ -378,7 +385,7 @@ categoryPage env { params: { categoryName } } = do
                             }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageArticles" /\ encodeStringifyArticleStubs articles
+                  [ "frontpageFeed"     /\ mkArticleFeed (Just categoryName) "categoryfeed" articles
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ]

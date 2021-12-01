@@ -2,19 +2,23 @@ module Mosaico where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
+import Control.Alternative as Alt
+import Data.Argonaut.Core (Json, toArray)
 import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
+import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
+import Data.String as String
 import Data.UUID as UUID
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -22,7 +26,7 @@ import KSF.Auth as Auth
 import KSF.Paper (Paper(..))
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category, CategoryLabel, FullArticle(..), Tag, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category, CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Frontpage as Frontpage
@@ -47,11 +51,7 @@ data ModalView = LoginModal
 
 type State =
   { article :: Maybe FullArticle
-  , frontpageArticles :: Array ArticleStub
   , mostReadArticles :: Array ArticleStub
-  , tagArticlesName :: Maybe Tag
-  , tagArticlesLoading :: Boolean
-  , tagArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
@@ -63,29 +63,38 @@ type State =
   , user :: Maybe User
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
-  , frontpageFeeds :: HashMap (Maybe CategoryLabel) (Array ArticleStub)
+  , frontpageFeeds :: HashMap ArticleFeed (Array ArticleStub)
   }
 
 type SetState = (State -> State) -> Effect Unit
 type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
-  , frontpageArticles :: Maybe (Array ArticleStub)
   , staticPageContent :: Maybe StaticPage
   , categoryStructure :: Array Category
-  , tagArticlesName :: Maybe Tag
-  , tagArticles :: Maybe (Array ArticleStub)
+  , initialFrontpageFeed :: HashMap ArticleFeed (Array ArticleStub)
   }
 type JSProps =
   { article :: Nullable Json
   , isPreview :: Nullable Boolean
   , mostReadArticles :: Nullable (Array Json)
-  , frontpageArticles :: Nullable (Array Json)
   , staticPageContent :: Nullable StaticPage
   , categoryStructure :: Nullable (Array Json)
-  , tagArticlesName :: Nullable String
-  , tagArticles :: Nullable (Array Json)
+  , initialFrontpageFeed :: Nullable { feedType    :: Nullable String
+                                     , feedPage    :: Nullable String
+                                     , feedContent :: Nullable String
+                                     }
   }
+
+data ArticleFeed
+  = CategoryFeed (Maybe CategoryLabel) -- `Nothing` represents root
+  | TagFeed Tag
+derive instance eqArticleFeed :: Eq ArticleFeed
+instance showArticleFeed :: Show ArticleFeed where
+  show (CategoryFeed c) = "CategoryFeed " <> show c
+  show (TagFeed t) = "TagFeed" <> show t
+instance hashableArticleFeed :: Hashable ArticleFeed where
+  hash = hash <<< show
 
 app :: Component Props
 app = do
@@ -99,13 +108,10 @@ mosaicoComponent
 mosaicoComponent initialValues props = React.do
   state /\ setState <- useState initialValues.state
                          { article = props.article
-                         , frontpageArticles = fold props.frontpageArticles
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse props.staticPageContent
-                         , tagArticlesName = props.tagArticlesName
-                         , tagArticlesLoading = false
-                         , tagArticles = fold props.tagArticles
                          , categoryStructure = props.categoryStructure
+                         , frontpageFeeds = props.initialFrontpageFeed
                          }
 
   let loadArticle articleId = Aff.launchAff_ do
@@ -130,32 +136,21 @@ mosaicoComponent initialValues props = React.do
         void $ locations (routeListener cats setState) initialValues.nav
     pure mempty
 
+  let setFrontpage feedName =
+        case HashMap.lookup feedName state.frontpageFeeds of
+          Nothing -> Aff.launchAff_ do
+            let letteraFn =
+                  case feedName of
+                    TagFeed t -> Lettera.getByTag 0 20 t HBL
+                    CategoryFeed c -> Lettera.getFrontpage HBL (map unwrap c)
+            feed <- letteraFn
+            liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds }
+          Just _ -> pure unit
+
   useEffect state.route do
     case state.route of
-      Routes.Frontpage
-        -- Do we already have the front page feed?
-        | Just f <- HashMap.lookup Nothing state.frontpageFeeds -> setState _ { frontpageArticles = f }
-        -- If no, fetch from Lettera
-        | otherwise ->
-          Aff.launchAff_ do
-            frontpage <- Lettera.getFrontpage HBL Nothing
-            liftEffect $ setState \s -> s { frontpageArticles = frontpage
-                                          , article = Nothing
-                                          , frontpageFeeds = HashMap.insert Nothing frontpage s.frontpageFeeds
-                                          }
-      Routes.TagPage tag
-        | Just tag == state.tagArticlesName -> pure unit
-        | otherwise -> do
-            setState _ { tagArticlesName = Just tag
-                       , tagArticles = mempty
-                       , tagArticlesLoading = true
-                       }
-            Aff.launchAff_ do
-              byTag <- Lettera.getByTag 0 20 tag HBL
-              liftEffect $ setState _ { tagArticlesName = Just tag
-                                      , tagArticles = byTag
-                                      , tagArticlesLoading = false
-                                      }
+      Routes.Frontpage -> setFrontpage (CategoryFeed Nothing)
+      Routes.TagPage tag -> setFrontpage (TagFeed tag)
       -- Always uses server side provided article
       Routes.DraftPage -> pure unit
       Routes.ArticlePage articleId
@@ -164,18 +159,7 @@ mosaicoComponent initialValues props = React.do
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
-      Routes.CategoryPage category -> do
-        -- TODO: Loading spinner
-        case HashMap.lookup (Just category) state.frontpageFeeds of
-          Just feed -> setState _ { frontpageArticles = feed }
-          _ -> do
-            Aff.launchAff_ do
-              categoryFeed <- Lettera.getFrontpage HBL (Just $ show category)
-              liftEffect $
-                setState \s -> s { frontpageArticles = categoryFeed
-                                 , article = Nothing
-                                 , frontpageFeeds = HashMap.insert (Just category) categoryFeed s.frontpageFeeds
-                                 }
+      Routes.CategoryPage category -> setFrontpage (CategoryFeed (Just category))
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
@@ -224,11 +208,7 @@ getInitialValues = do
   pure
     { state:
         { article: Nothing
-        , frontpageArticles: []
         , mostReadArticles: []
-        , tagArticlesName: Nothing
-        , tagArticlesLoading: false
-        , tagArticles: []
         , route: initialRoute
         , clickedArticle: Nothing
         , modalView: Nothing
@@ -255,15 +235,29 @@ fromJSProps jsProps =
         | otherwise = FullArticle
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
-      frontpageArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageArticles
+
+      frontpageFeed :: Maybe (HashMap ArticleFeed (Array ArticleStub))
+      frontpageFeed = do
+        feed <- toMaybe jsProps.initialFrontpageFeed
+        let feedPage = toMaybe feed.feedPage
+        feedType <- do
+          f <- toMaybe feed.feedType
+          case String.toLower f of
+            "categoryfeed" -> Just $ CategoryFeed (map CategoryLabel feedPage)
+            "tagfeed"      -> map (TagFeed <<< Tag) feedPage
+            _              -> Nothing
+        feedContent <- do
+          content <- toMaybe feed.feedContent >>= (jsonParser >>> hush) >>= toArray
+          Alt.guard (not $ null content)
+          pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) content
+        pure $ HashMap.singleton feedType feedContent
+
       staticPageContent = toMaybe jsProps.staticPageContent
       -- Decoding errors are being hushed here, although if this
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
-      tagArticlesName = uriComponentToTag <$> toMaybe jsProps.tagArticlesName
-      tagArticles = mapMaybe (hush <<< parseArticleStubWithoutLocalizing) <$> toMaybe jsProps.tagArticles
-  in { article, mostReadArticles, frontpageArticles, staticPageContent, categoryStructure, tagArticles, tagArticlesName }
+  in { article, mostReadArticles, initialFrontpageFeed: fromMaybe HashMap.empty frontpageFeed, staticPageContent, categoryStructure }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -288,9 +282,9 @@ render setState state router onPaywallEvent =
         }
     _ -> mempty
   <> case state.route of
-       Routes.CategoryPage _category ->
+       Routes.CategoryPage category ->
          mosaicoDefaultLayout $ state.frontpageComponent
-           { frontpageArticles: state.frontpageArticles
+           { frontpageArticles: fold $ HashMap.lookup (CategoryFeed (Just category)) state.frontpageFeeds
            , onArticleClick: \article -> do
                setState _ { clickedArticle = Just article }
                void $ Web.scroll 0 0 =<< Web.window
@@ -303,13 +297,15 @@ render setState state router onPaywallEvent =
          -- If we have this article already in `state`, let's pass that to `articleComponent`
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
-         | otherwise                 -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> frontpage state.frontpageArticles
+         | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
+       Routes.Frontpage -> frontpage $ fold $ HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.TagPage _ ->
-         if state.tagArticlesLoading || (not $ null state.tagArticles)
-           then frontpage state.tagArticles
-           else renderArticle (Right notFoundArticle)
+       Routes.TagPage tag ->
+         case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
+           Just tagFeed
+             | not $ null tagFeed -> frontpage tagFeed
+             | otherwise -> mosaicoDefaultLayout $ renderArticle (Right notFoundArticle)
+           Nothing -> mosaicoDefaultLayout mempty -- TODO: Loading spinner
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ state.menuComponent
@@ -368,7 +364,7 @@ render setState state router onPaywallEvent =
     onCategoryClick c =
       case state.route of
         Routes.CategoryPage category | category == c -> pure unit
-        _ -> setState _ { frontpageArticles = [] }
+        _ -> pure unit
 
     onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window
