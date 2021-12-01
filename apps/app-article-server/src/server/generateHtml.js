@@ -19,7 +19,6 @@ export default function generateHtml(markup, article, user) {
      <script>window.user = ${user ? JSON.stringify(user) : null}</script>
      <script>document.addEventListener('DOMContentLoaded', function(event) {
 	pushLoadingArticleToGoogleTagManager(window.article, window.user);
-	positionAdsWithinArticle();
      })</script>
     `
     );

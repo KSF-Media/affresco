@@ -1,4 +1,3 @@
-require("dotenv").config();
 var cheerio = require("cheerio");
 
 // Writes mosaico html inside #app
@@ -17,4 +16,3 @@ exports.appendHeadImpl = function (element, HTML_TEMPLATE) {
 
 // Server Port
 exports.serverPort = process.env.PORT;
-
