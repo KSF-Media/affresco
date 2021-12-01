@@ -236,7 +236,7 @@ fromJSProps jsProps =
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
 
       frontpageFeed :: Maybe (HashMap ArticleFeed (Array ArticleStub))
-      frontpageFeed = do --map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.frontpageFeed
+      frontpageFeed = do
         feed <- toMaybe jsProps.initialFrontpageFeed
         let feedPage = toMaybe feed.feedPage
         feedType <- do
