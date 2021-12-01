@@ -1,6 +1,7 @@
 require 'open3'
 require 'json'
 require 'yaml'
+require 'fileutils'
 
 def run_command(command)
   puts "Running `#{command}`"
@@ -75,6 +76,10 @@ def setup_env(app)
     ENV['NODE_ENV'] = 'production'
   else
     ENV['NODE_ENV'] = 'development'
+    # Copy .env.local to .env.development for Parcel
+    if (File.exist?("#{app['path']}/.env.local"))
+      FileUtils.cp("#{app['path']}/.env.local", "#{app['path']}/.env.development")
+    end
   end
 end
 
