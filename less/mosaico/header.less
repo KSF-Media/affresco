@@ -74,7 +74,15 @@
 
     grid-column-start: 2;
 
-    background-image: url("../images/logo-hbl.svg");
+    #HBL & {
+      background-image: url("../images/logo-hbl.svg");
+    }
+    #VN & {
+      background-image: url("../images/logo-vn.svg");
+    }
+    #ON & {
+      background-image: url("../images/logo-on.svg");
+    }
     background-repeat: no-repeat;
 
     @media (min-width: @breakpoint-3col) {
@@ -163,7 +171,15 @@
 
 .mosaico-top-line {
   grid-area: line;
-  background-color: @hbl-orange;
+  #HBL & {
+    background-color: @hbl-orange;
+  }
+  #VN & {
+    background-color: @vn-red;
+  }
+  #ON & {
+    background-color: @on-blue;
+  }
   border: 0px;
   margin: 0px;
   width: 100%;
