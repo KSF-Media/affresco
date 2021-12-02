@@ -287,10 +287,7 @@ render setState state router onPaywallEvent =
        Routes.CategoryPage category ->
          mosaicoDefaultLayout $ state.frontpageComponent
            { frontpageArticles: fold $ HashMap.lookup (CategoryFeed (Just category)) state.frontpageFeeds
-           , onArticleClick: \article -> do
-               setState _ { clickedArticle = Just article }
-               void $ Web.scroll 0 0 =<< Web.window
-               router.pushState (write {}) $ "/artikel/" <> article.uuid
+           , onArticleClick
            , onTagClick
            }
        Routes.ArticlePage articleId
@@ -373,12 +370,14 @@ render setState state router onPaywallEvent =
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) $ "/tagg/" <> tagToURIComponent tag
 
+    onArticleClick article = capture_ do
+      setState _ { clickedArticle = Just article }
+      void $ Web.scroll 0 0 =<< Web.window
+      router.pushState (write {}) $ "/artikel/" <> article.uuid
+
     frontpage frontpageArticles = mosaicoDefaultLayout $ state.frontpageComponent
       { frontpageArticles
-      , onArticleClick: \article -> do
-          setState \s -> s { clickedArticle = Just article }
-          void $ Web.scroll 0 0 =<< Web.window
-          router.pushState (write {}) $ "/artikel/" <> article.uuid
+      , onArticleClick
       , onTagClick
       }
 
