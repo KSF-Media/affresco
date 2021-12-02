@@ -390,4 +390,5 @@ render setState state router onPaywallEvent =
         , user: state.user
         , onPaywallEvent
         , onTagClick
+        , onArticleClick
         }

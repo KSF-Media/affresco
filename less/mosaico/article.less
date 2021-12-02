@@ -238,7 +238,31 @@
     margin-top: 30px;
     margin-bottom: 10px;
   }
-
+  &__related {
+    display: block;
+    margin: 30px auto;
+    padding: 0 30px 0 15px;
+    ul {
+      list-style: none;
+      margin-top: 5px;
+      li {
+        border-left: 4px solid @hbl-orange; // TODO: deal with other site's colours
+        margin-bottom: 3px;
+        a {
+          margin-left: 10px;
+          text-decoration: none;
+          color: black;
+        }
+      }
+      li:first-child {
+        margin-top: 5px;
+      }
+    }
+    ul::before {
+      content: "LÄS OCKSÅ";
+      color: @hbl-orange;
+    }
+  }
 }
 
 .mosaico--article-draft {

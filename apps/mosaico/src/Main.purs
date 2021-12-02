@@ -234,6 +234,7 @@ renderArticle env uuid article mostReadArticles = do
               , user: Nothing
               , onPaywallEvent: pure unit
               , onTagClick: const mempty
+              , onArticleClick: const mempty
               }
           mosaicoString = DOM.renderToString
                           $ mosaico
@@ -403,6 +404,7 @@ notFound env _ _ = do
           , user: Nothing
           , onPaywallEvent: pure unit
           , onTagClick: const mempty
+          , onArticleClick: const mempty
           }
 
   mosaico <- liftEffect MosaicoServer.app
