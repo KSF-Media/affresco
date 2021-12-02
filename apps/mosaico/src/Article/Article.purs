@@ -6,7 +6,6 @@ import Bottega.Models.Order (OrderSource(..))
 import Data.Array (cons, head, snoc)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
-import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
@@ -52,9 +51,9 @@ getPreamble :: Either ArticleStub FullArticle -> Maybe String
 getPreamble (Left articleStub) = articleStub.preamble
 getPreamble (Right fullArticle) = _.preamble $ fromFullArticle fullArticle
 
-getBody :: Either ArticleStub FullArticle -> Array (Either String BodyElement)
+getBody :: Either ArticleStub FullArticle -> Array BodyElement
 getBody (Left _articleStub) = mempty
-getBody (Right fullArticle) = map Record.toSum <<< _.body $ fromFullArticle fullArticle
+getBody (Right fullArticle) = _.body $ fromFullArticle fullArticle
 
 type Props =
   { paper :: Paper
@@ -62,6 +61,7 @@ type Props =
   , onLogin :: Effect Unit
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
+  , onArticleClick :: ArticleStub -> EventHandler
   , user :: Maybe User
   }
 
@@ -262,53 +262,57 @@ render props =
 
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?
-    renderElement :: Either String BodyElement -> JSX
-    renderElement = case _ of
-      Left _   -> mempty
-      Right el -> case el of
-        Html content ->
-          -- Can't place div's or blockquotes under p's, so place them under div.
-          -- This is usually case with embeds
-          let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
-          in domFn
-             { dangerouslySetInnerHTML: { __html: content }
-             , className: block <> " " <> block <> "__html"
-             }
-        Headline str -> DOM.h4
-          { className: block <> " " <> block <> "__subheadline"
-          , children: [ DOM.text str ]
+    renderElement :: BodyElement -> JSX
+    renderElement el = case el of
+      Html content ->
+        -- Can't place div's or blockquotes under p's, so place them under div.
+        -- This is usually case with embeds
+        let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
+        in domFn
+           { dangerouslySetInnerHTML: { __html: content }
+           , className: block <> " " <> block <> "__html"
+           }
+      Headline str -> DOM.h4
+        { className: block <> " " <> block <> "__subheadline"
+        , children: [ DOM.text str ]
+        }
+      Image img -> DOM.div
+        { className: block
+        , children: [ renderImage img ]
+        }
+      Box boxData ->
+        DOM.div
+          { className: block <> " " <> block <> "__factbox"
+          , children:
+              [ box
+                  { headline: boxData.headline
+                  , title: boxData.title
+                  , content: boxData.content
+                  , paper: props.paper
+                  }
+              ]
           }
-        Image img -> DOM.div
-          { className: block
-          , children: [ renderImage img ]
+      Footnote footnote -> DOM.p
+          { className: block <> " " <> block <> "__footnote"
+          , children: [ DOM.text footnote ]
           }
-        Box boxData ->
-          DOM.div
-            { className: block <> " " <> block <> "__factbox"
-            , children:
-                [ box
-                    { headline: boxData.headline
-                    , title: boxData.title
-                    , content: boxData.content
-                    , paper: props.paper
-                    }
-                ]
-            }
-        Footnote footnote -> DOM.p
-            { className: block <> " " <> block <> "__footnote"
-            , children: [ DOM.text footnote ]
-            }
-        Quote { body, author } -> DOM.figure
-            { className: block <> " " <> block <> "__quote"
-            , children:
-                [ DOM.blockquote_ [ DOM.text body ]
-                , foldMap (DOM.figcaption_ <<< pure <<< DOM.text) author
-                ]
-            }
-        Question question -> DOM.p
-            { className: block <> " " <> block <> "__question"
-            , children: [ DOM.text question ]
-            }
+      Quote { body, author } -> DOM.figure
+          { className: block <> " " <> block <> "__quote"
+          , children:
+              [ DOM.blockquote_ [ DOM.text body ]
+              , foldMap (DOM.figcaption_ <<< pure <<< DOM.text) author
+              ]
+          }
+      Question question -> DOM.p
+          { className: block <> " " <> block <> "__question"
+          , children: [ DOM.text question ]
+          }
+      Related related -> DOM.figure
+          { className: block <> " " <> block <> "__related"
+          , children:
+              [ DOM.ul_ $ map renderRelatedArticle related
+              ]
+          }
       where
         block = "article-element"
         isDiv = isElem "<div"
@@ -316,3 +320,11 @@ render props =
         -- Does the string start with wanted element
         isElem elemName elemString =
           Just 0 == String.indexOf (Pattern elemName) elemString
+        renderRelatedArticle article =
+          DOM.li_
+            [ DOM.a
+                { href: "/artikel/" <> article.uuid
+                , children: [ DOM.text article.title ]
+                , onClick: props.onArticleClick article
+                }
+            ]
