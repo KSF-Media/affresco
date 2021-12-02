@@ -23,7 +23,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import KSF.Auth as Auth
-import KSF.Paper (Paper(..))
+import KSF.Paper as Paper
 import KSF.User (User)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category, CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
@@ -34,6 +34,7 @@ import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
+import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
 import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
 import React.Basic (JSX)
@@ -128,7 +129,7 @@ mosaicoComponent initialValues props = React.do
   useEffectOnce do
     Aff.launchAff_ do
       cats <- if null props.categoryStructure
-              then Lettera.getCategoryStructure HBL
+              then Lettera.getCategoryStructure mosaicoPaper
               else pure props.categoryStructure
       liftEffect do
         setState _ { categoryStructure = cats }
@@ -141,8 +142,8 @@ mosaicoComponent initialValues props = React.do
           Nothing -> Aff.launchAff_ do
             let letteraFn =
                   case feedName of
-                    TagFeed t -> Lettera.getByTag 0 20 t HBL
-                    CategoryFeed c -> Lettera.getFrontpage HBL (map unwrap c)
+                    TagFeed t -> Lettera.getByTag 0 20 t mosaicoPaper
+                    CategoryFeed c -> Lettera.getFrontpage mosaicoPaper (map unwrap c)
             feed <- letteraFn
             liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds }
           Just _ -> pure unit
@@ -174,7 +175,7 @@ mosaicoComponent initialValues props = React.do
         | not $ null mostReads -> liftEffect $ setState \s -> s { mostReadArticles = mostReads }
       _ ->
         Aff.launchAff_ do
-          mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+          mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
           liftEffect $ setState \s -> s { mostReadArticles = mostReadArticles }
 
     pure mempty
@@ -333,6 +334,7 @@ render setState state router onPaywallEvent =
     mosaicoLayout :: JSX -> Boolean -> JSX
     mosaicoLayout content showAside = DOM.div
       { className: "mosaico grid"
+      , id: Paper.toString mosaicoPaper
       , children:
           [ Header.topLine
           , state.headerComponent
@@ -382,7 +384,7 @@ render setState state router onPaywallEvent =
     renderArticle :: Either ArticleStub FullArticle -> JSX
     renderArticle article =
       Article.render
-        { brand: "hbl"
+        { paper: mosaicoPaper
         , article
         , onLogin: setState \s -> s { modalView = Just LoginModal }
         , onPaywallEvent

@@ -2,8 +2,10 @@ module MosaicoServer where
 
 import Prelude
 
+import KSF.Paper as Paper
 import Lettera.Models (ArticleStub, Category)
 import Mosaico.Header as Header
+import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, JSX, component, useState, (/\))
@@ -63,6 +65,7 @@ app = do
 render :: PushStateInterface -> State -> Props -> JSX
 render router state props = DOM.div
        { className: "mosaico grid"
+       , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
            , state.headerComponent { router

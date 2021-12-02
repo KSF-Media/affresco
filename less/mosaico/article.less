@@ -163,7 +163,15 @@
     a {
       color: @dark-text;
       text-decoration: none;
-      border-bottom: solid 1px @hbl-orange;
+      #HBL & {
+        border-bottom: solid 1px @hbl-orange;
+      }
+      #VN & {
+        border-bottom: solid 1px @vn-red;
+      }
+      #ON & {
+        border-bottom: solid 1px @on-blue;
+      }
       &:hover {
         color: lighten(@dark-text, 20%);
       }
@@ -182,7 +190,15 @@
       margin: 10px auto 5px 0;
       width: 10%;
       height: 2px;
-      background-color: @hbl-orange; // TODO: deal with other site's colours
+      #HBL & {
+        background-color: @hbl-orange;
+      }
+      #VN & {
+        background-color: @vn-red;
+      }
+      #ON & {
+        background-color: @on-blue;
+      }
     }
   }
   &__quote {
@@ -191,14 +207,30 @@
     padding: 15px 30px;
     font: 1.5rem/1.5 "Duplex Serif Light Web", serif;
     text-align: center;
-    color: @hbl-orange; // TODO: deal with other site's colours
+    #HBL & {
+      color: @hbl-orange;
+    }
+    #VN & {
+      color: @vn-red;
+    }
+    #ON & {
+      color: @on-blue;
+    }
     &::before {
       content: "";
       display: block;
       width: 20%;
       height: 2px;
       margin: 0 auto 15px auto;
-      background-color: @hbl-orange; // TODO: deal with other site's colours
+      #HBL & {
+        background-color: @hbl-orange;
+      }
+      #VN & {
+        background-color: @vn-red;
+      }
+      #ON & {
+        background-color: @on-blue;
+      }
     }
   }
   &__subheadline {
