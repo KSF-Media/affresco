@@ -314,9 +314,12 @@ render props =
             { className: block <> " " <> block <> "__footnote"
             , children: [ DOM.text footnote ]
             }
-        Quote quote -> DOM.q
+        Quote { body, author } -> DOM.figure
             { className: block <> " " <> block <> "__quote"
-            , children: [ DOM.text quote ]
+            , children:
+                [ DOM.blockquote_ [ DOM.text body ]
+                , foldMap (DOM.figcaption_ <<< pure <<< DOM.text) author
+                ]
             }
         Question question -> DOM.p
             { className: block <> " " <> block <> "__question"

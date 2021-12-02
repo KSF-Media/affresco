@@ -265,7 +265,7 @@ type BodyElementJS =
   , headline :: Maybe String
   , footnote :: Maybe String
   , question :: Maybe String
-  , quote    :: Maybe String
+  , quote    :: Maybe QuoteInfo
   }
 
 data BodyElement
@@ -275,7 +275,7 @@ data BodyElement
   | Headline String
   | Footnote String
   | Question String
-  | Quote String
+  | Quote QuoteInfo
 derive instance bodyElementGeneric :: Generic BodyElement _
 instance bodyElementShow :: Show BodyElement where show = genericShow
 
@@ -283,6 +283,11 @@ type BoxInfo =
   { title :: Maybe String
   , headline :: Maybe String
   , content :: Array String
+  }
+
+type QuoteInfo =
+  { body :: String
+  , author :: Maybe String
   }
 
 type Image =
