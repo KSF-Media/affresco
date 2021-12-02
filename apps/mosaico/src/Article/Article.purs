@@ -15,10 +15,11 @@ import Data.String as String
 import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
+import KSF.Paper as Paper
 import KSF.Vetrina as Vetrina
+import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
@@ -55,7 +56,7 @@ getBody (Left _articleStub) = mempty
 getBody (Right fullArticle) = map Record.toSum <<< _.body $ fromFullArticle fullArticle
 
 type Props =
-  { brand :: String
+  { paper :: Paper
   , article :: Either ArticleStub FullArticle
   , onLogin :: Effect Unit
   , onPaywallEvent :: Effect Unit
@@ -126,7 +127,7 @@ render props =
                           , children:
                               [ foldMap renderTag $ head tags
                               , guard (isPremium props.article) $ DOM.div
-                                  { className: "premium-badge background-" <> props.brand
+                                  { className: "premium-badge background-" <> Paper.cssName props.paper
                                   , children: [ DOM.text "Premium"]
                                   }
                               ]
@@ -202,7 +203,7 @@ render props =
 
     renderTag tag =
       DOM.a
-        { className: "mosaico-article__tag color-" <> props.brand
+        { className: "mosaico-article__tag color-" <> Paper.cssName props.paper
         , children: [ DOM.text $ (un Tag) tag ]
         , href: "/tagg/" <> tagToURIComponent tag
         , onClick: props.onTagClick tag
@@ -227,54 +228,34 @@ render props =
       Vetrina.vetrina
         { onClose: Just props.onPaywallEvent
         , onLogin: props.onLogin
-        , products: Right [ hblPremium ]
+        , products: Right case props.paper of
+            HBL -> [ hblPremium ]
+            ON -> [ onPremium ]
+            VN -> [ vnPremium ]
+            _ -> []
         , unexpectedError: mempty
         , headline: Just
           $ DOM.div_
-              [ DOM.text "Läs HBL digitalt för "
+              [ DOM.text $ "Läs " <> paperName <> " digitalt för "
               , DOM.span { className: "vetrina--price-headline", children: [ DOM.text "Endast 1€" ] }
               ]
-        , paper: Just HBL
+        , paper: Just props.paper
         , paymentMethods: []
         , customNewPurchase: Nothing
         , subscriptionExists: mempty
         , loadingContainer: Nothing
-        , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
+        , accessEntitlements: Set.fromFoldable case props.paper of
+            HBL -> ["hbl-365", "hbl-web"]
+            ON -> ["on-365", "on-web"]
+            VN -> ["vn-365", "vn-web"]
+            _ -> []
         , orderSource: PaywallSource
         , askAccountAlways: false
         }
-      where
-        hblPremium =
-          { id: "HBL WEBB"
-          , name: "Hufvudstadsbladet Premium"
-          , priceCents: 999
-          , description:
-              DOM.div_
-                [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
-                , DOM.br {}
-                , DOM.text "Läs Hufvudstadsbladet för 1€ i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
-                ]
-          , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
-          , campaign: Just
-              { no: 4701
-              , id: "1MÅN1 EURO"
-              , name: "FÖRSTA MÅNADEN FÖR 1 EURO"
-              , length: 1
-              , lengthUnit: Month
-              , priceEur: 1.0
-              }
-          , contents:
-              [ { title: "Premium"
-                , description: "Alla artiklar på hbl.fi"
-                }
-              , { title: "Nyhetsappen HBL Nyheter"
-                , description: "Nyheter på mobilen och surfplattan, pushnotiser"
-                }
-              , { title: "Digitalt månadsbrev"
-                , description: "Nyheter & förmåner"
-                }
-              ]
-          }
+
+    paperName = case props.paper of
+      HBL -> "HBL"
+      p -> Paper.paperName p
 
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?
@@ -306,7 +287,7 @@ render props =
                     { headline: boxData.headline
                     , title: boxData.title
                     , content: boxData.content
-                    , brand: props.brand
+                    , paper: props.paper
                     }
                 ]
             }

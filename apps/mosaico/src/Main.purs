@@ -32,11 +32,11 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object as Object
 import JSURI as URI
 import KSF.Api (Token(..), UserAuth, parseToken)
-import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, tagToURIComponent, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Frontpage as Frontpage
+import Mosaico.Paper (mosaicoPaper)
 import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -163,7 +163,7 @@ main = do
       foldM makeMap HashMap.empty staticPageNames
   htmlTemplate <- FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
-    categoryStructure <- Lettera.getCategoryStructure HBL
+    categoryStructure <- Lettera.getCategoryStructure mosaicoPaper
     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
@@ -199,7 +199,7 @@ getArticle
 getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
   | Just uuid <- UUID.parseUUID uuidOrSlug = do
       article <- Lettera.getArticle uuid r.guards.credentials
-      mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+      mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
       setCredentials credentials
         <$> renderArticle env (Just uuidOrSlug) article mostReadArticles
   | otherwise = do
@@ -212,7 +212,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
           , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> (_.uuid $ fromFullArticle a)]
           }
       Left _ -> do
-        mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+        mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
         let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
         notFound env maybeMostRead { params: {path: List.fromFoldable ["artikel", uuidOrSlug]} }
 
@@ -228,7 +228,7 @@ renderArticle env uuid article mostReadArticles = do
     Right a -> do
       let articleJSX =
             Article.render
-              { brand: "hbl"
+              { paper: mosaicoPaper
               , article: Right a
               , onLogin: pure unit
               , onPaywallEvent: pure unit
@@ -270,8 +270,8 @@ assets { params: { path } } = Handlers.directory "dist/client" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff TextHtml
 frontpage env _ = do
-  articles <- Lettera.getFrontpage HBL Nothing
-  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  articles <- Lettera.getFrontpage mosaicoPaper Nothing
+  mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
   mosaico <- liftEffect MosaicoServer.app
   frontpageComponent <- liftEffect Frontpage.frontpageComponent
   let mosaicoString =
@@ -303,8 +303,8 @@ mkArticleFeed feedPage feedType feedContent =
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
   let tag' = uriComponentToTag tag
-  articles <- Lettera.getByTag 0 20 tag' HBL
-  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  articles <- Lettera.getByTag 0 20 tag' mosaicoPaper
+  mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
   mosaico <- liftEffect MosaicoServer.app
   if null articles
     then notFound env (Just mostReadArticles) { params: { path: List.fromFoldable [ "tagg", tag ] } }
@@ -334,7 +334,7 @@ tagList env { params: { tag } } = do
 
 staticPage :: Env -> { params :: { pageName :: String }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName } } = do
-  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
   case HashMap.lookup pageName env.staticPages of
     Just staticPageContent -> do
       mosaico <- liftEffect MosaicoServer.app
@@ -371,8 +371,8 @@ categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { categ
 categoryPage env { params: { categoryName } } = do
   mosaico <- liftEffect MosaicoServer.app
   frontpageComponent <- liftEffect Frontpage.frontpageComponent
-  articles <- Lettera.getFrontpage HBL (Just categoryName)
-  mostReadArticles <- Lettera.getMostRead 0 10 "" HBL true
+  articles <- Lettera.getFrontpage mosaicoPaper (Just categoryName)
+  mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
   let mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: FrontpageContent $ frontpageComponent
@@ -396,7 +396,7 @@ notFound :: Env -> Maybe (Array ArticleStub) -> { params :: { path :: List Strin
 notFound env _ _ = do
   let articleJSX =
         Article.render
-          { brand: "hbl"
+          { paper: mosaicoPaper
           , article: Right notFoundArticle
           , onLogin: pure unit
           , onPaywallEvent: pure unit
