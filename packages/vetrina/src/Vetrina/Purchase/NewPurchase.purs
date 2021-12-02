@@ -43,7 +43,6 @@ type State =
        { emailAddress :: Maybe String
        , password     :: Maybe String
        }
-  , accountStatus       :: AccountStatus
   , serverErrors        :: Array (Form.ValidationError FormInputField)
   , errorMessage        :: JSX
   , productSelection    :: Maybe Product
@@ -65,7 +64,8 @@ type Props =
   , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
   , paymentMethods                :: Array PaymentMethod
   , onPaymentMethodChange         :: Maybe PaymentMethod -> Effect Unit
-  , customRender                  :: Maybe (JSX -> State -> JSX)
+  , onEmailChange                 :: Effect Unit
+  , customRender                  :: Maybe (JSX -> AccountStatus -> JSX)
   }
 
 data FormInputField
@@ -117,14 +117,13 @@ newPurchase props = make component
                       { emailAddress: Nothing
                       , password: Nothing
                       }
-                  , accountStatus: NewAccount
                   , serverErrors: []
                   , errorMessage: foldMap formatErrorMessage props.errorMessage
                   , productSelection: Nothing
                   , paymentMethod: Nothing
                   , showProductContents: false
                   }
-  , render: maybe render (\f self -> f (form self) self.state) props.customRender
+  , render: maybe render (\f self -> f (form self) self.props.accountStatus) props.customRender
   , didMount
   }
   props
@@ -135,8 +134,7 @@ didMount self = do
         case self.props.accountStatus of
           ExistingAccount email -> Just email
           _                     -> Nothing
-  self.setState _ { accountStatus = self.props.accountStatus
-                  , paymentMethod = self.props.paymentMethod
+  self.setState _ { paymentMethod = self.props.paymentMethod
                   , productSelection =
                       -- If there's already a selected product, pick that
                       -- or take the first item on the products list
@@ -148,7 +146,7 @@ render :: Self -> JSX
 render self =
   title self
   <> newPurchaseLinks self
-  <> case self.state.accountStatus of
+  <> case self.props.accountStatus of
     LoggedInAccount user
       | isNothing $ toMaybe user.firstName ->
         DOM.div
@@ -156,7 +154,7 @@ render self =
           , children: [ DOM.text user.email ]
           }
     _ -> mempty
-  <> case self.state.accountStatus of
+  <> case self.props.accountStatus of
        NewAccount -> mempty
        _ -> description self
   <> form self
@@ -168,7 +166,7 @@ render self =
 title :: Self -> JSX
 title self =
   let headlineText =
-        case self.state.accountStatus of
+        case self.props.accountStatus of
           ExistingAccount _    -> Just $ DOM.text "Du har redan ett KSF Media-konto"
           LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
           NewAccount -> self.props.headline
@@ -185,7 +183,7 @@ description self =
   DOM.p
     { className: "vetrina--description-text"
     , children: Array.singleton $
-        case self.state.accountStatus of
+        case self.props.accountStatus of
           NewAccount        -> mempty
           ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
           LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
@@ -205,19 +203,19 @@ form self = DOM.form $
         else mempty
       , renderPaymentMethods self.props.paymentMethods
        -- Don't show the product selection if we are asking the user to login
-      , if not isExistingAccount self.state.accountStatus
+      , if not isExistingAccount self.props.accountStatus
            || isNothing self.state.productSelection
         then foldMap _.description self.state.productSelection
         else mempty
       , self.state.errorMessage
-      , emailInput self self.state.accountStatus
+      , emailInput self self.props.accountStatus
       ] <> children
   }
   where
     isExistingAccount (ExistingAccount _) = true
     isExistingAccount _ = false
 
-    onSubmit = handler preventDefault $ case self.state.accountStatus of
+    onSubmit = handler preventDefault $ case self.props.accountStatus of
       NewAccount ->
         (\_ -> validation
           (\_ ->
@@ -241,9 +239,9 @@ form self = DOM.form $
           (\_ -> pure unit)
           (\validForm -> self.props.mkPurchaseWithLoggedInAccount user validForm)
           $ loggedInAccountFormValidations self)
-    children = case self.state.accountStatus of
+    children = case self.props.accountStatus of
         NewAccount ->
-          [ additionalFormRequirements self.state.accountStatus
+          [ additionalFormRequirements self.props.accountStatus
           , formSubmitButton self
           ]
         ExistingAccount _ ->
@@ -329,13 +327,13 @@ form self = DOM.form $
 -- | Only show this when initial screen with new account
 newPurchaseLinks :: Self -> JSX
 newPurchaseLinks self =
-  case self.state.accountStatus of
+  case self.props.accountStatus of
     NewAccount -> loginLink self
     _ -> mempty
 
 links :: Self -> JSX
 links self =
-  case self.state.accountStatus of
+  case self.props.accountStatus of
     NewAccount        -> mempty -- Login link shown elsewhere
     ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
     LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
@@ -393,11 +391,11 @@ formSubmitButton self =
     , value
     }
   where
-    value = case self.state.accountStatus of
+    value = case self.props.accountStatus of
       NewAccount        -> "Bekräfta och gå vidare"
       ExistingAccount _ -> "Logga in"
       LoggedInAccount _ -> "Bekräfta och gå vidare"
-    disabled = case self.state.accountStatus of
+    disabled = case self.props.accountStatus of
       NewAccount        -> isFormInvalid $ newAccountFormValidations self
       ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations self
       LoggedInAccount _ -> isFormInvalid $ loggedInAccountFormValidations self
@@ -442,21 +440,21 @@ emailInput self accountStatus =
          ]
      }
   where
-    onChange = case self.state.accountStatus of
+    onChange = case self.props.accountStatus of
       NewAccount -> \val ->
          self.setState _
            { newAccountForm { emailAddress = val }
            , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
            , errorMessage = mempty
            }
-      ExistingAccount _ -> \val ->
+      ExistingAccount _ -> \val -> do
+        -- If email value is changed, we must consider it as another
+        -- attempt of creating a new account (if an account with this email exists,
+        -- and we are asking the user to log in right now, changing the email should cancel that)
+        self.props.onEmailChange
         self.setState _
           { existingAccountForm { emailAddress = Nothing, password = Nothing }
           , newAccountForm { emailAddress = val }
-            -- If email value is changed, we must consider it as another
-            -- attempt of creating a new account (if an account with this email exists,
-            -- and we are asking the user to log in right now, changing the email should cancel that)
-          , accountStatus = NewAccount
           , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
           , errorMessage = mempty
           }
