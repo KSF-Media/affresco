@@ -287,12 +287,16 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Build Server Mosaico server
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
+        name: Build Server Mosaico server
         run: |2
             ruby deploy.rb mosaico
             cp -R apps/mosaico build/mosaico
         shell: bash
-      - name: Copy app.yaml.dev to app.yaml
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
+        name: Copy app.yaml.dev to app.yaml
         run: |
           cp build/mosaico/app.dev.yaml build/mosaico/app.yaml
         shell: bash
