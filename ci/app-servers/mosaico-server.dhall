@@ -16,6 +16,9 @@ in  AppServer::{
       [ Handler::{ url = Some "/assets", static_dir = Some "dist/client" } ]
     , entrypoint =
         ''
-          node -e "require('./output/Main/index').main()"
+          node -r dotenv/config -e "require('./output/Main/index').main()"
         ''
+    , env = toMap
+        { LETTERA_URL = "https://lettera.api.ksfmedia.fi/v4beta"
+        }
     }
