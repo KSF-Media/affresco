@@ -94,6 +94,7 @@ fromUTCTime utcTime = do
 
 type ArticleStubCommon =
   ( title     :: String
+  , listTitle :: Maybe String
   , uuid      :: String
   , preamble  :: Maybe String
   , listImage :: Maybe Image
