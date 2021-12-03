@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Array (head)
 import Data.Foldable (foldMap)
-import Data.Maybe (maybe)
+import Data.Maybe (fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
@@ -56,7 +56,7 @@ render props =
                                  ) $ head a.tags
                              , DOM.a
                                  { href: "/artikel/" <> a.uuid
-                                 , children: [ DOM.h2_ [ DOM.text a.title ] ]
+                                 , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
                                  }
                              , guard a.premium $
                                DOM.div
