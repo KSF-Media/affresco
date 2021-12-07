@@ -6,13 +6,14 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component)
 
+foreign import renderHtmlInput :: String -> JSX
+
 type Self =
   { props :: Props
   }
 
 type Props =
-  { content     :: String
-  , sanitize    :: Boolean
+  { content :: String
   }
 
 htmlRendererComponent :: Component Props
@@ -21,4 +22,4 @@ htmlRendererComponent = do
     pure $ render { props }
 
 render :: Self -> JSX
-render { props } = DOM.div_ [ DOM.text "Hello World!" ]
+render { props } = DOM.div_ [ renderHtmlInput props.content ]
