@@ -44,6 +44,9 @@ letteraArticleSlugUrl = letteraBaseUrl <> "/article/slug/"
 letteraFrontPageUrl :: String
 letteraFrontPageUrl = letteraBaseUrl <> "/list/frontpage"
 
+letteraFrontPageHtmlUrl :: String
+letteraFrontPageHtmlUrl = letteraBaseUrl <> "/frontpage/html"
+
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 
@@ -138,6 +141,18 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
       | (StatusCode 403) <- response.status ->
         pure $ Left "Unauthorized"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+
+getFrontpageHtml :: Paper -> String -> Aff (Either String String)
+getFrontpageHtml paper category = do
+  let request = letteraFrontPageHtmlUrl <> "?paper=" <> Paper.toString paper  <> "&category=" <> category
+  htmlResponse <- AX.get ResponseFormat.string request
+  case htmlResponse of
+    Left err -> 
+      pure $ Left $ "Frontpage html GET response failed to decode: " <> AX.printError err
+    Right response
+      | (StatusCode 200) <- response.status -> pure $ Right response.body
+      | (StatusCode s) <- response.status -> 
+        pure $ Left $ "Unexpected HTTP status: " <> show s
 
 getFrontpage :: Paper -> Maybe String -> Aff (Array ArticleStub)
 getFrontpage paper categoryId = do
