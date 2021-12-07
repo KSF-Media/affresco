@@ -208,9 +208,9 @@ class Content extends Component {
     return (
       <div className={"row"}>
         <div
-          className={`col-sm-12 content text-left mt-2 ${this.state.paper}`}
+          className={`col-sm-12 content text-left mt-2 ${this.state.paper} ${this.contentStyles()}`}
           id={"content"}
-          style={_.merge({ wordWrap: "break-word" }, this.contentStyles())}
+          style={_.merge({ wordWrap: "break-word" })}
         >
           <div id="MOBPARAD"></div>
           {this.props.body != null
@@ -218,13 +218,20 @@ class Content extends Component {
                 return this.conditionalRendering(block, key);
               })
             : ""}
+          <div id="MOBNER"></div>
         </div>
       </div>
     );
   }
 
   contentStyles() {
-    return this.props.fontSize ? { fontSize: this.props.fontSize + "em" } : {};
+    const classNames = new Map();
+    classNames.set("1.06", "content-xs");
+    classNames.set("1.5", "content-sm");
+    classNames.set("2.0", "content-md");
+    classNames.set("2.5", "content-lg");
+    classNames.set("3.0", "content-xl");
+    return classNames.get(this.props.fontSize);
   }
 }
 

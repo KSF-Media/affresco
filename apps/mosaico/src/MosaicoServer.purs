@@ -2,9 +2,10 @@ module MosaicoServer where
 
 import Prelude
 
+import KSF.Paper as Paper
 import Lettera.Models (ArticleStub, Category)
-import Mosaico.Article as Article
 import Mosaico.Header as Header
+import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, JSX, component, useState, (/\))
@@ -19,8 +20,7 @@ type Props =
   }
 
 type State =
-  { articleComponent :: Article.Props -> JSX
-  , headerComponent :: Header.Props -> JSX
+  { headerComponent :: Header.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   }
 
@@ -38,7 +38,6 @@ fromMainContent (StaticPageContent jsx) = jsx
 
 app :: Component Props
 app = do
-  articleComponent <- Article.articleComponent
   headerComponent  <- Header.headerComponent
   mostReadListComponent <- MostReadList.mostReadListComponent
   let (emptyRouter :: PushStateInterface) =
@@ -56,8 +55,7 @@ app = do
         }
   component "Mosaico" \props -> React.do
     let initialState =
-          { articleComponent
-          , headerComponent
+          { headerComponent
           , mostReadListComponent
           }
     state /\ _setState <- useState initialState
@@ -67,6 +65,7 @@ app = do
 render :: PushStateInterface -> State -> Props -> JSX
 render router state props = DOM.div
        { className: "mosaico grid"
+       , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
            , state.headerComponent { router

@@ -1,21 +1,18 @@
 module Mosaico.Header.Menu where
 
-import Data.Foldable
-import Data.Monoid
-import Data.Semigroup
 import Prelude
 
-import Data.Array (concat, cons, foldl, intersperse, length, singleton, snoc, toUnfoldable)
-import Data.Foldable as Foldable
-import Data.List ((:))
-import Data.List as List
+import Data.Array (foldl, intersperse, snoc)
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Newtype (unwrap)
+import Data.String (toUpper)
 import Data.String.Common (trim)
-import Data.Tuple (uncurry)
-import Data.Tuple.Nested ((/\))
 import Effect (Effect)
+import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Hooks (Component, component)
 
 type Self =
@@ -23,7 +20,8 @@ type Self =
   }
 
 type Props =
-  { visible :: Boolean
+  { categoryStructure :: Array Category
+  , onCategoryClick :: CategoryLabel -> String -> Effect Unit
   }
 
 data MenuLayoutElement = Section Section
@@ -36,13 +34,12 @@ type MenuLayout = Array MenuBlock
 
 type Section =
   { title :: String
-  , modifier :: Maybe String
   , url :: String
   , subsections :: Array Subsection
   }
 
 type Subsection =
-  { title :: String
+  { title :: CategoryLabel
   , url :: String
   }
 
@@ -51,18 +48,9 @@ menuComponent = do
   component "Menu" \props -> React.do
     pure $ render { props }
 
-visibleMenuComponent :: Effect JSX
-visibleMenuComponent = do
-  component <- menuComponent
-  pure $ component { visible: true }
-
 render :: Self -> JSX
-render { props: { visible } } = DOM.div
-  { className: menuClass <>
-      if visible then
-        " " <> visibleMenuClass
-      else
-        mempty
+render { props } = DOM.div
+  { className: menuClass
   , children: [ menuContent
               , DOM.div
                   { className: menuFooterClass
@@ -86,7 +74,7 @@ render { props: { visible } } = DOM.div
     upperBlock = topSections
 
     middleBlock :: MenuBlock
-    middleBlock = (intersperse mobileOnlySeparator) $ [ stardsidan, nyheter, opinion, kultur, sport ]
+    middleBlock = (intersperse mobileOnlySeparator) $ foldl mkSection [] props.categoryStructure
 
     bottomBlock :: MenuBlock
     bottomBlock = bottomSections
@@ -100,134 +88,41 @@ render { props: { visible } } = DOM.div
     topSections :: MenuBlock
     topSections = Section <$>
                   [ { title: "SÖK"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "E-TIDNINGEN"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "KUNDSERVICE"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   ]
 
-    stardsidan = Section $
-                 { title: "STARTSIDAN"
-                 , modifier: Just "--startsidan"
-                 , url: ""
-                 , subsections: []
-                 }
-    nyheter      = Section $
-                   { title: "NYHETER"
-                   , modifier: Just "--section1"
-                   , url: ""
-                   , subsections:
-                       [ { title: "Finland"
-                         , url: ""
-                         }
-                       , { title: "Huvustadsregionen"
-                         , url: ""
-                         }
-                       , { title: "Norden och världen"
-                         , url: ""
-                         }
-                       , { title: "Ekonomi"
-                         , url: ""
-                         }
-                       , { title: "Miljö och natur"
-                         , url: ""
-                         }
-                       ]
-                 }
-    opinion    = Section $
-                 { title: "OPINION"
-                 , modifier: Just "--section2"
-                 , url: ""
-                 , subsections:
-                     [ { title: "Ledare"
-                       , url: ""
-                       }
-                     , { title: "Kolumner"
-                       , url: ""
-                       }
-                     , { title: "Debatt"
-                       , url: ""
-                       }
-                     , { title: "Krönikor"
-                       , url: ""
-                       }
-                     ]
-                 }
-    kultur    =  Section $
-                 { title: "KULTUR"
-                 , modifier: Just "--section2"
-                 , url: ""
-                 , subsections:
-                     [ { title: "Litteratur"
-                       , url: ""
-                       }
-                     , { title: "Musik"
-                       , url: ""
-                       }
-                     , { title: "Scen"
-                       , url: ""
-                       }
-                     , { title: "Konst"
-                       , url: ""
-                       }
-                     , { title: "Film och TV"
-                       , url: ""
-                       }
-                     ]
-                 }
-    sport     =  Section $
-                 { title: "SPORT"
-                 , modifier: Just "--section3"
-                 , url: ""
-                 , subsections:
-                     [ { title: "Sport"
-                       , url: ""
-                       }
-                     , { title: "Handboll"
-                       , url: ""
-                       }
-                     , { title: "Ishockey"
-                       , url: ""
-                       }
-                     , { title: "Fotboll"
-                       , url: ""
-                       }
-                     , { title: "Motorsport"
-                       , url: ""
-                       }
-                     , { title: "Friidrott"
-                       , url: ""
-                       }
-                     , { title: "Skidsport"
-                       , url: ""
-                       }
-                     ]
-                 }
+    mkSection acc (Category c) =
+      let mkSubsection (Category subc) =
+            { title: subc.label, url: "/" <> show subc.label }
+          section =
+            Section $
+              { title: toUpper $ unwrap c.label
+              , url: "/" <> show c.label
+              , subsections: map mkSubsection c.subCategories
+              }
+      in acc `snoc` section
 
     bottomSections :: MenuBlock
     bottomSections = Section <$>
                   [ { title: "KONTAKTA OSS"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "ANNONSERA"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
                   , { title: "JOBBA HOS OSS"
-                    , modifier: Nothing
                     , url: ""
                     , subsections: []
                     }
@@ -253,8 +148,8 @@ render { props: { visible } } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection { modifier, subsections, title } = DOM.div
-          { className: unwords [ sectionClass, sectionClass <> fromMaybe mempty modifier ]
+        renderSection { subsections, title } = DOM.div
+          { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
@@ -272,9 +167,15 @@ render { props: { visible } } = DOM.div
           }
 
         renderSubsection :: Subsection -> JSX
-        renderSubsection { title } = DOM.div
+        renderSubsection { title, url } = DOM.div
           { className: subsectionClass
-          , children: [ DOM.text title ]
+          , children:
+              [ DOM.a
+                  { href: url
+                  , children: [ DOM.text $ unwrap title ]
+                  , onClick: capture_ $ props.onCategoryClick title url
+                  }
+              ]
           }
 
         renderSeparator :: Maybe String -> JSX
@@ -297,9 +198,7 @@ render { props: { visible } } = DOM.div
     headerBlock = "mosaico-header"
 
     menuElement = "__menu"
-    visibleModifier = "--visible"
     menuClass = headerBlock <> menuElement
-    visibleMenuClass = menuClass <> visibleModifier
 
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement
@@ -318,9 +217,6 @@ render { props: { visible } } = DOM.div
 
     sectionTitleElement = "__section-title"
     sectionTitleClass = headerBlock <> sectionTitleElement
-
-    sectionExpanderElement = "__section-expander"
-    sectionExpanderClass = headerBlock <> sectionExpanderElement
 
     subsectionsElement = "__subsections"
     subsectionsClass = headerBlock <> subsectionsElement

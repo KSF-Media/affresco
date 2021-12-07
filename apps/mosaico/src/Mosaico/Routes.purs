@@ -2,7 +2,7 @@ module Mosaico.Routes where
 
 import Prelude
 
-import Data.Foldable (foldl, oneOf, oneOf)
+import Data.Foldable (foldl, oneOf)
 import Data.List (List(..))
 import Data.Semiring.Free (free)
 import Data.Set as Set

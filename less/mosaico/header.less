@@ -74,7 +74,15 @@
 
     grid-column-start: 2;
 
-    background-image: url("../images/logo-hbl.svg");
+    #HBL & {
+      background-image: url("../images/logo-hbl.svg");
+    }
+    #VN & {
+      background-image: url("../images/logo-vn.svg");
+    }
+    #ON & {
+      background-image: url("../images/logo-on.svg");
+    }
     background-repeat: no-repeat;
 
     @media (min-width: @breakpoint-3col) {
@@ -88,10 +96,6 @@
     grid-row-start: 1;
     align-self: center;
     grid-column-start: 1;
-
-    &--menu-visible {
-      z-index: 2;
-    }
 
     @media (min-width: @breakpoint-3col) {
       grid-row-start: 3;
@@ -109,8 +113,8 @@
     justify-content: center;
 
     a, a:hover, a:focus, a:active {
-	text-decoration: none;
-	color: inherit;
+      text-decoration: none;
+      color: inherit;
     }
 
     @media (min-width: @breakpoint-3col) {
@@ -162,15 +166,20 @@
     &--search {
       background-image: url("../images/icon-search.svg");
     }
-    &--menu-visible {
-      background-image: url("../images/icon-close-lg.svg");
-    }
   }
 }
 
 .mosaico-top-line {
   grid-area: line;
-  background-color: @hbl-orange;
+  #HBL & {
+    background-color: @hbl-orange;
+  }
+  #VN & {
+    background-color: @vn-red;
+  }
+  #ON & {
+    background-color: @on-blue;
+  }
   border: 0px;
   margin: 0px;
   width: 100%;

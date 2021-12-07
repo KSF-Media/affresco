@@ -10,16 +10,16 @@ import React.Basic.DOM as DOM
 import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Types (AccountStatus(..))
 
-render :: JSX -> NewPurchase.State -> JSX
-render form state =
-  case state.accountStatus of
+render :: JSX -> AccountStatus -> JSX
+render form accountStatus =
+  case accountStatus of
     ExistingAccount _ ->
       fragment
         [ DOM.text "Du har redan ett KSF Media-konto"
         , form
         ]
     _ -> descriptionBox $ fragment
-           [ case state.accountStatus of
+           [ case accountStatus of
                 LoggedInAccount user ->
                   DOM.div
                     { children:
