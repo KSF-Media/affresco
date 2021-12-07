@@ -30,38 +30,96 @@
     <!--Start Google Tag Manager-->
     <script>
       (function (w, d, s, l, i) {
-	w[l] = w[l] || [];
-	w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-	var f = d.getElementsByTagName(s)[0],
-	  j = d.createElement(s),
-	  dl = l != "dataLayer" ? "&l=" + l : "";
-	j.async = true;
-	j.src = "//www.googletagmanager.com/gtm.js?id=" + i + dl;
-	f.parentNode.insertBefore(j, f);
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "//www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
       })(window, document, "script", "dataLayer", "GTM-MH7NXT3");
     </script>
     <!--End Google Tag Manager-->
     <!--Start Google Ad-->
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
       var ksf = {};
       ksf.settings = {};
       ksf.settings.brand = {};
       ksf.settings.brand.id = "hbl";
     </script>
-    <script async src="https://script.ksfmedia.fi/app/gamAppAds.min.js"></script>
+    <script>
+      const getUrlParam = () => {
+        return new URLSearchParams(window.location.search);
+      };
+    
+      const getBrandValueParam = () => {
+        let urlParams = getUrlParam();
+        if (urlParams.has("paper")) {
+          return urlParams.get("paper");
+        }
+        return "hbl";
+      };
+
+      const brandValueName = getBrandValueParam();
+      let appToTarget = "";
+
+      if (brandValueName == "on") {
+        appToTarget = "appON";
+      } else if (brandValueName == "vn") {
+        appToTarget = "appVN";
+      } else {
+        appToTarget = "appHBL";
+      }
+
+      const mobparadContainer = document.getElementById("MOBPARAD");
+
+      window.googletag = window.googletag || { cmd: [] };
+      window.googletag.cmd.push(function () {
+        googletag
+          .defineSlot(
+            "/21664538223/MOBPARAD",
+            [
+              [300, 100],
+              [300, 250],
+              [300, 300],
+              [300, 431],
+              [300, 600],
+            ],
+            "MOBPARAD"
+          )
+          .addService(googletag.pubads());
+        googletag
+          .defineSlot(
+            "/21664538223/MOBNER",
+            [
+              [300, 100],
+              [300, 250],
+              [300, 300],
+              [300, 431],
+              [300, 600],
+            ],
+            "MOBNER"
+          )
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.pubads().collapseEmptyDivs();
+        googletag.enableServices();
+        googletag.pubads().setTargeting("newspaper", appToTarget);
+      });
+    </script>
     <!--End Google Ad-->
-    <script async src="https://apis.google.com/js/platform.js"></script>
-    <script async src="analytics.js"></script>
-    <script async src="ads.js"></script>
+    <script src="https://apis.google.com/js/platform.js"></script>
+    <script src="analytics.js"></script>
   </head>
   <body>
     <noscript
       ><iframe
-	src="//www.googletagmanager.com/ns.html?id=GTM-MH7NXT3"
-	height="0"
-	width="0"
-	style="display: none; visibility: hidden"
+        src="//www.googletagmanager.com/ns.html?id=GTM-MH7NXT3"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
       ></iframe
     ></noscript>
     <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -77,5 +135,11 @@
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
     <script src="./index.js"></script>
+    <script>
+      googletag.cmd.push(function () {
+        googletag.display("MOBPARAD");
+        googletag.display("MOBNER");
+      });
+    </script>
   </body>
 </html>
