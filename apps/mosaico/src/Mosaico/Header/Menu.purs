@@ -2,26 +2,26 @@ module Mosaico.Header.Menu where
 
 import Prelude
 
-import Data.Array (foldl, intersperse, snoc)
+import Data.Array (catMaybes, foldl, intersperse, snoc)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
 import Data.String (toUpper)
 import Data.String.Common (trim)
 import Effect (Effect)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
+import KSF.User (User, logout)
 import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
+import React.Basic.Events (EventHandler, handler_)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (capture_)
-import React.Basic.Hooks (Component, component)
-
-type Self =
-  { props :: Props
-  }
 
 type Props =
   { categoryStructure :: Array Category
-  , onCategoryClick :: CategoryLabel -> String -> Effect Unit
+  , onCategoryClick :: CategoryLabel -> EventHandler
+  , user :: Maybe User
+  , onLogout :: Effect Unit
   }
 
 data MenuLayoutElement = Section Section
@@ -34,22 +34,16 @@ type MenuLayout = Array MenuBlock
 
 type Section =
   { title :: String
-  , url :: String
   , subsections :: Array Subsection
+  , onClick :: Maybe (Effect Unit)
   }
 
 type Subsection =
   { title :: CategoryLabel
-  , url :: String
   }
 
-menuComponent :: Component Props
-menuComponent = do
-  component "Menu" \props -> React.do
-    pure $ render { props }
-
-render :: Self -> JSX
-render { props } = DOM.div
+render :: Props -> JSX
+render props@{ onLogout } = DOM.div
   { className: menuClass
   , children: [ menuContent
               , DOM.div
@@ -86,45 +80,56 @@ render { props } = DOM.div
     mobileOnlySeparator = Separator $ Just mobileOnlySeparatorClass
 
     topSections :: MenuBlock
-    topSections = Section <$>
-                  [ { title: "SÖK"
-                    , url: ""
+    topSections = Section <$> catMaybes
+                  [ Just
+                    { title: "SÖK"
                     , subsections: []
+                    , onClick: Nothing
                     }
-                  , { title: "E-TIDNINGEN"
-                    , url: ""
+                  , Just
+                    { title: "E-TIDNINGEN"
                     , subsections: []
+                    , onClick: Nothing
                     }
-                  , { title: "KUNDSERVICE"
-                    , url: ""
+                  , Just
+                    { title: "KUNDSERVICE"
                     , subsections: []
+                    , onClick: Nothing
+                    }
+                  , props.user *>
+                    Just
+                    { title: "LOGGA UT"
+                    , subsections: []
+                    , onClick: Just $ launchAff_ do
+                      logout $ const $ pure unit
+                      liftEffect onLogout
                     }
                   ]
 
     mkSection acc (Category c) =
       let mkSubsection (Category subc) =
-            { title: subc.label, url: "/" <> show subc.label }
+            { title: subc.label }
           section =
             Section $
               { title: toUpper $ unwrap c.label
-              , url: "/" <> show c.label
               , subsections: map mkSubsection c.subCategories
+              , onClick: Nothing
               }
       in acc `snoc` section
 
     bottomSections :: MenuBlock
     bottomSections = Section <$>
                   [ { title: "KONTAKTA OSS"
-                    , url: ""
                     , subsections: []
+                    , onClick: Nothing
                     }
                   , { title: "ANNONSERA"
-                    , url: ""
                     , subsections: []
+                    , onClick: Nothing
                     }
                   , { title: "JOBBA HOS OSS"
-                    , url: ""
                     , subsections: []
+                    , onClick: Nothing
                     }
                   ]
 
@@ -148,15 +153,15 @@ render { props } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection { subsections, title } = DOM.div
+        renderSection section@{ subsections, title } = DOM.div
           { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
                               [ DOM.div
-                                 { className: sectionTitleClass
-                                 , children: [ DOM.text title ]
-                                 }
+                                  { className: sectionTitleClass
+                                  , children: [ DOM.text title ]
+                                  }
                               ]
                           }
                       , DOM.div
@@ -164,16 +169,17 @@ render { props } = DOM.div
                           , children: renderSubsection <$> subsections
                           }
                       ]
+          , onClick: foldMap handler_ section.onClick
           }
 
         renderSubsection :: Subsection -> JSX
-        renderSubsection { title, url } = DOM.div
+        renderSubsection { title } = DOM.div
           { className: subsectionClass
           , children:
               [ DOM.a
-                  { href: url
+                  { href: "/" <> show title
                   , children: [ DOM.text $ unwrap title ]
-                  , onClick: capture_ $ props.onCategoryClick title url
+                  , onClick: props.onCategoryClick title
                   }
               ]
           }

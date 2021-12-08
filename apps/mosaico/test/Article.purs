@@ -5,21 +5,16 @@ import Prelude hiding (sub)
 import Control.Alternative (guard)
 import Control.Monad.Maybe.Trans (runMaybeT, lift)
 import Data.Maybe (Maybe)
-import Data.Newtype (over)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
+import Mosaico.Test (Test, sub)
 import Puppeteer as Chrome
 import Test.Unit.Assert as Assert
-
-type Test = Chrome.Page -> Aff Unit
 
 type PageIds =
   { articleId :: Maybe String
   , premiumArticleId :: Maybe String
   }
-
-sub :: String -> Chrome.Selector -> Chrome.Selector
-sub specialize = over Chrome.Selector (_ <> specialize)
 
 testFrontPage :: Chrome.Page -> Aff PageIds
 testFrontPage page = do

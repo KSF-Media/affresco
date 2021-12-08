@@ -2,6 +2,7 @@ module MosaicoServer where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
 import KSF.Paper as Paper
 import Lettera.Models (ArticleStub, Category)
 import Mosaico.Header as Header
@@ -20,8 +21,7 @@ type Props =
   }
 
 type State =
-  { headerComponent :: Header.Props -> JSX
-  , mostReadListComponent :: MostReadList.Props -> JSX
+  { mostReadListComponent :: MostReadList.Props -> JSX
   }
 
 data MainContent
@@ -38,7 +38,6 @@ fromMainContent (StaticPageContent jsx) = jsx
 
 app :: Component Props
 app = do
-  headerComponent  <- Header.headerComponent
   mostReadListComponent <- MostReadList.mostReadListComponent
   let (emptyRouter :: PushStateInterface) =
         { listen: const $ pure $ pure unit
@@ -55,8 +54,7 @@ app = do
         }
   component "Mosaico" \props -> React.do
     let initialState =
-          { headerComponent
-          , mostReadListComponent
+          { mostReadListComponent
           }
     state /\ _setState <- useState initialState
     pure $ render emptyRouter state props
@@ -68,10 +66,12 @@ render router state props = DOM.div
        , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
-           , state.headerComponent { router
-                                   , categoryStructure: props.categoryStructure
-                                   , onCategoryClick: const $ pure unit
-                                   }
+           , Header.render { router
+                           , categoryStructure: props.categoryStructure
+                           , onCategoryClick: const mempty
+                           , user: Nothing
+                           , onLogin: pure unit
+                           }
            , Header.mainSeparator
            , fromMainContent props.mainContent
            , DOM.footer
