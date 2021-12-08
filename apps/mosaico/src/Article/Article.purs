@@ -36,6 +36,9 @@ import React.Basic.Events (EventHandler)
 isPremium :: Either ArticleStub FullArticle -> Boolean
 isPremium = either _.premium _.article.premium
 
+isAdvertorial :: Either ArticleStub FullArticle -> Boolean 
+isAdvertorial = either (const false) ((_ == Just "Premium") <<< head <<< _.article.categories)
+
 getTags :: Either ArticleStub FullArticle -> Array Tag
 getTags = either _.tags _.article.tags
 
@@ -116,6 +119,10 @@ render imageComponent props =
                               , guard (isPremium props.article) $ DOM.div
                                   { className: "premium-badge"
                                   , children: [ DOM.text "Premium"]
+                                  }
+                              , guard (isAdvertorial props.article) $ DOM.div
+                                  { className: "premium-badge background-" <> Paper.cssName props.paper
+                                  , children: [ DOM.text "Advertorial!"]
                                   }
                               ]
                           }

@@ -77,6 +77,7 @@ notFoundArticle =
     , updateTime: Nothing
     , externalScripts: Nothing
     , articleType: KatastrofLiten
+    , categories: []
     }
   }
 
@@ -179,6 +180,7 @@ type ArticleCommon =
   , premium           :: Boolean
   , removeAds         :: Boolean
   , externalScripts   :: Maybe (Array ExternalScript)
+  , categories        :: Array String
   )
 
 type JSArticle =
