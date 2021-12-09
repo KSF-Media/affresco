@@ -338,7 +338,7 @@ render setState state components router onPaywallEvent =
          | c.type == Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
          | otherwise ->
            mosaicoDefaultLayout $ components.frontpageComponent
-             { frontpageArticles: HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
+             { content: pure <<< Frontpage.ArticleList =<< HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
              , onArticleClick
              , onTagClick
              }
@@ -450,7 +450,7 @@ render setState state components router onPaywallEvent =
       router.pushState (write {}) $ "/sök?q=" <> query
 
     frontpage frontpageArticles = mosaicoDefaultLayout $ components.frontpageComponent
-      { frontpageArticles
+      { content: Frontpage.ArticleList frontpageArticles
       , onArticleClick
       , onTagClick
       }

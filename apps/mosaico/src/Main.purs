@@ -33,7 +33,7 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign (unsafeToForeign)
 import JSURI as URI
 import KSF.Api (UserAuth, parseToken)
-import KSF.Api.Error as Api.Error
+import KSF.Paper (Paper)
 import KSF.User (User, fromPersonaUser)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
@@ -82,10 +82,6 @@ type Env =
   , categoryRegex :: Regex
   , staticPages :: HashMap.HashMap String String
   }
-
-data FrontPage
-  = Html String
-  | ArticleList (Array ArticleStub)
 
 indexHtmlFileLocation :: String
 indexHtmlFileLocation = "./dist/client/index.html"
@@ -284,7 +280,7 @@ frontpage env { guards: { credentials } } = do
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Lettera.getFrontpage mosaicoPaper Nothing)
+    <*> parallel (getFrontPage mosaicoPaper "Startsidan")
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   mosaico <- liftEffect MosaicoServer.app
   frontpageComponent <- liftEffect Frontpage.frontpageComponent
@@ -294,7 +290,7 @@ frontpage env { guards: { credentials } } = do
           { mainContent:
               FrontpageContent
               $ frontpageComponent
-                  { frontpageArticles: Just articles
+                  { content: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -311,15 +307,18 @@ frontpage env { guards: { credentials } } = do
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
-getFrontPage :: Paper -> String -> Aff FrontPage
+getFrontPage :: Paper -> String -> Aff Frontpage.FrontPageContent
 getFrontPage paper category = do 
   eitherHtml <- Lettera.getFrontpageHtml paper category
   case eitherHtml of
-    Right html -> Html html
-    Left Lettera.FrontPageHtmlNotFound -> getFrontpageArticles
-    Left Lettera.ResponseParseError error -> Console.warn
+    Right html -> pure $ Frontpage.Html html
+    Left err -> case err.type of
+      Lettera.FrontPageHtmlNotFound -> getFrontpageArticles
+      _                             -> do
+        liftEffect $ Lettera.handleLetteraError err
+        getFrontpageArticles
   where
-    getFrontpageArticles = Lettera.getFrontpage paper Nothing
+    getFrontpageArticles = Frontpage.ArticleList <$> Lettera.getFrontpage paper Nothing
 
 mkArticleFeed :: Maybe String -> String -> Array ArticleStub -> String
 mkArticleFeed feedPage feedType feedContent =
@@ -383,7 +382,7 @@ tagList env { params: { tag }, guards: { credentials } } = do
             { mainContent:
                 TagListContent tag'
                 $ frontpageComponent
-                  { frontpageArticles: Just articles
+                  { content: Just (Frontpage.ArticleList articles)
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -450,7 +449,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
   let mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: FrontpageContent $ frontpageComponent
-                                { frontpageArticles: Just articles
+                                { content: Just (Frontpage.ArticleList articles)
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }

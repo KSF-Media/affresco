@@ -14,11 +14,12 @@ import Data.Array (foldl, partition, snoc)
 import Data.Either (Either(..), either, isRight)
 import Data.Foldable (foldMap)
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (un)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
+import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -59,10 +60,19 @@ letteraTagUrl = letteraBaseUrl <> "/list/tag/"
 letteraSearchUrl :: String
 letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
-data LetteraError 
+type LetteraError =
+  { type        :: LetteraErrorType
+  , information :: Maybe String
+  }  
+
+data LetteraErrorType
   = FrontPageHtmlNotFound
-  | ResponseParseError String
-  | UnexpectedError String
+  | ResponseParseError
+  | UnexpectedError
+
+handleLetteraError :: LetteraError -> Effect Unit
+handleLetteraError { information } =
+  maybe (pure unit) (\info -> Console.warn info) information
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
@@ -153,12 +163,12 @@ getFrontpageHtml paper category = do
   htmlResponse <- AX.get ResponseFormat.string request
   case htmlResponse of
     Left err -> 
-      pure $ Left $ ResponseParseError $ AX.printError err
+      pure $ Left { type: ResponseParseError, information: Just $ AX.printError err }
     Right response
       | (StatusCode 200) <- response.status -> pure $ Right response.body
-      | (StatusCode 404) <- response.status -> pure $ Left FrontPageHtmlNotFound
+      | (StatusCode 404) <- response.status -> pure $ Left  { type: FrontPageHtmlNotFound, information: Nothing }
       | (StatusCode s) <- response.status ->
-        pure $ Left $ UnexpectedError $ "Unexpected HTTP status: " <> show s
+        pure $ Left $ { type: UnexpectedError, information: Just $ "Unexpected HTTP status: " <> show s }
 
 getFrontpage :: Paper -> Maybe String -> Aff (Array ArticleStub)
 getFrontpage paper categoryId = do

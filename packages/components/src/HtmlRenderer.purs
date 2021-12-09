@@ -1,4 +1,4 @@
-module HtmlRenderer where
+module KSF.HtmlRenderer where
 
 import Prelude
 

@@ -11,6 +11,7 @@ import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
+import KSF.HtmlRenderer as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import React.Basic (JSX)
@@ -18,21 +19,34 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, component)
 
+data FrontPageContent
+  = Html String
+  | ArticleList (Array ArticleStub)
+
+type State = { htmlRendererComponent :: HtmlRenderer.Props -> JSX }
+
 type Props =
-  { frontpageArticles :: Maybe (Array ArticleStub)
+  { content :: Maybe FrontPageContent
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
 
 frontpageComponent :: Component Props
-frontpageComponent = component "FrontpageComponent" $ pure <<< render
+frontpageComponent = do
+  htmlRendererComponent <- HtmlRenderer.htmlRendererComponent
+  component "FrontpageComponent" \props -> React.do
+    let initialState = { htmlRendererComponent }
+    pure $ render initialState props
 
-render :: Props -> JSX
-render props =
-   DOM.div
+render :: State -> Props -> JSX
+render state props =
+  DOM.div
     { className: "mosaico--article-list"
-    , children: maybe [loadingSpinner] (map renderListArticle) props.frontpageArticles
+    , children: maybe [loadingSpinner] $ case props.content of
+        ArticleList list -> map renderListArticle list
+        Html content     -> [ state.htmlRendererComponent { content } ]
     }
+  
   where
     renderListArticle :: ArticleStub -> JSX
     renderListArticle a =
