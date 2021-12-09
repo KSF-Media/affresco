@@ -24,7 +24,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import KSF.Auth as Auth
 import KSF.Paper as Paper
-import KSF.User (User)
+import KSF.User (User, magicLogin)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category, CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
@@ -56,8 +56,6 @@ type State =
   , route :: Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
-  , headerComponent :: Header.Props -> JSX
-  , menuComponent :: Menu.Props -> JSX
   , loginModalComponent :: LoginModal.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
   , frontpageComponent :: Frontpage.Props -> JSX
@@ -135,6 +133,9 @@ mosaicoComponent initialValues props = React.do
         setState _ { categoryStructure = cats }
         -- Listen for route changes and set state accordingly
         void $ locations (routeListener cats setState) initialValues.nav
+      magicLogin Nothing $ \u -> case u of
+        Right user -> setState _ { user = Just user }
+        _ -> pure unit
     pure mempty
 
   let setFrontpage feedName =
@@ -147,6 +148,8 @@ mosaicoComponent initialValues props = React.do
             feed <- letteraFn
             liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds }
           Just _ -> pure unit
+      onPaywallEvent = do
+        maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
 
   useEffect state.route do
     case state.route of
@@ -180,7 +183,7 @@ mosaicoComponent initialValues props = React.do
 
     pure mempty
 
-  pure $ render setState state initialValues.nav $ maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
+  pure $ render setState state initialValues.nav onPaywallEvent
 
 routeListener :: Array Category -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
@@ -201,8 +204,6 @@ getInitialValues = do
   locationState <- nav.locationState
   let initialRoute = either (const $ Routes.Frontpage) identity $ match (Routes.routes []) locationState.path
 
-  headerComponent     <- Header.headerComponent
-  menuComponent       <- Menu.menuComponent
   loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
   frontpageComponent    <- Frontpage.frontpageComponent
@@ -213,8 +214,6 @@ getInitialValues = do
         , route: initialRoute
         , clickedArticle: Nothing
         , modalView: Nothing
-        , headerComponent
-        , menuComponent
         , loginModalComponent
         , mostReadListComponent
         , frontpageComponent
@@ -307,11 +306,13 @@ render setState state router onPaywallEvent =
            Nothing -> mosaicoDefaultLayout mempty -- TODO: Loading spinner
        Routes.MenuPage ->
          mosaicoLayoutNoAside
-         $ state.menuComponent
+         $ Menu.render
              { categoryStructure: state.categoryStructure
-             , onCategoryClick: \categoryLabel url -> do
-                 onCategoryClick categoryLabel
-                 router.pushState (write {}) url
+             , onCategoryClick
+             , user: state.user
+             , onLogout: do
+                 setState _ { user = Nothing }
+                 onPaywallEvent
              }
        Routes.DraftPage -> mosaicoLayoutNoAside
          $ renderArticle $ maybe (Right notFoundArticle) Right state.article
@@ -335,10 +336,12 @@ render setState state router onPaywallEvent =
       , id: Paper.toString mosaicoPaper
       , children:
           [ Header.topLine
-          , state.headerComponent
+          , Header.render
               { router
               , categoryStructure: state.categoryStructure
               , onCategoryClick
+              , user: state.user
+              , onLogin
               }
           , Header.mainSeparator
           , content
@@ -363,8 +366,10 @@ render setState state router onPaywallEvent =
 
     onCategoryClick c =
       case state.route of
-        Routes.CategoryPage category | category == c -> pure unit
-        _ -> pure unit
+        Routes.CategoryPage category | category == c -> mempty
+        _ -> capture_ do
+          void $ Web.scroll 0 0 =<< Web.window
+          router.pushState (write {}) $ show c
 
     onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window
@@ -374,6 +379,8 @@ render setState state router onPaywallEvent =
       setState _ { clickedArticle = Just article }
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) $ "/artikel/" <> article.uuid
+
+    onLogin = setState \s -> s { modalView = Just LoginModal }
 
     frontpage frontpageArticles = mosaicoDefaultLayout $ state.frontpageComponent
       { frontpageArticles
@@ -386,7 +393,7 @@ render setState state router onPaywallEvent =
       Article.render
         { paper: mosaicoPaper
         , article
-        , onLogin: setState \s -> s { modalView = Just LoginModal }
+        , onLogin
         , user: state.user
         , onPaywallEvent
         , onTagClick

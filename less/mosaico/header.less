@@ -96,10 +96,15 @@
     grid-row-start: 1;
     align-self: center;
     grid-column-start: 1;
+    text-transform: uppercase;
 
     @media (min-width: @breakpoint-3col) {
       grid-row-start: 3;
       align-self: stretch;
+    }
+
+    &--active {
+      cursor: pointer;
     }
   }
 
@@ -150,7 +155,7 @@
 
       justify-self: center;
     }
-
+    cursor: pointer;
   }
 
   &__icon {

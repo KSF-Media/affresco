@@ -8,7 +8,8 @@ import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class.Console (log)
 import Puppeteer as Chrome
 
-import Mosaico.Test.Article as Test
+import Mosaico.Test.Account as Account
+import Mosaico.Test.Article as Article
 
 foreign import testUser :: String
 foreign import testPassword :: String
@@ -23,28 +24,31 @@ defaultPremiumArticleId = "cf100445-d2d8-418a-b190-79d0937bf7fe"
 
 main :: Effect Unit
 main = launchAff_ do
-  { articleId, premiumArticleId } <- withBrowserPage Test.testFrontPage
+  if testUser == "" || testPassword == ""
+    then log "skip login and logout test, user or password not set"
+    else withBrowserPage $ Account.loginLogout testUser testPassword
+  { articleId, premiumArticleId } <- withBrowserPage Article.testFrontPage
   let premiumUuid = fromMaybe defaultPremiumArticleId premiumArticleId
 
-  withBrowserPage $ Test.testFreeArticle (fromMaybe defaultArticleId articleId)
+  withBrowserPage $ Article.testFreeArticle (fromMaybe defaultArticleId articleId)
 
   if testUser == "" || testPassword == ""
     then log "skip unentitled paywall test, user or password not set"
     else do
     case premiumArticleId of
       Just uuid -> withBrowserPage $
-        Test.testPaywallLogin false uuid testUser testPassword Test.testPaywallHolds
+        Article.testPaywallLogin false uuid testUser testPassword Article.testPaywallHolds
       _ -> log "Skip paywall hold test via navigation"
-  withBrowserPage $ Test.testPaywallLogin true premiumUuid testUser testPassword Test.testPaywallHolds
+  withBrowserPage $ Article.testPaywallLogin true premiumUuid testUser testPassword Article.testPaywallHolds
 
   if entitledUser == "" || entitledPassword == ""
     then log "skip entitled paywall test, user or password not set"
     else do
     case premiumArticleId of
       Just uuid -> withBrowserPage $
-        Test.testPaywallLogin false uuid entitledUser entitledPassword Test.testPaywallOpen
+        Article.testPaywallLogin false uuid entitledUser entitledPassword Article.testPaywallOpen
       _ -> log "Skip paywall open test via navigation"
-  withBrowserPage $ Test.testPaywallLogin true premiumUuid entitledUser entitledPassword Test.testPaywallOpen
+  withBrowserPage $ Article.testPaywallLogin true premiumUuid entitledUser entitledPassword Article.testPaywallOpen
   where
     withBrowser :: forall a. (Chrome.Browser -> Aff a) -> Aff a
     withBrowser = bracket Chrome.launch Chrome.close

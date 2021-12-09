@@ -3,18 +3,19 @@ module Mosaico.Header where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Maybe (Maybe, maybe)
 import Data.Newtype (unwrap)
+import Data.Nullable (toMaybe)
 import Data.String as String
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
+import Foreign.Object as Object
+import KSF.User (User)
 import Lettera.Models (Category(..), CategoryLabel)
-import Mosaico.Header.Menu as Menu
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (capture_)
-import React.Basic.Events (handler_)
-import React.Basic.Hooks (Component, component, useState, (/\))
-import React.Basic.Hooks as React
+import React.Basic.Events (EventHandler, handler_)
 import Routing (match)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (E, read, write)
@@ -22,31 +23,13 @@ import Simple.JSON (E, read, write)
 type Props =
   { router :: PushStateInterface
   , categoryStructure :: Array Category
-  , onCategoryClick :: CategoryLabel -> Effect Unit
+  , onCategoryClick :: CategoryLabel -> EventHandler
+  , onLogin :: Effect Unit
+  , user :: Maybe User
   }
 
-type Self =
-  { state :: State
-  , setState :: SetState
-  , props :: Props
-  }
-
-type State =
-  { menuComponent :: Menu.Props -> JSX
-  }
-
-type SetState = (State -> State) -> Effect Unit
-
-headerComponent :: Component Props
-headerComponent = do
-  menuComponent <- Menu.menuComponent
-  component "Header" \props -> React.do
-    let initialState = { menuComponent }
-    state /\ setState <- useState initialState
-    pure $ render { state, setState, props }
-
-render :: Self -> JSX
-render { props } =
+render :: Props -> JSX
+render props =
   DOM.header
     { className: block
     , children:
@@ -78,15 +61,24 @@ render { props } =
             { className: block <> "__logo"
             , onClick: handler_ $ props.router.pushState (write {}) "/"
             }
-        , DOM.div
-            { className: accountClass
-            , children: [ DOM.text "NAME" ]
-            }
+        , maybe
+            (DOM.div
+               { children: [ DOM.text "LOGGA IN" ]
+               , onClick: handler_ props.onLogin
+               , className: accountClass <> " " <> accountClass <> "--active"
+               , _data: Object.fromFoldable [Tuple "login" "1"]
+               }
+            )
+            (\firstName ->
+                DOM.div
+                  { className: accountClass
+                  , children: [ DOM.text firstName ]
+                  }
+            ) $ toMaybe <<< _.firstName =<< props.user
         , DOM.nav
             { className: block <> "__center-links"
             , children: map mkCategory props.categoryStructure
             }
-
         , DOM.div
             { className: block <> "__right-buttons"
             , children:
@@ -111,7 +103,6 @@ render { props } =
                           props.router
 
                     }
-
                 ]
             }
         ]
@@ -119,14 +110,9 @@ render { props } =
   where
     mkCategory (Category category) =
       DOM.a { href: "/" <> show category.label
-            , onClick: capture_ $ do
-                  props.onCategoryClick category.label
-                  writeCategoryRoute category.label
+            , onClick: props.onCategoryClick category.label
             , children: [ DOM.text $ String.toUpper $ unwrap category.label ]
             }
-
-    writeCategoryRoute categoryLabel =
-      props.router.pushState (write {}) $ "/" <> show categoryLabel
 
     searchButton :: JSX
     searchButton = DOM.div
