@@ -171,9 +171,9 @@ mosaicoComponent initialValues props = React.do
             staticPage <- fetchStaticPage page
             liftEffect $ setState _  { staticPage = Just staticPage }  
             case staticPage of
-              StaticPageResponse r ->
-                liftEffect $ evalExternalScripts ["<script>" <> r.pageScript <> "</script>"]
-              _ -> pure unit
+              StaticPageResponse r
+                | Just p <- r.pageScript -> liftEffect $ evalExternalScripts ["<script>" <> p <> "</script>"]
+              _ -> mempty
 
     case props.mostReadArticles of
       Just mostReads

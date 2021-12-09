@@ -60,3 +60,6 @@ export ENTITLED_PASSWORD=
 ```
 spago -x test.dhall test
 ```
+
+## Static Pages
+Since the js script does not work if inserted as inner html, therefore the script is in an external file. The js file has identical name as the html file and fetched at the same time as the html file and run after the DOM tree is built.
