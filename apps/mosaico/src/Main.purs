@@ -83,6 +83,10 @@ type Env =
   , staticPages :: HashMap.HashMap String String
   }
 
+data FrontPage
+  = Html String
+  | ArticleList (Array ArticleStub)
+
 indexHtmlFileLocation :: String
 indexHtmlFileLocation = "./dist/client/index.html"
 
@@ -306,6 +310,16 @@ frontpage env { guards: { credentials } } = do
                   ] <> userVar user
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+
+getFrontPage :: Paper -> String -> Aff FrontPage
+getFrontPage paper category = do 
+  eitherHtml <- Lettera.getFrontpageHtml paper category
+  case eitherHtml of
+    Right html -> Html html
+    Left Lettera.FrontPageHtmlNotFound -> getFrontpageArticles
+    Left Lettera.ResponseParseError error -> Console.warn
+  where
+    getFrontpageArticles = Lettera.getFrontpage paper Nothing
 
 mkArticleFeed :: Maybe String -> String -> Array ArticleStub -> String
 mkArticleFeed feedPage feedType feedContent =
