@@ -9,9 +9,9 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
-import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
+import Data.Hashable (class Hashable, hash)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
@@ -26,9 +26,10 @@ import KSF.Auth as Auth
 import KSF.Paper as Paper
 import KSF.User (User)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category, CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (ArticleStub, Category, CategoryLabel(..), FullArticle(..), Tag(..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
+import Mosaico.Eval (evalExternalScripts)
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
@@ -168,7 +169,11 @@ mosaicoComponent initialValues props = React.do
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
-            liftEffect $ setState _  { staticPage = Just staticPage }
+            liftEffect $ setState _  { staticPage = Just staticPage }  
+            case staticPage of
+              StaticPageResponse r ->
+                liftEffect $ evalExternalScripts ["<script>" <> r.pageScript <> "</script>"]
+              _ -> pure unit
 
     case props.mostReadArticles of
       Just mostReads

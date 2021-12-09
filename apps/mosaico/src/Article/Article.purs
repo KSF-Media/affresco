@@ -23,13 +23,10 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
+import Mosaico.Eval (evalExternalScripts)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
-
-foreign import evalExternalScriptsImpl :: EffectFn1 (Array String) Unit
-evalExternalScripts :: Array String -> Effect Unit
-evalExternalScripts = runEffectFn1 evalExternalScriptsImpl
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
 isPremium (Left articleStub) = articleStub.premium
