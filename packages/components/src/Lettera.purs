@@ -56,7 +56,6 @@ letteraTagUrl = letteraBaseUrl <> "/tag/"
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
   tokens <- Auth.loadToken
-  Auth.setMosaicoAuthCookies
   getArticle articleId tokens
 
 -- TODO: Instead of String, use some sort of LetteraError or something

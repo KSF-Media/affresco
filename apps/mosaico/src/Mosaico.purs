@@ -3,7 +3,7 @@ module Mosaico where
 import Prelude
 
 import Control.Alternative as Alt
-import Data.Argonaut.Core (Json, toArray)
+import Data.Argonaut.Core (Json, toArray, stringify)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
@@ -12,7 +12,7 @@ import Data.Foldable (fold, foldMap)
 import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
@@ -22,7 +22,8 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import KSF.Auth as Auth
+import Foreign (unsafeFromForeign)
+import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
@@ -37,6 +38,7 @@ import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
 import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
+import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
@@ -72,6 +74,7 @@ type Props =
   , staticPageContent :: Maybe StaticPage
   , categoryStructure :: Array Category
   , initialFrontpageFeed :: HashMap ArticleFeed (Array ArticleStub)
+  , user :: Maybe User
   }
 type JSProps =
   { article :: Nullable Json
@@ -83,6 +86,7 @@ type JSProps =
                                      , feedPage    :: Nullable String
                                      , feedContent :: Nullable String
                                      }
+  , user :: Nullable Json
   }
 
 data ArticleFeed
@@ -97,6 +101,7 @@ instance hashableArticleFeed :: Hashable ArticleFeed where
 
 app :: Component Props
 app = do
+  Auth.enableCookieLogin
   initialValues <- getInitialValues
   component "Mosaico" $ mosaicoComponent initialValues
 
@@ -113,6 +118,7 @@ mosaicoComponent initialValues props = React.do
                          , frontpageFeeds = props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes props.categoryStructure) initialValues.locationState.path
+                         , user = props.user
                          }
 
   let loadArticle articleId = Aff.launchAff_ do
@@ -135,9 +141,10 @@ mosaicoComponent initialValues props = React.do
         setState _ { categoryStructure = cats }
         -- Listen for route changes and set state accordingly
         void $ locations (routeListener cats setState) initialValues.nav
-      magicLogin Nothing $ \u -> case u of
-        Right user -> setState _ { user = Just user }
-        _ -> pure unit
+      when (isNothing props.user) $
+        magicLogin Nothing $ \u -> case u of
+          Right user -> setState _ { user = Just user }
+          _ -> pure unit
     pure mempty
 
   let setFrontpage feedName =
@@ -256,10 +263,16 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
-  in { article, mostReadArticles, initialFrontpageFeed, staticPageContent, categoryStructure }
+      -- User comes directly from the server, which uses the same
+      -- version of User.  User is alreay quite close to native
+      -- JavaScript representation, which should make raw conversion
+      -- to and from possible.
+      user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
+  in { article, mostReadArticles, initialFrontpageFeed, staticPageContent, categoryStructure, user }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
+  Auth.enableCookieLogin
   initialValues <- getInitialValues
   React.reactComponent "Mosaico" $ mosaicoComponent initialValues <<< fromJSProps
 
@@ -273,7 +286,6 @@ render setState state router onPaywallEvent =
              Right u -> do
                setState _ { modalView = Nothing, user = Just u }
                onPaywallEvent
-               Aff.launchAff_ Auth.setMosaicoAuthCookies
              Left _err -> do
                onPaywallEvent
                -- TODO: Handle properly
