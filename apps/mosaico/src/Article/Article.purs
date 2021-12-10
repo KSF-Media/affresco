@@ -23,6 +23,7 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
+import Mosaico.Article.Image (articleMainImage, articleImage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
@@ -67,31 +68,6 @@ type Props =
 
 evalEmbeds :: Article -> Effect Unit
 evalEmbeds = evalExternalScripts <<< map unwrap <<< fold <<< _.externalScripts
-
-renderImage :: Image -> JSX
-renderImage img =
-  DOM.div
-    { className: "mosaico-article__image"
-    , children:
-        [ DOM.img
-            { src: img.url
-            , title: caption
-            }
-        , DOM.div
-            { className: "caption"
-            , children:
-                [ DOM.text caption
-                , DOM.span
-                    { className: "byline"
-                    , children: [ DOM.text byline ]
-                    }
-                ]
-            }
-      ]
-    }
-  where
-    caption = fold img.caption
-    byline  = fold img.byline
 
 render :: Props -> JSX
 render props =
@@ -141,9 +117,10 @@ render props =
                       ]
                   }
             ]
-          , DOM.div
-              { className: "mosaico-article__main-image"
-              , children: [ foldMap renderImage mainImage ]
+          , articleMainImage
+              { clickable: true
+              , params: Just "&width=980&height=550&q=90"
+              , image: fold mainImage
               }
           , DOM.div
               { className: "mosaico-article__main"
@@ -276,10 +253,11 @@ render props =
         { className: block <> " " <> block <> "__subheadline"
         , children: [ DOM.text str ]
         }
-      Image img -> DOM.div
-        { className: block
-        , children: [ renderImage img ]
-        }
+      Image img -> articleImage
+          { clickable: true
+          , params: Just "&width=640&q=90"
+          , image: img
+          }
       Box boxData ->
         DOM.div
           { className: block <> " " <> block <> "__factbox"
