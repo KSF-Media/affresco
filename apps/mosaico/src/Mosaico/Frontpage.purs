@@ -45,7 +45,7 @@ render props =
                     [ DOM.a
                         { href: "/artikel/" <> a.uuid
                         , className: "list-article-image"
-                        , children: [ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url  a.listImage } ]
+                        , children: [ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url a.listImage } ]
                         }
                     ,  DOM.div
                          { className: "list-article-liftup"
