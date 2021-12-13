@@ -47,9 +47,14 @@ articleMainImage props =
   DOM.div
     { className: "mosaico-article__main-image"
     , children:
-        [ DOM.img
-            { src: img.url <> params
-            , title: caption
+        [ DOM.div
+            { className: "wrapper"
+            , children:
+                [ DOM.img
+                    { src: img.url <> params
+                    , title: caption
+                    }
+                ]
             }
         , DOM.div
             { className: "caption"
