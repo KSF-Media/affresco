@@ -14,12 +14,13 @@ import Effect.Class (liftEffect)
 import KSF.User (User, logout)
 import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
-import React.Basic.Events (EventHandler, handler_)
+import React.Basic.Events (EventHandler)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 
 type Props =
   { categoryStructure :: Array Category
-  , onCategoryClick :: CategoryLabel -> EventHandler
+  , onCategoryClick :: Category -> EventHandler
   , user :: Maybe User
   , onLogout :: Effect Unit
   }
@@ -35,11 +36,13 @@ type MenuLayout = Array MenuBlock
 type Section =
   { title :: String
   , subsections :: Array Subsection
-  , onClick :: Maybe (Effect Unit)
+  , url :: String
+  , onClick :: EventHandler
   }
 
 type Subsection =
   { title :: CategoryLabel
+  , onClick :: EventHandler
   }
 
 render :: Props -> JSX
@@ -84,36 +87,43 @@ render props@{ onLogout } = DOM.div
                   [ Just
                     { title: "SÖK"
                     , subsections: []
-                    , onClick: Nothing
+                    , url: ""
+                    , onClick: mempty
                     }
                   , Just
                     { title: "E-TIDNINGEN"
                     , subsections: []
-                    , onClick: Nothing
+                    , url: ""
+                    , onClick: mempty
                     }
                   , Just
                     { title: "KUNDSERVICE"
                     , subsections: []
-                    , onClick: Nothing
+                    , url: ""
+                    , onClick: mempty
                     }
                   , props.user *>
                     Just
                     { title: "LOGGA UT"
                     , subsections: []
-                    , onClick: Just $ launchAff_ do
+                    , url: ""
+                    , onClick: capture_ $ launchAff_ do
                       logout $ const $ pure unit
                       liftEffect onLogout
                     }
                   ]
 
-    mkSection acc (Category c) =
-      let mkSubsection (Category subc) =
-            { title: subc.label }
+    mkSection acc category@(Category c) =
+      let mkSubsection subCategory@(Category { label }) =
+            { title: label
+            , onClick: props.onCategoryClick subCategory
+            }
           section =
             Section $
               { title: toUpper $ unwrap c.label
               , subsections: map mkSubsection c.subCategories
-              , onClick: Nothing
+              , url: "/" <> show c.label
+              , onClick: props.onCategoryClick category
               }
       in acc `snoc` section
 
@@ -121,15 +131,18 @@ render props@{ onLogout } = DOM.div
     bottomSections = Section <$>
                   [ { title: "KONTAKTA OSS"
                     , subsections: []
-                    , onClick: Nothing
+                    , url: ""
+                    , onClick: mempty
                     }
                   , { title: "ANNONSERA"
                     , subsections: []
-                    , onClick: Nothing
+                    , url: ""
+                    , onClick: mempty
                     }
                   , { title: "JOBBA HOS OSS"
                     , subsections: []
-                    , onClick: Nothing
+                    , url: ""
+                    , onClick: mempty
                     }
                   ]
 
@@ -153,14 +166,20 @@ render props@{ onLogout } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection section@{ subsections, title } = DOM.div
+        renderSection { subsections, title, url, onClick } = DOM.div
           { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
                               [ DOM.div
                                   { className: sectionTitleClass
-                                  , children: [ DOM.text title ]
+                                  , children:
+                                      [ DOM.a
+                                          { href: url
+                                          , children: [ DOM.text title ]
+                                          , onClick
+                                          }
+                                      ]
                                   }
                               ]
                           }
@@ -169,17 +188,16 @@ render props@{ onLogout } = DOM.div
                           , children: renderSubsection <$> subsections
                           }
                       ]
-          , onClick: foldMap handler_ section.onClick
           }
 
         renderSubsection :: Subsection -> JSX
-        renderSubsection { title } = DOM.div
+        renderSubsection { title, onClick } = DOM.div
           { className: subsectionClass
           , children:
               [ DOM.a
                   { href: "/" <> show title
                   , children: [ DOM.text $ unwrap title ]
-                  , onClick: props.onCategoryClick title
+                  , onClick
                   }
               ]
           }
