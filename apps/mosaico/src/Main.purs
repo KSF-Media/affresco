@@ -282,7 +282,7 @@ frontpage env _ = do
           { mainContent:
               FrontpageContent
               $ frontpageComponent
-                  { frontpageArticles: articles
+                  { frontpageArticles: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -318,7 +318,7 @@ tagList env { params: { tag } } = do
             { mainContent:
                 TagListContent
                 $ frontpageComponent
-                  { frontpageArticles: articles
+                  { frontpageArticles: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -378,7 +378,7 @@ categoryPage env { params: { categoryName } } = do
   let mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: FrontpageContent $ frontpageComponent
-                                { frontpageArticles: articles
+                                { frontpageArticles: Just articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }

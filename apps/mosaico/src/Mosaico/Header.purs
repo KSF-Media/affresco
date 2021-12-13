@@ -11,7 +11,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Foreign.Object as Object
 import KSF.User (User)
-import Lettera.Models (Category(..), CategoryLabel)
+import Lettera.Models (Category(..))
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -23,7 +23,7 @@ import Simple.JSON (E, read, write)
 type Props =
   { router :: PushStateInterface
   , categoryStructure :: Array Category
-  , onCategoryClick :: CategoryLabel -> EventHandler
+  , onCategoryClick :: Category -> EventHandler
   , onLogin :: Effect Unit
   , user :: Maybe User
   }
@@ -108,10 +108,10 @@ render props =
         ]
     }
   where
-    mkCategory (Category category) =
-      DOM.a { href: "/" <> show category.label
-            , onClick: props.onCategoryClick category.label
-            , children: [ DOM.text $ String.toUpper $ unwrap category.label ]
+    mkCategory category@(Category { label }) =
+      DOM.a { href: "/" <> show label
+            , onClick: props.onCategoryClick category
+            , children: [ DOM.text $ String.toUpper $ unwrap label ]
             }
 
     searchButton :: JSX

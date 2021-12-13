@@ -96,7 +96,7 @@ render props =
                 , children: [ DOM.text $ fromMaybe mempty $ getPreamble props.article ]
                 }
             -- We don't want to be able to share error articles
-            , guard (maybe false (not <<< isErrorArticle) $ hush props.article)
+            , guard (maybe true (not <<< isErrorArticle) $ hush props.article)
                 DOM.section
                   { className: "mosaico-article__tag-n-share"
                   , children:

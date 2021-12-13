@@ -4,11 +4,12 @@ import Prelude
 
 import Data.Array (head)
 import Data.Foldable (foldMap)
-import Data.Maybe (fromMaybe, maybe)
+import Data.Maybe (Maybe, fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
+import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -16,7 +17,7 @@ import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, component)
 
 type Props =
-  { frontpageArticles :: Array ArticleStub
+  { frontpageArticles :: Maybe (Array ArticleStub)
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
@@ -28,7 +29,7 @@ render :: Props -> JSX
 render props =
    DOM.div
     { className: "mosaico--article-list"
-    , children: map renderListArticle props.frontpageArticles
+    , children: maybe [loadingSpinner] (map renderListArticle) props.frontpageArticles
     }
   where
     renderListArticle :: ArticleStub -> JSX
