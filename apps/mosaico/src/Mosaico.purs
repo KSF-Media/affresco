@@ -7,7 +7,7 @@ import Data.Argonaut.Core (Json, toArray)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
-import Data.Either (Either(..), either, hush)
+import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
@@ -111,6 +111,8 @@ mosaicoComponent initialValues props = React.do
                          , staticPage = map StaticPageResponse props.staticPageContent
                          , categoryStructure = props.categoryStructure
                          , frontpageFeeds = props.initialFrontpageFeed
+                         , route = fromMaybe Routes.Frontpage $ hush $
+                                   match (Routes.routes props.categoryStructure) initialValues.locationState.path
                          }
 
   let loadArticle articleId = Aff.launchAff_ do
@@ -195,14 +197,12 @@ type InitialValues =
   { state :: State
   , nav :: PushStateInterface
   , locationState :: LocationState
-  , initialRoute :: Routes.MosaicoPage
   }
 
 getInitialValues :: Effect InitialValues
 getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
-  let initialRoute = either (const $ Routes.Frontpage) identity $ match (Routes.routes []) locationState.path
 
   loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
@@ -211,7 +211,7 @@ getInitialValues = do
     { state:
         { article: Nothing
         , mostReadArticles: []
-        , route: initialRoute
+        , route: Routes.Frontpage
         , clickedArticle: Nothing
         , modalView: Nothing
         , loginModalComponent
@@ -224,7 +224,6 @@ getInitialValues = do
         }
     , nav
     , locationState
-    , initialRoute
     }
 
 fromJSProps :: JSProps -> Props
@@ -236,8 +235,8 @@ fromJSProps jsProps =
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
 
-      frontpageFeed :: Maybe (HashMap ArticleFeed (Array ArticleStub))
-      frontpageFeed = do
+      initialFrontpageFeed :: HashMap ArticleFeed (Array ArticleStub)
+      initialFrontpageFeed = fromMaybe HashMap.empty do
         feed <- toMaybe jsProps.initialFrontpageFeed
         let feedPage = toMaybe feed.feedPage
         feedType <- do
@@ -257,7 +256,7 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
-  in { article, mostReadArticles, initialFrontpageFeed: fromMaybe HashMap.empty frontpageFeed, staticPageContent, categoryStructure }
+  in { article, mostReadArticles, initialFrontpageFeed, staticPageContent, categoryStructure }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
