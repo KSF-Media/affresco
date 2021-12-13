@@ -285,7 +285,7 @@ render setState state router onPaywallEvent =
   <> case state.route of
        Routes.CategoryPage category ->
          mosaicoDefaultLayout $ state.frontpageComponent
-           { frontpageArticles: fold $ HashMap.lookup (CategoryFeed (Just category)) state.frontpageFeeds
+           { frontpageArticles: HashMap.lookup (CategoryFeed (Just category)) state.frontpageFeeds
            , onArticleClick
            , onTagClick
            }
@@ -296,14 +296,14 @@ render setState state router onPaywallEvent =
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> frontpage $ fold $ HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
+       Routes.Frontpage -> frontpage $ HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
          case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
            Just tagFeed
-             | not $ null tagFeed -> frontpage tagFeed
+             | not $ null tagFeed -> frontpage $ Just tagFeed
              | otherwise -> mosaicoDefaultLayout $ renderArticle (Right notFoundArticle)
-           Nothing -> mosaicoDefaultLayout mempty -- TODO: Loading spinner
+           Nothing -> frontpage Nothing
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ Menu.render
