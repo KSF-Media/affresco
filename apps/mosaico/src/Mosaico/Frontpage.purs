@@ -39,9 +39,12 @@ render :: State -> Props -> JSX
 render state props =
   DOM.div
     { className: "mosaico--article-list"
-    , children: maybe [loadingSpinner] $ case props.content of
-        ArticleList list -> map renderListArticle list
-        Html content     -> [ state.htmlRendererComponent { content } ]
+    , children: maybe 
+        [loadingSpinner]
+        (\content -> case content of
+            ArticleList list -> map renderListArticle list
+            Html html        -> [ state.htmlRendererComponent { content: html } ])
+        props.content
     }
   
   where

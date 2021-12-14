@@ -33,6 +33,7 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign (unsafeToForeign)
 import JSURI as URI
 import KSF.Api (UserAuth, parseToken)
+import KSF.Api.Error as Api.Error
 import KSF.Paper (Paper)
 import KSF.User (User, fromPersonaUser)
 import Lettera as Lettera
@@ -301,7 +302,7 @@ frontpage env { guards: { credentials } } = do
           }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" content
+                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" articles
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
