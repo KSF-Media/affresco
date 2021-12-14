@@ -2,8 +2,9 @@ module MosaicoServer where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import KSF.Paper as Paper
+import KSF.User (User)
 import Lettera.Models (ArticleStub, Category)
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
@@ -18,6 +19,7 @@ type Props =
   { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
   , categoryStructure :: Array Category
+  , user :: Maybe User
   }
 
 type State =
@@ -69,7 +71,7 @@ render router state props = DOM.div
            , Header.render { router
                            , categoryStructure: props.categoryStructure
                            , onCategoryClick: const mempty
-                           , user: Nothing
+                           , user: props.user
                            , onLogin: pure unit
                            }
            , Header.mainSeparator
