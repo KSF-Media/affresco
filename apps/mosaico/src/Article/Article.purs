@@ -119,7 +119,7 @@ render props =
             ]
           , articleMainImage
               { clickable: true
-              , params: Just "&width=980&height=550&q=90"
+              , params: Just "&width=960&height=540&q=90"
               , image: fold mainImage
               }
           , DOM.div
