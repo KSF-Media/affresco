@@ -41,6 +41,7 @@ import Mosaico.Article as Article
 import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header.Menu as Menu
+import Mosaico.Models (ArticleFeed(..))
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Search as Search
 import MosaicoServer (MainContent(..))
@@ -300,29 +301,34 @@ frontpage env { guards: { credentials } } = do
           }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" articles
+                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" content
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
-getFrontPage :: Paper -> String -> Aff Frontpage.FrontPageContent
+getFrontPage :: Paper -> String -> Aff ArticleFeed
 getFrontPage paper category = do 
   eitherHtml <- Lettera.getFrontpageHtml paper category
   case eitherHtml of
-    Right html -> pure $ Frontpage.Html html
+    Right html -> pure $ Html html
     Left err -> case err.type of
       Lettera.FrontPageHtmlNotFound -> getFrontpageArticles
       _                             -> do
         liftEffect $ Lettera.handleLetteraError err
         getFrontpageArticles
   where
-    getFrontpageArticles = Frontpage.ArticleList <$> Lettera.getFrontpage paper Nothing
+    getFrontpageArticles = ArticleList <$> Lettera.getFrontpage paper Nothing
 
-mkArticleFeed :: Maybe String -> String -> Array ArticleStub -> String
-mkArticleFeed feedPage feedType feedContent =
-  stringify $ encodeJson { feedPage, feedType, feedContent: encodeStringifyArticleStubs feedContent }
+mkArticleFeed :: Maybe String -> String -> ArticleFeed -> String
+mkArticleFeed feedPage feedType feed =
+  let feedContent /\ feedContentType =
+        case feed of
+          ArticleList list -> encodeStringifyArticleStubs list /\ "articlelist"
+          Html html        -> html /\ "html"
+   in
+    stringify $ encodeJson { feedPage, feedType, feedContent, feedContentType }
 
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
@@ -382,7 +388,7 @@ tagList env { params: { tag }, guards: { credentials } } = do
             { mainContent:
                 TagListContent tag'
                 $ frontpageComponent
-                  { content: Just (Frontpage.ArticleList articles)
+                  { content: Just (ArticleList articles)
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -392,7 +398,7 @@ tagList env { params: { tag }, guards: { credentials } } = do
             }
     html <- liftEffect do
               let windowVars =
-                    [ "frontpageFeed"     /\ mkArticleFeed (Just $ unwrap tag') "tagfeed" articles
+                    [ "frontpageFeed"     /\ mkArticleFeed (Just $ unwrap tag') "tagfeed" (ArticleList articles)
                     , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                     , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                     ] <> userVar user
@@ -449,7 +455,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
   let mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: FrontpageContent $ frontpageComponent
-                                { content: Just (Frontpage.ArticleList articles)
+                                { content: Just (ArticleList articles)
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }
@@ -459,7 +465,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
                             }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ mkArticleFeed (Just categoryName) "categoryfeed" articles
+                  [ "frontpageFeed"     /\ mkArticleFeed (Just categoryName) "categoryfeed" (ArticleList articles)
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user

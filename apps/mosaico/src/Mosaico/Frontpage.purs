@@ -14,19 +14,16 @@ import Foreign.Object as Object
 import KSF.HtmlRenderer as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Mosaico.Models (ArticleFeed(..))
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, component)
 
-data FrontPageContent
-  = Html String
-  | ArticleList (Array ArticleStub)
-
 type State = { htmlRendererComponent :: HtmlRenderer.Props -> JSX }
 
 type Props =
-  { content :: Maybe FrontPageContent
+  { content :: Maybe ArticleFeed
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
