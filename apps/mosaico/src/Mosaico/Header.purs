@@ -15,6 +15,7 @@ import Lettera.Models (Category(..))
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (EventHandler, handler_)
 import Routing (match)
 import Routing.PushState (PushStateInterface)
@@ -115,11 +116,13 @@ render props =
             }
 
     searchButton :: JSX
-    searchButton = DOM.div
+    searchButton = DOM.a
                     { className: iconButtonClass <> " " <> searchButtonClass
                     , children: [ DOM.div_ [ DOM.text "SÖK" ]
                                 , DOM.div { className: iconClass <> " " <> searchIconClass }
                                 ]
+                    , href: "/sök"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/sök"
                     }
 
     block = "mosaico-header"
