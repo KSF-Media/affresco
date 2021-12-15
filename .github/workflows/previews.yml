@@ -1,3 +1,7 @@
+env:
+  STAGING_BOTTEGA_URL: https://bottega.staging.ksfmedia.fi/v1
+  STAGING_LETTERA_URL: https://lettera.staging.ksfmedia.fi/v4beta
+  STAGING_PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
 jobs:
   check-ci:
     container:

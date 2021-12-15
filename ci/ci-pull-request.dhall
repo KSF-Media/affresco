@@ -98,4 +98,9 @@ in  { name = "previews"
           [ "deploy-gs", "deploy-mosaico-server", "deploy-app-article-server" ]
         }
       }
+      , env =
+        { STAGING_BOTTEGA_URL = "https://bottega.staging.ksfmedia.fi/v1"
+        , STAGING_PERSONA_URL = "https://persona.staging.ksfmedia.fi/v1"
+        , STAGING_LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v4beta"
+      }
     }

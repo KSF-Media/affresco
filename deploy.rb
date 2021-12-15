@@ -76,10 +76,7 @@ def setup_env(app)
     ENV['NODE_ENV'] = 'production'
   else
     ENV['NODE_ENV'] = 'development'
-    # Copy .env.local to .env.development for Parcel
-    if (File.exist?("#{app['path']}/.env.local"))
-      FileUtils.cp("#{app['path']}/.env.local", "#{app['path']}/.env.development")
-    end
+    generate_staging_dot_env(app, app_vars)
   end
 end
 
@@ -89,6 +86,17 @@ def generate_production_dot_env(app, app_vars)
     app_vars.each do |v|
       # Strip 'PRODUCTION_' from the variable name
       env_var_name = v.sub(/^PRODUCTION_/, '')
+      f.puts("#{env_var_name}=#{ENV[v]}")
+    end
+  end
+end
+
+def generate_staging_dot_env(app, app_vars)
+  puts "Generating .env.production"
+  File.open("#{app['path']}/.env.development", 'a') do |f|
+    app_vars.each do |v|
+      # Strip 'PRODUCTION_' from the variable name
+      env_var_name = v.sub(/^STAGING_/, '')
       f.puts("#{env_var_name}=#{ENV[v]}")
     end
   end
