@@ -15,7 +15,7 @@ function main() {
 	article={window.article || null}
 	isPreview={window.isPreview || null}
 	mostReadArticles={window.mostReadArticles || null}
-	staticPageContent={window.staticPageContent || null}
+	staticPageName={window.staticPageName || null}
 	categoryStructure={window.categoryStructure || null}
 	initialFrontpageFeed={window.frontpageFeed || null}
 	user={window.user || null}
