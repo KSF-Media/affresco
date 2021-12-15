@@ -37,7 +37,7 @@ import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
-import Mosaico.StaticPage (StaticPage, StaticPageResponse(..), fetchStaticPage)
+import Mosaico.StaticPage (StaticPageResponse(..), getInitialStaticPageContent, fetchStaticPage)
 import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -76,7 +76,7 @@ type Components =
 type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
-  , staticPageContent :: Maybe StaticPage
+  , staticPageName :: Maybe String
   , categoryStructure :: Array Category
   , initialFrontpageFeed :: HashMap ArticleFeed (Array ArticleStub)
   , user :: Maybe User
@@ -85,7 +85,7 @@ type JSProps =
   { article :: Nullable Json
   , isPreview :: Nullable Boolean
   , mostReadArticles :: Nullable (Array Json)
-  , staticPageContent :: Nullable StaticPage
+  , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
   , initialFrontpageFeed :: Nullable { feedType    :: Nullable String
                                      , feedPage    :: Nullable String
@@ -120,7 +120,10 @@ mosaicoComponent initialValues props = React.do
   state /\ setState <- useState initialValues.state
                          { article = props.article
                          , mostReadArticles = fold props.mostReadArticles
-                         , staticPage = map StaticPageResponse props.staticPageContent
+                         , staticPage = map StaticPageResponse $
+                                        { pageName:_, pageContent:_ }
+                                        <$> props.staticPageName
+                                        <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
                          , frontpageFeeds = props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
@@ -215,12 +218,14 @@ type InitialValues =
   , components :: Components
   , nav :: PushStateInterface
   , locationState :: LocationState
+  , staticPageContent :: Maybe String
   }
 
 getInitialValues :: Effect InitialValues
 getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
+  staticPageContent <- toMaybe <$> getInitialStaticPageContent
 
   loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
@@ -246,6 +251,7 @@ getInitialValues = do
         }
     , nav
     , locationState
+    , staticPageContent
     }
 
 fromJSProps :: JSProps -> Props
@@ -273,7 +279,7 @@ fromJSProps jsProps =
           pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) content
         pure $ HashMap.singleton feedType feedContent
 
-      staticPageContent = toMaybe jsProps.staticPageContent
+      staticPageName = toMaybe jsProps.staticPageName
       -- Decoding errors are being hushed here, although if this
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
@@ -283,7 +289,7 @@ fromJSProps jsProps =
       -- JavaScript representation, which should make raw conversion
       -- to and from possible.
       user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
-  in { article, mostReadArticles, initialFrontpageFeed, staticPageContent, categoryStructure, user }
+  in { article, mostReadArticles, initialFrontpageFeed, staticPageName, categoryStructure, user }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -405,7 +411,7 @@ render setState state components router onPaywallEvent =
         Routes.CategoryPage category | category == c.label -> mempty
         _ -> capture_ do
           void $ Web.scroll 0 0 =<< Web.window
-          router.pushState (write {}) $ show c.label
+          router.pushState (write {}) $ "/" <> show c.label
 
     onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window
