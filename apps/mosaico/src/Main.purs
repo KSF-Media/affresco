@@ -60,8 +60,10 @@ import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import Persona as Persona
 import React.Basic (fragment) as DOM
+import React.Basic.Events (handler_)
 import React.Basic.DOM (div, meta) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
+import Routing.PushState (makeInterface)
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
@@ -116,7 +118,7 @@ spec ::
                 }
          , menu ::
               GET "/meny"
-                { response :: TextHtml }
+                { response :: ResponseBody }
          , staticPage ::
               GET "/sida/<pageName>"
                 { response :: ResponseBody
@@ -174,9 +176,7 @@ main = do
           , tagList: tagList env
           , staticPage: staticPage env
           , categoryPage: categoryPage env
-          , setAuthCookie: setAuthCookie
           , searchPage: searchPage env
-          , deleteAuthCookie: deleteAuthCookie
           , notFoundPage: notFoundPage env
           , menu: menu env
           }
@@ -311,28 +311,32 @@ mkArticleFeed :: Maybe String -> String -> Array ArticleStub -> String
 mkArticleFeed feedPage feedType feedContent =
   stringify $ encodeJson { feedPage, feedType, feedContent: encodeStringifyArticleStubs feedContent }
 
-menu :: Env -> {} -> Aff TextHtml
+menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
   mosaico <- liftEffect MosaicoServer.app
-  menuComponent <- liftEffect Menu.menuComponent
+  router <- liftEffect makeInterface
   let mosaicoString =
         DOM.renderToString
         $ mosaico
           { mainContent:
             MenuContent
-            $ menuComponent
+            $ Menu.render
                 { categoryStructure: env.categoryStructure
-                , onCategoryClick: (\_ _ -> mempty)
+                , onCategoryClick: const $ handler_ $ pure unit
+                , user: Nothing
+                , onLogout: pure unit
+                , router
                 }
             , mostReadArticles: []
             , categoryStructure: env.categoryStructure
+            , user: Nothing
           }
   html <- liftEffect do
             let windowVars =
                   [ "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ]
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ TextHtml html
+  pure $ htmlContent $ Response.ok $ StringBody html
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag }, guards: { credentials } } = do
