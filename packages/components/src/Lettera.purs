@@ -53,10 +53,12 @@ letteraCategoryUrl = letteraBaseUrl <> "/categories"
 letteraTagUrl :: String
 letteraTagUrl = letteraBaseUrl <> "/tag/"
 
+letteraSearchUrl :: String
+letteraSearchUrl = letteraBaseUrl <> "/search"
+
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
   tokens <- Auth.loadToken
-  Auth.setMosaicoAuthCookies
   getArticle articleId tokens
 
 -- TODO: Instead of String, use some sort of LetteraError or something
@@ -193,6 +195,24 @@ getByTag start limit tag paper = do
         liftEffect $ takeRights <$> traverse parseArticleStub responseArray
       | otherwise -> do
         Console.warn "Failed to read API response!"
+        pure mempty
+
+search :: Int -> Int -> Paper -> String -> Aff (Array ArticleStub)
+search start limit paper query = do
+  searchResponse <- AX.get ResponseFormat.json (letteraSearchUrl
+                                                <> "?start=" <> show start
+                                                <> "&limit=" <> show limit
+                                                <> "&paper=" <> Paper.toString paper
+                                                <> "&contentQuery=" <> encodeURIComponent query)
+  case searchResponse of
+    Left err -> do
+      Console.warn $ "Search response failed to decode: " <> AX.printError err
+      pure mempty
+    Right response
+      | Just (responseArray :: Array Json) <- toArray response.body -> do
+        liftEffect $ takeRights <$> traverse parseArticleStub responseArray
+      | otherwise -> do
+        Console.warn "Failed to read API reponse!"
         pure mempty
 
 getCategoryStructure :: Paper -> Aff (Array Category)

@@ -2,26 +2,30 @@ module Mosaico.Header.Menu where
 
 import Prelude
 
-import Data.Array (foldl, intersperse, snoc)
+import Data.Array (catMaybes, foldl, intersperse, snoc)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
 import Data.String (toUpper)
 import Data.String.Common (trim)
 import Effect (Effect)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
+import KSF.User (User, logout)
 import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
+import React.Basic.Events (EventHandler)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
-import React.Basic.Hooks (Component, component)
-
-type Self =
-  { props :: Props
-  }
+import Routing.PushState (PushStateInterface)
+import Simple.JSON (write)
 
 type Props =
-  { categoryStructure :: Array Category
-  , onCategoryClick :: CategoryLabel -> String -> Effect Unit
+  { router :: PushStateInterface
+  , categoryStructure :: Array Category
+  , onCategoryClick :: Category -> EventHandler
+  , user :: Maybe User
+  , onLogout :: Effect Unit
   }
 
 data MenuLayoutElement = Section Section
@@ -34,22 +38,18 @@ type MenuLayout = Array MenuBlock
 
 type Section =
   { title :: String
-  , url :: String
   , subsections :: Array Subsection
+  , url :: String
+  , onClick :: EventHandler
   }
 
 type Subsection =
   { title :: CategoryLabel
-  , url :: String
+  , onClick :: EventHandler
   }
 
-menuComponent :: Component Props
-menuComponent = do
-  component "Menu" \props -> React.do
-    pure $ render { props }
-
-render :: Self -> JSX
-render { props } = DOM.div
+render :: Props -> JSX
+render props@{ onLogout } = DOM.div
   { className: menuClass
   , children: [ menuContent
               , DOM.div
@@ -86,45 +86,66 @@ render { props } = DOM.div
     mobileOnlySeparator = Separator $ Just mobileOnlySeparatorClass
 
     topSections :: MenuBlock
-    topSections = Section <$>
-                  [ { title: "SÖK"
-                    , url: ""
+    topSections = Section <$> catMaybes
+                  [ Just
+                    { title: "SÖK"
                     , subsections: []
+                    , url: "/sök"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/sök"
                     }
-                  , { title: "E-TIDNINGEN"
-                    , url: ""
+                  , Just
+                    { title: "E-TIDNINGEN"
                     , subsections: []
+                    , url: ""
+                    , onClick: mempty
                     }
-                  , { title: "KUNDSERVICE"
-                    , url: ""
+                  , Just
+                    { title: "KUNDSERVICE"
                     , subsections: []
+                    , url: ""
+                    , onClick: mempty
+                    }
+                  , props.user *>
+                    Just
+                    { title: "LOGGA UT"
+                    , subsections: []
+                    , url: ""
+                    , onClick: capture_ $ launchAff_ do
+                      logout $ const $ pure unit
+                      liftEffect onLogout
                     }
                   ]
 
-    mkSection acc (Category c) =
-      let mkSubsection (Category subc) =
-            { title: subc.label, url: "/" <> show subc.label }
+    mkSection acc category@(Category c) =
+      let mkSubsection subCategory@(Category { label }) =
+            { title: label
+            , onClick: props.onCategoryClick subCategory
+            }
           section =
             Section $
               { title: toUpper $ unwrap c.label
-              , url: "/" <> show c.label
               , subsections: map mkSubsection c.subCategories
+              , url: "/" <> show c.label
+              , onClick: props.onCategoryClick category
               }
       in acc `snoc` section
 
     bottomSections :: MenuBlock
     bottomSections = Section <$>
                   [ { title: "KONTAKTA OSS"
-                    , url: ""
                     , subsections: []
+                    , url: ""
+                    , onClick: mempty
                     }
                   , { title: "ANNONSERA"
-                    , url: ""
                     , subsections: []
+                    , url: ""
+                    , onClick: mempty
                     }
                   , { title: "JOBBA HOS OSS"
-                    , url: ""
                     , subsections: []
+                    , url: ""
+                    , onClick: mempty
                     }
                   ]
 
@@ -148,15 +169,21 @@ render { props } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection { subsections, title } = DOM.div
+        renderSection { subsections, title, url, onClick } = DOM.div
           { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
                           , children:
                               [ DOM.div
-                                 { className: sectionTitleClass
-                                 , children: [ DOM.text title ]
-                                 }
+                                  { className: sectionTitleClass
+                                  , children:
+                                      [ DOM.a
+                                          { href: url
+                                          , children: [ DOM.text title ]
+                                          , onClick
+                                          }
+                                      ]
+                                  }
                               ]
                           }
                       , DOM.div
@@ -167,13 +194,13 @@ render { props } = DOM.div
           }
 
         renderSubsection :: Subsection -> JSX
-        renderSubsection { title, url } = DOM.div
+        renderSubsection { title, onClick } = DOM.div
           { className: subsectionClass
           , children:
               [ DOM.a
-                  { href: url
+                  { href: "/" <> show title
                   , children: [ DOM.text $ unwrap title ]
-                  , onClick: capture_ $ props.onCategoryClick title url
+                  , onClick
                   }
               ]
           }

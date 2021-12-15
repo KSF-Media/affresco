@@ -1,0 +1,23 @@
+@import (reference) "../ksf-colors";
+
+.mosaico-search {
+  grid-area: search;
+
+  &__submit button {
+    @media (min-width: @breakpoint-2col) {
+      float: right;
+      width: 50%;
+    }
+
+    @media (min-width: @breakpoint-3col) {
+      float: right;
+      width: 33%;
+    }
+  }
+
+  &__message {
+    margin-top: 1em;
+  }
+
+  margin-bottom: 1em;
+}

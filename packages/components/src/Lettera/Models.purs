@@ -6,7 +6,7 @@ import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
 import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Class (encodeJson)
-import Data.Array (fromFoldable)
+import Data.Array (catMaybes, fromFoldable)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
 import Data.Foldable (foldMap)
@@ -16,18 +16,18 @@ import Data.Hashable (class Hashable, hash)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, un, unwrap)
-import Data.Show.Generic (genericShow)
 import Data.String (joinWith, toLower)
 import Data.String (Pattern(..), Replacement(..), replaceAll, toLower) as String
 import Data.String.Extra (kebabCase) as String
 import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
+import Data.Traversable (traverse)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
 import Foreign.Object as Object
 import KSF.Helpers (dateTimeFormatter)
-import Record (modify)
+import Record (merge, modify)
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 import Type.Prelude (Proxy(..))
@@ -94,9 +94,10 @@ fromUTCTime utcTime = do
 
 type ArticleStubCommon =
   ( title     :: String
+  , listTitle :: Maybe String
   , uuid      :: String
   , preamble  :: Maybe String
-  , listImage :: Maybe Image
+  , mainImage :: Maybe Image
   , premium   :: Boolean
   )
 
@@ -133,7 +134,6 @@ instance encodeJsonExternalScript :: EncodeJson ExternalScript where
 
 type ArticleCommon =
   ( title     :: String
-  , body      :: Array BodyElementJS
   , mainImage :: Maybe Image
   , uuid      :: String
   , preamble  :: Maybe String
@@ -145,6 +145,7 @@ type ArticleCommon =
 type JSArticle =
   { publishingTime :: String
   , updateTime     :: Maybe String
+  , body           :: Array BodyElementJS
   , tags           :: Array String
   | ArticleCommon
   }
@@ -152,6 +153,7 @@ type JSArticle =
 type Article =
   { publishingTime :: Maybe LocalDateTime
   , updateTime     :: Maybe LocalDateTime
+  , body           :: Array BodyElement
   , tags           :: Array Tag
   | ArticleCommon
   }
@@ -162,6 +164,7 @@ type JSDraftArticle =
   { publishingTime :: Maybe String
   , updateTime     :: Maybe String
   , tags           :: Array String
+  , body           :: Array BodyElementJS
   | ArticleCommon
   }
 
@@ -184,7 +187,26 @@ articleToJson article =
       { publishingTime = foldMap formatLocalDateTime article.publishingTime
       , updateTime     = foldMap formatLocalDateTime article.updateTime
       , tags           = map unwrap article.tags
+      , body           = map bodyElementToJson article.body
       }
+  where
+    base = { html: Nothing
+           , image: Nothing
+           , box: Nothing
+           , headline: Nothing
+           , footnote: Nothing
+           , question: Nothing
+           , quote: Nothing
+           , related: Nothing
+           }
+    bodyElementToJson (Html html)         = merge { html: Just html } base
+    bodyElementToJson (Image image)       = merge { image: Just image } base
+    bodyElementToJson (Box box)           = merge { box: Just box } base
+    bodyElementToJson (Headline headline) = merge { headline: Just headline } base
+    bodyElementToJson (Footnote footnote) = merge { footnote: Just footnote } base
+    bodyElementToJson (Question question) = merge { question: Just question } base
+    bodyElementToJson (Quote quote)       = merge { quote: Just quote } base
+    bodyElementToJson (Related related)   = merge { related: Just $ map articleStubToJson related } base
 
 articleStubToJson :: ArticleStub -> Json
 articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "tags") (map unwrap) <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
@@ -212,21 +234,28 @@ parseArticle = parseArticleWith fromJSArticle
 parseArticleWithoutLocalizing :: Json -> (Either String Article)
 parseArticleWithoutLocalizing =
   parseArticlePure
-    \jsArticle -> jsArticle { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
-                            , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
-                            , tags           = map Tag jsArticle.tags
-                            }
+    \jsArticle -> do
+      body <- parseArticlePure (fromJSBody (parseArticleStubWithoutLocalizing <<< encodeJson)) $
+              encodeJson (jsArticle.body :: Array BodyElementJS)
+      pure $ jsArticle
+        { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
+        , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+        , tags           = map Tag jsArticle.tags
+        , body           = body
+        }
 
 parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
-  parseArticlePure (\jsStub -> jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime
-                                      , tags           = map Tag jsStub.tags
-                                      })
+  parseArticlePure
+    \jsStub -> pure $
+               jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime
+                      , tags           = map Tag jsStub.tags
+                      }
 
-parseArticlePure :: forall b a. ReadForeign b => (b -> a) -> Json -> (Either String a)
+parseArticlePure :: forall b a. ReadForeign b => (b -> Either String a) -> Json -> (Either String a)
 parseArticlePure convertJSArticle jsonArticle =
   case JSON.readJSON $ stringify jsonArticle of
-    Right jsArticle -> Right $ convertJSArticle jsArticle
+    Right jsArticle -> convertJSArticle jsArticle
     Left err ->
       let parsingErrors = joinWith " " $ fromFoldable $ map renderForeignError err
       in Left $ "Parsing error: " <> parsingErrors
@@ -247,16 +276,35 @@ fromJSArticleStub jsStub@{ uuid, publishingTime, tags } = do
   pure jsStub { publishingTime = localPublishingTime, tags = map Tag tags }
 
 fromJSDraftArticle :: JSDraftArticle -> Effect Article
-fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags } = do
+fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags, body } = do
   localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags }
+  resolvedBody <- fromJSBody fromJSArticleStub body
+  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags, body = resolvedBody }
 
 fromJSArticle :: JSArticle -> Effect Article
-fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags } = do
+fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags }
+  resolvedBody <- fromJSBody fromJSArticleStub body
+  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags, body = resolvedBody }
+
+fromJSBody :: forall m. Applicative m => (JSArticleStub -> m ArticleStub) -> Array BodyElementJS -> m (Array BodyElement)
+fromJSBody f = map catMaybes <<< traverse fromJSBodyElement
+  where
+    fromJSBodyElement :: BodyElementJS -> m (Maybe BodyElement)
+    fromJSBodyElement { related: (Just related) } =
+      Just <<< Related <$> traverse f related
+    fromJSBodyElement element = pure $ fromPure element
+    fromPure { html: Just html }         = Just $ Html html
+    fromPure { image: Just image }       = Just $ Image image
+    fromPure { box: Just box }           = Just $ Box box
+    fromPure { headline: Just headline } = Just $ Headline headline
+    fromPure { footnote: Just footnote } = Just $ Footnote footnote
+    fromPure { question: Just question } = Just $ Question question
+    fromPure { quote: Just quote }       = Just $ Quote quote
+    -- It'd be a protocol error if we got this.
+    fromPure _                           = Nothing
 
 type BodyElementJS =
   { html     :: Maybe String
@@ -265,7 +313,8 @@ type BodyElementJS =
   , headline :: Maybe String
   , footnote :: Maybe String
   , question :: Maybe String
-  , quote    :: Maybe String
+  , quote    :: Maybe QuoteInfo
+  , related  :: Maybe (Array JSArticleStub)
   }
 
 data BodyElement
@@ -275,14 +324,19 @@ data BodyElement
   | Headline String
   | Footnote String
   | Question String
-  | Quote String
+  | Quote QuoteInfo
+  | Related (Array ArticleStub)
 derive instance bodyElementGeneric :: Generic BodyElement _
-instance bodyElementShow :: Show BodyElement where show = genericShow
 
 type BoxInfo =
   { title :: Maybe String
   , headline :: Maybe String
   , content :: Array String
+  }
+
+type QuoteInfo =
+  { body :: String
+  , author :: Maybe String
   }
 
 type Image =
@@ -381,5 +435,6 @@ tagToURIComponent = String.toLower <<< String.replaceAll (String.Pattern " ") (S
 
 instance eqTag :: Eq Tag where
   eq (Tag a) (Tag b) = String.toLower a == String.toLower b
+derive newtype instance showTag :: Show Tag
 
 derive instance newtypeTag :: Newtype Tag _

@@ -6,6 +6,8 @@ import Data.Foldable (fold)
 import Data.Maybe (Maybe)
 import Data.Monoid (guard)
 import Data.String (joinWith, length)
+import KSF.Paper (Paper)
+import KSF.Paper as Paper
 import React.Basic.Classic (Component, JSX, createComponent, make)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
@@ -18,7 +20,7 @@ type Props =
   { title :: Maybe String
   , headline :: Maybe String
   , content :: Array String
-  , brand :: String
+  , paper :: Paper
   }
 
 autoExpand :: Array String -> Boolean
@@ -31,7 +33,7 @@ box = make component
       self.setState \_ -> { expanded: autoExpand self.props.content }
   , render: \self ->
       DOM.section
-        { className: "boxinfo border-" <> self.props.brand
+        { className: "boxinfo color-" <> Paper.cssName self.props.paper
         , children:
             [ DOM.header
               { className: "boxinfo__header"
@@ -61,7 +63,7 @@ box = make component
               , className: "boxinfo__toggle"
               , children: guard (not self.state.expanded) $
                   [ DOM.a
-                    { className: "color-" <> self.props.brand
+                    { className: "color-" <> Paper.cssName self.props.paper
                     , children: [ DOM.text "Vik ut ▼" ]
                     }
                   ]

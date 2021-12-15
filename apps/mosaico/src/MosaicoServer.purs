@@ -2,8 +2,12 @@ module MosaicoServer where
 
 import Prelude
 
+import Data.Maybe (Maybe)
+import KSF.Paper as Paper
+import KSF.User (User)
 import Lettera.Models (ArticleStub, Category)
 import Mosaico.Header as Header
+import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, JSX, component, useState, (/\))
@@ -15,11 +19,11 @@ type Props =
   { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
   , categoryStructure :: Array Category
+  , user :: Maybe User
   }
 
 type State =
-  { headerComponent :: Header.Props -> JSX
-  , mostReadListComponent :: MostReadList.Props -> JSX
+  { mostReadListComponent :: MostReadList.Props -> JSX
   }
 
 data MainContent
@@ -38,7 +42,6 @@ fromMainContent (MenuContent jsx) = jsx
 
 app :: Component Props
 app = do
-  headerComponent  <- Header.headerComponent
   mostReadListComponent <- MostReadList.mostReadListComponent
   let (emptyRouter :: PushStateInterface) =
         { listen: const $ pure $ pure unit
@@ -55,8 +58,7 @@ app = do
         }
   component "Mosaico" \props -> React.do
     let initialState =
-          { headerComponent
-          , mostReadListComponent
+          { mostReadListComponent
           }
     state /\ _setState <- useState initialState
     pure $ render emptyRouter state props
@@ -65,12 +67,15 @@ app = do
 render :: PushStateInterface -> State -> Props -> JSX
 render router state props = DOM.div
        { className: "mosaico grid"
+       , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
-           , state.headerComponent { router
-                                   , categoryStructure: props.categoryStructure
-                                   , onCategoryClick: const $ pure unit
-                                   }
+           , Header.render { router
+                           , categoryStructure: props.categoryStructure
+                           , onCategoryClick: const mempty
+                           , user: props.user
+                           , onLogin: pure unit
+                           }
            , Header.mainSeparator
            , fromMainContent props.mainContent
            , DOM.footer
