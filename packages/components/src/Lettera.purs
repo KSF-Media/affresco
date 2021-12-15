@@ -42,19 +42,19 @@ letteraArticleSlugUrl :: String
 letteraArticleSlugUrl = letteraBaseUrl <> "/article/slug/"
 
 letteraFrontPageUrl :: String
-letteraFrontPageUrl = letteraBaseUrl <> "/frontpage"
+letteraFrontPageUrl = letteraBaseUrl <> "/list/frontpage"
 
 letteraMostReadUrl :: String
-letteraMostReadUrl = letteraBaseUrl <> "/mostread/"
+letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
 
 letteraTagUrl :: String
-letteraTagUrl = letteraBaseUrl <> "/tag/"
+letteraTagUrl = letteraBaseUrl <> "/list/tag/"
 
 letteraSearchUrl :: String
-letteraSearchUrl = letteraBaseUrl <> "/search"
+letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
