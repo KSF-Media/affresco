@@ -181,6 +181,7 @@ main = do
           , setAuthCookie: setAuthCookie
           , deleteAuthCookie: deleteAuthCookie
           , notFound: notFound env Nothing
+          , menu: menu env
           }
         guards = { credentials: getCredentials, category: parseCategory env }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
@@ -297,8 +298,8 @@ frontpage env _ = do
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ TextHtml html
 
-menu :: Env -> Aff TextHtml
-menu env = do
+menu :: Env -> {} -> Aff TextHtml
+menu env _ = do
   mosaico <- liftEffect MosaicoServer.app
   menuComponent <- liftEffect Menu.menuComponent
   let mosaicoString =
@@ -313,8 +314,12 @@ menu env = do
             , mostReadArticles: []
             , categoryStructure: env.categoryStructure
           }
-  -- TODO: Make this a full HTML document
-  pure $ TextHtml mosaicoString
+  html <- liftEffect do
+            let windowVars =
+                  [ "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  ]
+            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  pure $ TextHtml html
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
