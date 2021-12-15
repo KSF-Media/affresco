@@ -127,6 +127,18 @@ let copyAppYamlForStaging =
             ''
         }
 
+let mkDevelopmentEnvFile =
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Copy .env.local to .env.development"
+        , env = app.env
+        , shell = Some "bash"
+        , run = Some
+            ''
+            cp apps/${app.deployDir}/.env.local apps/${app.deployDir}/.env.development
+            ''
+        } 
+
 let mkUploadStep =
       \(env : Env) ->
       \(app : App.Type) ->
@@ -366,4 +378,5 @@ in  { Step
     , mkCleanAppEngineStep
     , copyAppYamlForStaging
     , generateAppYaml
+    , mkDevelopmentEnvFile
     }
