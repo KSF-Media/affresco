@@ -14,9 +14,10 @@ import Data.Foldable (fold, foldM, foldMap)
 import Data.HashMap as HashMap
 import Data.List (List, intercalate)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Monoid (guard)
 import Data.Newtype (unwrap)
-import Data.String (Pattern(..), Replacement(..), replace)
+import Data.String (Pattern(..), Replacement(..), replace, trim)
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
 import Data.String.Regex.Flags (ignoreCase) as Regex
@@ -40,6 +41,7 @@ import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams
 import Mosaico.Article as Article
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Search as Search
 import MosaicoServer (MainContent(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -123,6 +125,12 @@ spec ::
                 , params :: { categoryName :: String }
                 , guards :: Guards ("credentials" : "category" : Nil)
                 }
+          , searchPage ::
+              GET "/sök?q=<search>"
+                { response :: ResponseBody
+                , query :: { search :: Maybe String }
+                , guards :: Guards ("credentials" : Nil)
+                }
           , notFoundPage ::
               GET "/<..path>"
                 { response :: ResponseBody
@@ -162,6 +170,7 @@ main = do
           , tagList: tagList env
           , staticPage: staticPage env
           , categoryPage: categoryPage env
+          , searchPage: searchPage env
           , notFoundPage: notFoundPage env
           }
         guards = { credentials: getCredentials, category: parseCategory env }
@@ -393,6 +402,45 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
   html <- liftEffect do
             let windowVars =
                   [ "frontpageFeed"     /\ mkArticleFeed (Just categoryName) "categoryfeed" articles
+                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  ] <> userVar user
+            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+
+searchPage :: Env -> { query :: { search :: Maybe String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
+searchPage env { query: { search }, guards: { credentials } } = do
+  let query = if (trim <$> search) == Just "" then Nothing else search
+  mosaico <- liftEffect MosaicoServer.app
+  searchComponent <- liftEffect Search.searchComponent
+  frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  { user, articles, mostReadArticles } <- sequential $
+    { user: _, articles: _, mostReadArticles: _ }
+    <$> maybe (pure Nothing) (parallel <<< getUser) credentials
+    <*> maybe (pure mempty) (parallel <<< Lettera.search 0 20 mosaicoPaper) query
+    <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+  let mosaicoString = DOM.renderToString
+                        $ mosaico
+                          { mainContent: FrontpageContent $
+                             searchComponent { query
+                                             , doSearch: const $ pure unit
+                                             , searching: false
+                                             , noResults: isJust query && null articles
+                                             } <>
+                             (guard (not $ null articles) $
+                              frontpageComponent
+                                { frontpageArticles : Just articles
+                                , onArticleClick: const mempty
+                                , onTagClick: const mempty
+                                }
+                             )
+                          , mostReadArticles
+                          , categoryStructure: env.categoryStructure
+                          , user: hush =<< user
+                          }
+  html <- liftEffect do
+            let windowVars =
+                  [ "frontpageFeed"     /\ mkArticleFeed query "searchfeed" articles
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user

@@ -17,9 +17,12 @@ import React.Basic (JSX)
 import React.Basic.Events (EventHandler)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
+import Routing.PushState (PushStateInterface)
+import Simple.JSON (write)
 
 type Props =
-  { categoryStructure :: Array Category
+  { router :: PushStateInterface
+  , categoryStructure :: Array Category
   , onCategoryClick :: Category -> EventHandler
   , user :: Maybe User
   , onLogout :: Effect Unit
@@ -87,8 +90,8 @@ render props@{ onLogout } = DOM.div
                   [ Just
                     { title: "SÖK"
                     , subsections: []
-                    , url: ""
-                    , onClick: mempty
+                    , url: "/sök"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/sök"
                     }
                   , Just
                     { title: "E-TIDNINGEN"
