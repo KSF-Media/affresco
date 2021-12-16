@@ -31,7 +31,6 @@ import Effect.Exception (throw)
 import Effect.Class (liftEffect)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign (unsafeToForeign)
-import Foreign.Object as Object
 import JSURI as URI
 import KSF.Api (UserAuth, parseToken)
 import KSF.Api.Error as Api.Error
@@ -409,13 +408,8 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
               , user: hush =<< user
               }
       html <- liftEffect do
-        let staticPageString = JSON.stringify $ JSON.fromString $ DOM.renderToString staticPageJsx
-            staticPageObj = Object.singleton "pageName" pageName
-                            # Object.insert "pageContent" staticPageString
-                            # encodeJson
-                            # JSON.stringify
-            windowVars =
-              [ "staticPageContent" /\ staticPageObj
+        let windowVars =
+              [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName)
               , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
               ] <> userVar user
         appendMosaico mosaicoString env.htmlTemplate
