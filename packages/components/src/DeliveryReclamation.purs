@@ -94,6 +94,7 @@ render self@{ state: { publicationDate, claim }} =
               [ publicationDayInput
               , claimExtensionInput
               , claimNewDeliveryInput
+              , eveningMessage
               ] `snoc`foldMap errorMessage self.state.validationError
                 `snoc` DOM.div
                         { children: [ submitFormButton ]
@@ -102,6 +103,10 @@ render self@{ state: { publicationDate, claim }} =
           }
 
     publicationDayInput = dateInput self self.state.publicationDate "Utgivningsdatum"
+
+    eveningMessage =
+      DOM.div
+        { children: [ DOM.text "Obs! Reklamationer som är gjorda innan 16.30 delas i regel ut med följande möjliga tidningsutdelning." ] }
 
     claimExtensionInput =
       InputField.inputField
