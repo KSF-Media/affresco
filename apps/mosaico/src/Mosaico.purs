@@ -343,7 +343,7 @@ render setState state components router onPaywallEvent =
          case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
            Just tagFeed
              | not $ null tagFeed -> frontpage $ Just tagFeed
-             | otherwise -> mosaicoDefaultLayout $ renderArticle (Right notFoundArticle)
+             | otherwise -> mosaicoDefaultLayout Error.notFoundWithAside
            Nothing -> frontpage Nothing
        Routes.MenuPage ->
          mosaicoLayoutNoAside
@@ -362,8 +362,7 @@ render setState state components router onPaywallEvent =
          Nothing -> DOM.text "laddar"
          Just (StaticPageResponse page)  ->
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
-         Just StaticPageNotFound ->
-           renderArticle (Right notFoundArticle)
+         Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
   where
     mosaicoDefaultLayout :: JSX -> JSX
