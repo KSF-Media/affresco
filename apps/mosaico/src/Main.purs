@@ -63,7 +63,8 @@ import React.Basic (fragment) as DOM
 import React.Basic.Events (handler_)
 import React.Basic.DOM (div, meta) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
-import Routing.PushState (makeInterface)
+import Routing.PushState (PushStateInterface)
+import Simple.JSON (write)
 
 foreign import appendMosaicoImpl :: EffectFn2 String String String
 appendMosaico :: String -> String -> Effect String
@@ -314,7 +315,19 @@ mkArticleFeed feedPage feedType feedContent =
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
   mosaico <- liftEffect MosaicoServer.app
-  router <- liftEffect makeInterface
+  let (emptyRouter :: PushStateInterface) =
+        { listen: const $ pure $ pure unit
+        , locationState:
+            pure
+              { hash: mempty
+              , path: mempty
+              , pathname: mempty
+              , search: mempty
+              , state: write {}
+              }
+        , pushState: const $ const mempty
+        , replaceState: const $ const mempty
+        }
   let mosaicoString =
         DOM.renderToString
         $ mosaico
@@ -325,7 +338,7 @@ menu env _ = do
                 , onCategoryClick: const $ handler_ $ pure unit
                 , user: Nothing
                 , onLogout: pure unit
-                , router
+                , router: emptyRouter
                 }
             , mostReadArticles: []
             , categoryStructure: env.categoryStructure
