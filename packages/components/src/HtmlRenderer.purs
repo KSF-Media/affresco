@@ -2,6 +2,7 @@ module KSF.HtmlRenderer where
 
 import Prelude
 
+import KSF.HtmlRenderer.Models as Models
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component)
