@@ -31,12 +31,14 @@ data MainContent
   | FrontpageContent JSX
   | TagListContent Tag JSX
   | StaticPageContent String JSX
+  | MenuContent JSX
 
 fromMainContent :: MainContent -> JSX
 fromMainContent (ArticleContent jsx) = jsx
 fromMainContent (FrontpageContent jsx) = jsx
 fromMainContent (TagListContent _ jsx) = jsx
 fromMainContent (StaticPageContent _ jsx) = jsx
+fromMainContent (MenuContent jsx) = jsx
 
 app :: Component Props
 app = do
