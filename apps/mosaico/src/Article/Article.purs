@@ -45,7 +45,7 @@ getTitle (Left articleStub) = articleStub.title
 getTitle (Right fullArticle) = _.title $ fromFullArticle fullArticle
 
 getMainImage :: Either ArticleStub FullArticle -> Maybe Image
-getMainImage (Left articleStub) = articleStub.listImage
+getMainImage (Left articleStub) = articleStub.mainImage
 getMainImage (Right fullArticle) = _.mainImage $ fromFullArticle fullArticle
 
 getPreamble :: Either ArticleStub FullArticle -> Maybe String

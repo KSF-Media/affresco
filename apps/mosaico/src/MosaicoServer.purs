@@ -2,9 +2,10 @@ module MosaicoServer where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, Category)
+import KSF.User (User)
+import Lettera.Models (ArticleStub, Category, Tag)
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
@@ -18,6 +19,7 @@ type Props =
   { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
   , categoryStructure :: Array Category
+  , user :: Maybe User
   }
 
 type State =
@@ -27,14 +29,16 @@ type State =
 data MainContent
   = ArticleContent JSX
   | FrontpageContent JSX
-  | TagListContent JSX
-  | StaticPageContent JSX
+  | TagListContent Tag JSX
+  | StaticPageContent String JSX
+  | MenuContent JSX
 
 fromMainContent :: MainContent -> JSX
 fromMainContent (ArticleContent jsx) = jsx
 fromMainContent (FrontpageContent jsx) = jsx
-fromMainContent (TagListContent jsx) = jsx
-fromMainContent (StaticPageContent jsx) = jsx
+fromMainContent (TagListContent _ jsx) = jsx
+fromMainContent (StaticPageContent _ jsx) = jsx
+fromMainContent (MenuContent jsx) = jsx
 
 app :: Component Props
 app = do
@@ -69,7 +73,7 @@ render router state props = DOM.div
            , Header.render { router
                            , categoryStructure: props.categoryStructure
                            , onCategoryClick: const mempty
-                           , user: Nothing
+                           , user: props.user
                            , onLogin: pure unit
                            }
            , Header.mainSeparator
@@ -81,7 +85,7 @@ render router state props = DOM.div
                }
            , case props.mainContent of
                  FrontpageContent _ -> aside
-                 TagListContent _ -> aside
+                 TagListContent _ _ -> aside
                  _ -> mempty
            ]
        }
