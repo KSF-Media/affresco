@@ -45,7 +45,7 @@ receiverName { props: { subscription: { receiver } } } =
   foldMap (\r -> Array.singleton
               { term: "Mottagare:"
               , description: [ DOM.text r ]
-              }) $ toMaybe receiver
+              }) receiver
 
 deliveryAddress :: Types.Self -> Array DescriptionList.Definition
 deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
@@ -58,7 +58,7 @@ deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, 
   where
     currentDeliveryAddress :: String
     currentDeliveryAddress
-      | Just address <- toMaybe subDeliveryAddress
+      | Just address <- subDeliveryAddress
       = Helpers.formatAddress address
       | Just { streetAddress, zipCode, city } <- toMaybe userAddress
       = intercalate ", "
@@ -81,7 +81,7 @@ paymentMethod { props: { subscription: { paymentMethod: method, paymentMethodId 
   where
     subscriptionCreditCard :: JSX
     subscriptionCreditCard
-      | Just id <- toMaybe paymentMethodId,
+      | Just id <- paymentMethodId,
         Just card <- find (\c -> c.paymentMethodId == id) creditCards =
           DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
                   , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
@@ -247,7 +247,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
                 Right newSubscription -> liftEffect do
                   self.setState _
-                    { pausedSubscriptions = toMaybe newSubscription.paused
+                    { pausedSubscriptions = newSubscription.paused
                     , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing "Uppehållet har tagits bort"
                     }
                   Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
@@ -301,7 +301,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                         Right newSubscription -> liftEffect do
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing "Tillfällig adressändring har tagits bort",
-                            pendingAddressChanges = toMaybe newSubscription.pendingAddressChanges }
+                            pendingAddressChanges = newSubscription.pendingAddressChanges }
                           Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
                         Left _ -> liftEffect do
                           self.setState _
@@ -372,7 +372,7 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \pausedSubscription ->
                     self.setState _
-                      { pausedSubscriptions = toMaybe pausedSubscription.paused
+                      { pausedSubscriptions = pausedSubscription.paused
                       , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper pauseReadMsg Helpers.successText
                       }
     , onError: \err -> do
@@ -422,7 +422,7 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } 
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
     , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
                     self.setState _
-                        { pendingAddressChanges = toMaybe newPendingChanges
+                        { pendingAddressChanges = newPendingChanges
                         , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing Helpers.successText
                         }
 

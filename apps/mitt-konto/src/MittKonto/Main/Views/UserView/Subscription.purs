@@ -40,8 +40,8 @@ subscription = make component
 didMount :: Types.Self -> Effect Unit
 didMount self = do
   self.setState _
-    { pausedSubscriptions = toMaybe self.props.subscription.paused
-    , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
+    { pausedSubscriptions = self.props.subscription.paused
+    , pendingAddressChanges = self.props.subscription.pendingAddressChanges
     }
   self.props.logger.setUser $ Just self.props.user
 

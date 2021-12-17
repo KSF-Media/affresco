@@ -56,12 +56,12 @@ type BaseSubscription p =
   , package               :: Package
   , dates                 :: SubscriptionDates
   , campaign              :: Campaign
-  , paused                :: Nullable (Array PausedSubscription)
-  , deliveryAddress       :: Nullable DeliveryAddress
-  , receiver              :: Nullable String
-  , pendingAddressChanges :: Nullable (Array PendingAddressChange)
+  , paused                :: Maybe (Array PausedSubscription)
+  , deliveryAddress       :: Maybe DeliveryAddress
+  , receiver              :: Maybe String
+  , pendingAddressChanges :: Maybe (Array PendingAddressChange)
   , paymentMethod         :: p
-  , paymentMethodId       :: Nullable PaymentMethodId
+  , paymentMethodId       :: Maybe PaymentMethodId
   }
 
 data SubscriptionPaymentMethod
