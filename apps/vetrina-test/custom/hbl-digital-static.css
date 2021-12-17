@@ -65,12 +65,15 @@
   color: white;
   font-family: "Duplex Serif Bold", serif;
   text-align: center;
+  font-size: 2.5rem;
 }
 
-.hide {
-  @media (min-width: 594px) {
-    display: none;
-  }
+.vetrina--duration-headline {
+  white-space: nowrap;
+}
+
+.vetrina--freebe-headline {
+  white-space: nowrap;
 }
 
 .vetrina--price-headline {

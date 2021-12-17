@@ -8,7 +8,11 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..), hush)
 import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
+import Data.Nullable (Nullable)
+import Effect (Effect)
 import Effect.Aff (Aff)
+
+foreign import getInitialStaticPageContent :: Effect (Nullable String)
 
 data StaticPageResponse
   = StaticPageResponse StaticPage
