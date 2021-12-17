@@ -42,3 +42,23 @@ var Mosaico = require("../output/Mosaico/index.js").jsApp();
 ```
 
 After that, we run `parcel build web/index.html -d dist/client --no-cache --public-url /assets`. Here, we build the file `index.html` we have under `web/` into a destination directory `dist/client/`. Parcel does its thing: it finds every dependency it needs (js, css, images, whatever) and places them into `dist/client/`. We don't want Parcel to use any caching and we set the public url of our assets to be `/assets`. This where we look for static files in our server, and parcel will just prefix the file url's with `/assets` in this case.
+
+On static pages, the app initialization expects the selector "#app .mosaico--static-content" to match with the element containing the static content.  This assumption isn't checked at build time.
+
+## Tests
+
+Launch site as described in the Development sections.
+
+The test expects to get account data for testing from environment
+variables.
+
+```
+export TEST_USER=
+export TEST_PASSWORD=
+export ENTITLED_USER=
+export ENTITLED_PASSWORD=
+```
+
+```
+spago -x test.dhall test
+```

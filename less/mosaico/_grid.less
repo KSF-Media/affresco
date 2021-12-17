@@ -6,7 +6,10 @@
   grid-template-columns: 1fr;
   grid-row-gap: 8px;
   grid-template-areas:
+    "line"
     "head"
+    "separator"
+    "search"
     "main"
     "article"
     "aside"
@@ -14,13 +17,14 @@
 
   @media (min-width: @breakpoint-3col) {
     max-width: 100%;
-    grid-template-rows: auto 85px auto auto auto 150px;
+    grid-template-rows: auto 85px auto auto auto auto 150px;
     // don't use repeat, causes error
     grid-template-columns: 1fr @content-block @content-block @content-block 1fr;
     grid-template-areas:
       "line line line line line"
       ". head head head ."
       "separator separator separator separator separator"
+      ". search search search ."
       ". main main aside ."
       ". article article article ."
       ". foot foot foot .";
@@ -41,8 +45,15 @@
   grid-area: main;
 }
 
-.mosaico--static-page-error {
+.mosaico--error-with-aside {
   grid-area: main;
+  h1 {
+    font-size: 3.75rem;
+    font: 700 3.75rem "Duplex Serif Web", serif;
+    color: #333;
+    margin: 1rem auto 1.5rem auto;
+    letter-spacing: -0.015em;
+  }
 }
 
 .mosaico--footer {

@@ -21,7 +21,7 @@
         }
       }
 
-      > a {
+      > span {
         cursor: pointer;
         display: grid;
         grid-template-columns: 1fr;
@@ -44,12 +44,24 @@
         }
 
         transition: all 0.2s;
+
+        a {
+          text-decoration: none;
+          h2 {
+            color: black;
+          }
+	}
       }
 
-      > a:hover {
+      > span:hover {
         filter: contrast(120%);
       }
     }
+  }
+
+  .spinner--loading-spinner {
+    // TODO will Mosaico have a dark mode?
+    background: initial;
   }
 }
 

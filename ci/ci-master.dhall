@@ -34,8 +34,6 @@ let mkAeSteps =
         # [ Actions.mkBuildServerStep app ]
         # [ Actions.generateAppYaml app ]
         # [ Actions.mkAppEngineStep env promote app ]
-        # [ Actions.copyAppYamlForStaging app ]
-        # [ Actions.mkAppEngineStep Actions.Env.Staging promote app ]
         # [ Actions.mkCleanAppEngineStep env app ]
 
 let steps-gs =
@@ -93,7 +91,7 @@ in  { name = "production"
             }
         //  refreshCDNJobs
     , env =
-      { PRODUCTION_FACEBOOK_APP_ID = "1742585382627694"
+      { PRODUCTION_FACEBOOK_APP_ID = "894000011480431"
       , PRODUCTION_GOOGLE_CLIENT_ID =
           "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
       , PRODUCTION_JANRAIN_FLOW_VERSION = "20201223120649370442"

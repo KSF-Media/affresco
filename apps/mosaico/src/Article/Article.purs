@@ -6,7 +6,6 @@ import Bottega.Models.Order (OrderSource(..))
 import Data.Array (cons, head, snoc)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
-import Data.Generic.Rep.RecordToSum as Record
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
@@ -15,10 +14,12 @@ import Data.String as String
 import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import KSF.Api.Package (CampaignLengthUnit(..))
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
+import KSF.Paper as Paper
+import KSF.User (User)
 import KSF.Vetrina as Vetrina
+import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
@@ -43,23 +44,25 @@ getTitle (Left articleStub) = articleStub.title
 getTitle (Right fullArticle) = _.title $ fromFullArticle fullArticle
 
 getMainImage :: Either ArticleStub FullArticle -> Maybe Image
-getMainImage (Left articleStub) = articleStub.listImage
+getMainImage (Left articleStub) = articleStub.mainImage
 getMainImage (Right fullArticle) = _.mainImage $ fromFullArticle fullArticle
 
 getPreamble :: Either ArticleStub FullArticle -> Maybe String
 getPreamble (Left articleStub) = articleStub.preamble
 getPreamble (Right fullArticle) = _.preamble $ fromFullArticle fullArticle
 
-getBody :: Either ArticleStub FullArticle -> Array (Either String BodyElement)
+getBody :: Either ArticleStub FullArticle -> Array BodyElement
 getBody (Left _articleStub) = mempty
-getBody (Right fullArticle) = map Record.toSum <<< _.body $ fromFullArticle fullArticle
+getBody (Right fullArticle) = _.body $ fromFullArticle fullArticle
 
 type Props =
-  { brand :: String
+  { paper :: Paper
   , article :: Either ArticleStub FullArticle
   , onLogin :: Effect Unit
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
+  , onArticleClick :: ArticleStub -> EventHandler
+  , user :: Maybe User
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -117,7 +120,7 @@ render props =
                 , children: [ DOM.text $ fromMaybe mempty $ getPreamble props.article ]
                 }
             -- We don't want to be able to share error articles
-            , guard (maybe false (not <<< isErrorArticle) $ hush props.article)
+            , guard (maybe true (not <<< isErrorArticle) $ hush props.article)
                 DOM.section
                   { className: "mosaico-article__tag-n-share"
                   , children:
@@ -126,7 +129,7 @@ render props =
                           , children:
                               [ foldMap renderTag $ head tags
                               , guard (isPremium props.article) $ DOM.div
-                                  { className: "premium-badge background-" <> props.brand
+                                  { className: "premium-badge background-" <> Paper.cssName props.paper
                                   , children: [ DOM.text "Premium"]
                                   }
                               ]
@@ -202,7 +205,7 @@ render props =
 
     renderTag tag =
       DOM.a
-        { className: "mosaico-article__tag color-" <> props.brand
+        { className: "mosaico-article__tag color-" <> Paper.cssName props.paper
         , children: [ DOM.text $ (un Tag) tag ]
         , href: "/tagg/" <> tagToURIComponent tag
         , onClick: props.onTagClick tag
@@ -227,101 +230,89 @@ render props =
       Vetrina.vetrina
         { onClose: Just props.onPaywallEvent
         , onLogin: props.onLogin
-        , products: Right [ hblPremium ]
+        , user: props.user
+        , products: Right case props.paper of
+            HBL -> [ hblPremium ]
+            ON -> [ onPremium ]
+            VN -> [ vnPremium ]
+            _ -> []
         , unexpectedError: mempty
         , headline: Just
           $ DOM.div_
-              [ DOM.text "Läs HBL digitalt för "
+              [ DOM.text $ "Läs " <> paperName <> " digitalt för "
               , DOM.span { className: "vetrina--price-headline", children: [ DOM.text "Endast 1€" ] }
               ]
-        , paper: Just HBL
+        , paper: Just props.paper
         , paymentMethods: []
         , customNewPurchase: Nothing
         , subscriptionExists: mempty
         , loadingContainer: Nothing
-        , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
+        , accessEntitlements: Set.fromFoldable case props.paper of
+            HBL -> ["hbl-365", "hbl-web"]
+            ON -> ["on-365", "on-web"]
+            VN -> ["vn-365", "vn-web"]
+            _ -> []
         , orderSource: PaywallSource
         , askAccountAlways: false
         }
-      where
-        hblPremium =
-          { id: "HBL WEBB"
-          , name: "Hufvudstadsbladet Premium"
-          , priceCents: 999
-          , description:
-              DOM.div_
-                [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
-                , DOM.br {}
-                , DOM.text "Läs Hufvudstadsbladet för 1€ i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
-                ]
-          , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
-          , campaign: Just
-              { no: 4701
-              , id: "1MÅN1 EURO"
-              , name: "FÖRSTA MÅNADEN FÖR 1 EURO"
-              , length: 1
-              , lengthUnit: Month
-              , priceEur: 1.0
-              }
-          , contents:
-              [ { title: "Premium"
-                , description: "Alla artiklar på hbl.fi"
-                }
-              , { title: "Nyhetsappen HBL Nyheter"
-                , description: "Nyheter på mobilen och surfplattan, pushnotiser"
-                }
-              , { title: "Digitalt månadsbrev"
-                , description: "Nyheter & förmåner"
-                }
-              ]
-          }
+
+    paperName = case props.paper of
+      HBL -> "HBL"
+      p -> Paper.paperName p
 
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?
-    renderElement :: Either String BodyElement -> JSX
-    renderElement = case _ of
-      Left _   -> mempty
-      Right el -> case el of
-        Html content ->
-          -- Can't place div's or blockquotes under p's, so place them under div.
-          -- This is usually case with embeds
-          let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
-          in domFn
-             { dangerouslySetInnerHTML: { __html: content }
-             , className: block <> " " <> block <> "__html"
-             }
-        Headline str -> DOM.h4
-          { className: block <> " " <> block <> "__subheadline"
-          , children: [ DOM.text str ]
+    renderElement :: BodyElement -> JSX
+    renderElement el = case el of
+      Html content ->
+        -- Can't place div's or blockquotes under p's, so place them under div.
+        -- This is usually case with embeds
+        let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
+        in domFn
+           { dangerouslySetInnerHTML: { __html: content }
+           , className: block <> " " <> block <> "__html"
+           }
+      Headline str -> DOM.h4
+        { className: block <> " " <> block <> "__subheadline"
+        , children: [ DOM.text str ]
+        }
+      Image img -> DOM.div
+        { className: block
+        , children: [ renderImage img ]
+        }
+      Box boxData ->
+        DOM.div
+          { className: block <> " " <> block <> "__factbox"
+          , children:
+              [ box
+                  { headline: boxData.headline
+                  , title: boxData.title
+                  , content: boxData.content
+                  , paper: props.paper
+                  }
+              ]
           }
-        Image img -> DOM.div
-          { className: block
-          , children: [ renderImage img ]
+      Footnote footnote -> DOM.p
+          { className: block <> " " <> block <> "__footnote"
+          , children: [ DOM.text footnote ]
           }
-        Box boxData ->
-          DOM.div
-            { className: block <> " " <> block <> "__factbox"
-            , children:
-                [ box
-                    { headline: boxData.headline
-                    , title: boxData.title
-                    , content: boxData.content
-                    , brand: props.brand
-                    }
-                ]
-            }
-        Footnote footnote -> DOM.p
-            { className: block <> " " <> block <> "__footnote"
-            , children: [ DOM.text footnote ]
-            }
-        Quote quote -> DOM.q
-            { className: block <> " " <> block <> "__quote"
-            , children: [ DOM.text quote ]
-            }
-        Question question -> DOM.p
-            { className: block <> " " <> block <> "__question"
-            , children: [ DOM.text question ]
-            }
+      Quote { body, author } -> DOM.figure
+          { className: block <> " " <> block <> "__quote"
+          , children:
+              [ DOM.blockquote_ [ DOM.text body ]
+              , foldMap (DOM.figcaption_ <<< pure <<< DOM.text) author
+              ]
+          }
+      Question question -> DOM.p
+          { className: block <> " " <> block <> "__question"
+          , children: [ DOM.text question ]
+          }
+      Related related -> DOM.figure
+          { className: block <> " " <> block <> "__related"
+          , children:
+              [ DOM.ul_ $ map renderRelatedArticle related
+              ]
+          }
       where
         block = "article-element"
         isDiv = isElem "<div"
@@ -329,3 +320,11 @@ render props =
         -- Does the string start with wanted element
         isElem elemName elemString =
           Just 0 == String.indexOf (Pattern elemName) elemString
+        renderRelatedArticle article =
+          DOM.li_
+            [ DOM.a
+                { href: "/artikel/" <> article.uuid
+                , children: [ DOM.text article.title ]
+                , onClick: props.onArticleClick article
+                }
+            ]

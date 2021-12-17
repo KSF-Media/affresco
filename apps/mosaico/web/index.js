@@ -15,10 +15,10 @@ function main() {
 	article={window.article || null}
 	isPreview={window.isPreview || null}
 	mostReadArticles={window.mostReadArticles || null}
-	frontpageArticles={window.frontpageArticles || null}
-	staticPageContent={window.staticPageContent || null}
+	staticPageName={window.staticPageName || null}
 	categoryStructure={window.categoryStructure || null}
-	tagListArticles={window.tagListArticles || null}
+	initialFrontpageFeed={window.frontpageFeed || null}
+	user={window.user || null}
       />
     );
     ReactDOM.hydrate(mosaico, document.getElementById("app"));

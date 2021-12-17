@@ -4,12 +4,13 @@ import Prelude
 
 import Data.Foldable (foldl, oneOf)
 import Data.List (List(..))
+import Data.Maybe (Maybe)
 import Data.Semiring.Free (free)
 import Data.Set as Set
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Category(..), CategoryLabel(..), Tag, uriComponentToTag)
-import Routing.Match (Match(..), end, lit, root, str)
+import Routing.Match (Match(..), end, lit, optionalMatch, param, root, str)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
 
@@ -21,6 +22,7 @@ data MosaicoPage
   | StaticPage String
   | CategoryPage CategoryLabel
   | TagPage Tag
+  | SearchPage (Maybe String)
   | MenuPage
 derive instance eqMosaicoPage :: Eq MosaicoPage
 
@@ -32,6 +34,7 @@ routes categories = root *> oneOf
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
   , Frontpage <$ end
   , MenuPage <$ lit "meny"
+  , SearchPage <$> (lit "sök" *> optionalMatch (param "q")) <* end
   , CategoryPage <<< CategoryLabel <$> categoryRoute
   , NotFoundPage <$> str
   ]
