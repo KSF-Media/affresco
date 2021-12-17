@@ -33,7 +33,7 @@ box = make component
       self.setState \_ -> { expanded: autoExpand self.props.content }
   , render: \self ->
       DOM.section
-        { className: "boxinfo color-" <> Paper.cssName self.props.paper
+        { className: "boxinfo border-" <> Paper.cssName self.props.paper
         , children:
             [ DOM.header
               { className: "boxinfo__header"

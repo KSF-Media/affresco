@@ -11,10 +11,11 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Foreign.Object as Object
 import KSF.User (User)
-import Lettera.Models (Category(..), CategoryLabel)
+import Lettera.Models (Category(..))
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
 import React.Basic.Events (EventHandler, handler_)
 import Routing (match)
 import Routing.PushState (PushStateInterface)
@@ -23,7 +24,7 @@ import Simple.JSON (E, read, write)
 type Props =
   { router :: PushStateInterface
   , categoryStructure :: Array Category
-  , onCategoryClick :: CategoryLabel -> EventHandler
+  , onCategoryClick :: Category -> EventHandler
   , onLogin :: Effect Unit
   , user :: Maybe User
   }
@@ -108,18 +109,20 @@ render props =
         ]
     }
   where
-    mkCategory (Category category) =
-      DOM.a { href: "/" <> show category.label
-            , onClick: props.onCategoryClick category.label
-            , children: [ DOM.text $ String.toUpper $ unwrap category.label ]
+    mkCategory category@(Category { label }) =
+      DOM.a { href: "/" <> show label
+            , onClick: props.onCategoryClick category
+            , children: [ DOM.text $ String.toUpper $ unwrap label ]
             }
 
     searchButton :: JSX
-    searchButton = DOM.div
+    searchButton = DOM.a
                     { className: iconButtonClass <> " " <> searchButtonClass
                     , children: [ DOM.div_ [ DOM.text "SÖK" ]
                                 , DOM.div { className: iconClass <> " " <> searchIconClass }
                                 ]
+                    , href: "/sök"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/sök"
                     }
 
     block = "mosaico-header"

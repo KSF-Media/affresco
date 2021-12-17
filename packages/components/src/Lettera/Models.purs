@@ -97,7 +97,7 @@ type ArticleStubCommon =
   , listTitle :: Maybe String
   , uuid      :: String
   , preamble  :: Maybe String
-  , listImage :: Maybe Image
+  , mainImage :: Maybe Image
   , premium   :: Boolean
   )
 

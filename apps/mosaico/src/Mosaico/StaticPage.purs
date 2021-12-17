@@ -6,7 +6,11 @@ import Affjax (get) as AX
 import Affjax.ResponseFormat (string) as AX
 import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..))
+import Data.Nullable (Nullable)
+import Effect (Effect)
 import Effect.Aff (Aff)
+
+foreign import getInitialStaticPageContent :: Effect (Nullable String)
 
 data StaticPageResponse
   = StaticPageResponse StaticPage
