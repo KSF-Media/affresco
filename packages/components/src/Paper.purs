@@ -37,3 +37,10 @@ paperName ON     = "Östnyland"
 paperName VN     = "Västra Nyland"
 paperName JUNIOR = "HBL Junior"
 paperName KSF    = "KSF Media"
+
+homepage :: Paper -> String
+homepage HBL    = "https://www.hbl.fi/"
+homepage ON     = "https://www.ostnyland.fi/"
+homepage VN     = "https://www.vastranyland.fi/"
+homepage JUNIOR = "https://www.ksfmedia.fi/hbljunior"
+homepage KSF    = "https://www.ksfmedia.fi/"
