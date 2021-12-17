@@ -13,5 +13,12 @@ exports.renderHtmlInputWithHooks = function (htmlInput, hooks) {
 
     // Purescript functions are curried, so to call them from javascript we need
     // to uncurry them
+    const uncurriedHooks = hooks.map(h => {
+        return {
+            
+          shouldProcessNode: h.shouldProcessNode,
+          processNode: function (node, children, index) {}
+        }
+    });
     
 }

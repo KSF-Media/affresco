@@ -3,10 +3,28 @@ module KSF.HtmlRenderer.Models where
 import Data.Maybe (Maybe)
 import React.Basic (JSX)
 
-type Hook = 
-  { replaceChildren   :: Boolean
-  , shouldProcessNode :: Node -> Boolean
+-- | Utility to turn a hook into a generic one
+class Hook h where
+  toGenericHook :: h -> GenericHook
+
+-- | This type of hook is to replace the children of 
+--   targeted nodes
+type ReplacingHook = 
+  { shouldProcessNode :: Node -> Boolean
   , processNode       :: Node -> Array Node -> String -> JSX
+  }
+
+-- | This type of hook is just to modify targeted nodes,
+--   without replacing their children
+type ModifyingHook = 
+  { shouldProcessNode :: Node -> Boolean
+  , processNode       :: Node -> Array Node -> JSX
+  }
+
+type GenericHook =
+  { replaceChildren :: Boolean
+  , shouldProcessNode :: Node -> Boolean
+  , 
   }
 
 newtype Node = Node
