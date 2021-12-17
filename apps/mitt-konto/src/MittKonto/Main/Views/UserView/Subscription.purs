@@ -83,6 +83,6 @@ render self@{ props: { now, subscription: sub@{ package, state } } } =
   where
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
-      filter (not <<< Helpers.isPeriodExpired false now <<< toMaybe <<< _.endDate) pausedSubs
+      filter (not <<< Helpers.isPeriodExpired false now <<< _.endDate) pausedSubs
     expired = isSubscriptionExpired sub now
     subsno = Subsno.toString sub.subsno

@@ -7,6 +7,7 @@ import Control.Monad.Error.Class (throwError)
 import Data.Array (any, catMaybes, filter, intercalate, length, mapMaybe, null, (:))
 import Data.Array as Array
 import Data.Date as Date
+import Data.DateTime (date, DateTime)
 import Data.Date (Date)
 import Data.Time.Duration (Days(..))
 import Data.Either (Either(..))
@@ -767,8 +768,7 @@ switchEditProgress self EditPhone progress = self.setState _ { editPhone = progr
 
 isUpcomingPendingChange :: Maybe Date -> User.PendingAddressChange -> Boolean
 isUpcomingPendingChange Nothing _ = true
-isUpcomingPendingChange (Just now) { startDate } =
-  maybe true (_ > now) $ toDate startDate
+isUpcomingPendingChange (Just now) { startDate } = (date startDate > now)
 
 pendingAddressChangeText :: User.PendingAddressChange -> String
 pendingAddressChangeText { address, startDate } =
@@ -800,10 +800,8 @@ resetFields self EditPhone =
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =
-  (maybe "" (_ <> ", ") $ toMaybe temporaryName) <>
-  intercalate ", " [ fromMaybe "-" $ toMaybe streetAddress, zipcode, fromMaybe "-" $ toMaybe city ]
+  (maybe "" (_ <> ", ") temporaryName) <>
+  intercalate ", " [ fromMaybe "-" streetAddress, zipcode, fromMaybe "-" city ]
 
-formatDateString :: JSDate -> String
-formatDateString startDate
-  | Just startString <- formatDateDots <$> toDate startDate = startString
-  | otherwise = mempty
+formatDateString :: DateTime -> String
+formatDateString = formatDateDots <<< date

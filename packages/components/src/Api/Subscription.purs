@@ -5,6 +5,7 @@ import Prelude
 import Bottega.Models.PaymentMethod (PaymentMethodId)
 import Control.Alt ((<|>))
 import Data.Date (Date)
+import Data.DateTime (DateTime)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Int as Int
@@ -30,16 +31,16 @@ fromString :: String -> Maybe Subsno
 fromString str = Subsno <$> Int.fromString str
 
 type DeliveryAddress =
-  { streetAddress :: Nullable String
+  { streetAddress :: Maybe String
   , zipcode       :: String
-  , city          :: Nullable String
-  , temporaryName :: Nullable String
+  , city          :: Maybe String
+  , temporaryName :: Maybe String
   }
 
 type PendingAddressChange =
   { address   :: DeliveryAddress
-  , startDate :: JSDate
-  , endDate   :: Nullable JSDate
+  , startDate :: DateTime
+  , endDate   :: Maybe DateTime
   }
 
 type Subscription = BaseSubscription SubscriptionPaymentMethod
@@ -73,8 +74,8 @@ data SubscriptionPaymentMethod
   | UnknownPaymentMethod
 
 type PausedSubscription =
-  { startDate :: JSDate
-  , endDate   :: Nullable JSDate
+  { startDate :: DateTime
+  , endDate   :: Maybe DateTime
   }
 
 -- | Parse Foreign values of a 'raw' subscription into a Subscription
