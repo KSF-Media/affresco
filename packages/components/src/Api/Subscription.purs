@@ -5,7 +5,7 @@ import Prelude
 import Bottega.Models.PaymentMethod (PaymentMethodId)
 import Control.Alt ((<|>))
 import Data.Date (Date)
-import Data.DateTime (DateTime)
+import Data.DateTime (DateTime, date)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Int as Int
@@ -107,14 +107,14 @@ instance ordSubscriptionState :: Ord SubscriptionState where
         else Left st
 
 type SubscriptionDates =
-  { lenMonths           :: Nullable Int
-  , lenDays             :: Nullable Int
-  , start               :: JSDate
-  , end                 :: Nullable JSDate
-  , unpaidBreak         :: Nullable JSDate
-  , invoicingStart      :: Nullable JSDate
-  , paidUntil           :: Nullable JSDate
-  , suspend             :: Nullable JSDate
+  { lenMonths           :: Maybe Int
+  , lenDays             :: Maybe Int
+  , start               :: DateTime
+  , end                 :: Maybe DateTime
+  , unpaidBreak         :: Maybe DateTime
+  , invoicingStart      :: Maybe DateTime
+  , paidUntil           :: Maybe DateTime
+  , suspend             :: Maybe DateTime
   }
 
 isSubscriptionCanceled :: Subscription -> Boolean
@@ -132,6 +132,6 @@ isSubscriptionTemporaryAddressChangable = _.canTempAddr <<< _.package
 
 isSubscriptionExpired :: Subscription -> Date -> Boolean
 isSubscriptionExpired subs today =
-  let end = toDate =<< toMaybe subs.dates.end
-      suspend = toDate =<< toMaybe subs.dates.suspend
+  let end = map date subs.dates.end
+      suspend = map date subs.dates.suspend
   in maybe false (_ < today) end || maybe false (_ <= today) suspend

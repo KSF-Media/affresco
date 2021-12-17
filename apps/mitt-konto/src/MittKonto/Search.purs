@@ -8,6 +8,7 @@ import Control.Monad.Except.Trans (runExceptT)
 import Data.Array (mapMaybe, drop, take)
 import Data.Array as Array
 import Data.Date (Date)
+import Data.DateTime (date)
 import Data.Either (Either(..), hush)
 import Data.Foldable (intercalate, length, foldMap, sum, sequence_)
 import Data.Int as Int
@@ -532,17 +533,17 @@ search = do
               }
           , DOM.td
               { className: if expired then "search--result-expired" else ""
-              , children: [ DOM.text $ case Tuple (toDate sub.dates.start) leastEnd of
-                               Tuple Nothing Nothing -> "ogiltig"
-                               Tuple start end -> maybe "" formatDateDots start <> "–" <>
-                                                  maybe "" formatDateDots end
+              , children: [ DOM.text $ case leastEnd of
+                               Nothing -> "ogiltig"
+                               end -> formatDateDots (date sub.dates.start) <> "–" <>
+                                      maybe "" formatDateDots end
                           ]
               }
           ]
           where
-            leastEnd = case Tuple (toDate =<< toMaybe sub.dates.suspend) (toDate =<< toMaybe sub.dates.end) of
-              Tuple (Just end1) (Just end2) -> Just $ min end1 end2
-              Tuple end1 end2 -> end1 <|> end2
+            leastEnd = case (map date sub.dates.suspend), (map date sub.dates.end) of
+              (Just end1), (Just end2) -> Just $ min end1 end2
+              end1, end2 -> end1 <|> end2
         loadableSubs _cusno =
            DOM.td { colSpan: 3
                   , children:

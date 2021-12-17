@@ -128,7 +128,7 @@ billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
       { term: "Faktureringsperioden upphör:"
       , description: [ DOM.text $ e ]
       }
-  ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe end)
+  ) $ map (trim <<< formatDateDots <<< date) end
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
 subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap
@@ -136,7 +136,7 @@ subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMa
       { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text s ]
       }
-  ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe suspend)
+  ) $ map (trim <<< formatDateDots <<< date) suspend
 
 subscriptionUpdates :: Types.Self -> JSX
 subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, package } }, state } =
