@@ -2,11 +2,11 @@ module Mosaico.Routes where
 
 import Prelude
 
-import Data.Foldable (foldl, oneOf)
+import Data.Foldable (foldr, oneOf)
 import Data.List (List(..))
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Semiring.Free (free)
-import Data.Set as Set
+import Data.Map as Map
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Category(..), CategoryLabel(..), Tag, uriComponentToTag)
@@ -20,7 +20,7 @@ data MosaicoPage
   | ArticlePage String
   | NotFoundPage String
   | StaticPage String
-  | CategoryPage CategoryLabel
+  | CategoryPage Category
   | TagPage Tag
   | SearchPage (Maybe String)
   | MenuPage
@@ -35,15 +35,15 @@ routes categories = root *> oneOf
   , Frontpage <$ end
   , MenuPage <$ lit "meny"
   , SearchPage <$> (lit "sök" *> optionalMatch (param "q")) <* end
-  , CategoryPage <<< CategoryLabel <$> categoryRoute
+  , CategoryPage <$> categoryRoute
   , NotFoundPage <$> str
   ]
   where
-    categoriesSet cats = foldl (\acc (Category c) -> Set.insert c.label acc # Set.union (categoriesSet c.subCategories)) Set.empty cats
+    categoriesMap = foldr (\category@(Category c) -> Map.insert c.label category) Map.empty categories
     categoryRoute =
       let matchRoute route
             | Cons (Path categoryRouteName) rs <- route
-            , Set.member (CategoryLabel categoryRouteName) (categoriesSet categories)
-            = pure $ Tuple rs categoryRouteName
+            , Just category <- Map.lookup (CategoryLabel categoryRouteName) categoriesMap
+            = pure $ Tuple rs category
             | otherwise = invalid $ free $ Fail "Not a category"
       in Match matchRoute

@@ -359,6 +359,8 @@ data CategoryType
   | Webview
   | Link
 
+derive instance eqCategoryType :: Eq CategoryType
+
 toString :: CategoryType -> String
 toString Feed = "feed"
 toString Webview = "webview"
@@ -424,6 +426,9 @@ instance categoryEncodeJson :: EncodeJson Category where
     # encodeJson
 
 derive instance newtypeCategory :: Newtype Category _
+
+instance eqCategory :: Eq Category where
+  eq (Category a) (Category b) = a.label == b.label
 
 newtype Tag = Tag String
 
