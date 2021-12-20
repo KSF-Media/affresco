@@ -49,6 +49,7 @@ main = launchAff_ do
         Article.testPaywallLogin false uuid entitledUser entitledPassword Article.testPaywallOpen
       _ -> log "Skip paywall open test via navigation"
   withBrowserPage $ Article.testPaywallLogin true premiumUuid entitledUser entitledPassword Article.testPaywallOpen
+  withBrowserPage $ Article.testMostRead false
   where
     withBrowser :: forall a. (Chrome.Browser -> Aff a) -> Aff a
     withBrowser = bracket Chrome.launch Chrome.close

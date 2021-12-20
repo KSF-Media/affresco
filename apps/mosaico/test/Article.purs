@@ -4,10 +4,13 @@ import Prelude hiding (sub)
 
 import Control.Alternative (guard)
 import Control.Monad.Maybe.Trans (runMaybeT, lift)
-import Data.Maybe (Maybe)
+import Data.Array (head)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
-import Mosaico.Test (Test, sub)
+import KSF.Paper (Paper(..))
+import Lettera as Lettera
+import Mosaico.Test (Test, site, sub)
 import Puppeteer as Chrome
 import Test.Unit.Assert as Assert
 
@@ -18,7 +21,7 @@ type PageIds =
 
 testFrontPage :: Chrome.Page -> Aff PageIds
 testFrontPage page = do
-  Chrome.goto (Chrome.URL "http://localhost:8080/") page
+  Chrome.goto (Chrome.URL site) page
   let articleList = Chrome.Selector ".mosaico--article-list"
   Chrome.waitFor_ articleList page
   nPremium <- Chrome.countElements articleList
@@ -75,7 +78,7 @@ testFrontPage page = do
 -- Test direct loading of an article
 testFreeArticle :: String -> Test
 testFreeArticle uuid page = do
-  Chrome.goto (Chrome.URL $ "http://localhost:8080/artikel/" <> uuid) page
+  Chrome.goto (Chrome.URL $ site <> "artikel/" <> uuid) page
   let article = Chrome.Selector "article.mosaico-article"
   Chrome.waitFor_ article page
   Chrome.waitFor_ (sub " .mosaico-article__main" article) page
@@ -93,7 +96,7 @@ premiumArticleTest sel page = do
 
 navigateTo :: String -> Chrome.Page -> Aff Unit
 navigateTo uuid page = do
-  Chrome.goto (Chrome.URL "http://localhost:8080/") page
+  Chrome.goto (Chrome.URL site) page
   Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
   let item = Chrome.Selector $ ".mosaico--list-article[data-uuid='" <> uuid <> "']"
   Chrome.click item page
@@ -101,7 +104,7 @@ navigateTo uuid page = do
 testPaywallLogin :: Boolean -> String -> String -> String -> (Chrome.Selector -> Int -> Test) -> Test
 testPaywallLogin loadDirect uuid user password f page = do
   if loadDirect
-    then Chrome.goto (Chrome.URL $ "http://localhost:8080/artikel/" <> uuid) page
+    then Chrome.goto (Chrome.URL $ site <> "artikel/" <> uuid) page
     else navigateTo uuid page
   let article = Chrome.Selector "article.mosaico-article"
       login = Chrome.Selector ".mosaico--login-modal"
@@ -128,7 +131,7 @@ testPaywallOpen article originalBlocks page = do
   Chrome.click (Chrome.Selector ".mosaico-header__logo") page
   navigateToPremium
   -- Same test via loading front page directly
-  Chrome.goto (Chrome.URL "http://localhost:8080/") page
+  Chrome.goto (Chrome.URL site) page
   navigateToPremium
   where
     navigateToPremium = do
@@ -149,3 +152,22 @@ testPaywallHolds article originalBlocks page = do
   paywallBlocks <- Chrome.countElements article (Chrome.Selector ".mosaico-article__body .article-element") page
   Assert.assert "Login without entitlements gives displays the same content" $ paywallBlocks == originalBlocks
   Chrome.waitFor_ (sub " .mosaico-article__main .mosaico-article__body .vetrina--container" article) page
+
+testMostRead :: Boolean -> Test
+testMostRead strict page = do
+  Chrome.goto (Chrome.URL site) page
+  let mostReadList = Chrome.Selector ".mosaico-asidelist__mostread"
+      article = Chrome.Selector "article.mosaico-article"
+  Chrome.waitFor_ mostReadList page
+  Chrome.click (sub " li a" mostReadList) page
+  mostRead <- Lettera.getMostRead 0 1 Nothing HBL true
+  let firstArticleTitle = _.title <$> head mostRead
+  Assert.assert "Got valid title from Lettera" $ isJust firstArticleTitle
+  Chrome.waitFor_ article page
+  -- It's very unlikely, but still possible, that most read list
+  -- changed between creating the front page and this.
+  if strict
+    then Chrome.assertContent (sub " .mosaico-article__headline" article) (fromMaybe "" firstArticleTitle) page
+    else do
+    articleTitle <- Chrome.getContent (sub " .mosaico-article__headline" article) page
+    when (articleTitle /= fromMaybe "" firstArticleTitle) $ testMostRead true page
