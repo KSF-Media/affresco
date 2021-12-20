@@ -3,9 +3,11 @@ module Persona where
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Monad.Error.Class (throwError)
 import Data.Array (catMaybes, filter)
 import Data.Date (Date)
 import Data.Date as Date
+import Data.Either (Either (..))
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..), maybe)
@@ -21,6 +23,7 @@ import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
+import Effect.Exception (error)
 import Effect.Now as Now
 import Foreign (Foreign, unsafeToForeign, unsafeFromForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
@@ -30,14 +33,15 @@ import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Search (SearchQuery, SearchResult, JanrainUser, FaroUser)
-import KSF.Api.Subscription (BaseSubscription, Subscription, PendingAddressChange, Subsno(..), isSubscriptionExpired)
+import KSF.Api.Subscription (BaseSubscription, Subscription (..), PendingAddressChange, Subsno(..), isSubscriptionExpired)
 import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Cusno (Cusno)
-import OpenApiClient (Api, callApi)
+import OpenApiClient (Api, callApi, callApi')
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
+import Data.Argonaut.Decode.Class (decodeJson)
 
 foreign import accountApi :: Api
 foreign import adminApi :: Api
@@ -123,7 +127,7 @@ processSubs :: Array (BaseSubscription Foreign) -> Aff (Array Subscription)
 processSubs subs = do
   now <- liftEffect Now.nowDate
   let threshold = maybe (const true) (not <<< flip isSubscriptionExpired) $ Date.adjust (Days (-180.0)) now
-  pure $ filter threshold $ map Subscription.parseSubscription subs
+  pure $ filter threshold $ map (Subscription <<< Subscription.parseSubscription) subs
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
 updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
@@ -221,12 +225,16 @@ pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscript
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
-  callApi usersApi "usersUuidSubscriptionsSubsnoPausePost"
-    [ unsafeToForeign uuid
-    , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: endDateISO }
-    ]
-    ( authHeaders uuid auth )
+  json <- callApi' usersApi "usersUuidSubscriptionsSubsnoPausePost"
+          [ unsafeToForeign uuid
+          , unsafeToForeign subsno
+          , unsafeToForeign { startDate: startDateISO, endDate: endDateISO }
+          ]
+          ( authHeaders uuid auth )
+
+  case decodeJson json of
+    Right s -> pure s
+    Left e -> throwError $ error "asd"
 
 editSubscriptionPause :: UUID -> Subsno -> Date -> Date -> Date -> Date -> UserAuth -> Aff Subscription
 editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate newEndDate auth = do

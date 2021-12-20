@@ -15,7 +15,7 @@ import Effect.Aff (Aff)
 import Foreign (unsafeToForeign)
 import KSF.Api (UserAuth, oauthToken)
 import KSF.Api.Error (ServerError)
-import KSF.Api.Package (Package, fromJSCampaign)
+import KSF.Api.Package (Package (..), fromJSCampaign)
 import OpenApiClient (Api, callApi)
 
 foreign import ordersApi :: Api
@@ -116,7 +116,7 @@ payOrder { userId, authToken } orderNumber paymentMethod = do
 
 getPackages :: Aff (Array Package)
 getPackages = do
-  map (\package -> package { campaigns = mapMaybe fromJSCampaign package.campaigns })
+  map (\package -> Package $ package { campaigns = mapMaybe fromJSCampaign package.campaigns })
     <$> callApi packagesApi "packageGet" [] {}
 
 readCreditCard :: ApiCreditCard -> Aff CreditCard

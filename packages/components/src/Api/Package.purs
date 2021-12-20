@@ -2,27 +2,53 @@ module KSF.Api.Package where
 
 import Prelude
 
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
 import Data.JSDate (JSDate)
+import Data.DateTime (DateTime)
 import Data.Nullable (Nullable, toMaybe)
+import KSF.Helpers (parseDateTime)
 import Data.Maybe (Maybe)
 import Data.String as String
+import Data.Newtype (class Newtype, un, unwrap)
 import Data.Tuple (Tuple(..))
+import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
 
 type PackageId = String
 
-type Package =
+newtype Package = Package
   { id           :: PackageId
   , name         :: String
   , paper        :: { code :: String, name :: String }
   , products     :: Array Product
   , offers       :: Array PackageOffer
   , campaigns    :: Array Campaign
-  , nextDelivery :: Nullable JSDate
+  , nextDelivery :: Maybe DateTime
   , digitalOnly  :: Boolean
   , canPause     :: Boolean
   , canTempAddr  :: Boolean
   , info         :: Array String
   }
+
+derive instance newtypePackage :: Newtype Package _
+
+instance decodeJsonPackage :: DecodeJson Package where
+  decodeJson json = do
+    obj <- decodeJson json
+    id <- obj .: "id"
+    name <- obj .: "name"
+    paper <- obj .: "paper"
+    products <- obj .: "products"
+    offers <- obj .: "offers"
+    campaigns <- obj .: "campaigns"
+    nextDelivery <- do
+      d <- obj .:? "nextDelivery"
+      pure $ parseDateTime =<< d
+    digitalOnly <- obj .: "digitalOnly"
+    canPause <- obj .: "canPause"
+    canTempAddr <- obj .: "canTempaddr"
+    info <- obj .: "info"
+    pure $ Package { id, name, paper, products, offers, campaigns, nextDelivery, digitalOnly, canPause, canTempAddr, info }
+
 
 type PackageOffer =
   { months       :: Int
@@ -30,12 +56,23 @@ type PackageOffer =
   , monthlyPrice :: Int
   }
 
-type Product =
+newtype Product = Product
   { id           :: String
   , name         :: String
   , active       :: ActiveDays
-  , nextDelivery :: Nullable JSDate
+  , nextDelivery :: Maybe DateTime
   }
+
+instance decodeJsonProduct :: DecodeJson Product where
+  decodeJson json = do
+    obj <- decodeJson json
+    id <- obj .: "id"
+    name <- obj .: "name"
+    active <- obj .: "active"
+    nextDelivery <- do
+      d <- obj .:? "nextDelivery"
+      pure $ parseDateTime =<< d
+    pure $ Product { id, name, active, nextDelivery }
 
 type ActiveDays =
   { mon :: Boolean
@@ -58,6 +95,9 @@ instance showCampaignLengthUnit :: Show CampaignLengthUnit where
   show Week = "week"
   show Month = "month"
   show Year = "year"
+
+instance decodeJsonCampaignLengthUnit :: DecodeJson CampaignLengthUnit where
+  decodeJson = map toCampaignLengthUnit <<< decodeJson
 
 toCampaignLengthUnit :: String -> CampaignLengthUnit
 toCampaignLengthUnit lengthUnit =

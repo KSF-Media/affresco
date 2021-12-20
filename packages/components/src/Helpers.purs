@@ -2,18 +2,21 @@ module KSF.Helpers where
 
 import           Prelude
 
-import           Data.Date               (Date)
-import           Data.DateTime           (DateTime (..))
-import           Data.Enum               (toEnum)
-import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
-                                          format)
-import           Data.Int                (toNumber)
-import           Data.List               (fromFoldable)
-import           Data.Maybe              (fromJust)
-import           Data.String             (Pattern (..))
-import           Data.String             as String
-import           Data.Time               (Time (..))
-import           Partial.Unsafe          (unsafePartial)
+import           Data.Argonaut.Core         as Json
+import           Data.Argonaut.Decode.Error (JsonDecodeError (..))
+import           Data.Date                  (Date)
+import           Data.DateTime              (DateTime (..))
+import           Data.Either                (Either (..), hush)
+import           Data.Enum                  (toEnum)
+import           Data.Formatter.DateTime    (Formatter, FormatterCommand (..),
+                                             format, unformat)
+import           Data.Int                   (toNumber)
+import           Data.List                  (fromFoldable)
+import           Data.Maybe                 (Maybe (..), fromJust)
+import           Data.String                (Pattern (..))
+import           Data.String                as String
+import           Data.Time                  (Time (..))
+import           Partial.Unsafe             (unsafePartial)
 
 midnight :: Time
 midnight = unsafePartial $ fromJust $ Time <$> toEnum 0 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
@@ -85,3 +88,15 @@ formatEur amountCent =
 
 paperInvoiceCents :: Int
 paperInvoiceCents = 500
+
+parseDateTime :: String -> Maybe DateTime
+parseDateTime = hush <<< unformat dateTimeFormatter
+
+jsonParseDateTime :: forall m. Applicative m => m String -> Either JsonDecodeError (m DateTime)
+jsonParseDateTime dateString = do
+  -- let y = do
+  --       x <- dateString
+  --       pure $ parseDateTime x -- Identity (Maybe DateTime) tai Maybe (Maybe DateTime)
+  case map parseDateTime dateString of
+    Just d -> Right $ pure d
+    Nothing -> Left $ UnexpectedValue $ Json.fromString $ "Unexpected DateTime format, got: " <> dateString

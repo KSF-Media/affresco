@@ -4,6 +4,7 @@ import Data.Function.Uncurried (Fn4, runFn4)
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Foreign (Foreign)
+import Data.Argonaut.Core (Json)
 
 foreign import data Api :: Type
 
@@ -20,4 +21,8 @@ foreign import callApi_
 
 callApi :: forall res opts. Api -> MethodName -> Array Foreign -> { | opts } -> Aff res
 callApi api methodName req opts =
+  fromEffectFnAff (runFn4 callApi_ api methodName req opts)
+
+callApi' :: forall res opts. Api -> MethodName -> Array Foreign -> { | opts } -> Aff Json
+callApi' api methodName req opts =
   fromEffectFnAff (runFn4 callApi_ api methodName req opts)
