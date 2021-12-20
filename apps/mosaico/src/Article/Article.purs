@@ -13,7 +13,6 @@ import Data.Set as Set
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
-import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.Paper as Paper
@@ -23,7 +22,7 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
-import Mosaico.Eval (evalExternalScripts)
+import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
@@ -63,7 +62,7 @@ type Props =
   }
 
 evalEmbeds :: Article -> Effect Unit
-evalEmbeds = evalExternalScripts <<< map unwrap <<< fold <<< _.externalScripts
+evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _.externalScripts
 
 renderImage :: Image -> JSX
 renderImage img =

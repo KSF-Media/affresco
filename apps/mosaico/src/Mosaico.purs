@@ -29,7 +29,7 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
-import Mosaico.Eval (evalExternalScripts)
+import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
@@ -197,7 +197,7 @@ mosaicoComponent initialValues props = React.do
             liftEffect $ setState _  { staticPage = Just staticPage }  
             case staticPage of
               StaticPageResponse r
-                | Just p <- r.pageScript -> liftEffect $ evalExternalScripts ["<script>" <> p <> "</script>"]
+                | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
               _ -> mempty
 
     case props.mostReadArticles of
