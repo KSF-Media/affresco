@@ -122,7 +122,7 @@ mosaicoComponent initialValues props = React.do
                          { article = props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse $
-                                        { pageName:_, pageContent:_ }
+                                        { pageName:_, pageContent:_, pageScript: Nothing }
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
