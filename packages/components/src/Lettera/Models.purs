@@ -9,11 +9,13 @@ import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (catMaybes, fromFoldable)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
-import Data.Foldable (foldMap)
+import Data.Foldable (foldMap, foldr)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.Hashable (class Hashable, hash)
 import Data.JSDate as JSDate
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.String (joinWith, toLower)
@@ -359,6 +361,8 @@ data CategoryType
   | Webview
   | Link
 
+derive instance eqCategoryType :: Eq CategoryType
+
 toString :: CategoryType -> String
 toString Feed = "feed"
 toString Webview = "webview"
@@ -404,6 +408,8 @@ newtype Category = Category
   , url           :: Maybe String
   }
 
+type Categories = Map CategoryLabel Category
+
 instance categoryDecodeJson :: DecodeJson Category where
   decodeJson json = do
     categoryObj   <- decodeJson json
@@ -424,6 +430,13 @@ instance categoryEncodeJson :: EncodeJson Category where
     # encodeJson
 
 derive instance newtypeCategory :: Newtype Category _
+
+instance eqCategory :: Eq Category where
+  eq (Category a) (Category b) = a.label == b.label
+
+categoriesMap :: Array Category -> Categories
+categoriesMap =
+  foldr (\cat@(Category c) -> (Map.union $ categoriesMap c.subCategories) <<< Map.insert c.label cat) Map.empty
 
 newtype Tag = Tag String
 

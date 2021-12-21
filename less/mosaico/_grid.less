@@ -3,7 +3,7 @@
   margin: 0 auto;
   min-height: 100%;
   max-width: calc(100% - @page-margin);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr); //minmax used to prevent grid blowout on static pages
   grid-row-gap: 8px;
   grid-template-areas:
     "line"
@@ -40,9 +40,15 @@
   grid-area: main;
 }
 
-.mosaico--static-page {
-  max-width: 100%;
+.mosaico--static-page-error {
   grid-area: main;
+  h1 {
+    font-size: 3.75rem;
+    font: 700 3.75rem "Duplex Serif Web", serif;
+    color: #333;
+    margin: 1rem auto 1.5rem auto;
+    letter-spacing: -0.015em;
+  }
 }
 
 .mosaico--error-with-aside {

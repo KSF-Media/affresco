@@ -4,8 +4,8 @@ import Prelude
 
 import Control.Monad.Error.Class (try)
 import Control.Parallel.Class (parallel, sequential)
-import Data.Argonaut.Core as JSON
 import Data.Argonaut.Core (stringify)
+import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (find, foldl, null)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -17,7 +17,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
-import Data.String (Pattern(..), Replacement(..), replace, trim)
+import Data.String (trim)
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
 import Data.String.Regex.Flags (ignoreCase) as Regex
@@ -27,8 +27,8 @@ import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
-import Effect.Exception (throw)
 import Effect.Class (liftEffect)
+import Effect.Exception (throw)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign (unsafeToForeign)
 import JSURI as URI
@@ -37,10 +37,10 @@ import KSF.Api.Error as Api.Error
 import KSF.User (User, fromPersonaUser)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
-import Mosaico.Header.Menu as Menu
 import Mosaico.Article as Article
 import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage as Frontpage
+import Mosaico.Header.Menu as Menu
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Search as Search
 import MosaicoServer (MainContent(..))
@@ -60,9 +60,9 @@ import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import Persona as Persona
 import React.Basic (fragment) as DOM
-import React.Basic.Events (handler_)
-import React.Basic.DOM (div, meta) as DOM
+import React.Basic.DOM (div, meta, script) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
+import React.Basic.Events (handler_)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (write)
 
@@ -158,8 +158,7 @@ main = do
       staticPageNames <- FS.readdir "./static/"
       let makeMap acc staticPageFileName = do
             pageContent <- FS.readTextFile UTF8 $ "./static/" <> staticPageFileName
-            let staticPageName = replace (Pattern ".html") (Replacement "") staticPageFileName
-            pure $ HashMap.insert staticPageName pageContent acc
+            pure $ HashMap.insert staticPageFileName pageContent acc
       foldM makeMap HashMap.empty staticPageNames
   htmlTemplate <- FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
@@ -393,12 +392,16 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
     { user: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
-  case HashMap.lookup pageName env.staticPages of
+  case HashMap.lookup (pageName <> ".html") env.staticPages of
     Just staticPageContent -> do
+      let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
       mosaico <- liftEffect MosaicoServer.app
       let staticPageJsx =
             DOM.div { className: "mosaico--static-page"
-                    , dangerouslySetInnerHTML: { __html: staticPageContent }
+                    , children:
+                        [ DOM.div { dangerouslySetInnerHTML: { __html: staticPageContent } }
+                        , foldMap (\script -> DOM.script { dangerouslySetInnerHTML: { __html: script } }) staticPageScript
+                        ]
                     }
       let mosaicoString =
             DOM.renderToString

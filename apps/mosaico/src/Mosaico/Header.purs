@@ -11,7 +11,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Foreign.Object as Object
 import KSF.User (User)
-import Lettera.Models (Category(..))
+import Lettera.Models (Category(..), Categories)
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -24,6 +24,7 @@ import Simple.JSON (E, read, write)
 type Props =
   { router :: PushStateInterface
   , categoryStructure :: Array Category
+  , catMap :: Categories
   , onCategoryClick :: Category -> EventHandler
   , onLogin :: Effect Unit
   , user :: Maybe User
@@ -92,7 +93,7 @@ render props =
                     , onClick: handler_ $
                         (\r -> do
                           locationState <- r.locationState
-                          case match (routes props.categoryStructure) locationState.pathname of
+                          case match (routes props.catMap) locationState.pathname of
                             Right MenuPage -> do
                               let
                                 eitherState :: E { previousPath :: String }

@@ -5,7 +5,7 @@ import Prelude
 import Data.Maybe (Maybe)
 import KSF.Paper as Paper
 import KSF.User (User)
-import Lettera.Models (ArticleStub, Category, Tag)
+import Lettera.Models (ArticleStub, Category, Tag, categoriesMap)
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
@@ -72,6 +72,7 @@ render router state props = DOM.div
            [ Header.topLine
            , Header.render { router
                            , categoryStructure: props.categoryStructure
+                           , catMap: categoriesMap props.categoryStructure
                            , onCategoryClick: const mempty
                            , user: props.user
                            , onLogin: pure unit

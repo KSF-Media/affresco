@@ -1,0 +1,52 @@
+@import (reference) "../../ksf-colors";
+
+.static-page__faq {
+  .faq__qa-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .faq__qa-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .faq__qa {
+    display: flex;
+    flex-flow: column wrap;
+  }
+
+  .faq__headline {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .faq__section-headline {
+    margin-top: 30px;
+  }
+
+  .faq__question {
+    margin-top: 10px;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    text-align: start;
+  }
+
+  .faq__answer-video {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  .faq__answer {
+    display: none;
+    position: absolute;
+  }
+
+  .faq__qa:last-child {
+    margin-bottom: 30px;
+  }
+
+}
