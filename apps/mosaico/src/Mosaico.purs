@@ -11,6 +11,7 @@ import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Hashable (class Hashable, hash)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
@@ -26,7 +27,7 @@ import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel (..), CategoryType(..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel (..), CategoryType(..), FullArticle(..), Tag (..), categoriesMap, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -63,6 +64,7 @@ type State =
   , user :: Maybe User
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
+  , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeed (Array ArticleStub)
   }
 
@@ -120,6 +122,7 @@ mosaicoComponent
   -> Props
   -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
+  let initialCatMap = categoriesMap props.categoryStructure
   state /\ setState <- useState initialValues.state
                          { article = props.article
                          , mostReadArticles = fold props.mostReadArticles
@@ -128,9 +131,10 @@ mosaicoComponent initialValues props = React.do
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
+                         , catMap = initialCatMap
                          , frontpageFeeds = props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
-                                   match (Routes.routes props.categoryStructure) initialValues.locationState.path
+                                   match (Routes.routes initialCatMap) initialValues.locationState.path
                          , user = props.user
                          }
 
@@ -150,10 +154,13 @@ mosaicoComponent initialValues props = React.do
       cats <- if null props.categoryStructure
               then Lettera.getCategoryStructure mosaicoPaper
               else pure props.categoryStructure
+      let catMap = categoriesMap cats
       liftEffect do
-        setState _ { categoryStructure = cats }
+        setState _ { categoryStructure = cats
+                   , catMap = catMap
+                   }
         -- Listen for route changes and set state accordingly
-        void $ locations (routeListener cats setState) initialValues.nav
+        void $ locations (routeListener catMap setState) initialValues.nav
       when (isNothing props.user) $
         magicLogin Nothing $ \u -> case u of
           Right user -> setState _ { user = Just user }
@@ -163,13 +170,15 @@ mosaicoComponent initialValues props = React.do
   let setFrontpage feedName =
         case HashMap.lookup feedName state.frontpageFeeds of
           Nothing -> Aff.launchAff_ do
-            let letteraFn =
-                  case feedName of
-                    TagFeed t -> Lettera.getByTag 0 20 t mosaicoPaper
-                    CategoryFeed c -> Lettera.getFrontpage mosaicoPaper (map unwrap c)
-                    SearchFeed q -> Lettera.search 0 20 mosaicoPaper q
-            feed <- letteraFn
-            liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds }
+            maybeFeed <- case feedName of
+              TagFeed t -> Just <$> Lettera.getByTag 0 20 t mosaicoPaper
+              CategoryFeed Nothing -> Just <$> Lettera.getFrontpage mosaicoPaper Nothing
+              CategoryFeed (Just c)
+                | Just cat <- unwrap <$> Map.lookup c state.catMap
+                , cat.type == Feed -> Just <$> Lettera.getFrontpage mosaicoPaper (Just $ unwrap cat.label)
+              CategoryFeed _ -> pure Nothing
+              SearchFeed q -> Just <$> Lettera.search 0 20 mosaicoPaper q
+            foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds }) maybeFeed
           Just _ -> pure unit
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
@@ -214,7 +223,7 @@ mosaicoComponent initialValues props = React.do
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
 
-routeListener :: Array Category -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
+routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   case match (Routes.routes c) location.path of
     Right path -> setState _ { route = path }
@@ -249,6 +258,7 @@ getInitialValues = do
         , user: Nothing
         , staticPage: Nothing
         , categoryStructure: []
+        , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
         }
     , components:
@@ -391,6 +401,7 @@ render setState state components router onPaywallEvent =
           , Header.render
               { router
               , categoryStructure: state.categoryStructure
+              , catMap: state.catMap
               , onCategoryClick
               , user: state.user
               , onLogin
