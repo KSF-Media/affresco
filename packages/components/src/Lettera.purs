@@ -46,7 +46,7 @@ letteraFrontPageUrl :: String
 letteraFrontPageUrl = letteraBaseUrl <> "/list/frontpage"
 
 letteraFrontPageHtmlUrl :: String
-letteraFrontPageHtmlUrl = letteraBaseUrl <> "/frontpage/html"
+letteraFrontPageHtmlUrl = letteraBaseUrl <> "/list/frontpage/html"
 
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"

@@ -4,21 +4,51 @@ const HtmlToReactParser = require('html-to-react').Parser;
 
 const htmlToReactParser = new HtmlToReactParser();
 
-exports.renderHtmlInput = function (htmlInput) {
+exports.renderHtmlInputImpl = function (htmlInput) {
     return htmlToReactParser.parse(htmlInput);
 }
 
-exports.renderHtmlInputWithHooks = function (htmlInput, hooks) {
+exports.renderHtmlInputWithHooksImpl = function (htmlInput, hooks) {
+
+    // Not used but needed
+    const isValidNode = function () {
+        return true;
+      };
+
     const processNodeDefinitions = new HtmlToReact.ProcessNodeDefinitions(React);
 
-    // Purescript functions are curried, so to call them from javascript we need
-    // to uncurry them
     const uncurriedHooks = hooks.map(h => {
+
+        const replaceChildren = h.replaceChildren;
+
+        // Purescript functions are curried, so to call them from javascript we need
+        // to uncurry them
+        const processNode = replaceChildren ?
+            (node, children, index) => {
+                return h.processNodeWithReplacement(node)(children)(index);
+            } :
+            (node, children) => {
+                return h.processNode(node)(children);
+            };
+
         return {
-            
+          replaceChildren,
           shouldProcessNode: h.shouldProcessNode,
-          processNode: function (node, children, index) {}
+          processNode,
         }
     });
-    
+
+    // A catch-all hook
+    uncurriedHooks.push({
+        shouldProcessNode: function (node) {
+            return true;
+        },
+        processNode: processNodeDefinitions.processDefaultNode,
+    });
+
+    return htmlToReactParser.parseWithInstructions(
+        htmlInput,
+        isValidNode,
+        uncurriedHooks
+    );
 }

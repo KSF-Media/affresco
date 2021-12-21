@@ -1,19 +1,53 @@
 module KSF.HtmlRenderer.Models where
 
+import Prelude
+
+import Data.Array (length)
+import Data.Function.Uncurried
 import Data.Maybe (Maybe(..))
-import Data.Nullable (toMaybe, toNullable)
+import Data.Nullable (Nullable, null, toMaybe, toNullable)
 import React.Basic (JSX)
+
+-- | Represents a node object returned by html-to-react
+foreign import data Node :: Type
+
+-- Getters
+foreign import getRaw     :: Fn1 Node (Maybe String)
+foreign import getData    :: Fn1 Node (Maybe String)
+foreign import getType    :: Fn1 Node (Maybe String)
+foreign import getName    :: Fn1 Node (Maybe String)
+foreign import getAttribs :: Fn1 Node (Maybe HTMLAttributes)
+
+-- Setters
+foreign import setRaw     :: Fn2 Node String Unit
+foreign import setData    :: Fn2 Node String Unit
+foreign import setType    :: Fn2 Node String Unit
+foreign import setName    :: Fn2 Node String Unit
+foreign import setAttribs :: Fn2 Node HTMLAttributes Unit
 
 -- | Utility to turn a hook into a generic one
 class ToGenericHook h where
   toGenericHook :: h -> GenericHook
 
+-- | A representation of a hook, can be used to group different
+--   type of hooks in the same collection
+--   See: https://stackoverflow.com/questions/53270182/similar-record-types-in-a-list-array-in-purescript
+newtype HookRep = HookRep (forall a. (forall h. ToGenericHook h => h -> a) -> a)
+
+toHookRep :: forall h. ToGenericHook h => h -> HookRep
+toHookRep h = HookRep \f -> f h
+
 -- | This type of hook is to replace the children of 
 --   targeted nodes
-newtype ReplacingHook = ReplacingHook
+newtype ReplacingHook = ReplacingHook ReplacingHookRecord
+
+type ReplacingHookRecord = 
   { shouldProcessNode :: Node -> Boolean
   , processNode       :: Node -> Array Node -> String -> JSX
   }
+
+replacingHook :: ReplacingHookRecord -> HookRep
+replacingHook = toHookRep <<< ReplacingHook
 
 instance replacingHookToGenericHook :: ToGenericHook ReplacingHook where
   toGenericHook (ReplacingHook { shouldProcessNode, processNode }) = 
@@ -25,10 +59,15 @@ instance replacingHookToGenericHook :: ToGenericHook ReplacingHook where
 
 -- | This type of hook is just to modify targeted nodes,
 --   without replacing their children
-newtype ModifyingHook = ModifyingHook
+newtype ModifyingHook = ModifyingHook ModifyingHookRecord
+
+type ModifyingHookRecord =
   { shouldProcessNode :: Node -> Boolean
   , processNode       :: Node -> Array Node -> JSX
   }
+
+modifyingHook :: ModifyingHookRecord -> HookRep
+modifyingHook = toHookRep <<< ModifyingHook
 
 instance modifyingHookToGenericHook :: ToGenericHook ModifyingHook where
   toGenericHook (ModifyingHook { shouldProcessNode, processNode }) = 
@@ -45,17 +84,22 @@ type GenericHook =
   , processNodeWithReplacement :: Maybe (Node -> Array Node -> String -> JSX)
   }
 
-newtype Node = Node
-  { raw      :: String
-  , data     :: String
-  , type     :: String
-  , name     :: Maybe String
-  , attribs  :: Maybe Attributes
-  , children :: Maybe (Array Node)
+type JSGenericHook =
+  { replaceChildren            :: Boolean
+  , shouldProcessNode          :: Node -> Boolean
+  , processNode                :: Nullable (Node -> Array Node -> JSX)
+  , processNodeWithReplacement :: Nullable (Node -> Array Node -> String -> JSX)
   }
 
+toJSGenericHook :: GenericHook -> JSGenericHook
+toJSGenericHook h =
+  { replaceChildren:            h.replaceChildren
+  , shouldProcessNode:          h.shouldProcessNode
+  , processNode:                toNullable h.processNode
+  , processNodeWithReplacement: toNullable h.processNodeWithReplacement
+  }
 
-newtype Attributes = Attributes
+type HTMLAttributes =
   { accept            :: Maybe String
   , "accept-charset"  :: Maybe String
   , accesskey         :: Maybe String
@@ -181,8 +225,134 @@ newtype Attributes = Attributes
   , onclick           :: Maybe String 
   }
 
+type JSHTMLAttributes =
+  { accept            :: Nullable String
+  , "accept-charset"  :: Nullable String
+  , accesskey         :: Nullable String
+  , action            :: Nullable String
+  , allowfullscreen   :: Nullable String
+  , allowtransparency :: Nullable String
+  , alt               :: Nullable String
+  , async             :: Nullable String
+  , autocomplete      :: Nullable String
+  , autofocus         :: Nullable String
+  , autoplay          :: Nullable String
+  , capture           :: Nullable String
+  , cellpadding       :: Nullable String
+  , cellspacing       :: Nullable String
+  , challenge         :: Nullable String
+  , charset           :: Nullable String
+  , checked           :: Nullable String
+  , cite              :: Nullable String
+  , class             :: Nullable String
+  , colspan           :: Nullable String
+  , cols              :: Nullable String
+  , content           :: Nullable String
+  , contenteditable   :: Nullable String
+  , contextmenu       :: Nullable String
+  , controls          :: Nullable String
+  , coords            :: Nullable String
+  , crossorigin       :: Nullable String
+  , data              :: Nullable String
+  , datetime          :: Nullable String
+  , default           :: Nullable String
+  , defer             :: Nullable String
+  , dir               :: Nullable String
+  , disabled          :: Nullable String
+  , download          :: Nullable String
+  , draggable         :: Nullable String
+  , enctype           :: Nullable String
+  , form              :: Nullable String
+  , formaction        :: Nullable String
+  , formenctype       :: Nullable String
+  , formmethod        :: Nullable String
+  , formnovalidate    :: Nullable String
+  , formtarget        :: Nullable String
+  , frameborder       :: Nullable String
+  , headers           :: Nullable String
+  , height            :: Nullable String
+  , hidden            :: Nullable String
+  , high              :: Nullable String
+  , href              :: Nullable String
+  , hreflang          :: Nullable String
+  , for               :: Nullable String
+  , "http-equiv"      :: Nullable String
+  , icon              :: Nullable String
+  , id                :: Nullable String
+  , inputmode         :: Nullable String
+  , integrity         :: Nullable String
+  , is                :: Nullable String
+  , keyparams         :: Nullable String
+  , keytype           :: Nullable String
+  , kind              :: Nullable String
+  , label             :: Nullable String
+  , lang              :: Nullable String
+  , list              :: Nullable String
+  , loop              :: Nullable String
+  , low               :: Nullable String
+  , manifest          :: Nullable String
+  , marginheight      :: Nullable String
+  , marginwidth       :: Nullable String
+  , max               :: Nullable String
+  , maxlength         :: Nullable String
+  , media             :: Nullable String
+  , mediagroup        :: Nullable String
+  , method            :: Nullable String
+  , min               :: Nullable String
+  , minlength         :: Nullable String
+  , multiple          :: Nullable String
+  , muted             :: Nullable String
+  , name              :: Nullable String
+  , novalidate        :: Nullable String
+  , nonce             :: Nullable String
+  , open              :: Nullable String
+  , optimum           :: Nullable String
+  , pattern           :: Nullable String
+  , placeholder       :: Nullable String
+  , poster            :: Nullable String
+  , preload           :: Nullable String
+  , profile           :: Nullable String
+  , radiogroup        :: Nullable String
+  , readonly          :: Nullable String
+  , rel               :: Nullable String
+  , required          :: Nullable String
+  , reversed          :: Nullable String
+  , role              :: Nullable String
+  , rowspan           :: Nullable String
+  , rows              :: Nullable String
+  , sandbox           :: Nullable String
+  , scope             :: Nullable String
+  , scoped            :: Nullable String
+  , scrolling         :: Nullable String
+  , seamless          :: Nullable String
+  , selected          :: Nullable String
+  , shape             :: Nullable String
+  , size              :: Nullable String
+  , sizes             :: Nullable String
+  , span              :: Nullable String
+  , spellcheck        :: Nullable String
+  , src               :: Nullable String
+  , srcdoc            :: Nullable String
+  , srclang           :: Nullable String
+  , srcset            :: Nullable String
+  , start             :: Nullable String
+  , step              :: Nullable String
+  , style             :: Nullable String
+  , summary           :: Nullable String
+  , tabindex          :: Nullable String
+  , target            :: Nullable String
+  , title             :: Nullable String
+  , type              :: Nullable String
+  , usemap            :: Nullable String
+  , value             :: Nullable String
+  , width             :: Nullable String
+  , wmode             :: Nullable String
+  , wrap              :: Nullable String
+  , onclick           :: Nullable String
+  }
 
-toJSRecord (Attributes as) =
+toJSHTMLAttributes :: HTMLAttributes -> JSHTMLAttributes
+toJSHTMLAttributes as =
   { accept:             toNullable as.accept
   , "accept-charset":   toNullable as."accept-charset"
   , accesskey:          toNullable as.accesskey
@@ -308,7 +478,8 @@ toJSRecord (Attributes as) =
   , onclick:            toNullable as.onclick
   }
 
-fromJSRecord as =
+fromJSAttributes :: JSHTMLAttributes -> HTMLAttributes
+fromJSAttributes as =
   { accept:             toMaybe as.accept
   , "accept-charset":   toMaybe as."accept-charset"
   , accesskey:          toMaybe as.accesskey

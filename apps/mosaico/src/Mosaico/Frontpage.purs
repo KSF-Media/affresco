@@ -12,6 +12,7 @@ import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
 import KSF.HtmlRenderer as HtmlRenderer
+import KSF.HtmlRenderer.Models as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import Mosaico.Models (ArticleFeed(..))
@@ -43,7 +44,16 @@ render state props =
         [loadingSpinner]
         (\content -> case content of
             ArticleList list -> map renderListArticle list
-            Html html        -> [ state.htmlRendererComponent { content: html } ])
+            Html html        -> [ state.htmlRendererComponent 
+                                    { content: html
+                                    , hooks: Just [ HtmlRenderer.replacingHook
+                                                      { shouldProcessNode: const false
+                                                      , processNode: \_ _ _ -> mempty
+                                                      }
+                                                  ]
+                                    }
+                                ]
+        )
         props.content
     }
   
