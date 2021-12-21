@@ -92,11 +92,8 @@ paperInvoiceCents = 500
 parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
 
-jsonParseDateTime :: forall m. Applicative m => m String -> Either JsonDecodeError (m DateTime)
+jsonParseDateTime :: String -> Either JsonDecodeError DateTime
 jsonParseDateTime dateString = do
-  -- let y = do
-  --       x <- dateString
-  --       pure $ parseDateTime x -- Identity (Maybe DateTime) tai Maybe (Maybe DateTime)
-  case map parseDateTime dateString of
-    Just d -> Right $ pure d
+  case parseDateTime dateString of
+    Just d  -> Right d
     Nothing -> Left $ UnexpectedValue $ Json.fromString $ "Unexpected DateTime format, got: " <> dateString

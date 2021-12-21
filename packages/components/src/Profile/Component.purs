@@ -35,7 +35,7 @@ import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
 import KSF.JSError as Error
 import KSF.Sentry as Sentry
-import KSF.User (User, UserError(UniqueViolation))
+import KSF.User (User, UserError(UniqueViolation), PendingAddressChange (..))
 import KSF.User as User
 import KSF.User.Cusno as Cusno
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, validateEmailAddress, validateEmptyField, validateField, validatePhone, validateFinnishZipCode, validateZipCode)
@@ -766,12 +766,12 @@ switchEditProgress self EditEmail progress = self.setState _ { editEmail = progr
 switchEditProgress self EditAddress progress = self.setState _ { editAddress = progress }
 switchEditProgress self EditPhone progress = self.setState _ { editPhone = progress }
 
-isUpcomingPendingChange :: Maybe Date -> User.PendingAddressChange -> Boolean
+isUpcomingPendingChange :: Maybe Date -> PendingAddressChange -> Boolean
 isUpcomingPendingChange Nothing _ = true
-isUpcomingPendingChange (Just now) { startDate } = (date startDate > now)
+isUpcomingPendingChange (Just now) (PendingAddressChange { startDate }) = (date startDate > now)
 
-pendingAddressChangeText :: User.PendingAddressChange -> String
-pendingAddressChangeText { address, startDate } =
+pendingAddressChangeText :: PendingAddressChange -> String
+pendingAddressChangeText (PendingAddressChange { address, startDate }) =
   let addressString = formatAddress address
       pendingPeriod = formatDateString startDate
   in addressString <> " (fr.o.m. " <> pendingPeriod <> ")"

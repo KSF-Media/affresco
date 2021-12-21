@@ -13,6 +13,7 @@ import Data.Either (Either(..), either, hush, isLeft, note)
 import Data.Foldable (foldMap)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Set (Set)
 import Data.Set as Set
@@ -24,8 +25,8 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (PackageId)
-import KSF.Api.Subscription (Subscription, isSubscriptionStateCanceled)
+import KSF.Api.Package (PackageId, Package(..))
+import KSF.Api.Subscription (Subscription (..), isSubscriptionStateCanceled)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
 import KSF.Paper (Paper)
@@ -516,8 +517,8 @@ mkPurchase self@{ state: { logger } } askAccount validForm affUser =
 
 userHasPackage :: PackageId -> Array Subscription -> Boolean
 userHasPackage packageId = Array.any
-                           (\s -> packageId == s.package.id
-                                  && not (isSubscriptionStateCanceled s.state))
+                           (\(Subscription { state, package: Package p }) -> packageId == p.id
+                                  && not (isSubscriptionStateCanceled state))
 
 isUserEntitled :: Set String -> Set String -> Boolean
 isUserEntitled accessEntitlements userEntitlements =

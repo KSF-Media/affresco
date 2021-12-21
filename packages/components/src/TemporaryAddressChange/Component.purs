@@ -11,6 +11,7 @@ import Data.Either (Either(..))
 import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, isJust, maybe)
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
 import Data.Time.Duration as Time.Duration
@@ -136,14 +137,14 @@ didMount self = do
   let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) self.props.now
       byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
       ongoing = fromMaybe false do
-        current <- self.props.editing
+        (User.PendingAddressChange current) <- self.props.editing
         let start = date current.startDate
         -- No need to check for end, this component shouldn't even show
         -- up then.
         pure $ self.props.now >= start
   self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow }
   case self.props.editing of
-    Just p -> do
+    Just (User.PendingAddressChange p) -> do
       self.setState _ { streetAddress = p.address.streetAddress
                       , zipCode = Just p.address.zipcode
                       , cityName = p.address.city
@@ -177,7 +178,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
     }
   where
     originalStart =
-      map (date <<< _.startDate) self.props.editing
+      map (date <<< _.startDate <<< unwrap) self.props.editing
     titleText =
       case self.props.editing of
         Just _ -> "Ändra datum för din adressändring"
@@ -197,7 +198,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         )
     addressChangeForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm (map (date <<< _.startDate) self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
+          { onSubmit: handler preventDefault (\_ -> submitForm (map (date <<< _.startDate <<< unwrap) self.props.editing) startDate (if self.state.isIndefinite then Nothing else endDate) self.props.editing { streetAddress, zipCode, cityName: Nothing, countryCode, temporaryName })
           , children:
               (if length self.props.pastAddresses == 0 || isJust self.props.editing
                  then identity
@@ -235,7 +236,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
             { className: "temporary-address-change--originals"
             , children:
                 [ DOM.text $ "Ursprunglig: " <> formatDateDots start <> " – " <>
-                  maybe "tillsvidare" (formatDateDots <<< date) (_.endDate =<< self.props.editing)
+                  maybe "tillsvidare" (formatDateDots <<< date) (_.endDate <<< unwrap =<< self.props.editing)
                 ]
             }
         _ -> mempty

@@ -92,7 +92,7 @@ import KSF.Api.Address (Address) as Address
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
-import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
+import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange (..), SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
 import KSF.Api.Subscription (Subsno)
 import KSF.Auth (loadToken, saveToken, deleteToken, requireToken)
 import KSF.Error as KSF.Error

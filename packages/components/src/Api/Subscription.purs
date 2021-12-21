@@ -50,12 +50,14 @@ newtype PendingAddressChange = PendingAddressChange
   , endDate   :: Maybe DateTime
   }
 
+derive instance newtypePendingAddressChange :: Newtype PendingAddressChange _
+
 instance decodeJsonPendingAddressChange :: DecodeJson PendingAddressChange where
   decodeJson json = do
     obj <- decodeJson json
     address <- obj .: "address"
-    (startDate :: Identity DateTime) <- jsonParseDateTime =<< obj .: "startDate"
-    (endDate :: Maybe DateTime) <- jsonParseDateTime =<< obj .:? "endDate"
+    startDate <- jsonParseDateTime =<< obj .: "startDate"
+    endDate <- map (parseDateTime =<< _) $ obj .:? "endDate"
     pure $ PendingAddressChange { startDate, endDate, address }
 
 newtype Subscription = Subscription (BaseSubscription SubscriptionPaymentMethod)
@@ -150,8 +152,8 @@ newtype PausedSubscription = PausedSubscription
 instance decodeJsonPausedSubscription :: DecodeJson PausedSubscription where
   decodeJson json = do
     obj <- decodeJson json
-    (startDate :: Identity DateTime) <- jsonParseDateTime =<< obj .: "startDate"
-    (endDate :: Maybe DateTime) <- jsonParseDateTime =<< obj .:? "endDate"
+    startDate <- jsonParseDateTime =<< obj .: "startDate"
+    endDate <- map (parseDateTime =<< _) $ obj .:? "endDate"
     pure $ PausedSubscription { startDate, endDate }
 
 
