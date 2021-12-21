@@ -8,9 +8,9 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
-import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
+import Data.Hashable (class Hashable, hash)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
@@ -29,6 +29,7 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel (..), FullArticle(..), Tag (..), isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
+import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
@@ -121,7 +122,7 @@ mosaicoComponent initialValues props = React.do
                          { article = props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse $
-                                        { pageName:_, pageContent:_ }
+                                        { pageName:_, pageContent:_, pageScript: Nothing }
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
@@ -194,6 +195,10 @@ mosaicoComponent initialValues props = React.do
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
             liftEffect $ setState _  { staticPage = Just staticPage }
+            case staticPage of
+              StaticPageResponse r
+                | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
+              _ -> mempty
 
     case props.mostReadArticles of
       Just mostReads
