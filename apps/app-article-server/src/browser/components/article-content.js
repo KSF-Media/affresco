@@ -212,13 +212,13 @@ class Content extends Component {
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >
-          <div id="MOBPARAD"></div>
+          <div className="kfs-app-ad" id="MOBPARAD"></div>
           {this.props.body != null
             ? this.props.body.map((block, key) => {
                 return this.conditionalRendering(block, key);
               })
             : ""}
-          <div id="MOBNER"></div>
+          <div className="kfs-app-ad" id="MOBNER"></div>
         </div>
       </div>
     );
