@@ -51,6 +51,10 @@ getBody :: Either ArticleStub FullArticle -> Array BodyElement
 getBody (Left _articleStub) = mempty
 getBody (Right fullArticle) = _.body $ fromFullArticle fullArticle
 
+getRemoveAds :: Either ArticleStub FullArticle -> Boolean
+getRemoveAds (Left articleStub) = articleStub.removeAds
+getRemoveAds (Right fullArticle) = _.removeAds $ fromFullArticle fullArticle
+
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
@@ -94,7 +98,9 @@ render props =
     let title = getTitle props.article
         tags = getTags props.article
         mainImage = getMainImage props.article
-        bodyWithAd = Ad.insertIntoBody adBox $ map renderElement $ getBody props.article
+        bodyWithAd = let body = map renderElement $ getBody props.article
+                     in if getRemoveAds props.article then body
+                        else Ad.insertIntoBody adBox body
         draftHeader = case props.article of
           Right (DraftArticle _) ->
             DOM.div
