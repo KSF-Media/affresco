@@ -194,7 +194,7 @@ mosaicoComponent initialValues props = React.do
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
-            liftEffect $ setState _  { staticPage = Just staticPage }  
+            liftEffect $ setState _  { staticPage = Just staticPage }
             case staticPage of
               StaticPageResponse r
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
