@@ -158,12 +158,12 @@ getFrontpage paper categoryId = do
         Console.warn "Failed to read API response!"
         pure mempty
 
-getMostRead :: Int -> Int -> String -> Paper -> Boolean -> Aff (Array ArticleStub)
+getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (Array ArticleStub)
 getMostRead start limit category paper onlySubscribers = do
   mostReadResponse <- AX.get ResponseFormat.json (letteraMostReadUrl
           <> "?start=" <> show start
           <> "&limit=" <> show limit
-          <> "&category" <> category
+          <> (foldMap ("&category=" <> _) category)
           <> "&paper=" <> Paper.toString paper
           <> "&onlySubscribers=" <> show onlySubscribers
   )

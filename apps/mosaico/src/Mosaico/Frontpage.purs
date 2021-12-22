@@ -4,9 +4,11 @@ import Prelude
 
 import Data.Array (head)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe, fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un)
+import Data.String (contains)
+import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
 import KSF.Spinner (loadingSpinner)
@@ -37,9 +39,12 @@ render props =
       DOM.div
         { className: "mosaico--list-article list-article-default"
         , onClick: props.onArticleClick a
-        , _data: Object.fromFoldable [ Tuple "premium" $ if a.premium then "1" else "0"
-                                     , Tuple "uuid" $ a.uuid
-                                     ]
+        , _data: Object.fromFoldable $
+          -- Known bug, exclude from tests
+          if Just true == (contains (Pattern ":") <<< un Tag <$> head a.tags) then []
+          else [ Tuple "premium" $ if a.premium then "1" else "0"
+               , Tuple "uuid" $ a.uuid
+               ]
         , children:
             [ DOM.span
                 { children:

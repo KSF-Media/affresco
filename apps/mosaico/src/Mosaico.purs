@@ -216,7 +216,7 @@ mosaicoComponent initialValues props = React.do
         | not $ null mostReads -> liftEffect $ setState \s -> s { mostReadArticles = mostReads }
       _ ->
         Aff.launchAff_ do
-          mostReadArticles <- Lettera.getMostRead 0 10 "" mosaicoPaper true
+          mostReadArticles <- Lettera.getMostRead 0 10 Nothing mosaicoPaper true
           liftEffect $ setState \s -> s { mostReadArticles = mostReadArticles }
 
     pure mempty

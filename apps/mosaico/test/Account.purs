@@ -2,13 +2,14 @@ module Mosaico.Test.Account where
 
 import Prelude hiding (sub)
 
-import Mosaico.Test (Test, sub)
+import Effect.Aff as Aff
+import Mosaico.Test (Test, site, sub)
 import Puppeteer as Chrome
 import Test.Unit.Assert as Assert
 
 loginLogout :: String -> String -> Test
 loginLogout user password page = do
-  Chrome.goto (Chrome.URL "http://localhost:8080/meny") page
+  Chrome.goto (Chrome.URL $ site <> "meny") page
   Chrome.waitFor_ (Chrome.Selector ".mosaico-header__menu-content") page
   -- Do it twice just to test idempotentness
   runTest
@@ -16,7 +17,7 @@ loginLogout user password page = do
   where
     runTest = do
       let menu = Chrome.Selector ".mosaico-header__menu-content"
-          logoutSelector = sub " .mosaico-header__block:nth-child(1) .mosaico-header__section:nth-child(4)" menu
+          logoutSelector = sub " .mosaico-header__block:nth-child(1) .mosaico-header__section:nth-child(4) a" menu
           accountSelector = Chrome.Selector ".mosaico-header__account"
           login = Chrome.Selector ".mosaico--login-modal"
       Chrome.assertNotFound logoutSelector page
@@ -29,5 +30,6 @@ loginLogout user password page = do
       Chrome.waitFor_ logoutSelector page
       accountText <- Chrome.getContent accountSelector page
       Assert.assert "Login element text has changed" $ accountText /= "LOGGA IN"
+      Chrome.waitFor_ logoutSelector page
       Chrome.click logoutSelector page
       Chrome.waitFor_ (sub "[data-login=\"1\"]" accountSelector) page

@@ -201,7 +201,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
         { user: _, article: _, mostReadArticles: _ }
         <$> maybe (pure Nothing) (parallel <<< getUser) credentials
         <*> parallel (Lettera.getArticle uuid r.guards.credentials)
-        <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+        <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
       renderArticle env user article mostReadArticles
   | otherwise = do
     article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials
@@ -216,7 +216,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
         { user, mostReadArticles } <- sequential $
           { user: _, mostReadArticles: _ }
           <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-          <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+          <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
         let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
         notFound env (notFoundArticleContent $ hush =<< user) user maybeMostRead
 
@@ -281,7 +281,7 @@ frontpage env { guards: { credentials } } = do
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (Lettera.getFrontpage mosaicoPaper Nothing)
-    <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   mosaico <- liftEffect MosaicoServer.app
   frontpageComponent <- liftEffect Frontpage.frontpageComponent
   let mosaicoString =
@@ -357,7 +357,7 @@ tagList env { params: { tag }, guards: { credentials } } = do
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (Lettera.getByTag 0 20 tag' mosaicoPaper)
-    <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   mosaico <- liftEffect MosaicoServer.app
   if null articles
     then notFound env (TagListContent tag' notFoundWithAside) user (Just mostReadArticles)
@@ -391,7 +391,7 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
   { user, mostReadArticles } <- sequential $
     { user: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   case HashMap.lookup (pageName <> ".html") env.staticPages of
     Just staticPageContent -> do
       let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
@@ -432,7 +432,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (Lettera.getFrontpage mosaicoPaper (Just categoryName))
-    <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: FrontpageContent $ frontpageComponent
@@ -463,7 +463,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> maybe (pure mempty) (parallel <<< Lettera.search 0 20 mosaicoPaper) query
-    <*> parallel (Lettera.getMostRead 0 10 "" mosaicoPaper true)
+    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaicoString = DOM.renderToString
                         $ mosaico
                           { mainContent: FrontpageContent $
