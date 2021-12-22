@@ -24,6 +24,7 @@ You can edit this file as you like.
   , "js-date"
   , "lists"
   , "maybe"
+  , "newtype"
   , "now"
   , "nullable"
   , "ordered-collections"

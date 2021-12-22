@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Array (snoc, sortBy, (:))
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.String (toUpper)
 import MittKonto.Main.UserView.AccountEdit as AccountEdit
 import MittKonto.Main.UserView.IconAction as IconAction
@@ -60,7 +61,7 @@ userView router { state: { now, news }, setState } logger user = React.fragment
       where
         subscriptions =
           -- Sort the canceled subscriptions to the end of the list
-          case sortBy (comparing _.state) user.subs of
+          case sortBy (comparing (_.state <<< unwrap)) user.subs of
             []   -> [ componentBlockContent noSubscriptionsText ]
             subs -> do
               map subscriptionComponentBlockContent subs `snoc` cancelSubscription

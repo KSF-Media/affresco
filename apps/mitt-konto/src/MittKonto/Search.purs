@@ -15,6 +15,7 @@ import Data.Int as Int
 import Data.JSDate (toDate)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String.Common as String
 import Data.Tuple (Tuple(..), fst, snd)
@@ -26,8 +27,9 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Foreign (unsafeToForeign, readString)
 import KSF.Api (Password(..))
+import KSF.Api.Package (Package(..))
 import KSF.Api.Search (FaroUser, JanrainUser, SearchResult)
-import KSF.Api.Subscription (Subscription, isSubscriptionExpired)
+import KSF.Api.Subscription (Subscription(..), isSubscriptionExpired, SubscriptionDates(..))
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Grid as Grid
@@ -510,18 +512,18 @@ search = do
               case user.subs of
                 Nothing -> [ loadableSubs user.cusno ]
                 Just subs -> if Array.null subs
-                               then [ DOM.td { colSpan: 3
-                                             , children: [ DOM.text "Ingen" ]
-                                             }
-                                    ]
-                               else subscriptionRow =<< take 1 subs
+                             then [ DOM.td { colSpan: 3
+                                           , children: [ DOM.text "Ingen" ]
+                                           }
+                                  ]
+                             else subscriptionRow =<< take 1 subs
           }
-      ] <> maybe mempty (\s -> subtr <<< subscriptionRow <$> drop 1 s) user.subs
+      ] <> foldMap (\s -> subtr <<< subscriptionRow <$> drop 1 s) user.subs
       where
         td children = DOM.td { rowSpan: rowSpan, children: children }
         rowSpan = maybe 1 (\s -> if Array.null s then 1 else length s) user.subs
         subtr children =  DOM.tr { className: "search--subrow", children: children }
-        subscriptionRow { sub, expired } =
+        subscriptionRow { sub: Subscription sub@{ package: Package p, dates: SubscriptionDates dates }, expired } =
           [ DOM.td
               { className: "search--result-subsno-column" <>
                            if expired then " search--result-expired" else ""
@@ -529,19 +531,19 @@ search = do
               }
           , DOM.td
               { className: if expired then "search--result-expired" else ""
-              , children: [ DOM.text $ sub.package.name ]
+              , children: [ DOM.text $ p.name ]
               }
           , DOM.td
               { className: if expired then "search--result-expired" else ""
               , children: [ DOM.text $ case leastEnd of
                                Nothing -> "ogiltig"
-                               end -> formatDateDots (date sub.dates.start) <> "–" <>
+                               end -> formatDateDots (date dates.start) <> "–" <>
                                       maybe "" formatDateDots end
                           ]
               }
           ]
           where
-            leastEnd = case (map date sub.dates.suspend), (map date sub.dates.end) of
+            leastEnd = case (map date dates.suspend), (map date dates.end) of
               (Just end1), (Just end2) -> Just $ min end1 end2
               end1, end2 -> end1 <|> end2
         loadableSubs _cusno =

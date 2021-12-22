@@ -5,11 +5,13 @@ import Prelude
 import Data.Array (concatMap, cons, filter)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
+import KSF.Api.Package (Package(..))
 import KSF.Api.Subscription (toString) as Subsno
-import KSF.Api.Subscription (isSubscriptionExpired)
+import KSF.Api.Subscription (isSubscriptionExpired, Subscription(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DescriptionList.Component as DescriptionList
 import KSF.Grid as Grid
@@ -40,13 +42,13 @@ subscription = make component
 didMount :: Types.Self -> Effect Unit
 didMount self = do
   self.setState _
-    { pausedSubscriptions = self.props.subscription.paused
-    , pendingAddressChanges = self.props.subscription.pendingAddressChanges
+    { pausedSubscriptions = _.paused $ unwrap self.props.subscription
+    , pendingAddressChanges = _.pendingAddressChanges $ unwrap self.props.subscription
     }
   self.props.logger.setUser $ Just self.props.user
 
 render :: Types.Self -> JSX
-render self@{ props: { now, subscription: sub@{ package, state } } } =
+render self@{ props: { now, subscription: Subscription sub@{ package: Package package, state } } } =
   Grid.row2
     (DescriptionList.descriptionList
          { definitions:
@@ -83,6 +85,6 @@ render self@{ props: { now, subscription: sub@{ package, state } } } =
   where
     filterExpiredPausePeriods :: Array User.PausedSubscription -> Array User.PausedSubscription
     filterExpiredPausePeriods pausedSubs =
-      filter (not <<< Helpers.isPeriodExpired false now <<< _.endDate) pausedSubs
-    expired = isSubscriptionExpired sub now
+      filter (not <<< Helpers.isPeriodExpired false now <<< _.endDate <<< unwrap) pausedSubs
+    expired = isSubscriptionExpired (Subscription sub) now
     subsno = Subsno.toString sub.subsno

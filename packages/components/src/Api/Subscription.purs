@@ -149,6 +149,8 @@ newtype PausedSubscription = PausedSubscription
   , endDate   :: Maybe DateTime
   }
 
+derive instance newtypePausedSubscription :: Newtype PausedSubscription _
+
 instance decodeJsonPausedSubscription :: DecodeJson PausedSubscription where
   decodeJson json = do
     obj <- decodeJson json

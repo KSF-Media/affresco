@@ -18,7 +18,7 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Foreign (unsafeToForeign)
-import KSF.Api.Subscription (SubscriptionPaymentMethod(..), Subscription (..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
+import KSF.Api.Subscription (PendingAddressChange(..), PausedSubscription(..), SubscriptionPaymentMethod(..), SubscriptionDates(..), Subscription (..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Api.Package (Package (..))
 import KSF.AsyncWrapper as AsyncWrapper
@@ -43,14 +43,14 @@ import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler, handler_)
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
-receiverName { props: { subscription: { receiver } } } =
+receiverName { props: { subscription: Subscription { receiver } } } =
   foldMap (\r -> Array.singleton
               { term: "Mottagare:"
               , description: [ DOM.text r ]
               }) receiver
 
 deliveryAddress :: Types.Self -> Array DescriptionList.Definition
-deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, package }, user: { address: userAddress } } } =
+deliveryAddress { props: { subscription: Subscription { deliveryAddress: subDeliveryAddress, package: Package package }, user: { address: userAddress } } } =
   if package.digitalOnly
   then mempty
   else Array.singleton
@@ -71,7 +71,7 @@ deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, 
       | otherwise = "-"
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
-paymentMethod { props: { subscription: { paymentMethod: method, paymentMethodId }, user: { creditCards } } } = Array.singleton
+paymentMethod { props: { subscription: Subscription { paymentMethod: method, paymentMethodId }, user: { creditCards } } } = Array.singleton
   { term: "Faktureringsmetod:"
   , description: [ DOM.div_ [ DOM.text $ Helpers.translatePaymentMethod method
                             , case method of
@@ -109,10 +109,10 @@ pendingAddressChanges self@{ state: { pendingAddressChanges: pendingChanges }, p
     filteredChanges = foldMap filterExpiredPendingChanges pendingChanges
     filterExpiredPendingChanges :: Array User.PendingAddressChange -> Array User.PendingAddressChange
     filterExpiredPendingChanges changes =
-      filter (not <<< Helpers.isPeriodExpired true now <<< _.endDate) changes
+      filter (not <<< Helpers.isPeriodExpired true now <<< _.endDate <<< unwrap) changes
 
 showPendingAddressChange :: Types.Self -> (Tuple Int User.PendingAddressChange) -> JSX
-showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
+showPendingAddressChange self (Tuple n change@(PendingAddressChange { address, startDate, endDate })) =
   let addressString = Helpers.formatAddress address
       pendingPeriod = Helpers.formatDateString startDate endDate
   in DOM.div
@@ -121,11 +121,11 @@ showPendingAddressChange self (Tuple n change@{ address, startDate, endDate }) =
                        (temporaryAddressChangeComponent self $ Just change)
                    , DOM.text $ addressString <> " (" <> pendingPeriod <> ")"
                    ]
-       , id: "subscription-" <> Subsno.toString self.props.subscription.subsno <> "-pending-address-change-" <> show n
+       , id: "subscription-" <> Subsno.toString (_.subsno $ unwrap self.props.subscription) <> "-pending-address-change-" <> show n
        }
 
 billingDateTerm :: Types.Self -> Array DescriptionList.Definition
-billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
+billingDateTerm { props: { subscription: Subscription { dates: SubscriptionDates { end } } } } = foldMap
   (\e -> Array.singleton $
       { term: "Faktureringsperioden upphör:"
       , description: [ DOM.text $ e ]
@@ -133,7 +133,7 @@ billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
   ) $ map (trim <<< formatDateDots <<< date) end
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
-subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap
+subscriptionEndTerm { props: { subscription: Subscription { dates: SubscriptionDates { suspend } } } } = foldMap
   (\s -> Array.singleton $
       { term: "Prenumerationens slutdatum:"
       , description: [ DOM.text s ]
@@ -141,7 +141,7 @@ subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMa
   ) $ map (trim <<< formatDateDots <<< date) suspend
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, package } }, state } =
+subscriptionUpdates self@{ props: props@{ now, subscription: Subscription sub@{ subsno, package: Package package } }, state } =
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
@@ -156,14 +156,14 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
       }
 
     paperOnlyActions =
-      [ if isSubscriptionPausable sub then pauseIcon else mempty
-      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< _.endDate))
+      [ if isSubscriptionPausable (Subscription sub) then pauseIcon else mempty
+      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< _.endDate <<< unwrap))
            self.state.pausedSubscriptions
           then mempty
           else removeSubscriptionPauses
-      , if isSubscriptionTemporaryAddressChangable sub then temporaryAddressChangeIcon else mempty
+      , if isSubscriptionTemporaryAddressChangable (Subscription sub) then temporaryAddressChangeIcon else mempty
       , case self.state.pendingAddressChanges of
-              Just a | not $ null $ filter (not <<< Helpers.isPeriodExpired false now <<< _.endDate) a ->
+              Just a | not $ null $ filter (not <<< Helpers.isPeriodExpired false now <<< _.endDate <<< unwrap) a ->
                 removeTempAddressChanges a
               _ -> mempty
       , deliveryReclamationIcon
@@ -187,7 +187,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
 
     deliveryReclamationComponent =
       DeliveryReclamation.deliveryReclamation
-        { subsno:   props.subscription.subsno
+        { subsno:   _.subsno $ unwrap props.subscription
         , cusno:    props.user.cusno
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
@@ -241,18 +241,18 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
               { wrapperProgress = AsyncWrapper.Loading mempty }
             Aff.launchAff_ $ do
               unpausedSubscription <- Aff.try $ do
-                User.unpauseSubscription props.user.uuid props.subscription.subsno
+                User.unpauseSubscription props.user.uuid (_.subsno $ unwrap props.subscription)
               case unpausedSubscription of
                 Left _ -> liftEffect do
                   self.setState _
                     { wrapperProgress = AsyncWrapper.Error "Uppehållet kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "error"
-                Right newSubscription -> liftEffect do
+                  Tracking.unpauseSubscription props.user.cusno (_.subsno $ unwrap props.subscription) "error"
+                Right (Subscription newSubscription) -> liftEffect do
                   self.setState _
                     { pausedSubscriptions = newSubscription.paused
                     , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing "Uppehållet har tagits bort"
                     }
-                  Tracking.unpauseSubscription props.user.cusno props.subscription.subsno "success"
+                  Tracking.unpauseSubscription props.user.cusno newSubscription.subsno "success"
         }
 
     temporaryAddressChangeIcon =
@@ -293,22 +293,25 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         , onClick: handler_ $ do
             self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
             Aff.launchAff_ $ do
-                for_ tempAddressChanges $ \tempAddressChange -> do
+                for_ tempAddressChanges $ \(PendingAddressChange tempAddressChange) -> do
                   let startDate = date tempAddressChange.startDate
-                  let endDate   = map date tempAddressChange.endDate
+                      endDate   = map date tempAddressChange.endDate
+                      sendAnalyticsEvent start end status =
+                        Tracking.deleteTempAddressChange (_.cusno $ unwrap props.subscription) (_.subsno $ unwrap props.subscription) start end status
                   case startDate, endDate of
                     startDate', endDate' -> do
-                      tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid props.subscription.subsno startDate' endDate'
+                      tempAddressChangesDeleted <- User.deleteTemporaryAddressChange props.user.uuid (_.subsno $ unwrap props.subscription) startDate' endDate'
                       case tempAddressChangesDeleted of
-                        Right newSubscription -> liftEffect do
+                        Right (Subscription newSubscription) -> liftEffect do
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing "Tillfällig adressändring har tagits bort",
                             pendingAddressChanges = newSubscription.pendingAddressChanges }
-                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
+                          sendAnalyticsEvent startDate' endDate' "success"
                         Left _ -> liftEffect do
                           self.setState _
                             { wrapperProgress = AsyncWrapper.Error "Tillfälliga addressförändringar kunde inte tas bort. Vänligen kontakta kundtjänst." }
-                          Tracking.deleteTempAddressChange props.subscription.cusno props.subscription.subsno startDate' endDate' "success"
+                          sendAnalyticsEvent startDate' endDate' "error"
+
         }
 
     deliveryReclamationIcon =
@@ -359,7 +362,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         }
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
-pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =
+pauseSubscriptionComponent self@{ props: props@{ subscription: Subscription sub@{ package: Package package } } } editing =
   PauseSubscription.pauseSubscription
     { subsno: sub.subsno
     , cusno: props.user.cusno
@@ -367,12 +370,12 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
       -- Make sure that both exist if used
     , oldStart: oldEnd *> oldStart
     , oldEnd: oldStart *> oldEnd
-    , nextDelivery: toDate =<< toMaybe package.nextDelivery
-    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
+    , nextDelivery: map date package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe (map date <<< _.nextDelivery <<< unwrap) package.products
     , now: self.props.now
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-    , onSuccess: \pausedSubscription ->
+    , onSuccess: \(Subscription pausedSubscription) ->
                     self.setState _
                       { pausedSubscriptions = pausedSubscription.paused
                       , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper pauseReadMsg Helpers.successText
@@ -402,15 +405,15 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
         self.setState _ { wrapperProgress = AsyncWrapper.Error errMsg }
     }
   where
-    oldStart = (date <<< _.startDate) <$> editing
-    oldEnd = map date (_.endDate =<< editing)
+    oldStart = (date <<< _.startDate <<< unwrap) <$> editing
+    oldEnd = map date (_.endDate <<< unwrap =<< editing)
     pauseReadMsg = Just $
       DOM.div
         { children: [ DOM.text "Du kan läsa tidningen digitalt utan extra kostnad under uppehållet." ]
         }
 
 temporaryAddressChangeComponent :: Types.Self -> Maybe User.PendingAddressChange -> JSX
-temporaryAddressChangeComponent self@{ props: props@{ subscription: Subscription sub@{ package: Package package } } }  editing =
+temporaryAddressChangeComponent self@{ props: props@{ subscription: Subscription sub@{ package: Package package } } } editing =
   TemporaryAddressChange.temporaryAddressChange
     { subsno: sub.subsno
     , cusno: props.user.cusno
@@ -422,7 +425,7 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: Subscription
     , now: self.props.now
     , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
     , onLoading: self.setState _ { wrapperProgress = AsyncWrapper.Loading mempty }
-    , onSuccess: \{ pendingAddressChanges: newPendingChanges } ->
+    , onSuccess: \(Subscription { pendingAddressChanges: newPendingChanges }) ->
                     self.setState _
                         { pendingAddressChanges = newPendingChanges
                         , wrapperProgress = AsyncWrapper.Success $ Just $ successWrapper Nothing Helpers.successText
@@ -456,10 +459,11 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: Subscription
 
 showPausedDates :: Types.Self -> Array User.PausedSubscription -> Array JSX
 showPausedDates self =
-  let formatDates { startDate, endDate } = Helpers.formatDateString startDate endDate
+  let formatDates (PausedSubscription { startDate, endDate }) = Helpers.formatDateString startDate endDate
+      pauseLine :: User.PausedSubscription -> JSX
       pauseLine pause =
         let text = "Uppehåll: " <> formatDates pause
-        in case map date pause.endDate of
+        in case map date (_.endDate $ unwrap pause) of
           Just _endDate ->
             DOM.div
               { children: [ changeButton self
