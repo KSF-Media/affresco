@@ -11,10 +11,9 @@ import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
-import Effect.Class.Console as Console
 import Foreign.Object as Object
-import KSF.HtmlRenderer as HtmlRenderer
-import KSF.HtmlRenderer.Models as HtmlRenderer
+import KSF.HtmlRenderer (Props, htmlRendererComponent) as HtmlRenderer
+import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import Mosaico.Models (ArticleFeed(..))
@@ -120,7 +119,7 @@ render state props =
                                   | name == "div", className == "dre-item__title" -> true
                                 _                                                 -> false
                            )
-      , processNode: (\n c i -> do
+      , processNode: (\_ _ _ -> do
                         pure $ DOM.div_ [ DOM.text "Hello world" ]
                      )
       }

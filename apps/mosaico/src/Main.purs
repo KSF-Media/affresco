@@ -286,16 +286,18 @@ frontpage env { guards: { credentials } } = do
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   mosaico <- liftEffect MosaicoServer.app
   frontpageComponent <- liftEffect Frontpage.frontpageComponent
+  let frontpage' = frontpageComponent
+                     { content: Just articles
+                     , onArticleClick: const mempty
+                     , onTagClick: const mempty
+                     }
   let mosaicoString =
         DOM.renderToString
         $ mosaico
           { mainContent:
-              FrontpageContent
-              $ frontpageComponent
-                  { content: Just articles
-                  , onArticleClick: const mempty
-                  , onTagClick: const mempty
-                  }
+              case articles of
+                ArticleList _ -> FrontpageContent frontpage'
+                Html _        -> HtmlFrontPageContent frontpage'
           , mostReadArticles
           , categoryStructure: env.categoryStructure
           , user: hush =<< user

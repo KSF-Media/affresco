@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Hashable (class Hashable, hash)
 import Data.Maybe (Maybe)
-import Lettera.Models (ArticleStub, Category, CategoryLabel (..), FullArticle(..), Tag (..))
+import Lettera.Models (ArticleStub, CategoryLabel, Tag)
 
 data ArticleFeed
   = ArticleList (Array ArticleStub)

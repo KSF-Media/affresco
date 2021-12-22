@@ -10,7 +10,6 @@ import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
-import Data.Hashable (class Hashable, hash)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
@@ -449,11 +448,16 @@ render setState state components router onPaywallEvent =
     doSearch query = do
       router.pushState (write {}) $ "/sök?q=" <> query
 
-    frontpage frontpageArticles = mosaicoDefaultLayout $ components.frontpageComponent
-      { content: frontpageArticles
-      , onArticleClick
-      , onTagClick
-      }
+    frontpage frontpageArticles = 
+      let layout = case frontpageArticles of
+                     Just (Html _) -> mosaicoLayoutNoAside
+                     _             -> mosaicoDefaultLayout
+       in
+        layout $ components.frontpageComponent
+          { content: frontpageArticles
+          , onArticleClick
+          , onTagClick
+          }
 
     renderArticle :: Either ArticleStub FullArticle -> JSX
     renderArticle article =

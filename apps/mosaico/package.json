@@ -6,6 +6,7 @@
   "dependencies": {
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "cheerio": "^1.0.0-rc.10",
+    "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d8876dc53c39e6c80cdff363a8230deb944c6e73",
     "react": ">=16.12",
