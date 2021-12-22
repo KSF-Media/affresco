@@ -11,14 +11,16 @@ import Data.Foldable (foldMap, for_, null, maximum)
 import Data.JSDate (toDate)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String (length, splitAt, trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Foreign (unsafeToForeign)
-import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
+import KSF.Api.Subscription (SubscriptionPaymentMethod(..), Subscription (..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
 import KSF.Api.Subscription (toString) as Subsno
+import KSF.Api.Package (Package (..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
 import KSF.DescriptionList.Component as DescriptionList
@@ -408,13 +410,13 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
         }
 
 temporaryAddressChangeComponent :: Types.Self -> Maybe User.PendingAddressChange -> JSX
-temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } } }  editing =
+temporaryAddressChangeComponent self@{ props: props@{ subscription: Subscription sub@{ package: Package package } } }  editing =
   TemporaryAddressChange.temporaryAddressChange
-    { subsno: props.subscription.subsno
+    { subsno: sub.subsno
     , cusno: props.user.cusno
     , pastAddresses: readPastTemporaryAddress <$> props.user.pastTemporaryAddresses
-    , nextDelivery: toDate =<< toMaybe package.nextDelivery
-    , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
+    , nextDelivery: map date package.nextDelivery
+    , lastDelivery: maximum $ mapMaybe (map date <<< _.nextDelivery <<< unwrap) package.products
     , editing: editing
     , userUuid: props.user.uuid
     , now: self.props.now

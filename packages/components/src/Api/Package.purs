@@ -63,6 +63,8 @@ newtype Product = Product
   , nextDelivery :: Maybe DateTime
   }
 
+derive instance newtypeProduct :: Newtype Product _
+
 instance decodeJsonProduct :: DecodeJson Product where
   decodeJson json = do
     obj <- decodeJson json

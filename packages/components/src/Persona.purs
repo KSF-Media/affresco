@@ -4,6 +4,8 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
+import Data.Argonaut.Core (Json)
+import Data.Argonaut.Decode.Error as Json
 import Data.Array (catMaybes, filter)
 import Data.Date (Date)
 import Data.Date as Date
@@ -221,20 +223,23 @@ hasScope uuid authScope auth = do
       UserWrite -> "UserWrite"
       UserPassword -> "UserPassword"
 
+decodeSubscription :: Json -> Aff Subscription
+decodeSubscription jsonSub =
+  case decodeJson jsonSub of
+    Right s -> pure s
+    Left e  -> throwError $ error $ "Could not parse subscription! Error: " <> Json.printJsonDecodeError e
+
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
-  json <- callApi' usersApi "usersUuidSubscriptionsSubsnoPausePost"
-          [ unsafeToForeign uuid
-          , unsafeToForeign subsno
-          , unsafeToForeign { startDate: startDateISO, endDate: endDateISO }
-          ]
-          ( authHeaders uuid auth )
-
-  case decodeJson json of
-    Right s -> pure s
-    Left e -> throwError $ error "asd"
+  decodeSubscription =<<
+    callApi' usersApi "usersUuidSubscriptionsSubsnoPausePost"
+      [ unsafeToForeign uuid
+      , unsafeToForeign subsno
+      , unsafeToForeign { startDate: startDateISO, endDate: endDateISO }
+      ]
+      ( authHeaders uuid auth )
 
 editSubscriptionPause :: UUID -> Subsno -> Date -> Date -> Date -> Date -> UserAuth -> Aff Subscription
 editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate newEndDate auth = do
@@ -242,24 +247,26 @@ editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate 
       oldEndDateISO   = formatDate oldEndDate
       newStartDateISO = formatDate newStartDate
       newEndDateISO   = formatDate newEndDate
-  callApi usersApi "usersUuidSubscriptionsSubsnoPausePatch"
-    [ unsafeToForeign uuid
-    , unsafeToForeign subsno
-    , unsafeToForeign { oldStartDate: oldStartDateISO
-                      , oldEndDate: oldEndDateISO
-                      , newStartDate: newStartDateISO
-                      , newEndDate: newEndDateISO
-                      }
-    ]
-    ( authHeaders uuid auth )
+  decodeSubscription =<<
+    callApi' usersApi "usersUuidSubscriptionsSubsnoPausePatch"
+      [ unsafeToForeign uuid
+      , unsafeToForeign subsno
+      , unsafeToForeign { oldStartDate: oldStartDateISO
+                        , oldEndDate: oldEndDateISO
+                        , newStartDate: newStartDateISO
+                        , newEndDate: newEndDateISO
+                        }
+      ]
+      ( authHeaders uuid auth )
 
 unpauseSubscription :: UUID -> Subsno -> UserAuth -> Aff Subscription
 unpauseSubscription uuid (Subsno subsno) auth = do
-  callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
-    ([ unsafeToForeign uuid
-     , unsafeToForeign subsno
-     ])
-    ( authHeaders uuid auth )
+  decodeSubscription =<<
+    callApi' usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
+      ([ unsafeToForeign uuid
+       , unsafeToForeign subsno
+       ])
+      ( authHeaders uuid auth )
 
 temporaryAddressChange
   :: UUID
@@ -276,12 +283,13 @@ temporaryAddressChange uuid (Subsno subsno) startDate endDate streetAddress zipC
   let startDateISO = formatDate startDate
       endDateISO   = formatDate <$> endDate
 
-  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
-    [ unsafeToForeign uuid
-    , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
-    ]
-    ( authHeaders uuid auth )
+  decodeSubscription =<<
+    callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
+      [ unsafeToForeign uuid
+      , unsafeToForeign subsno
+      , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
+      ]
+      ( authHeaders uuid auth )
 
 editTemporaryAddressChange
   :: UUID
@@ -296,12 +304,13 @@ editTemporaryAddressChange uuid (Subsno subsno) oldStartDate startDate endDate a
       startDateISO = formatDate startDate
       endDateISO = formatDate <$> endDate
 
-  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
-    [ unsafeToForeign uuid
-    , unsafeToForeign subsno
-    , unsafeToForeign { oldStartDate: oldStartDateISO, newStartDate: startDateISO, newEndDate: toNullable endDateISO }
-    ]
-    ( authHeaders uuid auth )
+  decodeSubscription =<<
+    callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
+      [ unsafeToForeign uuid
+      , unsafeToForeign subsno
+      , unsafeToForeign { oldStartDate: oldStartDateISO, newStartDate: startDateISO, newEndDate: toNullable endDateISO }
+      ]
+      ( authHeaders uuid auth )
 
 deleteTemporaryAddressChange
   :: UUID
@@ -313,12 +322,13 @@ deleteTemporaryAddressChange
 deleteTemporaryAddressChange uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate <$> endDate
-  callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
-    [ unsafeToForeign uuid
-    , unsafeToForeign subsno
-    , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO  }
-    ]
-    ( authHeaders uuid auth )
+  decodeSubscription =<<
+    callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
+      [ unsafeToForeign uuid
+      , unsafeToForeign subsno
+      , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO  }
+      ]
+      ( authHeaders uuid auth )
 
 createDeliveryReclamation
   :: UUID
