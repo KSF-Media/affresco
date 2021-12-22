@@ -28,6 +28,26 @@
   &__main-image {
     grid-area: image;
     margin-bottom: 30px;
+    .wrapper {
+      background: @grey-light;
+      img {
+        display: block;
+        margin: 0 auto;
+        max-width: 100%;
+      }
+    }
+    .caption {
+      font: 400 14px 'Roboto', sans-serif;
+      color: @grey-medium;
+      padding: 10px 0;
+      .byline {
+        font-weight: 500;
+        font-size: .9em;
+        color: black;
+        text-transform: uppercase;
+        margin-left: 5px;
+      }
+    }
   }
 
   &__main {
@@ -119,7 +139,6 @@
     border-top-width: 1px;
     border-left-width: 0;
     border-right-width: 0;
-    margin-top: 1rem;
     margin-bottom: 1.5rem;
     border-color: @hairline-color;
     color: @grey-mediumlight;
