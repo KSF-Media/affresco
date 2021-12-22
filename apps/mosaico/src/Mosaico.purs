@@ -143,6 +143,7 @@ mosaicoComponent initialValues props = React.do
               Left _ -> setState _ { article = Nothing }
 
   useEffectOnce do
+    foldMap (Article.evalEmbeds <<< fromFullArticle) props.article
     Aff.launchAff_ do
       cats <- if null props.categoryStructure
               then Lettera.getCategoryStructure mosaicoPaper
@@ -211,6 +212,7 @@ mosaicoComponent initialValues props = React.do
               StaticPageResponse r
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
               _ -> mempty
+      Routes.DebugPage _ -> pure unit
 
     case props.mostReadArticles of
       Just mostReads
@@ -397,6 +399,7 @@ render setState state components router onPaywallEvent =
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
+       Routes.DebugPage _ -> frontpage $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
   where
     mosaicoDefaultLayout :: JSX -> JSX
     mosaicoDefaultLayout = flip mosaicoLayout true
