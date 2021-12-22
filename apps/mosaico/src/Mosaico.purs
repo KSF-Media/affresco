@@ -289,7 +289,6 @@ fromJSProps jsProps =
           case feedContentType of 
             "articlelist" -> do
               list <- content # (jsonParser >>> hush) >>= toArray
-              Alt.guard (not $ null list)
               pure $ ArticleList $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list
             "html"        -> pure $ Html content
             _             -> Nothing
@@ -335,7 +334,7 @@ render setState state components router onPaywallEvent =
          | c.type == Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
          | otherwise ->
            mosaicoDefaultLayout $ components.frontpageComponent
-             { content: pure <<< ArticleList =<< HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
+             { content: HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
              , onArticleClick
              , onTagClick
              }
@@ -346,22 +345,26 @@ render setState state components router onPaywallEvent =
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> frontpage $ pure <<< ArticleList =<< HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
+       Routes.Frontpage -> frontpage $ HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
        Routes.SearchPage Nothing ->
           mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
        Routes.SearchPage query@(Just queryString) ->
           let frontpageArticles = HashMap.lookup (SearchFeed queryString) state.frontpageFeeds
               searching = isNothing frontpageArticles
-              noResults = (null <$> frontpageArticles) == Just true
+              noResults = case frontpageArticles of
+                Just (ArticleList list)
+                  | null list -> true
+                _             -> false
           in mosaicoDefaultLayout $
             components.searchComponent { query, doSearch, searching, noResults } <>
-            components.frontpageComponent { frontpageArticles, onArticleClick, onTagClick }
+            components.frontpageComponent { content: frontpageArticles, onArticleClick, onTagClick }
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
          case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
-           Just tagFeed
-             | not $ null tagFeed -> frontpage $ pure <<< ArticleList =<< Just tagFeed
+           Just (ArticleList tagFeed)
+             | not $ null tagFeed -> frontpage $ Just $ ArticleList $ tagFeed
              | otherwise -> mosaicoDefaultLayout Error.notFoundWithAside
+           Just (Html html) -> frontpage $ Just $ Html html
            Nothing -> frontpage Nothing
        Routes.MenuPage ->
          mosaicoLayoutNoAside

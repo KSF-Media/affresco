@@ -494,7 +494,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
                                              } <>
                              (guard (not $ null articles) $
                               frontpageComponent
-                                { frontpageArticles : Just articles
+                                { content: Just $ ArticleList articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }
@@ -505,7 +505,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
                           }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ mkArticleFeed query "searchfeed" articles
+                  [ "frontpageFeed"     /\ (mkArticleFeed query "searchfeed" $ ArticleList articles)
                   , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
@@ -545,7 +545,7 @@ notFound env mainContent user maybeMostReadArticles = do
           <> foldMap (pure <<< Tuple "mostReadArticles" <<< encodeStringifyArticleStubs) maybeMostReadArticles
           <> (case mainContent of
                  ArticleContent _ -> [ "article" /\ (encodeStringifyArticle $ fromFullArticle notFoundArticle) ]
-                 TagListContent tag _ -> [ "frontpageFeed" /\ mkArticleFeed (Just $ unwrap tag) "tagfeed" [] ]
+                 TagListContent tag _ -> [ "frontpageFeed" /\ mkArticleFeed (Just $ unwrap tag) "tagfeed" (ArticleList []) ]
                  StaticPageContent pageName _ -> [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName) ]
                  _ -> mempty
              )
