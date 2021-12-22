@@ -1,14 +1,14 @@
 module KSF.Api.Address where
 
-import Data.Nullable (Nullable)
+import           Data.Maybe (Maybe)
 
 type Address =
   { countryCode   :: String
-  , zipCode       :: Nullable String
-  , city          :: Nullable String
+  , zipCode       :: Maybe String
+  , city          :: Maybe String
   , streetAddress :: String
-  , streetName    :: Nullable String
-  , houseNo       :: Nullable String
-  , staircase     :: Nullable String
-  , apartment     :: Nullable String
+  , streetName    :: Maybe String
+  , houseNo       :: Maybe String
+  , staircase     :: Maybe String
+  , apartment     :: Maybe String
   }

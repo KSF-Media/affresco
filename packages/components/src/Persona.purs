@@ -2,6 +2,8 @@ module Persona where
 
 import Prelude
 
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
+import Data.Argonaut.Core as Json
 import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Data.Argonaut.Core (Json)
@@ -9,7 +11,7 @@ import Data.Argonaut.Decode.Error as Json
 import Data.Array (catMaybes, filter)
 import Data.Date (Date)
 import Data.Date as Date
-import Data.Either (Either (..))
+import Data.Either (Either (..), either, note)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..), maybe)
@@ -72,8 +74,8 @@ authHeaders uuid { userId, authToken } =
 
 getUser :: Maybe InvalidateCache -> UUID -> UserAuth -> Aff User
 getUser invalidateCache uuid auth = do
-  user <- callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
-  user { subs = _ } <$> processSubs user.subs
+  decodeUser =<< callApi' usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
+ -- User $ user { subs = _ } <$> processSubs user.subs
   where
     headers = Record.merge (authHeaders uuid auth)
       { cacheControl: toNullable maybeCacheControl
@@ -113,17 +115,16 @@ updateUser uuid update auth = do
             }
         DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
-  user <- callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth
-  user { subs = _ } <$> processSubs user.subs
+  decodeUser =<< (callApi' usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth)
 
 -- Admin only
 setUserCusno :: UUID -> Cusno -> UserAuth -> Aff User
 setUserCusno uuid cusno auth = do
-  user <- callApi usersApi "usersUuidPatch"
-            [ unsafeToForeign uuid
-            , unsafeToForeign {updateCusno: cusno}
-            ] $ authHeaders uuid auth
-  user { subs = _ } <$> processSubs user.subs
+  decodeUser =<<
+    (callApi' usersApi "usersUuidPatch"
+       [ unsafeToForeign uuid
+       , unsafeToForeign {updateCusno: cusno}
+       ] $ authHeaders uuid auth)
 
 processSubs :: Array (BaseSubscription Foreign) -> Aff (Array Subscription)
 processSubs subs = do
@@ -227,7 +228,13 @@ decodeSubscription :: Json -> Aff Subscription
 decodeSubscription jsonSub =
   case decodeJson jsonSub of
     Right s -> pure s
-    Left e  -> throwError $ error $ "Could not parse subscription! Error: " <> Json.printJsonDecodeError e
+    Left e  -> throwError $ error $ "Could not parse subscription json! Error: " <> Json.printJsonDecodeError e
+
+decodeUser :: Json -> Aff User
+decodeUser jsonSub =
+  case decodeJson jsonSub of
+    Right s -> pure s
+    Left e  -> throwError $ error $ "Could not parse user json! Error: " <> Json.printJsonDecodeError e
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
@@ -497,19 +504,39 @@ derive newtype instance showMergeToken :: Show MergeToken
 derive newtype instance readMergeToken :: ReadForeign MergeToken
 derive newtype instance writeMergeToken :: WriteForeign MergeToken
 
-type User = Record BaseUser
+newtype User = User (Record BaseUser)
+
+instance decodeJsonUser :: DecodeJson User where
+  decodeJson json = do
+    obj <- decodeJson json
+    uuid <- note (TypeMismatch "Could not parse UUID of user!") <<< UUID.parseUUID =<< obj .: "uuid"
+    email <- obj .: "email"
+    firstName <- obj .:? "firstName"
+    lastName <- obj .:? "lastName"
+    address <- obj .:? "address"
+    phone <- obj .:? "phone"
+    cusno <- obj .: "cusno"
+    subs <- obj .: "subs"
+    consent <- obj .: "consent"
+    pendingAddressChanges <- obj .:? "pendingAddresschanges" .!= mempty
+    pastTemporaryAddresses <- obj .: "pastTemporaryaddresses"
+    hasCompletedRegistration <- obj .: "hasCompletedregistration"
+    pure $ User { uuid, email, firstName, lastName, address, phone, cusno
+                , subs, consent, pendingAddressChanges, pastTemporaryAddresses
+                , hasCompletedRegistration
+                }
 
 type BaseUser =
   ( uuid :: UUID
   , email :: String
-  , firstName :: Nullable String
-  , lastName :: Nullable String
-  , address :: Nullable Address
-  , phone :: Nullable String
+  , firstName :: Maybe String
+  , lastName :: Maybe String
+  , address :: Maybe Address
+  , phone :: Maybe String
   , cusno :: Cusno
   , subs :: Array Subscription
   , consent :: Array GdprConsent
-  , pendingAddressChanges :: Nullable (Array PendingAddressChange)
+  , pendingAddressChanges :: Maybe (Array PendingAddressChange)
   , pastTemporaryAddresses :: Array TemporaryAddressChange
   , hasCompletedRegistration :: Boolean
   )
@@ -539,9 +566,9 @@ data NewUser =
 type TemporaryAddressChange =
   { street        :: String
   , zipcode       :: String
-  , cityName      :: Nullable String
+  , cityName      :: Maybe String
   , countryCode   :: String
-  , temporaryName :: Nullable String
+  , temporaryName :: Maybe String
   }
 
 type DeliveryReclamation =

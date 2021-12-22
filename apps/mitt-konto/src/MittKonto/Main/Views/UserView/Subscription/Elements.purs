@@ -62,11 +62,11 @@ deliveryAddress { props: { subscription: Subscription { deliveryAddress: subDeli
     currentDeliveryAddress
       | Just address <- subDeliveryAddress
       = Helpers.formatAddress address
-      | Just { streetAddress, zipCode, city } <- toMaybe userAddress
+      | Just { streetAddress, zipCode, city } <- userAddress
       = intercalate ", "
           [ streetAddress
-          , fromMaybe "-" $ toMaybe zipCode
-          , fromMaybe "-" $ toMaybe city
+          , fromMaybe "-" zipCode
+          , fromMaybe "-" city
           ]
       | otherwise = "-"
 
@@ -452,9 +452,9 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: Subscription
     readPastTemporaryAddress tmp =
       { streetAddress: Just tmp.street
       , zipCode: Just tmp.zipcode
-      , cityName: toMaybe tmp.cityName
+      , cityName: tmp.cityName
       , countryCode: Just tmp.countryCode
-      , temporaryName: toMaybe tmp.temporaryName
+      , temporaryName: tmp.temporaryName
       }
 
 showPausedDates :: Types.Self -> Array User.PausedSubscription -> Array JSX

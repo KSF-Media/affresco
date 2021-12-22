@@ -159,7 +159,7 @@ type MergeInfo =
 type User = { creditCards :: Array Bottega.CreditCard | Persona.BaseUser }
 
 fromPersonaUser :: Persona.User -> User
-fromPersonaUser personaUser = Record.merge personaUser { creditCards: [] }
+fromPersonaUser (Persona.User personaUser) = Record.merge personaUser { creditCards: [] }
 
 fromPersonaUserWithCards :: Persona.User -> Aff User
 fromPersonaUserWithCards personaUser = do

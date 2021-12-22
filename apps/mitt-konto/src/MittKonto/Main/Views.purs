@@ -8,7 +8,7 @@ module MittKonto.Main.Views
 
 import Prelude
 
-import Data.Array (mapMaybe)
+import Data.Array (mapMaybe, catMaybes)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
@@ -64,7 +64,7 @@ navbarView { state } router logout isPersonating =
         , onClick: handler preventDefault $ const $ router.pushState (unsafeToForeign {}) "/"
         , children: [ DOM.text $ Cusno.toString user.cusno <> " - " <>
                         ( String.joinWith " " $
-                          mapMaybe toMaybe [ user.firstName, user.lastName ] )
+                          catMaybes [ user.firstName, user.lastName ] )
                     ]
         }
 

@@ -5,7 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Alternative (guard)
 import Control.Monad.Except.Trans (runExceptT)
-import Data.Array (mapMaybe, drop, take)
+import Data.Array (mapMaybe, drop, take, catMaybes)
 import Data.Array as Array
 import Data.Date (Date)
 import Data.DateTime (date)
@@ -505,7 +505,7 @@ search = do
                   (\address -> intercalate [DOM.br {}] $
                                  [ [ DOM.text address.streetAddress ]
                                  , [ DOM.text $ String.joinWith " " $
-                                       mapMaybe toMaybe [ address.zipCode, address.city ] ]
+                                       catMaybes [ address.zipCode, address.city ] ]
                                  ] ) $
                   user.address
               ] <>

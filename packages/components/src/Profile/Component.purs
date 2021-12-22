@@ -1,4 +1,4 @@
-  module KSF.Profile.Component where
+module KSF.Profile.Component where
 
 import Prelude
 
@@ -14,8 +14,6 @@ import Data.Either (Either(..))
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
-import Data.Nullable (toMaybe)
-import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Validation.Semigroup (isValid, validation)
@@ -151,8 +149,7 @@ profile = make component
 
 addressArray :: User.Address -> Array String
 addressArray { streetAddress, zipCode, city } =
-  let takeJust = catMaybes <<< map Nullable.toMaybe
-  in streetAddress : takeJust [ zipCode, city ]
+  streetAddress : catMaybes [ zipCode, city ]
 
 didMount :: Self -> Effect Unit
 didMount self = do
@@ -271,7 +268,7 @@ render self@{ props: { profile: user } } =
           DescriptionList.descriptionList
             { definitions:
                 [ { term: "Telefonnummer:"
-                  , description: [ DOM.text $ fromMaybe "-" $ Nullable.toMaybe user.phone ]
+                  , description: [ DOM.text $ fromMaybe "-" user.phone ]
                   }
                 ]
             }
@@ -314,7 +311,7 @@ render self@{ props: { profile: user } } =
           DescriptionList.descriptionList
             { definitions:
                 [ { term: "Namn:"
-                  , description: map DOM.text $ mapMaybe toMaybe [ user.firstName, user.lastName ]
+                  , description: map DOM.text $ catMaybes [ user.firstName, user.lastName ]
                   }
                 ]
             }
@@ -338,13 +335,13 @@ render self@{ props: { profile: user } } =
                   -- Don't allow to edit address if already pending for a change
                 , case any (isUpcomingPendingChange self.state.now) pendingChanges of
                     false
-                      | isNothing $ toMaybe user.address -> addAddressButton self
+                      | isNothing user.address -> addAddressButton self
                       | otherwise -> changeAddressButton self
                     true -> deletePendingAddressChanges self $ length visiblePendingAddressChanges /= 1
                 ]
             }
           where
-            pendingChanges = fromMaybe [] $ toMaybe user.pendingAddressChanges
+            pendingChanges = fromMaybe [] user.pendingAddressChanges
 
         profileAddressEditing = DOM.div_
           [ DescriptionList.descriptionList
@@ -367,7 +364,7 @@ render self@{ props: { profile: user } } =
           DescriptionList.descriptionList
             { definitions:
                 [ { term: "Permanent adress:"
-                  , description: map DOM.text $ fromMaybe [] $ addressArray <$> toMaybe user.address
+                  , description: map DOM.text $ fromMaybe [] $ addressArray <$> user.address
                   }
                 ]
             }
@@ -392,7 +389,7 @@ editingError self fieldName errMessage =
 
 showPendingAddressChanges :: Self -> Array DescriptionList.Definition
 showPendingAddressChanges self =
-  case toMaybe self.props.profile.pendingAddressChanges of
+  case self.props.profile.pendingAddressChanges of
     Just pendingChanges
       -- In the pendingChanges array, we might have changes that have already happened.
       -- These should not be shown to the user.
@@ -720,7 +717,7 @@ deletePendingAddressChanges self multiple =
            Right _ -> liftEffect do
              self.setState _
                { editAddress = Success Nothing }
-             self.props.onUpdate $ self.props.profile { pendingAddressChanges = Nullable.null }
+             self.props.onUpdate $ self.props.profile { pendingAddressChanges = Nothing }
              Tracking.deletePendingAddressChanges self.props.profile.cusno "success"
            Left err -> liftEffect do
              self.props.logger.error $ Error.userError $ show err
@@ -780,23 +777,23 @@ resetFields :: Self -> EditField -> Effect Unit
 resetFields self EditAddress =
   self.setState _
     { address =
-        { streetAddress: _.streetAddress <$> toMaybe self.props.profile.address
-        , countryCode: (_.countryCode <$> toMaybe self.props.profile.address) <|> Just "FI"
-        , zipCode: toMaybe <<< _.zipCode =<< toMaybe self.props.profile.address
-        , city: toMaybe <<< _.city =<< toMaybe self.props.profile.address
+        { streetAddress: _.streetAddress <$> self.props.profile.address
+        , countryCode: (_.countryCode <$> self.props.profile.address) <|> Just "FI"
+        , zipCode:  _.zipCode =<< self.props.profile.address
+        , city: _.city =<< self.props.profile.address
         }
     , changeDate = Nothing
     }
 resetFields self EditName =
-  self.setState _ { name = { firstName: toMaybe self.props.profile.firstName
-                           , lastName:  toMaybe self.props.profile.lastName
+  self.setState _ { name = { firstName: self.props.profile.firstName
+                           , lastName:  self.props.profile.lastName
                            }
                   }
 resetFields self EditEmail =
   self.setState _ { email = Just self.props.profile.email }
 
 resetFields self EditPhone =
-  self.setState _ { phone = Nullable.toMaybe self.props.profile.phone }
+  self.setState _ { phone = self.props.profile.phone }
 
 formatAddress :: User.DeliveryAddress -> String
 formatAddress { temporaryName, streetAddress, zipcode, city } =
