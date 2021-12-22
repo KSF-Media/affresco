@@ -113,11 +113,13 @@ render props =
                       ]
                   }
             ]
-          , articleMainImage
-              { clickable: true
-              , params: Just "&width=960&height=540&q=90"
-              , image: fold mainImage
-              }
+          , foldMap
+              (\image -> articleMainImage
+                { clickable: true
+                , params: Just "&width=960&height=540&q=90"
+                , image
+                })
+              mainImage
           , DOM.div
               { className: "mosaico-article__main"
               , children:
