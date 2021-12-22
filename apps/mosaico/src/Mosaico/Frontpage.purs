@@ -10,6 +10,8 @@ import Data.Newtype (un)
 import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
+import Data.Tuple.Nested ((/\))
+import Effect.Class.Console as Console
 import Foreign.Object as Object
 import KSF.HtmlRenderer as HtmlRenderer
 import KSF.HtmlRenderer.Models as HtmlRenderer
@@ -46,10 +48,7 @@ render state props =
             ArticleList list -> map renderListArticle list
             Html html        -> [ state.htmlRendererComponent 
                                     { content: html
-                                    , hooks: Just [ HtmlRenderer.replacingHook
-                                                      { shouldProcessNode: const false
-                                                      , processNode: \_ _ _ -> mempty
-                                                      }
+                                    , hooks: Just [ andraLaserHook
                                                   ]
                                     }
                                 ]
@@ -109,3 +108,19 @@ render state props =
                 }
             ]
         }
+    andraLaserHook = HtmlRenderer.replacingHook
+      { shouldProcessNode: (\n ->
+                              let info = do
+                                    name      <- HtmlRenderer.getName n
+                                    attribs   <- HtmlRenderer.getAttribs n
+                                    className <- attribs.class
+                                    pure $ name /\ className
+                              in case info of
+                                Just (name /\ className)
+                                  | name == "div", className == "dre-item__title" -> true
+                                _                                                 -> false
+                           )
+      , processNode: (\n c i -> do
+                        pure $ DOM.div_ [ DOM.text "Hello world" ]
+                     )
+      }

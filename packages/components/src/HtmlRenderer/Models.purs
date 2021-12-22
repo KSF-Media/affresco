@@ -6,24 +6,57 @@ import Data.Array (length)
 import Data.Function.Uncurried
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, null, toMaybe, toNullable)
+import Effect (Effect)
+import Effect.Uncurried
 import React.Basic (JSX)
 
 -- | Represents a node object returned by html-to-react
 foreign import data Node :: Type
 
 -- Getters
-foreign import getRaw     :: Fn1 Node (Maybe String)
-foreign import getData    :: Fn1 Node (Maybe String)
-foreign import getType    :: Fn1 Node (Maybe String)
-foreign import getName    :: Fn1 Node (Maybe String)
-foreign import getAttribs :: Fn1 Node (Maybe HTMLAttributes)
+foreign import getRawImpl     :: Fn1 Node (Nullable String)
+foreign import getDataImpl    :: Fn1 Node (Nullable String)
+foreign import getTypeImpl    :: Fn1 Node (Nullable String)
+foreign import getNameImpl    :: Fn1 Node (Nullable String)
+foreign import getAttribsImpl :: Fn1 Node (Nullable JSHTMLAttributes)
+
+getRaw :: Node -> Maybe String
+getRaw n = toMaybe $ runFn1 getRawImpl n
+
+getData :: Node -> Maybe String
+getData n = toMaybe $ runFn1 getDataImpl n
+
+getType :: Node -> Maybe String
+getType n = toMaybe $ runFn1 getTypeImpl n
+
+getName :: Node -> Maybe String
+getName n = toMaybe $ runFn1 getNameImpl n
+
+getAttribs :: Node -> Maybe HTMLAttributes
+getAttribs n = fromJSAttributes <$> (toMaybe $ runFn1 getAttribsImpl n)
 
 -- Setters
-foreign import setRaw     :: Fn2 Node String Unit
-foreign import setData    :: Fn2 Node String Unit
-foreign import setType    :: Fn2 Node String Unit
-foreign import setName    :: Fn2 Node String Unit
-foreign import setAttribs :: Fn2 Node HTMLAttributes Unit
+foreign import setRawImpl     :: EffectFn2 Node String Unit
+foreign import setDataImpl    :: EffectFn2 Node String Unit
+foreign import setTypeImpl    :: EffectFn2 Node String Unit
+foreign import setNameImpl    :: EffectFn2 Node String Unit
+foreign import setAttribsImpl :: EffectFn2 Node JSHTMLAttributes Unit
+
+setRaw :: Node -> String -> Effect Unit
+setRaw = runEffectFn2 setRawImpl
+
+setData :: Node -> String -> Effect Unit
+setData = runEffectFn2 setDataImpl
+
+setType :: Node -> String -> Effect Unit
+setType = runEffectFn2 setTypeImpl
+
+setName :: Node -> String -> Effect Unit
+setName = runEffectFn2 setNameImpl
+
+setAttribs :: Node -> HTMLAttributes -> Effect Unit
+setAttribs n as = runEffectFn2 setAttribsImpl n $ toJSHTMLAttributes as
+
 
 -- | Utility to turn a hook into a generic one
 class ToGenericHook h where
@@ -43,7 +76,7 @@ newtype ReplacingHook = ReplacingHook ReplacingHookRecord
 
 type ReplacingHookRecord = 
   { shouldProcessNode :: Node -> Boolean
-  , processNode       :: Node -> Array Node -> String -> JSX
+  , processNode       :: Node -> Array Node -> String -> Effect JSX
   }
 
 replacingHook :: ReplacingHookRecord -> HookRep
@@ -63,7 +96,7 @@ newtype ModifyingHook = ModifyingHook ModifyingHookRecord
 
 type ModifyingHookRecord =
   { shouldProcessNode :: Node -> Boolean
-  , processNode       :: Node -> Array Node -> JSX
+  , processNode       :: Node -> Array Node -> Effect Unit
   }
 
 modifyingHook :: ModifyingHookRecord -> HookRep
@@ -80,23 +113,23 @@ instance modifyingHookToGenericHook :: ToGenericHook ModifyingHook where
 type GenericHook =
   { replaceChildren            :: Boolean
   , shouldProcessNode          :: Node -> Boolean
-  , processNode                :: Maybe (Node -> Array Node -> JSX)
-  , processNodeWithReplacement :: Maybe (Node -> Array Node -> String -> JSX)
+  , processNode                :: Maybe (Node -> Array Node -> Effect Unit)
+  , processNodeWithReplacement :: Maybe (Node -> Array Node -> String -> Effect JSX)
   }
 
 type JSGenericHook =
   { replaceChildren            :: Boolean
   , shouldProcessNode          :: Node -> Boolean
-  , processNode                :: Nullable (Node -> Array Node -> JSX)
-  , processNodeWithReplacement :: Nullable (Node -> Array Node -> String -> JSX)
+  , processNode                :: Nullable (EffectFn2 Node (Array Node) Unit)
+  , processNodeWithReplacement :: Nullable (EffectFn3 Node (Array Node) String JSX)
   }
 
 toJSGenericHook :: GenericHook -> JSGenericHook
 toJSGenericHook h =
   { replaceChildren:            h.replaceChildren
   , shouldProcessNode:          h.shouldProcessNode
-  , processNode:                toNullable h.processNode
-  , processNodeWithReplacement: toNullable h.processNodeWithReplacement
+  , processNode:                toNullable $ mkEffectFn2 <$> h.processNode
+  , processNodeWithReplacement: toNullable $ mkEffectFn3 <$> h.processNodeWithReplacement
   }
 
 type HTMLAttributes =

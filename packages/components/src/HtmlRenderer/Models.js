@@ -1,61 +1,65 @@
 "use strict";
 
-exports.getRaw = (node) =>  { 
+// html-to-react uses htmlparser to parse input and each 
+// node in the output tree follow htmlparser's specific format:
+// https://www.npmjs.com/package/htmlparser
+
+exports.getRawImpl = (node) => {
     if (node && node.raw)
       return node.raw;
 
     return null;
 }
 
-exports.getData = (node) =>  { 
+exports.getDataImpl = (node) => {
     if (node && node.data)
       return node.data;
 
     return null;
 }
 
-exports.getType = (node) =>  { 
+exports.getTypeImpl = (node) => {
     if (node && node.type)
       return node.type;
 
     return null;
 }
 
-exports.getName = (node) =>  { 
+exports.getNameImpl = (node) => {
     if (node && node.name)
       return node.name;
 
     return null;
 }
 
-exports.getAttribs = (node) =>  { 
+exports.getAttribsImpl = (node) => { 
     if (node && node.attribs)
       return node.attribs;
 
     return null;
 }
 
-exports.setRaw = (node, raw) =>  { 
+exports.setRawImpl = (node, raw) => { 
     if (node)
       node.raw = raw;
 }
 
-exports.setData = (node, data) =>  { 
+exports.setDataImpl = (node, data) => { 
     if (node)
       node.data = data;
 }
 
-exports.setType = (node, type) =>  { 
+exports.setTypeImpl = (node, type) => { 
     if (node)
       node.type = type;
 }
 
-exports.setName = (node, name) =>  { 
+exports.setNameImpl = (node, name) => { 
     if (node)
       node.name = name;
 }
 
-exports.setAttribs = (node, attribs) =>  { 
+exports.setAttribsImpl = (node, attribs) => { 
     if (node)
       node.attribs = attribs;
 }

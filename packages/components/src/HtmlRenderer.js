@@ -1,3 +1,5 @@
+// See https://www.npmjs.com/package/html-to-react
+
 const React = require('react');
 const HtmlToReact = require('html-to-react');
 const HtmlToReactParser = require('html-to-react').Parser;
@@ -21,15 +23,9 @@ exports.renderHtmlInputWithHooksImpl = function (htmlInput, hooks) {
 
         const replaceChildren = h.replaceChildren;
 
-        // Purescript functions are curried, so to call them from javascript we need
-        // to uncurry them
         const processNode = replaceChildren ?
-            (node, children, index) => {
-                return h.processNodeWithReplacement(node)(children)(index);
-            } :
-            (node, children) => {
-                return h.processNode(node)(children);
-            };
+            h.processNodeWithReplacement :
+            h.processNode;
 
         return {
           replaceChildren,
