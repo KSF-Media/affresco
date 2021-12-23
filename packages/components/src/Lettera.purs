@@ -121,13 +121,7 @@ getArticleWithUrl url auth = do
                       { "body": [ .. ] }
                  }
           -}
-        let articlePreviewJson =
-              (toObject response.body)
-                 >>= (\x -> lookup "not_entitled_v4" x <|> lookup "not_entitled" x)
-                 >>= toObject
-                 >>= lookup "articlePreview"
-
-        case articlePreviewJson of
+        case articlePreviewJson response.body of
           Just articlePreview -> do
             map PreviewArticle <$> (liftEffect $ parseArticle articlePreview)
           Nothing -> do
@@ -135,6 +129,32 @@ getArticleWithUrl url auth = do
             Console.warn "Did not find article preview from response!"
             pure $ Left "Parsing error"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+
+-- Fetch a single article and parse it as article stub.  For testing
+-- and debug purposes.
+getArticleStub :: UUID -> Aff (Either String ArticleStub)
+getArticleStub uuid = do
+  articleResponse <- AX.get ResponseFormat.json $ letteraArticleUrl <> toString uuid
+  case articleResponse of
+    Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
+    Right response
+      | (StatusCode 200) <- response.status ->
+        liftEffect $ parseArticleStub response.body
+      | (StatusCode 403) <- response.status ->
+        case articlePreviewJson response.body of
+          Just articlePreview ->
+            liftEffect $ parseArticleStub articlePreview
+          Nothing -> do
+            Console.warn "Did not find article preview from response!"
+            pure $ Left "Parsing error"
+      | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+
+articlePreviewJson :: Json -> Maybe Json
+articlePreviewJson =
+  toObject
+  >=> (\x -> lookup "not_entitled_v4" x <|> lookup "not_entitled" x)
+  >=> toObject
+  >=> lookup "articlePreview"
 
 getDraftArticle :: String -> DraftParams -> Aff (Either String FullArticle)
 getDraftArticle aptomaId { time, publication, user, hash } = do

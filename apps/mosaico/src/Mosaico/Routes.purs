@@ -23,6 +23,7 @@ data MosaicoPage
   | CategoryPage Category
   | TagPage Tag
   | SearchPage (Maybe String)
+  | DebugPage String -- Used for testing
   | MenuPage
 derive instance eqMosaicoPage :: Eq MosaicoPage
 
@@ -35,6 +36,7 @@ routes categories = root *> oneOf
   , Frontpage <$ end
   , MenuPage <$ lit "meny"
   , SearchPage <$> (lit "sök" *> optionalMatch (param "q")) <* end
+  , DebugPage <$> (lit "debug" *> str)
   , CategoryPage <$> categoryRoute
   , NotFoundPage <$> str
   ]
