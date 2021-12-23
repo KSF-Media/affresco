@@ -12,7 +12,7 @@ import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Foreign.Object as Object
-import KSF.HtmlRenderer (Props, render) as HtmlRenderer
+import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
@@ -20,7 +20,6 @@ import Mosaico.Models (ArticleFeed(..))
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
-import React.Basic.Hooks (Component, component)
 
 type Props =
   { content :: Maybe ArticleFeed

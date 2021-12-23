@@ -7,7 +7,6 @@ import Data.Maybe (Maybe(..))
 import KSF.HtmlRenderer.Models as Models
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, component)
 
 foreign import renderHtmlInputImpl          :: Fn1 String JSX
 foreign import renderHtmlInputWithHooksImpl :: Fn2 String (Array Models.JSGenericHook) JSX

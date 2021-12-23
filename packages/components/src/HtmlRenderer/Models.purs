@@ -62,7 +62,7 @@ class ToGenericHook h where
   toGenericHook :: h -> GenericHook
 
 -- | A representation of a hook, can be used to group different
---   type of hooks in the same collection
+--   types of hooks in the same collection
 --   See: https://stackoverflow.com/questions/53270182/similar-record-types-in-a-list-array-in-purescript
 newtype HookRep = HookRep (forall a. (forall h. ToGenericHook h => h -> a) -> a)
 
@@ -102,7 +102,7 @@ modifyingHook :: ModifyingHookRecord -> HookRep
 modifyingHook = toHookRep <<< ModifyingHook
 
 instance modifyingHookToGenericHook :: ToGenericHook ModifyingHook where
-  toGenericHook (ModifyingHook { shouldProcessNode, processNode }) = 
+  toGenericHook (ModifyingHook { shouldProcessNode, processNode }) =
     { replaceChildren: false
     , shouldProcessNode
     , processNode: Just processNode
@@ -254,7 +254,7 @@ type HTMLAttributes =
   , width             :: Maybe String
   , wmode             :: Maybe String
   , wrap              :: Maybe String
-  , onclick           :: Maybe String 
+  , onclick           :: Maybe String
   }
 
 type JSHTMLAttributes =
