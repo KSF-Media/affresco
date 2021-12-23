@@ -241,6 +241,7 @@ renderArticle env user article mostReadArticles = do
               , onPaywallEvent: pure unit
               , onTagClick: const mempty
               , onArticleClick: const mempty
+              , mostReadArticles
               }
           mosaicoString = DOM.renderToString
                           $ mosaico
@@ -525,6 +526,7 @@ notFoundArticleContent user =
     , onPaywallEvent: pure unit
     , onTagClick: const mempty
     , onArticleClick: const mempty
+    , mostReadArticles: mempty
     }
 
 notFound :: Env -> MainContent -> Maybe (Either Unit User) -> Maybe (Array ArticleStub) -> Aff (Response ResponseBody)

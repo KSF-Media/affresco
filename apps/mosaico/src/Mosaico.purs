@@ -466,4 +466,5 @@ render setState state components router onPaywallEvent =
         , onPaywallEvent
         , onTagClick
         , onArticleClick
+        , mostReadArticles: state.mostReadArticles
         }

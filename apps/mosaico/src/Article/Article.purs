@@ -3,7 +3,7 @@ module Mosaico.Article where
 import Prelude
 
 import Bottega.Models.Order (OrderSource(..))
-import Data.Array (cons, head, snoc)
+import Data.Array (cons, head, null, snoc, take)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -24,6 +24,8 @@ import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image (articleMainImage, articleImage)
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+import Mosaico.Frontpage as Frontpage
+import Mosaico.Models as Mosaico
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
@@ -64,6 +66,7 @@ type Props =
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
   , user :: Maybe User
+  , mostReadArticles :: Array ArticleStub
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -140,7 +143,9 @@ render props =
                           (Right (DraftArticle _draftArticle)) ->
                             map renderElement $ getBody props.article
                           (Right (FullArticle _fullArticle)) ->
-                            bodyWithAd
+                            bodyWithAd <>
+                            (foldMap (pure <<< renderMostReadArticles) $
+                             if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)
                           _ -> mempty
                         }
                     , DOM.div
@@ -240,6 +245,17 @@ render props =
     paperName = case props.paper of
       HBL -> "HBL"
       p -> Paper.paperName p
+
+    renderMostReadArticles articles =
+      DOM.div
+        { className: "mosaico-article__mostread--header"
+        , children: [ DOM.text "ANDRA LÄSER" ]
+        } <>
+      Frontpage.render
+        { content: Just $ Mosaico.ArticleList articles
+        , onArticleClick: props.onArticleClick
+        , onTagClick: props.onTagClick
+        }
 
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?

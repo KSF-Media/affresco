@@ -172,6 +172,55 @@
       font-size: .75rem;
     }
   }
+
+  &__mostread {
+    &--header {
+      font: bold 1.125rem "Roboto", sans-serif;
+      text-transform: uppercase;
+      margin: 70px 0 30px;
+
+      #HBL & {
+        color: @hbl-orange;
+      }
+      #VN & {
+        color: @vn-red;
+      }
+      #ON & {
+        color: @on-blue;
+      }
+    }
+  }
+
+  .mosaico--article-list {
+    .mosaico--list-article {
+      > span {
+        min-height: 150px;
+        grid-template-areas: "right" "left";
+	@media (max-width: @breakpoint-2col) {
+	  grid-template-columns: 1fr auto;
+          min-height: 110px;
+	}
+        grid-template-columns: 400px 115px;
+	grid-column-gap: 15px;
+        .list-article-image {
+          grid-area: initial;
+        }
+	h2 {
+	  font: 400 1rem "Duplex Serif Web", serif;
+	}
+      }
+      img {
+        width: 115px;
+        height: 115px;
+	object-fit: cover;
+        @media (max-width: @breakpoint-2col) {
+          width: 75px;
+          height: 75px;
+          padding: 5px;
+        }
+      }
+    }
+  }
 }
 
 .article-element {
