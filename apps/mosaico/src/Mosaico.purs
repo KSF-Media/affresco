@@ -159,14 +159,16 @@ mosaicoComponent initialValues props = React.do
         case HashMap.lookup feedName state.frontpageFeeds of
           Nothing -> Aff.launchAff_ do
             maybeFeed <- case feedName of
-              TagFeed t -> Just <$> Lettera.getByTag 0 20 t mosaicoPaper
-              CategoryFeed Nothing -> Just <$> Lettera.getFrontpage mosaicoPaper Nothing
+              TagFeed t -> Just <<< ArticleList <$> Lettera.getByTag 0 20 t mosaicoPaper
+              CategoryFeed Nothing -> do
+                html <- map Html <<< hush <$> Lettera.getFrontpageHtml mosaicoPaper "Startsidan"
+                Just <$> maybe (ArticleList <$> Lettera.getFrontpage mosaicoPaper Nothing) pure html
               CategoryFeed (Just c)
                 | Just cat <- unwrap <$> Map.lookup c state.catMap
-                , cat.type == Feed -> Just <$> Lettera.getFrontpage mosaicoPaper (Just $ unwrap cat.label)
+                , cat.type == Feed -> Just <<< ArticleList <$> Lettera.getFrontpage mosaicoPaper (Just $ unwrap cat.label)
               CategoryFeed _ -> pure Nothing
-              SearchFeed q -> Just <$> Lettera.search 0 20 mosaicoPaper q
-            foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName (ArticleList feed) s.frontpageFeeds }) maybeFeed
+              SearchFeed q -> Just <<< ArticleList <$> Lettera.search 0 20 mosaicoPaper q
+            foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds } ) maybeFeed
           Just _ -> pure unit
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
