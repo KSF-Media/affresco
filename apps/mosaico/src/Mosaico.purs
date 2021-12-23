@@ -6,6 +6,8 @@ import Data.Argonaut.Core (Json, toArray, stringify)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
+import Data.DateTime (DateTime)
+import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
@@ -16,11 +18,13 @@ import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.String as String
+import Data.Time.Duration (Minutes(..))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Now as Now
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
@@ -34,7 +38,7 @@ import Mosaico.Frontpage as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
-import Mosaico.Models (ArticleFeed(..), ArticleFeedType(..))
+import Mosaico.Models (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot)
 import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
@@ -65,7 +69,7 @@ type State =
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
   , catMap :: Categories
-  , frontpageFeeds :: HashMap ArticleFeedType ArticleFeed
+  , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -111,6 +115,7 @@ mosaicoComponent
   -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let initialCatMap = categoriesMap props.categoryStructure
+      maxAge = Minutes 15.0
   state /\ setState <- useState initialValues.state
                          { article = props.article
                          , mostReadArticles = fold props.mostReadArticles
@@ -120,7 +125,7 @@ mosaicoComponent initialValues props = React.do
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
                          , catMap = initialCatMap
-                         , frontpageFeeds = props.initialFrontpageFeed
+                         , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialValues.locationState.path
                          , user = props.user
@@ -155,21 +160,27 @@ mosaicoComponent initialValues props = React.do
           _ -> pure unit
     pure mempty
 
-  let setFrontpage feedName =
+  let loadFeed feedName = do
+        maybeFeed <- case feedName of
+          TagFeed t -> Just <<< ArticleList <$> Lettera.getByTag 0 20 t mosaicoPaper
+          CategoryFeed Nothing -> do
+            html <- map Html <<< hush <$> Lettera.getFrontpageHtml mosaicoPaper "Startsidan"
+            Just <$> maybe (ArticleList <$> Lettera.getFrontpage mosaicoPaper Nothing) pure html
+          CategoryFeed (Just c)
+            | Just cat <- unwrap <$> Map.lookup c state.catMap
+            , cat.type == Feed -> Just <<< ArticleList <$> Lettera.getFrontpage mosaicoPaper (Just $ unwrap cat.label)
+          CategoryFeed _ -> pure Nothing
+          SearchFeed q -> Just <<< ArticleList <$> Lettera.search 0 20 mosaicoPaper q
+        stamp <- liftEffect Now.nowDateTime
+        foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName { stamp, feed } s.frontpageFeeds }) maybeFeed
+      setFrontpage feedName =
         case HashMap.lookup feedName state.frontpageFeeds of
-          Nothing -> Aff.launchAff_ do
-            maybeFeed <- case feedName of
-              TagFeed t -> Just <<< ArticleList <$> Lettera.getByTag 0 20 t mosaicoPaper
-              CategoryFeed Nothing -> do
-                html <- map Html <<< hush <$> Lettera.getFrontpageHtml mosaicoPaper "Startsidan"
-                Just <$> maybe (ArticleList <$> Lettera.getFrontpage mosaicoPaper Nothing) pure html
-              CategoryFeed (Just c)
-                | Just cat <- unwrap <$> Map.lookup c state.catMap
-                , cat.type == Feed -> Just <<< ArticleList <$> Lettera.getFrontpage mosaicoPaper (Just $ unwrap cat.label)
-              CategoryFeed _ -> pure Nothing
-              SearchFeed q -> Just <<< ArticleList <$> Lettera.search 0 20 mosaicoPaper q
-            foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName feed s.frontpageFeeds } ) maybeFeed
-          Just _ -> pure unit
+          Nothing -> Aff.launchAff_ $ loadFeed feedName
+          Just { stamp } -> do
+            now <- Now.nowDateTime
+            when (DateTime.diff now stamp > maxAge) do
+              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
+              Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
 
@@ -225,10 +236,12 @@ type InitialValues =
   , nav :: PushStateInterface
   , locationState :: LocationState
   , staticPageContent :: Maybe String
+  , startTime :: DateTime
   }
 
 getInitialValues :: Effect InitialValues
 getInitialValues = do
+  startTime <- Now.nowDateTime
   nav <- makeInterface
   locationState <- nav.locationState
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
@@ -259,6 +272,7 @@ getInitialValues = do
     , nav
     , locationState
     , staticPageContent
+    , startTime
     }
 
 fromJSProps :: JSProps -> Props
@@ -332,7 +346,7 @@ render setState state components router onPaywallEvent =
          | c.type == Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
          | otherwise ->
            mosaicoDefaultLayout $ Frontpage.render
-             { content: HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
+             { content: _.feed <$> HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
              , onArticleClick
              , onTagClick
              }
@@ -343,11 +357,11 @@ render setState state components router onPaywallEvent =
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> frontpage $ HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
+       Routes.Frontpage -> frontpage $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
        Routes.SearchPage Nothing ->
           mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
        Routes.SearchPage query@(Just queryString) ->
-          let frontpageArticles = HashMap.lookup (SearchFeed queryString) state.frontpageFeeds
+          let frontpageArticles = _.feed <$> HashMap.lookup (SearchFeed queryString) state.frontpageFeeds
               searching = isNothing frontpageArticles
               noResults = case frontpageArticles of
                 Just (ArticleList list)
@@ -358,7 +372,7 @@ render setState state components router onPaywallEvent =
             Frontpage.render { content: frontpageArticles, onArticleClick, onTagClick }
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
-         case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
+         case _.feed <$> HashMap.lookup (TagFeed tag) state.frontpageFeeds of
            Just (ArticleList tagFeed)
              | not $ null tagFeed -> frontpage $ Just $ ArticleList $ tagFeed
              | otherwise -> mosaicoDefaultLayout Error.notFoundWithAside
