@@ -73,7 +73,6 @@ type SetState = (State -> State) -> Effect Unit
 type Components =
   { loginModalComponent :: LoginModal.Props -> JSX
   , mostReadListComponent :: MostReadList.Props -> JSX
-  , frontpageComponent :: Frontpage.Props -> JSX
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   }
@@ -234,7 +233,6 @@ getInitialValues = do
 
   loginModalComponent <- LoginModal.loginModal
   mostReadListComponent <- MostReadList.mostReadListComponent
-  frontpageComponent    <- Frontpage.frontpageComponent
   searchComponent       <- Search.searchComponent
   webviewComponent      <- Webview.webviewComponent
   pure
@@ -253,7 +251,6 @@ getInitialValues = do
     , components:
         { loginModalComponent
         , mostReadListComponent
-        , frontpageComponent
         , searchComponent
         , webviewComponent
         }
@@ -332,7 +329,7 @@ render setState state components router onPaywallEvent =
        Routes.CategoryPage category@(Category c)
          | c.type == Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
          | otherwise ->
-           mosaicoDefaultLayout $ components.frontpageComponent
+           mosaicoDefaultLayout $ Frontpage.render
              { content: HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
              , onArticleClick
              , onTagClick
@@ -356,7 +353,7 @@ render setState state components router onPaywallEvent =
                 _             -> false
           in mosaicoDefaultLayout $
             components.searchComponent { query, doSearch, searching, noResults } <>
-            components.frontpageComponent { content: frontpageArticles, onArticleClick, onTagClick }
+            Frontpage.render { content: frontpageArticles, onArticleClick, onTagClick }
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
          case HashMap.lookup (TagFeed tag) state.frontpageFeeds of
@@ -453,7 +450,7 @@ render setState state components router onPaywallEvent =
                      Just (Html _) -> mosaicoLayoutNoAside
                      _             -> mosaicoDefaultLayout
        in
-        layout $ components.frontpageComponent
+        layout $ Frontpage.render
           { content: frontpageArticles
           , onArticleClick
           , onTagClick

@@ -12,7 +12,7 @@ import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Foreign.Object as Object
-import KSF.HtmlRenderer (Props, htmlRendererComponent) as HtmlRenderer
+import KSF.HtmlRenderer (Props, render) as HtmlRenderer
 import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
@@ -22,30 +22,21 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, component)
 
-type State = { htmlRendererComponent :: HtmlRenderer.Props -> JSX }
-
 type Props =
   { content :: Maybe ArticleFeed
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
 
-frontpageComponent :: Component Props
-frontpageComponent = do
-  htmlRendererComponent <- HtmlRenderer.htmlRendererComponent
-  component "FrontpageComponent" \props -> React.do
-    let initialState = { htmlRendererComponent }
-    pure $ render initialState props
-
-render :: State -> Props -> JSX
-render state props =
+render :: Props -> JSX
+render props =
   DOM.div
     { className: "mosaico--article-list"
     , children: maybe
         [loadingSpinner]
         (\content -> case content of
             ArticleList list -> map renderListArticle list
-            Html html        -> [ state.htmlRendererComponent
+            Html html        -> [ HtmlRenderer.render
                                     { content: html
                                     , hooks: Just [ sampleHook
                                                   ]

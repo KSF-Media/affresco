@@ -285,8 +285,7 @@ frontpage env { guards: { credentials } } = do
     <*> parallel (getFrontpage mosaicoPaper "Startsidan")
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   mosaico <- liftEffect MosaicoServer.app
-  frontpageComponent <- liftEffect Frontpage.frontpageComponent
-  let frontpage' = frontpageComponent
+  let frontpage' = Frontpage.render
                      { content: Just articles
                      , onArticleClick: const mempty
                      , onTagClick: const mempty
@@ -384,13 +383,12 @@ tagList env { params: { tag }, guards: { credentials } } = do
   if null articles
     then notFound env (TagListContent tag' notFoundWithAside) user (Just mostReadArticles)
     else do
-    frontpageComponent <- liftEffect Frontpage.frontpageComponent
     let mosaicoString =
           DOM.renderToString
           $ mosaico
             { mainContent:
                 TagListContent tag'
-                $ frontpageComponent
+                $ Frontpage.render
                   { content: Just (ArticleList articles)
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
@@ -449,7 +447,6 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category, credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 categoryPage env { params: { categoryName }, guards: { credentials } } = do
   mosaico <- liftEffect MosaicoServer.app
-  frontpageComponent <- liftEffect Frontpage.frontpageComponent
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
@@ -457,7 +454,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaicoString = DOM.renderToString
                           $ mosaico
-                            { mainContent: FrontpageContent $ frontpageComponent
+                            { mainContent: FrontpageContent $ Frontpage.render
                                 { content: Just (ArticleList articles)
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
@@ -480,7 +477,6 @@ searchPage env { query: { search }, guards: { credentials } } = do
   let query = if (trim <$> search) == Just "" then Nothing else search
   mosaico <- liftEffect MosaicoServer.app
   searchComponent <- liftEffect Search.searchComponent
-  frontpageComponent <- liftEffect Frontpage.frontpageComponent
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
@@ -495,7 +491,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
                                              , noResults: isJust query && null articles
                                              } <>
                              (guard (not $ null articles) $
-                              frontpageComponent
+                              Frontpage.render
                                 { content: Just $ ArticleList articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
