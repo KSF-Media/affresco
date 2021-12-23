@@ -3,7 +3,7 @@ module Mosaico.Article where
 import Prelude
 
 import Bottega.Models.Order (OrderSource(..))
-import Data.Array (cons, head, snoc)
+import Data.Array (cons, head, null, snoc, take)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -22,7 +22,10 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
+import Mosaico.Article.Image (articleMainImage, articleImage)
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+import Mosaico.Frontpage as Frontpage
+import Mosaico.Models as Mosaico
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
@@ -51,6 +54,10 @@ getBody :: Either ArticleStub FullArticle -> Array BodyElement
 getBody (Left _articleStub) = mempty
 getBody (Right fullArticle) = _.body $ fromFullArticle fullArticle
 
+getRemoveAds :: Either ArticleStub FullArticle -> Boolean
+getRemoveAds (Left articleStub) = articleStub.removeAds
+getRemoveAds (Right fullArticle) = _.removeAds $ fromFullArticle fullArticle
+
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
@@ -59,42 +66,20 @@ type Props =
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
   , user :: Maybe User
+  , mostReadArticles :: Array ArticleStub
   }
 
 evalEmbeds :: Article -> Effect Unit
 evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _.externalScripts
-
-renderImage :: Image -> JSX
-renderImage img =
-  DOM.div
-    { className: "mosaico-article__image"
-    , children:
-        [ DOM.img
-            { src: img.url
-            , title: caption
-            }
-        , DOM.div
-            { className: "caption"
-            , children:
-                [ DOM.text caption
-                , DOM.span
-                    { className: "byline"
-                    , children: [ DOM.text byline ]
-                    }
-                ]
-            }
-      ]
-    }
-  where
-    caption = fold img.caption
-    byline  = fold img.byline
 
 render :: Props -> JSX
 render props =
     let title = getTitle props.article
         tags = getTags props.article
         mainImage = getMainImage props.article
-        bodyWithAd = Ad.insertIntoBody adBox $ map renderElement $ getBody props.article
+        bodyWithAd = let body = map renderElement $ getBody props.article
+                     in if getRemoveAds props.article then body
+                        else Ad.insertIntoBody adBox body
         draftHeader = case props.article of
           Right (DraftArticle _) ->
             DOM.div
@@ -137,10 +122,13 @@ render props =
                       ]
                   }
             ]
-          , DOM.div
-              { className: "mosaico-article__main-image"
-              , children: [ foldMap renderImage mainImage ]
-              }
+          , foldMap
+              (\image -> articleMainImage
+                { clickable: true
+                , params: Just "&width=960&height=540&q=90"
+                , image
+                })
+              mainImage
           , DOM.div
               { className: "mosaico-article__main"
               , children:
@@ -155,7 +143,9 @@ render props =
                           (Right (DraftArticle _draftArticle)) ->
                             map renderElement $ getBody props.article
                           (Right (FullArticle _fullArticle)) ->
-                            bodyWithAd
+                            bodyWithAd <>
+                            (foldMap (pure <<< renderMostReadArticles) $
+                             if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)
                           _ -> mempty
                         }
                     , DOM.div
@@ -256,6 +246,17 @@ render props =
       HBL -> "HBL"
       p -> Paper.paperName p
 
+    renderMostReadArticles articles =
+      DOM.div
+        { className: "mosaico-article__mostread--header"
+        , children: [ DOM.text "ANDRA LÄSER" ]
+        } <>
+      Frontpage.render
+        { content: Just $ Mosaico.ArticleList articles
+        , onArticleClick: props.onArticleClick
+        , onTagClick: props.onTagClick
+        }
+
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?
     renderElement :: BodyElement -> JSX
@@ -272,10 +273,11 @@ render props =
         { className: block <> " " <> block <> "__subheadline"
         , children: [ DOM.text str ]
         }
-      Image img -> DOM.div
-        { className: block
-        , children: [ renderImage img ]
-        }
+      Image img -> articleImage
+          { clickable: true
+          , params: Just "&width=640&q=90"
+          , image: img
+          }
       Box boxData ->
         DOM.div
           { className: block <> " " <> block <> "__factbox"

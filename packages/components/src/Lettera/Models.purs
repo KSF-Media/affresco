@@ -68,6 +68,7 @@ notFoundArticle = ErrorArticle
   , preamble: Nothing
   , authors: []
   , premium: false
+  , removeAds: false
   , publishingTime: Nothing
   , updateTime: Nothing
   , externalScripts: Nothing
@@ -101,6 +102,7 @@ type ArticleStubCommon =
   , preamble  :: Maybe String
   , mainImage :: Maybe Image
   , premium   :: Boolean
+  , removeAds :: Boolean
   )
 
 type JSArticleStub =
@@ -141,6 +143,7 @@ type ArticleCommon =
   , preamble  :: Maybe String
   , authors   :: Array Author
   , premium   :: Boolean
+  , removeAds :: Boolean
   , externalScripts :: Maybe (Array ExternalScript)
   )
 

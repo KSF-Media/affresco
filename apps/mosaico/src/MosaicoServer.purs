@@ -29,6 +29,7 @@ type State =
 data MainContent
   = ArticleContent JSX
   | FrontpageContent JSX
+  | HtmlFrontPageContent JSX
   | TagListContent Tag JSX
   | StaticPageContent String JSX
   | MenuContent JSX
@@ -36,6 +37,7 @@ data MainContent
 fromMainContent :: MainContent -> JSX
 fromMainContent (ArticleContent jsx) = jsx
 fromMainContent (FrontpageContent jsx) = jsx
+fromMainContent (HtmlFrontPageContent jsx) = jsx
 fromMainContent (TagListContent _ jsx) = jsx
 fromMainContent (StaticPageContent _ jsx) = jsx
 fromMainContent (MenuContent jsx) = jsx

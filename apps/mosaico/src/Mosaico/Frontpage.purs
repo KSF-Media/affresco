@@ -10,28 +10,39 @@ import Data.Newtype (un)
 import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
+import Data.Tuple.Nested ((/\))
 import Foreign.Object as Object
+import KSF.HtmlRenderer (render) as HtmlRenderer
+import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Mosaico.Models (ArticleFeed(..))
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
-import React.Basic.Hooks (Component, component)
 
 type Props =
-  { frontpageArticles :: Maybe (Array ArticleStub)
+  { content :: Maybe ArticleFeed
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
 
-frontpageComponent :: Component Props
-frontpageComponent = component "FrontpageComponent" $ pure <<< render
-
 render :: Props -> JSX
 render props =
-   DOM.div
+  DOM.div
     { className: "mosaico--article-list"
-    , children: maybe [loadingSpinner] (map renderListArticle) props.frontpageArticles
+    , children: maybe
+        [loadingSpinner]
+        (\content -> case content of
+            ArticleList list -> map renderListArticle list
+            Html html        -> [ HtmlRenderer.render
+                                    { content: html
+                                    , hooks: Just [ sampleHook
+                                                  ]
+                                    }
+                                ]
+        )
+        props.content
     }
   where
     renderListArticle :: ArticleStub -> JSX
@@ -85,3 +96,19 @@ render props =
                 }
             ]
         }
+    sampleHook = HtmlRenderer.replacingHook
+      { shouldProcessNode: (\n ->
+                              let info = do
+                                    name      <- HtmlRenderer.getName n
+                                    attribs   <- HtmlRenderer.getAttribs n
+                                    className <- attribs.class
+                                    pure $ name /\ className
+                              in case info of
+                                Just (name /\ className)
+                                  | name == "div", className == "dre-item__title" -> true
+                                _                                                 -> false
+                           )
+      , processNode: (\_ _ _ -> do
+                        pure $ DOM.div_ [ DOM.text "Injected html here" ]
+                     )
+      }

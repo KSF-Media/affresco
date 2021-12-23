@@ -14,11 +14,12 @@ import Data.Array (foldl, partition, snoc)
 import Data.Either (Either(..), either, isRight)
 import Data.Foldable (foldMap)
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (un)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
+import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -44,6 +45,9 @@ letteraArticleSlugUrl = letteraBaseUrl <> "/article/slug/"
 letteraFrontPageUrl :: String
 letteraFrontPageUrl = letteraBaseUrl <> "/list/frontpage"
 
+letteraFrontPageHtmlUrl :: String
+letteraFrontPageHtmlUrl = letteraBaseUrl <> "/list/frontpage/html"
+
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 
@@ -55,6 +59,20 @@ letteraTagUrl = letteraBaseUrl <> "/list/tag/"
 
 letteraSearchUrl :: String
 letteraSearchUrl = letteraBaseUrl <> "/list/search"
+
+type LetteraError =
+  { type        :: LetteraErrorType
+  , information :: Maybe String
+  }
+
+data LetteraErrorType
+  = FrontPageHtmlNotFound
+  | ResponseParseError
+  | UnexpectedError
+
+handleLetteraError :: LetteraError -> Effect Unit
+handleLetteraError { information } =
+  maybe (pure unit) (\info -> Console.warn info) information
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
@@ -138,6 +156,19 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
       | (StatusCode 403) <- response.status ->
         pure $ Left "Unauthorized"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+
+getFrontpageHtml :: Paper -> String -> Aff (Either LetteraError String)
+getFrontpageHtml paper category = do
+  let request = letteraFrontPageHtmlUrl <> "?paper=" <> Paper.toString paper  <> "&category=" <> category
+  htmlResponse <- AX.get ResponseFormat.string request
+  case htmlResponse of
+    Left err ->
+      pure $ Left { type: ResponseParseError, information: Just $ AX.printError err }
+    Right response
+      | (StatusCode 200) <- response.status -> pure $ Right response.body
+      | (StatusCode 404) <- response.status -> pure $ Left  { type: FrontPageHtmlNotFound, information: Nothing }
+      | (StatusCode s) <- response.status ->
+        pure $ Left $ { type: UnexpectedError, information: Just $ "Unexpected HTTP status: " <> show s }
 
 getFrontpage :: Paper -> Maybe String -> Aff (Array ArticleStub)
 getFrontpage paper categoryId = do
