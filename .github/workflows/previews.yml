@@ -29,7 +29,7 @@ jobs:
           project_id: ksf-staging
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            yarn install --pure-lockfile
             mkdir -p build
       - env:
           HIDE_LOGIN_LINKS: 'true'
@@ -78,7 +78,7 @@ jobs:
           project_id: ksf-staging
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            yarn install --pure-lockfile
             mkdir -p build
       - name: Build Scripts
         run: |2
@@ -221,7 +221,7 @@ jobs:
           project_id: ksf-staging
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            yarn install --pure-lockfile
             mkdir -p build
       - env:
           LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
