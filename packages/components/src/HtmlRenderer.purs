@@ -2,7 +2,7 @@ module KSF.HtmlRenderer where
 
 import Prelude
 
-import Data.Function.Uncurried
+import Data.Function.Uncurried (Fn1, Fn2, runFn1, runFn2)
 import Data.Maybe (Maybe(..))
 import KSF.HtmlRenderer.Models as Models
 import React.Basic (JSX)

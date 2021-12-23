@@ -2,12 +2,11 @@ module KSF.HtmlRenderer.Models where
 
 import Prelude
 
-import Data.Array (length)
-import Data.Function.Uncurried
+import Data.Function.Uncurried (Fn1, runFn1)
 import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, null, toMaybe, toNullable)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
-import Effect.Uncurried
+import Effect.Uncurried (EffectFn2, EffectFn3, mkEffectFn2, mkEffectFn3, runEffectFn2)
 import React.Basic (JSX)
 
 -- | Represents a node object returned by html-to-react
