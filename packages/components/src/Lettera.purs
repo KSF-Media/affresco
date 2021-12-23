@@ -63,7 +63,7 @@ letteraSearchUrl = letteraBaseUrl <> "/list/search"
 type LetteraError =
   { type        :: LetteraErrorType
   , information :: Maybe String
-  }  
+  }
 
 data LetteraErrorType
   = FrontPageHtmlNotFound
@@ -162,7 +162,7 @@ getFrontpageHtml paper category = do
   let request = letteraFrontPageHtmlUrl <> "?paper=" <> Paper.toString paper  <> "&category=" <> category
   htmlResponse <- AX.get ResponseFormat.string request
   case htmlResponse of
-    Left err -> 
+    Left err ->
       pure $ Left { type: ResponseParseError, information: Just $ AX.printError err }
     Right response
       | (StatusCode 200) <- response.status -> pure $ Right response.body

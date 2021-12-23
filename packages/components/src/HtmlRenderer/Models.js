@@ -1,6 +1,6 @@
 "use strict";
 
-// html-to-react uses htmlparser to parse input and each 
+// html-to-react uses htmlparser to parse input and each
 // node in the output tree follow htmlparser's specific format:
 // https://www.npmjs.com/package/htmlparser
 
@@ -32,34 +32,34 @@ exports.getNameImpl = (node) => {
     return null;
 }
 
-exports.getAttribsImpl = (node) => { 
+exports.getAttribsImpl = (node) => {
     if (node && node.attribs)
       return node.attribs;
 
     return null;
 }
 
-exports.setRawImpl = (node, raw) => { 
+exports.setRawImpl = (node, raw) => {
     if (node)
       node.raw = raw;
 }
 
-exports.setDataImpl = (node, data) => { 
+exports.setDataImpl = (node, data) => {
     if (node)
       node.data = data;
 }
 
-exports.setTypeImpl = (node, type) => { 
+exports.setTypeImpl = (node, type) => {
     if (node)
       node.type = type;
 }
 
-exports.setNameImpl = (node, name) => { 
+exports.setNameImpl = (node, name) => {
     if (node)
       node.name = name;
 }
 
-exports.setAttribsImpl = (node, attribs) => { 
+exports.setAttribsImpl = (node, attribs) => {
     if (node)
       node.attribs = attribs;
 }

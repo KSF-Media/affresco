@@ -41,11 +41,11 @@ render :: State -> Props -> JSX
 render state props =
   DOM.div
     { className: "mosaico--article-list"
-    , children: maybe 
+    , children: maybe
         [loadingSpinner]
         (\content -> case content of
             ArticleList list -> map renderListArticle list
-            Html html        -> [ state.htmlRendererComponent 
+            Html html        -> [ state.htmlRendererComponent
                                     { content: html
                                     , hooks: Just [ sampleHook
                                                   ]
@@ -54,7 +54,6 @@ render state props =
         )
         props.content
     }
-  
   where
     renderListArticle :: ArticleStub -> JSX
     renderListArticle a =

@@ -282,7 +282,7 @@ frontpage env { guards: { credentials } } = do
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (getFrontPage mosaicoPaper "Startsidan")
+    <*> parallel (getFrontpage mosaicoPaper "Startsidan")
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   mosaico <- liftEffect MosaicoServer.app
   frontpageComponent <- liftEffect Frontpage.frontpageComponent
@@ -311,8 +311,8 @@ frontpage env { guards: { credentials } } = do
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
-getFrontPage :: Paper -> String -> Aff ArticleFeed
-getFrontPage paper category = do 
+getFrontpage :: Paper -> String -> Aff ArticleFeed
+getFrontpage paper category = do
   eitherHtml <- Lettera.getFrontpageHtml paper category
   case eitherHtml of
     Right html -> pure $ Html html

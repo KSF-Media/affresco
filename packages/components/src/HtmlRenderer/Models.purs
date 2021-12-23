@@ -69,11 +69,11 @@ newtype HookRep = HookRep (forall a. (forall h. ToGenericHook h => h -> a) -> a)
 toHookRep :: forall h. ToGenericHook h => h -> HookRep
 toHookRep h = HookRep \f -> f h
 
--- | This type of hook is to replace the children of 
+-- | This type of hook is to replace the children of
 --   targeted nodes
 newtype ReplacingHook = ReplacingHook ReplacingHookRecord
 
-type ReplacingHookRecord = 
+type ReplacingHookRecord =
   { shouldProcessNode :: Node -> Boolean
   , processNode       :: Node -> Array Node -> String -> Effect JSX
   }
@@ -82,7 +82,7 @@ replacingHook :: ReplacingHookRecord -> HookRep
 replacingHook = toHookRep <<< ReplacingHook
 
 instance replacingHookToGenericHook :: ToGenericHook ReplacingHook where
-  toGenericHook (ReplacingHook { shouldProcessNode, processNode }) = 
+  toGenericHook (ReplacingHook { shouldProcessNode, processNode }) =
     { replaceChildren: true
     , shouldProcessNode
     , processNode: Nothing

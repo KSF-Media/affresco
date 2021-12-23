@@ -285,7 +285,7 @@ fromJSProps jsProps =
         feedContent <- do
           content <- toMaybe feed.feedContent
           feedContentType <- toMaybe feed.feedContentType
-          case feedContentType of 
+          case feedContentType of
             "articlelist" -> do
               list <- content # (jsonParser >>> hush) >>= toArray
               pure $ ArticleList $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list
@@ -448,7 +448,7 @@ render setState state components router onPaywallEvent =
     doSearch query = do
       router.pushState (write {}) $ "/sök?q=" <> query
 
-    frontpage frontpageArticles = 
+    frontpage frontpageArticles =
       let layout = case frontpageArticles of
                      Just (Html _) -> mosaicoLayoutNoAside
                      _             -> mosaicoDefaultLayout
