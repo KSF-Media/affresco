@@ -40,7 +40,6 @@ let mkAeSteps =
 
 let steps-gs =
         Actions.setupSteps Actions.Env.Staging
-      # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Staging apps
 
@@ -84,12 +83,6 @@ in  { name = "previews"
         , steps = steps-mosaico
         , outputs.preview = "\${{ steps.deploy-mosaico-server.outputs.url}}"
         , needs = "check-ci"
-        }
-      , deploy-dispatch-yaml =
-        { runs-on = "ubuntu-latest"
-        , container
-        , steps = steps-dispatch
-        , needs = [ "deploy-mosaico-server", "deploy-app-article-server" ]
         }
       , previews =
         { runs-on = "ubuntu-latest"

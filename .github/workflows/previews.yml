@@ -62,37 +62,6 @@ jobs:
         name: Keep only 10 latest versions of app-article-server
         run: |
           ./ci/ae-cleanup.sh app-article-server
-  deploy-dispatch-yaml:
-    container:
-      image: ksfmedia/diskho:gha-1.0
-      options: "--cpus 2"
-    needs:
-      - deploy-mosaico-server
-      - deploy-app-article-server
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: "actions/checkout@v2"
-      - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
-        with:
-          export_default_credentials: 'true'
-          project_id: ksf-staging
-          service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
-      - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
-            mkdir -p build
-      - name: Generate AppEngine domain map
-        run: |2
-            dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > ./dispatch.yaml
-            cat dispatch.yaml
-        shell: bash
-      - name: Deploy AppEngine domain map
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          deliverables: dispatch.yaml
-          project_id: ksf-staging
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-1.0
@@ -111,39 +80,6 @@ jobs:
       - run: |2
             yarn install --pure-lockfile --cache-folder=.yarn-cache
             mkdir -p build
-      - name: Setup build cache for Mitt Konto
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
-          path: |
-            apps/mitt-konto/.spago
-            apps/mitt-konto/output
-      - name: "Setup build cache for Vetrina (for testing only)"
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
-          path: |
-            apps/vetrina-test/.spago
-            apps/vetrina-test/output
-      - name: Setup build cache for App article
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
-          path: |
-            apps/app-article/dist
-      - name: Setup build cache for Corona banner
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
-          path: |
-            apps/corona-banner/dist
-      - name: Setup build cache for HBL365
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
-          path: |
-            apps/hbl365/.spago
-            apps/hbl365/output
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
