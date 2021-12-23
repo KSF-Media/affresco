@@ -47,7 +47,7 @@ render state props =
             ArticleList list -> map renderListArticle list
             Html html        -> [ state.htmlRendererComponent 
                                     { content: html
-                                    , hooks: Just [ andraLaserHook
+                                    , hooks: Just [ sampleHook
                                                   ]
                                     }
                                 ]
@@ -107,7 +107,7 @@ render state props =
                 }
             ]
         }
-    andraLaserHook = HtmlRenderer.replacingHook
+    sampleHook = HtmlRenderer.replacingHook
       { shouldProcessNode: (\n ->
                               let info = do
                                     name      <- HtmlRenderer.getName n
@@ -120,6 +120,6 @@ render state props =
                                 _                                                 -> false
                            )
       , processNode: (\_ _ _ -> do
-                        pure $ DOM.div_ [ DOM.text "Hello world" ]
+                        pure $ DOM.div_ [ DOM.text "Injected html here" ]
                      )
       }
