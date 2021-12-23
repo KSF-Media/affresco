@@ -2,6 +2,6 @@ image: ksfmedia/diskho:lts-18.8
 
 testjob:
   only:
-    - gitlab-hook
+    - master
   script:
     - "echo 'Hello World!"
