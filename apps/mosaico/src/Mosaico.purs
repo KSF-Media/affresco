@@ -132,7 +132,7 @@ mosaicoComponent initialValues props = React.do
         case UUID.parseUUID articleId of
           Nothing -> liftEffect $ setState _ { article = Nothing }
           Just uuid -> do
-            eitherArticle <- Lettera.getArticleAuth uuid
+            eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
               Right article -> do
                 Article.evalEmbeds $ fromFullArticle article
