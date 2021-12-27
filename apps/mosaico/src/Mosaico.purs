@@ -76,7 +76,6 @@ type SetState = (State -> State) -> Effect Unit
 
 type Components =
   { loginModalComponent :: LoginModal.Props -> JSX
-  , mostReadListComponent :: MostReadList.Props -> JSX
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   }
@@ -249,9 +248,8 @@ getInitialValues = do
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
 
   loginModalComponent <- LoginModal.loginModal
-  mostReadListComponent <- MostReadList.mostReadListComponent
-  searchComponent       <- Search.searchComponent
-  webviewComponent      <- Webview.webviewComponent
+  searchComponent     <- Search.searchComponent
+  webviewComponent    <- Webview.webviewComponent
   pure
     { state:
         { article: Nothing
@@ -267,7 +265,6 @@ getInitialValues = do
         }
     , components:
         { loginModalComponent
-        , mostReadListComponent
         , searchComponent
         , webviewComponent
         }
@@ -430,7 +427,7 @@ render setState state components router onPaywallEvent =
           , guard showAside $ DOM.aside
               { className: "mosaico--aside"
               , children:
-                  [ components.mostReadListComponent
+                  [ MostReadList.render
                       { mostReadArticles: state.mostReadArticles
                       , onClickHandler: \articleStub -> do
                           setState _ { clickedArticle = Just articleStub }

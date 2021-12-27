@@ -22,10 +22,6 @@ type Props =
   , user :: Maybe User
   }
 
-type State =
-  { mostReadListComponent :: MostReadList.Props -> JSX
-  }
-
 data MainContent
   = ArticleContent JSX
   | FrontpageContent JSX
@@ -42,9 +38,8 @@ fromMainContent (TagListContent _ jsx) = jsx
 fromMainContent (StaticPageContent _ jsx) = jsx
 fromMainContent (MenuContent jsx) = jsx
 
-app :: Component Props
-app = do
-  mostReadListComponent <- MostReadList.mostReadListComponent
+app :: Props -> JSX
+app props =
   let (emptyRouter :: PushStateInterface) =
         { listen: const $ pure $ pure unit
         , locationState:
@@ -58,16 +53,12 @@ app = do
         , pushState: const $ const mempty
         , replaceState: const $ const mempty
         }
-  component "Mosaico" \props -> React.do
-    let initialState =
-          { mostReadListComponent
-          }
-    state /\ _setState <- useState initialState
-    pure $ render emptyRouter state props
+   in
+     render emptyRouter props
 
 
-render :: PushStateInterface -> State -> Props -> JSX
-render router state props = DOM.div
+render :: PushStateInterface -> Props -> JSX
+render router props = DOM.div
        { className: "mosaico grid"
        , id: Paper.toString mosaicoPaper
        , children:
@@ -97,7 +88,7 @@ render router state props = DOM.div
       DOM.aside
         { className: "mosaico--aside"
         , children:
-            [ state.mostReadListComponent
+            [ MostReadList.render
                 { mostReadArticles: props.mostReadArticles
                 , onClickHandler: const $ pure unit
                 }

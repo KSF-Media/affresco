@@ -15,11 +15,7 @@ type Props =
   { mostReadArticles :: Array ArticleStub
   , onClickHandler :: ArticleStub -> Effect Unit
   }
-
-mostReadListComponent :: Component Props
-mostReadListComponent = do
-  component "MostReadListComponent" (pure <<< render)
-
+  
 render :: Props -> JSX
 render props =
   let block =  "mosaico-asidelist"

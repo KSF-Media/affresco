@@ -15,6 +15,7 @@ import Foreign.Object as Object
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
+import Mosaico.Frontpage.Hooks
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import Mosaico.Models (ArticleFeed(..))
 import React.Basic (JSX)
