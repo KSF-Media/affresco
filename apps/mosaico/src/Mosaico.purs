@@ -79,6 +79,7 @@ type Components =
   { loginModalComponent :: LoginModal.Props -> JSX
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
+  , articleComponent :: Article.Props -> JSX
   }
 
 type Props =
@@ -251,6 +252,7 @@ getInitialValues = do
   loginModalComponent <- LoginModal.loginModal
   searchComponent     <- Search.searchComponent
   webviewComponent    <- Webview.webviewComponent
+  articleComponent    <- Article.component
   pure
     { state:
         { article: Nothing
@@ -268,6 +270,7 @@ getInitialValues = do
         { loginModalComponent
         , searchComponent
         , webviewComponent
+        , articleComponent
         }
     , nav
     , locationState
@@ -467,7 +470,7 @@ render setState state components router onPaywallEvent =
 
     renderArticle :: Either ArticleStub FullArticle -> JSX
     renderArticle article =
-      Article.render
+      components.articleComponent
         { paper: mosaicoPaper
         , article
         , onLogin

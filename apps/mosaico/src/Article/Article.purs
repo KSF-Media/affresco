@@ -22,11 +22,13 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
-import Mosaico.Article.Image (articleMainImage, articleImage)
+import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component)
 import React.Basic.Events (EventHandler)
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
@@ -71,8 +73,14 @@ type Props =
 evalEmbeds :: Article -> Effect Unit
 evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _.externalScripts
 
-render :: Props -> JSX
-render props =
+component :: Component Props
+component = do
+  imageComponent <- Image.component
+  React.component "Article" $ \props -> React.do
+    pure $ render imageComponent props
+
+render :: (Image.Props -> JSX) -> Props -> JSX
+render imageComponent props =
     let title = getTitle props.article
         tags = getTags props.article
         mainImage = getMainImage props.article
@@ -122,8 +130,9 @@ render props =
                   }
             ]
           , foldMap
-              (\image -> articleMainImage
+              (\image -> imageComponent
                 { clickable: true
+                , main: true
                 , params: Just "&width=960&height=540&q=90"
                 , image
                 })
@@ -272,10 +281,11 @@ render props =
         { className: block <> " " <> block <> "__subheadline"
         , children: [ DOM.text str ]
         }
-      Image img -> articleImage
+      Image image -> imageComponent
           { clickable: true
+          , main: false
           , params: Just "&width=640&q=90"
-          , image: img
+          , image
           }
       Box boxData ->
         DOM.div

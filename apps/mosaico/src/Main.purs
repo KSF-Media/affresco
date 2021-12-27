@@ -39,6 +39,7 @@ import KSF.User (User, fromPersonaUser)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
+import Mosaico.Article.Image as Image
 import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
@@ -242,7 +243,7 @@ renderArticle env user article mostReadArticles = do
   case article of
     Right a -> do
       let articleJSX =
-            Article.render
+            Article.render (Image.render mempty)
               { paper: mosaicoPaper
               , article: Right a
               , onLogin: pure unit
@@ -565,7 +566,7 @@ notFoundPage env { guards: { credentials } } = do
 
 notFoundArticleContent :: Maybe User -> MainContent
 notFoundArticleContent user =
-  ArticleContent $ Article.render
+  ArticleContent $ Article.render (Image.render mempty)
     { paper: mosaicoPaper
     , article: Right notFoundArticle
     , onLogin: pure unit
