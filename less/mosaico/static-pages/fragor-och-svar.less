@@ -1,6 +1,13 @@
 @import (reference) "../../ksf-colors";
 
 .static-page__faq {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 30px;
+
+  .faq__headline {
+    font-size: 3.2rem;
+  }
   .faq__qa-container {
     display: flex;
     flex-direction: column;
@@ -9,6 +16,11 @@
   .faq__qa-section {
     display: flex;
     flex-direction: column;
+    margin-top: 30px;
+  }
+  .faq__section-headline {
+    font-size: 1.75rem;
+    line-height: 1.75rem;
   }
 
   .faq__qa {
@@ -19,11 +31,7 @@
   .faq__headline {
     text-align: center;
     margin-top: 20px;
-    margin-bottom: 10px;
-  }
-
-  .faq__section-headline {
-    margin-top: 30px;
+    margin-bottom: 20px;
   }
 
   .faq__question {
@@ -42,11 +50,10 @@
 
   .faq__answer {
     display: none;
-    position: relative;
   }
 
-  .faq__qa:last-child {
-    margin-bottom: 30px;
+  .faq__answer--open {
+    margin-top: 10px;
   }
 
 }
