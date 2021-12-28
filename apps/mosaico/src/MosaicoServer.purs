@@ -10,8 +10,7 @@ import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, JSX, component, useState, (/\))
-import React.Basic.Hooks as React
+import React.Basic.Hooks (JSX)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (write)
 

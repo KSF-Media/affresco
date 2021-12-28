@@ -9,7 +9,6 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
-import React.Basic.Hooks (Component, component)
 
 type Props =
   { mostReadArticles :: Array ArticleStub
