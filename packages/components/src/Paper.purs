@@ -28,6 +28,9 @@ toString ON     = "ON"
 toString KSF    = "KSF"
 toString JUNIOR = "JUNIOR"
 
+cssName :: Paper -> String
+cssName = String.toLower <<< toString
+
 paperName :: Paper -> String
 paperName HBL    = "Hufvudstadtsbladet"
 paperName ON     = "Östnyland"

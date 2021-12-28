@@ -849,22 +849,22 @@ html iframe {
 }
 
 .title-sm {
-  line-height: 40px !important;
+  line-height: 1 !important;
   font-size: 2.2rem !important;
 }
 
 .title-md {
-  line-height: 44px !important;
+  line-height: 1 !important;
   font-size: 2.35rem !important;
 }
 
 .title-lg {
-  line-height: 44px !important;
+  line-height: 1 !important;
   font-size: 2.45rem !important;
 }
 
 .title-xl {
-  line-height: 44px !important;
+  line-height: 1 !important;
   font-size: 2.6rem !important;
 }
 

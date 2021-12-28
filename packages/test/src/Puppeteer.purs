@@ -52,6 +52,12 @@ getData :: Selector -> String -> Page -> Aff String
 getData selector field page = do
   unsafeFromForeign <$> Chrome.unsafePageEval selector ("e => e.dataset." <> field) page
 
+-- Note: Any quotes have to be with ' delimiters
+countElements :: Selector -> Selector -> Page -> Aff Int
+countElements selector (Selector sub) page =
+  unsafeFromForeign <$> Chrome.unsafePageEval selector
+  ("e => e.querySelectorAll(\"" <> sub <> "\").length") page
+
 assertContent :: Selector -> String -> Page -> Aff Unit
 assertContent selector expected page = do
   -- here we wait because most likely we're trying to do this on a new page load
