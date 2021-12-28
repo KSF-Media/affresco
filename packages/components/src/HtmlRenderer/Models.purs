@@ -135,7 +135,7 @@ toJSGenericHook h =
   , processNodeWithReplacement: toNullable $ mkEffectFn3 <$> h.processNodeWithReplacement
   }
 
--- TODO: This representation might be inefficient. 
+-- TODO: This representation might be inefficient.
 -- Instead of scanning a JS node for all the attributes,
 -- it could be better to construct an association list
 -- or hashmap by iterating on the js attribute object's keys

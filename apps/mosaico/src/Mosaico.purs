@@ -400,8 +400,8 @@ render setState state components router onPaywallEvent =
     frontpageWithHeader header = frontpage $ Just header
 
     frontpageNoHeader :: Maybe ArticleFeed -> JSX
-    frontpageNoHeader = frontpage Nothing 
-      
+    frontpageNoHeader = frontpage Nothing
+
     frontpage :: Maybe JSX -> Maybe ArticleFeed -> JSX
     frontpage maybeHeader (Just (ArticleList list)) = listFrontpage maybeHeader $ Just list
     frontpage maybeHeader (Just (Html html))        = prerenderedFrontpage maybeHeader $ Just html
@@ -417,7 +417,7 @@ render setState state components router onPaywallEvent =
         })
 
     prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
-    prerenderedFrontpage maybeHeader content = mosaicoLayoutNoAside $ 
+    prerenderedFrontpage maybeHeader content = mosaicoLayoutNoAside $
       (fromMaybe mempty maybeHeader) <>
       (Frontpage.render $ Frontpage.Prerendered
         { content

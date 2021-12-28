@@ -1,4 +1,4 @@
-module Mosaico.Frontpage 
+module Mosaico.Frontpage
   ( Frontpage(..)
   , ListFrontpageProps(..)
   , PrerenderedFrontpageProps(..)

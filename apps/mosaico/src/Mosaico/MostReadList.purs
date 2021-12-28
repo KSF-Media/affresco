@@ -15,7 +15,7 @@ type Props =
   { mostReadArticles :: Array ArticleStub
   , onClickHandler :: ArticleStub -> Effect Unit
   }
-  
+
 render :: Props -> JSX
 render props =
   let block =  "mosaico-asidelist"

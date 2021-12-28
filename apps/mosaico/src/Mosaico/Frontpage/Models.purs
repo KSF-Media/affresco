@@ -18,7 +18,7 @@ toHookRep (MostRead articles onClickHandler) = mostReadHook { articles, onClickH
 mostReadHook
   :: { articles :: Array ArticleStub
      , onClickHandler :: ArticleStub -> Effect Unit
-     } 
+     }
      -> HtmlRenderer.HookRep
 mostReadHook { articles, onClickHandler } = HtmlRenderer.replacingHook
   { shouldProcessNode: (\n ->
@@ -37,7 +37,7 @@ mostReadHook { articles, onClickHandler } = HtmlRenderer.replacingHook
                               , text      == "Andra läser DESKTOP" -> true
                             _                                      -> false
                        )
-  , processNode: (\_ _ _ -> pure $ MostReadList.render 
+  , processNode: (\_ _ _ -> pure $ MostReadList.render
                                      { mostReadArticles: articles
                                      , onClickHandler
                                      }
