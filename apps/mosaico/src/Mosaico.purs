@@ -425,7 +425,7 @@ render setState state components router onPaywallEvent =
         }
 
     hooks :: Array Frontpage.Hook
-    hooks = [ Frontpage.AndraLaser state.mostReadArticles onClickHandler ]
+    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler ]
 
     mosaicoDefaultLayout :: JSX -> JSX
     mosaicoDefaultLayout = flip mosaicoLayout true

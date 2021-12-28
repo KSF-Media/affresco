@@ -10,17 +10,17 @@ import Lettera.Models (ArticleStub)
 import Mosaico.MostReadList as MostReadList
 
 data Hook
-  = AndraLaser (Array ArticleStub) (ArticleStub -> Effect Unit)
+  = MostRead (Array ArticleStub) (ArticleStub -> Effect Unit)
 
 toHookRep :: Hook -> HtmlRenderer.HookRep
-toHookRep (AndraLaser articles onClickHandler) = andraLaserHook { articles, onClickHandler }
+toHookRep (MostRead articles onClickHandler) = mostReadHook { articles, onClickHandler }
 
-andraLaserHook 
+mostReadHook
   :: { articles :: Array ArticleStub
-     , onClickHandler :: ArticleStub -> Effect Unit 
+     , onClickHandler :: ArticleStub -> Effect Unit
      } 
      -> HtmlRenderer.HookRep
-andraLaserHook { articles, onClickHandler } = HtmlRenderer.replacingHook
+mostReadHook { articles, onClickHandler } = HtmlRenderer.replacingHook
   { shouldProcessNode: (\n ->
                           let info = do
                                 name      <- HtmlRenderer.getName n

@@ -306,7 +306,7 @@ frontpage env { guards: { credentials } } = do
       renderFrontpage (Html html) =
         Frontpage.renderPrerenderedFrontpage
           { content: Just html
-          , hooks: [ Frontpage.AndraLaser mostReadArticles (const $ pure unit) ]
+          , hooks: [ Frontpage.MostRead mostReadArticles (const $ pure unit) ]
           }
       frontpage' = renderFrontpage articles
       mosaicoString =
