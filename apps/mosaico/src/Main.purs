@@ -41,8 +41,10 @@ import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams
 import Mosaico.Article as Article
 import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage as Frontpage
+import Mosaico.Frontpage.Models as Frontpage
 import Mosaico.Header.Menu as Menu
 import Mosaico.Models (ArticleFeed(..))
+import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Search as Search
 import MosaicoServer (MainContent(..))
@@ -253,7 +255,7 @@ renderArticle env user article mostReadArticles = do
           mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: ArticleContent articleJSX
-                            , mostReadArticles
+                            , mostReadArticles: MostReadList.render { mostReadArticles, onClickHandler: const $ pure unit }
                             , categoryStructure: env.categoryStructure
                             , user: hush =<< user
                             }
@@ -293,8 +295,10 @@ frontpage env { guards: { credentials } } = do
     <*> parallel (getFrontpage mosaicoPaper "Startsidan")
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaico = MosaicoServer.app
+      mostReadArticlesProps = { mostReadArticles, onClickHandler: const $ pure unit }
+      hooks = [ Frontpage.AndraLaser mostReadArticlesProps ]
       frontpage' = Frontpage.render
-                     { content: Just articles
+                     { content: Just $ Frontpage.fromArticleFeed articles hooks
                      , onArticleClick: const mempty
                      , onTagClick: const mempty
                      }
@@ -305,7 +309,10 @@ frontpage env { guards: { credentials } } = do
               case articles of
                 ArticleList _ -> FrontpageContent frontpage'
                 Html _        -> HtmlFrontPageContent frontpage'
-          , mostReadArticles
+          , mostReadArticles:
+              case articles of
+                ArticleList _ -> MostReadList.render mostReadArticlesProps
+                Html _        -> mempty
           , categoryStructure: env.categoryStructure
           , user: hush =<< user
           }
@@ -368,7 +375,7 @@ menu env _ = do
                 , onLogout: pure unit
                 , router: emptyRouter
                 }
-            , mostReadArticles: []
+            , mostReadArticles: mempty
             , categoryStructure: env.categoryStructure
             , user: Nothing
           }
@@ -397,12 +404,12 @@ tagList env { params: { tag }, guards: { credentials } } = do
             { mainContent:
                 TagListContent tag'
                 $ Frontpage.render
-                  { content: Just (ArticleList articles)
+                  { content: Just (Frontpage.ArticleList articles)
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
             , categoryStructure: env.categoryStructure
-            , mostReadArticles
+            , mostReadArticles: MostReadList.render { mostReadArticles, onClickHandler: const $ pure unit }
             , user: hush =<< user
             }
     html <- liftEffect do
@@ -435,7 +442,7 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
             DOM.renderToString
             $ mosaico
               { mainContent: StaticPageContent pageName staticPageJsx
-              , mostReadArticles
+              , mostReadArticles: MostReadList.render { mostReadArticles, onClickHandler: const $ pure unit }
               , categoryStructure: env.categoryStructure
               , user: hush =<< user
               }
@@ -465,11 +472,12 @@ debugList env { params: { uuid }, guards: { credentials } } = do
         $ mosaico
           { mainContent:
               FrontpageContent $ Frontpage.render
-                { content: ArticleList <<< pure <$> article
+                { content: Frontpage.ArticleList <<< pure <$> article
                 , onArticleClick: const mempty
                 , onTagClick: const mempty
                 }
-          , mostReadArticles
+          , mostReadArticles:
+              MostReadList.render { mostReadArticles, onClickHandler: const $ pure unit }
           , categoryStructure: env.categoryStructure
           , user: hush =<< user
           }
@@ -493,11 +501,12 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
       mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: FrontpageContent $ Frontpage.render
-                                { content: Just (ArticleList articles)
+                                { content: Just (Frontpage.ArticleList articles)
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }
-                            , mostReadArticles
+                            , mostReadArticles:
+                                MostReadList.render { mostReadArticles, onClickHandler: const $ pure unit }
                             , categoryStructure: env.categoryStructure
                             , user: hush =<< user
                             }
@@ -530,12 +539,12 @@ searchPage env { query: { search }, guards: { credentials } } = do
                                              } <>
                              (guard (not $ null articles) $
                               Frontpage.render
-                                { content: Just $ ArticleList articles
+                                { content: Just $ Frontpage.ArticleList articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }
                              )
-                          , mostReadArticles
+                          , mostReadArticles: MostReadList.render { mostReadArticles, onClickHandler: const $ pure unit }
                           , categoryStructure: env.categoryStructure
                           , user: hush =<< user
                           }
@@ -571,7 +580,11 @@ notFound env mainContent user maybeMostReadArticles = do
   let mosaico = MosaicoServer.app
       mosaicoString = DOM.renderToString $ mosaico
                         { mainContent
-                        , mostReadArticles: fromMaybe [] maybeMostReadArticles
+                        , mostReadArticles: 
+                            maybe 
+                              mempty 
+                              (\as -> MostReadList.render { mostReadArticles: as, onClickHandler: const $ pure unit })
+                              maybeMostReadArticles
                         , categoryStructure: env.categoryStructure
                         , user: hush =<< user
                         }

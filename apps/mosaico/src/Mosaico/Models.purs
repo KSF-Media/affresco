@@ -5,6 +5,7 @@ import Prelude
 import Data.DateTime (DateTime)
 import Data.Hashable (class Hashable, hash)
 import Data.Maybe (Maybe)
+import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub, CategoryLabel, Tag)
 
 type FeedSnapshot =

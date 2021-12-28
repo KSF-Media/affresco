@@ -15,15 +15,14 @@ import Foreign.Object as Object
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
-import Mosaico.Frontpage.Hooks
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
-import Mosaico.Models (ArticleFeed(..))
+import Mosaico.Frontpage.Models (Content(..), toHookRep)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 
 type Props =
-  { content :: Maybe ArticleFeed
+  { content :: Maybe Content
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
@@ -36,10 +35,9 @@ render props =
         [loadingSpinner]
         (\content -> case content of
             ArticleList list -> map renderListArticle list
-            Html html        -> [ HtmlRenderer.render
+            Html html hooks  -> [ HtmlRenderer.render
                                     { content: html
-                                    , hooks: Just [ sampleHook
-                                                  ]
+                                    , hooks: Just $ toHookRep <$> hooks
                                     }
                                 ]
         )
@@ -97,19 +95,3 @@ render props =
                 }
             ]
         }
-    sampleHook = HtmlRenderer.replacingHook
-      { shouldProcessNode: (\n ->
-                              let info = do
-                                    name      <- HtmlRenderer.getName n
-                                    attribs   <- HtmlRenderer.getAttribs n
-                                    className <- attribs.class
-                                    pure $ name /\ className
-                              in case info of
-                                Just (name /\ className)
-                                  | name == "div", className == "dre-item__title" -> true
-                                _                                                 -> false
-                           )
-      , processNode: (\_ _ _ -> do
-                        pure $ DOM.div_ [ DOM.text "Injected html here" ]
-                     )
-      }

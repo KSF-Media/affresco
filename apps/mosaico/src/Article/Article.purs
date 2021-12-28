@@ -25,6 +25,7 @@ import Mosaico.Article.Box (box)
 import Mosaico.Article.Image (articleMainImage, articleImage)
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Frontpage as Frontpage
+import Mosaico.Frontpage.Models as Frontpage
 import Mosaico.Models as Mosaico
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -252,7 +253,7 @@ render props =
         , children: [ DOM.text "ANDRA LÄSER" ]
         } <>
       Frontpage.render
-        { content: Just $ Mosaico.ArticleList articles
+        { content: Just $ Frontpage.ArticleList articles
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick
         }

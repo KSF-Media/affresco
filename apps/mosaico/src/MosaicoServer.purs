@@ -17,7 +17,7 @@ import Simple.JSON (write)
 
 type Props =
   { mainContent :: MainContent
-  , mostReadArticles :: Array ArticleStub
+  , mostReadArticles :: JSX
   , categoryStructure :: Array Category
   , user :: Maybe User
   }
@@ -87,10 +87,5 @@ render router props = DOM.div
     aside =
       DOM.aside
         { className: "mosaico--aside"
-        , children:
-            [ MostReadList.render
-                { mostReadArticles: props.mostReadArticles
-                , onClickHandler: const $ pure unit
-                }
-            ]
+        , children: [ props.mostReadArticles ]
         }
