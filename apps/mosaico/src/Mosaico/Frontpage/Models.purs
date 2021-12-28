@@ -4,7 +4,6 @@ import Prelude
 
 import Data.Array (head)
 import Data.Maybe (Maybe(..))
-import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
@@ -30,9 +29,9 @@ andraLaserHook { articles, onClickHandler } = HtmlRenderer.replacingHook
                                 children  <- HtmlRenderer.getChildren n
                                 textChild <- head children
                                 text      <- HtmlRenderer.getData textChild
-                                pure $ name /\ className /\ text
+                                pure { name, className, text }
                           in case info of
-                            Just (name /\ className /\ text)
+                            Just { name, className, text }
                               | name      == "div"
                               , className == "dre-item__title"
                               , text      == "Andra läser DESKTOP" -> true
