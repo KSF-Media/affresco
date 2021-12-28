@@ -10,6 +10,7 @@ import Puppeteer as Chrome
 
 import Mosaico.Test.Account as Account
 import Mosaico.Test.Article as Article
+import Mosaico.Test.Embeds as Embeds
 
 foreign import testUser :: String
 foreign import testPassword :: String
@@ -50,6 +51,8 @@ main = launchAff_ do
       _ -> log "Skip paywall open test via navigation"
   withBrowserPage $ Article.testPaywallLogin true premiumUuid entitledUser entitledPassword Article.testPaywallOpen
   withBrowserPage $ Article.testMostRead false
+  withBrowserPage Embeds.testEmbedNavigation
+  withBrowserPage Embeds.testEmbedServerRender
   where
     withBrowser :: forall a. (Chrome.Browser -> Aff a) -> Aff a
     withBrowser = bracket Chrome.launch Chrome.close

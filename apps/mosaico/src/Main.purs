@@ -7,7 +7,7 @@ import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core (stringify)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
-import Data.Array (find, foldl, null)
+import Data.Array (find, foldl, fromFoldable, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap)
@@ -128,6 +128,12 @@ spec ::
                 , params :: { pageName :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , debugList ::
+              GET "/debug/<uuid>"
+                { response :: ResponseBody
+                , params :: { uuid :: String }
+                , guards :: Guards ("credentials" : Nil)
+                }
           , categoryPage ::
               GET "/<categoryName>"
                 { response :: ResponseBody
@@ -177,6 +183,7 @@ main = do
           , frontpage: frontpage env
           , tagList: tagList env
           , staticPage: staticPage env
+          , debugList: debugList env
           , categoryPage: categoryPage env
           , searchPage: searchPage env
           , notFoundPage: notFoundPage env
@@ -444,6 +451,36 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
     Nothing ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
       in notFound env (StaticPageContent pageName notFoundWithAside) user maybeMostRead
+
+debugList :: Env -> { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
+debugList env { params: { uuid }, guards: { credentials } } = do
+  mosaico <- liftEffect MosaicoServer.app
+  { user, article, mostReadArticles } <- sequential $
+    { user: _, article: _, mostReadArticles: _ }
+    <$> maybe (pure Nothing) (parallel <<< getUser) credentials
+    <*> maybe (pure Nothing) (parallel <<< map hush <<< Lettera.getArticleStub) (UUID.parseUUID uuid)
+    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+  let mosaicoString =
+        DOM.renderToString
+        $ mosaico
+          { mainContent:
+              FrontpageContent $ Frontpage.render
+                { content: ArticleList <<< pure <$> article
+                , onArticleClick: const mempty
+                , onTagClick: const mempty
+                }
+          , mostReadArticles
+          , categoryStructure: env.categoryStructure
+          , user: hush =<< user
+          }
+  html <- liftEffect do
+            let windowVars =
+                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" (ArticleList $ fromFoldable article)
+                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  ] <> userVar user
+            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category, credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 categoryPage env { params: { categoryName }, guards: { credentials } } = do
