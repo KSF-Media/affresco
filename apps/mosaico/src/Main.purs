@@ -40,8 +40,8 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error (notFoundWithAside)
-import Mosaico.Frontpage (render) as Frontpage
-import Mosaico.Frontpage.Models (Content(..), Hook(..), fromArticleFeed) as Frontpage
+import Mosaico.Frontpage as Frontpage
+import Mosaico.Frontpage.Models as Frontpage
 import Mosaico.Header.Menu as Menu
 import Mosaico.Models (ArticleFeed(..))
 import Mosaico.MostReadList as MostReadList
@@ -63,6 +63,7 @@ import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import Persona as Persona
+import React.Basic (JSX)
 import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta, script) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
@@ -296,12 +297,19 @@ frontpage env { guards: { credentials } } = do
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaico = MosaicoServer.app
       mostReadArticlesProps = { mostReadArticles, onClickHandler: const $ pure unit }
-      hooks = [ Frontpage.AndraLaser mostReadArticlesProps ]
-      frontpage' = Frontpage.render
-                     { content: Just $ Frontpage.fromArticleFeed articles hooks
-                     , onArticleClick: const mempty
-                     , onTagClick: const mempty
-                     }
+      frontpage :: ArticleFeed -> JSX
+      frontpage (ArticleList list) = 
+        Frontpage.renderListFrontpage
+          { content: Just list
+          , onArticleClick: const mempty
+          , onTagClick: const mempty
+          }
+      frontpage (Html html) = 
+        Frontpage.renderPrerenderedFrontpage
+          { content: Just html
+          , hooks: [ Frontpage.AndraLaser mostReadArticles (const $ pure unit) ]
+          }
+      frontpage' = frontpage articles
       mosaicoString =
         DOM.renderToString
         $ mosaico
@@ -403,8 +411,8 @@ tagList env { params: { tag }, guards: { credentials } } = do
           $ mosaico
             { mainContent:
                 TagListContent tag'
-                $ Frontpage.render
-                  { content: Just (Frontpage.ArticleList articles)
+                $ Frontpage.renderListFrontpage
+                  { content: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -471,8 +479,8 @@ debugList env { params: { uuid }, guards: { credentials } } = do
         DOM.renderToString
         $ mosaico
           { mainContent:
-              FrontpageContent $ Frontpage.render
-                { content: Frontpage.ArticleList <<< pure <$> article
+              FrontpageContent $ Frontpage.renderListFrontpage
+                { content: pure <$> article
                 , onArticleClick: const mempty
                 , onTagClick: const mempty
                 }
@@ -500,8 +508,8 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
   let mosaico = MosaicoServer.app
       mosaicoString = DOM.renderToString
                           $ mosaico
-                            { mainContent: FrontpageContent $ Frontpage.render
-                                { content: Just (Frontpage.ArticleList articles)
+                            { mainContent: FrontpageContent $ Frontpage.renderListFrontpage
+                                { content: Just articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }
@@ -538,8 +546,8 @@ searchPage env { query: { search }, guards: { credentials } } = do
                                              , noResults: isJust query && null articles
                                              } <>
                              (guard (not $ null articles) $
-                              Frontpage.render
-                                { content: Just $ Frontpage.ArticleList articles
+                              Frontpage.renderListFrontpage
+                                { content: Just articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
                                 }
