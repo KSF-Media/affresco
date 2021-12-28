@@ -92,14 +92,14 @@ render (List props) = genericRender (\list -> map renderListArticle list) props.
                 }
             ]
         }
-render (Prerendered { content, hooks }) = genericRender
+render (Prerendered props@{ hooks }) = genericRender
   (\content -> [ HtmlRenderer.render
                    { content
                    , hooks: Just $ toHookRep <$> hooks
                    }
                 ]
   )
-  content
+  props.content
 
 genericRender :: forall a. (a -> Array JSX) -> Maybe a -> JSX
 genericRender f content = DOM.div

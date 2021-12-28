@@ -34,7 +34,7 @@ import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel (..)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
-import Mosaico.Frontpage as Frontpage
+import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
