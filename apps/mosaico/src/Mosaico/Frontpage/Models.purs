@@ -2,13 +2,13 @@ module Mosaico.Frontpage.Models where
 
 import Prelude
 
+import Data.Array (head)
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
 import Mosaico.Models as Mosaico
 import Mosaico.MostReadList as MostReadList
-import React.Basic.DOM as DOM
 
 data Content
   = ArticleList (Array ArticleStub)
@@ -34,11 +34,16 @@ andraLaserHook props = HtmlRenderer.replacingHook
                                 name      <- HtmlRenderer.getName n
                                 attribs   <- HtmlRenderer.getAttribs n
                                 className <- attribs.class
-                                pure $ name /\ className
+                                children  <- HtmlRenderer.getChildren n
+                                textChild <- head children
+                                text      <- HtmlRenderer.getData textChild
+                                pure $ name /\ className /\ text
                           in case info of
-                            Just (name /\ className)
-                              | name == "div", className == "dre-item__title" -> true
-                            _                                                 -> false
+                            Just (name /\ className /\ text)
+                              | name      == "div"
+                              , className == "dre-item__title"
+                              , text      == "Andra läser DESKTOP" -> true
+                            _                                      -> false
                        )
   , processNode: (\_ _ _ -> pure $ MostReadList.render props)
   }

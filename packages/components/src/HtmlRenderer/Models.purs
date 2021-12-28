@@ -13,11 +13,12 @@ import React.Basic (JSX)
 foreign import data Node :: Type
 
 -- Getters
-foreign import getRawImpl     :: Fn1 Node (Nullable String)
-foreign import getDataImpl    :: Fn1 Node (Nullable String)
-foreign import getTypeImpl    :: Fn1 Node (Nullable String)
-foreign import getNameImpl    :: Fn1 Node (Nullable String)
-foreign import getAttribsImpl :: Fn1 Node (Nullable JSHTMLAttributes)
+foreign import getRawImpl      :: Fn1 Node (Nullable String)
+foreign import getDataImpl     :: Fn1 Node (Nullable String)
+foreign import getTypeImpl     :: Fn1 Node (Nullable String)
+foreign import getNameImpl     :: Fn1 Node (Nullable String)
+foreign import getAttribsImpl  :: Fn1 Node (Nullable JSHTMLAttributes)
+foreign import getChildrenImpl :: Fn1 Node (Nullable (Array Node))
 
 getRaw :: Node -> Maybe String
 getRaw n = toMaybe $ runFn1 getRawImpl n
@@ -33,6 +34,9 @@ getName n = toMaybe $ runFn1 getNameImpl n
 
 getAttribs :: Node -> Maybe HTMLAttributes
 getAttribs n = fromJSAttributes <$> (toMaybe $ runFn1 getAttribsImpl n)
+
+getChildren :: Node -> Maybe (Array Node)
+getChildren n = toMaybe $ runFn1 getChildrenImpl n
 
 -- Setters
 foreign import setRawImpl     :: EffectFn2 Node String Unit
