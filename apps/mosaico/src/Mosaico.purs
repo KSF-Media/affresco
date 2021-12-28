@@ -34,8 +34,8 @@ import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel (..)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
-import Mosaico.Frontpage as Frontpage
-import Mosaico.Frontpage.Models as Frontpage
+import Mosaico.Frontpage (render) as Frontpage
+import Mosaico.Frontpage.Models (Hook(..), fromArticleFeed, fromArticleFeedNoHooks) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
@@ -378,7 +378,7 @@ render setState state components router onPaywallEvent =
                Just (ArticleList tagFeed)
                  | not $ null tagFeed -> frontpage maybeFeed []
                  | otherwise          -> mosaicoDefaultLayout Error.notFoundWithAside
-               Just (Html html)       -> frontpage maybeFeed []
+               Just (Html _)          -> frontpage maybeFeed []
                Nothing                -> frontpage Nothing []
        Routes.MenuPage ->
          mosaicoLayoutNoAside

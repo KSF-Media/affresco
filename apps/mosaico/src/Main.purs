@@ -40,8 +40,8 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Error (notFoundWithAside)
-import Mosaico.Frontpage as Frontpage
-import Mosaico.Frontpage.Models as Frontpage
+import Mosaico.Frontpage (render) as Frontpage
+import Mosaico.Frontpage.Models (Content(..), Hook(..), fromArticleFeed) as Frontpage
 import Mosaico.Header.Menu as Menu
 import Mosaico.Models (ArticleFeed(..))
 import Mosaico.MostReadList as MostReadList

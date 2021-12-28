@@ -10,10 +10,8 @@ import Data.Newtype (un)
 import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
-import Data.Tuple.Nested ((/\))
 import Foreign.Object as Object
 import KSF.HtmlRenderer (render) as HtmlRenderer
-import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import Mosaico.Frontpage.Models (Content(..), toHookRep)

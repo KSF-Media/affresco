@@ -24,9 +24,8 @@ import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image (articleMainImage, articleImage)
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
-import Mosaico.Frontpage as Frontpage
-import Mosaico.Frontpage.Models as Frontpage
-import Mosaico.Models as Mosaico
+import Mosaico.Frontpage (render) as Frontpage
+import Mosaico.Frontpage.Models (Content(..)) as Frontpage
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
