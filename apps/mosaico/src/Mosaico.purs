@@ -34,7 +34,8 @@ import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel (..)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
-import Mosaico.Frontpage as Frontpage
+import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
+import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
@@ -76,7 +77,6 @@ type SetState = (State -> State) -> Effect Unit
 
 type Components =
   { loginModalComponent :: LoginModal.Props -> JSX
-  , mostReadListComponent :: MostReadList.Props -> JSX
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   }
@@ -249,9 +249,8 @@ getInitialValues = do
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
 
   loginModalComponent <- LoginModal.loginModal
-  mostReadListComponent <- MostReadList.mostReadListComponent
-  searchComponent       <- Search.searchComponent
-  webviewComponent      <- Webview.webviewComponent
+  searchComponent     <- Search.searchComponent
+  webviewComponent    <- Webview.webviewComponent
   pure
     { state:
         { article: Nothing
@@ -267,7 +266,6 @@ getInitialValues = do
         }
     , components:
         { loginModalComponent
-        , mostReadListComponent
         , searchComponent
         , webviewComponent
         }
@@ -347,11 +345,8 @@ render setState state components router onPaywallEvent =
        Routes.CategoryPage category@(Category c)
          | c.type == Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
          | otherwise ->
-           mosaicoDefaultLayout $ Frontpage.render
-             { content: _.feed <$> HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
-             , onArticleClick
-             , onTagClick
-             }
+           let maybeFeed = _.feed <$> HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
+            in frontpageNoHeader maybeFeed
        Routes.ArticlePage articleId
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle
@@ -359,7 +354,7 @@ render setState state components router onPaywallEvent =
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> frontpage $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
+       Routes.Frontpage -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
        Routes.SearchPage Nothing ->
           mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
        Routes.SearchPage query@(Just queryString) ->
@@ -369,17 +364,16 @@ render setState state components router onPaywallEvent =
                 Just (ArticleList list)
                   | null list -> true
                 _             -> false
-          in mosaicoDefaultLayout $
-            components.searchComponent { query, doSearch, searching, noResults } <>
-            Frontpage.render { content: frontpageArticles, onArticleClick, onTagClick }
+              searchProps = { query, doSearch, searching, noResults }
+              header = components.searchComponent searchProps
+          in frontpageWithHeader header frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
-         case _.feed <$> HashMap.lookup (TagFeed tag) state.frontpageFeeds of
-           Just (ArticleList tagFeed)
-             | not $ null tagFeed -> frontpage $ Just $ ArticleList $ tagFeed
-             | otherwise -> mosaicoDefaultLayout Error.notFoundWithAside
-           Just (Html html) -> frontpage $ Just $ Html html
-           Nothing -> frontpage Nothing
+         let maybeFeed = _.feed <$> HashMap.lookup (TagFeed tag) state.frontpageFeeds
+          in case maybeFeed of
+               Just (ArticleList tagFeed)
+                 | null tagFeed -> mosaicoDefaultLayout Error.notFoundWithAside
+               _                -> frontpageNoHeader maybeFeed
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ Menu.render
@@ -399,8 +393,40 @@ render setState state components router onPaywallEvent =
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
-       Routes.DebugPage _ -> frontpage $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
+       Routes.DebugPage _ -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
   where
+
+    frontpageWithHeader :: JSX -> Maybe ArticleFeed -> JSX
+    frontpageWithHeader header = frontpage $ Just header
+
+    frontpageNoHeader :: Maybe ArticleFeed -> JSX
+    frontpageNoHeader = frontpage Nothing
+
+    frontpage :: Maybe JSX -> Maybe ArticleFeed -> JSX
+    frontpage maybeHeader (Just (ArticleList list)) = listFrontpage maybeHeader $ Just list
+    frontpage maybeHeader (Just (Html html))        = prerenderedFrontpage maybeHeader $ Just html
+    frontpage maybeHeader _                         = listFrontpage maybeHeader Nothing
+
+    listFrontpage :: Maybe JSX -> Maybe (Array ArticleStub) -> JSX
+    listFrontpage maybeHeader content = mosaicoDefaultLayout $
+      (fromMaybe mempty maybeHeader) <>
+      (Frontpage.render $ Frontpage.List
+        { content
+        , onArticleClick
+        , onTagClick
+        })
+
+    prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
+    prerenderedFrontpage maybeHeader content = mosaicoLayoutNoAside $
+      (fromMaybe mempty maybeHeader) <>
+      (Frontpage.render $ Frontpage.Prerendered
+        { content
+        , hooks
+        })
+
+    hooks :: Array Frontpage.Hook
+    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler ]
+
     mosaicoDefaultLayout :: JSX -> JSX
     mosaicoDefaultLayout = flip mosaicoLayout true
 
@@ -430,17 +456,32 @@ render setState state components router onPaywallEvent =
           , guard showAside $ DOM.aside
               { className: "mosaico--aside"
               , children:
-                  [ components.mostReadListComponent
+                  [ MostReadList.render
                       { mostReadArticles: state.mostReadArticles
-                      , onClickHandler: \articleStub -> do
-                          setState _ { clickedArticle = Just articleStub }
-                          void $ Web.scroll 0 0 =<< Web.window
-                          router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
+                      , onClickHandler
                       }
                   ]
               }
           ]
       }
+
+    renderArticle :: Either ArticleStub FullArticle -> JSX
+    renderArticle article =
+      Article.render
+        { paper: mosaicoPaper
+        , article
+        , onLogin
+        , user: state.user
+        , onPaywallEvent
+        , onTagClick
+        , onArticleClick
+        , mostReadArticles: state.mostReadArticles
+        }
+
+    onClickHandler articleStub = do
+      setState _ { clickedArticle = Just articleStub }
+      void $ Web.scroll 0 0 =<< Web.window
+      router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
 
     onCategoryClick cat@(Category c) =
       case state.route of
@@ -463,27 +504,3 @@ render setState state components router onPaywallEvent =
     -- Search is done via the router
     doSearch query = do
       router.pushState (write {}) $ "/sök?q=" <> query
-
-    frontpage frontpageArticles =
-      let layout = case frontpageArticles of
-                     Just (Html _) -> mosaicoLayoutNoAside
-                     _             -> mosaicoDefaultLayout
-       in
-        layout $ Frontpage.render
-          { content: frontpageArticles
-          , onArticleClick
-          , onTagClick
-          }
-
-    renderArticle :: Either ArticleStub FullArticle -> JSX
-    renderArticle article =
-      Article.render
-        { paper: mosaicoPaper
-        , article
-        , onLogin
-        , user: state.user
-        , onPaywallEvent
-        , onTagClick
-        , onArticleClick
-        , mostReadArticles: state.mostReadArticles
-        }

@@ -4,6 +4,7 @@
 // node in the output tree follow htmlparser's specific format:
 // https://www.npmjs.com/package/htmlparser
 
+// Getters
 exports.getRawImpl = (node) => {
     if (node && node.raw)
       return node.raw;
@@ -39,6 +40,14 @@ exports.getAttribsImpl = (node) => {
     return null;
 }
 
+exports.getChildrenImpl = (node) => {
+    if (node && node.children)
+      return node.children;
+
+    return null;
+}
+
+// Setters
 exports.setRawImpl = (node, raw) => {
     if (node)
       node.raw = raw;
