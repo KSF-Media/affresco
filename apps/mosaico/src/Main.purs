@@ -298,13 +298,13 @@ frontpage env { guards: { credentials } } = do
   let mosaico = MosaicoServer.app
       renderFrontpage :: ArticleFeed -> JSX
       renderFrontpage (ArticleList list) =
-        Frontpage.renderListFrontpage
+        Frontpage.render $ Frontpage.List
           { content: Just list
           , onArticleClick: const mempty
           , onTagClick: const mempty
           }
       renderFrontpage (Html html) =
-        Frontpage.renderPrerenderedFrontpage
+        Frontpage.render $ Frontpage.Prerendered
           { content: Just html
           , hooks: [ Frontpage.MostRead mostReadArticles (const $ pure unit) ]
           }
@@ -407,7 +407,7 @@ tagList env { params: { tag }, guards: { credentials } } = do
           $ mosaico
             { mainContent:
                 TagListContent tag'
-                $ Frontpage.renderListFrontpage
+                $ Frontpage.render $ Frontpage.List
                   { content: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
@@ -475,7 +475,7 @@ debugList env { params: { uuid }, guards: { credentials } } = do
         DOM.renderToString
         $ mosaico
           { mainContent:
-              FrontpageContent $ Frontpage.renderListFrontpage
+              FrontpageContent $ Frontpage.render $ Frontpage.List
                 { content: pure <$> article
                 , onArticleClick: const mempty
                 , onTagClick: const mempty
@@ -503,7 +503,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
   let mosaico = MosaicoServer.app
       mosaicoString = DOM.renderToString
                           $ mosaico
-                            { mainContent: FrontpageContent $ Frontpage.renderListFrontpage
+                            { mainContent: FrontpageContent $ Frontpage.render $ Frontpage.List
                                 { content: Just articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty
@@ -540,7 +540,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
                                              , noResults: isJust query && null articles
                                              } <>
                              (guard (not $ null articles) $
-                              Frontpage.renderListFrontpage
+                              Frontpage.render $ Frontpage.List
                                 { content: Just articles
                                 , onArticleClick: const mempty
                                 , onTagClick: const mempty

@@ -251,7 +251,7 @@ render props =
         { className: "mosaico-article__mostread--header"
         , children: [ DOM.text "ANDRA LÄSER" ]
         } <>
-      (Frontpage.renderListFrontpage
+      (Frontpage.render $ Frontpage.List
         { content: Just articles
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick

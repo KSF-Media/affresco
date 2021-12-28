@@ -410,19 +410,19 @@ render setState state components router onPaywallEvent =
     listFrontpage :: Maybe JSX -> Maybe (Array ArticleStub) -> JSX
     listFrontpage maybeHeader content = mosaicoDefaultLayout $
       (fromMaybe mempty maybeHeader) <>
-      Frontpage.renderListFrontpage
+      (Frontpage.render $ Frontpage.List
         { content
         , onArticleClick
         , onTagClick
-        }
+        })
 
     prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
     prerenderedFrontpage maybeHeader content = mosaicoLayoutNoAside $ 
       (fromMaybe mempty maybeHeader) <>
-      Frontpage.renderPrerenderedFrontpage
+      (Frontpage.render $ Frontpage.Prerendered
         { content
         , hooks
-        }
+        })
 
     hooks :: Array Frontpage.Hook
     hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler ]
