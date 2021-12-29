@@ -13,6 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 
 foreign import getInitialStaticPageContent :: Effect (Nullable String)
+foreign import getInitialStaticPageScript :: Effect (Nullable String)
 
 data StaticPageResponse
   = StaticPageResponse StaticPage

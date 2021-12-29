@@ -13,7 +13,7 @@ import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
@@ -45,7 +45,7 @@ import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
-import Mosaico.StaticPage (StaticPageResponse(..), getInitialStaticPageContent, fetchStaticPage)
+import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage, getInitialStaticPageContent, getInitialStaticPageScript)
 import Mosaico.Webview as Webview
 import Persona as Persona
 import React.Basic (JSX)
@@ -65,6 +65,7 @@ type State =
   { article :: Maybe FullArticle
   , mostReadArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
+  , prevRoute :: Maybe Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe User
@@ -122,7 +123,7 @@ mosaicoComponent initialValues props = React.do
                          { article = props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse $
-                                        { pageName:_, pageContent:_, pageScript: Nothing }
+                                        { pageName:_, pageContent:_, pageScript: initialValues.staticPageScript }
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
@@ -205,7 +206,8 @@ mosaicoComponent initialValues props = React.do
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
-        -> pure unit
+        -> when (isJust state.prevRoute) do
+             foldMap (\p -> evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]) r.pageScript
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
@@ -231,7 +233,7 @@ mosaicoComponent initialValues props = React.do
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   case match (Routes.routes c) location.path of
-    Right path -> setState _ { route = path }
+    Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
     Left _     -> pure unit
 
 type InitialValues =
@@ -240,6 +242,7 @@ type InitialValues =
   , nav :: PushStateInterface
   , locationState :: LocationState
   , staticPageContent :: Maybe String
+  , staticPageScript :: Maybe String
   , startTime :: DateTime
   }
 
@@ -249,6 +252,7 @@ getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
+  staticPageScript <- toMaybe <$> getInitialStaticPageScript
 
   loginModalComponent <- LoginModal.loginModal
   searchComponent     <- Search.searchComponent
@@ -259,6 +263,7 @@ getInitialValues = do
         { article: Nothing
         , mostReadArticles: []
         , route: Routes.Frontpage
+        , prevRoute: Nothing
         , clickedArticle: Nothing
         , modalView: Nothing
         , user: Nothing
@@ -276,6 +281,7 @@ getInitialValues = do
     , nav
     , locationState
     , staticPageContent
+    , staticPageScript
     , startTime
     }
 

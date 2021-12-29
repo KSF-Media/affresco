@@ -4,11 +4,8 @@ import Prelude hiding (sub)
 
 import Control.Alternative (guard)
 import Control.Monad.Maybe.Trans (runMaybeT, lift)
-import Data.Array (head)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe)
 import Effect.Aff (Aff)
-import KSF.Paper (Paper(..))
-import Lettera as Lettera
 import Mosaico.Test (Test, log, site, sub)
 import Puppeteer as Chrome
 import Test.Unit.Assert as Assert
@@ -17,6 +14,9 @@ type PageIds =
   { articleId :: Maybe String
   , premiumArticleId :: Maybe String
   }
+
+relatedExample :: String
+relatedExample = "d25bde70-a2a1-4ac6-9c38-22f742b799f7"
 
 navigateToNews :: Chrome.Page -> Aff Unit
 navigateToNews page = do
@@ -60,7 +60,7 @@ testNewsPage page = do
       uuid <- Chrome.getData item "uuid" page
       articleListTest item
       -- Test for lack of premium badge
-      Chrome.assertNotFound (sub " .premium-badge" article) page
+      Chrome.assertNotFound (sub " .mosaico-article__tag-n-share .premium-badge" article) page
       -- Return to front page
       navigateToNews page
       Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
@@ -84,7 +84,7 @@ testFreeArticle uuid page = do
   let article = Chrome.Selector "article.mosaico-article"
   Chrome.waitFor_ article page
   Chrome.waitFor_ (sub " .mosaico-article__main" article) page
-  Chrome.assertNotFound (sub " .premium-badge" article) page
+  Chrome.assertNotFound (sub " .mosaico-article__tag-n-share .premium-badge" article) page
 
 -- Tests for non-privileged/not logged in user
 premiumArticleTest :: Chrome.Selector -> Test
@@ -92,7 +92,7 @@ premiumArticleTest sel page = do
   -- Test that we see paywall
   Chrome.waitFor_ (sub " .mosaico-article__main .mosaico-article__body .vetrina--container" sel) page
   -- Test for premium badge
-  Chrome.waitFor_ (sub " .premium-badge" sel) page
+  Chrome.waitFor_ (sub " .mosaico-article__tag-n-share .premium-badge" sel) page
   -- Test that there's at most one element of content
   Chrome.assertNotFound (sub " .mosaico-article__body .article-element:nth-of-type(2)" sel) page
 
@@ -148,7 +148,7 @@ testPaywallOpen article originalBlocks page = do
         else do
         Chrome.click item page
         -- Test for premium badge
-        Chrome.waitFor_ (sub " .premium-badge" article) page
+        Chrome.waitFor_ (sub " .mosaico-article__tag-n-share .premium-badge" article) page
         Chrome.assertNotFound (sub " .mosaico--article-fading-body" article) page
 
 testPaywallHolds :: Chrome.Selector -> Int -> Test
@@ -158,21 +158,12 @@ testPaywallHolds article originalBlocks page = do
   Assert.assert "Login without entitlements gives displays the same content" $ paywallBlocks == originalBlocks
   Chrome.waitFor_ (sub " .mosaico-article__main .mosaico-article__body .vetrina--container" article) page
 
-testMostRead :: Boolean -> Test
-testMostRead strict page = do
-  Chrome.goto (Chrome.URL $ site <> "nyheter") page
-  let mostReadList = Chrome.Selector ".mosaico-asidelist__mostread"
-      article = Chrome.Selector "article.mosaico-article"
-  Chrome.waitFor_ mostReadList page
-  Chrome.click (sub " li a" mostReadList) page
-  mostRead <- Lettera.getMostRead 0 1 Nothing HBL true
-  let firstArticleTitle = _.title <$> head mostRead
-  Assert.assert "Got valid title from Lettera" $ isJust firstArticleTitle
-  Chrome.waitFor_ article page
-  -- It's very unlikely, but still possible, that most read list
-  -- changed between creating the front page and this.
-  if strict
-    then Chrome.assertContent (sub " .mosaico-article__headline" article) (fromMaybe "" firstArticleTitle) page
-    else do
-    articleTitle <- Chrome.getContent (sub " .mosaico-article__headline" article) page
-    when (articleTitle /= fromMaybe "" firstArticleTitle) $ testMostRead true page
+testRelated :: Test
+testRelated page = do
+  Chrome.goto (Chrome.URL $ site <> "artikel/" <> relatedExample) page
+  Chrome.waitFor_ (Chrome.Selector "article.mosaico-article .article-element__related") page
+  originalTitle <- Chrome.getContent (Chrome.Selector "article.mosaico-article .mosaico-article__headline") page
+  Chrome.click (Chrome.Selector "article.mosaico-article .article-element__related a") page
+  Chrome.waitFor_ (Chrome.Selector "article.mosaico-article .article-element__html") page
+  newTitle <- Chrome.getContent (Chrome.Selector "article.mosaico-article .mosaico-article__headline") page
+  Assert.assert "Article title changes after clicking on a related article" $ originalTitle /= newTitle
