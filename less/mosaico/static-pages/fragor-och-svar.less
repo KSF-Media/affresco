@@ -7,6 +7,10 @@
 
   .faq__headline {
     font-size: 3.2rem;
+    line-height: 2.75rem;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
   }
   .faq__qa-container {
     display: flex;
@@ -28,24 +32,28 @@
     flex-flow: column wrap;
   }
 
-  .faq__headline {
-    text-align: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
-  }
-
   .faq__question {
+    max-width: 95%;
     margin-top: 10px;
     cursor: pointer;
     border: none;
     padding: 0;
     text-align: start;
+    outline: none;
   }
 
-  .faq__answer-video {
-    display: block;
-    margin: 0 auto;
-    max-width: 100%;
+  .faq__question::after {
+    display: inline-block;
+    position: absolute;
+    content: url(../images/chevron.svg);
+    margin-left: 5px;
+  }
+
+  .faq__question--active::after {
+    display: inline-block;
+    position: absolute;
+    content: url(../images/chevron.svg);
+    transform: rotate(180deg);
   }
 
   .faq__answer {
@@ -54,6 +62,13 @@
 
   .faq__answer--open {
     margin-top: 10px;
+    max-width: 100%;
   }
 
+  .faq__answer-video {
+    display: block;
+    margin: 10px auto;
+    width: 100%;
+    height: auto;
+  }
 }
