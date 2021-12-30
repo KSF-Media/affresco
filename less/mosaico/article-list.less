@@ -71,6 +71,15 @@
     font: bold 1.125rem "Roboto", sans-serif;
     text-transform: uppercase;
     margin: 0 10px;
+    #HBL & {
+      color: @hbl-orange;
+    }
+    #VN & {
+      color: @vn-red;
+    }
+    #ON & {
+      color: @on-blue;
+    }
   }
 
   &__mostread {
@@ -101,6 +110,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
+
+	    #HBL & {
+              background-color: @hbl-orange;
+	    }
+	    #VN & {
+              background-color: @vn-red;
+	    }
+	    #ON & {
+              background-color: @on-blue;
+	    }
 
             &::after {
               content: counter(listcounter);

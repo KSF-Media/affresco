@@ -22,7 +22,7 @@ render props =
        { className: block
        , children:
            [ DOM.h6
-               { className: block <> "--header color-hbl"
+               { className: block <> "--header"
                , children: [ DOM.text "Andra läser" ]
                }
            , DOM.ul
@@ -41,7 +41,7 @@ render props =
             , children:
                 [ DOM.div
                     { className: "counter"
-                    , children: [ DOM.div { className: "background-hbl" } ]
+                    , children: [ DOM.div_ [] ]
                     }
                 , DOM.div
                     { className: "list-article-liftup"
@@ -51,7 +51,7 @@ render props =
                             { className: "mosaico--article--meta"
                             , children:
                                 [ DOM.div
-                                    { className: "premium-badge background-hbl"
+                                    { className: "premium-badge"
                                     , children: [ DOM.text "premium" ]
                                     }
                                 ]
