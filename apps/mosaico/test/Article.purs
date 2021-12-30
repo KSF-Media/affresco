@@ -7,10 +7,9 @@ import Control.Monad.Maybe.Trans (runMaybeT, lift)
 import Data.Array (head)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect.Aff (Aff)
-import Effect.Class.Console (log)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Mosaico.Test (Test, site, sub)
+import Mosaico.Test (Test, log, site, sub)
 import Puppeteer as Chrome
 import Test.Unit.Assert as Assert
 
@@ -19,16 +18,23 @@ type PageIds =
   , premiumArticleId :: Maybe String
   }
 
-testFrontPage :: Chrome.Page -> Aff PageIds
-testFrontPage page = do
-  Chrome.goto (Chrome.URL site) page
+navigateToNews :: Chrome.Page -> Aff Unit
+navigateToNews page = do
+  let newsTitle = Chrome.Selector ".mosaico-header__block:nth-child(3) .mosaico-header__section-title a"
+  Chrome.click (Chrome.Selector ".mosaico-header__icon-button--menu") page
+  Chrome.waitFor_ newsTitle page
+  Chrome.click newsTitle page
+
+testNewsPage :: Chrome.Page -> Aff PageIds
+testNewsPage page = do
+  Chrome.goto (Chrome.URL $ site <> "nyheter") page
   let articleList = Chrome.Selector ".mosaico--article-list"
   Chrome.waitFor_ articleList page
   nPremium <- Chrome.countElements articleList
               (Chrome.Selector ".mosaico--list-article[data-premium='1']") page
   nFree <- Chrome.countElements articleList
            (Chrome.Selector ".mosaico--list-article[data-premium='0']") page
-  -- TODO It would be very unusual to have all articles on the front
+  -- TODO It would be very unusual to have all articles on the news
   -- page either premium or free.  But allow for it in the test.
   -- Error if we have neither.
   Assert.assert "At least one article on front page list" $ nPremium + nFree > 0
@@ -37,25 +43,26 @@ testFrontPage page = do
     guard $ nPremium > 0
     lift do
       let item = Chrome.Selector ".mosaico--list-article[data-premium='1']"
+      log "Get first premium article from list"
       uuid <- Chrome.getData item "uuid" page
       articleListTest item
       premiumArticleTest article page
-      tagListCheck article
-      -- Return to front page
-      Chrome.click (Chrome.Selector ".mosaico-header__logo") page
+      log "Click to news page"
+      -- Return to news page
+      navigateToNews page
       Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
       pure uuid
   articleId <-runMaybeT do
     guard $ nFree > 0
     lift do
       let item = Chrome.Selector ".mosaico--list-article[data-premium='0']"
+      log "Get first free article from list"
       uuid <- Chrome.getData item "uuid" page
       articleListTest item
       -- Test for lack of premium badge
       Chrome.assertNotFound (sub " .premium-badge" article) page
-      tagListCheck article
       -- Return to front page
-      Chrome.click (Chrome.Selector ".mosaico-header__logo") page
+      navigateToNews page
       Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
       pure uuid
   pure { premiumArticleId, articleId }
@@ -69,11 +76,6 @@ testFrontPage page = do
       Chrome.waitFor_ article page
       -- Tag content should match
       Chrome.assertContent (sub " .mosaico-article__tag" article) tag page
-    -- Navigates to tag list
-    tagListCheck sel = do
-      -- Clicking on tag leads to a populated article list
-      Chrome.click (sub " .mosaico-article__tag" sel) page
-      Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list .mosaico--list-article") page
 
 -- Test direct loading of an article
 testFreeArticle :: String -> Test
@@ -96,13 +98,14 @@ premiumArticleTest sel page = do
 
 navigateTo :: String -> Chrome.Page -> Aff Unit
 navigateTo uuid page = do
-  Chrome.goto (Chrome.URL site) page
+  Chrome.goto (Chrome.URL $ site <> "nyheter") page
   Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
   let item = Chrome.Selector $ ".mosaico--list-article[data-uuid='" <> uuid <> "']"
   Chrome.click item page
 
 testPaywallLogin :: Boolean -> String -> String -> String -> (Chrome.Selector -> Int -> Test) -> Test
 testPaywallLogin loadDirect uuid user password f page = do
+  log $ "Paywall login, direct " <> show loadDirect <> " article " <> uuid
   if loadDirect
     then Chrome.goto (Chrome.URL $ site <> "artikel/" <> uuid) page
     else navigateTo uuid page
@@ -123,23 +126,25 @@ testPaywallLogin loadDirect uuid user password f page = do
 
 testPaywallOpen :: Chrome.Selector -> Int -> Test
 testPaywallOpen article originalBlocks page = do
-  -- Check that we have more content than originally
+  log "Check article has more content after login"
   Chrome.waitFor_ (sub (" .mosaico-article__body .article-element:nth-of-type("<> show (originalBlocks+1) <>")") article) page
-  -- Test that Vetrina is gone
+  log "Check that Vetrina is gone"
   Chrome.assertNotFound (sub " .mosaico-article__main .mosaico-article__body .vetrina--container" article) page
-  -- Test that opening premium article with the same session via a list shows content
-  Chrome.click (Chrome.Selector ".mosaico-header__logo") page
+  log "Test that opening premium article with the same session via a list shows content"
+  navigateToNews page
   navigateToPremium
   -- Same test via loading front page directly
-  Chrome.goto (Chrome.URL site) page
+  log "Test opening premium article with new session"
+  Chrome.goto (Chrome.URL $ site <> "nyheter") page
   navigateToPremium
   where
     navigateToPremium = do
+      log "Navigate to premium"
       let articleList = Chrome.Selector ".mosaico--article-list"
           item = (sub " .mosaico--list-article[data-premium='1']" articleList)
       Chrome.waitFor_ articleList page
       nPremium <- Chrome.countElements articleList item page
-      if nPremium == 0 then log "No premium articles on front page, skip navigation test"
+      if nPremium == 0 then log "No premium articles on news page, skip navigation test"
         else do
         Chrome.click item page
         -- Test for premium badge
@@ -155,7 +160,7 @@ testPaywallHolds article originalBlocks page = do
 
 testMostRead :: Boolean -> Test
 testMostRead strict page = do
-  Chrome.goto (Chrome.URL site) page
+  Chrome.goto (Chrome.URL $ site <> "nyheter") page
   let mostReadList = Chrome.Selector ".mosaico-asidelist__mostread"
       article = Chrome.Selector "article.mosaico-article"
   Chrome.waitFor_ mostReadList page

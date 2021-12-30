@@ -24,8 +24,7 @@ import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image (articleMainImage, articleImage)
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
-import Mosaico.Frontpage as Frontpage
-import Mosaico.Models as Mosaico
+import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
@@ -251,11 +250,11 @@ render props =
         { className: "mosaico-article__mostread--header"
         , children: [ DOM.text "ANDRA LÄSER" ]
         } <>
-      Frontpage.render
-        { content: Just $ Mosaico.ArticleList articles
+      (Frontpage.render $ Frontpage.List
+        { content: Just articles
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick
-        }
+        })
 
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?

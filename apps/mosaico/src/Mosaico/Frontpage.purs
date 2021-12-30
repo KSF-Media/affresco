@@ -1,4 +1,9 @@
-module Mosaico.Frontpage where
+module Mosaico.Frontpage
+  ( Frontpage(..)
+  , ListFrontpageProps(..)
+  , PrerenderedFrontpageProps(..)
+  , render
+  ) where
 
 import Prelude
 
@@ -10,40 +15,31 @@ import Data.Newtype (un)
 import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
-import Data.Tuple.Nested ((/\))
 import Foreign.Object as Object
 import KSF.HtmlRenderer (render) as HtmlRenderer
-import KSF.HtmlRenderer.Models (getAttribs, getName, replacingHook) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
-import Mosaico.Models (ArticleFeed(..))
+import Mosaico.Frontpage.Models (Hook, toHookRep)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 
-type Props =
-  { content :: Maybe ArticleFeed
+-- | Represents a frontpage
+data Frontpage = List ListFrontpageProps | Prerendered PrerenderedFrontpageProps
+
+type ListFrontpageProps =
+  { content :: Maybe (Array ArticleStub)
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
 
-render :: Props -> JSX
-render props =
-  DOM.div
-    { className: "mosaico--article-list"
-    , children: maybe
-        [loadingSpinner]
-        (\content -> case content of
-            ArticleList list -> map renderListArticle list
-            Html html        -> [ HtmlRenderer.render
-                                    { content: html
-                                    , hooks: Just [ sampleHook
-                                                  ]
-                                    }
-                                ]
-        )
-        props.content
-    }
+type PrerenderedFrontpageProps =
+  { content :: Maybe String
+  , hooks   :: Array Hook
+  }
+
+render :: Frontpage -> JSX
+render (List props) = genericRender (\list -> map renderListArticle list) props.content
   where
     renderListArticle :: ArticleStub -> JSX
     renderListArticle a =
@@ -54,8 +50,8 @@ render props =
           -- Known bug, exclude from tests
           if Just true == (contains (Pattern ":") <<< un Tag <$> head a.tags) then []
           else [ Tuple "premium" $ if a.premium then "1" else "0"
-               , Tuple "uuid" $ a.uuid
-               ]
+                , Tuple "uuid" $ a.uuid
+                ]
         , children:
             [ DOM.span
                 { children:
@@ -65,50 +61,48 @@ render props =
                         , children: [ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url a.mainImage } ]
                         }
                     ,  DOM.div
-                         { className: "list-article-liftup"
-                         , children:
-                             [ foldMap
-                                 (\tag ->
-                                     DOM.a
-                                       { className: "mosaico-article__tag color-hbl"
-                                       , onClick: props.onTagClick tag
-                                       , href: "/tagg/" <> tagToURIComponent tag
-                                       , children: [ DOM.text $ un Tag tag ]
-                                       }
-                                 ) $ head a.tags
-                             , DOM.a
-                                 { href: "/artikel/" <> a.uuid
-                                 , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
-                                 }
-                             , guard a.premium $
-                               DOM.div
-                                 { className: "mosaico--article--meta"
-                                 , children:
-                                     [ DOM.div
-                                         { className: "premium-badge background-hbl"
-                                         , children: [ DOM.text "premium" ]
-                                         }
-                                     ]
-                                 }
-                             ]
-                         }
+                          { className: "list-article-liftup"
+                          , children:
+                              [ foldMap
+                                  (\tag ->
+                                      DOM.a
+                                        { className: "mosaico-article__tag color-hbl"
+                                        , onClick: props.onTagClick tag
+                                        , href: "/tagg/" <> tagToURIComponent tag
+                                        , children: [ DOM.text $ un Tag tag ]
+                                        }
+                                  ) $ head a.tags
+                              , DOM.a
+                                  { href: "/artikel/" <> a.uuid
+                                  , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
+                                  }
+                              , guard a.premium $
+                                DOM.div
+                                  { className: "mosaico--article--meta"
+                                  , children:
+                                      [ DOM.div
+                                          { className: "premium-badge background-hbl"
+                                          , children: [ DOM.text "premium" ]
+                                          }
+                                      ]
+                                  }
+                              ]
+                          }
                     ]
                 }
             ]
         }
-    sampleHook = HtmlRenderer.replacingHook
-      { shouldProcessNode: (\n ->
-                              let info = do
-                                    name      <- HtmlRenderer.getName n
-                                    attribs   <- HtmlRenderer.getAttribs n
-                                    className <- attribs.class
-                                    pure $ name /\ className
-                              in case info of
-                                Just (name /\ className)
-                                  | name == "div", className == "dre-item__title" -> true
-                                _                                                 -> false
-                           )
-      , processNode: (\_ _ _ -> do
-                        pure $ DOM.div_ [ DOM.text "Injected html here" ]
-                     )
-      }
+render (Prerendered props@{ hooks }) = genericRender
+  (\content -> [ HtmlRenderer.render
+                   { content
+                   , hooks: Just $ toHookRep <$> hooks
+                   }
+                ]
+  )
+  props.content
+
+genericRender :: forall a. (a -> Array JSX) -> Maybe a -> JSX
+genericRender f content = DOM.div
+  { className: "mosaico--article-list"
+  , children: maybe [loadingSpinner] f content
+  }
