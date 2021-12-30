@@ -34,6 +34,7 @@ import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel (..)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+import Mosaico.Footer (footer)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
@@ -452,10 +453,7 @@ render setState state components router onPaywallEvent =
               }
           , Header.mainSeparator
           , content
-          , DOM.footer
-              { className: "mosaico--footer"
-              , children: [ DOM.text "footer" ]
-              }
+          , footer onStaticPageClick
           , guard showAside $ DOM.aside
               { className: "mosaico--aside"
               , children:
@@ -501,6 +499,13 @@ render setState state components router onPaywallEvent =
       setState _ { clickedArticle = Just article }
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) $ "/artikel/" <> article.uuid
+
+    onStaticPageClick link =
+      case state.route of
+        Routes.StaticPage page | page == link -> mempty
+        _ -> capture_ do
+          void $ Web.scroll 0 0 =<< Web.window
+          router.pushState (write {}) ("/sida/" <> link)
 
     onLogin = setState \s -> s { modalView = Just LoginModal }
 

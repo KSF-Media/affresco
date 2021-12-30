@@ -6,6 +6,7 @@ import Data.Maybe (Maybe)
 import KSF.Paper as Paper
 import KSF.User (User)
 import Lettera.Models (ArticleStub, Category, Tag, categoriesMap)
+import Mosaico.Footer (footer)
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
@@ -71,11 +72,7 @@ render router props = DOM.div
                            }
            , Header.mainSeparator
            , fromMainContent props.mainContent
-           , DOM.footer
-               { className: "mosaico--footer"
-               , children:
-                  [ DOM.text "footer" ]
-               }
+           , footer mempty
            , case props.mainContent of
                  FrontpageContent _ -> aside
                  TagListContent _ _ -> aside
