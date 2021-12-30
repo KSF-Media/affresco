@@ -109,7 +109,7 @@ render props =
                           , children:
                               [ foldMap renderTag $ head tags
                               , guard (isPremium props.article) $ DOM.div
-                                  { className: "premium-badge background-" <> Paper.cssName props.paper
+                                  { className: "premium-badge"
                                   , children: [ DOM.text "Premium"]
                                   }
                               ]
@@ -190,7 +190,7 @@ render props =
 
     renderTag tag =
       DOM.a
-        { className: "mosaico-article__tag color-" <> Paper.cssName props.paper
+        { className: "mosaico-article__tag"
         , children: [ DOM.text $ (un Tag) tag ]
         , href: "/tagg/" <> tagToURIComponent tag
         , onClick: props.onTagClick tag
