@@ -3,6 +3,7 @@ module KSF.Api.Package where
 import Prelude
 
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
+import Data.Either (Either)
 import Data.JSDate (JSDate)
 import Data.DateTime (DateTime)
 import Data.Nullable (Nullable, toMaybe)
@@ -12,6 +13,7 @@ import Data.String as String
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.Tuple (Tuple(..))
 import Data.Argonaut.Decode.Class (class DecodeJson, decodeJson)
+import OpenApiClient (OpenApiDate)
 
 type PackageId = String
 
@@ -40,12 +42,10 @@ instance decodeJsonPackage :: DecodeJson Package where
     products <- obj .: "products"
     offers <- obj .: "offers"
     campaigns <- obj .: "campaigns"
-    nextDelivery <- do
-      d <- obj .:? "nextDelivery"
-      pure $ parseDateTime =<< d
+    nextDelivery <- map (map unwrap) (obj .:? "nextDelivery" :: Either JsonDecodeError (Maybe OpenApiDate))
     digitalOnly <- obj .: "digitalOnly"
     canPause <- obj .: "canPause"
-    canTempAddr <- obj .: "canTempaddr"
+    canTempAddr <- obj .: "canTempAddr"
     info <- obj .: "info"
     pure $ Package { id, name, paper, products, offers, campaigns, nextDelivery, digitalOnly, canPause, canTempAddr, info }
 
@@ -71,9 +71,7 @@ instance decodeJsonProduct :: DecodeJson Product where
     id <- obj .: "id"
     name <- obj .: "name"
     active <- obj .: "active"
-    nextDelivery <- do
-      d <- obj .:? "nextDelivery"
-      pure $ parseDateTime =<< d
+    nextDelivery <-  map (map unwrap) (obj .:? "nextDelivery" :: Either JsonDecodeError (Maybe OpenApiDate))
     pure $ Product { id, name, active, nextDelivery }
 
 type ActiveDays =

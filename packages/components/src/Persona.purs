@@ -519,8 +519,8 @@ instance decodeJsonUser :: DecodeJson User where
     subs <- obj .: "subs"
     consent <- obj .: "consent"
     pendingAddressChanges <- obj .:? "pendingAddresschanges" .!= mempty
-    pastTemporaryAddresses <- obj .: "pastTemporaryaddresses"
-    hasCompletedRegistration <- obj .: "hasCompletedregistration"
+    pastTemporaryAddresses <- obj .: "pastTemporaryAddresses"
+    hasCompletedRegistration <- obj .: "hasCompletedRegistration"
     pure $ User { uuid, email, firstName, lastName, address, phone, cusno
                 , subs, consent, pendingAddressChanges, pastTemporaryAddresses
                 , hasCompletedRegistration

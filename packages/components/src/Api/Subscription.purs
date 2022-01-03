@@ -2,7 +2,7 @@ module KSF.Api.Subscription where
 
 import Prelude
 
-import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?), getField )
 import Data.Argonaut.Core as Json
 import Data.Identity (Identity (..))
 import Bottega.Models.PaymentMethod (PaymentMethodId (..), toPaymentMethod)
@@ -15,16 +15,19 @@ import Data.Int as Int
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe (..), maybe, fromMaybe)
 import Data.Newtype (class Newtype, un, unwrap)
+import Foreign.Object (Object)
+import Foreign.Object as Object
 import Data.Nullable (Nullable, toMaybe)
 import Data.String (toLower)
 import Foreign (Foreign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
 import KSF.Api.Package (Package, Campaign)
-import KSF.Helpers (parseDateTime, jsonParseDateTime)
+import KSF.Helpers (parseDateTime, jsonParseDateTime, formatDate)
 import KSF.User.Cusno (Cusno)
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 import KSF.User.Cusno (Cusno (..))
+import OpenApiClient (OpenApiDate)
 
 newtype Subsno = Subsno Int
 
@@ -56,8 +59,8 @@ instance decodeJsonPendingAddressChange :: DecodeJson PendingAddressChange where
   decodeJson json = do
     obj <- decodeJson json
     address <- obj .: "address"
-    startDate <- jsonParseDateTime =<< obj .: "startDate"
-    endDate <- map (parseDateTime =<< _) $ obj .:? "endDate"
+    startDate <- map unwrap (obj .: "startDate" :: Either JsonDecodeError OpenApiDate)
+    endDate <- map (map unwrap) (obj .:? "endDate" :: Either JsonDecodeError (Maybe OpenApiDate))
     pure $ PendingAddressChange { startDate, endDate, address }
 
 newtype Subscription = Subscription (BaseSubscription SubscriptionPaymentMethod)
@@ -74,7 +77,7 @@ instance decodeJsonSubscription :: DecodeJson Subscription where
     pricegroup <- obj .: "pricegroup"
     package <- obj .: "package"
     dates <- obj .: "dates"
-    campaign <- obj .: "campaign"
+    campaign <- obj .:? "campaign"
     paused <- obj .:? "paused"
     deliveryAddress <- obj .:? "deliveryAddress"
     receiver <- obj .:? "receiver"
@@ -115,7 +118,7 @@ type BaseSubscription p =
   , pricegroup            :: String
   , package               :: Package
   , dates                 :: SubscriptionDates
-  , campaign              :: Campaign
+  , campaign              :: Maybe Campaign
   , paused                :: Maybe (Array PausedSubscription)
   , deliveryAddress       :: Maybe DeliveryAddress
   , receiver              :: Maybe String
@@ -154,8 +157,8 @@ derive instance newtypePausedSubscription :: Newtype PausedSubscription _
 instance decodeJsonPausedSubscription :: DecodeJson PausedSubscription where
   decodeJson json = do
     obj <- decodeJson json
-    startDate <- jsonParseDateTime =<< obj .: "startDate"
-    endDate <- map (parseDateTime =<< _) $ obj .:? "endDate"
+    startDate <- map unwrap (obj .: "startDate" :: Either JsonDecodeError OpenApiDate)
+    endDate <- map (map unwrap) (obj .:? "endDate" :: Either JsonDecodeError (Maybe OpenApiDate))
     pure $ PausedSubscription { startDate, endDate }
 
 
@@ -200,24 +203,16 @@ newtype SubscriptionDates = SubscriptionDates
 
 instance decodeJsonSubscriptionDates :: DecodeJson SubscriptionDates where
   decodeJson json = do
-    obj <- decodeJson json
-    lenMonths <- obj .:? "lenMonths"
-    lenDays <- obj .:? "lenDays"
-    (start' :: String) <- obj .: "start"
-    start <- do
-      case parseDateTime start' of
-        Just d -> pure d
-        _ -> Left $ UnexpectedValue $ Json.fromString $ "Unexpected start date format: " <> start'
-    end <- asd $ obj .:? "end"
-    unpaidBreak <- asd $ obj .:? "unpaidBreak"
-    invoicingStart <- asd $ obj .:? "invoicingStart"
-    paidUntil <- asd $ obj .:? "paidUntil"
-    suspend <- asd $ obj .:? "suspend"
+    obj            <- decodeJson json
+    lenMonths      <- obj .:? "lenMonths"
+    lenDays        <- obj .:? "lenDays"
+    start          <- map unwrap (obj .: "start" :: Either JsonDecodeError OpenApiDate)
+    end            <- map (map unwrap) (obj .:? "end" :: Either JsonDecodeError (Maybe OpenApiDate))
+    unpaidBreak    <- map (map unwrap) (obj .:? "unpaidBreak" :: Either JsonDecodeError (Maybe OpenApiDate))
+    invoicingStart <- map (map unwrap) (obj .:? "invoicingStart" :: Either JsonDecodeError (Maybe OpenApiDate))
+    paidUntil      <- map (map unwrap) (obj .:? "paidUntil" :: Either JsonDecodeError (Maybe OpenApiDate))
+    suspend        <- map (map unwrap) (obj .:? "suspend" :: Either JsonDecodeError (Maybe OpenApiDate))
     pure $ SubscriptionDates { lenMonths, lenDays, start, end, unpaidBreak, invoicingStart, paidUntil, suspend }
-    where
-      asd x = do
-        (x' :: Maybe String) <- x
-        pure $ parseDateTime =<< x'
 
 isSubscriptionCanceled :: Subscription -> Boolean
 isSubscriptionCanceled (Subscription s) = isSubscriptionStateCanceled s.state

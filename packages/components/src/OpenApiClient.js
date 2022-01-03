@@ -7,36 +7,44 @@ exports.callApi_ = function (api, methodName, params, opts) {
     var req = api[methodName].apply(
       api,
       args.concat(function (err, data, res) {
-        if (err) {
-          debugInfo.error = err;
-          // If we have an error message we decode it and attach it as the `data`
-          // so we can eventually read the error from there
-          if (res && res.text) {
-            try {
-              err.data = JSON.parse(res.text);
-            } catch (decodeErr) {
-              debugInfo.decodeError = decodeErr;
-              console.error("Failed to parse error response body", decodeErr);
-            }
-          }
-          const debugString = JSON.stringify(debugInfo.params);
-          console.error("Superagent error", err, debugInfo, debugString);
-          onError(err);
-        } else {
-          onSuccess(data);
-        }
+	if (err) {
+	  debugInfo.error = err;
+	  // If we have an error message we decode it and attach it as the `data`
+	  // so we can eventually read the error from there
+	  if (res && res.text) {
+	    try {
+	      err.data = JSON.parse(res.text);
+	    } catch (decodeErr) {
+	      debugInfo.decodeError = decodeErr;
+	      console.error("Failed to parse error response body", decodeErr);
+	    }
+	  }
+	  const debugString = JSON.stringify(debugInfo.params);
+	  console.error("Superagent error", err, debugInfo, debugString);
+	  onError(err);
+	} else {
+	  onSuccess(data);
+	}
       })
     );
     return function (cancelError, onCancelerError, onCancelerSuccess) {
       try {
-        req.abort();
-        onCancelerSuccess();
+	req.abort();
+	onCancelerSuccess();
       } catch (e) {
-        onCancelerError(e);
+	onCancelerError(e);
       }
     };
   };
   function isEmptyObject(obj) {
     return Object.keys(obj).length === 0 && obj.constructor === Object;
+  }
+};
+
+exports.readOpenApiDateImpl = function (date) {
+  try {
+    return date.toISOString().split(".")[0] + "Z";
+  } catch (err) {
+    return null;
   }
 };

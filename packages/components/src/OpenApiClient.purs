@@ -1,12 +1,34 @@
 module OpenApiClient where
 
-import Data.Function.Uncurried (Fn4, runFn4)
+import Prelude
+
+import Data.Function.Uncurried (Fn4, runFn4, Fn1, runFn1)
+import Data.Nullable (Nullable, toMaybe)
+import Data.Argonaut.Decode.Error (JsonDecodeError (..))
+import Data.Argonaut.Decode (class DecodeJson, decodeJson)
+import Data.Maybe (Maybe (..))
+import Data.Newtype (class Newtype)
+import Data.Either (Either (..))
 import Effect.Aff (Aff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Foreign (Foreign)
 import Data.Argonaut.Core (Json)
+import Data.DateTime (DateTime)
+import KSF.Helpers (parseDateTime)
 
 foreign import data Api :: Type
+foreign import readOpenApiDateImpl :: Fn1 Json (Nullable String)
+
+newtype OpenApiDate = OpenApiDate DateTime
+
+derive instance newtypeOpenApiDate :: Newtype OpenApiDate _
+
+instance decodeJsonOpenApiDate :: DecodeJson OpenApiDate where
+  decodeJson json = do
+    let dateTimeString = runFn1 readOpenApiDateImpl json
+    case parseDateTime =<< toMaybe dateTimeString of
+      Just dt -> Right $ OpenApiDate dt
+      Nothing -> Left $ UnexpectedValue json
 
 type MethodName = String
 
