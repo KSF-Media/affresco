@@ -1,0 +1,31 @@
+@import (reference) "../../ksf-colors";
+
+.static-page__tip {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 30px;
+
+  .tip__headline {
+    margin: 20px 0;
+  }
+
+  .tip__info-headline {
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .tip__form-container {
+    margin-top: 20px;
+  }
+
+  .tip__form {
+    display: block;
+    margin: 3px auto 15px 0px;
+    width: 100%;
+    height: 991px;
+    @media (min-width: @breakpoint-2col) {
+      width: 640px;
+      margin-left: 0;
+    }
+  }
+}
