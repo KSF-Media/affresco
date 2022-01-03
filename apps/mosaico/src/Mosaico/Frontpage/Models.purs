@@ -61,17 +61,17 @@ articleUrltoRelativeHook = HtmlRenderer.modifyingHook
                               , contains hblArticleUrlPrefix href -> true
                             _                                     -> false
                        )
-  , processNode: (\n _ ->
+  , processNode: (\n _ -> do
                     let updatedAttribs = do
                           attribs      <- HtmlRenderer.getAttribs n
                           href         <- attribs.href
                           relativeHref <- stripPrefix hblUrlPrefix href
                           pure $ attribs { href = Just relativeHref }
-                    in case updatedAttribs of
+                    case updatedAttribs of
                       Just attribs -> do
                         HtmlRenderer.setAttribs n attribs
-                        pure unit
                       Nothing      -> pure unit
+                    pure n
                  )
   }
   where
