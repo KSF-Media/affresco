@@ -306,7 +306,9 @@ frontpage env { guards: { credentials } } = do
       renderFrontpage (Html html) =
         Frontpage.render $ Frontpage.Prerendered
           { content: Just html
-          , hooks: [ Frontpage.MostRead mostReadArticles (const $ pure unit) ]
+          , hooks: [ Frontpage.MostRead mostReadArticles (const $ pure unit)
+                   , Frontpage.ArticleUrltoRelative
+                   ]
           }
       frontpage' = renderFrontpage articles
       mosaicoString =
