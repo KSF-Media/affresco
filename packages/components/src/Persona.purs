@@ -32,7 +32,7 @@ import Effect.Now as Now
 import Foreign (Foreign, unsafeToForeign, unsafeFromForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
-import KSF.Api (AuthScope(..), InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
+import KSF.Api (AuthScope(..), InvalidateCache, Password, Token (..), UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
 import KSF.Api.Error (ServerError)
@@ -55,13 +55,13 @@ foreign import rawJSONStringify :: Foreign -> String
 foreign import rawJSONParse :: String -> Foreign
 
 login :: LoginData -> Aff LoginResponse
-login loginData = callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
+login loginData = decodeApiRes "LoginResponse" =<< callApi' loginApi "loginPost" [ unsafeToForeign loginData ] {}
 
 loginSome :: LoginDataSome -> Aff LoginResponse
-loginSome loginData = callApi loginApi "loginSomePost" [ unsafeToForeign loginData ] {}
+loginSome loginData = decodeApiRes "LoginResponse" =<< callApi' loginApi "loginSomePost" [ unsafeToForeign loginData ] {}
 
 loginSso :: LoginDataSso -> Aff LoginResponse
-loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
+loginSso loginData = decodeApiRes "LoginResponse" =<< callApi' loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
 -- Send authUser field only when impersonating a user
 authHeaders :: UUID -> UserAuth -> { authorization :: String, authUser :: Nullable String }
@@ -75,7 +75,6 @@ authHeaders uuid { userId, authToken } =
 getUser :: Maybe InvalidateCache -> UUID -> UserAuth -> Aff User
 getUser invalidateCache uuid auth = do
   decodeUser =<< callApi' usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
- -- User $ user { subs = _ } <$> processSubs user.subs
   where
     headers = Record.merge (authHeaders uuid auth)
       { cacheControl: toNullable maybeCacheControl
@@ -84,7 +83,7 @@ getUser invalidateCache uuid auth = do
 
 getUserEntitlements :: UserAuth -> Aff (Array String)
 getUserEntitlements auth =
-  callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth
+  decodeApiRes "Entitlements" =<< (callApi' usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth)
 
 updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
@@ -142,17 +141,17 @@ updatePassword uuid password confirmPassword auth = callApi usersApi "usersUuidP
 
 logout :: UserAuth -> Aff Unit
 logout auth =
-  callApi loginApi "loginUuidDelete" [ unsafeToForeign auth.userId ] { authorization }
+  decodeApiRes "Unit" =<< callApi' loginApi "loginUuidDelete" [ unsafeToForeign auth.userId ] { authorization }
   where
     authorization = oauthToken auth.authToken
 
 requestPasswordReset :: String -> Aff Unit
 requestPasswordReset email = do
-  callApi accountApi "accountPasswordForgotPost" [ unsafeToForeign { email } ] {}
+  decodeApiRes "Unit" =<< callApi' accountApi "accountPasswordForgotPost" [ unsafeToForeign { email } ] {}
 
 startPasswordReset :: String -> Aff Unit
 startPasswordReset token = do
-  callApi accountApi "accountPasswordResetPost" [ unsafeToForeign { token } ] {}
+  decodeApiRes "Unit" =<< callApi' accountApi "accountPasswordResetPost" [ unsafeToForeign { token } ] {}
 
 updateForgottenPassword :: String -> Password -> Password -> Aff Unit
 updateForgottenPassword token password confirmPassword = do
@@ -161,14 +160,14 @@ updateForgottenPassword token password confirmPassword = do
         , password
         , confirmPassword
         }
-  callApi accountApi "accountPasswordResetPost" [ unsafeToForeign updatePasswordData ] {}
+  decodeApiRes "Unit" =<< callApi' accountApi "accountPasswordResetPost" [ unsafeToForeign updatePasswordData ] {}
 
 register :: NewUser -> Aff LoginResponse
 register newUser = do
   let body = case newUser of
         NewDigitalOnlyUser user -> unsafeToForeign user
         NewPaperUser user -> unsafeToForeign user
-  callApi usersApi "usersPost" [ body ] {}
+  decodeApiRes "LoginResponse" =<< callApi usersApi "usersPost" [ body ] {}
 
 type NewTemporaryUser =
   { emailAddress :: Email
@@ -177,7 +176,7 @@ type NewTemporaryUser =
 
 registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
-  callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
+  decodeApiRes "LoginResponse" =<< callApi' usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
 
 type NewCusnoUser =
   { cusno     :: Cusno
@@ -206,18 +205,19 @@ registerCusno newUser@{ cusno } auth = do
                 , legalConsents: newUser.consents
                 }
         }
-  response <- callApi adminApi "adminUserPost" [ unsafeToForeign user ]
+  response <- decodeApiRes "LoginResponse" =<< callApi' adminApi "adminUserPost" [ unsafeToForeign user ]
     ( authHeaders UUID.emptyUUID auth )
   when newUser.sendReset $ requestPasswordReset newUser.email
   pure response
 
 hasScope :: UUID -> AuthScope -> UserAuth -> Aff Number
 hasScope uuid authScope auth = do
-  callApi usersApi "usersUuidScopeGet"
-    [ unsafeToForeign uuid
-    , unsafeToForeign scope
-    ] $
-    ( authHeaders uuid auth )
+   decodeApiRes "Number" =<<
+     (callApi' usersApi "usersUuidScopeGet"
+      [ unsafeToForeign uuid
+      , unsafeToForeign scope
+      ] $
+      ( authHeaders uuid auth ))
   where
     scope = case authScope of
       UserRead -> "UserRead"
@@ -235,6 +235,12 @@ decodeUser jsonSub =
   case decodeJson jsonSub of
     Right s -> pure s
     Left e  -> throwError $ error $ "Could not parse user json! Error: " <> Json.printJsonDecodeError e
+
+decodeApiRes :: forall a. (DecodeJson a) => String -> Json -> Aff a
+decodeApiRes typeName json =
+  case decodeJson json of
+    Right x -> pure x
+    Left e  -> throwError $ error $ "Could not parse json! " <> "Type:" <> typeName <> " Error: " <> Json.printJsonDecodeError e
 
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
@@ -360,12 +366,21 @@ derive newtype instance readforeignEmail :: ReadForeign Email
 derive newtype instance writeforeignEmail :: WriteForeign Email
 derive newtype instance eqEmail :: Eq Email
 
-type LoginResponse =
+newtype LoginResponse = LoginResponse
   { token :: Token
-  , ssoCode :: Nullable String
+  , ssoCode :: Maybe String
   , uuid :: UUID
   , isAdmin :: Boolean
   }
+
+instance decodeJsonLoginResponse :: DecodeJson LoginResponse where
+  decodeJson json = do
+    obj <- decodeJson json
+    token <- map Token $ obj .: "token"
+    ssoCode <- obj .:? "ssoCode"
+    uuid <- note (TypeMismatch "Could not parse UUID of user!") <<< UUID.parseUUID =<< obj .: "uuid"
+    isAdmin <- obj .: "isAdmin"
+    pure $ LoginResponse { token, ssoCode, uuid, isAdmin }
 
 type LoginData =
   { username :: String

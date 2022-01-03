@@ -31,8 +31,8 @@ loadToken = liftEffect $ runMaybeT do
   pure { userId, authToken }
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m UserAuth
-saveToken { token, ssoCode, uuid, isAdmin } = liftEffect do
-  for_ (Nullable.toMaybe ssoCode) $ \code -> do
+saveToken (Persona.LoginResponse { token, ssoCode, uuid, isAdmin }) = liftEffect do
+  for_ ssoCode $ \code -> do
     config <- JanrainSSO.loadConfig
     for_ (Nullable.toMaybe config) \conf -> JanrainSSO.setSession conf code
   useCookies <- saveTokenInCookies
