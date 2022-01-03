@@ -52,6 +52,10 @@ getData :: Selector -> String -> Page -> Aff String
 getData selector field page = do
   unsafeFromForeign <$> Chrome.unsafePageEval selector ("e => e.dataset." <> field) page
 
+getHref :: Selector -> Page -> Aff String
+getHref selector page = do
+  unsafeFromForeign <$> Chrome.unsafePageEval selector "e => e.attributes.href.value" page
+
 -- Note: Any quotes have to be with ' delimiters
 countElements :: Selector -> Selector -> Page -> Aff Int
 countElements selector (Selector sub) page =
@@ -75,3 +79,8 @@ assertNotFound selector@(Selector sel) page =
       -- to be updated if this changes.
       let expected = "Error: Error: failed to find element matching selector"
       if String.take (String.length expected) (show err) == expected then pure unit else liftEffect $ throwException err
+
+back :: Page -> Aff Unit
+back page = do
+  _ <- Chrome.unsafeEvaluateStringFunction "window.history.back();" page
+  pure unit

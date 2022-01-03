@@ -16,6 +16,7 @@ import Effect (Effect)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.Paper as Paper
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
@@ -154,6 +155,7 @@ render imageComponent props =
                             bodyWithAd <>
                             (foldMap (pure <<< renderMostReadArticles) $
                              if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)
+                          Left _ -> [ loadingSpinner ]
                           _ -> mempty
                         }
                     , DOM.div

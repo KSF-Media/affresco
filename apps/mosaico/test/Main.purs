@@ -11,7 +11,10 @@ import Puppeteer as Chrome
 import Mosaico.Test.Account as Account
 import Mosaico.Test.Article as Article
 import Mosaico.Test.Embeds as Embeds
+import Mosaico.Test.Frontpage as Frontpage
+import Mosaico.Test.Lettera as Lettera
 import Mosaico.Test.Search as Search
+import Mosaico.Test.Static as Static
 import Mosaico.Test.Tags as Tags
 
 foreign import testUser :: String
@@ -63,8 +66,14 @@ main = launchAff_ do
     log "Test paywall opens, direct"
     withBrowserPage $ Article.testPaywallLogin true premiumUuid entitledUser entitledPassword Article.testPaywallOpen
 
+  log "Test related article links"
+  withBrowserPage Article.testRelated
+
+  log "Test front page embedded HTML"
+  withBrowserPage Frontpage.testHtmlEmbed
+  withBrowserPage Frontpage.testHtmlEmbedNavigation
   log "Test most read list"
-  withBrowserPage $ Article.testMostRead false
+  withBrowserPage $ Frontpage.testMostRead false
   log "Test embed render via navigation"
   withBrowserPage Embeds.testEmbedNavigation
   log "Test embed render, direct"
@@ -75,12 +84,16 @@ main = launchAff_ do
   withBrowserPage Search.testSearchServerRender
   log "Search with a not found search word"
   withBrowserPage Search.testFailingSearch
-  log "Test tagless article, navigation"
-  withBrowserPage Tags.testTaglessArticleNavigation
-  log "Test tagless article, direct"
-  withBrowserPage Tags.testTaglessArticleServerRender
   log "Test tag list"
   withBrowserPage Tags.testTagList
+  log "Test static pages"
+  withBrowserPage Static.testNavigateToStatic
+  withBrowserPage Static.testStaticEmbeds
+  log "Test listTitle field"
+  withBrowserPage Lettera.testListTitle
+  withBrowserPage Lettera.testDefaultListTitle
+  log "Test categories"
+  withBrowserPage Lettera.testCategoryLists
   where
     withBrowser :: forall a. (Chrome.Browser -> Aff a) -> Aff a
     withBrowser = bracket Chrome.launch Chrome.close
