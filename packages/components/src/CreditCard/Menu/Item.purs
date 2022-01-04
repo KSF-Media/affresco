@@ -2,7 +2,7 @@ module KSF.CreditCard.Menu.Item where
 
 import Prelude (Unit, ($), (<>), show)
 
-import Bottega.Models (CreditCard, CreditCardId(..))
+import Bottega.Models (CreditCard (..), CreditCardId(..))
 import Data.String.CodePoints (splitAt)
 import Effect (Effect)
 import React.Basic (JSX)
@@ -30,7 +30,7 @@ initialState :: State
 initialState = { selected: false }
 
 render :: Self -> JSX
-render { props: { creditCard, onClick } } = DOM.label
+render { props: { creditCard: (CreditCard creditCard), onClick } } = DOM.label
                 { className: "credit-card-menu-item"
                 , children: [ DOM.input
                                 { type: "radio"

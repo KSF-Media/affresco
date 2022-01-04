@@ -14,6 +14,7 @@ import Control.Monad.Rec.Class (untilJust)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -49,7 +50,7 @@ startOrder poller setState order = do
     wait
     untilJust do
       let continue = wait *> pure Nothing
-      status <- map _.status.state <$> User.getOrder order
+      status <- map (_.status.state <<< unwrap) <$> User.getOrder order
       liftEffect $ setState status
       case status of
         Right OrderCreated -> continue

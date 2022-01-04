@@ -33,6 +33,7 @@ import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.Tracking as Tracking
 import KSF.User (InvalidDateInput(..))
 import KSF.User as User
+import Bottega.Models as Bottega
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
@@ -84,7 +85,7 @@ paymentMethod { props: { subscription: Subscription { paymentMethod: method, pay
     subscriptionCreditCard :: JSX
     subscriptionCreditCard
       | Just id <- paymentMethodId,
-        Just card <- find (\c -> c.paymentMethodId == id) creditCards =
+        Just (Bottega.CreditCard card) <- find (\(Bottega.CreditCard c) -> c.paymentMethodId == id) creditCards =
           DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
                   , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
                   ]

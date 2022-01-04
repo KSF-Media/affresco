@@ -1,6 +1,6 @@
 module KSF.CreditCard.Register where
 
-import KSF.User (PaymentTerminalUrl)
+import KSF.User (PaymentTerminalUrl (..))
 import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
@@ -33,7 +33,7 @@ render { props: { terminalUrl } } =
       }
 
     netsTerminalIframe :: PaymentTerminalUrl -> JSX
-    netsTerminalIframe { paymentTerminalUrl } =
+    netsTerminalIframe (PaymentTerminalUrl paymentTerminalUrl) =
       DOM.div
         { className: "credit-card-register--wrapper"
         , children : [ DOM.iframe

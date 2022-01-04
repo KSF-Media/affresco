@@ -42,7 +42,7 @@ import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Cusno (Cusno)
-import OpenApiClient (Api, callApi, callApi')
+import OpenApiClient (Api, callApi, callApi', decodeApiRes)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
 import Data.Argonaut.Decode.Class (decodeJson)
@@ -74,7 +74,7 @@ authHeaders uuid { userId, authToken } =
 
 getUser :: Maybe InvalidateCache -> UUID -> UserAuth -> Aff User
 getUser invalidateCache uuid auth = do
-  decodeUser =<< callApi' usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
+  decodeApiRes "User" =<< callApi' usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
   where
     headers = Record.merge (authHeaders uuid auth)
       { cacheControl: toNullable maybeCacheControl
@@ -114,12 +114,12 @@ updateUser uuid update auth = do
             }
         DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
-  decodeUser =<< (callApi' usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth)
+  decodeApiRes "User" =<< (callApi' usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth)
 
 -- Admin only
 setUserCusno :: UUID -> Cusno -> UserAuth -> Aff User
 setUserCusno uuid cusno auth = do
-  decodeUser =<<
+  decodeApiRes "User" =<<
     (callApi' usersApi "usersUuidPatch"
        [ unsafeToForeign uuid
        , unsafeToForeign {updateCusno: cusno}
@@ -224,29 +224,11 @@ hasScope uuid authScope auth = do
       UserWrite -> "UserWrite"
       UserPassword -> "UserPassword"
 
-decodeSubscription :: Json -> Aff Subscription
-decodeSubscription jsonSub =
-  case decodeJson jsonSub of
-    Right s -> pure s
-    Left e  -> throwError $ error $ "Could not parse subscription json! Error: " <> Json.printJsonDecodeError e
-
-decodeUser :: Json -> Aff User
-decodeUser jsonSub =
-  case decodeJson jsonSub of
-    Right s -> pure s
-    Left e  -> throwError $ error $ "Could not parse user json! Error: " <> Json.printJsonDecodeError e
-
-decodeApiRes :: forall a. (DecodeJson a) => String -> Json -> Aff a
-decodeApiRes typeName json =
-  case decodeJson json of
-    Right x -> pure x
-    Left e  -> throwError $ error $ "Could not parse json! " <> "Type:" <> typeName <> " Error: " <> Json.printJsonDecodeError e
-
 pauseSubscription :: UUID -> Subsno -> Date -> Date -> UserAuth -> Aff Subscription
 pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
-  decodeSubscription =<<
+  decodeApiRes "Subscription" =<<
     callApi' usersApi "usersUuidSubscriptionsSubsnoPausePost"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
@@ -260,7 +242,7 @@ editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate 
       oldEndDateISO   = formatDate oldEndDate
       newStartDateISO = formatDate newStartDate
       newEndDateISO   = formatDate newEndDate
-  decodeSubscription =<<
+  decodeApiRes "Subscription" =<<
     callApi' usersApi "usersUuidSubscriptionsSubsnoPausePatch"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
@@ -274,7 +256,7 @@ editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate 
 
 unpauseSubscription :: UUID -> Subsno -> UserAuth -> Aff Subscription
 unpauseSubscription uuid (Subsno subsno) auth = do
-  decodeSubscription =<<
+  decodeApiRes "Subscription" =<<
     callApi' usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
       ([ unsafeToForeign uuid
        , unsafeToForeign subsno
@@ -296,7 +278,7 @@ temporaryAddressChange uuid (Subsno subsno) startDate endDate streetAddress zipC
   let startDateISO = formatDate startDate
       endDateISO   = formatDate <$> endDate
 
-  decodeSubscription =<<
+  decodeApiRes "Subscription" =<<
     callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
@@ -317,7 +299,7 @@ editTemporaryAddressChange uuid (Subsno subsno) oldStartDate startDate endDate a
       startDateISO = formatDate startDate
       endDateISO = formatDate <$> endDate
 
-  decodeSubscription =<<
+  decodeApiRes "Subscription" =<<
     callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
@@ -335,7 +317,7 @@ deleteTemporaryAddressChange
 deleteTemporaryAddressChange uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate <$> endDate
-  decodeSubscription =<<
+  decodeApiRes "Subscription" =<<
     callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno

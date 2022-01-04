@@ -3,19 +3,35 @@ module Bottega.Models.Order where
 import Prelude
 
 import Bottega.Models.FailReason (FailReason(..), parseFailReason)
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe (..), maybe)
+import Data.Either (note)
+import Data.Newtype (class Newtype)
 import Data.Show.Generic (genericShow)
 import Data.String as String
-import Data.UUID (UUID)
+import Data.UUID (UUID, parseUUID)
 
 newtype OrderNumber = OrderNumber String
 
-type Order =
+instance decodeJsonOrderNumber :: DecodeJson OrderNumber where
+  decodeJson = map OrderNumber <<< decodeJson
+
+newtype Order = Order
   { number     :: OrderNumber
   , user       :: UUID
   , status     :: OrderStatus
   }
+
+derive instance newtypeOrder :: Newtype Order _
+
+instance decodeJsonOrder :: DecodeJson Order where
+  decodeJson json = do
+    obj <- decodeJson json
+    number <- obj .: "number"
+    user   <- note (TypeMismatch "Could not parse UUID of user!") <<< parseUUID =<< obj .: "user"
+    status <- obj .: "status"
+    pure $ Order { number, user, status }
 
 type OrderStatus =
   { state      :: OrderState
@@ -29,6 +45,9 @@ data OrderState
   | OrderFailed FailReason
   | OrderCanceled
   | OrderUnknownState
+
+instance decodeJsonOrderState :: DecodeJson OrderState where
+  decodeJson = decodeJson >>> map (flip parseOrderState $ Nothing)
 
 derive instance genericOrderNumber :: Generic OrderNumber _
 instance showOrderNumber :: Show OrderNumber where

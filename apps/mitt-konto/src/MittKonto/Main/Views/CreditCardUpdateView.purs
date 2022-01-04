@@ -3,7 +3,7 @@ module MittKonto.Main.CreditCardUpdateView where
 import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
-import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..))
+import Bottega.Models (CreditCard (..), CreditCardRegister (..), CreditCardRegisterNumber(..), CreditCardRegisterState(..))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Effect (Effect)
@@ -121,16 +121,16 @@ render self@{ setState, state: { asyncWrapperState, updateState }, props: { cred
     onTryAgain = setState \s -> s { asyncWrapperState = AsyncWrapper.Ready }
 
 registerCreditCard :: Self -> AVar Unit -> CreditCard -> Aff Unit
-registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } closed oldCreditCard@{ id } = do
+registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } closed oldCreditCard@(CreditCard { id }) = do
   creditCardRegister <- User.registerCreditCardFromExisting id
   case creditCardRegister of
-    Right register@{ terminalUrl: Just url } -> do
+    Right register@(CreditCardRegister { terminalUrl: Just url }) -> do
       let newState = state { updateState = RegisterCreditCard url }
       liftEffect do
         setState \_ -> newState
         setWrapperState _ { closeable = true }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
-    Right { terminalUrl: Nothing } ->
+    Right (CreditCardRegister { terminalUrl: Nothing }) ->
       liftEffect do
         logger.log "No terminal url received" Sentry.Error
         onError self
@@ -151,7 +151,7 @@ startRegisterPoller self@{ setState, state } closed oldCreditCard creditCardRegi
   liftEffect $ setState _ { poller = newPoller }
 
 pollRegister :: Self -> AVar Unit -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-pollRegister self@{ props: { cusno, subsno, logger } } closed oldCreditCard (Right register) = do
+pollRegister self@{ props: { cusno, subsno, logger } } closed oldCreditCard (Right (CreditCardRegister register)) = do
   case register.status.state of
     CreditCardRegisterStarted ->
       delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number

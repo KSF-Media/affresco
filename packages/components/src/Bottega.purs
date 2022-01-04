@@ -16,7 +16,7 @@ import Foreign (unsafeToForeign)
 import KSF.Api (UserAuth, oauthToken)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Package (Package (..), fromJSCampaign)
-import OpenApiClient (Api, callApi)
+import OpenApiClient (Api, callApi, callApi', decodeApiRes)
 
 foreign import ordersApi :: Api
 foreign import packagesApi :: Api
@@ -79,7 +79,7 @@ bottegaErrorMessage e = show e
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder@{ campaignNo, orderSource } =
-  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource } ] { authorization, authUser }
+  decodeApiRes "Order" =<< callApi' ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource } ] { authorization, authUser }
   where
     -- NOTE/REMINDER: We don't want send Maybes to the server,
     -- as they will be sent as objects
@@ -91,88 +91,81 @@ createOrder { userId, authToken } newOrder@{ campaignNo, orderSource } =
 
 getOrder :: UserAuth -> OrderNumber -> Aff Order
 getOrder { userId, authToken } orderNumber = do
-  readOrder =<< callApi ordersApi "orderOrderNumberGet" [ unsafeToForeign orderNumber ] { authorization, authUser }
+  decodeApiRes "Order" =<< callApi' ordersApi "orderOrderNumberGet" [ unsafeToForeign orderNumber ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
-
-readOrder :: ApiOrder -> Aff Order
-readOrder orderObj = do
-  let state = parseOrderState orderObj.status.state (toMaybe orderObj.status.failReason)
-  pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
 
 type PaymentTerminalUrlApi = Nullable { paymentTerminalUrl :: Nullable String }
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff (Maybe PaymentTerminalUrl)
 payOrder { userId, authToken } orderNumber paymentMethod = do
-  nullableTerminalUrl :: PaymentTerminalUrlApi <- callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
-  pure do
-    urlObject <- toMaybe nullableTerminalUrl
-    url <- toMaybe urlObject.paymentTerminalUrl
-    pure { paymentTerminalUrl: url }
+  decodeApiRes "PaymentTermunalUrl" =<< callApi' ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
+  -- pure do
+  --   urlObject <- toMaybe nullableTerminalUrl
+  --   url <- toMaybe urlObject.paymentTerminalUrl
+  --   pure { paymentTerminalUrl: url }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 getPackages :: Aff (Array Package)
-getPackages = do
-  map (\package -> Package $ package { campaigns = mapMaybe fromJSCampaign package.campaigns })
-    <$> callApi packagesApi "packageGet" [] {}
+getPackages = decodeApiRes "Package" =<< callApi' packagesApi "packageGet" [] {}
 
-readCreditCard :: ApiCreditCard -> Aff CreditCard
-readCreditCard creditCardObj = pure $
-  { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: creditCardObj.paymentMethodId, maskedPan: creditCardObj.maskedPan, expiryDate: creditCardObj.expiryDate }
+-- readCreditCard :: ApiCreditCard -> Aff CreditCard
+-- readCreditCard creditCardObj = pure $
+--   { id: creditCardObj.id, user: creditCardObj.user, paymentMethodId: creditCardObj.paymentMethodId, maskedPan: creditCardObj.maskedPan, expiryDate: creditCardObj.expiryDate }
 
-readCreditCardRegister :: ApiCreditCardRegister -> Aff CreditCardRegister
-readCreditCardRegister creditCardRegisterObj = do
-  let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
-  pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, creditCardId: creditCardRegisterObj.creditCardId, terminalUrl: toMaybe creditCardRegisterObj.paymentTerminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
+-- readCreditCardRegister :: ApiCreditCardRegister -> Aff CreditCardRegister
+-- readCreditCardRegister creditCardRegisterObj = do
+--   let state = parseCreditCardRegisterState creditCardRegisterObj.status.state (toMaybe creditCardRegisterObj.status.failReason)
+--   pure $ { number: creditCardRegisterObj.number, user: creditCardRegisterObj.user, creditCardId: creditCardRegisterObj.creditCardId, terminalUrl: toMaybe creditCardRegisterObj.paymentTerminalUrl, status: { state, time: creditCardRegisterObj.status.time }}
 
 getCreditCards :: UserAuth -> Aff (Array CreditCard)
 getCreditCards { userId, authToken } = do
-  traverse readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardGet" [ ] { authorization, authUser }
+  decodeApiRes "CreditCard" =<< callApi' paymentMethodsApi "paymentMethodCreditCardGet" [ ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 getCreditCard :: UserAuth -> CreditCardId -> Aff CreditCard
 getCreditCard { userId, authToken } creditCardId = do
-  readCreditCard =<< callApi paymentMethodsApi "paymentMethodCreditCardIdGet" [ unsafeToForeign creditCardId ] { authorization, authUser }
+  decodeApiRes "CreditCard" =<< callApi' paymentMethodsApi "paymentMethodCreditCardIdGet" [ unsafeToForeign creditCardId ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 deleteCreditCard :: UserAuth -> CreditCardId -> Aff Unit
 deleteCreditCard { userId, authToken } creditCardId = do
-  callApi paymentMethodsApi "paymentMethodCreditCardIdDelete" [ unsafeToForeign creditCardId ] { authorization, authUser }
+  pure unit <* callApi' paymentMethodsApi "paymentMethodCreditCardIdDelete" [ unsafeToForeign creditCardId ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 registerCreditCard :: UserAuth -> Aff CreditCardRegister
 registerCreditCard { userId, authToken } =
-  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardRegisterPost" [ ] { authorization, authUser }
+  decodeApiRes "CreditCardRegister" =<< callApi' paymentMethodsApi "paymentMethodCreditCardRegisterPost" [ ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 registerCreditCardFromExisting :: UserAuth -> CreditCardId -> Aff CreditCardRegister
 registerCreditCardFromExisting { userId, authToken } creditCardId =
-  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterPost" [ unsafeToForeign creditCardId ] { authorization, authUser }
+  decodeApiRes "CreditCardRegister" =<< callApi' paymentMethodsApi "paymentMethodCreditCardIdRegisterPost" [ unsafeToForeign creditCardId ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 getCreditCardRegister :: UserAuth -> CreditCardId -> CreditCardRegisterNumber -> Aff CreditCardRegister
 getCreditCardRegister { userId, authToken } creditCardId creditCardRegisterNumber = do
-  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterNumberGet" [ unsafeToForeign creditCardId, unsafeToForeign creditCardRegisterNumber ] { authorization, authUser }
+  decodeApiRes "CreditCardRegister" =<< callApi' paymentMethodsApi "paymentMethodCreditCardIdRegisterNumberGet" [ unsafeToForeign creditCardId, unsafeToForeign creditCardRegisterNumber ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
 updateCreditCardSubscriptions :: UserAuth -> CreditCardId -> CreditCardId -> Aff Unit
 updateCreditCardSubscriptions { userId, authToken } oldCreditCardId newCreditCardId =
-  callApi paymentMethodsApi "paymentMethodCreditCardIdSubscriptionPut" [ unsafeToForeign oldCreditCardId, unsafeToForeign newCreditCardId ] { authorization, authUser }
+  pure unit <* callApi' paymentMethodsApi "paymentMethodCreditCardIdSubscriptionPut" [ unsafeToForeign oldCreditCardId, unsafeToForeign newCreditCardId ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId

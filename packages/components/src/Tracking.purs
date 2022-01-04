@@ -45,7 +45,7 @@ type CreditCard =
   , expiryDate      :: String
   }
 readBottegaCreditCard :: Bottega.CreditCard -> CreditCard
-readBottegaCreditCard { id: Bottega.CreditCardId id, expiryDate, paymentMethodId: Bottega.PaymentMethodId paymentMethodId, maskedPan } =
+readBottegaCreditCard (Bottega.CreditCard { id: Bottega.CreditCardId id, expiryDate, paymentMethodId: Bottega.PaymentMethodId paymentMethodId, maskedPan }) =
   { expiryDate
   , id
   , maskedPan
