@@ -5,6 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "html-to-react": "^1.4.7",
     "react": "^16.12",
     "react-dom": "^16.12"
   }

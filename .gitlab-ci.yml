@@ -1,0 +1,7 @@
+image: ksfmedia/diskho:lts-18.8
+
+testjob:
+  only:
+    - master
+  script:
+    - "echo 'Hello World!"

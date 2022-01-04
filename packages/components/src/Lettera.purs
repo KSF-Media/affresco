@@ -14,11 +14,12 @@ import Data.Array (foldl, partition, snoc)
 import Data.Either (Either(..), either, isRight)
 import Data.Foldable (foldMap)
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (un)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
+import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -44,6 +45,9 @@ letteraArticleSlugUrl = letteraBaseUrl <> "/article/slug/"
 letteraFrontPageUrl :: String
 letteraFrontPageUrl = letteraBaseUrl <> "/list/frontpage"
 
+letteraFrontPageHtmlUrl :: String
+letteraFrontPageHtmlUrl = letteraBaseUrl <> "/list/frontpage/html"
+
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 
@@ -55,6 +59,20 @@ letteraTagUrl = letteraBaseUrl <> "/list/tag/"
 
 letteraSearchUrl :: String
 letteraSearchUrl = letteraBaseUrl <> "/list/search"
+
+type LetteraError =
+  { type        :: LetteraErrorType
+  , information :: Maybe String
+  }
+
+data LetteraErrorType
+  = FrontPageHtmlNotFound
+  | ResponseParseError
+  | UnexpectedError
+
+handleLetteraError :: LetteraError -> Effect Unit
+handleLetteraError { information } =
+  maybe (pure unit) (\info -> Console.warn info) information
 
 getArticleAuth :: UUID -> Aff (Either String FullArticle)
 getArticleAuth articleId = do
@@ -103,13 +121,7 @@ getArticleWithUrl url auth = do
                       { "body": [ .. ] }
                  }
           -}
-        let articlePreviewJson =
-              (toObject response.body)
-                 >>= (\x -> lookup "not_entitled_v4" x <|> lookup "not_entitled" x)
-                 >>= toObject
-                 >>= lookup "articlePreview"
-
-        case articlePreviewJson of
+        case articlePreviewJson response.body of
           Just articlePreview -> do
             map PreviewArticle <$> (liftEffect $ parseArticle articlePreview)
           Nothing -> do
@@ -117,6 +129,23 @@ getArticleWithUrl url auth = do
             Console.warn "Did not find article preview from response!"
             pure $ Left "Parsing error"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+
+getArticleStub :: UUID -> Aff (Either String ArticleStub)
+getArticleStub uuid = do
+  articleResponse <- AX.get ResponseFormat.json $ letteraArticleUrl <> toString uuid <> "/stub"
+  case articleResponse of
+    Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
+    Right response
+      | (StatusCode 200) <- response.status ->
+        liftEffect $ parseArticleStub response.body
+      | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+
+articlePreviewJson :: Json -> Maybe Json
+articlePreviewJson =
+  toObject
+  >=> lookup "not_entitled"
+  >=> toObject
+  >=> lookup "articlePreview"
 
 getDraftArticle :: String -> DraftParams -> Aff (Either String FullArticle)
 getDraftArticle aptomaId { time, publication, user, hash } = do
@@ -139,6 +168,19 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
         pure $ Left "Unauthorized"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
 
+getFrontpageHtml :: Paper -> String -> Aff (Either LetteraError String)
+getFrontpageHtml paper category = do
+  let request = letteraFrontPageHtmlUrl <> "?paper=" <> Paper.toString paper  <> "&category=" <> category
+  htmlResponse <- AX.get ResponseFormat.string request
+  case htmlResponse of
+    Left err ->
+      pure $ Left { type: ResponseParseError, information: Just $ AX.printError err }
+    Right response
+      | (StatusCode 200) <- response.status -> pure $ Right response.body
+      | (StatusCode 404) <- response.status -> pure $ Left  { type: FrontPageHtmlNotFound, information: Nothing }
+      | (StatusCode s) <- response.status ->
+        pure $ Left $ { type: UnexpectedError, information: Just $ "Unexpected HTTP status: " <> show s }
+
 getFrontpage :: Paper -> Maybe String -> Aff (Array ArticleStub)
 getFrontpage paper categoryId = do
   let letteraUrl =
@@ -158,12 +200,12 @@ getFrontpage paper categoryId = do
         Console.warn "Failed to read API response!"
         pure mempty
 
-getMostRead :: Int -> Int -> String -> Paper -> Boolean -> Aff (Array ArticleStub)
+getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (Array ArticleStub)
 getMostRead start limit category paper onlySubscribers = do
   mostReadResponse <- AX.get ResponseFormat.json (letteraMostReadUrl
           <> "?start=" <> show start
           <> "&limit=" <> show limit
-          <> "&category" <> category
+          <> (foldMap ("&category=" <> _) category)
           <> "&paper=" <> Paper.toString paper
           <> "&onlySubscribers=" <> show onlySubscribers
   )

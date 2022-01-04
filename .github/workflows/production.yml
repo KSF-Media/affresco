@@ -38,7 +38,7 @@ jobs:
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            yarn install --pure-lockfile
             mkdir -p build
       - env:
           HIDE_LOGIN_LINKS: 'true'
@@ -85,7 +85,7 @@ jobs:
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            yarn install --pure-lockfile
             mkdir -p build
       - name: Generate AppEngine domain map
         run: |2
@@ -114,7 +114,7 @@ jobs:
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            yarn install --pure-lockfile
             mkdir -p build
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
@@ -288,7 +288,7 @@ jobs:
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile --cache-folder=.yarn-cache
+            yarn install --pure-lockfile
             mkdir -p build
       - env:
           LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta

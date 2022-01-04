@@ -13,23 +13,24 @@ import Data.Set as Set
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
-import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.Paper as Paper
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
+import Mosaico.Article.Image as Image
+import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component)
 import React.Basic.Events (EventHandler)
-
-foreign import evalExternalScriptsImpl :: EffectFn1 (Array String) Unit
-evalExternalScripts :: Array String -> Effect Unit
-evalExternalScripts = runEffectFn1 evalExternalScriptsImpl
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
 isPremium (Left articleStub) = articleStub.premium
@@ -55,6 +56,10 @@ getBody :: Either ArticleStub FullArticle -> Array BodyElement
 getBody (Left _articleStub) = mempty
 getBody (Right fullArticle) = _.body $ fromFullArticle fullArticle
 
+getRemoveAds :: Either ArticleStub FullArticle -> Boolean
+getRemoveAds (Left articleStub) = articleStub.removeAds
+getRemoveAds (Right fullArticle) = _.removeAds $ fromFullArticle fullArticle
+
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
@@ -63,38 +68,20 @@ type Props =
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
   , user :: Maybe User
+  , mostReadArticles :: Array ArticleStub
   }
 
 evalEmbeds :: Article -> Effect Unit
-evalEmbeds = evalExternalScripts <<< map unwrap <<< fold <<< _.externalScripts
+evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _.externalScripts
 
-renderImage :: Image -> JSX
-renderImage img =
-  DOM.div
-    { className: "mosaico-article__image"
-    , children:
-        [ DOM.img
-            { src: img.url
-            , title: caption
-            }
-        , DOM.div
-            { className: "caption"
-            , children:
-                [ DOM.text caption
-                , DOM.span
-                    { className: "byline"
-                    , children: [ DOM.text byline ]
-                    }
-                ]
-            }
-      ]
-    }
-  where
-    caption = fold img.caption
-    byline  = fold img.byline
+component :: Component Props
+component = do
+  imageComponent <- Image.component
+  React.component "Article" $ \props -> React.do
+    pure $ render imageComponent props
 
-render :: Props -> JSX
-render props =
+render :: (Image.Props -> JSX) -> Props -> JSX
+render imageComponent props =
     let title = getTitle props.article
         tags = getTags props.article
         mainImage = getMainImage props.article
@@ -132,7 +119,7 @@ render props =
                           , children:
                               [ foldMap renderTag $ head tags
                               , guard (isPremium props.article) $ DOM.div
-                                  { className: "premium-badge background-" <> Paper.cssName props.paper
+                                  { className: "premium-badge"
                                   , children: [ DOM.text "Premium"]
                                   }
                               ]
@@ -144,10 +131,14 @@ render props =
                       ]
                   }
             ]
-          , DOM.div
-              { className: "mosaico-article__main-image"
-              , children: [ foldMap renderImage mainImage ]
-              }
+          , foldMap
+              (\image -> imageComponent
+                { clickable: true
+                , main: true
+                , params: Just "&width=960&height=540&q=90"
+                , image
+                })
+              mainImage
           , DOM.div
               { className: "mosaico-article__main"
               , children:
@@ -162,7 +153,10 @@ render props =
                           (Right (DraftArticle _draftArticle)) ->
                             bodyWithoutAd
                           (Right (FullArticle _fullArticle)) ->
-                            bodyWithAd
+                            bodyWithAd <>
+                            (foldMap (pure <<< renderMostReadArticles) $
+                             if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)
+                          Left _ -> [ loadingSpinner ]
                           _ -> mempty
                         }
                     , DOM.div
@@ -208,7 +202,7 @@ render props =
 
     renderTag tag =
       DOM.a
-        { className: "mosaico-article__tag color-" <> Paper.cssName props.paper
+        { className: "mosaico-article__tag"
         , children: [ DOM.text $ (un Tag) tag ]
         , href: "/tagg/" <> tagToURIComponent tag
         , onClick: props.onTagClick tag
@@ -263,6 +257,17 @@ render props =
       HBL -> "HBL"
       p -> Paper.paperName p
 
+    renderMostReadArticles articles =
+      DOM.div
+        { className: "mosaico-article__mostread--header"
+        , children: [ DOM.text "ANDRA LÄSER" ]
+        } <>
+      (Frontpage.render $ Frontpage.List
+        { content: Just articles
+        , onArticleClick: props.onArticleClick
+        , onTagClick: props.onTagClick
+        })
+
     -- TODO: maybe we don't want to deal at all with the error cases
     -- and we want to throw them away?
     renderElement :: BodyElement -> JSX
@@ -279,10 +284,12 @@ render props =
         { className: block <> " " <> block <> "__subheadline"
         , children: [ DOM.text str ]
         }
-      Image img -> DOM.div
-        { className: block
-        , children: [ renderImage img ]
-        }
+      Image image -> imageComponent
+          { clickable: true
+          , main: false
+          , params: Just "&width=640&q=90"
+          , image
+          }
       Box boxData ->
         DOM.div
           { className: block <> " " <> block <> "__factbox"

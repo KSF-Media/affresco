@@ -1,7 +1,17 @@
-.mosaico--static-page {
-  max-width: 100%;
-  font: 1rem "Roboto";
-  line-height: 1.2rem;
-  padding: 15px;
+@import (reference) "../../ksf-colors";
 
+.mosaico--static-page {
+  grid-area: main;
+  font: 300  1rem "Roboto";
+  line-height: 1.2;
+  color: #333;
+
+  h1, h2 {
+    font-family: "Duplex Sans", sans-serif;
+  }
+
+  a:link, a:visited {
+    text-decoration: none;
+    color: @link;
+  }
 }

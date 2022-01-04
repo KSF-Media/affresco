@@ -85,12 +85,6 @@ in  { name = "previews"
         , outputs.preview = "\${{ steps.deploy-mosaico-server.outputs.url}}"
         , needs = "check-ci"
         }
-      , deploy-dispatch-yaml =
-        { runs-on = "ubuntu-latest"
-        , container
-        , steps = steps-dispatch
-        , needs = [ "deploy-mosaico-server", "deploy-app-article-server" ]
-        }
       , previews =
         { runs-on = "ubuntu-latest"
         , steps = previewLinks

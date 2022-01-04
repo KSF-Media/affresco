@@ -1,0 +1,132 @@
+@import (reference) "../ksf-colors";
+
+.mosaico--footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 50px;
+}
+
+.mosaico-footer {
+  &__links {
+    display: flex;
+    margin: 35px auto 30px;
+    justify-content: center;
+
+    a {
+      margin: 5px 20px;
+      text-decoration: none;
+      color: @dark-text;
+      @media (max-width: @breakpoint-2col) {
+	margin: 5px auto 5px auto;
+      }
+      font: 400 14px Roboto, sans-serif;
+    }
+
+    @media (max-width: @breakpoint-2col) {
+      flex-direction: column;
+    }
+  }
+
+  &__separator {
+    width: 420px;
+    margin: 0 auto 20px;
+    background-color: @grey-slightlylight;
+    border: 0;
+    height: 1px;
+
+    @media (max-width: @breakpoint-2col) {
+      width: 220px;
+    }
+    @media (max-width: 320px) {
+      width: 80%;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-rows: auto auto;
+    grid-template-columns: 1fr 1fr 1fr;
+    row-gap: 8px;
+    column-gap: 0;
+  }
+
+  &__caption {
+    font: 900 13px "Roboto", sans-serif;
+    color: @grey-mediumlight;
+
+    margin-top: 25px;
+    margin-bottom: 15px;
+  }
+
+  &__other-papers {
+    width: 400px;
+    display: flex;
+
+    @media (max-width: @breakpoint-2col) {
+      width: 300px;
+    }
+    @media (max-width: 320px) {
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+
+  &__logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    justify-content: center;
+
+    &--on {
+      flex: 1;
+    }
+
+    &--vn {
+      flex: 1;
+    }
+
+    &--hbl {
+      flex: 1;
+    }
+
+    text-decoration: none;
+  }
+
+  &__logo-image {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100%;
+    width: 55px;
+    height: 55px;
+    flex: 55px;
+
+    background-color: @grey-mediumlight;
+    mask-position: 0 0;
+    mask-size: 55px 55px;
+    -webkit-mask-position: 0 0;
+    -webkit-mask-size: 55px 55px;
+
+    &--on {
+      mask-image: url("../images/logo-on.svg");
+      -webkit-mask-image: url("../images/logo-on.svg");
+    }
+
+    &--vn {
+      mask-image: url("../images/logo-vn.svg");
+      -webkit-mask-image: url("../images/logo-vn.svg");
+    }
+
+    &--hbl {
+      mask-image: url("../images/logo-hbl.svg");
+      -webkit-mask-image: url("../images/logo-hbl.svg");
+    }
+  }
+
+  &__logo-caption {
+    font: 400 12px "Roboto", sans-serif;
+    color: @grey-mediumlight;
+    white-space: nowrap;
+  }
+}

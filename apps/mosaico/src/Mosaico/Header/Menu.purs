@@ -57,9 +57,10 @@ render props@{ onLogout } = DOM.div
                   , children:
                       [ DOM.div
                           { className: footerCaptionClass
-                          , children: [ DOM.text "ANDRA KSF-TIDNINGAR" ]
+                          , children: [ DOM.text "ALLA KSF-TIDNINGAR" ]
                           }
                       , logo vnLogoClass vnLogoImageClass "Västra Nyland"
+                      , logo hblLogoClass hblLogoImageClass "Hufvudstadsbladet"
                       , logo onLogoClass onLogoImageClass "Östnyland"
                       ]
                   }
@@ -261,14 +262,17 @@ render props@{ onLogout } = DOM.div
     footerCaptionClass = headerBlock <> footerCaptionElement
 
     logoElement =  "__footer-logo"
+    hblLogoModifier = "--hbl"
     onLogoModifier = "--on"
     vnLogoModifier = "--vn"
     logoClass = headerBlock <> logoElement
+    hblLogoClass = logoClass <> hblLogoModifier
     onLogoClass = logoClass <> onLogoModifier
     vnLogoClass = logoClass <> vnLogoModifier
 
     logoImageElement = "__footer-logo-image"
     logoImageClass = headerBlock <> logoImageElement
+    hblLogoImageClass =  logoImageClass <> hblLogoModifier
     onLogoImageClass = logoImageClass <> onLogoModifier
     vnLogoImageClass = logoImageClass <> vnLogoModifier
 
