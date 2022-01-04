@@ -3,7 +3,7 @@ module Mosaico.Article where
 import Prelude
 
 import Bottega.Models.Order (OrderSource(..))
-import Data.Array (cons, head, insertAt, length, snoc, (!!))
+import Data.Array (cons, head, insertAt, length, null, snoc, take, (!!))
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
