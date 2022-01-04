@@ -34,6 +34,7 @@ import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Footer (footer)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
+import Mosaico.Frontpage.Events (onFrontpageClick)
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
@@ -49,6 +50,7 @@ import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
+import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
@@ -405,12 +407,15 @@ render setState state components router onPaywallEvent =
         })
 
     prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
-    prerenderedFrontpage maybeHeader content = mosaicoLayoutNoAside $
-      (fromMaybe mempty maybeHeader) <>
-      (Frontpage.render $ Frontpage.Prerendered
-        { content
-        , hooks
-        })
+    prerenderedFrontpage maybeHeader content =
+      mosaicoLayout inner false (onFrontpageClick simpleRoute)
+      where
+        inner =
+          (fromMaybe mempty maybeHeader) <>
+          (Frontpage.render $ Frontpage.Prerendered
+             { content
+             , hooks
+             })
 
     hooks :: Array Frontpage.Hook
     hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler
@@ -418,15 +423,16 @@ render setState state components router onPaywallEvent =
             ]
 
     mosaicoDefaultLayout :: JSX -> JSX
-    mosaicoDefaultLayout = flip mosaicoLayout true
+    mosaicoDefaultLayout content = mosaicoLayout content true mempty
 
     mosaicoLayoutNoAside :: JSX -> JSX
-    mosaicoLayoutNoAside = flip mosaicoLayout false
+    mosaicoLayoutNoAside content = mosaicoLayout content false mempty
 
-    mosaicoLayout :: JSX -> Boolean -> JSX
-    mosaicoLayout content showAside = DOM.div
+    mosaicoLayout :: JSX -> Boolean -> EventHandler -> JSX
+    mosaicoLayout content showAside onClick = DOM.div
       { className: "mosaico grid"
       , id: Paper.toString mosaicoPaper
+      , onClick
       , children:
           [ Header.topLine
           , Header.render
@@ -468,24 +474,25 @@ render setState state components router onPaywallEvent =
     onClickHandler articleStub = do
       setState _ { clickedArticle = Just articleStub }
       void $ Web.scroll 0 0 =<< Web.window
-      router.pushState (write {}) $ "/artikel/" <> articleStub.uuid
+      simpleRoute $ "/artikel/" <> articleStub.uuid
 
     onCategoryClick cat@(Category c) =
       case state.route of
         Routes.CategoryPage category | category == cat -> mempty
         _ -> capture_ do
           void $ Web.scroll 0 0 =<< Web.window
-          router.pushState (write {}) $ "/" <>
-            if c.label == frontpageCategoryLabel then "" else show c.label
+          simpleRoute $ "/" <> if c.label == frontpageCategoryLabel then "" else show c.label
 
     onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window
-      router.pushState (write {}) $ "/tagg/" <> tagToURIComponent tag
+      simpleRoute $ "/tagg/" <> tagToURIComponent tag
 
-    onArticleClick article = capture_ do
+    onArticleClick article = capture_ $ handleArticleClick article
+
+    handleArticleClick article = do
       setState _ { clickedArticle = Just article }
       void $ Web.scroll 0 0 =<< Web.window
-      router.pushState (write {}) $ "/artikel/" <> article.uuid
+      simpleRoute $ "/artikel/" <> article.uuid
 
     onStaticPageClick link =
       case state.route of
@@ -499,3 +506,5 @@ render setState state components router onPaywallEvent =
     -- Search is done via the router
     doSearch query = do
       router.pushState (write {}) $ "/sök?q=" <> query
+
+    simpleRoute = router.pushState (write {})
