@@ -4,7 +4,6 @@ import Prelude
 
 import Control.Monad.Error.Class (try)
 import Control.Parallel.Class (parallel, sequential)
-import Data.Argonaut.Core (stringify)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (find, foldl, fromFoldable, null)
@@ -44,7 +43,7 @@ import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header.Menu as Menu
-import Mosaico.Models (ArticleFeed(..))
+import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Search as Search
 import MosaicoServer (MainContent(..))
@@ -324,10 +323,10 @@ frontpage env { guards: { credentials } } = do
           }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" articles
-                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
+                    <> mkArticleFeed (CategoryFeed Nothing) articles
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -343,15 +342,6 @@ getFrontpage paper category = do
         getFrontpageArticles
   where
     getFrontpageArticles = ArticleList <$> Lettera.getFrontpage paper Nothing
-
-mkArticleFeed :: Maybe String -> String -> ArticleFeed -> String
-mkArticleFeed feedPage feedType feed =
-  let feedContent /\ feedContentType =
-        case feed of
-          ArticleList list -> encodeStringifyArticleStubs list /\ "articlelist"
-          Html html        -> html /\ "html"
-   in
-    stringify $ encodeJson { feedPage, feedType, feedContent, feedContentType }
 
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
@@ -420,10 +410,10 @@ tagList env { params: { tag }, guards: { credentials } } = do
             }
     html <- liftEffect do
               let windowVars =
-                    [ "frontpageFeed"     /\ mkArticleFeed (Just $ unwrap tag') "tagfeed" (ArticleList articles)
-                    , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                    [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                     , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                     ] <> userVar user
+                      <> mkArticleFeed (TagFeed tag') (ArticleList articles)
               appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
     pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -488,10 +478,10 @@ debugList env { params: { uuid }, guards: { credentials } } = do
           }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ mkArticleFeed Nothing "categoryfeed" (ArticleList $ fromFoldable article)
-                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
+                    <> mkArticleFeed (CategoryFeed Nothing) (ArticleList $ fromFoldable article)
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -516,10 +506,10 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
                             }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ mkArticleFeed (Just categoryName) "categoryfeed" (ArticleList articles)
-                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
+                    <> mkArticleFeed (CategoryFeed $ Just $ CategoryLabel categoryName) (ArticleList articles)
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -554,10 +544,10 @@ searchPage env { query: { search }, guards: { credentials } } = do
                           }
   html <- liftEffect do
             let windowVars =
-                  [ "frontpageFeed"     /\ (mkArticleFeed query "searchfeed" $ ArticleList articles)
-                  , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
+                    <> mkArticleFeed (SearchFeed $ fromMaybe "" query) (ArticleList articles)
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -595,7 +585,7 @@ notFound env mainContent user maybeMostReadArticles = do
           <> foldMap (pure <<< Tuple "mostReadArticles" <<< encodeStringifyArticleStubs) maybeMostReadArticles
           <> (case mainContent of
                  ArticleContent _ -> [ "article" /\ (encodeStringifyArticle $ fromFullArticle notFoundArticle) ]
-                 TagListContent tag _ -> [ "frontpageFeed" /\ mkArticleFeed (Just $ unwrap tag) "tagfeed" (ArticleList []) ]
+                 TagListContent tag _ -> mkArticleFeed (TagFeed tag) (ArticleList [])
                  StaticPageContent pageName _ -> [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName) ]
                  _ -> mempty
              )
