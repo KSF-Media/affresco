@@ -435,7 +435,9 @@ render setState state components router onPaywallEvent =
         })
 
     hooks :: Array Frontpage.Hook
-    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler ]
+    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler
+            , Frontpage.ArticleUrltoRelative
+            ]
 
     mosaicoDefaultLayout :: JSX -> JSX
     mosaicoDefaultLayout = flip mosaicoLayout true
