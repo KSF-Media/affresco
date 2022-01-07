@@ -19,23 +19,11 @@ exports.renderHtmlInputWithHooksImpl = function (htmlInput, hooks) {
 
     const processNodeDefinitions = new HtmlToReact.ProcessNodeDefinitions(React);
 
-    const uncurriedHooks = hooks.map(h => {
-
-        const replaceChildren = h.replaceChildren;
-
-        const processNode = replaceChildren ?
-            h.processNodeWithReplacement :
-            h.processNode;
-
-        return {
-          replaceChildren,
-          shouldProcessNode: h.shouldProcessNode,
-          processNode,
-        }
-    });
+    const processHooks = hooks.filter(h => h.shouldProcessNode);
+    const preprocessHooks = hooks.filter(h => h.shouldPreprocessNode);
 
     // A catch-all hook
-    uncurriedHooks.push({
+    processHooks.push({
         shouldProcessNode: function (node) {
             return true;
         },
@@ -45,6 +33,7 @@ exports.renderHtmlInputWithHooksImpl = function (htmlInput, hooks) {
     return htmlToReactParser.parseWithInstructions(
         htmlInput,
         isValidNode,
-        uncurriedHooks
+	processHooks,
+	preprocessHooks
     );
 }
