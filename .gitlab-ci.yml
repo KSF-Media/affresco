@@ -1,7 +1,105 @@
-image: ksfmedia/diskho:lts-18.8
+image: ksfmedia/diskho:lts-18.13
 
-testjob:
+variables:
+  DOCKER_DRIVER: overlay2
+  GIT_SUBMODULE_STRATEGY: recursive
+  CI_SCRIPTS: "${CI_PROJECT_DIR}/infra/ci-scripts"
+  YARN_CACHE: "${CI_PROJECT_DIR}/.yarn-cache"
+
+before_script:
+  - eval `./infra/ci-scripts/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
+
+# You may also want a lint stage before the build
+# and you might want to remove the update-clients job
+stages:
+#  - test
+  - build
+  - docker
+  - deploy
+
+# Build
+.build-app:
+  script:
+    - mkdir -p artifacts
+    - yarn install --pure-lockfile --cache-folder=$YARN_CACHE
+    - yarn --cwd apps/$CI_JOB_NAME/ run build
+    - cp -R apps/$CI_JOB_NAME artifacts/$CI_JOB_NAME
+
+mosaico: &build-app
+  stage: build
+  environment: staging/$CI_JOB_NAME
+  extends: .build-app
+  only:
+    - master
+  cache:
+    key: "affresco-yarn-cache"
+    paths:
+      - $YARN_CACHE
+  artifacts:
+    paths:
+      - artifacts/
+    when: always
+    expire_in: 7 days
+
+app-article-server: *build-app
+
+# Docker build
+.build-docker:
+  stage: docker
+  environment: staging
   only:
     - master
   script:
-    - "echo 'Hello World!"
+    - cd artifacts/$SERVICE_NAME
+    - $CI_SCRIPTS/docker-build.sh
+    - $CI_SCRIPTS/auth-gcloud.sh
+    - $CI_SCRIPTS/docker-push.sh
+
+mosaico-docker-build:
+  extends: .build-docker
+  environment: staging/$CI_JOB_NAME
+  variables:
+    SERVICE_NAME: mosaico
+
+app-article-docker-build:
+  extends: .build-docker
+  environment: staging/$CI_JOB_NAME
+  variables:
+    SERVICE_NAME: app-article-server
+
+# Deploy
+.deploy:
+   stage: deploy
+   only:
+     - master
+   script:
+     - ./infra/ci-scripts/auth-gcloud.sh
+     - ./infra/ci-scripts/kubernetes-deployment.sh
+
+# staging
+deploy-mosaico-staging:
+  extends: .deploy
+  environment: staging/$CI_JOB_NAME
+  variables:
+    SERVICE_NAME: mosaico
+
+deploy-app-article-staging:
+  extends: .deploy
+  environment: staging/$CI_JOB_NAME
+  variables:
+    SERVICE_NAME: app-article-server
+
+# production
+deploy-mosaico-production:
+  extends: .deploy
+  environment: production/$CI_JOB_NAME
+  when: manual
+  variables:
+    SERVICE_NAME: mosaico
+
+deploy-app-article-production:
+  extends: .deploy
+  environment: production/$CI_JOB_NAME
+  when: manual
+  variables:
+    SERVICE_NAME: app-article-server
