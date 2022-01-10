@@ -12,7 +12,7 @@ variables:
   SERVICE_NAME: app-article-server
 
 before_script:
-  - eval `./infra/ci-scripts/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
+  - eval `${CI_SCRIPTS}/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
 
 # You may also want a lint stage before the build
 # and you might want to remove the update-clients job
@@ -38,16 +38,16 @@ stages:
     when: always
     expire_in: 7 days
   script:
-    - mkdir -p artifacts/staging
+    - mkdir -p $CI_PROJECT_DIR/artifacts/staging
     - yarn install --pure-lockfile --cache-folder=$YARN_CACHE
     # build apps with staging vars
-    - yarn --cwd apps/$SERVICE_NAME/ run build
-    - cp -R apps/$SERVICE_NAME artifacts/staging/$SERVICE_NAME
+    - yarn --cwd $CI_PROJECT_DIR/apps/$SERVICE_NAME/ run build
+    - cp -R $CI_PROJECT_DIR/apps/$SERVICE_NAME $CI_PROJECT_DIR/artifacts/staging/$SERVICE_NAME
     # rebuild with production vars
-    - eval `./infra/ci-scripts/prepare_stage_envvars.py production`
-    - mkdir -p artifacts/production
-    - yarn --cwd apps/$SERVICE_NAME/ run build
-    - cp -R apps/$SERVICE_NAME artifacts/production/$SERVICE_NAME
+    - eval `$CI_SCRIPTS/prepare_stage_envvars.py production`
+    - mkdir -p $CI_PROJECT_DIR/artifacts/production
+    - yarn --cwd $CI_PROJECT_DIR/apps/$SERVICE_NAME/ run build
+    - cp -R $CI_PROJECT_DIR/apps/$SERVICE_NAME $CI_PROJECT_DIR/artifacts/production/$SERVICE_NAME
 
 # Docker build template
 .build-docker:
@@ -57,12 +57,12 @@ stages:
     - master
   script:
     # docker build & push staging
-    - cd artifacts/staging/$SERVICE_NAME
+    - cd $CI_PROJECT_DIR/artifacts/staging/$SERVICE_NAME
     - $CI_SCRIPTS/docker-build.sh
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/docker-push.sh
     # docker buld & push production
-    - cd artifacts/production/$SERVICE_NAME
+    - cd $CI_PROJECT_DIR/artifacts/production/$SERVICE_NAME
     - $CI_SCRIPTS/docker-build.sh
     - KSF_ENV_TEXT=production GOOGLE_CREDENTIALS=$PRODUCTION_GOOGLE_CREDENTIALS $CI_SCRIPTS/auth-gcloud.sh
     - KSF_ENV_TEXT=production $CI_SCRIPTS/docker-push.sh
@@ -74,8 +74,8 @@ stages:
   only:
     - master
   script:
-    - ./infra/ci-scripts/auth-gcloud.sh
-    - ./infra/ci-scripts/kubernetes-deployment.sh
+    - $CI_SCRIPTS/auth-gcloud.sh
+    - $CI_SCRIPTS/kubernetes-deployment.sh
 
 # Build apps
 mosaico-build:
