@@ -89,19 +89,27 @@ app-article-build:
 # Build docker images
 mosaico-docker-build:
   extends: .build-docker
+  needs: 
+    - mosaico-build
   variables: *mosaico-ci-vars
 
 app-article-docker-build:
   extends: .build-docker
+  needs: 
+    - app-article-build
   variables: *app-article-ci-vars
 
 # Deploy Staging
 deploy-mosaico-staging:
   extends: .deploy
+  needs: 
+    - mosaico-docker-build
   variables: *mosaico-ci-vars
 
 deploy-app-article-staging:
   extends: .deploy
+  needs: 
+    - app-article-docker-build
   variables: *app-article-ci-vars
 
 # Deploy production
