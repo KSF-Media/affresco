@@ -11,6 +11,7 @@ import Data.Argonaut.Decode.Error as Json
 import Data.Array (catMaybes, filter)
 import Data.Date (Date)
 import Data.Date as Date
+import Data.DateTime (DateTime)
 import Data.Either (Either (..), either, note)
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDate)
@@ -42,7 +43,7 @@ import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
 import KSF.LocalStorage as LocalStorage
 import KSF.User.Cusno (Cusno)
-import OpenApiClient (Api, callApi, callApi', decodeApiRes)
+import OpenApiClient (Api, callApi, decodeApiRes)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
 import Data.Argonaut.Decode.Class (decodeJson)
@@ -55,13 +56,13 @@ foreign import rawJSONStringify :: Foreign -> String
 foreign import rawJSONParse :: String -> Foreign
 
 login :: LoginData -> Aff LoginResponse
-login loginData = decodeApiRes "LoginResponse" =<< callApi' loginApi "loginPost" [ unsafeToForeign loginData ] {}
+login loginData = decodeApiRes "LoginResponse" =<< callApi loginApi "loginPost" [ unsafeToForeign loginData ] {}
 
 loginSome :: LoginDataSome -> Aff LoginResponse
-loginSome loginData = decodeApiRes "LoginResponse" =<< callApi' loginApi "loginSomePost" [ unsafeToForeign loginData ] {}
+loginSome loginData = decodeApiRes "LoginResponse" =<< callApi loginApi "loginSomePost" [ unsafeToForeign loginData ] {}
 
 loginSso :: LoginDataSso -> Aff LoginResponse
-loginSso loginData = decodeApiRes "LoginResponse" =<< callApi' loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
+loginSso loginData = decodeApiRes "LoginResponse" =<< callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
 
 -- Send authUser field only when impersonating a user
 authHeaders :: UUID -> UserAuth -> { authorization :: String, authUser :: Nullable String }
@@ -74,7 +75,7 @@ authHeaders uuid { userId, authToken } =
 
 getUser :: Maybe InvalidateCache -> UUID -> UserAuth -> Aff User
 getUser invalidateCache uuid auth = do
-  decodeApiRes "User" =<< callApi' usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
+  decodeApiRes "User" =<< callApi usersApi "usersUuidGet" [ unsafeToForeign uuid ] headers
   where
     headers = Record.merge (authHeaders uuid auth)
       { cacheControl: toNullable maybeCacheControl
@@ -83,7 +84,7 @@ getUser invalidateCache uuid auth = do
 
 getUserEntitlements :: UserAuth -> Aff (Array String)
 getUserEntitlements auth =
-  decodeApiRes "Entitlements" =<< (callApi' usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth)
+  decodeApiRes "Entitlements" =<< (callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth)
 
 updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
@@ -114,13 +115,13 @@ updateUser uuid update auth = do
             }
         DeletePendingAddressChanges -> unsafeToForeign { pendingAddressChanges: [] }
 
-  decodeApiRes "User" =<< (callApi' usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth)
+  decodeApiRes "User" =<< (callApi usersApi "usersUuidPatch" [ unsafeToForeign uuid, body ] $ authHeaders uuid auth)
 
 -- Admin only
 setUserCusno :: UUID -> Cusno -> UserAuth -> Aff User
 setUserCusno uuid cusno auth = do
   decodeApiRes "User" =<<
-    (callApi' usersApi "usersUuidPatch"
+    (callApi usersApi "usersUuidPatch"
        [ unsafeToForeign uuid
        , unsafeToForeign {updateCusno: cusno}
        ] $ authHeaders uuid auth)
@@ -132,7 +133,7 @@ processSubs subs = do
   pure $ filter threshold $ map (Subscription <<< Subscription.parseSubscription) subs
 
 updateGdprConsent :: UUID -> Token -> Array GdprConsent -> Aff Unit
-updateGdprConsent uuid token consentValues = callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
+updateGdprConsent uuid token consentValues = pure unit <* callApi usersApi "usersUuidGdprPut" [ unsafeToForeign uuid, unsafeToForeign consentValues ] { authorization }
   where
     authorization = oauthToken token
 
@@ -141,17 +142,17 @@ updatePassword uuid password confirmPassword auth = callApi usersApi "usersUuidP
 
 logout :: UserAuth -> Aff Unit
 logout auth =
-  decodeApiRes "Unit" =<< callApi' loginApi "loginUuidDelete" [ unsafeToForeign auth.userId ] { authorization }
+  decodeApiRes "Unit" =<< callApi loginApi "loginUuidDelete" [ unsafeToForeign auth.userId ] { authorization }
   where
     authorization = oauthToken auth.authToken
 
 requestPasswordReset :: String -> Aff Unit
 requestPasswordReset email = do
-  decodeApiRes "Unit" =<< callApi' accountApi "accountPasswordForgotPost" [ unsafeToForeign { email } ] {}
+  decodeApiRes "Unit" =<< callApi accountApi "accountPasswordForgotPost" [ unsafeToForeign { email } ] {}
 
 startPasswordReset :: String -> Aff Unit
 startPasswordReset token = do
-  decodeApiRes "Unit" =<< callApi' accountApi "accountPasswordResetPost" [ unsafeToForeign { token } ] {}
+  decodeApiRes "Unit" =<< callApi accountApi "accountPasswordResetPost" [ unsafeToForeign { token } ] {}
 
 updateForgottenPassword :: String -> Password -> Password -> Aff Unit
 updateForgottenPassword token password confirmPassword = do
@@ -160,7 +161,7 @@ updateForgottenPassword token password confirmPassword = do
         , password
         , confirmPassword
         }
-  decodeApiRes "Unit" =<< callApi' accountApi "accountPasswordResetPost" [ unsafeToForeign updatePasswordData ] {}
+  decodeApiRes "Unit" =<< callApi accountApi "accountPasswordResetPost" [ unsafeToForeign updatePasswordData ] {}
 
 register :: NewUser -> Aff LoginResponse
 register newUser = do
@@ -176,7 +177,7 @@ type NewTemporaryUser =
 
 registerWithEmail :: NewTemporaryUser -> Aff LoginResponse
 registerWithEmail newEmailUser =
-  decodeApiRes "LoginResponse" =<< callApi' usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
+  decodeApiRes "LoginResponse" =<< callApi usersApi "usersTemporaryPost" [ unsafeToForeign newEmailUser ] {}
 
 type NewCusnoUser =
   { cusno     :: Cusno
@@ -205,7 +206,7 @@ registerCusno newUser@{ cusno } auth = do
                 , legalConsents: newUser.consents
                 }
         }
-  response <- decodeApiRes "LoginResponse" =<< callApi' adminApi "adminUserPost" [ unsafeToForeign user ]
+  response <- decodeApiRes "LoginResponse" =<< callApi adminApi "adminUserPost" [ unsafeToForeign user ]
     ( authHeaders UUID.emptyUUID auth )
   when newUser.sendReset $ requestPasswordReset newUser.email
   pure response
@@ -213,7 +214,7 @@ registerCusno newUser@{ cusno } auth = do
 hasScope :: UUID -> AuthScope -> UserAuth -> Aff Number
 hasScope uuid authScope auth = do
    decodeApiRes "Number" =<<
-     (callApi' usersApi "usersUuidScopeGet"
+     (callApi usersApi "usersUuidScopeGet"
       [ unsafeToForeign uuid
       , unsafeToForeign scope
       ] $
@@ -229,7 +230,7 @@ pauseSubscription uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate endDate
   decodeApiRes "Subscription" =<<
-    callApi' usersApi "usersUuidSubscriptionsSubsnoPausePost"
+    callApi usersApi "usersUuidSubscriptionsSubsnoPausePost"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
       , unsafeToForeign { startDate: startDateISO, endDate: endDateISO }
@@ -243,7 +244,7 @@ editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate 
       newStartDateISO = formatDate newStartDate
       newEndDateISO   = formatDate newEndDate
   decodeApiRes "Subscription" =<<
-    callApi' usersApi "usersUuidSubscriptionsSubsnoPausePatch"
+    callApi usersApi "usersUuidSubscriptionsSubsnoPausePatch"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
       , unsafeToForeign { oldStartDate: oldStartDateISO
@@ -257,7 +258,7 @@ editSubscriptionPause uuid (Subsno subsno) oldStartDate oldEndDate newStartDate 
 unpauseSubscription :: UUID -> Subsno -> UserAuth -> Aff Subscription
 unpauseSubscription uuid (Subsno subsno) auth = do
   decodeApiRes "Subscription" =<<
-    callApi' usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
+    callApi usersApi "usersUuidSubscriptionsSubsnoUnpausePost"
       ([ unsafeToForeign uuid
        , unsafeToForeign subsno
        ])
@@ -279,7 +280,7 @@ temporaryAddressChange uuid (Subsno subsno) startDate endDate streetAddress zipC
       endDateISO   = formatDate <$> endDate
 
   decodeApiRes "Subscription" =<<
-    callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
+    callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePost"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
       , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO, streetAddress, zipCode, countryCode, temporaryName: toNullable temporaryName }
@@ -300,7 +301,7 @@ editTemporaryAddressChange uuid (Subsno subsno) oldStartDate startDate endDate a
       endDateISO = formatDate <$> endDate
 
   decodeApiRes "Subscription" =<<
-    callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
+    callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangePatch"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
       , unsafeToForeign { oldStartDate: oldStartDateISO, newStartDate: startDateISO, newEndDate: toNullable endDateISO }
@@ -318,7 +319,7 @@ deleteTemporaryAddressChange uuid (Subsno subsno) startDate endDate auth = do
   let startDateISO = formatDate startDate
       endDateISO   = formatDate <$> endDate
   decodeApiRes "Subscription" =<<
-    callApi' usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
+    callApi usersApi "usersUuidSubscriptionsSubsnoAddressChangeDelete"
       [ unsafeToForeign uuid
       , unsafeToForeign subsno
       , unsafeToForeign { startDate: startDateISO, endDate: toNullable endDateISO  }
@@ -335,7 +336,7 @@ createDeliveryReclamation
 createDeliveryReclamation uuid (Subsno subsno) date claim auth = do
   let dateISO = formatDate date
   let claim'  = show claim
-  callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
+  decodeApiRes "DeliveryReclamation" =<< callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
     , unsafeToForeign { publicationDate: dateISO, claim: claim' }
@@ -568,19 +569,31 @@ type TemporaryAddressChange =
   , temporaryName :: Maybe String
   }
 
-type DeliveryReclamation =
+newtype DeliveryReclamation = DeliveryReclamation
   { subscriptionNumber :: Int
   , customerNumber     :: Int
   , number             :: Int
-  , date               :: JSDate
-  , publicationDate    :: JSDate
+  , date               :: DateTime
+  , publicationDate    :: DateTime
   , claim              :: DeliveryReclamationClaim
   , status             :: DeliveryReclamationStatus
   }
 
+instance decodeJsonDeliveryReclamation :: DecodeJson DeliveryReclamation where
+  decodeJson json = do
+    obj <- decodeJson json
+    subscriptionNumber <- obj .: "subscriptionNumber"
+    customerNumber <- obj .: "customerNumber"
+    date <-
+
 data DeliveryReclamationClaim
   = Extension
   | NewDelivery
+
+instance decodeJsonDeliveryReclamationClaim :: DecodeJson DeliveryReclamationClaim where
+  decodeJson claim = do
+    claimString <- decodeJson claim
+    note (TypeMismatch "Could not parse UUID of user!") $ read claimString
 
 instance readDeliveryReclamationClaim :: Read DeliveryReclamationClaim where
   read c =

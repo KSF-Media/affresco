@@ -43,12 +43,12 @@ foreign import callApi_
        { | opts }
        (EffectFnAff res)
 
-callApi :: forall res opts. Api -> MethodName -> Array Foreign -> { | opts } -> Aff res
-callApi api methodName req opts =
-  fromEffectFnAff (runFn4 callApi_ api methodName req opts)
+-- callApi :: forall res opts. Api -> MethodName -> Array Foreign -> { | opts } -> Aff res
+-- callApi api methodName req opts =
+--   fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
-callApi' :: forall res opts. Api -> MethodName -> Array Foreign -> { | opts } -> Aff Json
-callApi' api methodName req opts =
+callApi :: forall res opts. Api -> MethodName -> Array Foreign -> { | opts } -> Aff Json
+callApi api methodName req opts =
   fromEffectFnAff (runFn4 callApi_ api methodName req opts)
 
 decodeApiRes :: forall a. (DecodeJson a) => String -> Json -> Aff a
