@@ -11,6 +11,7 @@ import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
 import "react-image-lightbox/style.css";
 
+const axios = require("axios");
 var _ = require("lodash");
 
 class Article extends Component {
@@ -19,7 +20,15 @@ class Article extends Component {
     this.state = {
       modalCaption: "",
       isImageModalOpen: false,
+      mostReadArticles: [],
     };
+  }
+
+  componentDidMount() {
+    if (this.props.darkModeEnabled) {
+      document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
+    }
+    this.getMostReadArticles();
   }
 
   showHighResolutionImage = (imgSrc, caption) => {
@@ -29,6 +38,15 @@ class Article extends Component {
       modalCaption: caption,
     });
   };
+
+  getMostReadArticles() {
+    const mostreadReq =
+      process.env.LETTERA_URL +
+      `/mostread?start=0&limit=10&paper=${this.props.paper}&onlySubscribers=${this.props.paper === "hbl"}`;
+    axios(mostreadReq).then((res) => {
+      this.setState({ mostReadArticles: res.data });
+    });
+  }
 
   render() {
     return (
@@ -66,6 +84,7 @@ class Article extends Component {
               showHighResolutionImg={this.showHighResolutionImage}
               mainImage={this.props.mainImage}
               caption={_.get(this.props.mainImage, "caption") || ""}
+              fontSize={this.props.fontSize}
               appendBylineLabel={
                 _.has(this.props.mainImage, "byline") &&
                 _.get(this.props.mainImage, "byline") !== null &&
@@ -110,9 +129,9 @@ class Article extends Component {
             ) : (
               ""
             )}
-            {this.props.mostReadArticles.length > 0 ? (
+            {this.state.mostReadArticles.length > 0 ? (
               <MostReadArticles
-                mostReadArticles={this.props.mostReadArticles}
+                mostReadArticles={this.state.mostReadArticles}
                 queryString={this.props.queryString}
                 darkModeEnabled={this.props.darkModeEnabled}
                 paper={this.props.paper}
@@ -129,11 +148,17 @@ class Article extends Component {
 }
 
 const Title = (props, state) => {
-  const fontSizeStyle = () => (props.fontSize ? { fontSize: props.fontSize + 1 + "rem", lineHeight: "100%" } : {});
+  const classNames = new Map();
+  classNames.set("1.06", "title-xs");
+  classNames.set("1.5", "title-sm");
+  classNames.set("2.0", "title-md");
+  classNames.set("2.5", "title-lg");
+  classNames.set("3.0", "title-xl");
+
   return (
     <div className={"row"}>
       <div className={"col-12 mt-2 mb-3"} style={{ wordWrap: "break-word" }}>
-        <h2 className={`title ${props.darkModeEnabled ? "darkMode" : ""}`} style={fontSizeStyle()}>
+        <h2 className={`title ${props.darkModeEnabled ? "darkMode" : ""} ${classNames.get(props.fontSize)}`}>
           {props.title}
         </h2>
       </div>

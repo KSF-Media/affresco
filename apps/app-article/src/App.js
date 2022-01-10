@@ -27,7 +27,6 @@ import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from "js-cookie";
 import { AndroidView } from "react-device-detect";
 import { Sentry } from "./sentry";
-import CoronaBanner from "../../../packages/components/src/CoronaBanner/banner";
 
 class App extends Component {
   constructor(props) {
@@ -71,19 +70,13 @@ class App extends Component {
       errorFetching: false,
       errorFetchingLatestArticles: false,
       forceLoginView: false,
-      showBanner: false,
-      banner: {
-        newCases: null,
-        hospitalised: null,
-        deaths: null,
-        vaccinated: null,
-        vaccinatedPercentage: null,
-        showLinks: false,
-      },
     };
   }
   componentDidMount() {
-    if(isDarkModeOn())  document.body.classList.add('darkMode');
+    if (isDarkModeOn()) {
+      document.body.classList.add("darkMode");
+      document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
+    }
     if (localStorage.getItem("currentUser") !== null) {
       this.setState({ user: JSON.parse(localStorage.getItem("currentUser")) });
     }
@@ -100,14 +93,7 @@ class App extends Component {
       this.getMostReadArticles();
     }
   }
-  componentDidUpdate(prevProps, prevState) {
-    const hasCoronaTag = this.state.tags.some((tag) => tag.match(/coronavirus/i));
-    const hadCoronaTag = prevState.tags.some((tag) => tag.match(/coronavirus/i));
-    const articleHidden = this.state.showBuyOption;
-    if (hasCoronaTag && !hadCoronaTag && !articleHidden) {
-      this.getCoronaBannerStats();
-    }
-  }
+
   componentWillUnmount() {}
   onLogout() {
     //To avoid undefined error for ios webview
@@ -183,23 +169,6 @@ class App extends Component {
       });
   }
 
-  getCoronaBannerStats() {
-    fetch("https://cdn.ksfmedia.fi/corona-banner/stats.json")
-      .then((res) => res.json())
-      .then((data) => {
-        this.setState({
-          showBanner: true,
-          banner: {
-            newCases: data.newCases,
-            hospitalised: data.hospitalised,
-            deaths: data.deaths,
-            vaccinated: data.vaccinatedAmount,
-            vaccinatedPercentage: data.vaccinatedPercentage,
-          },
-        });
-      });
-  }
-
   checkCache(uuid) {
     if (!isUserLoggedIn()) {
       try {
@@ -249,7 +218,7 @@ class App extends Component {
               category: article.articleType,
               preamble: article.preamble,
               body: article.body,
-              relatedArticles: article.relatedArticles,
+              relatedArticles: article.relatedArticles || [],
               publishingTime: article.publishingTime,
               updateTime: article.updateTime,
               shareUrl: article.shareUrl,
@@ -297,7 +266,7 @@ class App extends Component {
               preamble: data.not_entitled.articlePreview.preamble,
               premium: data.not_entitled.articlePreview.premium,
               body: data.not_entitled.articlePreview.body,
-              relatedArticles: data.not_entitled.articlePreview.relatedArticles,
+              relatedArticles: data.not_entitled.articlePreview.relatedArticles || [],
               publishingTime: data.not_entitled.articlePreview.publishingTime,
               updateTime: data.not_entitled.articlePreview.updateTime,
               shareUrl: data.not_entitled.articlePreview.shareUrl,
@@ -323,7 +292,7 @@ class App extends Component {
               premium: data.premium,
               preamble: data.preamble,
               body: data.body,
-              relatedArticles: data.relatedArticles,
+              relatedArticles: data.relatedArticles || [],
               publishingTime: data.publishingTime,
               updateTime: data.updateTime,
               shareUrl: data.shareUrl,
@@ -708,16 +677,6 @@ class App extends Component {
               />
             )}
             <Content body={this.state.body} showHighResolutionImage={this.showHighResolutionImage} />
-            {this.state.showBanner && (
-              <CoronaBanner
-                newCases={this.state.banner.newCases}
-                hospitalised={this.state.banner.hospitalised}
-                deaths={this.state.banner.deaths}
-                vaccinated={this.state.banner.vaccinated}
-                vaccinatedPercentage={this.state.banner.vaccinatedPercentage}
-                showLinks={this.state.banner.showLinks}
-              />
-            )}
             <div className={"row"}>
               <div className={`col-sm-12 premiumSection ${isDarkModeOn() ? "darkMode" : ""}`}>
                 {this.state.showBuyOption ? <PremiumBox showLogin={this.showLogin} /> : ""}

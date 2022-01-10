@@ -13,3 +13,24 @@
     width: 100%;
     max-width: 640px;
 }
+
+.ksf-app-ad {
+    div[id^="google_ads_iframe_"] {
+        &:before {
+            content: "Annons";
+            font: 400 .75rem "Roboto", sans-serif;
+            color: @grey-medium;
+            text-transform: uppercase;
+            display: block;
+            margin: 10px;
+        }
+        &:after {
+            content: "Annons slut";
+            font: 400 .75rem "Roboto", sans-serif;
+            color: @grey-medium;
+            text-transform: uppercase;
+            display: block;
+            margin: 10px;
+        }
+    }
+}

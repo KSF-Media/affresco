@@ -1,5 +1,9 @@
 let Prelude = ./Prelude.dhall
 
+let A = ./apps.dhall
+
+let AS = ./app-servers/AppServer.dhall
+
 let Map = Prelude.Map.Type
 
 let default = Prelude.Text.default
@@ -10,39 +14,9 @@ let null = Prelude.Optional.null
 
 let Env = < Staging | Production >
 
-let App =
-      { Type =
-          { buildDir : Text
-          , deployDir : Text
-          , name : Text
-          , env : Map Text Text
-          , lockfile : Optional Text
-          , caches : Optional Text
-          }
-      , default =
-        { env = [] : Map Text Text, lockfile = None Text, caches = None Text }
-      }
+let AppServer = AS.AppServer
 
-let AppServer =
-      { Type =
-          { id : Text
-          , buildDir : Text
-          , deployDir : Text
-          , name : Text
-          , runtime : Text
-          , entrypoint : Text
-          , env : Map Text Text
-          , previewUrl : Text
-          , lockfile : Optional Text
-          , caches : Optional Text
-          }
-      , default =
-        { env = [] : Map Text Text
-        , previewUrl = ""
-        , lockfile = None Text
-        , caches = None Text
-        }
-      }
+let App = A.App
 
 let Step =
       { Type =
@@ -52,6 +26,8 @@ let Step =
           , run : Optional Text
           , `with` : Map Text Text
           , env : Map Text Text
+          , shell : Optional Text
+          , continue-on-error : Optional Bool
           }
       , default =
         { id = None Text
@@ -60,52 +36,42 @@ let Step =
         , run = None Text
         , `with` = [] : Map Text Text
         , env = [] : Map Text Text
+        , shell = None Text
+        , continue-on-error = None Bool
         }
       }
 
 let setupSteps =
-      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
-      , Step::{
-        , name = Some "Setup node and yarn"
-        , uses = Some "actions/setup-node@v1"
-        , `with` = toMap { node-version = "12" }
-        }
-      , Step::{
-        , name = Some "Setup ruby"
-        , uses = Some "actions/setup-ruby@v1"
-        , `with` = toMap { ruby-version = "2.6" }
-        }
-      , Step::{
-        , uses = Some "cachix/install-nix-action@v12"
-        , `with` = toMap { nix_path = "nixpkgs=channel:nixos-20.09" }
-        }
-      , Step::{
-        , name = Some "Setup global build cache"
-        , uses = Some "actions/cache@v2"
-        , `with` = toMap
-            { key = "\${{ runner.os }}-build-\${{ hashFiles('yarn.lock')}}"
-            , path =
-                ''
-                  **/node_modules
-                  **/.yarn-cache
-                  **/.cache
-                  ~/.npm
-                  ~/.cache/spago
-                  apps/elections/dist
-                  !build
-                  !build/*
-                  !build/**
-                ''
-            }
-        }
-      , Step::{
-        , run = Some
-            ''
-              yarn install --pure-lockfile --cache-folder=.yarn-cache
-              mkdir -p build
-            ''
-        }
-      ]
+      \(env : Env) ->
+        [ Step::{
+          , name = Some "Checkout repo"
+          , uses = Some "actions/checkout@v2"
+          }
+        , Step::{
+          , name = Some "Setup Cloud SDK"
+          , uses = Some "google-github-actions/setup-gcloud@master"
+          , `with` = toMap
+              { project_id =
+                  merge
+                    { Staging = "ksf-staging", Production = "ksf-production" }
+                    env
+              , service_account_key =
+                  merge
+                    { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
+                    , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+                    }
+                    env
+              , export_default_credentials = "true"
+              }
+          }
+        , Step::{
+          , run = Some
+              ''
+                yarn install --pure-lockfile
+                mkdir -p build
+              ''
+          }
+        ]
 
 let mkCacheAppStep =
       \(app : App.Type) ->
@@ -128,6 +94,7 @@ let mkBuildStep =
         Step::{
         , name = Some "Build ${app.name}"
         , env = app.env
+        , shell = Some "bash"
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
@@ -140,10 +107,23 @@ let mkBuildServerStep =
         Step::{
         , name = Some "Build Server ${app.name}"
         , env = app.env
+        , shell = Some "bash"
         , run = Some
             ''
               ruby deploy.rb ${app.buildDir}
               cp -R apps/${app.buildDir} build/${app.deployDir}
+            ''
+        }
+
+let copyAppYamlForStaging =
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Copy app.yaml.dev to app.yaml"
+        , env = app.env
+        , shell = Some "bash"
+        , run = Some
+            ''
+            cp build/${app.deployDir}/app.dev.yaml build/${app.deployDir}/app.yaml
             ''
         }
 
@@ -157,7 +137,8 @@ let mkUploadStep =
             { path = "build/${app.deployDir}"
             , destination =
                 merge
-                  { Staging = "deploy-previews/\${{ github.sha }}/${app.deployDir}"
+                  { Staging =
+                      "deploy-previews/\${{ github.sha }}/${app.deployDir}"
                   , Production = "ksf-frontends/${app.deployDir}"
                   }
                   env
@@ -173,19 +154,23 @@ let mkUploadStep =
 
 let mkAppEngineStep =
       \(env : Env) ->
+      \(promote : Text) ->
       \(app : AppServer.Type) ->
         Step::{
-        , id = Some "deploy-${app.id}"
+        , id =
+            merge
+              { Staging = Some "deploy-${app.id}"
+              , Production = Some "deploy-${app.id}-production"
+              }
+              env
         , name = Some "Deploy ${app.name}"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
-            , promote = merge { Staging = "false", Production = "true" } env
+            , promote
             , project_id =
                 merge
-                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                  }
+                  { Staging = "ksf-staging", Production = "ksf-production" }
                   env
             , credentials =
                 merge
@@ -202,13 +187,10 @@ let deployDispatchYamlStep =
         , name = Some "Deploy AppEngine domain map"
         , uses = Some "google-github-actions/deploy-appengine@main"
         , `with` = toMap
-            { working_directory = "build"
-            , deliverables = "dispatch.yaml"
+            { deliverables = "dispatch.yaml"
             , project_id =
                 merge
-                  { Staging = "\${{ secrets.GCP_STAGING_PROJECT_ID }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
-                  }
+                  { Staging = "ksf-staging", Production = "ksf-production" }
                   env
             , credentials =
                 merge
@@ -219,34 +201,49 @@ let deployDispatchYamlStep =
             }
         }
 
-let checkCIStep =
-      Step::{
-      , name = Some "Check CI script has been generated from Dhall"
-      , run = Some
-          ''
-            make
-            git diff --exit-code
-          ''
-      }
+let checkCISteps =
+      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
+      , Step::{
+        , name = Some "Check CI script has been generated from Dhall"
+        , run = Some
+            ''
+              make
+              git diff --exit-code
+            ''
+        }
+      ]
 
 let generateDispatchYamlStep =
       \(env : Env) ->
         Step::{
         , name = Some "Generate AppEngine domain map"
+        , shell = Some "bash"
         , run =
             merge
               { Staging = Some
                   ''
-                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Staging"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > ./dispatch.yaml
+                    cat dispatch.yaml
                   ''
               , Production = Some
                   ''
-                    nix-shell ci/dhall.nix --run 'dhall-to-yaml --omit-empty \
-                    <<< "./ci/dispatch.yaml.dhall" <<< "<Staging|Production>.Production"' > ./build/dispatch.yaml
+                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Production" > ./dispatch.yaml
+                    cat dispatch.yaml
                   ''
               }
               env
+        }
+
+let generateAppYaml =
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Generate app.yaml for ${app.id}"
+        , shell = Some "bash"
+        , run = Some
+            ''
+            dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/${app.id}.dhall" > ./build/${app.deployDir}/app.yaml
+            cat ./build/${app.deployDir}/app.yaml
+            ''
         }
 
 let linkPreviewsStep =
@@ -255,7 +252,8 @@ let linkPreviewsStep =
       \(previewUrl : Text) ->
         Step::{
         , name = Some "Post preview links"
-        , uses = Some "unsplash/comment-on-pr@master"
+        , uses = Some
+            "unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b"
         , env = toMap { GITHUB_TOKEN = "\${{ secrets.GITHUB_TOKEN }}" }
         , `with` = toMap
             { msg =
@@ -265,7 +263,7 @@ let linkPreviewsStep =
 
                 let renderAELink =
                       \(app : AppServer.Type) ->
-                        "- [${app.name}](\${{ steps.deploy-${app.id}.outputs.url }}/${app.previewUrl})"
+                        "- [${app.name}](\${{ needs.deploy-${app.id}.outputs.preview }}/${app.previewUrl})"
 
                 in  ''
                     Deploy previews are ready :sunglasses:
@@ -280,7 +278,20 @@ let linkPreviewsStep =
                         renderAELink
                         appServers}
                     ''
+            , check_for_duplicate_msg = "false"
             }
+        }
+
+let mkCleanAppEngineStep =
+      \(env : Env) ->
+      \(app : AppServer.Type) ->
+        Step::{
+        , name = Some "Keep only 10 latest versions of ${app.id}"
+        , continue-on-error = Some True
+        , run = Some
+            ''
+            ./ci/ae-cleanup.sh ${app.id}
+            ''
         }
 
 let refreshCDNSteps =
@@ -289,7 +300,7 @@ let refreshCDNSteps =
           , name = Some "Install gcloud"
           , uses = Some "google-github-actions/setup-gcloud@master"
           , `with` = toMap
-              { project_id = "\${{ secrets.GCP_PRODUCTION_PROJECT_ID }}"
+              { project_id = "ksf-production"
               , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
               , export_default_credentials = "true"
               }
@@ -305,9 +316,10 @@ let refreshCDNSteps =
 
 let refreshCDNJob =
       \(cdnName : Text) ->
+      \(jobName : Text) ->
         { runs-on = "ubuntu-latest"
         , steps = refreshCDNSteps cdnName
-        , needs = "deploy"
+        , needs = jobName
         }
 
 let uploadSteps =
@@ -315,12 +327,17 @@ let uploadSteps =
 
 let deployAppEngineSteps =
       \(env : Env) ->
-        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env)
+      \(promote : Text) ->
+        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
 
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
 
 let buildServerSteps =
       Prelude.List.map AppServer.Type Step.Type mkBuildServerStep
+
+let cleanAppEngineSteps =
+      \(env : Env) ->
+        Prelude.List.map AppServer.Type Step.Type (mkCleanAppEngineStep env)
 
 let cacheSteps = Prelude.List.map App.Type Step.Type mkCacheAppStep
 
@@ -330,19 +347,23 @@ let hasLockfile
 
 in  { Step
     , Prelude
-    , App
-    , AppServer
     , Env
     , setupSteps
     , buildSteps
     , buildServerSteps
+    , mkBuildServerStep
     , uploadSteps
     , deployAppEngineSteps
-    , checkCIStep
+    , mkAppEngineStep
+    , checkCISteps
     , linkPreviewsStep
     , refreshCDNJob
     , generateDispatchYamlStep
     , deployDispatchYamlStep
     , cacheSteps
     , hasLockfile
+    , cleanAppEngineSteps
+    , mkCleanAppEngineStep
+    , copyAppYamlForStaging
+    , generateAppYaml
     }

@@ -53,6 +53,7 @@ mkAccountForm = do
             , city = toMaybe <<< _.city =<< toMaybe props.user.address
             , zipCode =  toMaybe <<< _.zipCode =<< toMaybe props.user.address
             , countryCode = _.countryCode <$> toMaybe props.user.address <|> Just "FI"
+            , phone = toMaybe props.user.phone
             }
     state /\ setState <- useState { contactForm: initialContactInformation }
     let self = { state, setState }
@@ -126,6 +127,15 @@ render props self@{ state: { contactForm } } = fragment
         , CountryDropdown.defaultCountryDropDown
             (\newCountry -> self.setState _ { contactForm { countryCode = newCountry } })
             (contactForm.countryCode <|> _.countryCode <$> toMaybe props.user.address)
+        , InputField.inputField
+            { type_: InputField.Text
+            , label: Just "Telefon"
+            , name: "phone"
+            , placeholder: "Telefon"
+            , onChange: \newPhone -> self.setState _ { contactForm { phone = newPhone }}
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField Phone contactForm.phone []
+            , value: contactForm.phone
+            }
         , DOM.input
             { type: "submit"
             , className: "vetrina--button vetrina--button__contact_information"
@@ -144,6 +154,7 @@ render props self@{ state: { contactForm } } = fragment
       , city: _
       , zipCode: _
       , countryCode: _
+      , phone: _
       }
       <$> Form.validateField FirstName self.state.contactForm.firstName mempty
       <*> Form.validateField LastName  self.state.contactForm.lastName  mempty
@@ -151,6 +162,7 @@ render props self@{ state: { contactForm } } = fragment
       <*> Form.validateField City self.state.contactForm.city mempty
       <*> Form.validateField Zip self.state.contactForm.zipCode mempty
       <*> Form.validateField Country self.state.contactForm.countryCode mempty
+      <*> Form.validateField Phone self.state.contactForm.phone mempty
 
     submitForm = validation
       (\_ -> do
@@ -163,6 +175,7 @@ render props self@{ state: { contactForm } } = fragment
                 , city            = form.city          <|> Just ""
                 , zipCode         = form.zipCode       <|> Just ""
                 , countryCode     = form.countryCode   <|> Just ""
+                , phone           = form.phone         <|> Just ""
                 }
             })
       (\validForm -> do
@@ -173,7 +186,8 @@ render props self@{ state: { contactForm } } = fragment
                 city          <- validForm.city
                 zipCode       <- validForm.zipCode
                 countryCode   <- validForm.countryCode
-                pure { firstName, lastName, streetAddress, city, zipCode, countryCode }
+                let phone = validForm.phone
+                pure { firstName, lastName, streetAddress, city, zipCode, countryCode, phone }
           case updateAddress of
             Nothing -> pure unit
             Just addr -> Aff.launchAff_ do
@@ -182,7 +196,7 @@ render props self@{ state: { contactForm } } = fragment
               liftEffect $ props.setLoading (Just Spinner.Loading)
               Aff.finally
                 (liftEffect $ props.setLoading Nothing)
-                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull $ addr `merge` { startDate: Nothing }
+                do eitherUser <- User.updateUser props.user.uuid $ UpdateFull $ addr `merge` { startDate: Nothing, phone: Nothing }
                    case eitherUser of
                      Right user -> liftEffect $ props.retryPurchase user
                      Left err -> liftEffect $ props.onError err

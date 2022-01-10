@@ -1,6 +1,9 @@
 runtime: nodejs12
-service: mosaico
-entrypoint: node -e 'require("./output/Main/index").main()'
+service: mosaico-server
+entrypoint: node -r dotenv/config -e 'require("./output/Main/index").main()'
+handlers:
+  - url: /assets
+    static_dir: dist/client
 env_variables:
-  PERSONA_URL: "https://persona.api.ksfmedia.fi/v1"
-  LETTERA_URL: "https://lettera.api.ksfmedia.fi/v3"
+  PERSONA_URL: "https://persona.staging.ksfmedia.fi/v1"
+  LETTERA_URL: "https://lettera.staging.ksfmedia.fi/v4beta"

@@ -21,7 +21,7 @@
         }
       }
 
-      > a {
+      > span {
         cursor: pointer;
         display: grid;
         grid-template-columns: 1fr;
@@ -44,12 +44,24 @@
         }
 
         transition: all 0.2s;
+
+        a {
+          text-decoration: none;
+          h2 {
+            color: black;
+          }
+	}
       }
 
-      > a:hover {
+      > span:hover {
         filter: contrast(120%);
       }
     }
+  }
+
+  .spinner--loading-spinner {
+    // TODO will Mosaico have a dark mode?
+    background: initial;
   }
 }
 
@@ -59,6 +71,15 @@
     font: bold 1.125rem "Roboto", sans-serif;
     text-transform: uppercase;
     margin: 0 10px;
+    #HBL & {
+      color: @hbl-orange;
+    }
+    #VN & {
+      color: @vn-red;
+    }
+    #ON & {
+      color: @on-blue;
+    }
   }
 
   &__mostread {
@@ -90,6 +111,16 @@
             align-items: center;
             justify-content: center;
 
+	    #HBL & {
+              background-color: @hbl-orange;
+	    }
+	    #VN & {
+              background-color: @vn-red;
+	    }
+	    #ON & {
+              background-color: @on-blue;
+	    }
+
             &::after {
               content: counter(listcounter);
               font-weight: 500;
@@ -106,7 +137,7 @@
             color: @grey-warm-mid;
           }
 
-          .mosaico--article--premium {
+          .premium-badge {
             transform: scale(.85);
             transform-origin: left;
           }

@@ -1,6 +1,7 @@
 require 'open3'
 require 'json'
 require 'yaml'
+require 'fileutils'
 
 def run_command(command)
   puts "Running `#{command}`"
@@ -32,19 +33,11 @@ end
 
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
-apps_json = ""
-apps_servers_json = ""
-begin
-  apps_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/apps.dhall\"'")
-  apps_servers_json = run_command("nix-shell ci/dhall.nix --run 'dhall-to-json <<< \"./ci/app-servers.dhall\"'")
-rescue Exception => e
-  # FIXME: this is here because Netlify doesn't have nix-shell.
-  # This is terrible and should be removed ASAP. Really.
-  apps_json = file = File.read('./temp-apps-deprecate-me-asap.json')
-end
+apps_json = run_command("/bin/bash -c 'npx dhall-to-json <<< \"(./ci/apps.dhall).apps\"'")
+apps_servers_json = run_command("/bin/bash -c 'npx dhall-to-json <<< ./ci/app-servers.dhall'")
 
 apps_list = JSON.parse(apps_json)
-app_servers_list = JSON.parse(apps_servers_json)
+app_servers_list = JSON.parse(apps_servers_json).values
 apps = apps_list.map{ |x| [x["deployDir"], x] }.to_h
 apps.merge!(app_servers_list.map{ |x| [x["deployDir"], x] }.to_h)
 
@@ -79,40 +72,27 @@ def setup_env(app)
     app_vars.each do |v|
       abort("Did not find #{v} in the environment variables") if ENV[v].nil?
     end
-    # For deploying things to gcloud app engine
-    if app.key?('runtime')
-      puts "Generating production app.yaml"
-      app_yaml                  = {}
-      app_yaml['runtime']       = app['runtime']
-      app_yaml['service']       = app['id']
-      app_yaml['entrypoint']    = app['entrypoint']
-      app_yaml['env_variables'] = {}
-      app_vars.each do |v|
-        env_var_name = v.sub(/^PRODUCTION_/, '')
-        app_yaml['env_variables']["#{env_var_name}"] = ENV[v]
-      end
-      File.open("#{app['path']}/app.yaml", 'w') do |f|
-        f.puts(YAML.dump(app_yaml))
-      end
-    else
-      puts "Generating .env.production"
-      File.open("#{app['path']}/.env.production", 'a') do |f|
-        app_vars.each do |v|
-          # Strip 'PRODUCTION_' from the variable name
-          env_var_name = v.sub(/^PRODUCTION_/, '')
-          f.puts("#{env_var_name}=#{ENV[v]}")
-        end
-      end
-    end
+    generate_production_dot_env(app, app_vars)
     ENV['NODE_ENV'] = 'production'
   else
     ENV['NODE_ENV'] = 'development'
-    if app.key?('runtime')
-      run_command("cp #{app['path']}/app.dev.yaml #{app['path']}/app.yaml")
+    # Copy .env.local to .env.development for Parcel
+    if (File.exist?("#{app['path']}/.env.local"))
+      FileUtils.cp("#{app['path']}/.env.local", "#{app['path']}/.env.development")
     end
   end
 end
 
+def generate_production_dot_env(app, app_vars)
+  puts "Generating .env.production"
+  File.open("#{app['path']}/.env.production", 'a') do |f|
+    app_vars.each do |v|
+      # Strip 'PRODUCTION_' from the variable name
+      env_var_name = v.sub(/^PRODUCTION_/, '')
+      f.puts("#{env_var_name}=#{ENV[v]}")
+    end
+  end
+end
 
 build_commands = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",

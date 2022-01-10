@@ -62,15 +62,18 @@ type JSProps =
   , paper              :: Nullable String
   , paymentMethods     :: Nullable (Array String)
   , loadingContainer   :: Nullable (JSX -> JSX)
-  , customNewPurchase  :: Nullable (JSX -> NewPurchase.State -> JSX)
+  , customNewPurchase  :: Nullable (JSX -> AccountStatus -> JSX)
   , orderSource        :: Nullable String
   , subscriptionExists :: Nullable JSX
+  , askAccountAlways   :: Nullable Boolean
   }
 
 type Props =
    -- If onClose is Nothing, the final button in `Completed` view will not be shown
   { onClose            :: Maybe (Effect Unit)
   , onLogin            :: Effect Unit
+  -- Used to signal from the outside that user status has changed
+  , user               :: Maybe User
   , products           :: Either Error (Array Product)
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
@@ -78,15 +81,17 @@ type Props =
   , paper              :: Maybe Paper
   , paymentMethods     :: Array User.PaymentMethod
   , loadingContainer   :: Maybe (JSX -> JSX)
-  , customNewPurchase  :: Maybe (JSX -> NewPurchase.State -> JSX)
+  , customNewPurchase  :: Maybe (JSX -> AccountStatus -> JSX)
   , orderSource        :: OrderSource
   , subscriptionExists :: JSX
+  , askAccountAlways   :: Boolean
   }
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { onClose: toMaybe jsProps.onClose
   , onLogin: fromMaybe (pure unit) $ toMaybe jsProps.onLogin
+  , user: Nothing
   , products:
       let productError = error "Did not get any valid products in props!"
       in case toMaybe jsProps.products of
@@ -106,6 +111,7 @@ fromJSProps jsProps =
   , customNewPurchase: toMaybe jsProps.customNewPurchase
   , orderSource: maybe UnknownSource toOrderSource $ toMaybe jsProps.orderSource
   , subscriptionExists: fromMaybe mempty $ toMaybe jsProps.subscriptionExists
+  , askAccountAlways: fromMaybe false $ toMaybe jsProps.askAccountAlways
   }
 
 type State =
@@ -196,6 +202,9 @@ didMount self = do
         if length paymentMethods == 1
         then head paymentMethods
         else Nothing
+  foldMap (\user -> self.setState _ { user = Just user
+                                    , accountStatus = LoggedInAccount user
+                                    }) self.props.user
   -- Before rendering the form, we need to:
   -- 1. fetch the user if access token is found in the browser
   Aff.launchAff_ do
@@ -293,6 +302,7 @@ pollOrder setState { logger } (Left bottegaErr) = liftEffect do
   let errMessage = case bottegaErr of
         BottegaUnexpectedError e   -> e
         BottegaInsufficientAccount -> "InsufficientAccount"
+        BottegaTimeout             -> "Timeout"
   logger.error $ Error.orderError $ "Failed to get order from server: " <> errMessage
   setState _ { purchaseState = PurchaseFailed ServerError }
 
@@ -304,23 +314,7 @@ render self = vetrinaContainer self $
        else maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
   else case self.state.purchaseState of
     PurchasePolling -> maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
-    NewPurchase ->
-      Purchase.NewPurchase.newPurchase
-        { accountStatus: self.state.accountStatus
-        , products: self.state.products
-        , errorMessage : Nothing
-        , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
-        , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
-        , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
-        , productSelection: self.state.productSelection
-        , onLogin: self.props.onLogin
-        , headline: self.props.headline
-        , paper: self.props.paper
-        , paymentMethod: self.state.paymentMethod
-        , paymentMethods: self.state.paymentMethods
-        , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
-        , customRender: self.props.customNewPurchase
-        }
+    NewPurchase -> newPurchase
     CapturePayment url -> netsTerminalIframe url
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed failure ->
@@ -347,23 +341,7 @@ render self = vetrinaContainer self $
                 }
             -- Can't do much without a user
             Nothing -> self.props.unexpectedError
-        AuthenticationError ->
-          Purchase.NewPurchase.newPurchase
-            { accountStatus: self.state.accountStatus
-            , products: self.state.products
-            , errorMessage: Just $ orderErrorMessage AuthenticationError
-            , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
-            , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
-            , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
-            , paymentMethod: self.state.paymentMethod
-            , productSelection: self.state.productSelection
-            , onLogin: self.props.onLogin
-            , headline: self.props.headline
-            , paper: self.props.paper
-            , paymentMethods: self.state.paymentMethods
-            , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
-            , customRender: self.props.customNewPurchase
-            }
+        AuthenticationError -> newPurchase
         ServerError         -> Purchase.Error.error { onRetry }
         UnexpectedError _   -> Purchase.Error.error { onRetry }
         InitializationError -> self.props.unexpectedError
@@ -388,6 +366,23 @@ render self = vetrinaContainer self $
         }
   where
     onRetry = self.setState _ { purchaseState = NewPurchase }
+    newPurchase = Purchase.NewPurchase.newPurchase
+      { accountStatus: maybe self.state.accountStatus LoggedInAccount self.props.user
+      , products: self.state.products
+      , errorMessage : Nothing
+      , mkPurchaseWithNewAccount: mkPurchaseWithNewAccount self
+      , mkPurchaseWithExistingAccount: mkPurchaseWithExistingAccount self
+      , mkPurchaseWithLoggedInAccount: mkPurchaseWithLoggedInAccount self
+      , productSelection: self.state.productSelection
+      , onLogin: self.props.onLogin
+      , headline: self.props.headline
+      , paper: self.props.paper
+      , paymentMethod: self.state.paymentMethod
+      , paymentMethods: self.state.paymentMethods
+      , onPaymentMethodChange: \p -> self.setState _ { paymentMethod = p }
+      , onEmailChange: self.setState _ { accountStatus = NewAccount }
+      , customRender: self.props.customNewPurchase
+      }
 
 vetrinaContainer :: Self -> JSX -> JSX
 vetrinaContainer { state: { purchaseState } } child =
@@ -415,22 +410,23 @@ orderErrorMessage failure =
 
 -- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
 mkPurchaseWithNewAccount :: Self -> NewPurchase.NewAccountForm -> Effect Unit
-mkPurchaseWithNewAccount self validForm = mkPurchase self validForm $ createNewAccount self validForm.emailAddress
+mkPurchaseWithNewAccount self validForm = mkPurchase self self.props.askAccountAlways validForm $ createNewAccount self validForm.emailAddress
 
 mkPurchaseWithExistingAccount :: Self -> NewPurchase.ExistingAccountForm -> Effect Unit
 mkPurchaseWithExistingAccount self validForm =
-  mkPurchase self validForm $ loginToExistingAccount self validForm.emailAddress validForm.password
+  mkPurchase self self.props.askAccountAlways validForm $ loginToExistingAccount self validForm.emailAddress validForm.password
 
 mkPurchaseWithLoggedInAccount :: Self -> User.User -> { | NewPurchase.PurchaseParameters } -> Effect Unit
-mkPurchaseWithLoggedInAccount self user validForm = mkPurchase self validForm $ (pure $ Right user)
+mkPurchaseWithLoggedInAccount self user validForm = mkPurchase self self.props.askAccountAlways validForm $ (pure $ Right user)
 
 mkPurchase
   :: forall r
   . Self
+  -> Boolean
   -> { productSelection :: Maybe Product, paymentMethod :: Maybe PaymentMethod | r }
   -> Aff (Either OrderFailure User.User)
   -> Effect Unit
-mkPurchase self@{ state: { logger } } validForm affUser =
+mkPurchase self@{ state: { logger } } askAccount validForm affUser =
   Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
   eitherUser <- affUser
   eitherOrder <- runExceptT do
@@ -449,6 +445,13 @@ mkPurchase self@{ state: { logger } } validForm affUser =
     userEntitlements <- ExceptT getUserEntitlements
     when (isUserEntitled self.props.accessEntitlements userEntitlements)
       $ except $ Left SubscriptionExists
+
+    -- If props.askAccountAlways is true, mkPurchase gets called once
+    -- with askAccount true and this triggers, after which
+    -- InsufficientAccount handling will call mkPurchase with
+    -- askAccount set as false and the purchase can proceed.
+    when askAccount $
+      throwError InsufficientAccount
 
     order <- ExceptT $ createOrder user product self.props.orderSource
     paymentUrl <- ExceptT $ payOrder order paymentMethod
@@ -494,7 +497,7 @@ mkPurchase self@{ state: { logger } } validForm affUser =
               self.state { purchaseState = PurchaseFailed InsufficientAccount
                          , retryPurchase = \user ->
                              -- NOTE: This will make the purchase as "logged in user"
-                             mkPurchase self validForm (pure $ Right user)
+                             mkPurchase self false validForm (pure $ Right user)
                          }
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
@@ -587,6 +590,7 @@ toOrderFailure :: BottegaError -> OrderFailure
 toOrderFailure bottegaErr =
   case bottegaErr of
     BottegaInsufficientAccount    -> InsufficientAccount
+    BottegaTimeout                -> UnexpectedError "Timeout"
     BottegaUnexpectedError errMsg -> UnexpectedError errMsg
 
 netsTerminalIframe :: PaymentTerminalUrl -> JSX

@@ -6,9 +6,10 @@
   "dependencies": {
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "cheerio": "^1.0.0-rc.10",
+    "html-to-react": "^1.4.7",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#40058b09b6d969390daaad6e58918b04129b1c16",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d8876dc53c39e6c80cdff363a8230deb944c6e73",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",
@@ -18,7 +19,8 @@
     "xhr2": "^0.2.1"
   },
   "scripts": {
-    "start": "spago run",
-    "build": "spago build && parcel build web/index.html -d dist/client --public-url /assets"
+    "start": "node -r dotenv/config -e 'require(\"./output/Main/index\").main()' dotenv_config_path=.env.local",
+    "start-dev": "parcel build ./static/* -d dist/client && parcel web/index.html -p 8000 -d dist/client --public-url /assets",
+    "build": "spago build && parcel build web/index.html -d dist/client --public-url /assets && parcel build ./static/* -d dist/client"
   }
 }

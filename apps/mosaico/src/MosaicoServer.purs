@@ -2,26 +2,44 @@ module MosaicoServer where
 
 import Prelude
 
-import Mosaico.Article as Article
+import Data.Maybe (Maybe)
+import KSF.Paper as Paper
+import KSF.User (User)
+import Lettera.Models (ArticleStub, Category, Tag, categoriesMap)
+import Mosaico.Footer (footer)
 import Mosaico.Header as Header
+import Mosaico.Paper (mosaicoPaper)
+import Mosaico.MostReadList as MostReadList
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, JSX, component, useState, (/\))
-import React.Basic.Hooks as React
+import React.Basic.Hooks (JSX)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (write)
 
 type Props =
-  { mainContent :: JSX }
-
-type State =
-  { articleComponent :: Article.Props -> JSX
-  , headerComponent :: Header.Props -> JSX
+  { mainContent :: MainContent
+  , mostReadArticles :: Array ArticleStub
+  , categoryStructure :: Array Category
+  , user :: Maybe User
   }
 
-app :: Component Props
-app = do
-  articleComponent <- Article.articleComponent
-  headerComponent  <- Header.headerComponent
+data MainContent
+  = ArticleContent JSX
+  | FrontpageContent JSX
+  | HtmlFrontPageContent JSX
+  | TagListContent Tag JSX
+  | StaticPageContent String JSX
+  | MenuContent JSX
+
+fromMainContent :: MainContent -> JSX
+fromMainContent (ArticleContent jsx) = jsx
+fromMainContent (FrontpageContent jsx) = jsx
+fromMainContent (HtmlFrontPageContent jsx) = jsx
+fromMainContent (TagListContent _ jsx) = jsx
+fromMainContent (StaticPageContent _ jsx) = jsx
+fromMainContent (MenuContent jsx) = jsx
+
+app :: Props -> JSX
+app props =
   let (emptyRouter :: PushStateInterface) =
         { listen: const $ pure $ pure unit
         , locationState:
@@ -35,28 +53,35 @@ app = do
         , pushState: const $ const mempty
         , replaceState: const $ const mempty
         }
-  component "Mosaico" \props -> React.do
-    let initialState =
-          { articleComponent
-          , headerComponent
-          }
-    state /\ _setState <- useState initialState
-    pure $ render emptyRouter state props
+   in
+     render emptyRouter props
 
 
-render :: PushStateInterface -> State -> Props -> JSX
-render router state props = DOM.div
+render :: PushStateInterface -> Props -> JSX
+render router props = DOM.div
        { className: "mosaico grid"
+       , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
-           , state.headerComponent { router }
+           , Header.render { router
+                           , categoryStructure: props.categoryStructure
+                           , catMap: categoriesMap props.categoryStructure
+                           , onCategoryClick: const mempty
+                           , user: props.user
+                           , onLogin: pure unit
+                           }
            , Header.mainSeparator
-           , props.mainContent
-           , DOM.footer
-               { className: "mosaico--footer"
-               , children: [ DOM.text "footer" ]
-               }
-           , DOM.aside
-               { className: "mosaico--aside" }
+           , fromMainContent props.mainContent
+           , footer mempty
+           , case props.mainContent of
+                 FrontpageContent _ -> aside
+                 TagListContent _ _ -> aside
+                 _ -> mempty
            ]
        }
+  where
+    aside =
+      DOM.aside
+        { className: "mosaico--aside"
+        , children: [ MostReadList.render { mostReadArticles: props.mostReadArticles, onClickHandler: const $ pure unit } ]
+        }

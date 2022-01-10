@@ -105,13 +105,14 @@ subscribeNewCustomerPaySetPassword page password = do
   log "Payment should have succeeded, so we can now set the password of the account"
   let passSelector1 = Chrome.Selector "#setPassword > div:nth-child(1) > input[type=password]"
   let passSelector2 = Chrome.Selector "#setPassword > div:nth-child(2) > input[type=password]"
-  Chrome.waitFor_ passSelector1 page
+  Chrome.waitForLong_ passSelector1 page
   Chrome.type_ passSelector1 password page
   Chrome.type_ passSelector2 password page
   Chrome.click (Chrome.Selector "input[type=\"submit\"]") page
 
   let titleSelector = Chrome.Selector ".vetrina--headline"
   log "Check that we land on the right page at the end"
+  Chrome.waitForLong_ titleSelector page
   Chrome.assertContent titleSelector "Ditt KSF Media-konto är klart!" page
 
 subscribe365NewCustomer :: Test
@@ -126,22 +127,22 @@ buyWithExistingCustomer :: Test
 buyWithExistingCustomer page email password = do
   log $ "We have to create a new account first, we can just call to Persona, email: " <> email
   logShow =<< Persona.register
-    { firstName: "Testi"
-    , lastName: "Testinen"
-    , emailAddress: email
-    , password: password
-    , confirmPassword: password
-    , streetAddress: "Mannerheimintie 18"
-    , zipCode: "00100"
-    , city: "Helsinki"
-    , country: "FI"
-    , phone: "1234567890"
-    , legalConsents: [{
-        dateAccepted: "2020-09-22T12:58:17.691Z",
-        consentId: "legal_acceptance_v1",
-        screenName: "legalAcceptanceScreen"
+    (Persona.NewPaperUser
+     { firstName: "Testi"
+     , lastName: "Testinen"
+     , emailAddress: email
+     , password: password
+     , confirmPassword: password
+     , streetAddress: "Mannerheimintie 18"
+     , zipCode: "00100"
+     , city: "Helsinki"
+     , country: "FI"
+     , legalConsents: [{
+         dateAccepted: "2020-09-22T12:58:17.691Z",
+         consentId: "legal_acceptance_v1",
+         screenName: "legalAcceptanceScreen"
       }]
-    }
+     })
   log "Then we can fill in the email we just registered"
   fillEmail email page
   loginExistingUser password page
@@ -195,7 +196,7 @@ payWithNets :: forall page. Chrome.HasFrame page => page -> Aff Unit
 payWithNets page = do
   log "Getting the nets iframe, so we can pay the order"
   let netsIframe = Chrome.Selector "iframe.vetrina--payment-terminal"
-  frameHandle <- Chrome.waitFor netsIframe page
+  frameHandle <- Chrome.waitFor netsIframe 30000 page
   iframe <- Chrome.contentFrame frameHandle
 
   log "Waiting for credit card fields and typing credit card details"
@@ -210,6 +211,7 @@ fillAddress page = do
       addressSelector   = idSelector "streetAddress"
       citySelector      = idSelector "city"
       zipCodeSelector   = idSelector "zipCode"
+      phoneSelector     = idSelector "phone"
 
   Chrome.waitFor_ firstNameSelector page
   Chrome.type_ firstNameSelector "Testi"              page
@@ -217,6 +219,7 @@ fillAddress page = do
   Chrome.type_ addressSelector   "Mannerheimintie 18" page
   Chrome.type_ citySelector      "Helsingfors"        page
   Chrome.type_ zipCodeSelector   "00100"              page
+  Chrome.type_ phoneSelector     "+35891253500"       page
 
   Chrome.click (Chrome.Selector ".vetrina--button") page
 

@@ -25,10 +25,13 @@ launch :: Aff Browser
 launch = Chrome.launch { headless: false, args: ["--disable-features=site-per-process"] }
 
 waitFor_ :: forall page. HasFrame page => Selector -> page -> Aff Unit
-waitFor_ selector frame = void $ waitFor selector frame
+waitFor_ selector frame = void $ waitFor selector 30000 frame
 
-waitFor :: forall page. HasFrame page => Selector -> page -> Aff ElementHandle
-waitFor selector frame = Chrome.waitForSelector selector { visible: true } frame
+waitForLong_ :: forall page. HasFrame page => Selector -> page -> Aff Unit
+waitForLong_ selector frame = void $ waitFor selector 100000 frame
+
+waitFor :: forall page. HasFrame page => Selector -> Int -> page -> Aff ElementHandle
+waitFor selector timeout frame = Chrome.waitForSelector selector { visible: true, timeout } frame
 
 type_ :: forall page. HasFrame page => Selector -> String -> page -> Aff Unit
 type_ selector text page = Chrome.keyboardType selector text { delay: 10.0 } page
@@ -49,6 +52,16 @@ getData :: Selector -> String -> Page -> Aff String
 getData selector field page = do
   unsafeFromForeign <$> Chrome.unsafePageEval selector ("e => e.dataset." <> field) page
 
+getHref :: Selector -> Page -> Aff String
+getHref selector page = do
+  unsafeFromForeign <$> Chrome.unsafePageEval selector "e => e.attributes.href.value" page
+
+-- Note: Any quotes have to be with ' delimiters
+countElements :: Selector -> Selector -> Page -> Aff Int
+countElements selector (Selector sub) page =
+  unsafeFromForeign <$> Chrome.unsafePageEval selector
+  ("e => e.querySelectorAll(\"" <> sub <> "\").length") page
+
 assertContent :: Selector -> String -> Page -> Aff Unit
 assertContent selector expected page = do
   -- here we wait because most likely we're trying to do this on a new page load
@@ -66,3 +79,8 @@ assertNotFound selector@(Selector sel) page =
       -- to be updated if this changes.
       let expected = "Error: Error: failed to find element matching selector"
       if String.take (String.length expected) (show err) == expected then pure unit else liftEffect $ throwException err
+
+back :: Page -> Aff Unit
+back page = do
+  _ <- Chrome.unsafeEvaluateStringFunction "window.history.back();" page
+  pure unit

@@ -16,6 +16,7 @@ module KSF.User
   , createUserWithEmail
   , createCusnoUser
   , getUser
+  , fromPersonaUser
   , isAdminUser
   , updateUser
   , setCusno
@@ -58,12 +59,11 @@ import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
-import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel (parSequence_)
 import Data.Array as Array
 import Data.Date (Date)
 import Data.Either (Either(..), either)
-import Data.Foldable (for_, traverse_)
+import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
@@ -71,6 +71,7 @@ import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
+import Data.String as String
 import Data.Time.Duration (Seconds(..))
 import Data.UUID (UUID)
 import Data.UUID as UUID
@@ -80,19 +81,20 @@ import Effect.Aff as Aff
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
 import Effect.Class.Console as Log
-import Effect.Exception (Error, error, throw)
+import Effect.Exception (Error, error)
 import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
 import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (AuthScope, InvalidateCache, UserAuth)
-import KSF.Api (Token(..), UserAuth, oauthToken, Password) as Api
+import KSF.Api (Token(..), Password, UserAuth, oauthToken, parseToken) as Api
 import KSF.Api.Address (Address) as Address
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
 import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, SubscriptionState(..), Subscription, PausedSubscription, SubscriptionDates) as Subscription
 import KSF.Api.Subscription (Subsno)
+import KSF.Auth (loadToken, saveToken, deleteToken, requireToken)
 import KSF.Error as KSF.Error
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
@@ -100,7 +102,7 @@ import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -130,6 +132,7 @@ data UserError =
   | LoginGoogleAuthInitError
   | LoginGoogleAuthInitErrorOrigin
   | LoginTokenInvalid
+  | LoginTokenExpired
   | InvalidFormFields ValidationServerError
   | RegistrationEmailInUse
   | RegistrationCusnoInUse ConflictingUser
@@ -209,6 +212,8 @@ createCusnoUser newCusnoUser = do
       | Just (errData :: Persona.InvalidFormFields) <- Api.Error.errorData err -> do
           Console.error errData.invalid_form_fields.description
           pure $ Left $ InvalidFormFields errData.invalid_form_fields.errors
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
       | otherwise -> do
           Console.error "An unexpected error occurred during registration"
           pure $ Left $ UnexpectedError err
@@ -286,6 +291,8 @@ setCusno uuid cusno = do
     Left err
       | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
           pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
       | KSF.Error.badRequestError err -> do
           pure $ Left InvalidCusno
       | otherwise -> pure $ Left SomethingWentWrong
@@ -294,7 +301,10 @@ updatePassword :: UUID -> Api.Password -> Api.Password -> Aff (Either UserError 
 updatePassword uuid password confirmPassword = do
   eitherUser <- try $ Persona.updatePassword uuid password confirmPassword =<< requireToken
   case eitherUser of
-    Left err   -> pure $ Left $ UnexpectedError err
+    Left err
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
+      | otherwise -> pure $ Left $ UnexpectedError err
     Right user -> Right <$> fromPersonaUserWithCards user
 
 requestPasswordReset :: String -> Aff (Either String Unit)
@@ -520,34 +530,6 @@ finalizeLogin maybeInvalidateCache auth = do
       Console.info "User fetched successfully"
       pure $ Right user
 
-loadToken :: forall m. MonadEffect m => m (Maybe UserAuth)
-loadToken = liftEffect $ runMaybeT do
-  authToken <- map Api.Token $ MaybeT $ LocalStorage.getItem "token"
-  userId <- MaybeT $ (UUID.parseUUID =<< _) <$> LocalStorage.getItem "uuid"
-  pure { userId, authToken }
-
-saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m UserAuth
-saveToken { token, ssoCode, uuid, isAdmin } = liftEffect do
-  for_ (Nullable.toMaybe ssoCode) $ \code -> do
-    config <- JanrainSSO.loadConfig
-    for_ (Nullable.toMaybe config) \conf -> JanrainSSO.setSession conf code
-  LocalStorage.setItem "token" case token of Api.Token a -> a
-  LocalStorage.setItem "uuid" $ UUID.toString uuid
-  -- This isn't returned by loadToken.
-  if isAdmin
-    then LocalStorage.setItem "isAdmin" "1"
-    else LocalStorage.removeItem "isAdmin"
-  pure { userId: uuid, authToken: token }
-
-deleteToken :: Effect Unit
-deleteToken = traverse_ LocalStorage.removeItem [ "token", "uuid", "isAdmin", "searchQuery", "searchResult" ]
-
-requireToken :: forall m. MonadEffect m => m UserAuth
-requireToken =
-  loadToken >>= case _ of
-    Nothing -> liftEffect $ throw "Did not find uuid/token in local storage."
-    Just loginResponse -> pure loginResponse
-
 facebookSdk :: Aff FB.Sdk
 facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
@@ -724,7 +706,10 @@ callBottega f = do
       | Just (errData :: Bottega.InsufficientAccount) <- Api.Error.errorData err ->
           pure $ Left BottegaInsufficientAccount
       | otherwise ->
-          pure $ Left (BottegaUnexpectedError $ Error.message err)
+          let msg = Error.message err
+          in pure $ Left if String.take 7 msg == "Timeout"
+                           then BottegaTimeout
+                           else BottegaUnexpectedError msg
 
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages

@@ -12,8 +12,6 @@ import generateHtml from "./generateHtml";
 import Article from "../browser/components/article";
 import ErrorPage from "../browser/components/error";
 
-require("dotenv").config();
-
 app.use("/dist", express.static(`${__dirname}/../client`));
 
 app.get("/article/:id", async (req, res) => {
@@ -44,14 +42,16 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
   });
   const paper = queryParams.paper || "hbl";
   const darkModeEnabled = queryParams.mode === "dark";
-  const mostReadReq = axios.get(process.env.LETTERA_URL + "/mostread?paper=" + paper);
 
-  const requests = [articleReq, mostReadReq];
+  const requests = [articleReq];
   // If we have a user id in the headers, let's fetch the user too
   if (_.has(authHeaders, "authuser") && _.has(authHeaders, "authorization")) {
     requests.push(
       axios.get(process.env.PERSONA_URL + "/users/" + authHeaders.authuser, {
 	headers: { authorization: authHeaders.authorization },
+	validateStatus: function (httpStatus) {
+	  return httpStatus < 400 || httpStatus === 403;
+	},
       })
     );
   }
@@ -61,7 +61,6 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     .then(
       axios.spread((...responses) => {
 	const articleResponse = responses[0].data;
-
 	let article;
 	let isPreviewArticle;
 	// If the response.data is an article already, meaning we can find the article id (uuid) there, great! We have an article
@@ -73,8 +72,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	  article = _.get(articleResponse, "not_entitled.articlePreview");
 	  isPreviewArticle = true;
 	}
-	const mostReadArticles = responses[1].data;
-	const user = _.get(responses[2], "data");
+	const user = _.get(responses[1], "data");
 
 	const articleJSX = (
 	  <Article
@@ -91,7 +89,6 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	    authors={article.authors}
 	    premium={article.premium}
 	    isPreview={isPreviewArticle}
-	    mostReadArticles={mostReadArticles}
 	    fontSize={queryParams.fontSize}
 	    darkModeEnabled={queryParams.mode === "dark"}
 	    queryString={queryString}
@@ -100,7 +97,6 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	);
 
 	const updatedArticle = _.merge(article, {
-	  mostReadArticles: mostReadArticles,
 	  isPreview: isPreviewArticle,
 	  fontSize: queryParams.fontSize,
 	  darkModeEnabled: queryParams.mode === "dark",
@@ -115,10 +111,12 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     .catch((errors) => {
       const markup = ReactDOM.renderToString(<ErrorPage message={"Artikeln kunde inte hämtas!"} />);
       const html = generateHtml(markup);
+      // We might get some other error as well here, so let's log that also
+      const errorMessage = _.get(errors, "response.data") || errors;
       console.warn("Failed to fetch article!", {
 	url: _.get(errors, "response.config.url"),
 	status: _.get(errors, "response.status"),
-	message: _.get(errors, "response.data"),
+	message: errorMessage,
       });
       res.send(html);
     });

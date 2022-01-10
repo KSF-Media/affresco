@@ -1,28 +1,12 @@
-let Actions = ./workflows.dhall
+{-
 
-let app-servers =
-        [ Actions.AppServer::{
-          , id = "app-article-server"
-          , name = "App article server"
-          , buildDir = "app-article-server"
-          , deployDir = "app-article-server"
-          , previewUrl = "article/c7da734f-9e2b-45be-b645-5f4742766486"
-          , runtime = "nodejs12"
-          , entrypoint = "node dist/server"
-          }
-        , Actions.AppServer::{
-          , id = "mosaico-server"
-          , name = "Mosaico server"
-          , buildDir = "mosaico"
-          , deployDir = "mosaico"
-          , previewUrl = "artikel/c7da734f-9e2b-45be-b645-5f4742766486"
-          , runtime = "nodejs12"
-          , entrypoint =
-              ''
-                node -e "require('./output/Main/index').main()"
-              ''
-          }
-        ]
-      : List Actions.AppServer.Type
+servers: Apps to be deployed to AppEngine
+all: list of all servers
 
-in  app-servers
+Note: When adding a new server please also update the list of all servers
+TODO: Figure out a way to generate all from servers.
+
+-}
+{ app-article-server = ./app-servers/app-article-server.dhall
+, mosaico-server = ./app-servers/mosaico-server.dhall
+}

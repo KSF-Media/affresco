@@ -15,6 +15,7 @@ const Footer = (props) => {
       </a>
       <br />
       <strong>KSF Media {new Date().getFullYear()}</strong>
+      <p><small>KSF Media ägs av Konstsamfundet</small></p>
     </div>
   );
 };

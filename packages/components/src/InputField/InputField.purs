@@ -6,6 +6,7 @@ import Data.Array (snoc)
 import Data.Foldable (foldMap)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
+import Data.Nullable as Nullable
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
@@ -17,6 +18,7 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
 import Record as Record
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import generateIdNumber :: Effect Int
 
@@ -31,10 +33,14 @@ type Props =
   , label           :: Maybe String
   , validationError :: Maybe String
   , disabled        :: Boolean
+  , extraClass      :: String
+  , autoComplete    :: String
   )
 
 type DefaultProps =
   ( disabled        :: Boolean
+  , extraClass      :: String
+  , autoComplete    :: String
   )
 
 type State =
@@ -58,6 +64,8 @@ inputField userProps = React.make component
     defaultProps :: Record DefaultProps
     defaultProps =
       { disabled: false
+      , extraClass: ""
+      , autoComplete: ""
       }
 
     didMount { props, setState } = when (isJust props.value) $
@@ -70,7 +78,9 @@ render :: Self -> JSX
 render self@{ props, state } =
   DOM.div
     { className: classNameFromInputType props.type_ <>
-        if isNothing props.label then " input-field--no-label" else ""
+        (if isNothing props.label then " input-field--no-label" else "") <>
+        (if isNothing props.validationError then "" else " input-field--invalid") <>
+        (if props.extraClass == "" then "" else " " <> props.extraClass)
     , children:
         -- The final order of the children is defined in css!
         [ case props.label of
@@ -90,6 +100,7 @@ render self@{ props, state } =
                 then "input-field--invalid-field"
                 else mempty
             , disabled: props.disabled
+            , autoComplete: if props.autoComplete == "" then unsafeCoerce Nullable.null else props.autoComplete
             }
         ] `snoc` foldMap errorMessage props.validationError
     }
