@@ -62,7 +62,7 @@ stages:
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/docker-push.sh
     # docker buld & push production
-    - cd artifacts/produciton/$SERVICE_NAME
+    - cd artifacts/production/$SERVICE_NAME
     - $CI_SCRIPTS/docker-build.sh
     - KSF_ENV_TEXT=production GOOGLE_CREDENTIALS=$PRODUCTION_GOOGLE_CREDENTIALS $CI_SCRIPTS/auth-gcloud.sh
     - KSF_ENV_TEXT=production $CI_SCRIPTS/docker-push.sh
