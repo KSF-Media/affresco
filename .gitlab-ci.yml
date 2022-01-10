@@ -6,6 +6,11 @@ variables:
   CI_SCRIPTS: "${CI_PROJECT_DIR}/infra/ci-scripts"
   YARN_CACHE: "${CI_PROJECT_DIR}/.yarn-cache"
 
+.mosaico-ci-variables: &mosaico-ci-vars
+  SERVICE_NAME: mosaico
+.app-article-ci-variables: &app-article-ci-vars
+  SERVICE_NAME: app-article-server
+
 before_script:
   - eval `./infra/ci-scripts/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
 
@@ -17,18 +22,10 @@ stages:
   - docker
   - deploy
 
-# Build
+# Build template
 .build-app:
-  script:
-    - mkdir -p artifacts
-    - yarn install --pure-lockfile --cache-folder=$YARN_CACHE
-    - yarn --cwd apps/$CI_JOB_NAME/ run build
-    - cp -R apps/$CI_JOB_NAME artifacts/$CI_JOB_NAME
-
-mosaico: &build-app
   stage: build
-  environment: staging/$CI_JOB_NAME
-  extends: .build-app
+  environment: staging/$SERVICE_NAME
   only:
     - master
   cache:
@@ -40,66 +37,82 @@ mosaico: &build-app
       - artifacts/
     when: always
     expire_in: 7 days
+  script:
+    - mkdir -p artifacts/staging
+    - yarn install --pure-lockfile --cache-folder=$YARN_CACHE
+    # build apps with staging vars
+    - yarn --cwd apps/$SERVICE_NAME/ run build
+    - cp -R apps/$SERVICE_NAME artifacts/staging/$SERVICE_NAME
+    # rebuild with production vars
+    - eval `./infra/ci-scripts/prepare_stage_envvars.py production`
+    - mkdir -p artifacts/production
+    - yarn --cwd apps/$SERVICE_NAME/ run build
+    - cp -R apps/$SERVICE_NAME artifacts/production/$SERVICE_NAME
 
-app-article-server: *build-app
-
-# Docker build
+# Docker build template
 .build-docker:
   stage: docker
-  environment: staging
+  environment: staging/$SERVICE_NAME
   only:
     - master
   script:
-    - cd artifacts/$SERVICE_NAME
+    # docker build & push staging
+    - cd artifacts/staging/$SERVICE_NAME
     - $CI_SCRIPTS/docker-build.sh
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/docker-push.sh
+    # docker buld & push production
+    - cd artifacts/produciton/$SERVICE_NAME
+    - $CI_SCRIPTS/docker-build.sh
+    - KSF_ENV_TEXT=production GOOGLE_CREDENTIALS=$PRODUCTION_GOOGLE_CREDENTIALS $CI_SCRIPTS/auth-gcloud.sh
+    - KSF_ENV_TEXT=production $CI_SCRIPTS/docker-push.sh
 
+# Deploy template
+.deploy:
+  stage: deploy
+  environment: staging/$SERVICE_NAME
+  only:
+    - master
+  script:
+    - ./infra/ci-scripts/auth-gcloud.sh
+    - ./infra/ci-scripts/kubernetes-deployment.sh
+
+# Build apps
+mosaico-build:
+  extends: .build-app
+  variables: *mosaico-ci-vars
+
+app-article-build:
+  extends: .build-app
+  variables: *app-article-ci-vars
+
+# Build docker images
 mosaico-docker-build:
   extends: .build-docker
-  environment: staging/$CI_JOB_NAME
-  variables:
-    SERVICE_NAME: mosaico
+  variables: *mosaico-ci-vars
 
 app-article-docker-build:
   extends: .build-docker
-  environment: staging/$CI_JOB_NAME
-  variables:
-    SERVICE_NAME: app-article-server
+  variables: *app-article-ci-vars
 
-# Deploy
-.deploy:
-   stage: deploy
-   only:
-     - master
-   script:
-     - ./infra/ci-scripts/auth-gcloud.sh
-     - ./infra/ci-scripts/kubernetes-deployment.sh
-
-# staging
+# Deploy Staging
 deploy-mosaico-staging:
   extends: .deploy
-  environment: staging/$CI_JOB_NAME
-  variables:
-    SERVICE_NAME: mosaico
+  variables: *mosaico-ci-vars
 
 deploy-app-article-staging:
   extends: .deploy
-  environment: staging/$CI_JOB_NAME
-  variables:
-    SERVICE_NAME: app-article-server
+  variables: *app-article-ci-vars
 
-# production
+# Deploy production
 deploy-mosaico-production:
   extends: .deploy
-  environment: production/$CI_JOB_NAME
+  environment: production/$SERVICE_NAME
   when: manual
-  variables:
-    SERVICE_NAME: mosaico
+  variables: *mosaico-ci-vars
 
 deploy-app-article-production:
   extends: .deploy
-  environment: production/$CI_JOB_NAME
+  environment: production/$SERVICE_NAME
   when: manual
-  variables:
-    SERVICE_NAME: app-article-server
+  variables: *app-article-ci-vars
