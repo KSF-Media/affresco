@@ -17,7 +17,7 @@
 
   @media (min-width: @breakpoint-3col) {
     max-width: 100%;
-    grid-template-rows: auto 85px auto auto auto auto 150px;
+    grid-template-rows: auto 85px auto auto auto auto 500px;
     // don't use repeat, causes error
     grid-template-columns: 1fr @content-block @content-block @content-block 1fr;
     grid-template-areas:
@@ -27,7 +27,7 @@
       ". search search search ."
       ". main main aside ."
       ". article article article ."
-      ". foot foot foot .";
+      "foot foot foot foot foot";
   }
 }
 

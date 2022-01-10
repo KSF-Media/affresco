@@ -2,9 +2,8 @@ module Mosaico where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, toArray, stringify)
+import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
@@ -13,11 +12,10 @@ import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
-import Data.String as String
 import Data.Time.Duration (Minutes(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -30,21 +28,22 @@ import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel (..), CategoryType(..), FullArticle(..), Tag (..), categoriesMap, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (ArticleStub, Categories, Category(..), CategoryType(..), FullArticle(..), categoriesMap, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+import Mosaico.Footer (footer)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
-import Mosaico.Models (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot)
+import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot, JSInitialFeed, parseFeed)
 import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
-import Mosaico.StaticPage (StaticPageResponse(..), getInitialStaticPageContent, fetchStaticPage)
+import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage, getInitialStaticPageContent, getInitialStaticPageScript)
 import Mosaico.Webview as Webview
 import Persona as Persona
 import React.Basic (JSX)
@@ -64,6 +63,7 @@ type State =
   { article :: Maybe FullArticle
   , mostReadArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
+  , prevRoute :: Maybe Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe User
@@ -79,6 +79,7 @@ type Components =
   { loginModalComponent :: LoginModal.Props -> JSX
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
+  , articleComponent :: Article.Props -> JSX
   }
 
 type Props =
@@ -95,11 +96,7 @@ type JSProps =
   , mostReadArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
-  , initialFrontpageFeed :: Nullable { feedType        :: Nullable String
-                                     , feedPage        :: Nullable String
-                                     , feedContent     :: Nullable String
-                                     , feedContentType :: Nullable String
-                                     }
+  , initialFrontpageFeed :: Nullable JSInitialFeed
   , user :: Nullable Json
   }
 
@@ -120,7 +117,7 @@ mosaicoComponent initialValues props = React.do
                          { article = props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , staticPage = map StaticPageResponse $
-                                        { pageName:_, pageContent:_, pageScript: Nothing }
+                                        { pageName:_, pageContent:_, pageScript: initialValues.staticPageScript }
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
@@ -203,7 +200,8 @@ mosaicoComponent initialValues props = React.do
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
-        -> pure unit
+        -> when (isJust state.prevRoute) do
+             foldMap (\p -> evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]) r.pageScript
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
@@ -229,7 +227,7 @@ mosaicoComponent initialValues props = React.do
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   case match (Routes.routes c) location.path of
-    Right path -> setState _ { route = path }
+    Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
     Left _     -> pure unit
 
 type InitialValues =
@@ -238,6 +236,7 @@ type InitialValues =
   , nav :: PushStateInterface
   , locationState :: LocationState
   , staticPageContent :: Maybe String
+  , staticPageScript :: Maybe String
   , startTime :: DateTime
   }
 
@@ -247,15 +246,18 @@ getInitialValues = do
   nav <- makeInterface
   locationState <- nav.locationState
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
+  staticPageScript <- toMaybe <$> getInitialStaticPageScript
 
   loginModalComponent <- LoginModal.loginModal
   searchComponent     <- Search.searchComponent
   webviewComponent    <- Webview.webviewComponent
+  articleComponent    <- Article.component
   pure
     { state:
         { article: Nothing
         , mostReadArticles: []
         , route: Routes.Frontpage
+        , prevRoute: Nothing
         , clickedArticle: Nothing
         , modalView: Nothing
         , user: Nothing
@@ -268,10 +270,12 @@ getInitialValues = do
         { loginModalComponent
         , searchComponent
         , webviewComponent
+        , articleComponent
         }
     , nav
     , locationState
     , staticPageContent
+    , staticPageScript
     , startTime
     }
 
@@ -284,27 +288,7 @@ fromJSProps jsProps =
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
 
-      initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
-      initialFrontpageFeed = fromMaybe HashMap.empty do
-        feed <- toMaybe jsProps.initialFrontpageFeed
-        let feedPage = toMaybe feed.feedPage
-        feedType <- do
-          f <- toMaybe feed.feedType
-          case String.toLower f of
-            "categoryfeed" -> Just $ CategoryFeed (map CategoryLabel feedPage)
-            "tagfeed"      -> map (TagFeed <<< Tag) feedPage
-            "searchfeed"   -> SearchFeed <$> feedPage
-            _              -> Nothing
-        feedContent <- do
-          content <- toMaybe feed.feedContent
-          feedContentType <- toMaybe feed.feedContentType
-          case feedContentType of
-            "articlelist" -> do
-              list <- content # (jsonParser >>> hush) >>= toArray
-              pure $ ArticleList $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list
-            "html"        -> pure $ Html content
-            _             -> Nothing
-        pure $ HashMap.singleton feedType feedContent
+      initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
 
       staticPageName = toMaybe jsProps.staticPageName
       -- Decoding errors are being hushed here, although if this
@@ -425,7 +409,9 @@ render setState state components router onPaywallEvent =
         })
 
     hooks :: Array Frontpage.Hook
-    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler ]
+    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler
+            , Frontpage.ArticleUrltoRelative
+            ]
 
     mosaicoDefaultLayout :: JSX -> JSX
     mosaicoDefaultLayout = flip mosaicoLayout true
@@ -449,10 +435,7 @@ render setState state components router onPaywallEvent =
               }
           , Header.mainSeparator
           , content
-          , DOM.footer
-              { className: "mosaico--footer"
-              , children: [ DOM.text "footer" ]
-              }
+          , footer onStaticPageClick
           , guard showAside $ DOM.aside
               { className: "mosaico--aside"
               , children:
@@ -467,7 +450,7 @@ render setState state components router onPaywallEvent =
 
     renderArticle :: Either ArticleStub FullArticle -> JSX
     renderArticle article =
-      Article.render
+      components.articleComponent
         { paper: mosaicoPaper
         , article
         , onLogin
@@ -498,6 +481,13 @@ render setState state components router onPaywallEvent =
       setState _ { clickedArticle = Just article }
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) $ "/artikel/" <> article.uuid
+
+    onStaticPageClick link =
+      case state.route of
+        Routes.StaticPage page | page == link -> mempty
+        _ -> capture_ do
+          void $ Web.scroll 0 0 =<< Web.window
+          router.pushState (write {}) ("/sida/" <> link)
 
     onLogin = setState \s -> s { modalView = Just LoginModal }
 

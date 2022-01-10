@@ -67,7 +67,7 @@ render (List props) = genericRender (\list -> map renderListArticle list) props.
                               [ foldMap
                                   (\tag ->
                                       DOM.a
-                                        { className: "mosaico-article__tag color-hbl"
+                                        { className: "mosaico-article__tag"
                                         , onClick: props.onTagClick tag
                                         , href: "/tagg/" <> tagToURIComponent tag
                                         , children: [ DOM.text $ un Tag tag ]
@@ -82,7 +82,7 @@ render (List props) = genericRender (\list -> map renderListArticle list) props.
                                   { className: "mosaico--article--meta"
                                   , children:
                                       [ DOM.div
-                                          { className: "premium-badge background-hbl"
+                                          { className: "premium-badge"
                                           , children: [ DOM.text "premium" ]
                                           }
                                       ]

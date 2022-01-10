@@ -3,7 +3,7 @@ module KSF.HtmlRenderer.Models where
 import Prelude
 
 import Data.Function.Uncurried (Fn1, runFn1)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn2, EffectFn3, mkEffectFn2, mkEffectFn3, runEffectFn2)
@@ -79,7 +79,7 @@ newtype ReplacingHook = ReplacingHook ReplacingHookRecord
 
 type ReplacingHookRecord =
   { shouldProcessNode :: Node -> Boolean
-  , processNode       :: Node -> Array Node -> String -> Effect JSX
+  , processNode       :: Node -> Array Node -> Int -> Effect JSX
   }
 
 replacingHook :: ReplacingHookRecord -> HookRep
@@ -88,9 +88,10 @@ replacingHook = toHookRep <<< ReplacingHook
 instance replacingHookToGenericHook :: ToGenericHook ReplacingHook where
   toGenericHook (ReplacingHook { shouldProcessNode, processNode }) =
     { replaceChildren: true
-    , shouldProcessNode
-    , processNode: Nothing
-    , processNodeWithReplacement: Just processNode
+    , shouldPreprocessNode: Nothing
+    , shouldProcessNode: Just shouldProcessNode
+    , preprocessNode: Nothing
+    , processNode: Just processNode
     }
 
 -- | This type of hook is just to modify targeted nodes,
@@ -99,7 +100,7 @@ newtype ModifyingHook = ModifyingHook ModifyingHookRecord
 
 type ModifyingHookRecord =
   { shouldProcessNode :: Node -> Boolean
-  , processNode       :: Node -> Array Node -> Effect Unit
+  , processNode       :: Node -> Array Node -> Effect Node
   }
 
 modifyingHook :: ModifyingHookRecord -> HookRep
@@ -108,31 +109,35 @@ modifyingHook = toHookRep <<< ModifyingHook
 instance modifyingHookToGenericHook :: ToGenericHook ModifyingHook where
   toGenericHook (ModifyingHook { shouldProcessNode, processNode }) =
     { replaceChildren: false
-    , shouldProcessNode
-    , processNode: Just processNode
-    , processNodeWithReplacement: Nothing
+    , shouldPreprocessNode: Just shouldProcessNode
+    , shouldProcessNode: Nothing
+    , preprocessNode: Just processNode
+    , processNode: Nothing
     }
 
 type GenericHook =
-  { replaceChildren            :: Boolean
-  , shouldProcessNode          :: Node -> Boolean
-  , processNode                :: Maybe (Node -> Array Node -> Effect Unit)
-  , processNodeWithReplacement :: Maybe (Node -> Array Node -> String -> Effect JSX)
+  { replaceChildren      :: Boolean
+  , shouldPreprocessNode :: Maybe (Node -> Boolean)
+  , shouldProcessNode    :: Maybe (Node -> Boolean)
+  , preprocessNode       :: Maybe (Node -> Array Node -> Effect Node)
+  , processNode          :: Maybe (Node -> Array Node -> Int -> Effect JSX)
   }
 
 type JSGenericHook =
-  { replaceChildren            :: Boolean
-  , shouldProcessNode          :: Node -> Boolean
-  , processNode                :: Nullable (EffectFn2 Node (Array Node) Unit)
-  , processNodeWithReplacement :: Nullable (EffectFn3 Node (Array Node) String JSX)
+  { replaceChildren      :: Boolean
+  , shouldPreprocessNode :: Nullable (Node -> Boolean)
+  , shouldProcessNode    :: Node -> Boolean
+  , preprocessNode       :: Nullable (EffectFn2 Node (Array Node) Node)
+  , processNode          :: Nullable (EffectFn3 Node (Array Node) Int JSX)
   }
 
 toJSGenericHook :: GenericHook -> JSGenericHook
 toJSGenericHook h =
-  { replaceChildren:            h.replaceChildren
-  , shouldProcessNode:          h.shouldProcessNode
-  , processNode:                toNullable $ mkEffectFn2 <$> h.processNode
-  , processNodeWithReplacement: toNullable $ mkEffectFn3 <$> h.processNodeWithReplacement
+  { replaceChildren:      h.replaceChildren
+  , shouldPreprocessNode: toNullable h.shouldPreprocessNode
+  , shouldProcessNode:    fromMaybe (const false) h.shouldProcessNode
+  , preprocessNode:       toNullable $ mkEffectFn2 <$> h.preprocessNode
+  , processNode:          toNullable $ mkEffectFn3 <$> h.processNode
   }
 
 -- TODO: This representation might be inefficient.
@@ -145,7 +150,6 @@ type HTMLAttributes =
   , accesskey         :: Maybe String
   , action            :: Maybe String
   , allowfullscreen   :: Maybe String
-  , allowtransparency :: Maybe String
   , alt               :: Maybe String
   , async             :: Maybe String
   , autocomplete      :: Maybe String
@@ -271,7 +275,6 @@ type JSHTMLAttributes =
   , accesskey         :: Nullable String
   , action            :: Nullable String
   , allowfullscreen   :: Nullable String
-  , allowtransparency :: Nullable String
   , alt               :: Nullable String
   , async             :: Nullable String
   , autocomplete      :: Nullable String
@@ -398,7 +401,6 @@ toJSHTMLAttributes as =
   , accesskey:          toNullable as.accesskey
   , action:             toNullable as.action
   , allowfullscreen:    toNullable as.allowfullscreen
-  , allowtransparency:  toNullable as.allowtransparency
   , alt:                toNullable as.alt
   , async:              toNullable as.async
   , autocomplete:       toNullable as.autocomplete
@@ -525,7 +527,6 @@ fromJSAttributes as =
   , accesskey:          toMaybe as.accesskey
   , action:             toMaybe as.action
   , allowfullscreen:    toMaybe as.allowfullscreen
-  , allowtransparency:  toMaybe as.allowtransparency
   , alt:                toMaybe as.alt
   , async:              toMaybe as.async
   , autocomplete:       toMaybe as.autocomplete

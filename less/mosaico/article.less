@@ -106,6 +106,17 @@
       line-height: 1.95rem;
     }
   }
+  &__tag {
+    #HBL & {
+      color: @hbl-orange;
+    }
+    #VN & {
+      color: @vn-red;
+    }
+    #ON & {
+      color: @on-blue;
+    }
+  }
   &__tag-n-share {
     display: flex;
     justify-content: space-between;
@@ -314,7 +325,16 @@
       list-style: none;
       margin-top: 5px;
       li {
-        border-left: 4px solid @hbl-orange; // TODO: deal with other site's colours
+        border-left: 4px solid;
+	#HBL & {
+	  border-color: @hbl-orange;
+	}
+	#VN & {
+	  border-color: @vn-red;
+	}
+	#ON & {
+	  border-color: @on-blue;
+	}
         margin-bottom: 3px;
         a {
           display: inline-block;
@@ -329,11 +349,47 @@
     }
     ul::before {
       content: "LÄS OCKSÅ";
-      color: @hbl-orange;
+      #HBL & {
+	color: @hbl-orange;
+      }
+      #VN & {
+	color: @vn-red;
+      }
+      #ON & {
+	color: @on-blue;
+      }
     }
   }
 }
 
 .mosaico--article-draft {
   color: red;
+}
+
+.mosaico-article__focus-image {
+  position: fixed;
+  right: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 3;
+  display: flex;
+
+  img {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%,-50%);
+    position: relative;
+    top: 50%;
+    left: 50%;
+  }
+  .wrapper {
+    max-height: 100%;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+  }
 }

@@ -16,17 +16,20 @@ import Effect (Effect)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
 import KSF.Paper as Paper
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
 import Mosaico.Ad as Ad
 import Mosaico.Article.Box (box)
-import Mosaico.Article.Image (articleMainImage, articleImage)
+import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component)
 import React.Basic.Events (EventHandler)
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
@@ -71,8 +74,14 @@ type Props =
 evalEmbeds :: Article -> Effect Unit
 evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _.externalScripts
 
-render :: Props -> JSX
-render props =
+component :: Component Props
+component = do
+  imageComponent <- Image.component
+  React.component "Article" $ \props -> React.do
+    pure $ render imageComponent props
+
+render :: (Image.Props -> JSX) -> Props -> JSX
+render imageComponent props =
     let title = getTitle props.article
         tags = getTags props.article
         mainImage = getMainImage props.article
@@ -109,7 +118,7 @@ render props =
                           , children:
                               [ foldMap renderTag $ head tags
                               , guard (isPremium props.article) $ DOM.div
-                                  { className: "premium-badge background-" <> Paper.cssName props.paper
+                                  { className: "premium-badge"
                                   , children: [ DOM.text "Premium"]
                                   }
                               ]
@@ -122,8 +131,9 @@ render props =
                   }
             ]
           , foldMap
-              (\image -> articleMainImage
+              (\image -> imageComponent
                 { clickable: true
+                , main: true
                 , params: Just "&width=960&height=540&q=90"
                 , image
                 })
@@ -145,6 +155,7 @@ render props =
                             bodyWithAd <>
                             (foldMap (pure <<< renderMostReadArticles) $
                              if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)
+                          Left _ -> [ loadingSpinner ]
                           _ -> mempty
                         }
                     , DOM.div
@@ -190,7 +201,7 @@ render props =
 
     renderTag tag =
       DOM.a
-        { className: "mosaico-article__tag color-" <> Paper.cssName props.paper
+        { className: "mosaico-article__tag"
         , children: [ DOM.text $ (un Tag) tag ]
         , href: "/tagg/" <> tagToURIComponent tag
         , onClick: props.onTagClick tag
@@ -272,10 +283,11 @@ render props =
         { className: block <> " " <> block <> "__subheadline"
         , children: [ DOM.text str ]
         }
-      Image img -> articleImage
+      Image image -> imageComponent
           { clickable: true
+          , main: false
           , params: Just "&width=640&q=90"
-          , image: img
+          , image
           }
       Box boxData ->
         DOM.div
