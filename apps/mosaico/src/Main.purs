@@ -36,7 +36,7 @@ import KSF.Api.Error as Api.Error
 import KSF.Paper (Paper)
 import KSF.User (User, fromPersonaUser)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, frontpageCategoryLabel, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
 import Mosaico.Error (notFoundWithAside)
@@ -326,7 +326,7 @@ frontpage env { guards: { credentials } } = do
                   [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed Nothing) articles
+                    <> mkArticleFeed (CategoryFeed frontpageCategoryLabel) articles
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -481,7 +481,7 @@ debugList env { params: { uuid }, guards: { credentials } } = do
                   [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed Nothing) (ArticleList $ fromFoldable article)
+                    <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -509,7 +509,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
                   [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed $ Just $ CategoryLabel categoryName) (ArticleList articles)
+                    <> mkArticleFeed (CategoryFeed $ CategoryLabel categoryName) (ArticleList articles)
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 

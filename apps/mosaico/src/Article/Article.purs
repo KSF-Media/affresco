@@ -3,7 +3,7 @@ module Mosaico.Article where
 import Prelude
 
 import Bottega.Models.Order (OrderSource(..))
-import Data.Array (cons, head, null, snoc, take)
+import Data.Array (cons, head, insertAt, length, null, snoc, take, (!!))
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -85,9 +85,10 @@ render imageComponent props =
     let title = getTitle props.article
         tags = getTags props.article
         mainImage = getMainImage props.article
-        bodyWithAd = let body = map renderElement $ getBody props.article
-                     in if getRemoveAds props.article then body
-                        else Ad.insertIntoBody adBox body
+        body = getBody props.article
+        bodyWithoutAd = map renderElement body
+        bodyWithAd = map renderElement
+          <<< insertAdsIntoBodyText articleMiddle1Desktop articleMiddle2Desktop $ body
         draftHeader = case props.article of
           Right (DraftArticle _) ->
             DOM.div
@@ -150,7 +151,7 @@ render imageComponent props =
                             `cons` bodyWithAd
                             `snoc` vetrina
                           (Right (DraftArticle _draftArticle)) ->
-                            map renderElement $ getBody props.article
+                            bodyWithoutAd
                           (Right (FullArticle _fullArticle)) ->
                             bodyWithAd <>
                             (foldMap (pure <<< renderMostReadArticles) $
@@ -216,8 +217,8 @@ render imageComponent props =
             }
         ]
 
-    adBox =
-        Ad.ad { contentUnit: "JATTEBOX" }
+    articleMiddle1Desktop = "article_middle_1_desktop"
+    articleMiddle2Desktop = "article_middle_2_desktop"
 
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
@@ -322,6 +323,10 @@ render imageComponent props =
               [ DOM.ul_ $ map renderRelatedArticle related
               ]
           }
+      Ad contentUnit ->
+          Ad.ad {
+            contentUnit
+          }
       where
         block = "article-element"
         isDiv = isElem "<div"
@@ -337,3 +342,24 @@ render imageComponent props =
                 , onClick: props.onArticleClick article
                 }
             ]
+
+    insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement  
+    insertAdsIntoBodyText contentUnit1 contentUnit2 body =
+      let ad1 = Ad contentUnit1
+          ad2 = Ad contentUnit2
+      in if elements > 15
+        then fromMaybe body $ do
+          bodyWithAd <- insertAt (findAdSpace body $ elements/3) ad1 body
+          insertAt (findAdSpace bodyWithAd $ 2 * elements/3) ad2 bodyWithAd
+        else if elements > 6
+          then fromMaybe body $ insertAt (findAdSpace body $ elements/2) ad1 body
+          else body `snoc` ad1
+      where
+        elements = length body
+        findAdSpace :: Array BodyElement -> Int -> Int
+        findAdSpace body' i
+          | i > elements = elements
+          | Just (Html _) <- body' !! (i-1)
+          , Just (Html _) <- body' !! (i) 
+          = i
+          | otherwise = findAdSpace body' (i+1)

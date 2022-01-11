@@ -28,7 +28,7 @@ import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryType(..), FullArticle(..), categoriesMap, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -161,12 +161,16 @@ mosaicoComponent initialValues props = React.do
   let loadFeed feedName = do
         maybeFeed <- case feedName of
           TagFeed t -> Just <<< ArticleList <$> Lettera.getByTag 0 20 t mosaicoPaper
-          CategoryFeed Nothing -> do
-            html <- map Html <<< hush <$> Lettera.getFrontpageHtml mosaicoPaper "Startsidan"
-            Just <$> maybe (ArticleList <$> Lettera.getFrontpage mosaicoPaper Nothing) pure html
-          CategoryFeed (Just c)
-            | Just cat <- unwrap <$> Map.lookup c state.catMap
-            , cat.type == Feed -> Just <<< ArticleList <$> Lettera.getFrontpage mosaicoPaper (Just $ unwrap cat.label)
+          CategoryFeed c
+            | Just cat <- unwrap <$> Map.lookup c state.catMap ->
+              let label = unwrap c
+                  getArticleList = ArticleList <$> Lettera.getFrontpage mosaicoPaper (Just label)
+              in case cat.type of
+                Prerendered ->
+                  map Just <<< maybe getArticleList pure =<<
+                  map Html <<< hush <$> Lettera.getFrontpageHtml mosaicoPaper label
+                Feed -> Just <$> getArticleList
+                _ -> pure Nothing
           CategoryFeed _ -> pure Nothing
           SearchFeed q -> Just <<< ArticleList <$> Lettera.search 0 20 mosaicoPaper q
         stamp <- liftEffect Now.nowDateTime
@@ -184,7 +188,7 @@ mosaicoComponent initialValues props = React.do
 
   useEffect state.route do
     case state.route of
-      Routes.Frontpage -> setFrontpage (CategoryFeed Nothing)
+      Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
       Routes.SearchPage Nothing -> pure unit
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
@@ -196,7 +200,7 @@ mosaicoComponent initialValues props = React.do
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
-      Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed (Just c.label))
+      Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
@@ -329,7 +333,7 @@ render setState state components router onPaywallEvent =
        Routes.CategoryPage category@(Category c)
          | c.type == Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
          | otherwise ->
-           let maybeFeed = _.feed <$> HashMap.lookup (CategoryFeed (Just c.label)) state.frontpageFeeds
+           let maybeFeed = _.feed <$> HashMap.lookup (CategoryFeed c.label) state.frontpageFeeds
             in frontpageNoHeader maybeFeed
        Routes.ArticlePage articleId
          | Just fullArticle <- state.article
@@ -338,7 +342,7 @@ render setState state components router onPaywallEvent =
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
+       Routes.Frontpage -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed frontpageCategoryLabel) state.frontpageFeeds
        Routes.SearchPage Nothing ->
           mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
        Routes.SearchPage query@(Just queryString) ->
@@ -377,7 +381,7 @@ render setState state components router onPaywallEvent =
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
-       Routes.DebugPage _ -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed Nothing) state.frontpageFeeds
+       Routes.DebugPage _ -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "") state.frontpageFeeds
   where
 
     frontpageWithHeader :: JSX -> Maybe ArticleFeed -> JSX
@@ -471,7 +475,8 @@ render setState state components router onPaywallEvent =
         Routes.CategoryPage category | category == cat -> mempty
         _ -> capture_ do
           void $ Web.scroll 0 0 =<< Web.window
-          router.pushState (write {}) $ "/" <> show c.label
+          router.pushState (write {}) $ "/" <>
+            if c.label == frontpageCategoryLabel then "" else show c.label
 
     onTagClick tag = capture_ do
       void $ Web.scroll 0 0 =<< Web.window

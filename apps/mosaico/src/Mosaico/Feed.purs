@@ -36,7 +36,7 @@ parseFeed feed = fromMaybe HashMap.empty do
   feedType <- do
     f <- toMaybe feed.feedType
     case String.toLower f of
-      "categoryfeed" -> Just $ CategoryFeed (map CategoryLabel feedPage)
+      "categoryfeed" -> CategoryFeed <<< CategoryLabel <$> feedPage
       "tagfeed"      -> map (TagFeed <<< Tag) feedPage
       "searchfeed"   -> SearchFeed <$> feedPage
       _              -> Nothing
@@ -60,10 +60,10 @@ mkArticleFeed feedDefinition feed =
     -- would be ideal but it'd be a challenge.
     _ -> Nothing
   where
-    feedPage = case feedDefinition of
-      CategoryFeed page -> unwrap <$> page
-      TagFeed tag       -> Just $ unwrap tag
-      SearchFeed query  -> Just query
+    feedPage = Just $ case feedDefinition of
+      CategoryFeed page -> unwrap page
+      TagFeed tag       -> unwrap tag
+      SearchFeed query  -> query
     feedType = case feedDefinition of
       CategoryFeed _ -> "categoryfeed"
       TagFeed _      -> "tagfeed"
@@ -74,7 +74,7 @@ data ArticleFeed
   | Html String
 
 data ArticleFeedType
-  = CategoryFeed (Maybe CategoryLabel) -- `Nothing` represents root
+  = CategoryFeed CategoryLabel
   | TagFeed Tag
   | SearchFeed String
 derive instance eqArticleFeedType :: Eq ArticleFeedType

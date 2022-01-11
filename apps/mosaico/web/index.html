@@ -15,11 +15,25 @@
       window.googletag = window.googletag || { cmd: [] };
 
       window.googletag.cmd.push(function () {
-	googletag.pubads().setTargeting("newspaper", "hbl");
-	googletag.defineSlot("/21664538223/JATTEBOX", [468, 400], "JATTEBOX").addService(googletag.pubads());
-	googletag.pubads().enableSingleRequest();
-	googletag.pubads().collapseEmptyDivs();
-	googletag.enableServices();
+      	// googletag.pubads().setTargeting("newspaper", "hbl");
+        googletag.pubads().setTargeting("Test", "mosaico_test");
+        googletag
+          .defineSlot(
+            "/21664538223/mosaico/article_middle_1_desktop",
+            [468, 400],
+            "article_middle_1_desktop"
+          )
+          .addService(googletag.pubads());
+        googletag
+          .defineSlot(
+            "/21664538223/mosaico/article_middle_2_desktop",
+            [468, 400],
+            "article_middle_2_desktop"
+          )
+          .addService(googletag.pubads());
+      	googletag.pubads().enableSingleRequest();
+      	googletag.pubads().collapseEmptyDivs();
+      	googletag.enableServices();
       });
     </script>
     <link rel="stylesheet" href="../../../node_modules/basscss/css/basscss-cp.min.css" />
