@@ -114,12 +114,16 @@ deploy-app-article-staging:
 # Deploy production
 deploy-mosaico-production:
   extends: .deploy
+  needs: 
+    - mosaico-docker-build
   environment: production/$SERVICE_NAME
   when: manual
   variables: *mosaico-ci-vars
 
 deploy-app-article-production:
   extends: .deploy
+  needs: 
+    - app-article-docker-build
   environment: production/$SERVICE_NAME
   when: manual
   variables: *app-article-ci-vars
