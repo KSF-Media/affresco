@@ -101,6 +101,7 @@ type ArticleStubCommon =
   , uuid      :: String
   , preamble  :: Maybe String
   , mainImage :: Maybe Image
+  , listImage :: Maybe Image
   , premium   :: Boolean
   , removeAds :: Boolean
   )
@@ -212,6 +213,7 @@ articleToJson article =
     bodyElementToJson (Question question) = merge { question: Just question } base
     bodyElementToJson (Quote quote)       = merge { quote: Just quote } base
     bodyElementToJson (Related related)   = merge { related: Just $ map articleStubToJson related } base
+    bodyElementToJson (Ad _)              = base
 
 articleStubToJson :: ArticleStub -> Json
 articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "tags") (map unwrap) <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
@@ -319,6 +321,7 @@ type BodyElementJS =
   , footnote :: Maybe String
   , question :: Maybe String
   , quote    :: Maybe QuoteInfo
+  , ad       :: Maybe String
   , related  :: Maybe (Array JSArticleStub)
   }
 
@@ -330,6 +333,8 @@ data BodyElement
   | Footnote String
   | Question String
   | Quote QuoteInfo
+  -- Note that Ad does NOT come from Lettera, but was added here to make smart ad placement possible
+  | Ad String
   | Related (Array ArticleStub)
 derive instance bodyElementGeneric :: Generic BodyElement _
 

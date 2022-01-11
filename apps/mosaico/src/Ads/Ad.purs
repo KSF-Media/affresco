@@ -31,13 +31,6 @@ type State =
   { populated :: Boolean
   }
 
-insertIntoBody :: JSX -> Array JSX -> Array JSX  
-insertIntoBody adBox body =
-  let elements = length body
-  in if elements > 4
-    then fromMaybe body $ insertAt (elements/2) adBox body
-    else body `snoc` adBox
-
 ad :: Props -> JSX
 ad = make component
   { initialState: { populated: false }
