@@ -101,6 +101,7 @@ type ArticleStubCommon =
   , uuid      :: String
   , preamble  :: Maybe String
   , mainImage :: Maybe Image
+  , listImage :: Maybe Image
   , premium   :: Boolean
   , removeAds :: Boolean
   )

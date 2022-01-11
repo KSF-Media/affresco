@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Array (head)
 import Data.Maybe (Maybe(..))
+import Data.String (Pattern(..), contains, stripPrefix)
 import Effect (Effect)
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
@@ -11,9 +12,11 @@ import Mosaico.MostReadList as MostReadList
 
 data Hook
   = MostRead (Array ArticleStub) (ArticleStub -> Effect Unit)
+  | ArticleUrltoRelative
 
 toHookRep :: Hook -> HtmlRenderer.HookRep
 toHookRep (MostRead articles onClickHandler) = mostReadHook { articles, onClickHandler }
+toHookRep ArticleUrltoRelative               = articleUrltoRelativeHook
 
 mostReadHook
   :: { articles :: Array ArticleStub
@@ -43,3 +46,34 @@ mostReadHook { articles, onClickHandler } = HtmlRenderer.replacingHook
                                      }
                  )
   }
+
+articleUrltoRelativeHook :: HtmlRenderer.HookRep
+articleUrltoRelativeHook = HtmlRenderer.modifyingHook
+  { shouldProcessNode: (\n ->
+                          let info = do
+                                name    <- HtmlRenderer.getName n
+                                attribs <- HtmlRenderer.getAttribs n
+                                href    <- attribs.href
+                                pure { name, href }
+                          in case info of
+                            Just { name, href}
+                              | name == "a"
+                              , contains hblArticleUrlPrefix href -> true
+                            _                                     -> false
+                       )
+  , processNode: (\n _ -> do
+                    let updatedAttribs = do
+                          attribs      <- HtmlRenderer.getAttribs n
+                          href         <- attribs.href
+                          relativeHref <- stripPrefix hblUrlPrefix href
+                          pure $ attribs { href = Just relativeHref }
+                    case updatedAttribs of
+                      Just attribs -> do
+                        HtmlRenderer.setAttribs n attribs
+                      Nothing      -> pure unit
+                    pure n
+                 )
+  }
+  where
+    hblUrlPrefix        = Pattern "https://www.hbl.fi"
+    hblArticleUrlPrefix = Pattern "https://www.hbl.fi/artikel"

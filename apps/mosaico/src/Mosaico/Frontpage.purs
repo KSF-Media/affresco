@@ -7,6 +7,7 @@ module Mosaico.Frontpage
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Array (head)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -58,7 +59,7 @@ render (List props) = genericRender (\list -> map renderListArticle list) props.
                     [ DOM.a
                         { href: "/artikel/" <> a.uuid
                         , className: "list-article-image"
-                        , children: [ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url a.mainImage } ]
+                        , children: [ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url (a.listImage <|> a.mainImage) } ]
                         }
                     ,  DOM.div
                           { className: "list-article-liftup"

@@ -2,9 +2,8 @@ module Mosaico where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, toArray, stringify)
+import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
@@ -17,7 +16,6 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
-import Data.String as String
 import Data.Time.Duration (Minutes(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -30,7 +28,7 @@ import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel (..), CategoryType(..), FullArticle(..), Tag (..), categoriesMap, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (ArticleStub, Categories, Category(..), CategoryType(..), FullArticle(..), categoriesMap, isPreviewArticle, fromFullArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -40,7 +38,7 @@ import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
-import Mosaico.Models (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot)
+import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot, JSInitialFeed, parseFeed)
 import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
@@ -98,11 +96,7 @@ type JSProps =
   , mostReadArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
-  , initialFrontpageFeed :: Nullable { feedType        :: Nullable String
-                                     , feedPage        :: Nullable String
-                                     , feedContent     :: Nullable String
-                                     , feedContentType :: Nullable String
-                                     }
+  , initialFrontpageFeed :: Nullable JSInitialFeed
   , user :: Nullable Json
   }
 
@@ -294,27 +288,7 @@ fromJSProps jsProps =
       article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
 
-      initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
-      initialFrontpageFeed = fromMaybe HashMap.empty do
-        feed <- toMaybe jsProps.initialFrontpageFeed
-        let feedPage = toMaybe feed.feedPage
-        feedType <- do
-          f <- toMaybe feed.feedType
-          case String.toLower f of
-            "categoryfeed" -> Just $ CategoryFeed (map CategoryLabel feedPage)
-            "tagfeed"      -> map (TagFeed <<< Tag) feedPage
-            "searchfeed"   -> SearchFeed <$> feedPage
-            _              -> Nothing
-        feedContent <- do
-          content <- toMaybe feed.feedContent
-          feedContentType <- toMaybe feed.feedContentType
-          case feedContentType of
-            "articlelist" -> do
-              list <- content # (jsonParser >>> hush) >>= toArray
-              pure $ ArticleList $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list
-            "html"        -> pure $ Html content
-            _             -> Nothing
-        pure $ HashMap.singleton feedType feedContent
+      initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
 
       staticPageName = toMaybe jsProps.staticPageName
       -- Decoding errors are being hushed here, although if this
@@ -435,7 +409,9 @@ render setState state components router onPaywallEvent =
         })
 
     hooks :: Array Frontpage.Hook
-    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler ]
+    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler
+            , Frontpage.ArticleUrltoRelative
+            ]
 
     mosaicoDefaultLayout :: JSX -> JSX
     mosaicoDefaultLayout = flip mosaicoLayout true

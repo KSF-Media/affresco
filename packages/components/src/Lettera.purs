@@ -7,7 +7,6 @@ import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
-import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
