@@ -2,7 +2,9 @@ module Mosaico.Header where
 
 import Prelude
 
+import Data.Array (head, splitAt)
 import Data.Either (Either(..))
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
@@ -11,7 +13,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Foreign.Object as Object
 import KSF.User (User)
-import Lettera.Models (Category(..), Categories)
+import Lettera.Models (Categories, Category(..))
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -61,7 +63,7 @@ render props =
             }
         , DOM.div
             { className: block <> "__logo"
-            , onClick: handler_ $ props.router.pushState (write {}) "/"
+            , onClick: foldMap props.onCategoryClick frontpageCategory
             }
         , maybe
             (DOM.div
@@ -79,7 +81,7 @@ render props =
             ) $ toMaybe <<< _.firstName =<< props.user
         , DOM.nav
             { className: block <> "__center-links"
-            , children: map mkCategory props.categoryStructure
+            , children: map mkCategory headerCategories
             }
         , DOM.div
             { className: block <> "__right-buttons"
@@ -115,6 +117,10 @@ render props =
             , onClick: props.onCategoryClick category
             , children: [ DOM.text $ String.toUpper $ unwrap label ]
             }
+
+    { frontpageCategory, headerCategories } =
+      let { after, before } = splitAt 1 props.categoryStructure
+      in  { frontpageCategory: head before, headerCategories: after }
 
     searchButton :: JSX
     searchButton = DOM.a
