@@ -366,6 +366,7 @@ type DraftParams =
 
 data CategoryType
   = Feed
+  | Prerendered
   | Webview
   | Link
 
@@ -375,18 +376,23 @@ toString :: CategoryType -> String
 toString Feed = "feed"
 toString Webview = "webview"
 toString Link = "link"
+toString Prerendered = "prerendered"
 
 instance categoryTypeDecodeJson :: DecodeJson CategoryType where
   decodeJson json = do
     categoryTypeString <- decodeJson json
     case toLower categoryTypeString of
-      "feed"    -> Right Feed
-      "webview" -> Right Webview
-      "link"    -> Right Link
-      _         -> Left $ UnexpectedValue json
+      "feed"        -> Right Feed
+      "webview"     -> Right Webview
+      "link"        -> Right Link
+      "prerendered" -> Right Prerendered
+      _             -> Left $ UnexpectedValue json
 
 newtype CategoryLabel = CategoryLabel String
 derive instance newtypeCategoryLabel :: Newtype CategoryLabel _
+
+frontpageCategoryLabel :: CategoryLabel
+frontpageCategoryLabel = CategoryLabel "Startsidan"
 
 -- (CategoryLabel "Norden Och Världen") is equal to (CategoryLabel "norden-och-världen")
 instance eqCategoryLabel :: Eq CategoryLabel where
