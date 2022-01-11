@@ -73,22 +73,22 @@ handleLetteraError :: LetteraError -> Effect Unit
 handleLetteraError { information } =
   maybe (pure unit) (\info -> Console.warn info) information
 
-getArticleAuth :: UUID -> Aff (Either String FullArticle)
-getArticleAuth articleId = do
+getArticleAuth :: UUID -> Paper -> Aff (Either String FullArticle)
+getArticleAuth articleId paper = do
   tokens <- Auth.loadToken
-  getArticle articleId tokens
+  getArticle articleId paper tokens
 
 -- TODO: Instead of String, use some sort of LetteraError or something
-getArticle :: UUID -> Maybe UserAuth -> Aff (Either String FullArticle)
-getArticle articleId = getArticleWithUrl (letteraArticleUrl <> (toString articleId))
+getArticle :: UUID -> Paper -> Maybe UserAuth -> Aff (Either String FullArticle)
+getArticle articleId = getArticleWithUrl (letteraArticleUrl <> (toString articleId)) <<< Just
 
 getArticleWithSlug :: String -> Maybe UserAuth -> Aff (Either String FullArticle)
-getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug)
+getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug) Nothing
 
-getArticleWithUrl :: String -> Maybe UserAuth -> Aff (Either String FullArticle)
-getArticleWithUrl url auth = do
+getArticleWithUrl :: String -> Maybe Paper -> Maybe UserAuth -> Aff (Either String FullArticle)
+getArticleWithUrl url paper auth = do
   let request = AX.defaultRequest
-        { url = url
+        { url = url <> foldMap (\p -> "?paper=" <> Paper.toString p) paper
         , method = Left GET
         , responseFormat = AX.json
         , headers =

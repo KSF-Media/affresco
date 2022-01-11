@@ -211,7 +211,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
       { user, article, mostReadArticles } <- sequential $
         { user: _, article: _, mostReadArticles: _ }
         <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-        <*> parallel (Lettera.getArticle uuid r.guards.credentials)
+        <*> parallel (Lettera.getArticle uuid mosaicoPaper r.guards.credentials)
         <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
       renderArticle env user article mostReadArticles
   | otherwise = do
