@@ -1,25 +1,19 @@
-google.com, pub-5179151387011116, DIRECT, f08c47fec0942fa0
-
-smartadserver.com,2936, RESELLER
-
-indexexchange.com,179394,DIRECT
-
+adform.com, 629, RESELLER
+adform.com, 984, RESELLER
+adten.eu, c-1599, DIRECT
+appnexus.com,11451,RESELLER
+appnexus.com,3703,DIRECT,f5ab79cb980f11d1
 contextweb.com,560288,DIRECT,89ff185a4c4e857c
-
-pubmatic.com,156439,DIRECT
-
-pubmatic.com,154037,DIRECT
-
-rubiconproject.com,16114,DIRECT,0bfd66d529a55807
-
-rubiconproject.com, 16474, RESELLER, 0bfd66d529a55807
-
+google.com, pub-5179151387011116, DIRECT, f08c47fec0942fa0
+indexexchange.com,179394,DIRECT
+netricsales.com, 13290, RESELLER
+netricsales.com, 16474, RESELLER
 openx.com,537149888,DIRECT,6a698e2ec38604c6
-
+pubmatic.com, 158930, RESELLER, 5d62403b186f2ace
+relevant.fi, 61a8926e318c8ec09eb743ab, DIRECT
+rubiconproject.com, 13290, RESELLER,0bfd66d529a55807
+rubiconproject.com, 16474, RESELLER, 0bfd66d529a55807
+smartadserver.com, 1976, RESELLER
+smartadserver.com, 3668, RESELLER
 sovrn.com,257611,DIRECT,fafdf38b16bf6b2b
 
-appnexus.com,3703,DIRECT,f5ab79cb980f11d1
-
-google.com, pub-6190566960238380, DIRECT, f08c47fec0942fa0
-
-adform.com, 629, RESELLER
