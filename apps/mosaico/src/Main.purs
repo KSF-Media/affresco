@@ -93,7 +93,10 @@ indexHtmlFileLocation = "./dist/client/index.html"
 spec ::
   Spec
     { routes ::
-         { getDraftArticle ::
+         { getHealthz ::
+              GET "/healthz"
+                { response :: String }
+         , getDraftArticle ::
               GET "/artikel/draft/<aptomaId>/?dp-time=<time>&publicationId=<publication>&user=<user>&hash=<hash>"
                 { response :: ResponseBody
                 , params :: { aptomaId :: String }
@@ -179,7 +182,8 @@ main = do
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages }
         handlers =
-          { getDraftArticle: getDraftArticle env
+          { getHealthz
+          , getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
           , assets
           , frontpage: frontpage env
@@ -193,6 +197,9 @@ main = do
           }
         guards = { credentials: getCredentials, category: parseCategory env }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+
+getHealthz :: {} -> Aff String
+getHealthz _ = pure "OK"
 
 getDraftArticle
   :: Env
