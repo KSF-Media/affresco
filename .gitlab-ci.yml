@@ -14,10 +14,7 @@ variables:
 before_script:
   - eval `${CI_SCRIPTS}/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
 
-# You may also want a lint stage before the build
-# and you might want to remove the update-clients job
 stages:
-#  - test
   - build
   - docker
   - deploy
