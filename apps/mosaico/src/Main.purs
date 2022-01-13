@@ -33,12 +33,12 @@ import Foreign (unsafeToForeign)
 import JSURI as URI
 import KSF.Api (UserAuth, parseToken)
 import KSF.Api.Error as Api.Error
-import KSF.Paper (Paper)
 import KSF.User (User, fromPersonaUser)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, frontpageCategoryLabel, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
+import Mosaico.Cache as Cache
 import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
@@ -96,6 +96,7 @@ type Env =
   , categoryStructure :: Array Category
   , categoryRegex :: Regex
   , staticPages :: HashMap.HashMap String String
+  , cache :: Cache.Cache
   }
 
 indexHtmlFileLocation :: String
@@ -188,10 +189,11 @@ main = do
   Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure mosaicoPaper
     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
+    cache <- liftEffect $ Cache.initCache mosaicoPaper categoryStructure
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
-    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages }
+    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
         handlers =
           { getHealthz
           , getDraftArticle: getDraftArticle env
@@ -230,7 +232,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
         { user: _, article: _, mostReadArticles: _ }
         <$> maybe (pure Nothing) (parallel <<< getUser) credentials
         <*> parallel (Lettera.getArticle uuid mosaicoPaper r.guards.credentials)
-        <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+        <*> parallel (Cache.getMostRead env.cache)
       renderArticle env user article mostReadArticles
   | otherwise = do
     article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials
@@ -245,7 +247,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
         { user, mostReadArticles } <- sequential $
           { user: _, mostReadArticles: _ }
           <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-          <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+          <*> parallel (Cache.getMostRead env.cache)
         let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
         notFound env (notFoundArticleContent $ hush =<< user) user maybeMostRead
 
@@ -311,8 +313,8 @@ frontpage env { guards: { credentials } } = do
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (getFrontpage mosaicoPaper "Startsidan")
-    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+    <*> parallel (getFrontpage env.cache frontpageCategoryLabel)
+    <*> parallel (Cache.getMostRead env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
       renderFrontpage :: ArticleFeed -> JSX
@@ -350,18 +352,12 @@ frontpage env { guards: { credentials } } = do
             appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
-getFrontpage :: Paper -> String -> Aff ArticleFeed
-getFrontpage paper category = do
-  eitherHtml <- Lettera.getFrontpageHtml paper category
-  case eitherHtml of
-    Right html -> pure $ Html html
-    Left err -> case err.type of
-      Lettera.FrontPageHtmlNotFound -> getFrontpageArticles
-      _                             -> do
-        liftEffect $ Lettera.handleLetteraError err
-        getFrontpageArticles
-  where
-    getFrontpageArticles = ArticleList <$> Lettera.getFrontpage paper Nothing
+getFrontpage :: Cache.Cache -> CategoryLabel -> Aff ArticleFeed
+getFrontpage cache category = do
+  maybeHtml <- Cache.getFrontpageHtml cache category
+  case maybeHtml of
+    Just html -> pure $ Html html
+    Nothing -> ArticleList <$> Cache.getFrontpage cache category
 
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
@@ -411,8 +407,8 @@ tagList env { params: { tag }, guards: { credentials } } = do
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Lettera.getByTag 0 20 tag' mosaicoPaper)
-    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+    <*> parallel (Cache.getByTag env.cache tag')
+    <*> parallel (Cache.getMostRead env.cache)
   if null articles
     then notFound env (TagListContent tag' notFoundWithAside) user (Just mostReadArticles)
     else do
@@ -444,7 +440,7 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
   { user, mostReadArticles } <- sequential $
     { user: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+    <*> parallel (Cache.getMostRead env.cache)
   case HashMap.lookup (pageName <> ".html") env.staticPages of
     Just staticPageContent -> do
       let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
@@ -484,7 +480,7 @@ debugList env { params: { uuid }, guards: { credentials } } = do
     { user: _, article: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> maybe (pure Nothing) (parallel <<< map hush <<< Lettera.getArticleStub) (UUID.parseUUID uuid)
-    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+    <*> parallel (Cache.getMostRead env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString =
@@ -514,8 +510,8 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Lettera.getFrontpage mosaicoPaper (Just categoryName))
-    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+    <*> parallel (Cache.getFrontpage env.cache $ CategoryLabel categoryName)
+    <*> parallel (Cache.getMostRead env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString
@@ -546,7 +542,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> maybe (pure mempty) (parallel <<< Lettera.search 0 20 mosaicoPaper) query
-    <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
+    <*> parallel (Cache.getMostRead env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString

@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (mapMaybe, null)
+import Data.Array (fromFoldable, mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
@@ -163,15 +163,15 @@ mosaicoComponent initialValues props = React.do
 
   let loadFeed feedName = do
         maybeFeed <- case feedName of
-          TagFeed t -> Just <<< ArticleList <$> Lettera.getByTag 0 20 t mosaicoPaper
+          TagFeed t -> Just <<< ArticleList <<< join <<< fromFoldable <$> Lettera.getByTag 0 20 t mosaicoPaper
           CategoryFeed c
             | Just cat <- unwrap <$> Map.lookup c state.catMap ->
               let label = unwrap c
-                  getArticleList = ArticleList <$> Lettera.getFrontpage mosaicoPaper (Just label)
+                  getArticleList = ArticleList <<< join <<< fromFoldable <$> Lettera.getFrontpage mosaicoPaper (Just label)
               in case cat.type of
                 Prerendered ->
                   map Just <<< maybe getArticleList pure =<<
-                  map Html <<< hush <$> Lettera.getFrontpageHtml mosaicoPaper label
+                  map Html <<< Lettera.responseBody <$> Lettera.getFrontpageHtml mosaicoPaper label
                 Feed -> Just <$> getArticleList
                 _ -> pure Nothing
           CategoryFeed _ -> pure Nothing
@@ -224,7 +224,7 @@ mosaicoComponent initialValues props = React.do
         | not $ null mostReads -> liftEffect $ setState \s -> s { mostReadArticles = mostReads }
       _ ->
         Aff.launchAff_ do
-          mostReadArticles <- Lettera.getMostRead 0 10 Nothing mosaicoPaper true
+          mostReadArticles <- join <<< fromFoldable <$> Lettera.getMostRead 0 10 Nothing mosaicoPaper true
           liftEffect $ setState \s -> s { mostReadArticles = mostReadArticles }
 
     pure mempty
