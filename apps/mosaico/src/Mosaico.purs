@@ -29,6 +29,7 @@ import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Mosaico.Ad as Ad
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -435,7 +436,9 @@ render setState state components router onPaywallEvent =
       , id: Paper.toString mosaicoPaper
       , onClick
       , children:
-          [ Header.topLine
+          [ Ad.ad
+              { contentUnit: "mosaico-ad__top-parade" }
+          , Header.topLine
           , Header.render
               { router
               , categoryStructure: state.categoryStructure
