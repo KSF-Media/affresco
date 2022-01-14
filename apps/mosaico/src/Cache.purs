@@ -13,6 +13,7 @@ import Data.HashMap as HashMap
 import Data.Int (toNumber, floor)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (un)
+import Data.String (null)
 import Data.Time.Duration (Seconds(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
@@ -51,6 +52,10 @@ instance applyStamped :: Apply Stamped where
 getContent :: forall a. Stamped a -> a
 getContent (Stamped { content }) = content
 
+toValidUntil :: DateTime -> Maybe Int -> Maybe DateTime
+toValidUntil now maxAge =
+  flip adjust now <<< Seconds <<< toNumber =<< maxAge
+
 -- prerendered, mainCategoryFeed and mostRead are updated eagerly from
 -- Lettera.  byTag and subCategoryFeed is only updated on request.
 type Cache =
@@ -59,6 +64,7 @@ type Cache =
   , mostRead :: Aff (Stamped (Array ArticleStub))
   , subCategoryFeed :: AVar (HashMap CategoryLabel (Stamped (Array ArticleStub)))
   , byTag :: AVar (HashMap Tag (Stamped (Array ArticleStub)))
+  , subPrerendered :: AVar (HashMap CategoryLabel (Stamped String))
   , paper :: Paper
   }
 
@@ -74,7 +80,7 @@ startUpdates fetch = do
         LetteraResponse response <- fetch
         _ <- AVar.tryTake var
         now <- liftEffect nowDateTime
-        let validUntil = fromMaybe now $ flip adjust now <<< Seconds <<< toNumber =<< response.maxAge
+        let validUntil = fromMaybe now $ toValidUntil now response.maxAge
         case response.body of
           Right value -> do
             AVar.put (Stamped { validUntil, content: Just value }) var
@@ -123,16 +129,18 @@ initCache paper categoryStructure = do
 
   subCategoryFeed <- Effect.AVar.new HashMap.empty
   byTag <- Effect.AVar.new HashMap.empty
+  subPrerendered <- Effect.AVar.new HashMap.empty
 
   pure { prerendered
        , mainCategoryFeed
        , mostRead
        , subCategoryFeed
        , byTag
+       , subPrerendered
        , paper
        }
 
-getUsingCache :: forall k. Hashable k => AVar (HashMap k (Stamped (Array ArticleStub))) -> k -> Aff (LetteraResponse (Array ArticleStub)) -> Aff (Stamped (Array ArticleStub))
+getUsingCache :: forall k m. Hashable k => Monoid m  => AVar (HashMap k (Stamped m)) -> k -> Aff (LetteraResponse m) -> Aff (Stamped m)
 getUsingCache cache key action = do
   store <- AVar.take cache
   let fetch = do
@@ -140,7 +148,7 @@ getUsingCache cache key action = do
         now <- liftEffect nowDateTime
         pure $ case (\content validUntil -> Stamped { content, validUntil })
                     <$> hush response.body
-                    <*> (flip adjust now <<< Seconds <<< toNumber =<< response.maxAge) of
+                    <*> toValidUntil now response.maxAge of
           Just value ->
             { value, newStore: HashMap.insert key value store }
           _ ->
@@ -154,10 +162,16 @@ getUsingCache cache key action = do
   AVar.put newStore cache
   pure value
 
--- Assumes that only main categories may have prerendered HTML
+-- Only main category prerendered contents are cached, others will be
+-- fetched on demand.
 getFrontpageHtml :: Cache -> CategoryLabel -> Aff (Stamped (Maybe String))
 getFrontpageHtml cache category =
-  maybe emptyStamp identity $ HashMap.lookup category cache.prerendered
+  maybe useSubPrerendered identity $ HashMap.lookup category cache.prerendered
+  where
+    useSubPrerendered =
+      (map <<< map) (\h -> if null h then Nothing else Just h) $
+      getUsingCache cache.subPrerendered category $
+      Lettera.getFrontpageHtml cache.paper $ show category
 
 getFrontpage :: Cache -> CategoryLabel -> Aff (Stamped (Array ArticleStub))
 getFrontpage cache category = do
