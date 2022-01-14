@@ -113,6 +113,14 @@ jobs:
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
+      - name: Setup build cache for Mosaico
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
+          path: |
+            apps/mosaico/.spago
+            apps/mosaico/output
+            apps/mosaico/.cache
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -172,6 +180,13 @@ jobs:
         run: |2
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
+        shell: bash
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
+        name: Build Mosaico
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico/dist build/mosaico
         shell: bash
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
@@ -236,55 +251,16 @@ jobs:
           destination: "deploy-previews/${{ github.sha }}/prenumerera"
           parent: 'false'
           path: build/prenumerera
-  deploy-mosaico-server:
-    container:
-      image: ksfmedia/diskho:gha-1.0
-      options: "--cpus 2"
-    needs: check-ci
-    outputs:
-      preview: "${{ steps.deploy-mosaico-server.outputs.url}}"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: "actions/checkout@v2"
-      - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+      - name: Upload Mosaico
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
-          export_default_credentials: 'true'
-          project_id: ksf-staging
-          service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
-      - run: |2
-            yarn install --pure-lockfile
-            mkdir -p build
-      - env:
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
-        name: Build Server Mosaico server
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico build/mosaico
-        shell: bash
-      - env:
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
-        name: Copy app.yaml.dev to app.yaml
-        run: |
-          cp build/mosaico/app.dev.yaml build/mosaico/app.yaml
-        shell: bash
-      - id: deploy-mosaico-server
-        name: Deploy Mosaico server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: ksf-staging
-          promote: 'false'
-          working_directory: build/mosaico
-      - continue-on-error: true
-        name: Keep only 10 latest versions of mosaico-server
-        run: |
-          ./ci/ae-cleanup.sh mosaico-server
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/mosaico"
+          parent: 'false'
+          path: build/mosaico
   previews:
     needs:
       - deploy-gs
-      - deploy-mosaico-server
       - deploy-app-article-server
     runs-on: ubuntu-latest
     steps:
@@ -305,8 +281,8 @@ jobs:
             - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
             - [Prenumerera](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/prenumerera/index.html)
+            - [Mosaico](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
             - [App article server](${{ needs.deploy-app-article-server.outputs.preview }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
-            - [Mosaico server](${{ needs.deploy-mosaico-server.outputs.preview }}/artikel/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews
 on:
   pull_request:
