@@ -6,6 +6,7 @@
   grid-template-columns: minmax(0, 1fr); //minmax used to prevent grid blowout on static pages
   grid-row-gap: 8px;
   grid-template-areas:
+    "headads"
     "line"
     "head"
     "separator"
@@ -17,10 +18,11 @@
 
   @media (min-width: @breakpoint-3col) {
     max-width: 100%;
-    grid-template-rows: auto 85px auto auto auto auto 500px;
+    grid-template-rows: auto auto 85px auto auto auto auto 500px;
     // don't use repeat, causes error
     grid-template-columns: 1fr @content-block @content-block @content-block 1fr;
     grid-template-areas:
+      ". headads headads headads ."
       "line line line line line"
       ". head head head ."
       "separator separator separator separator separator"
