@@ -22,21 +22,18 @@ type Props =
   , user :: Maybe User
   }
 
-data MainContent
-  = ArticleContent JSX
-  | FrontpageContent JSX
-  | HtmlFrontPageContent JSX
-  | TagListContent Tag JSX
-  | StaticPageContent String JSX
-  | MenuContent JSX
+type MainContent =
+  { content :: JSX
+  , type :: MainContentType
+  }
 
-fromMainContent :: MainContent -> JSX
-fromMainContent (ArticleContent jsx) = jsx
-fromMainContent (FrontpageContent jsx) = jsx
-fromMainContent (HtmlFrontPageContent jsx) = jsx
-fromMainContent (TagListContent _ jsx) = jsx
-fromMainContent (StaticPageContent _ jsx) = jsx
-fromMainContent (MenuContent jsx) = jsx
+data MainContentType
+  = ArticleContent
+  | FrontpageContent
+  | HtmlFrontpageContent
+  | TagListContent Tag
+  | StaticPageContent String
+  | MenuContent
 
 app :: Props -> JSX
 app props =
@@ -71,11 +68,11 @@ render router props = DOM.div
                            , onLogin: pure unit
                            }
            , Header.mainSeparator
-           , fromMainContent props.mainContent
+           , props.mainContent.content
            , footer mempty
-           , case props.mainContent of
-                 FrontpageContent _ -> aside
-                 TagListContent _ _ -> aside
+           , case props.mainContent.type of
+                 FrontpageContent -> aside
+                 TagListContent _ -> aside
                  _ -> mempty
            ]
        }

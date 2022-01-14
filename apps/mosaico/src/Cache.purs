@@ -3,14 +3,16 @@ module Mosaico.Cache where
 import Prelude
 
 import Control.Monad.Rec.Class (untilJust)
+import Control.Plus (class Plus, empty)
 import Data.Array (filter, fromFoldable)
-import Data.DateTime (DateTime, adjust)
+import Data.DateTime (DateTime, adjust, diff)
 import Data.Either (Either(..), hush)
 import Data.Hashable (class Hashable)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
-import Data.Int (toNumber)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Int (toNumber, floor)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Newtype (un)
 import Data.Time.Duration (Seconds(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
@@ -27,24 +29,40 @@ import KSF.Paper (Paper)
 import Lettera (LetteraResponse(..))
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel, CategoryType(..), Tag)
+import Payload.Headers as Headers
+import Payload.ResponseTypes (Response(..))
 
-type StampedArticles =
+data Stamped a = Stamped
   { validUntil :: DateTime
-  , articles :: Array ArticleStub
+  , content :: a
   }
+
+emptyStamp :: forall m a. Plus m => Aff (Stamped (m a))
+emptyStamp =
+  Stamped <<< { validUntil: _, content: empty } <$> liftEffect nowDateTime
+
+instance functorStamped :: Functor Stamped where
+  map f (Stamped s@{ content }) = Stamped $ s { content = f content }
+
+instance applyStamped :: Apply Stamped where
+  apply (Stamped { validUntil: t1, content: f}) (Stamped { validUntil: t2, content: x}) =
+    Stamped { validUntil: min t1 t2, content: f x }
+
+getContent :: forall a. Stamped a -> a
+getContent (Stamped { content }) = content
 
 -- prerendered, mainCategoryFeed and mostRead are updated eagerly from
 -- Lettera.  byTag and subCategoryFeed is only updated on request.
 type Cache =
-  { prerendered :: HashMap CategoryLabel (Aff (Maybe String))
-  , mainCategoryFeed :: HashMap CategoryLabel (Aff (Array ArticleStub))
-  , mostRead :: Aff (Array ArticleStub)
-  , subCategoryFeed :: AVar (HashMap CategoryLabel StampedArticles)
-  , byTag :: AVar (HashMap Tag StampedArticles)
+  { prerendered :: HashMap CategoryLabel (Aff (Stamped (Maybe String)))
+  , mainCategoryFeed :: HashMap CategoryLabel (Aff (Stamped (Array ArticleStub)))
+  , mostRead :: Aff (Stamped (Array ArticleStub))
+  , subCategoryFeed :: AVar (HashMap CategoryLabel (Stamped (Array ArticleStub)))
+  , byTag :: AVar (HashMap Tag (Stamped (Array ArticleStub)))
   , paper :: Paper
   }
 
-startUpdates :: forall a. Aff (LetteraResponse a) -> Effect (Aff (Maybe a))
+startUpdates :: forall a. Aff (LetteraResponse a) -> Effect (Aff (Stamped (Maybe a)))
 startUpdates fetch = do
   -- Var is empty only if the update thread is not running.
   var <- Effect.AVar.empty
@@ -55,9 +73,11 @@ startUpdates fetch = do
       update = untilJust do
         LetteraResponse response <- fetch
         _ <- AVar.tryTake var
+        now <- liftEffect nowDateTime
+        let validUntil = fromMaybe now $ flip adjust now <<< Seconds <<< toNumber =<< response.maxAge
         case response.body of
           Right value -> do
-            AVar.put (Just value) var
+            AVar.put (Stamped { validUntil, content: Just value }) var
           Left err -> do
             Console.warn $ show err
         -- Tell the possible caller to continue, we either have a
@@ -82,7 +102,7 @@ startUpdates fetch = do
             AVar.put unit updateDone
             -- Leave it empty for the next caller.
             AVar.take updateDone
-            join <$> AVar.tryRead var
+            AVar.tryRead var >>= maybe emptyStamp pure
   Aff.launchAff_ start
   pure start
 
@@ -96,10 +116,10 @@ initCache paper categoryStructure = do
       mainFeedCategories = filter (\(Category c) -> c.type == Feed) categoryStructure
   mainCategoryFeed <-
     HashMap.fromArray
-    <$> traverse ((map <<< map <<< map <<< map) (join <<< fromFoldable) $
+    <$> traverse ((map <<< map <<< map <<< map <<< map) (join <<< fromFoldable) $
                   withCat $ startUpdates <<< Lettera.getFrontpage paper <<< Just) mainFeedCategories
   prerendered <- HashMap.fromArray <$> traverse (withCat $ startUpdates <<< Lettera.getFrontpageHtml paper) prerenderedCategories
-  mostRead <- (map <<< map) (join <<< fromFoldable) $ startUpdates $ Lettera.getMostRead 0 10 Nothing paper false
+  mostRead <- (map <<< map <<< map) (join <<< fromFoldable) $ startUpdates $ Lettera.getMostRead 0 10 Nothing paper false
 
   subCategoryFeed <- Effect.AVar.new HashMap.empty
   byTag <- Effect.AVar.new HashMap.empty
@@ -112,44 +132,53 @@ initCache paper categoryStructure = do
        , paper
        }
 
-getUsingCache :: forall k. Hashable k => AVar (HashMap k StampedArticles) -> k -> Aff (LetteraResponse (Array ArticleStub)) -> Aff (Array ArticleStub)
+getUsingCache :: forall k. Hashable k => AVar (HashMap k (Stamped (Array ArticleStub))) -> k -> Aff (LetteraResponse (Array ArticleStub)) -> Aff (Stamped (Array ArticleStub))
 getUsingCache cache key action = do
   store <- AVar.take cache
   let fetch = do
-        (LetteraResponse response) <- action
+        LetteraResponse response <- action
         now <- liftEffect nowDateTime
-        pure $ case { value:_, validUntil:_ }
+        pure $ case (\content validUntil -> Stamped { content, validUntil })
                     <$> hush response.body
                     <*> (flip adjust now <<< Seconds <<< toNumber =<< response.maxAge) of
-          Just { value, validUntil } ->
-            { value, newStore: HashMap.insert key ({ validUntil, articles: value }) store }
+          Just value ->
+            { value, newStore: HashMap.insert key value store }
           _ ->
-            { value: mempty, newStore: HashMap.delete key store }
+            { value: Stamped { validUntil: now, content: mempty }, newStore: HashMap.delete key store }
   { value, newStore } <-
     case HashMap.lookup key store of
-      Just { validUntil, articles } -> do
+      Just value@(Stamped { validUntil }) -> do
         now <- liftEffect nowDateTime
-        if now > validUntil then fetch else pure { value: articles, newStore: store }
+        if now > validUntil then fetch else pure { value, newStore: store }
       Nothing -> fetch
   AVar.put newStore cache
   pure value
 
 -- Assumes that only main categories may have prerendered HTML
-getFrontpageHtml :: Cache -> CategoryLabel -> Aff (Maybe String)
+getFrontpageHtml :: Cache -> CategoryLabel -> Aff (Stamped (Maybe String))
 getFrontpageHtml cache category =
-  maybe (pure Nothing) identity $ HashMap.lookup category cache.prerendered
+  maybe emptyStamp identity $ HashMap.lookup category cache.prerendered
 
-getFrontpage :: Cache -> CategoryLabel -> Aff (Array ArticleStub)
+getFrontpage :: Cache -> CategoryLabel -> Aff (Stamped (Array ArticleStub))
 getFrontpage cache category = do
   case HashMap.lookup category cache.mainCategoryFeed of
     Just c -> c
     Nothing -> getUsingCache cache.subCategoryFeed category $
                Lettera.getFrontpage cache.paper $ Just $ show category
 
-getMostRead :: Cache -> Aff (Array ArticleStub)
+getMostRead :: Cache -> Aff (Stamped (Array ArticleStub))
 getMostRead cache = cache.mostRead
 
-getByTag :: Cache -> Tag -> Aff (Array ArticleStub)
+getByTag :: Cache -> Tag -> Aff (Stamped (Array ArticleStub))
 getByTag cache tag =
   getUsingCache cache.byTag tag $
   Lettera.getByTag 0 20 tag cache.paper
+
+addHeader :: forall a b. DateTime -> Boolean -> Stamped b -> Response a -> Response a
+addHeader now private (Stamped { validUntil }) =
+  if maxAge <= 0 then identity
+  else \(Response response) ->
+    Response $ response { headers = Headers.set "cache-control" control response.headers }
+  where
+    maxAge = floor $ un Seconds $ diff validUntil now
+    control = (if private then "private, " else "") <> "max-age=" <> show maxAge

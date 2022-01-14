@@ -28,6 +28,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
+import Effect.Now (nowDateTime)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign (unsafeToForeign)
 import JSURI as URI
@@ -38,6 +39,7 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, frontpageCategoryLabel, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
+import Mosaico.Cache (Stamped(..))
 import Mosaico.Cache as Cache
 import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
@@ -46,7 +48,7 @@ import Mosaico.Header.Menu as Menu
 import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Search as Search
-import MosaicoServer (MainContent(..))
+import MosaicoServer (MainContent, MainContentType(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync as FS
@@ -62,7 +64,6 @@ import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
 import Persona as Persona
-import React.Basic (JSX)
 import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta, script) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
@@ -188,8 +189,8 @@ main = do
   htmlTemplate <- parseTemplate <$> FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure mosaicoPaper
-    -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
     cache <- liftEffect $ Cache.initCache mosaicoPaper categoryStructure
+    -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
@@ -232,7 +233,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
         { user: _, article: _, mostReadArticles: _ }
         <$> maybe (pure Nothing) (parallel <<< getUser) credentials
         <*> parallel (Lettera.getArticle uuid mosaicoPaper r.guards.credentials)
-        <*> parallel (Cache.getMostRead env.cache)
+        <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
       renderArticle env user article mostReadArticles
   | otherwise = do
     article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials
@@ -247,7 +248,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
         { user, mostReadArticles } <- sequential $
           { user: _, mostReadArticles: _ }
           <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-          <*> parallel (Cache.getMostRead env.cache)
+          <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
         let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
         notFound env (notFoundArticleContent $ hush =<< user) user maybeMostRead
 
@@ -275,7 +276,7 @@ renderArticle env user article mostReadArticles = do
               }
           mosaicoString = DOM.renderToString
                           $ mosaico
-                            { mainContent: ArticleContent articleJSX
+                            { mainContent: { type: ArticleContent, content: articleJSX }
                             , mostReadArticles
                             , categoryStructure: env.categoryStructure
                             , user: hush =<< user
@@ -315,49 +316,52 @@ frontpage env { guards: { credentials } } = do
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (getFrontpage env.cache frontpageCategoryLabel)
     <*> parallel (Cache.getMostRead env.cache)
-  let mosaico = MosaicoServer.app
-      htmlTemplate = cloneTemplate env.htmlTemplate
-      renderFrontpage :: ArticleFeed -> JSX
-      renderFrontpage (ArticleList list) =
-        Frontpage.render $ Frontpage.List
+  let htmlTemplate = cloneTemplate env.htmlTemplate
+      mosaicoString = renderContent user <$> articles <*> mostReadArticles
+  html <- liftEffect do
+            let windowVars =
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
+                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  ] <> userVar user
+                    <> mkArticleFeed (CategoryFeed frontpageCategoryLabel) (Cache.getContent articles)
+            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  now <- liftEffect nowDateTime
+  pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+  where
+    renderContent user articles mostReadArticles =
+      DOM.renderToString
+      $ MosaicoServer.app
+          { mainContent: renderFrontpage articles mostReadArticles
+          , mostReadArticles
+          , categoryStructure: env.categoryStructure
+          , user: hush =<< user
+          }
+
+    renderFrontpage :: ArticleFeed -> Array ArticleStub -> MainContent
+    renderFrontpage (ArticleList list) _ =
+      { type: FrontpageContent
+      , content: Frontpage.render $ Frontpage.List
           { content: Just list
           , onArticleClick: const mempty
           , onTagClick: const mempty
           }
-      renderFrontpage (Html html) =
-        Frontpage.render $ Frontpage.Prerendered
+      }
+    renderFrontpage (Html html) mostReadArticles =
+      { type: HtmlFrontpageContent
+      , content: Frontpage.render $ Frontpage.Prerendered
           { content: Just html
           , hooks: [ Frontpage.MostRead mostReadArticles (const $ pure unit)
                    , Frontpage.ArticleUrltoRelative
                    ]
           }
-      frontpage' = renderFrontpage articles
-      mosaicoString =
-        DOM.renderToString
-        $ mosaico
-          { mainContent:
-              case articles of
-                ArticleList _ -> FrontpageContent frontpage'
-                Html _        -> HtmlFrontPageContent frontpage'
-          , mostReadArticles
-          , categoryStructure: env.categoryStructure
-          , user: hush =<< user
-          }
-  html <- liftEffect do
-            let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
-                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                  ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed frontpageCategoryLabel) articles
-            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+      }
 
-getFrontpage :: Cache.Cache -> CategoryLabel -> Aff ArticleFeed
+getFrontpage :: Cache.Cache -> CategoryLabel -> Aff (Stamped ArticleFeed)
 getFrontpage cache category = do
   maybeHtml <- Cache.getFrontpageHtml cache category
   case maybeHtml of
-    Just html -> pure $ Html html
-    Nothing -> ArticleList <$> Cache.getFrontpage cache category
+    html@(Stamped {content: Just content}) -> pure $ (const $ Html content) <$> html
+    _ -> map ArticleList <$> Cache.getFrontpage cache category
 
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
@@ -380,14 +384,15 @@ menu env _ = do
         DOM.renderToString
         $ mosaico
           { mainContent:
-            MenuContent
-            $ Menu.render
-                { categoryStructure: env.categoryStructure
-                , onCategoryClick: const $ handler_ $ pure unit
-                , user: Nothing
-                , onLogout: pure unit
-                , router: emptyRouter
-                }
+              { type: MenuContent
+              , content: Menu.render
+                  { categoryStructure: env.categoryStructure
+                  , onCategoryClick: const $ handler_ $ pure unit
+                  , user: Nothing
+                  , onLogout: pure unit
+                  , router: emptyRouter
+                  }
+              }
             , mostReadArticles: mempty
             , categoryStructure: env.categoryStructure
             , user: Nothing
@@ -402,45 +407,48 @@ menu env _ = do
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag }, guards: { credentials } } = do
   let tag' = uriComponentToTag tag
-      mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (Cache.getByTag env.cache tag')
     <*> parallel (Cache.getMostRead env.cache)
-  if null articles
-    then notFound env (TagListContent tag' notFoundWithAside) user (Just mostReadArticles)
+  if null $ Cache.getContent articles
+    then notFound env { type: TagListContent tag', content: notFoundWithAside } user (Just $ Cache.getContent mostReadArticles)
     else do
-    let mosaicoString =
-          DOM.renderToString
-          $ mosaico
-            { mainContent:
-                TagListContent tag'
-                $ Frontpage.render $ Frontpage.List
-                  { content: Just articles
-                  , onArticleClick: const mempty
-                  , onTagClick: const mempty
-                  }
-            , categoryStructure: env.categoryStructure
-            , mostReadArticles
-            , user: hush =<< user
-            }
+    let mosaicoString = renderContent tag' user <$> articles <*> mostReadArticles
     html <- liftEffect do
               let windowVars =
-                    [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                    [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
                     , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                     ] <> userVar user
-                      <> mkArticleFeed (TagFeed tag') (ArticleList articles)
-              appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
-    pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+                      <> mkArticleFeed (TagFeed tag') (ArticleList (Cache.getContent articles))
+              appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+    now <- liftEffect nowDateTime
+    pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+  where
+    renderContent tag' user articles mostReadArticles =
+      DOM.renderToString
+      $ MosaicoServer.app
+      { mainContent:
+          { type: TagListContent tag'
+          , content: Frontpage.render $ Frontpage.List
+              { content: Just articles
+              , onArticleClick: const mempty
+              , onTagClick: const mempty
+              }
+          }
+      , categoryStructure: env.categoryStructure
+      , mostReadArticles
+      , user: hush =<< user
+      }
 
 staticPage :: Env -> { params :: { pageName :: String }, guards :: { credentials :: Maybe UserAuth }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName }, guards: { credentials } } = do
   { user, mostReadArticles } <- sequential $
     { user: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Cache.getMostRead env.cache)
+    <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
   case HashMap.lookup (pageName <> ".html") env.staticPages of
     Just staticPageContent -> do
       let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
@@ -456,7 +464,10 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
       let mosaicoString =
             DOM.renderToString
             $ mosaico
-              { mainContent: StaticPageContent pageName staticPageJsx
+              { mainContent:
+                  { type: StaticPageContent pageName
+                  , content: staticPageJsx
+                  }
               , mostReadArticles
               , categoryStructure: env.categoryStructure
               , user: hush =<< user
@@ -472,7 +483,7 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
       pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
     Nothing ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-      in notFound env (StaticPageContent pageName notFoundWithAside) user maybeMostRead
+      in notFound env { type: StaticPageContent pageName, content: notFoundWithAside } user maybeMostRead
 
 debugList :: Env -> { params :: { uuid :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 debugList env { params: { uuid }, guards: { credentials } } = do
@@ -481,29 +492,32 @@ debugList env { params: { uuid }, guards: { credentials } } = do
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> maybe (pure Nothing) (parallel <<< map hush <<< Lettera.getArticleStub) (UUID.parseUUID uuid)
     <*> parallel (Cache.getMostRead env.cache)
-  let mosaico = MosaicoServer.app
-      htmlTemplate = cloneTemplate env.htmlTemplate
-      mosaicoString =
-        DOM.renderToString
-        $ mosaico
+  let htmlTemplate = cloneTemplate env.htmlTemplate
+      mosaicoString = renderContent user article <$> mostReadArticles
+  html <- liftEffect do
+            let windowVars =
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
+                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  ] <> userVar user
+                    <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
+            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+  where
+    renderContent user article mostReadArticles =
+      DOM.renderToString
+      $ MosaicoServer.app
           { mainContent:
-              FrontpageContent $ Frontpage.render $ Frontpage.List
-                { content: pure <$> article
-                , onArticleClick: const mempty
-                , onTagClick: const mempty
-                }
+              { type: FrontpageContent
+              , content: Frontpage.render $ Frontpage.List
+                  { content: pure <$> article
+                  , onArticleClick: const mempty
+                  , onTagClick: const mempty
+                  }
+              }
           , mostReadArticles
           , categoryStructure: env.categoryStructure
           , user: hush =<< user
           }
-  html <- liftEffect do
-            let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
-                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                  ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
-            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category, credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 categoryPage env { params: { categoryName }, guards: { credentials } } = do
@@ -512,27 +526,34 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (Cache.getFrontpage env.cache $ CategoryLabel categoryName)
     <*> parallel (Cache.getMostRead env.cache)
-  let mosaico = MosaicoServer.app
-      htmlTemplate = cloneTemplate env.htmlTemplate
-      mosaicoString = DOM.renderToString
-                          $ mosaico
-                            { mainContent: FrontpageContent $ Frontpage.render $ Frontpage.List
-                                { content: Just articles
-                                , onArticleClick: const mempty
-                                , onTagClick: const mempty
-                                }
-                            , mostReadArticles
-                            , categoryStructure: env.categoryStructure
-                            , user: hush =<< user
-                            }
+  let htmlTemplate = cloneTemplate env.htmlTemplate
+      mosaicoString = renderContent user <$> articles <*> mostReadArticles
   html <- liftEffect do
             let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed $ CategoryLabel categoryName) (ArticleList articles)
-            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+                    <> mkArticleFeed (CategoryFeed $ CategoryLabel categoryName) (ArticleList $ Cache.getContent articles)
+            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  now <- liftEffect nowDateTime
+  pure $ Cache.addHeader now (isJust user) mosaicoString $
+    maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+  where
+    renderContent user articles mostReadArticles =
+      DOM.renderToString
+      $ MosaicoServer.app
+          { mainContent:
+              { type: FrontpageContent
+              , content: Frontpage.render $ Frontpage.List
+                  { content: Just articles
+                  , onArticleClick: const mempty
+                  , onTagClick: const mempty
+                  }
+              }
+          , mostReadArticles
+          , categoryStructure: env.categoryStructure
+          , user: hush =<< user
+          }
 
 searchPage :: Env -> { query :: { search :: Maybe String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 searchPage env { query: { search }, guards: { credentials } } = do
@@ -542,24 +563,26 @@ searchPage env { query: { search }, guards: { credentials } } = do
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> maybe (pure mempty) (parallel <<< Lettera.search 0 20 mosaicoPaper) query
-    <*> parallel (Cache.getMostRead env.cache)
+    <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString
                         $ mosaico
-                          { mainContent: FrontpageContent $
-                             searchComponent { query
-                                             , doSearch: const $ pure unit
-                                             , searching: false
-                                             , noResults: isJust query && null articles
-                                             } <>
-                             (guard (not $ null articles) $
-                              Frontpage.render $ Frontpage.List
-                                { content: Just articles
-                                , onArticleClick: const mempty
-                                , onTagClick: const mempty
-                                }
-                             )
+                          { mainContent:
+                              { type: FrontpageContent
+                              , content:
+                                  searchComponent { query
+                                                  , doSearch: const $ pure unit
+                                                  , searching: false
+                                                  , noResults: isJust query && null articles
+                                                  } <>
+                                  (guard (not $ null articles) $
+                                   Frontpage.render $ Frontpage.List
+                                   { content: Just articles
+                                   , onArticleClick: const mempty
+                                   , onTagClick: const mempty
+                                   })
+                              }
                           , mostReadArticles
                           , categoryStructure: env.categoryStructure
                           , user: hush =<< user
@@ -580,7 +603,8 @@ notFoundPage env { guards: { credentials } } = do
 
 notFoundArticleContent :: Maybe User -> MainContent
 notFoundArticleContent user =
-  ArticleContent $ Article.render (Image.render mempty)
+  { type: ArticleContent
+  , content: Article.render (Image.render mempty)
     { paper: mosaicoPaper
     , article: Right notFoundArticle
     , onLogin: pure unit
@@ -590,6 +614,7 @@ notFoundArticleContent user =
     , onArticleClick: const mempty
     , mostReadArticles: mempty
     }
+  }
 
 notFound :: Env -> MainContent -> Maybe (Either Unit User) -> Maybe (Array ArticleStub) -> Aff (Response ResponseBody)
 notFound env mainContent user maybeMostReadArticles = do
@@ -606,10 +631,10 @@ notFound env mainContent user maybeMostReadArticles = do
           [ "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
           ] <> userVar user
           <> foldMap (pure <<< Tuple "mostReadArticles" <<< encodeStringifyArticleStubs) maybeMostReadArticles
-          <> (case mainContent of
-                 ArticleContent _ -> [ "article" /\ (encodeStringifyArticle $ fromFullArticle notFoundArticle) ]
-                 TagListContent tag _ -> mkArticleFeed (TagFeed tag) (ArticleList [])
-                 StaticPageContent pageName _ -> [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName) ]
+          <> (case mainContent.type of
+                 ArticleContent -> [ "article" /\ (encodeStringifyArticle $ fromFullArticle notFoundArticle) ]
+                 TagListContent tag -> mkArticleFeed (TagFeed tag) (ArticleList [])
+                 StaticPageContent pageName -> [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName) ]
                  _ -> mempty
              )
     appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
