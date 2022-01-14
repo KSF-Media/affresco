@@ -101,6 +101,7 @@ type ArticleStubCommon =
   , uuid      :: String
   , preamble  :: Maybe String
   , mainImage :: Maybe Image
+  , listImage :: Maybe Image
   , premium   :: Boolean
   , removeAds :: Boolean
   )
@@ -212,6 +213,7 @@ articleToJson article =
     bodyElementToJson (Question question) = merge { question: Just question } base
     bodyElementToJson (Quote quote)       = merge { quote: Just quote } base
     bodyElementToJson (Related related)   = merge { related: Just $ map articleStubToJson related } base
+    bodyElementToJson (Ad _)              = base
 
 articleStubToJson :: ArticleStub -> Json
 articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "tags") (map unwrap) <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
@@ -319,6 +321,7 @@ type BodyElementJS =
   , footnote :: Maybe String
   , question :: Maybe String
   , quote    :: Maybe QuoteInfo
+  , ad       :: Maybe String
   , related  :: Maybe (Array JSArticleStub)
   }
 
@@ -330,6 +333,8 @@ data BodyElement
   | Footnote String
   | Question String
   | Quote QuoteInfo
+  -- Note that Ad does NOT come from Lettera, but was added here to make smart ad placement possible
+  | Ad String
   | Related (Array ArticleStub)
 derive instance bodyElementGeneric :: Generic BodyElement _
 
@@ -361,6 +366,7 @@ type DraftParams =
 
 data CategoryType
   = Feed
+  | Prerendered
   | Webview
   | Link
 
@@ -370,18 +376,23 @@ toString :: CategoryType -> String
 toString Feed = "feed"
 toString Webview = "webview"
 toString Link = "link"
+toString Prerendered = "prerendered"
 
 instance categoryTypeDecodeJson :: DecodeJson CategoryType where
   decodeJson json = do
     categoryTypeString <- decodeJson json
     case toLower categoryTypeString of
-      "feed"    -> Right Feed
-      "webview" -> Right Webview
-      "link"    -> Right Link
-      _         -> Left $ UnexpectedValue json
+      "feed"        -> Right Feed
+      "webview"     -> Right Webview
+      "link"        -> Right Link
+      "prerendered" -> Right Prerendered
+      _             -> Left $ UnexpectedValue json
 
 newtype CategoryLabel = CategoryLabel String
 derive instance newtypeCategoryLabel :: Newtype CategoryLabel _
+
+frontpageCategoryLabel :: CategoryLabel
+frontpageCategoryLabel = CategoryLabel "Startsidan"
 
 -- (CategoryLabel "Norden Och Världen") is equal to (CategoryLabel "norden-och-världen")
 instance eqCategoryLabel :: Eq CategoryLabel where
