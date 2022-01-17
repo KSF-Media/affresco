@@ -16,7 +16,6 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
-import Data.String.Regex (search)
 import Data.Time.Duration (Minutes(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -234,8 +233,7 @@ mosaicoComponent initialValues props = React.do
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
-  let locationPath = location.pathname <> location.search
-  case match (Routes.routes c) locationPath of
+  case match (Routes.routes c) $ location.pathname <> location.search of
     Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
     Left _     -> pure unit
 

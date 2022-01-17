@@ -2,14 +2,11 @@ module Mosaico.Routes where
 
 import Prelude
 
-import Control.Alt ((<|>))
-import Data.Array(head)
 import Data.Foldable (oneOf)
 import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Data.Semiring.Free (free)
 import Data.Map as Map
-import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Categories, Category, CategoryLabel(..), Tag, uriComponentToTag)
@@ -52,7 +49,3 @@ routes categories = root *> oneOf
             = pure $ Tuple rs category
             | otherwise = invalid $ free $ Fail "Not a category"
       in Match matchRoute
---    removeHash staticPageRoute =
---      case head $ String.split (String.Pattern """#""") staticPageRoute of
---        Just staticPageName -> staticPageName
---        Nothing -> ""
