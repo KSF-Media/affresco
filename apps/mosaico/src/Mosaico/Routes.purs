@@ -32,7 +32,6 @@ routes categories = root *> oneOf
   [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
---  , StaticPage <$> (removeHash <$> (lit "sida" *> str))
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
   , Frontpage <$ end
   , MenuPage <$ lit "meny"
