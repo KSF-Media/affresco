@@ -39,13 +39,13 @@ stages:
     - yarn install --pure-lockfile --cache-folder=$YARN_CACHE
     - rm $CI_PROJECT_DIR/apps/$SERVICE_NAME/.env.local
     # build apps with staging vars
-    - yarn --cwd $CI_PROJECT_DIR/apps/$SERVICE_NAME/ run build
+    - yarn --cwd $CI_PROJECT_DIR/apps/$SERVICE_NAME/ run build-gke
     - cp -R $CI_PROJECT_DIR/apps/$SERVICE_NAME $CI_PROJECT_DIR/artifacts/staging/$SERVICE_NAME
     # rebuild with production vars
     - rm -rf $CI_PROJECT_DIR/apps/$SERVICE_NAME/.cache
     - eval `$CI_SCRIPTS/prepare_stage_envvars.py production`
     - mkdir -p $CI_PROJECT_DIR/artifacts/production
-    - yarn --cwd $CI_PROJECT_DIR/apps/$SERVICE_NAME/ run build
+    - yarn --cwd $CI_PROJECT_DIR/apps/$SERVICE_NAME/ run build-gke
     - cp -R $CI_PROJECT_DIR/apps/$SERVICE_NAME $CI_PROJECT_DIR/artifacts/production/$SERVICE_NAME
 
 # Docker build template
