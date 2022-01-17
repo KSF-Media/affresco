@@ -88,7 +88,7 @@ type Env =
   }
 
 indexHtmlFileLocation :: String
-indexHtmlFileLocation = "./dist/client/index.html"
+indexHtmlFileLocation = "./dist/index.html"
 
 spec ::
   Spec
