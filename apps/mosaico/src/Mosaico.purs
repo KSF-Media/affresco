@@ -115,7 +115,7 @@ mosaicoComponent
   -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let initialCatMap = categoriesMap props.categoryStructure
-  let path = initialValues.locationState.path <> initialValues.locationState.search
+  let initialPath = initialValues.locationState.path <> initialValues.locationState.search
       maxAge = Minutes 15.0
   state /\ setState <- useState initialValues.state
                          { article = props.article
@@ -128,7 +128,7 @@ mosaicoComponent initialValues props = React.do
                          , catMap = initialCatMap
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
-                                   match (Routes.routes initialCatMap) path
+                                   match (Routes.routes initialCatMap) initialPath
                          , user = props.user
                          }
 
@@ -234,7 +234,8 @@ mosaicoComponent initialValues props = React.do
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
-  case match (Routes.routes c) location.path of
+  let locationPath = location.pathname <> location.search
+  case match (Routes.routes c) locationPath of
     Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
     Left _     -> pure unit
 
