@@ -70,18 +70,29 @@ import React.Basic.Events (handler_)
 import Routing.PushState (PushStateInterface)
 import Simple.JSON (write)
 
-foreign import appendMosaicoImpl :: EffectFn2 String String String
-appendMosaico :: String -> String -> Effect String
+foreign import data Template :: Type
+foreign import data TemplateMaster :: Type
+
+foreign import parseTemplate :: String -> TemplateMaster
+foreign import cloneTemplate :: TemplateMaster -> Template
+foreign import renderTemplateHtml :: Template -> String
+
+foreign import appendMosaicoImpl :: EffectFn2 String Template Template
+appendMosaico :: String -> Template -> Effect Template
 appendMosaico content htmlTemplate = runEffectFn2 appendMosaicoImpl content htmlTemplate
 
-foreign import appendHeadImpl :: EffectFn2 String String String
-appendHead :: String -> String -> Effect String
+foreign import appendHeadImpl :: EffectFn2 String Template Template
+appendHead :: String -> Template -> Effect Template
 appendHead = runEffectFn2 appendHeadImpl
+
+foreign import appendVarsImpl :: EffectFn2 String Template Template
+appendVars :: String -> Template -> Effect Template
+appendVars = runEffectFn2 appendVarsImpl
 
 foreign import serverPort :: Int
 
 type Env =
-  { htmlTemplate :: String
+  { htmlTemplate :: TemplateMaster
   , categoryStructure :: Array Category
   , categoryRegex :: Regex
   , staticPages :: HashMap.HashMap String String
@@ -173,7 +184,7 @@ main = do
             pageContent <- FS.readTextFile UTF8 $ "./static/" <> staticPageFileName
             pure $ HashMap.insert staticPageFileName pageContent acc
       foldM makeMap HashMap.empty staticPageNames
-  htmlTemplate <- FS.readTextFile UTF8 indexHtmlFileLocation
+  htmlTemplate <- parseTemplate <$> FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure mosaicoPaper
     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
@@ -246,6 +257,7 @@ renderArticle
   -> Aff (Response ResponseBody)
 renderArticle env user article mostReadArticles = do
   let mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
   case article of
     Right a -> do
       let articleJSX =
@@ -284,9 +296,9 @@ renderArticle env user article mostReadArticles = do
                     , DOM.meta { property: "og:description", content: fold a'.preamble }
                     , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
                     ]
-        appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars) >>= appendHead metaTags
+        appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars) >>= appendHead metaTags
 
-      pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+      pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
     Left _ ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
       in notFound env (notFoundArticleContent $ hush =<< user) user maybeMostRead
@@ -302,6 +314,7 @@ frontpage env { guards: { credentials } } = do
     <*> parallel (getFrontpage mosaicoPaper "Startsidan")
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
       renderFrontpage :: ArticleFeed -> JSX
       renderFrontpage (ArticleList list) =
         Frontpage.render $ Frontpage.List
@@ -334,8 +347,8 @@ frontpage env { guards: { credentials } } = do
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
                     <> mkArticleFeed (CategoryFeed frontpageCategoryLabel) articles
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
 getFrontpage :: Paper -> String -> Aff ArticleFeed
 getFrontpage paper category = do
@@ -353,6 +366,7 @@ getFrontpage paper category = do
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
   let mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
   let (emptyRouter :: PushStateInterface) =
         { listen: const $ pure $ pure unit
         , locationState:
@@ -386,13 +400,14 @@ menu env _ = do
             let windowVars =
                   [ "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ]
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ htmlContent $ Response.ok $ StringBody html
+            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+  pure $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
 tagList :: Env -> { params :: { tag :: String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 tagList env { params: { tag }, guards: { credentials } } = do
   let tag' = uriComponentToTag tag
       mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
@@ -421,8 +436,8 @@ tagList env { params: { tag }, guards: { credentials } } = do
                     , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                     ] <> userVar user
                       <> mkArticleFeed (TagFeed tag') (ArticleList articles)
-              appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-    pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+              appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+    pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
 staticPage :: Env -> { params :: { pageName :: String }, guards :: { credentials :: Maybe UserAuth }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName }, guards: { credentials } } = do
@@ -434,6 +449,7 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
     Just staticPageContent -> do
       let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
           mosaico = MosaicoServer.app
+          htmlTemplate = cloneTemplate env.htmlTemplate
           staticPageJsx =
             DOM.div { className: "mosaico--static-page"
                     , children:
@@ -454,10 +470,10 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
               [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName)
               , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
               ] <> userVar user
-        appendMosaico mosaicoString env.htmlTemplate
-          >>= appendHead (mkWindowVariables windowVars)
+        appendMosaico mosaicoString htmlTemplate
+          >>= appendVars (mkWindowVariables windowVars)
 
-      pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+      pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
     Nothing ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
       in notFound env (StaticPageContent pageName notFoundWithAside) user maybeMostRead
@@ -470,6 +486,7 @@ debugList env { params: { uuid }, guards: { credentials } } = do
     <*> maybe (pure Nothing) (parallel <<< map hush <<< Lettera.getArticleStub) (UUID.parseUUID uuid)
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString =
         DOM.renderToString
         $ mosaico
@@ -489,8 +506,8 @@ debugList env { params: { uuid }, guards: { credentials } } = do
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
                     <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category, credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 categoryPage env { params: { categoryName }, guards: { credentials } } = do
@@ -500,6 +517,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
     <*> parallel (Lettera.getFrontpage mosaicoPaper (Just categoryName))
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: FrontpageContent $ Frontpage.render $ Frontpage.List
@@ -517,8 +535,8 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
                     <> mkArticleFeed (CategoryFeed $ CategoryLabel categoryName) (ArticleList articles)
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
 searchPage :: Env -> { query :: { search :: Maybe String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 searchPage env { query: { search }, guards: { credentials } } = do
@@ -530,6 +548,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
     <*> maybe (pure mempty) (parallel <<< Lettera.search 0 20 mosaicoPaper) query
     <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
   let mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString
                         $ mosaico
                           { mainContent: FrontpageContent $
@@ -555,8 +574,8 @@ searchPage env { query: { search }, guards: { credentials } } = do
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
                     <> mkArticleFeed (SearchFeed $ fromMaybe "" query) (ArticleList articles)
-            appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
+            appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
 notFoundPage :: Env -> { params :: { path :: List String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 notFoundPage env { guards: { credentials } } = do
@@ -579,6 +598,7 @@ notFoundArticleContent user =
 notFound :: Env -> MainContent -> Maybe (Either Unit User) -> Maybe (Array ArticleStub) -> Aff (Response ResponseBody)
 notFound env mainContent user maybeMostReadArticles = do
   let mosaico = MosaicoServer.app
+      htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString $ mosaico
                         { mainContent
                         , mostReadArticles: fromMaybe [] maybeMostReadArticles
@@ -596,8 +616,8 @@ notFound env mainContent user maybeMostReadArticles = do
                  StaticPageContent pageName _ -> [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName) ]
                  _ -> mempty
              )
-    appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
-  pure $ maybeInvalidateAuth user $ htmlContent $ Response.notFound $ StringBody $ html
+    appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.notFound $ StringBody $ renderTemplateHtml html
 
 getCredentials :: HTTP.Request -> Aff (Maybe UserAuth)
 getCredentials req = do
