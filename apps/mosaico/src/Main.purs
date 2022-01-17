@@ -292,7 +292,7 @@ renderArticle env user article mostReadArticles = do
       in notFound env (notFoundArticleContent $ hush =<< user) user maybeMostRead
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: { path } } = Handlers.directory "dist/client" path
+assets { params: { path } } = Handlers.directory "dist" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 frontpage env { guards: { credentials } } = do
