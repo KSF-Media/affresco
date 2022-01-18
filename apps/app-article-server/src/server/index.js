@@ -14,6 +14,14 @@ import ErrorPage from "../browser/components/error";
 
 app.use("/dist", express.static(`${__dirname}/../client`));
 
+app.get("/", async (req, res) =>{
+	res.send("/");
+});
+
+app.get("/healthz", async (req, res) =>{
+	res.send("OK");
+});
+
 app.get("/article/:id", async (req, res) => {
   const articleId = req.params.id;
   if (articleId && UUID.validate(articleId)) {

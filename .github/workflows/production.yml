@@ -72,7 +72,6 @@ jobs:
       image: ksfmedia/diskho:gha-1.0
       options: "--cpus 2"
     needs:
-      - deploy-mosaico-server
       - deploy-app-article-server
     runs-on: ubuntu-latest
     steps:
@@ -149,6 +148,14 @@ jobs:
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
+      - name: Setup build cache for Mosaico
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
+          path: |
+            apps/mosaico/.spago
+            apps/mosaico/output
+            apps/mosaico/.cache
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -208,6 +215,13 @@ jobs:
         run: |2
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
+        shell: bash
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
+        name: Build Mosaico
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico/dist build/mosaico
         shell: bash
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
@@ -272,48 +286,13 @@ jobs:
           destination: ksf-frontends/prenumerera
           parent: 'false'
           path: build/prenumerera
-  deploy-mosaico-server:
-    container:
-      image: ksfmedia/diskho:gha-1.0
-      options: "--cpus 2"
-    needs: check-ci
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: "actions/checkout@v2"
-      - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+      - name: Upload Mosaico
+        uses: "google-github-actions/upload-cloud-storage@main"
         with:
-          export_default_credentials: 'true'
-          project_id: ksf-production
-          service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-      - run: |2
-            yarn install --pure-lockfile
-            mkdir -p build
-      - env:
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
-        name: Build Server Mosaico server
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico build/mosaico
-        shell: bash
-      - name: Generate app.yaml for mosaico-server
-        run: |
-          dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/mosaico-server.dhall" > ./build/mosaico/app.yaml
-          cat ./build/mosaico/app.yaml
-        shell: bash
-      - id: deploy-mosaico-server-production
-        name: Deploy Mosaico server
-        uses: "google-github-actions/deploy-appengine@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-          project_id: ksf-production
-          promote: 'true'
-          working_directory: build/mosaico
-      - continue-on-error: true
-        name: Keep only 10 latest versions of mosaico-server
-        run: |
-          ./ci/ae-cleanup.sh mosaico-server
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends/mosaico
+          parent: 'false'
+          path: build/mosaico
   refresh_cdn_app-article:
     needs: deploy-gs
     runs-on: ubuntu-latest

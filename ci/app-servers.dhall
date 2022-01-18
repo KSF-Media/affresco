@@ -8,5 +8,4 @@ TODO: Figure out a way to generate all from servers.
 
 -}
 { app-article-server = ./app-servers/app-article-server.dhall
-, mosaico-server = ./app-servers/mosaico-server.dhall
 }

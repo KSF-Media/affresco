@@ -15,13 +15,34 @@
       window.googletag = window.googletag || { cmd: [] };
 
       window.googletag.cmd.push(function () {
-	googletag.pubads().setTargeting("newspaper", "hbl");
-	googletag.defineSlot("/21664538223/JATTEBOX", [468, 400], "JATTEBOX").addService(googletag.pubads());
-	googletag.pubads().enableSingleRequest();
-	googletag.pubads().collapseEmptyDivs();
-	googletag.enableServices();
+      	// googletag.pubads().setTargeting("newspaper", "hbl");
+        googletag.pubads().setTargeting("Test", "mosaico_test");
+        googletag
+          .defineSlot(
+            "/21664538223/mosaico/article_middle_1_desktop",
+            [468, 400],
+            "article_middle_1_desktop"
+          )
+          .addService(googletag.pubads());
+        googletag
+          .defineSlot(
+            "/21664538223/mosaico/article_middle_2_desktop",
+            [468, 400],
+            "article_middle_2_desktop"
+          )
+          .addService(googletag.pubads());
+      	googletag.pubads().enableSingleRequest();
+      	googletag.pubads().collapseEmptyDivs();
+      	googletag.enableServices();
       });
     </script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-KB4TVP');</script>
+    <!-- End Google Tag Manager -->
     <link rel="stylesheet" href="../../../node_modules/basscss/css/basscss-cp.min.css" />
   </head>
 

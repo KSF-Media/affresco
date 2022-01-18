@@ -44,8 +44,6 @@ let steps-gs =
 
 let steps-app-article = mkAeSteps Actions.Env.Production AE.app-article-server
 
-let steps-mosaico = mkAeSteps Actions.Env.Production AE.mosaico-server
-
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Production
       # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
@@ -76,17 +74,11 @@ in  { name = "production"
               , steps = steps-app-article
               , needs = "check-ci"
               }
-            , deploy-mosaico-server =
-              { runs-on = "ubuntu-latest"
-              , container
-              , steps = steps-mosaico
-              , needs = "check-ci"
-              }
             , deploy-dispatch-yaml =
               { runs-on = "ubuntu-latest"
               , container
               , steps = steps-dispatch
-              , needs = [ "deploy-mosaico-server", "deploy-app-article-server" ]
+              , needs = [ "deploy-app-article-server" ]
               }
             }
         //  refreshCDNJobs

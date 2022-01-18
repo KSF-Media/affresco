@@ -108,6 +108,21 @@ let apps =
           , buildDir = "prenumerera"
           , deployDir = "prenumerera"
           }
+        , App::{
+          , name = "Mosaico"
+          , buildDir = "mosaico"
+          , deployDir = "mosaico"
+          , lockfile = Some "yarn.lock"
+          , env = toMap
+              { LETTERA_URL = "https://lettera.api.ksfmedia.fi/v4beta"
+              }
+          , caches = Some
+          ''
+          apps/mosaico/.spago
+          apps/mosaico/output
+          apps/mosaico/.cache
+          ''
+          }
         ]
       : List App.Type
 

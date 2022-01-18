@@ -46,8 +46,6 @@ let steps-gs =
 
 let steps-app-article = mkAeSteps Actions.Env.Staging AE.app-article-server
 
-let steps-mosaico = mkAeSteps Actions.Env.Staging AE.mosaico-server
-
 let steps-dispatch =
         Actions.setupSteps Actions.Env.Staging
       # [ Actions.generateDispatchYamlStep Actions.Env.Staging ]
@@ -78,18 +76,11 @@ in  { name = "previews"
         , outputs.preview = "\${{ steps.deploy-app-article-server.outputs.url}}"
         , needs = "check-ci"
         }
-      , deploy-mosaico-server =
-        { runs-on = "ubuntu-latest"
-        , container
-        , steps = steps-mosaico
-        , outputs.preview = "\${{ steps.deploy-mosaico-server.outputs.url}}"
-        , needs = "check-ci"
-        }
       , previews =
         { runs-on = "ubuntu-latest"
         , steps = previewLinks
         , needs =
-          [ "deploy-gs", "deploy-mosaico-server", "deploy-app-article-server" ]
+          [ "deploy-gs", "deploy-app-article-server" ]
         }
       }
     }

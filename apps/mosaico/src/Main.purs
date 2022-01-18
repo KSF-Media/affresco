@@ -36,7 +36,7 @@ import KSF.Api.Error as Api.Error
 import KSF.Paper (Paper)
 import KSF.User (User, fromPersonaUser)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, frontpageCategoryLabel, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
 import Mosaico.Error (notFoundWithAside)
@@ -88,12 +88,15 @@ type Env =
   }
 
 indexHtmlFileLocation :: String
-indexHtmlFileLocation = "./dist/client/index.html"
+indexHtmlFileLocation = "./dist/index.html"
 
 spec ::
   Spec
     { routes ::
-         { getDraftArticle ::
+         { getHealthz ::
+              GET "/healthz"
+                { response :: String }
+         , getDraftArticle ::
               GET "/artikel/draft/<aptomaId>/?dp-time=<time>&publicationId=<publication>&user=<user>&hash=<hash>"
                 { response :: ResponseBody
                 , params :: { aptomaId :: String }
@@ -179,7 +182,8 @@ main = do
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages }
         handlers =
-          { getDraftArticle: getDraftArticle env
+          { getHealthz
+          , getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
           , assets
           , frontpage: frontpage env
@@ -193,6 +197,9 @@ main = do
           }
         guards = { credentials: getCredentials, category: parseCategory env }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+
+getHealthz :: {} -> Aff String
+getHealthz _ = pure "OK"
 
 getDraftArticle
   :: Env
@@ -211,7 +218,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
       { user, article, mostReadArticles } <- sequential $
         { user: _, article: _, mostReadArticles: _ }
         <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-        <*> parallel (Lettera.getArticle uuid r.guards.credentials)
+        <*> parallel (Lettera.getArticle uuid mosaicoPaper r.guards.credentials)
         <*> parallel (Lettera.getMostRead 0 10 Nothing mosaicoPaper true)
       renderArticle env user article mostReadArticles
   | otherwise = do
@@ -285,7 +292,7 @@ renderArticle env user article mostReadArticles = do
       in notFound env (notFoundArticleContent $ hush =<< user) user maybeMostRead
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: { path } } = Handlers.directory "dist/client" path
+assets { params: { path } } = Handlers.directory "dist" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 frontpage env { guards: { credentials } } = do
@@ -326,7 +333,7 @@ frontpage env { guards: { credentials } } = do
                   [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed Nothing) articles
+                    <> mkArticleFeed (CategoryFeed frontpageCategoryLabel) articles
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -481,7 +488,7 @@ debugList env { params: { uuid }, guards: { credentials } } = do
                   [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed Nothing) (ArticleList $ fromFoldable article)
+                    <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
@@ -509,7 +516,7 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
                   [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed $ Just $ CategoryLabel categoryName) (ArticleList articles)
+                    <> mkArticleFeed (CategoryFeed $ CategoryLabel categoryName) (ArticleList articles)
             appendMosaico mosaicoString env.htmlTemplate >>= appendHead (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody html
 
