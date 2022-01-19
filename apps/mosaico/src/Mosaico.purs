@@ -4,11 +4,12 @@ import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (mapMaybe, null)
+import Data.Array (mapMaybe, null, intercalate)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
+import Data.Formatter.DateTime (format)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Map as Map
@@ -25,13 +26,17 @@ import Effect.Class.Console as Console
 import Effect.Now as Now
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
+import KSF.Helpers (dateTimeFormatter)
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
+import KSF.User.Cusno (toString)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Mosaico.Analytics (pushToDataLayer)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot, JSInitialFeed, parseFeed)
 import Mosaico.Footer (footer)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Events (onFrontpageClick)
@@ -39,7 +44,6 @@ import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
-import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot, JSInitialFeed, parseFeed)
 import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
@@ -75,6 +79,12 @@ type State =
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
   }
 
+newtype Blah = Blah String
+
+type Argh = 
+  { a :: Blah
+  , b :: Int
+}
 type SetState = (State -> State) -> Effect Unit
 
 type Components =
@@ -136,8 +146,22 @@ mosaicoComponent initialValues props = React.do
           Just uuid -> do
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
+            --analytiikka tähän
               Right article -> do
+                let a = fromFullArticle article
                 Article.evalEmbeds $ fromFullArticle article
+                pushToDataLayer "title" a.title
+                pushToDataLayer "publishingTime" $ foldMap (\x -> format dateTimeFormatter x) a.publishingTimeUtc
+                pushToDataLayer "authors" $ intercalate ", " $ _.byline <$> a.authors
+                pushToDataLayer "premium" $ show a.premium
+                pushToDataLayer "category" $ fromMaybe "" a.analyticsCategory
+                pushToDataLayer "section" $ fromMaybe "" a.analyticsSection
+                pushToDataLayer "listTitle" $ fromMaybe "" a.listTitle
+                pushToDataLayer "uuid" a.uuid
+                pushToDataLayer "tags" $ show a.tags
+                pushToDataLayer "userCusno" $ case state.user of
+                  Just user -> toString user.cusno
+                  Nothing   -> "None"
                 setState _ { article = Just article }
               Left _ -> setState _ { article = Nothing }
 

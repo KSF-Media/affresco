@@ -61,7 +61,10 @@ isErrorArticle _ = false
 notFoundArticle :: FullArticle
 notFoundArticle = ErrorArticle
   { title: "Hoppsan! Sidan eller artikeln hittades inte"
+  , listTitle: Nothing
   , body: []
+  , analyticsCategory: Nothing
+  , analyticsSection: Nothing
   , mainImage: Nothing
   , tags: []
   , uuid: "notfound"
@@ -70,6 +73,7 @@ notFoundArticle = ErrorArticle
   , premium: false
   , removeAds: false
   , publishingTime: Nothing
+  , publishingTimeUtc: Nothing
   , updateTime: Nothing
   , externalScripts: Nothing
   }
@@ -139,10 +143,13 @@ instance encodeJsonExternalScript :: EncodeJson ExternalScript where
 
 type ArticleCommon =
   ( title     :: String
+  , listTitle :: Maybe String
   , mainImage :: Maybe Image
   , uuid      :: String
   , preamble  :: Maybe String
   , authors   :: Array Author
+  , analyticsSection :: Maybe String
+  , analyticsCategory :: Maybe String
   , premium   :: Boolean
   , removeAds :: Boolean
   , externalScripts :: Maybe (Array ExternalScript)
@@ -158,6 +165,7 @@ type JSArticle =
 
 type Article =
   { publishingTime :: Maybe LocalDateTime
+  , publishingTimeUtc :: Maybe DateTime
   , updateTime     :: Maybe LocalDateTime
   , body           :: Array BodyElement
   , tags           :: Array Tag
@@ -191,6 +199,7 @@ articleToJson article =
   encodeJson $
     article
       { publishingTime = foldMap formatLocalDateTime article.publishingTime
+      , publishingTimeUtc = foldMap (\x -> format dateTimeFormatter x) article.publishingTimeUtc
       , updateTime     = foldMap formatLocalDateTime article.updateTime
       , tags           = map unwrap article.tags
       , body           = map bodyElementToJson article.body
@@ -241,15 +250,16 @@ parseArticle = parseArticleWith fromJSArticle
 parseArticleWithoutLocalizing :: Json -> (Either String Article)
 parseArticleWithoutLocalizing =
   parseArticlePure
-    \jsArticle -> do
+    \(jsArticle :: JSArticle)-> do
       body <- parseArticlePure (fromJSBody (parseArticleStubWithoutLocalizing <<< encodeJson)) $
               encodeJson (jsArticle.body :: Array BodyElementJS)
-      pure $ jsArticle
-        { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
-        , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
-        , tags           = map Tag jsArticle.tags
-        , body           = body
-        }
+      pure $ merge
+        { publishingTime: LocalDateTime <$> parseDateTime jsArticle.publishingTime
+        , publishingTimeUtc: parseDateTime jsArticle.publishingTime
+        , updateTime: LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+        , tags: map Tag jsArticle.tags
+        , body: body
+        } jsArticle
 
 parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
@@ -287,14 +297,25 @@ fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags, body } = do
   localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags, body = resolvedBody }
+  pure $ merge
+    { publishingTime: localPublishingTime
+    , publishingTimeUtc: parseDateTime =<< publishingTime
+    , updateTime: localUpdateTime
+    , tags: map Tag tags
+    , body: resolvedBody
+    } jsDraft
 
 fromJSArticle :: JSArticle -> Effect Article
 fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags, body = resolvedBody }
+  pure $ merge 
+    { publishingTime: localPublishingTime
+    , publishingTimeUtc: parseDateTime publishingTime
+    , updateTime: localUpdateTime
+    , tags: map Tag tags
+    , body: resolvedBody } jsArticle
 
 fromJSBody :: forall m. Applicative m => (JSArticleStub -> m ArticleStub) -> Array BodyElementJS -> m (Array BodyElement)
 fromJSBody f = map catMaybes <<< traverse fromJSBodyElement
