@@ -7,6 +7,7 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Array (mapMaybe, null, intercalate)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
+import Data.Tuple (Tuple)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.Formatter.DateTime (format)
@@ -29,7 +30,7 @@ import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Helpers (dateTimeFormatter)
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
-import KSF.User.Cusno (toString)
+import KSF.User.Cusno (toString, Cusno)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Analytics (pushToDataLayer)
@@ -81,7 +82,7 @@ type State =
 
 newtype Blah = Blah String
 
-type Argh = 
+type Argh =
   { a :: Blah
   , b :: Int
 }
@@ -121,7 +122,7 @@ app = do
 mosaicoComponent
   :: InitialValues
   -> Props
-  -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
+  -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let initialCatMap = categoriesMap props.categoryStructure
       maxAge = Minutes 15.0
@@ -212,7 +213,7 @@ mosaicoComponent initialValues props = React.do
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
 
-  useEffect state.route do
+  useEffect (state.route /\ map _.cusno state.user) do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
