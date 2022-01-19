@@ -6,6 +6,17 @@
   line-height: 1.2;
   color: #333;
   padding: 0 18px;
+  @media (min-width: @breakpoint-3col) {
+    padding-left: 0;
+    padding-right: 35px;
+  }
+
+  .static-page__headline {
+    font-size: 2rem;
+    @media (min-width: @breakpoint-3col) {
+      font-size: 2.5rem;
+    }
+  }
 
   h1, h2 {
     font-family: "Duplex Sans", sans-serif;
