@@ -1,6 +1,11 @@
 .static-page__terms {
   display: flex;
   flex-direction: column;
+  padding: 0 15px;
+  @media (min-width: @breakpoint-3col) {
+    padding-left: 0;
+    padding-right: 35px;
+  }
   .terms__section-links-list {
     list-style: none outside;
     padding: 0;
@@ -44,21 +49,8 @@
   .terms__list {
     list-style-type: disc;
     list-style-position: inside;
-    padding: 20px;
     margin-top: 10px;
     margin-bottom: 10px;
     text-align: left;
-  }
-
-  .terms__link:link {
-    color: #00698e;
-    text-decoration: none;
-  }
-
-  .terms__link:visited,
-  .terms__link:hover,
-  .terms__link:active {
-    color: #575d5c;
-    text-decoration: none;
   }
 }
