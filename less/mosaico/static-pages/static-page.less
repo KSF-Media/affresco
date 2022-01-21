@@ -2,15 +2,30 @@
 
 .mosaico--static-page {
   grid-area: main;
-  font: 300  1rem "Roboto";
+  font: 300 1.07rem "Roboto";
   line-height: 1.2;
   color: #333;
+  padding: 0 18px;
+  @media (min-width: @breakpoint-3col) {
+    padding-left: 0;
+    padding-right: 35px;
+  }
 
-  h1, h2 {
+  .static-page__headline {
+    margin: 20px 0;
+    font-size: 2rem;
+    font-family: "Duplex Sans", sans-serif;
+    @media (min-width: @breakpoint-3col) {
+      font-size: 2.5rem;
+    }
+  }
+
+  .static-page__sub-headline {
     font-family: "Duplex Sans", sans-serif;
   }
 
-  a:link, a:visited {
+  .static-page__link:link,
+  .static-page__link:visited {
     text-decoration: none;
     color: @link;
   }

@@ -5,30 +5,45 @@
   flex-direction: column;
 
   .customer-service__headline {
-    margin: 20px 0;
     font-size: 2.2rem;
     line-height: 1;
+    @media (min-width: @breakpoint-3col) {
+      margin: 40px 0;
+    }
   }
 
   .customer-service__menu-buttons {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
     margin-top: 20px;
     margin-bottom: 30px;
-    padding: 0 25px;
+    @media (min-width: @breakpoint-2col) {
+      padding: 0 35px;
+    }
+    @media (min-width: @breakpoint-3col) {
+      grid-template-columns: 1fr 1fr;
+      padding: 0;
+      gap: 20px 30px;
+      margin-top: 50px;
+    }
   }
 
   .customer-service__menu-button {
-    margin: 10px 0;
+    /*margin: 10px 0;*/
     padding: 10px 0;
-    border: .5px solid @grey-dark;
+    border: 0.5px solid @grey-dark;
     border-radius: 10px;
     text-align: center;
     font-weight: 500;
     cursor: pointer;
+    @media (min-width: @breakpoint-2col) {
+      padding: 20px 0;
+    }
   }
 
-  a:link, a:visited {
+  a:link,
+  a:visited {
     text-decoration: none;
     color: #333 !important;
   }
