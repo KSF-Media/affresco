@@ -3,7 +3,7 @@
 .static-page__faq {
   display: flex;
   flex-direction: column;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 
   .faq__headline {
     font-size: 2rem;
@@ -47,7 +47,7 @@
 
   .faq__question {
     color: #333;
-    max-width: 95%;
+    // max-width: 95%;
     margin-top: 20px;
     cursor: pointer;
     border: none;
@@ -56,9 +56,9 @@
     outline: none;
     font-weight: 500;
     line-height: 1.2;
-    @media (min-width: @breakpoint-3col) {
-      max-width: 90%;
-    }
+    // @media (min-width: @breakpoint-3col) {
+      // max-width: 90%;
+    // }
   }
 
   .faq__question::before {
@@ -110,5 +110,29 @@
       height: 315px;
       margin-left: 0;
     }
+  }
+
+  .faq__back-to-top {
+    position: fixed;
+    right: 10px;
+    bottom: 20px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border: 1.5px solid @grey-medium;
+    border-radius: 20px;
+    background-color: @button-color-tertiary;
+    background-image: url(../images/chevron.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    transform: rotate(180deg);
+    outline: none;
+    opacity: 0%;
+    transition: opacity 0.5s;
+  }
+
+  .faq__back-to-top:active,
+  .faq__back-to-top:focus {
+    outline: none;
   }
 }

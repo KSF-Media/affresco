@@ -1,14 +1,43 @@
-var questions = document.getElementsByClassName("faq__question");
-var i;
-for (i = 0; i < questions.length; i++) {
-  questions[i].addEventListener("click", function () {
-    this.classList.toggle("faq__question--active");
+const questions = document.getElementsByClassName("faq__question");
 
-    var answer = this.nextElementSibling;
-    if (answer.style.display === "block") {
-      answer.style.display = "none";
-    } else {
-      answer.style.display = "block";
+for (const q of questions) {
+  q.addEventListener("click", function () {
+    for (const q of questions) {
+      if (q === this) {
+        if (q.classList.contains("faq__question--active")) {
+          q.classList.remove("faq__question--active");
+          q.nextElementSibling.style.display = "none";
+        } else {
+          q.classList.add("faq__question--active");
+          q.nextElementSibling.style.display = "block";
+        }
+      } else {
+        q.classList.remove("faq__question--active");
+        q.nextElementSibling.style.display = "none";
+      }
     }
   });
+}
+
+const showOnPx = 100;
+const backToTopButton = document.querySelector(".faq__back-to-top");
+
+const scrollContainer = () => {
+  return document.documentElement || document.body;
 };
+
+document.addEventListener("scroll", () => {
+  if (scrollContainer().scrollTop > showOnPx) {
+    backToTopButton.style.opacity = "100%";
+  } else {
+    backToTopButton.style.opacity = "0%";
+  }
+});
+
+const goToTop = () => {
+  document.body.scrollIntoView({
+    behavior: "smooth",
+  });
+};
+
+backToTopButton.addEventListener("click", goToTop);
