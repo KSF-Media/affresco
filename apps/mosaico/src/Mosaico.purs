@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
+import Data.Set (Set)
 import Data.Time.Duration (Minutes(..))
 import Data.UUID as UUID
 import Effect (Effect)
@@ -30,6 +31,7 @@ import KSF.User (User, magicLogin)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Article as Article
+import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), FeedSnapshot, JSInitialFeed, parseFeed)
@@ -69,6 +71,7 @@ type State =
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe User
+  , entitlements :: Maybe (Set String)
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
   , catMap :: Categories
@@ -82,6 +85,7 @@ type Components =
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
+  , epaperComponent :: Epaper.Props -> JSX
   }
 
 type Props =
@@ -91,6 +95,7 @@ type Props =
   , categoryStructure :: Array Category
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
   , user :: Maybe User
+  , entitlements :: Maybe (Set String)
   }
 type JSProps =
   { article :: Nullable Json
@@ -100,6 +105,7 @@ type JSProps =
   , categoryStructure :: Nullable (Array Json)
   , initialFrontpageFeed :: Nullable JSInitialFeed
   , user :: Nullable Json
+  , entitlements :: Nullable Json
   }
 
 app :: Component Props
@@ -129,6 +135,7 @@ mosaicoComponent initialValues props = React.do
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
                          , user = props.user
+                         , entitlements = props.entitlements
                          }
 
   let loadArticle articleId = Aff.launchAff_ do
@@ -204,6 +211,7 @@ mosaicoComponent initialValues props = React.do
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
+      Routes.EpaperPage -> pure unit
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
@@ -259,6 +267,7 @@ getInitialValues = do
   searchComponent     <- Search.searchComponent
   webviewComponent    <- Webview.webviewComponent
   articleComponent    <- Article.component
+  epaperComponent     <- Epaper.component
   pure
     { state:
         { article: Nothing
@@ -268,6 +277,7 @@ getInitialValues = do
         , clickedArticle: Nothing
         , modalView: Nothing
         , user: Nothing
+        , entitlements: Nothing
         , staticPage: Nothing
         , categoryStructure: []
         , catMap: Map.empty
@@ -278,6 +288,7 @@ getInitialValues = do
         , searchComponent
         , webviewComponent
         , articleComponent
+        , epaperComponent
         }
     , nav
     , locationState
@@ -307,7 +318,8 @@ fromJSProps jsProps =
       -- JavaScript representation, which should make raw conversion
       -- to and from possible.
       user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
-  in { article, mostReadArticles, initialFrontpageFeed, staticPageName, categoryStructure, user }
+      entitlements = foldMap (hush <<< decodeJson) $ toMaybe jsProps.entitlements
+  in { article, mostReadArticles, initialFrontpageFeed, staticPageName, categoryStructure, user, entitlements }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -375,6 +387,13 @@ render setState state components router onPaywallEvent =
              , onLogout: do
                  setState _ { user = Nothing }
                  onPaywallEvent
+             }
+       Routes.EpaperPage -> mosaicoLayoutNoAside
+         $ components.epaperComponent
+             { user: state.user
+             , entitlements: state.entitlements
+             , paper: mosaicoPaper
+             , onLogin
              }
        Routes.DraftPage -> mosaicoLayoutNoAside
          $ renderArticle $ maybe (Right notFoundArticle) Right state.article

@@ -32,6 +32,7 @@ data MainContentType
   | FrontpageContent
   | HtmlFrontpageContent
   | TagListContent Tag
+  | EpaperContent
   | StaticPageContent String
   | MenuContent
 
