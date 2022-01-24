@@ -20,7 +20,7 @@ exports.appendMosaicoImpl = function (a, $template) {
 
 // Writes given element under the `head` element
 exports.appendHeadImpl = function (element, $template) {
-  $template.find("head").append(a);
+  $template.find("head").append(element);
   return $template;
 };
 

@@ -2,7 +2,7 @@ module Lettera where
 
 import Prelude
 
-import Affjax (defaultRequest, request, printError, get) as AX
+import Affjax (Error, Response, defaultRequest, request, printError, get) as AX
 import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json) as AX
 import Affjax.ResponseFormat as ResponseFormat
@@ -10,11 +10,12 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
-import Data.Either (Either(..), either, isRight)
-import Data.Foldable (foldMap)
+import Data.Either (Either(..), either, hush, isRight)
+import Data.Foldable (class Foldable, foldMap)
+import Data.Foldable as Foldable
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (un)
+import Data.Maybe (Maybe(..))
+import Data.Newtype (un, unwrap)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
@@ -28,6 +29,7 @@ import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Header as Cache
 
 foreign import letteraBaseUrl :: String
 foreign import encodeURIComponent :: String -> String
@@ -59,19 +61,35 @@ letteraTagUrl = letteraBaseUrl <> "/list/tag/"
 letteraSearchUrl :: String
 letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
-type LetteraError =
-  { type        :: LetteraErrorType
-  , information :: Maybe String
+data LetteraError
+  = ResponseError AX.Error
+  | HttpError Int
+  | ParseError
+
+instance showLetteraError :: Show LetteraError where
+  show (ResponseError err) = "ResponseError " <> AX.printError err
+  show (HttpError code)    = "HttpError " <> show code
+  show ParseError          = "ParseError"
+
+data LetteraResponse a = LetteraResponse
+  { maxAge :: Maybe Int
+  , body :: Either LetteraError a
   }
 
-data LetteraErrorType
-  = FrontPageHtmlNotFound
-  | ResponseParseError
-  | UnexpectedError
+responseBody :: forall a. LetteraResponse a -> Maybe a
+responseBody (LetteraResponse a) = hush a.body
+
+instance functorLetteraResponse :: Functor LetteraResponse where
+  map f (LetteraResponse r@{ body }) =
+    LetteraResponse $ r { body = f <$> body }
+
+instance foldableLetteraResponse :: Foldable LetteraResponse where
+  foldl f z = Foldable.foldl f z <<< responseBody
+  foldr f z = Foldable.foldr f z <<< responseBody
+  foldMap f = foldMap f <<< responseBody
 
 handleLetteraError :: LetteraError -> Effect Unit
-handleLetteraError { information } =
-  maybe (pure unit) (\info -> Console.warn info) information
+handleLetteraError = Console.warn <<< show
 
 getArticleAuth :: UUID -> Paper -> Aff (Either String FullArticle)
 getArticleAuth articleId paper = do
@@ -167,76 +185,56 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
         pure $ Left "Unauthorized"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
 
-getFrontpageHtml :: Paper -> String -> Aff (Either LetteraError String)
+useResponse :: forall a b. (a -> Aff (Either LetteraError b)) -> Either AX.Error (AX.Response a) -> Aff (LetteraResponse b)
+useResponse _ (Left err) = pure $ LetteraResponse { maxAge: Nothing, body: Left $ ResponseError err }
+useResponse f (Right response)
+  | (StatusCode 200) <- response.status = do
+    result <- f response.body
+    pure $ case result of
+      Right body -> LetteraResponse { maxAge: Cache.getMaxAge $ Cache.parseResponseHeaders response.headers
+                                    , body: Right body
+                                    }
+      Left err -> LetteraResponse { maxAge: Nothing, body: Left err }
+  | otherwise =
+      pure $ LetteraResponse { maxAge: Nothing, body: Left $ HttpError $ unwrap $ response.status }
+
+getFrontpageHtml :: Paper -> String -> Aff (LetteraResponse String)
 getFrontpageHtml paper category = do
   let request = letteraFrontPageHtmlUrl <> "?paper=" <> Paper.toString paper  <> "&category=" <> category
-  htmlResponse <- AX.get ResponseFormat.string request
-  case htmlResponse of
-    Left err ->
-      pure $ Left { type: ResponseParseError, information: Just $ AX.printError err }
-    Right response
-      | (StatusCode 200) <- response.status -> pure $ Right response.body
-      | (StatusCode 404) <- response.status -> pure $ Left  { type: FrontPageHtmlNotFound, information: Nothing }
-      | (StatusCode s) <- response.status ->
-        pure $ Left $ { type: UnexpectedError, information: Just $ "Unexpected HTTP status: " <> show s }
+  useResponse (pure <<< pure) =<< AX.get ResponseFormat.string request
 
-getFrontpage :: Paper -> Maybe String -> Aff (Array ArticleStub)
+parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
+parseArticleStubs response
+  | Just (responseArray :: Array Json) <- toArray response =
+      map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
+  | otherwise = pure $ Left ParseError
+
+getFrontpage :: Paper -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
 getFrontpage paper categoryId = do
   let letteraUrl =
         letteraFrontPageUrl
         <> "?paper=" <> Paper.toString paper
         <> foldMap ("&category=" <> _) categoryId
-  frontpageResponse <- AX.get ResponseFormat.json letteraUrl
-  case frontpageResponse of
-    Left err -> do
-      Console.warn $ "Frontpage response failed to decode: " <> AX.printError err
-      pure mempty
-    Right response
-      | Just (responseArray :: Array Json) <- toArray response.body -> do
-        a <- liftEffect $ traverse parseArticleStub responseArray
-        pure $ takeRights a
-      | otherwise -> do
-        Console.warn "Failed to read API response!"
-        pure mempty
+  useResponse parseArticleStubs =<< AX.get ResponseFormat.json letteraUrl
 
-getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (Array ArticleStub)
-getMostRead start limit category paper onlySubscribers = do
-  mostReadResponse <- AX.get ResponseFormat.json (letteraMostReadUrl
+getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
+getMostRead start limit category paper onlySubscribers =
+  useResponse parseArticleStubs =<< AX.get ResponseFormat.json (letteraMostReadUrl
           <> "?start=" <> show start
           <> "&limit=" <> show limit
           <> (foldMap ("&category=" <> _) category)
           <> "&paper=" <> Paper.toString paper
           <> "&onlySubscribers=" <> show onlySubscribers
   )
-  case mostReadResponse of
-    Left err -> do
-      Console.warn $ "MostRead response failed to decode: " <> AX.printError err
-      pure mempty
-    Right response
-      | Just (responseArray :: Array Json) <- toArray response.body -> do
-        a <- liftEffect $ traverse parseArticleStub responseArray
-        pure $ takeRights a
-      | otherwise -> do
-        Console.warn "Failed to read API response!"
-        pure mempty
 
-getByTag :: Int -> Int -> Tag -> Paper -> Aff (Array ArticleStub)
+getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do
-  byTagResponse <- AX.get ResponseFormat.json (letteraTagUrl <> encodeURIComponent(un Tag tag)
-                                               <> "?start=" <> show start
-                                               <> "&limit=" <> show limit
-                                               <> "&paper=" <> Paper.toString paper
-                                              )
-  case byTagResponse of
-    Left err -> do
-      Console.warn $ "GetByTag response failed to decode: " <> AX.printError err
-      pure mempty
-    Right response
-      | Just (responseArray :: Array Json) <- toArray response.body -> do
-        liftEffect $ takeRights <$> traverse parseArticleStub responseArray
-      | otherwise -> do
-        Console.warn "Failed to read API response!"
-        pure mempty
+  useResponse parseArticleStubs =<<
+    AX.get ResponseFormat.json (letteraTagUrl <> encodeURIComponent(un Tag tag)
+                                <> "?start=" <> show start
+                                <> "&limit=" <> show limit
+                                <> "&paper=" <> Paper.toString paper
+                               )
 
 search :: Int -> Int -> Paper -> String -> Aff (Array ArticleStub)
 search start limit paper query = do
