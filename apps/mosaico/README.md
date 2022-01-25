@@ -57,6 +57,7 @@ export TEST_USER=
 export TEST_PASSWORD=
 export ENTITLED_USER=
 export ENTITLED_PASSWORD=
+export LETTERA_URL=
 ```
 
 ```
