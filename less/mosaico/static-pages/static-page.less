@@ -5,10 +5,13 @@
   font: 300 1.07rem "Roboto";
   line-height: 1.2;
   color: #333;
-  padding: 0 16px;
+  padding: 0 18px;
+  @media (min-width: @breakpoint-2col) {
+    padding-right: 40px;
+  }
   @media (min-width: @breakpoint-3col) {
     padding-left: 0;
-    padding-right: 35px;
+    padding-right: 50px;
   }
 
   .static-page__headline {
