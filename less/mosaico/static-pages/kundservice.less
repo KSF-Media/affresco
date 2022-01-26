@@ -15,22 +15,23 @@
   .customer-service__menu-buttons {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 15px;
-    margin-top: 20px;
+    gap: 25px;
+    margin-top: 30px;
     margin-bottom: 30px;
     @media (min-width: @breakpoint-2col) {
       padding: 0 35px;
+      gap: 30px;
     }
     @media (min-width: @breakpoint-3col) {
       grid-template-columns: 1fr 1fr;
       padding: 0;
-      gap: 20px 30px;
+      gap: 30px 30px;
       margin-top: 50px;
     }
   }
 
   .customer-service__menu-button {
-    padding: 10px 0;
+    padding: 15px 0;
     border: 0.5px solid @grey-dark;
     border-radius: 10px;
     text-align: center;
@@ -38,6 +39,7 @@
     cursor: pointer;
     @media (min-width: @breakpoint-2col) {
       padding: 20px 0;
+      font-size: 1.2rem;
     }
   }
 
