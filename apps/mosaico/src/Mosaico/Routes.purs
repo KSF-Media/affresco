@@ -17,6 +17,7 @@ import Routing.Types (RoutePart(..))
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
   | DraftPage -- Ignore parameters on client side and just show server side content
+  | EpaperPage
   | ArticlePage String
   | NotFoundPage String
   | StaticPage String
@@ -32,6 +33,7 @@ routes categories = root *> oneOf
   [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
+  , EpaperPage <$ (lit "epaper" *> end)
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
   , Frontpage <$ end
   , MenuPage <$ lit "meny"

@@ -3,6 +3,7 @@ module Main where
 import Prelude
 
 import Control.Monad.Error.Class (try)
+import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
@@ -16,6 +17,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.Set as Set
 import Data.String (trim)
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
@@ -34,13 +36,14 @@ import Foreign (unsafeToForeign)
 import JSURI as URI
 import KSF.Api (UserAuth, parseToken)
 import KSF.Api.Error as Api.Error
-import KSF.User (User, fromPersonaUser)
+import KSF.User (User, fromPersonaUser, getUserEntitlements)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, frontpageCategoryLabel, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
 import Mosaico.Cache (Stamped(..))
 import Mosaico.Cache as Cache
+import Mosaico.Epaper as Epaper
 import Mosaico.Error (notFoundWithAside)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
@@ -146,6 +149,11 @@ spec ::
                 , params :: { pageName :: String }
                 , guards :: Guards ("credentials" : Nil)
                 }
+         , epaperPage ::
+              GET "/epaper"
+                { response :: ResponseBody
+                , guards :: Guards ("credentials" : Nil)
+                }
          , debugList ::
               GET "/debug/<uuid>"
                 { response :: ResponseBody
@@ -203,6 +211,7 @@ main = do
           , frontpage: frontpage env
           , tagList: tagList env
           , staticPage: staticPage env
+          , epaperPage: epaperPage env
           , debugList: debugList env
           , categoryPage: categoryPage env
           , searchPage: searchPage env
@@ -442,6 +451,46 @@ tagList env { params: { tag }, guards: { credentials } } = do
       , mostReadArticles
       , user: hush =<< user
       }
+
+epaperPage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
+epaperPage env { guards: { credentials } } = do
+  { user, mostReadArticles } <- sequential $
+    { user: _, mostReadArticles: _ }
+    <$> maybe (pure Nothing) (parallel <<< getUser) credentials
+    <*> parallel (Cache.getMostRead env.cache)
+  -- Loading this in parallel with User might make Persona fetch the
+  -- user twice from Janrain.  TODO: lift it to make it sequential
+  -- inside the parallel above.
+  entitlements <- map (fromMaybe Set.empty) $ runMaybeT $ do
+    userAuth <- MaybeT $ pure $ (hush =<< user) *> credentials
+    MaybeT $ map hush $ getUserEntitlements userAuth
+  let htmlTemplate = cloneTemplate env.htmlTemplate
+      mosaicoString = renderContent user entitlements <$> mostReadArticles
+  html <- liftEffect do
+            let windowVars =
+                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
+                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  , "entitlements"      /\ (JSON.stringify $ encodeJson entitlements)
+                  ] <> userVar user
+            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+  now <- liftEffect nowDateTime
+  pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+  where
+    renderContent user entitlements mostReadArticles =
+      DOM.renderToString
+        $ MosaicoServer.app
+          { mainContent:
+              -- Having Nothing as entitlements is the loading state
+              -- for Epaper component so avoid that for server side
+              -- render.
+              { type: EpaperContent
+              , content: Epaper.render (pure unit) mosaicoPaper ((hush =<< user) *> credentials) (Just entitlements)
+              }
+          , categoryStructure: env.categoryStructure
+          , mostReadArticles
+          , user: hush =<< user
+          }
+
 
 staticPage :: Env -> { params :: { pageName :: String }, guards :: { credentials :: Maybe UserAuth }} -> Aff (Response ResponseBody)
 staticPage env { params: { pageName }, guards: { credentials } } = do
