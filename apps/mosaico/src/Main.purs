@@ -38,8 +38,9 @@ import KSF.Api (UserAuth, parseToken)
 import KSF.Api.Error as Api.Error
 import KSF.User (User, fromPersonaUser, getUserEntitlements)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
+import Lettera.Models (ArticleStub, ArticleType(..), Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
+import Mosaico.Article.Advertorial.Basic as Advertorial
 import Mosaico.Article.Image as Image
 import Mosaico.Cache (Stamped(..))
 import Mosaico.Cache as Cache
@@ -289,18 +290,21 @@ renderArticle env user article mostReadArticles latestArticles = do
       htmlTemplate = cloneTemplate env.htmlTemplate
   case article of
     Right a -> do
-      let articleJSX =
-            Article.render (Image.render mempty)
-              { paper: mosaicoPaper
-              , article: Right a
-              , onLogin: mempty
-              , user: hush =<< user
-              , onPaywallEvent: pure unit
-              , onTagClick: const mempty
-              , onArticleClick: const mempty
-              , mostReadArticles
-              , latestArticles
-              }
+      let articleJSX = case a.article.articleType of
+            Advertorial ->
+              Advertorial.render { article: a, paper: mosaicoPaper }
+            _ ->
+              Article.render (Image.render mempty)
+                { paper: mosaicoPaper
+                , article: Right a
+                , onLogin: mempty
+                , user: hush =<< user
+                , onPaywallEvent: pure unit
+                , onTagClick: const mempty
+                , onArticleClick: const mempty
+                , mostReadArticles
+                , latestArticles
+                }
           mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: { type: ArticleContent, content: articleJSX }

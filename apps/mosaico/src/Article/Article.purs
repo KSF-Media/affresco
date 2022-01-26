@@ -20,7 +20,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
@@ -37,7 +37,7 @@ isPremium :: Either ArticleStub FullArticle -> Boolean
 isPremium = either _.premium _.article.premium
 
 isAdvertorial :: Either ArticleStub FullArticle -> Boolean 
-isAdvertorial = either (const false) ((_ == Just "Premium") <<< head <<< _.article.categories)
+isAdvertorial = either ((_ == Advertorial) <<< _.articleType) ((_ == Advertorial) <<< _.article.articleType)
 
 getTags :: Either ArticleStub FullArticle -> Array Tag
 getTags = either _.tags _.article.tags

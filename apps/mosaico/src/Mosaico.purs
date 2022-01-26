@@ -34,9 +34,10 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
+import Mosaico.Article.Advertorial.Basic as Advertorial
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -379,7 +380,9 @@ render setState state components router onPaywallEvent =
          | Just (Right fullArticle@{ article }) <- state.article -> mosaicoLayoutNoAside $
            if article.uuid == articleId
            -- If we have this article already in `state`, let's pass that to `renderArticle`
-           then renderArticle (Right fullArticle)
+           then case article.articleType of
+             Advertorial -> Advertorial.render { article: fullArticle, paper: mosaicoPaper }
+             _           -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | Nothing <- state.article -> mosaicoLayoutNoAside loadingSpinner
