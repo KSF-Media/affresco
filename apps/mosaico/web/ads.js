@@ -160,14 +160,13 @@ window.googletag.cmd.push(function () {
 
   /* define gam slots */
   const slots = window.innerWidth < 1020 ? adSlots.mobile : adSlots.desktop;
-  window.mosaicoAdSlots = [];
   slots.map(
     slot => {
-      window.mosaicoAdSlots.push(googletag.defineSlot(
+      googletag.defineSlot(
         networkCode + slot.gamId,
         slot.sizes,
         slot.targetId
-      ).addService(googletag.pubads()));
+      ).addService(googletag.pubads());
     }
   );
   googletag.pubads().collapseEmptyDivs();
