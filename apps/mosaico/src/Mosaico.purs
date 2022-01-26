@@ -30,7 +30,7 @@ import KSF.Paper as Paper
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Article as Article
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
@@ -100,7 +100,7 @@ type Props =
   }
 type JSProps =
   { article :: Nullable Json
-  , isPreview :: Nullable Boolean
+  , articleType :: Nullable String
   , mostReadArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
@@ -147,12 +147,12 @@ mosaicoComponent initialValues props = React.do
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
               Right article -> do
-                Article.evalEmbeds $ fromFullArticle article
+                Article.evalEmbeds article.article
                 setState _ { article = Just $ Right article }
               Left _ -> setState _ { article = Just $ Left unit }
 
   useEffectOnce do
-    foldMap (Article.evalEmbeds <<< fromFullArticle) props.article
+    foldMap (Article.evalEmbeds <<< _.article) props.article
     Aff.launchAff_ do
       cats <- if null props.categoryStructure
               then Lettera.getCategoryStructure mosaicoPaper
@@ -196,7 +196,7 @@ mosaicoComponent initialValues props = React.do
               setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
-        maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> (join <<< map hush $ state.article)
+        maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
 
   useEffect state.route do
     case state.route of
@@ -207,7 +207,7 @@ mosaicoComponent initialValues props = React.do
       -- Always uses server side provided article
       Routes.DraftPage -> pure unit
       Routes.ArticlePage articleId
-        | Just articleId == ((_.uuid <<< fromFullArticle) <$> (join <<< map hush $ state.article)) -> pure unit
+        | Just articleId == (_.article.uuid <$> (join <<< map hush $ state.article)) -> pure unit
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
@@ -300,11 +300,9 @@ getInitialValues = do
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
-  let isPreview = fromMaybe false $ toMaybe jsProps.isPreview
-      mkFullArticle
-        | isPreview = PreviewArticle
-        | otherwise = FullArticle
-      article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
+  let article = { articleType: _, article: _ }
+                <$> (readArticleType =<< toMaybe jsProps.articleType)
+                <*> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
 
       initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
@@ -348,8 +346,7 @@ render setState state components router onPaywallEvent =
   <> case state.route of
        Routes.CategoryPage category -> renderCategory category
        Routes.ArticlePage articleId
-         | Just (Right fullArticle) <- state.article
-         , article <- fromFullArticle fullArticle -> mosaicoLayoutNoAside $
+         | Just (Right fullArticle@{ article }) <- state.article -> mosaicoLayoutNoAside $
            if article.uuid == articleId
            -- If we have this article already in `state`, let's pass that to `renderArticle`
            then renderArticle (Right fullArticle)
