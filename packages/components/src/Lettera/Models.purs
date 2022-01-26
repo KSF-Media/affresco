@@ -462,6 +462,8 @@ tagToURIComponent = String.toLower <<< String.replaceAll (String.Pattern " ") (S
 
 instance eqTag :: Eq Tag where
   eq (Tag a) (Tag b) = String.toLower a == String.toLower b
+instance hashTag :: Hashable Tag where
+  hash (Tag t) = hash $ String.toLower t
 derive newtype instance showTag :: Show Tag
 
 derive instance newtypeTag :: Newtype Tag _
