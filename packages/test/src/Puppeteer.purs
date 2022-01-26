@@ -56,6 +56,10 @@ getHref :: Selector -> Page -> Aff String
 getHref selector page = do
   unsafeFromForeign <$> Chrome.unsafePageEval selector "e => e.attributes.href.value" page
 
+getWidth :: Selector -> Page -> Aff Int
+getWidth selector page = do
+  unsafeFromForeign <$> Chrome.unsafePageEval selector "e => {e.style.display='block';return e.offsetWidth;}" page
+
 -- Note: Any quotes have to be with ' delimiters
 countElements :: Selector -> Selector -> Page -> Aff Int
 countElements selector (Selector sub) page =
