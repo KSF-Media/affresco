@@ -20,7 +20,7 @@ for (const q of questions) {
 }
 
 const showOnPx = 100;
-const backToTopButton = document.querySelector(".faq__back-to-top");
+const backToTopButton = document.querySelector(".static-page__back-to-top");
 
 const scrollContainer = () => {
   return document.documentElement || document.body;
