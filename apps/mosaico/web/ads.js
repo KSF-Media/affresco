@@ -76,8 +76,8 @@ window.googletag.cmd.push(function () {
       //   targetId: ""
       // },
       {
-        gamId: "DIGIHEL",
-        sizes: [ [620,891], [620,991] ],
+        gamId: "DIGIHELMOB",
+        sizes: [300,431],
         targetId: "mosaico-ad__article-body-1"
       },
       // {
@@ -85,11 +85,11 @@ window.googletag.cmd.push(function () {
       //   sizes: [ [980, 120], [980,400], [980,552] ],
       //   targetId: ""
       // },
-      {
-        gamId: "MAXPARAD",
-        sizes: [ [980, 120], [980,400], [980,480], [980,552], [1920,1080] ],
-        targetId: "mosaico-ad__top-parade"
-      },
+      // {
+      //   gamId: "MAXPARAD",
+      //   sizes: [ [980, 120], [980,400], [980,480], [980,552], [1920,1080] ],
+      //   targetId: "mosaico-ad__top-parade"
+      // },
       // {
       //   gamId: "PANORAMA",
       //   sizes: [ [980, 120], [980, 400] ],
@@ -170,7 +170,6 @@ window.googletag.cmd.push(function () {
       ).addService(googletag.pubads()));
     }
   );
-  // googletag.pubads().enableSingleRequest();
   googletag.pubads().collapseEmptyDivs();
   googletag.enableServices();
   googletag.pubads().addEventListener('slotRenderEnded', event => {
