@@ -27,6 +27,7 @@ import Effect.Now as Now
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User, magicLogin)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
@@ -345,11 +346,7 @@ render setState state components router onPaywallEvent =
         }
     _ -> mempty
   <> case state.route of
-       Routes.CategoryPage category@(Category c)
-         | c.type == Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
-         | otherwise ->
-           let maybeFeed = _.feed <$> HashMap.lookup (CategoryFeed c.label) state.frontpageFeeds
-            in frontpageNoHeader maybeFeed
+       Routes.CategoryPage category -> renderCategory category
        Routes.ArticlePage articleId
          | Just fullArticle <- state.article
          , article <- fromFullArticle fullArticle
@@ -357,7 +354,7 @@ render setState state components router onPaywallEvent =
          , article.uuid == articleId -> mosaicoLayoutNoAside $ renderArticle (Right fullArticle)
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed frontpageCategoryLabel) state.frontpageFeeds
+       Routes.Frontpage -> maybe mempty renderCategory $ Map.lookup frontpageCategoryLabel state.catMap
        Routes.SearchPage Nothing ->
           mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
        Routes.SearchPage query@(Just queryString) ->
@@ -405,6 +402,15 @@ render setState state components router onPaywallEvent =
          Just StaticPageOtherError -> Error.somethingWentWrong
        Routes.DebugPage _ -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "") state.frontpageFeeds
   where
+
+    renderCategory :: Category -> JSX
+    renderCategory category@(Category c) =
+      let maybeFeed = _.feed <$> HashMap.lookup (CategoryFeed c.label) state.frontpageFeeds
+      in case c.type of
+        Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
+        Link -> mempty -- TODO
+        Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader <<< Just) maybeFeed
+        Feed -> frontpageNoHeader maybeFeed
 
     frontpageWithHeader :: JSX -> Maybe ArticleFeed -> JSX
     frontpageWithHeader header = frontpage $ Just header
