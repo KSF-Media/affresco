@@ -5,30 +5,13 @@ import Prelude
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Lettera.Models (Article, Author, Tag)
-import Data.DateTime (DateTime)
-import KSF.User.Cusno (toString, Cusno)
+import Lettera.Models (Article)
+import KSF.User.Cusno (toString)
 import KSF.User (User)
-import KSF.Api.Subscription (Subscription)
 import Data.Foldable (foldMap)
 import Data.Formatter.DateTime (format)
 import KSF.Helpers (dateTimeFormatter)
 import Data.Array (intercalate)
-
-
-type ArticleMetadata = 
-  { title :: String
-  , publishingTime :: Maybe DateTime
-  , authors :: Array Author
-  , premium :: Boolean
-  , listTitle :: Maybe String
-  , category :: Maybe String
-  , section :: Maybe String
-  , articleUuid :: String
-  , tags :: Array Tag
-  , userCusno :: Maybe Cusno
-  , userSubs :: Maybe (Array Subscription)
-  }
 
 type StringArticleMetadata = 
   { title :: String
