@@ -8,7 +8,6 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe)
 import Data.DateTime (DateTime)
 import Data.Either (hush)
-import Data.Foldable (foldMap)
 import Data.Hashable (class Hashable, hash)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
@@ -28,6 +27,7 @@ type JSInitialFeed =
   { feedType        :: Nullable String
   , feedPage        :: Nullable String
   , feedContent     :: Nullable String
+  , feedContentType :: Nullable String
   }
 
 parseFeed :: JSInitialFeed -> HashMap ArticleFeedType ArticleFeed
@@ -42,32 +42,37 @@ parseFeed feed = fromMaybe HashMap.empty do
       _              -> Nothing
   feedContent <- do
     content <- toMaybe feed.feedContent
-    list <- content # (jsonParser >>> hush) >>= toArray
-    pure $ ArticleList $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list
-
+    contentType <- toMaybe feed.feedContentType
+    case contentType of
+      "articleList" -> do
+        list <- content # (jsonParser >>> hush) >>= toArray
+        pure $ ArticleList $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list
+      "html" ->
+        pure $ Html content
+      _ ->
+        Nothing
   pure $ HashMap.singleton feedType feedContent
 
 mkArticleFeed :: ArticleFeedType -> ArticleFeed -> Array (Tuple String String)
 mkArticleFeed feedDefinition feed =
-  foldMap (\feedContent -> [ Tuple "frontpageFeed" $
-                             stringify $ encodeJson { feedPage, feedType, feedContent } ]) $
-  case feed of
-    ArticleList list -> Just $ encodeStringifyArticleStubs list
-    -- If we need the front page HTML in a feed after the initial
-    -- load, it's just as much network traffic to make the user load
-    -- it on demand instead of having it twice in the initial load.
-    -- Getting the HTML from the generated DOM's containing innerHTML
-    -- would be ideal but it'd be a challenge.
-    _ -> Nothing
+  [ Tuple "frontpageFeed" $ stringify $ encodeJson { feedPage, feedType, feedContent, feedContentType } ]
   where
-    feedPage = Just $ case feedDefinition of
-      CategoryFeed page -> unwrap page
-      TagFeed tag       -> unwrap tag
-      SearchFeed query  -> query
-    feedType = case feedDefinition of
-      CategoryFeed _ -> "categoryfeed"
-      TagFeed _      -> "tagfeed"
-      SearchFeed _   -> "searchfeed"
+    (Tuple feedContentType feedContent) = case feed of
+      ArticleList list -> Tuple "articleList" $ encodeStringifyArticleStubs list
+      -- The prerendered HTML is rather large (at some 150kB) so it
+      -- would be nice to have a way to not have it second time in a
+      -- variable, but there's just no easy way around it.  React
+      -- doesn't really have the option of just using the existing
+      -- HTML on the page.  Hydrate can take over an existing DOM tree
+      -- but it still expects to know how to render the same tree from
+      -- its internal state.  Getting the HTML from the generated
+      -- DOM's containing innerHTML would be ideal but it'd be a
+      -- challenge.
+      Html html -> Tuple "html" html
+    (Tuple feedType feedPage) = case feedDefinition of
+      CategoryFeed page -> Tuple "categoryfeed" $ unwrap page
+      TagFeed tag       -> Tuple "tagfeed" $ unwrap tag
+      SearchFeed query  -> Tuple "searchfeed" query
 
 data ArticleFeed
   = ArticleList (Array ArticleStub)

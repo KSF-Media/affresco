@@ -3,15 +3,29 @@
 .static-page__faq {
   display: flex;
   flex-direction: column;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 
-  .faq__headline {
-    font-size: 3.2rem;
-    line-height: 1;
-    text-align: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
+  .faq__qa-section-links-container {
+    @media (min-width: @breakpoint-2col) {
+      margin-top: 30px;
+    }
   }
+
+  .faq__qa-section-list-item {
+    padding: 3px 0;
+  }
+
+  .faq__qa-section-link {
+    color: @dark-text;
+    font-weight: 400;
+    text-decoration: none;
+  }
+
+  .faq__qa-section-link::before {
+    content: url(../images/double-chevron-right.svg);
+    margin-right: 5px;
+  }
+
   .faq__qa-container {
     display: flex;
     flex-direction: column;
@@ -20,11 +34,14 @@
   .faq__qa-section {
     display: flex;
     flex-direction: column;
-    margin-top: 30px;
+    @media (min-width: @breakpoint-2col) {
+      margin-top: 30px;
+    }
   }
   .faq__section-headline {
-    font-size: 1.75rem;
+    font-size: 1.65rem;
     line-height: 1;
+    margin-top: 30px;
   }
 
   .faq__qa {
@@ -34,8 +51,7 @@
 
   .faq__question {
     color: #333;
-    max-width: 95%;
-    margin-top: 10px;
+    margin-top: 20px;
     cursor: pointer;
     border: none;
     padding: 0;
@@ -43,23 +59,18 @@
     outline: none;
     font-weight: 500;
     line-height: 1.2;
-    @media (min-width: @breakpoint-3col) {
-      max-width: 90%;
-    }
   }
 
-  .faq__question::after {
-    display: inline-block;
-    position: absolute;
+  .faq__question::before {
     content: url(../images/chevron.svg);
-    margin-left: 5px;
+    margin-right: 5px;
   }
 
-  .faq__question--active::after {
+  .faq__question--active::before {
     display: inline-block;
-    position: absolute;
     content: url(../images/chevron.svg);
-    transform: rotate(180deg);
+    transform: rotate(-180deg);
+    margin-right: 5px;
   }
 
   .faq__answer {
@@ -67,21 +78,15 @@
   }
 
   .faq__answer--open {
-    margin-top: 10px;
+    margin: 15px 0 5px;
     max-width: 100%;
-    padding-bottom: 10px;
+    padding-bottom: 30px;
     border-bottom: 1px solid @hairline-color;
-    @media (min-width: @breakpoint-2col) {
-      max-width: 95%;
-    }
-    @media (min-width: @breakpoint-3col) {
-      max-width: 90%;
-    }
   }
 
   .faq__answer-subheadline {
     display: block;
-    margin-top: 5px;
+    margin: 10px 0 3px;
     font-weight: 400;
   }
 
@@ -91,13 +96,13 @@
 
   .faq__answer-video {
     display: block;
-    margin: 3px auto 15px;
+    margin: 15px auto;
     width: 100%;
     height: auto;
     @media (min-width: @breakpoint-2col) {
       width: 560px;
       height: 315px;
-      margin-left: 0;
+      margin: 20px 0;
     }
   }
 }

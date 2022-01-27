@@ -21,7 +21,7 @@ import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
-import Mosaico.Ad as Ad
+import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -88,7 +88,7 @@ render imageComponent props =
         body = getBody props.article
         bodyWithoutAd = map renderElement body
         bodyWithAd = map renderElement
-          <<< insertAdsIntoBodyText articleMiddle1Desktop articleMiddle2Desktop $ body
+          <<< insertAdsIntoBodyText "mosaico-ad__article-body-1" "mosaico-ad__article-body-2" $ body
         draftHeader = case props.article of
           Right (DraftArticle _) ->
             DOM.div
@@ -161,7 +161,7 @@ render imageComponent props =
                         }
                     , DOM.div
                         { className: "mosaico-article__aside"
-                        , children: []
+                        , children: [ Mosaico.ad { contentUnit: "mosaico-ad__sidebar-1" } ]
                         }
                     ]
               }
@@ -216,9 +216,6 @@ render imageComponent props =
             , className: "mosaico-article__some--" <> someName
             }
         ]
-
-    articleMiddle1Desktop = "article_middle_1_desktop"
-    articleMiddle2Desktop = "article_middle_2_desktop"
 
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
@@ -324,7 +321,7 @@ render imageComponent props =
               ]
           }
       Ad contentUnit ->
-          Ad.ad {
+          Mosaico.ad {
             contentUnit
           }
       where
@@ -343,7 +340,7 @@ render imageComponent props =
                 }
             ]
 
-    insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement  
+    insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement
     insertAdsIntoBodyText contentUnit1 contentUnit2 body =
       let ad1 = Ad contentUnit1
           ad2 = Ad contentUnit2
@@ -360,6 +357,6 @@ render imageComponent props =
         findAdSpace body' i
           | i > elements = elements
           | Just (Html _) <- body' !! (i-1)
-          , Just (Html _) <- body' !! (i) 
+          , Just (Html _) <- body' !! (i)
           = i
           | otherwise = findAdSpace body' (i+1)
