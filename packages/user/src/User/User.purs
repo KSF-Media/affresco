@@ -45,6 +45,7 @@ module KSF.User
   , getCreditCardRegister
   , updateCreditCardSubscriptions
   , getPackages
+  , getUserEntitlements
   , getUserEntitlementsLoadToken
   , module Api
   , module Subscription

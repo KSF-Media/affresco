@@ -6,9 +6,12 @@
   line-height: 1.2;
   color: #333;
   padding: 0 18px;
+  @media (min-width: @breakpoint-2col) {
+    padding-right: 40px;
+  }
   @media (min-width: @breakpoint-3col) {
     padding-left: 0;
-    padding-right: 35px;
+    padding-right: 50px;
   }
 
   .static-page__headline {
@@ -28,5 +31,40 @@
   .static-page__link:visited {
     text-decoration: none;
     color: @link;
+  }
+
+  .static-page__back-to-top {
+    position: fixed;
+    right: 10px;
+    bottom: 20px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border: 1.5px solid @grey-medium;
+    border-radius: 20px;
+    background-color: @button-color-tertiary;
+    background-image: url(../images/chevron.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    transform: rotate(180deg);
+    outline: none;
+    opacity: 0%;
+    transition: opacity 0.5s;
+    @media (min-width: @breakpoint-2col) {
+      bottom: 30px;
+      right: 30px;
+      width: 45px;
+      height: 45px;
+      border-radius: 22.5px;
+      background-size: 55%;
+    }
+    @media (min-width: @breakpoint-3col) {
+      right: calc(50% - 130px);
+    }
+  }
+
+  .static-page__back-to-top:active,
+  .static-page__back-to-top:focus {
+    outline: none;
   }
 }

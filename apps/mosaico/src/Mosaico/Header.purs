@@ -42,7 +42,11 @@ render props =
             , children:
                 [ DOM.a_ [ DOM.text "KONTAKTA OSS" ]
                 , DOM.text "|"
-                , DOM.a_ [ DOM.text "E-TIDNINGEN" ]
+                , DOM.a
+                    { children: [ DOM.text "E-TIDNINGEN" ]
+                    , href: "/epaper"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
+                    }
                 ]
             }
         , DOM.div

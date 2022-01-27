@@ -1,0 +1,107 @@
+.mosaico-epaper {
+  grid-area: article;
+
+  .mosaico-epaper--section {
+    overflow-y: hidden;
+  }
+
+  .mosaico-epaper--section:nth-of-type(2n+1) {
+    background: @nude;
+  }
+
+  .spinner--loading-spinner {
+    background: transparent;
+  }
+
+  &--section {
+    padding-top: 60px;
+    display: flex;
+    flex-direction: row;
+  }
+
+  &--teaser {
+    flex: 0 0 50%;
+    font-weight: 300;
+    max-width: 500px;
+    height: 400px;
+    background-size: 83%;
+    background-repeat: no-repeat;
+    background-position: center 30px;
+    img {
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+    }
+
+    #HBL & {
+      background-image: url('https://www.e-pages.dk/hbl/teasers/3271/medium.jpg');
+    }
+    #VN & {
+      background-image: url('https://www.e-pages.dk/vastranyland/teasers/3668/medium.jpg');
+    }
+    #ON & {
+      background-image: url('https://www.e-pages.dk/ostnyland/teasers/3669/medium.jpg');
+    }
+    &__junior {
+      background-image: url('https://www.e-pages.dk/hbljunior/teasers/12509/medium.jpg') !important;
+      height: 295px;
+      box-shadow: 0px 0px 45px -10px rgba(0,0,0,0.3), inset 0px -50px 46px -38px rgba(0,0,0,0.22);
+    }
+  }
+  &--body {
+    flex: 0 0 50%;
+    padding: 0 30px;
+    font-size: 18px;
+    font-family: "Roboto", sans-serif;
+    font-weight: 300;
+    text-align: center;
+    h2 {
+      margin-bottom: 30px;
+      font-family: "Duplex Serif Web", serif;
+      font-weight: 700;
+      margin-top: 0.9375rem;
+      letter-spacing: -0.015em;
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+    p {
+      margin-bottom: 20px;
+    }
+    li {
+      text-align: initial;
+    }
+    ul {
+      margin: 18px 0 18px 40px;
+      list-style: initial;
+    }
+    a {
+      font-weight: 400;
+      text-decoration: none;
+      outline: 0;
+      font-size: 16px;
+      line-height: 16px;
+      letter-spacing: 0.015em;
+      padding: 12px;
+      border-radius: 2px;
+      text-transform: none;
+      cursor: pointer;
+      display: inline-block;
+      transition: color 0.2s linear;
+      margin-left: 6px;
+      margin-right: 6px;
+    }
+    a.mosaico-epaper--primary-button {
+      color: white;
+      border: solid 1px @primary-accent;
+      background-color: @primary-accent;
+    }
+    a.mosaico-epaper--secondary-button:hover {
+      opacity: 0.75;
+    }
+    a.mosaico-epaper--secondary-button {
+      color: @grey-medium;
+      padding: 1px;
+      background-color: transparent;
+    }
+  }
+}
