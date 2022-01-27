@@ -23,6 +23,7 @@ You can edit this file as you like.
   , "foreign"
   , "foreign-object"
   , "formatters"
+  , "integers"
   , "js-uri"
   , "lists"
   , "maybe"

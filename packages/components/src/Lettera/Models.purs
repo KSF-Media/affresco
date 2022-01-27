@@ -34,48 +34,48 @@ import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 import Type.Prelude (Proxy(..))
 
-data FullArticle
-  = FullArticle Article
-  | PreviewArticle Article
-  | DraftArticle Article
-  | ErrorArticle Article
+data ArticleType = FullArticle | PreviewArticle | DraftArticle | ErrorArticle
 
-fromFullArticle :: FullArticle -> Article
-fromFullArticle (FullArticle a) = a
-fromFullArticle (PreviewArticle a) = a
-fromFullArticle (DraftArticle a) = a
-fromFullArticle (ErrorArticle a) = a
+derive instance eqArticleType :: Eq ArticleType
+instance showArticleType :: Show ArticleType where
+  show FullArticle = "FullArticle"
+  show PreviewArticle = "PreviewArticle"
+  show DraftArticle = "DraftArticle"
+  show ErrorArticle = "ErrorArticle"
 
-isPreviewArticle :: FullArticle -> Boolean
-isPreviewArticle (PreviewArticle _) = true
-isPreviewArticle _ = false
+readArticleType :: String -> Maybe ArticleType
+readArticleType "FullArticle" = Just FullArticle
+readArticleType "PreviewArticle" = Just PreviewArticle
+readArticleType "DraftArticle" = Just DraftArticle
+readArticleType "ErrorArticle" = Just ErrorArticle
+readArticleType _ = Nothing
 
-isDraftArticle :: FullArticle -> Boolean
-isDraftArticle (DraftArticle _) = true
-isDraftArticle _ = false
-
-isErrorArticle :: FullArticle -> Boolean
-isErrorArticle (ErrorArticle _) = true
-isErrorArticle _ = false
+type FullArticle =
+  { articleType :: ArticleType
+  , article :: Article
+  }
 
 notFoundArticle :: FullArticle
-notFoundArticle = ErrorArticle
-  { title: "Hoppsan! Sidan eller artikeln hittades inte"
-  , listTitle: Nothing
-  , body: []
-  , analyticsCategory: Nothing
-  , analyticsSection: Nothing
-  , mainImage: Nothing
-  , tags: []
-  , uuid: "notfound"
-  , preamble: Nothing
-  , authors: []
-  , premium: false
-  , removeAds: false
-  , publishingTime: Nothing
-  , publishingTimeUtc: Nothing
-  , updateTime: Nothing
-  , externalScripts: Nothing
+notFoundArticle =
+  { articleType: ErrorArticle
+  , article:
+    { title: "Hoppsan! Sidan eller artikeln hittades inte"
+    , listTitle: Nothing
+    , body: []
+    , analyticsCategory: Nothing
+    , analyticsSection: Nothing
+    , mainImage: Nothing
+    , tags: []
+    , uuid: "notfound"
+    , preamble: Nothing
+    , authors: []
+    , premium: false
+    , removeAds: false
+    , publishingTime: Nothing
+    , publishingTimeUtc: Nothing
+    , updateTime: Nothing
+    , externalScripts: Nothing
+    }
   }
 
 newtype LocalDateTime = LocalDateTime DateTime

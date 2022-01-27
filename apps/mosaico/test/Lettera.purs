@@ -73,7 +73,8 @@ testCategoryLists page = do
     testCategory (Tuple idx (Category c))
       | c.type == Feed = do
         log $ "test feed category " <> show c.label
-        firstArticle <- map head $ Lettera.getFrontpage HBL $ Just $ show c.label
+        firstArticle <- join <<< map head <<< Lettera.responseBody <$>
+                        (Lettera.getFrontpage HBL $ Just $ show c.label)
         let catElement = Chrome.Selector $ ".mosaico-header__block:nth-child(3) .mosaico-header__section:nth-of-type(" <> show idx <> ") a"
             (CategoryLabel catLabel) = c.label
         Chrome.waitFor_ catElement page
