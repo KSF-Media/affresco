@@ -18,7 +18,6 @@ import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..))
-import Data.Tuple (Tuple)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -31,8 +30,8 @@ import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (Article, ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
-import Mosaico.Analytics (pushToDataLayer)
+import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -140,7 +139,6 @@ mosaicoComponent initialValues props = React.do
           Just uuid -> do
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
-            --analytiikka tähän
               Right article -> do
                 Article.evalEmbeds $ fromFullArticle article
                 sendArticleAnalytics (fromFullArticle article) state.user
@@ -235,27 +233,6 @@ mosaicoComponent initialValues props = React.do
     pure mempty
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
-
-sendArticleAnalytics:: Article -> Maybe User -> Effect Unit
-sendArticleAnalytics article user = do
-  let metadata = { title: article.title
-          , publishingTime: article.publishingTimeUtc
-          , authors: article.authors
-          , premium: article.premium
-          , category: article.analyticsCategory
-          , section: article.analyticsSection
-          , listTitle: article.listTitle
-          , articleUuid: article.uuid
-          , tags: article.tags
-          , userCusno: case user of
-            Just u -> Just u.cusno
-            Nothing   -> Nothing
-          , userSubs: case user of
-            Just u -> Just u.subs
-            Nothing -> Nothing
-          }
-  pushToDataLayer metadata
-  pure unit
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
