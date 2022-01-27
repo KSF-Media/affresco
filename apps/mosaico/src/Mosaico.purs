@@ -7,6 +7,7 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Array (mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
+import Data.Tuple (Tuple)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
