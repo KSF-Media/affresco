@@ -97,8 +97,8 @@ render props@{ onLogout } = DOM.div
                   , Just
                     { title: "E-TIDNINGEN"
                     , subsections: []
-                    , url: ""
-                    , onClick: mempty
+                    , url: "/epaper"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
                     }
                   , Just
                     { title: "KUNDSERVICE"
