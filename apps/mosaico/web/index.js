@@ -19,6 +19,7 @@ function main() {
 	categoryStructure={window.categoryStructure || null}
 	initialFrontpageFeed={window.frontpageFeed || null}
 	user={window.user || null}
+	entitlements={window.entitlements || null}
       />
     );
     ReactDOM.hydrate(mosaico, document.getElementById("app"));
