@@ -48,25 +48,6 @@ foreign import _pushToDataLayer :: EffectFn1 StringArticleMetadata Unit
 pushToDataLayer :: StringArticleMetadata -> Effect Unit
 pushToDataLayer = runEffectFn1 _pushToDataLayer
 
--- stringifyMetadata :: ArticleMetadata -> StringArticleMetadata
--- stringifyMetadata metadata = 
---   { title : metadata.title
---   , publishingTime: foldMap (\x -> format dateTimeFormatter x) metadata.publishingTime
---   , premium: show metadata.premium
---   , category: fromMaybe "" metadata.category
---   , section: fromMaybe "" metadata.section
---   , listTitle: fromMaybe "" metadata.listTitle
---   , articleUuid: (metadata.articleUuid :: String)
---   , tags: intercalate ", " $ show <$> metadata.tags
---   , authors: intercalate ", " $ _.byline <$> metadata.authors
---   , userCusno: case metadata.userCusno of
---     Just c       -> toString c
---     Nothing      -> ""
---   , userSubs: case metadata.userSubs of
---     Just subs    -> intercalate ", " $ _.package.id <$> subs
---     Nothing      -> ""
---   }
-
 sendArticleAnalytics:: Article -> Maybe User -> Effect Unit
 sendArticleAnalytics article user = do
   let metadata = 
@@ -87,4 +68,3 @@ sendArticleAnalytics article user = do
             Nothing -> ""
           }
   pushToDataLayer metadata
-  pure unit
