@@ -2,6 +2,7 @@ module KSF.CountryDropDown where
 
 import Prelude
 
+import Data.Array (cons)
 import Data.Maybe (Maybe, fromMaybe)
 import Effect (Effect)
 import KSF.InputField (inputLabel)
@@ -19,9 +20,8 @@ countryDropDown countries disabled onChange value =
     , children:
         [ inputLabel { label: "Land", nameFor: "country" }
         , DOM.select
-            { children: map createOption countries
+            { children: cons placeholderOption $ map createOption countries
             , onChange: handler targetValue onChange
-            , value: fromMaybe "FI" value
             }
         ]
     }
@@ -31,6 +31,14 @@ countryDropDown countries disabled onChange value =
         { value: countryCode
         , children: [ DOM.text countryName ]
         , disabled: disabled
+        }
+    placeholderOption =
+      DOM.option
+        { value: ""
+        , children: [ DOM.text "- Välj land -" ]
+        , disabled: true
+        , selected: true
+        , hidden: true
         }
 
 defaultCountryDropDown :: (Maybe String -> Effect Unit) -> Maybe String -> JSX
