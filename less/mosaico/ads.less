@@ -1,15 +1,31 @@
 @import (reference) "../ksf-colors";
 
 .mosaico-ad {
-
+  text-align: center;
   &__content-unit {
-    div[id^="google_ads_iframe_"]::before {
-      content: "Annons";
-      font: 400 .75rem "Roboto", sans-serif;
-      color: @grey-medium;
-      text-transform: uppercase;
-      display: block;
+    &.populated {
+      &::before {
+        content: "— Annons —";
+        font: 400 .75rem "Roboto", sans-serif;
+        color: @grey-medium;
+        text-transform: uppercase;
+        display: block;
+        margin: 0 auto 5px auto;
+      }
+      &::after {
+        content: "— Annons slut —";
+        font: 400 .75rem "Roboto", sans-serif;
+        color: @grey-medium;
+        text-transform: uppercase;
+        display: block;
+        margin: 5px auto 0 auto;
+      }
     }
+  }
+
+  &.mosaico-ad__article-body-1,
+  &.mosaico-ad__article-body-2 {
+    margin: 10px auto 20px;
   }
 
   &.jattebox {
