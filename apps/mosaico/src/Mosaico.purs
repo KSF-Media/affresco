@@ -4,12 +4,11 @@ import Prelude
 
 import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (mapMaybe, null, intercalate)
+import Data.Array (mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
-import Data.Formatter.DateTime (format)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Map as Map
@@ -18,6 +17,7 @@ import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..))
+import Data.Tuple (Tuple)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -26,12 +26,11 @@ import Effect.Class.Console as Console
 import Effect.Now as Now
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
-import KSF.Helpers (dateTimeFormatter)
 import KSF.Paper as Paper
 import KSF.User (User, magicLogin)
-import KSF.User.Cusno (toString)
+import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, isPreviewArticle, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
 import Mosaico.Analytics (pushToDataLayer)
 import Mosaico.Article as Article
 import Mosaico.Error as Error
@@ -79,12 +78,6 @@ type State =
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
   }
 
-newtype Blah = Blah String
-
-type Argh = 
-  { a :: Blah
-  , b :: Int
-}
 type SetState = (State -> State) -> Effect Unit
 
 type Components =
@@ -121,7 +114,7 @@ app = do
 mosaicoComponent
   :: InitialValues
   -> Props
-  -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
+  -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let initialCatMap = categoriesMap props.categoryStructure
       maxAge = Minutes 15.0
@@ -148,20 +141,8 @@ mosaicoComponent initialValues props = React.do
             liftEffect case eitherArticle of
             --analytiikka tähän
               Right article -> do
-                let a = fromFullArticle article
                 Article.evalEmbeds $ fromFullArticle article
-                pushToDataLayer "title" a.title
-                pushToDataLayer "publishingTime" $ foldMap (\x -> format dateTimeFormatter x) a.publishingTimeUtc
-                pushToDataLayer "authors" $ intercalate ", " $ _.byline <$> a.authors
-                pushToDataLayer "premium" $ show a.premium
-                pushToDataLayer "category" $ fromMaybe "" a.analyticsCategory
-                pushToDataLayer "section" $ fromMaybe "" a.analyticsSection
-                pushToDataLayer "listTitle" $ fromMaybe "" a.listTitle
-                pushToDataLayer "uuid" a.uuid
-                pushToDataLayer "tags" $ show a.tags
-                pushToDataLayer "userCusno" $ case state.user of
-                  Just user -> toString user.cusno
-                  Nothing   -> "None"
+                sendArticleAnalytics (fromFullArticle article) state.user
                 setState _ { article = Just article }
               Left _ -> setState _ { article = Nothing }
 
@@ -212,7 +193,7 @@ mosaicoComponent initialValues props = React.do
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> state.article
 
-  useEffect state.route do
+  useEffect (state.route /\ map _.cusno state.user) do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
@@ -253,6 +234,27 @@ mosaicoComponent initialValues props = React.do
     pure mempty
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
+
+sendArticleAnalytics:: Article -> Maybe User -> Effect Unit
+sendArticleAnalytics article user = do
+  let metadata = { title: article.title
+          , publishingTime: article.publishingTimeUtc
+          , authors: article.authors
+          , premium: article.premium
+          , category: article.analyticsCategory
+          , section: article.analyticsSection
+          , listTitle: article.listTitle
+          , articleUuid: article.uuid
+          , tags: article.tags
+          , userCusno: case user of
+            Just u -> Just u.cusno
+            Nothing   -> Nothing
+          , userSubs: case user of
+            Just u -> Just u.subs
+            Nothing -> Nothing
+          }
+  pushToDataLayer metadata
+  pure unit
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
