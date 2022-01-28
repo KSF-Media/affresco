@@ -12,7 +12,6 @@ import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (handler)
 
 
-
 countryDropDown :: Array DropDownCountry -> Boolean -> (Maybe String -> Effect Unit) -> Maybe String -> JSX
 countryDropDown countries disabled onChange value =
   DOM.div
@@ -29,7 +28,10 @@ countryDropDown countries disabled onChange value =
     createOption { countryCode, countryName } =
       DOM.option
         { value: countryCode
-        , children: [ DOM.text countryName ]
+        , children:
+          [ DOM.text $ countryName
+                        <> if fromMaybe mempty value == countryCode then " (vald)" else mempty
+          ]
         , disabled: disabled
         }
     placeholderOption =
