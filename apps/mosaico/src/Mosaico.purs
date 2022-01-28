@@ -22,6 +22,8 @@ import Data.Time.Duration (Minutes(..))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff as Aff
+import Effect.Aff.AVar as Aff.AVar
+import Effect.AVar as AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
@@ -158,6 +160,7 @@ mosaicoComponent initialValues props = React.do
   useEffectOnce do
     foldMap (Article.evalEmbeds <<< _.article) props.article
     Aff.launchAff_ do
+      when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
               then Lettera.getCategoryStructure mosaicoPaper
               else pure props.categoryStructure
@@ -168,6 +171,7 @@ mosaicoComponent initialValues props = React.do
                    }
         -- Listen for route changes and set state accordingly
         void $ locations (routeListener catMap setState) initialValues.nav
+      when (Map.isEmpty initialCatMap) $ Aff.AVar.put catMap initialValues.catMap
       when (isNothing props.user) $
         magicLogin Nothing $ \u -> case u of
           Right user -> setState _ { user = Just user }
@@ -175,10 +179,13 @@ mosaicoComponent initialValues props = React.do
     pure mempty
 
   let loadFeed feedName = do
+        -- In SPA mode, this may be called before catMap has been
+        -- populated to state.  Synchronize with an AVar.
+        catMap <- Aff.AVar.read initialValues.catMap
         maybeFeed <- case feedName of
           TagFeed t -> Just <<< ArticleList <<< join <<< fromFoldable <$> Lettera.getByTag 0 20 t mosaicoPaper
           CategoryFeed c
-            | Just cat <- unwrap <$> Map.lookup c state.catMap ->
+            | Just cat <- unwrap <$> Map.lookup c catMap ->
               let label = unwrap c
                   getArticleList = ArticleList <<< join <<< fromFoldable <$> Lettera.getFrontpage mosaicoPaper (Just label)
               in case cat.type of
@@ -258,10 +265,12 @@ type InitialValues =
   , staticPageContent :: Maybe String
   , staticPageScript :: Maybe String
   , startTime :: DateTime
+  , catMap :: AVar.AVar Categories
   }
 
 getInitialValues :: Effect InitialValues
 getInitialValues = do
+  catMap <- AVar.empty
   startTime <- Now.nowDateTime
   nav <- makeInterface
   locationState <- nav.locationState
@@ -295,6 +304,7 @@ getInitialValues = do
         , articleComponent
         , epaperComponent
         }
+    , catMap
     , nav
     , locationState
     , staticPageContent
