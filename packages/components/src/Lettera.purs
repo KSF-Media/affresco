@@ -28,7 +28,7 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, ArticleType(..), Category, DraftParams, FullArticle, Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
 
 foreign import letteraBaseUrl :: String
