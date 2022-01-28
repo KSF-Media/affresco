@@ -19,7 +19,7 @@ footer onStaticPageClick =
               [ externalLink "Dataskyddsbeskrivning" "https://www.ksfmedia.fi/dataskydd"
               , footerLink "Bruksvillkor" "bruksvillkor"
               , footerLink "Kundservice" "kundservice"
-              , footerLink "Kontakta oss" "kontaktaoss"
+              , footerLink "Kontakta oss" "kontakt"
               ]
             }
         , DOM.hr { className: "mosaico-footer__separator" }
