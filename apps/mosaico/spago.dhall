@@ -22,6 +22,7 @@ You can edit this file as you like.
   , "foldable-traversable"
   , "foreign"
   , "foreign-object"
+  , "formatters"
   , "integers"
   , "js-uri"
   , "lists"

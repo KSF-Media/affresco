@@ -7,6 +7,7 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Array (fromFoldable, mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
+import Data.Tuple (Tuple)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
@@ -21,6 +22,8 @@ import Data.Time.Duration (Minutes(..))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff as Aff
+import Effect.Aff.AVar as Aff.AVar
+import Effect.AVar as AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
@@ -29,8 +32,10 @@ import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User, magicLogin)
+import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle(..), categoriesMap, fromFullArticle, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, tagToURIComponent)
+import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
@@ -100,7 +105,7 @@ type Props =
   }
 type JSProps =
   { article :: Nullable Json
-  , isPreview :: Nullable Boolean
+  , articleType :: Nullable String
   , mostReadArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
@@ -118,7 +123,7 @@ app = do
 mosaicoComponent
   :: InitialValues
   -> Props
-  -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
+  -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let initialCatMap = categoriesMap props.categoryStructure
   let initialPath = initialValues.locationState.path <> initialValues.locationState.search
@@ -147,13 +152,15 @@ mosaicoComponent initialValues props = React.do
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
               Right article -> do
-                Article.evalEmbeds $ fromFullArticle article
+                Article.evalEmbeds article.article
+                sendArticleAnalytics article.article state.user
                 setState _ { article = Just $ Right article }
               Left _ -> setState _ { article = Just $ Left unit }
 
   useEffectOnce do
-    foldMap (Article.evalEmbeds <<< fromFullArticle) props.article
+    foldMap (Article.evalEmbeds <<< _.article) props.article
     Aff.launchAff_ do
+      when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
               then Lettera.getCategoryStructure mosaicoPaper
               else pure props.categoryStructure
@@ -164,6 +171,7 @@ mosaicoComponent initialValues props = React.do
                    }
         -- Listen for route changes and set state accordingly
         void $ locations (routeListener catMap setState) initialValues.nav
+      when (Map.isEmpty initialCatMap) $ Aff.AVar.put catMap initialValues.catMap
       when (isNothing props.user) $
         magicLogin Nothing $ \u -> case u of
           Right user -> setState _ { user = Just user }
@@ -171,10 +179,13 @@ mosaicoComponent initialValues props = React.do
     pure mempty
 
   let loadFeed feedName = do
+        -- In SPA mode, this may be called before catMap has been
+        -- populated to state.  Synchronize with an AVar.
+        catMap <- Aff.AVar.read initialValues.catMap
         maybeFeed <- case feedName of
           TagFeed t -> Just <<< ArticleList <<< join <<< fromFoldable <$> Lettera.getByTag 0 20 t mosaicoPaper
           CategoryFeed c
-            | Just cat <- unwrap <$> Map.lookup c state.catMap ->
+            | Just cat <- unwrap <$> Map.lookup c catMap ->
               let label = unwrap c
                   getArticleList = ArticleList <<< join <<< fromFoldable <$> Lettera.getFrontpage mosaicoPaper (Just label)
               in case cat.type of
@@ -196,9 +207,9 @@ mosaicoComponent initialValues props = React.do
               setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
-        maybe (pure unit) loadArticle $ _.uuid <<< fromFullArticle <$> (join <<< map hush $ state.article)
+        maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
 
-  useEffect state.route do
+  useEffect (state.route /\ map _.cusno state.user) do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
@@ -207,7 +218,7 @@ mosaicoComponent initialValues props = React.do
       -- Always uses server side provided article
       Routes.DraftPage -> pure unit
       Routes.ArticlePage articleId
-        | Just articleId == ((_.uuid <<< fromFullArticle) <$> (join <<< map hush $ state.article)) -> pure unit
+        | Just articleId == (_.article.uuid <$> (join <<< map hush $ state.article)) -> pure unit
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> pure unit
       Routes.NotFoundPage _path -> pure unit
@@ -254,10 +265,12 @@ type InitialValues =
   , staticPageContent :: Maybe String
   , staticPageScript :: Maybe String
   , startTime :: DateTime
+  , catMap :: AVar.AVar Categories
   }
 
 getInitialValues :: Effect InitialValues
 getInitialValues = do
+  catMap <- AVar.empty
   startTime <- Now.nowDateTime
   nav <- makeInterface
   locationState <- nav.locationState
@@ -291,6 +304,7 @@ getInitialValues = do
         , articleComponent
         , epaperComponent
         }
+    , catMap
     , nav
     , locationState
     , staticPageContent
@@ -300,11 +314,9 @@ getInitialValues = do
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
-  let isPreview = fromMaybe false $ toMaybe jsProps.isPreview
-      mkFullArticle
-        | isPreview = PreviewArticle
-        | otherwise = FullArticle
-      article = mkFullArticle <$> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
+  let article = { articleType: _, article: _ }
+                <$> (readArticleType =<< toMaybe jsProps.articleType)
+                <*> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
 
       initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
@@ -348,8 +360,7 @@ render setState state components router onPaywallEvent =
   <> case state.route of
        Routes.CategoryPage category -> renderCategory category
        Routes.ArticlePage articleId
-         | Just (Right fullArticle) <- state.article
-         , article <- fromFullArticle fullArticle -> mosaicoLayoutNoAside $
+         | Just (Right fullArticle@{ article }) <- state.article -> mosaicoLayoutNoAside $
            if article.uuid == articleId
            -- If we have this article already in `state`, let's pass that to `renderArticle`
            then renderArticle (Right fullArticle)

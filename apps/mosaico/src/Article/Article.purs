@@ -4,7 +4,7 @@ import Prelude
 
 import Bottega.Models.Order (OrderSource(..))
 import Data.Array (cons, head, insertAt, length, null, snoc, take, (!!))
-import Data.Either (Either(..), hush)
+import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
@@ -20,7 +20,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), fromFullArticle, isErrorArticle, tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
@@ -33,32 +33,25 @@ import React.Basic.Hooks (Component)
 import React.Basic.Events (EventHandler)
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
-isPremium (Left articleStub) = articleStub.premium
-isPremium (Right fullArticle) = _.premium $ fromFullArticle fullArticle
+isPremium = either _.premium _.article.premium
 
 getTags :: Either ArticleStub FullArticle -> Array Tag
-getTags (Left articleStub) = articleStub.tags
-getTags (Right fullArticle) = _.tags $ fromFullArticle fullArticle
+getTags = either _.tags _.article.tags
 
 getTitle :: Either ArticleStub FullArticle -> String
-getTitle (Left articleStub) = articleStub.title
-getTitle (Right fullArticle) = _.title $ fromFullArticle fullArticle
+getTitle = either _.title _.article.title
 
 getMainImage :: Either ArticleStub FullArticle -> Maybe Image
-getMainImage (Left articleStub) = articleStub.mainImage
-getMainImage (Right fullArticle) = _.mainImage $ fromFullArticle fullArticle
+getMainImage = either _.mainImage _.article.mainImage
 
 getPreamble :: Either ArticleStub FullArticle -> Maybe String
-getPreamble (Left articleStub) = articleStub.preamble
-getPreamble (Right fullArticle) = _.preamble $ fromFullArticle fullArticle
+getPreamble = either _.preamble _.article.preamble
 
 getBody :: Either ArticleStub FullArticle -> Array BodyElement
-getBody (Left _articleStub) = mempty
-getBody (Right fullArticle) = _.body $ fromFullArticle fullArticle
+getBody = either (const mempty) _.article.body
 
 getRemoveAds :: Either ArticleStub FullArticle -> Boolean
-getRemoveAds (Left articleStub) = articleStub.removeAds
-getRemoveAds (Right fullArticle) = _.removeAds $ fromFullArticle fullArticle
+getRemoveAds = either _.removeAds _.article.removeAds
 
 type Props =
   { paper :: Paper
@@ -89,8 +82,8 @@ render imageComponent props =
         bodyWithoutAd = map renderElement body
         bodyWithAd = map renderElement
           <<< insertAdsIntoBodyText "mosaico-ad__article-body-1" "mosaico-ad__article-body-2" $ body
-        draftHeader = case props.article of
-          Right (DraftArticle _) ->
+        draftHeader = case _.articleType <$> props.article of
+          Right DraftArticle ->
             DOM.div
               { className: "mosaico-article--draft"
               , children: [ DOM.text "Förslag" ]
@@ -110,7 +103,7 @@ render imageComponent props =
                 , children: [ DOM.text $ fromMaybe mempty $ getPreamble props.article ]
                 }
             -- We don't want to be able to share error articles
-            , guard (maybe true (not <<< isErrorArticle) $ hush props.article)
+            , guard (maybe true ((_ /= ErrorArticle) <<< _.articleType) $ hush props.article)
                 DOM.section
                   { className: "mosaico-article__tag-n-share"
                   , children:
@@ -142,17 +135,17 @@ render imageComponent props =
           , DOM.div
               { className: "mosaico-article__main"
               , children:
-                    [ foldMap (renderMetabyline <<< fromFullArticle) $ hush props.article
+                    [ foldMap (renderMetabyline <<< _.article) $ hush props.article
                     , DOM.div
                         { className: "mosaico-article__body "
-                        , children: case props.article of
-                          (Right (PreviewArticle _previewArticle)) ->
+                        , children: case _.articleType <$> props.article of
+                          Right PreviewArticle ->
                             paywallFade
                             `cons` bodyWithAd
                             `snoc` vetrina
-                          (Right (DraftArticle _draftArticle)) ->
+                          Right DraftArticle ->
                             bodyWithoutAd
-                          (Right (FullArticle _fullArticle)) ->
+                          Right FullArticle ->
                             bodyWithAd <>
                             (foldMap (pure <<< renderMostReadArticles) $
                              if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)

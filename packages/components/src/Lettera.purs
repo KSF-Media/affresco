@@ -28,7 +28,7 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
 
 foreign import letteraBaseUrl :: String
@@ -122,7 +122,8 @@ getArticleWithUrl url paper auth = do
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
       | (StatusCode 200) <- response.status ->
-        either Left (Right <<< FullArticle) <$> (liftEffect $ parseArticle response.body)
+        either Left (Right <<< { articleType: FullArticle, article: _ }) <$>
+        (liftEffect $ parseArticle response.body)
       | (StatusCode 403) <- response.status -> do
           {- If we get a Forbidden response, that means the user is not entitled to read the article.
              However in this case, we have the article preview in the response,
@@ -140,7 +141,8 @@ getArticleWithUrl url paper auth = do
           -}
         case articlePreviewJson response.body of
           Just articlePreview -> do
-            map PreviewArticle <$> (liftEffect $ parseArticle articlePreview)
+            map { articleType: PreviewArticle, article: _ } <$>
+              (liftEffect $ parseArticle articlePreview)
           Nothing -> do
             -- TODO: Sentry and whatnot
             Console.warn "Did not find article preview from response!"
@@ -180,7 +182,8 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
       | (StatusCode 200) <- response.status ->
-        map DraftArticle <$> (liftEffect $ parseDraftArticle response.body)
+        map { articleType: DraftArticle, article: _ } <$>
+        (liftEffect $ parseDraftArticle response.body)
       | (StatusCode 403) <- response.status ->
         pure $ Left "Unauthorized"
       | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s

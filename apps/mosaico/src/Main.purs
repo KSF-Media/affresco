@@ -38,7 +38,7 @@ import KSF.Api (UserAuth, parseToken)
 import KSF.Api.Error as Api.Error
 import KSF.User (User, fromPersonaUser, getUserEntitlements)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, fromFullArticle, frontpageCategoryLabel, isDraftArticle, isPreviewArticle, notFoundArticle, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
 import Mosaico.Cache (Stamped(..))
@@ -251,7 +251,7 @@ getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
         pure $ Response
           { status: Status.found
           , body: EmptyBody
-          , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> (_.uuid $ fromFullArticle a)]
+          , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> a.article.uuid ]
           }
       Left _ -> do
         { user, mostReadArticles } <- sequential $
@@ -293,14 +293,13 @@ renderArticle env user article mostReadArticles = do
 
       html <- liftEffect do
         let windowVars =
-              [ "article"           /\ (encodeStringifyArticle $ fromFullArticle a)
-              , "isPreview"         /\ (show $ isPreviewArticle a)
-              , "mostReadArticles"  /\ (encodeStringifyArticleStubs mostReadArticles)
-              , "isDraft"           /\ (show $ isDraftArticle a)
+              [ "article"           /\ encodeStringifyArticle a.article
+              , "articleType"       /\ (show $ show a.articleType)
+              , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
               , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
               ] <> userVar user
             metaTags =
-              let a' = fromFullArticle a
+              let a' = a.article
               in DOM.renderToStaticMarkup $
                   DOM.fragment
                     [ DOM.meta { property: "og:type", content: "article" }
@@ -681,7 +680,7 @@ notFound env mainContent user maybeMostReadArticles = do
           ] <> userVar user
           <> foldMap (pure <<< Tuple "mostReadArticles" <<< encodeStringifyArticleStubs) maybeMostReadArticles
           <> (case mainContent.type of
-                 ArticleContent -> [ "article" /\ (encodeStringifyArticle $ fromFullArticle notFoundArticle) ]
+                 ArticleContent -> [ "article" /\ encodeStringifyArticle notFoundArticle.article ]
                  TagListContent tag -> mkArticleFeed (TagFeed tag) (ArticleList [])
                  StaticPageContent pageName -> [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName) ]
                  _ -> mempty
