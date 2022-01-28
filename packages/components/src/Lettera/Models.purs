@@ -61,7 +61,10 @@ notFoundArticle =
   { articleType: ErrorArticle
   , article:
     { title: "Hoppsan! Sidan eller artikeln hittades inte"
+    , listTitle: Nothing
     , body: []
+    , analyticsCategory: Nothing
+    , analyticsSection: Nothing
     , mainImage: Nothing
     , tags: []
     , uuid: "notfound"
@@ -70,6 +73,7 @@ notFoundArticle =
     , premium: false
     , removeAds: false
     , publishingTime: Nothing
+    , publishingTimeUtc: Nothing
     , updateTime: Nothing
     , externalScripts: Nothing
     , articleType: KatastrofLiten
@@ -164,14 +168,17 @@ instance encodeJsonExternalScript :: EncodeJson ExternalScript where
     encodeJson $ String.replaceAll (Pattern "</script>") (Replacement "<\\/script>") script
 
 type ArticleCommon =
-  ( title           :: String
-  , mainImage       :: Maybe Image
-  , uuid            :: String
-  , preamble        :: Maybe String
-  , authors         :: Array Author
-  , premium         :: Boolean
-  , removeAds       :: Boolean
-  , externalScripts :: Maybe (Array ExternalScript)
+  ( title             :: String
+  , listTitle         :: Maybe String
+  , mainImage         :: Maybe Image
+  , uuid              :: String
+  , preamble          :: Maybe String
+  , authors           :: Array Author
+  , analyticsSection  :: Maybe String
+  , analyticsCategory :: Maybe String
+  , premium           :: Boolean
+  , removeAds         :: Boolean
+  , externalScripts   :: Maybe (Array ExternalScript)
   )
 
 type JSArticle =
@@ -185,6 +192,7 @@ type JSArticle =
 
 type Article =
   { publishingTime :: Maybe LocalDateTime
+  , publishingTimeUtc :: Maybe DateTime
   , updateTime     :: Maybe LocalDateTime
   , body           :: Array BodyElement
   , tags           :: Array Tag
@@ -220,6 +228,7 @@ articleToJson article =
   encodeJson $
     article
       { publishingTime = foldMap formatLocalDateTime article.publishingTime
+      , publishingTimeUtc = foldMap (\x -> format dateTimeFormatter x) article.publishingTimeUtc
       , updateTime     = foldMap formatLocalDateTime article.updateTime
       , tags           = map unwrap article.tags
       , body           = map bodyElementToJson article.body
@@ -274,16 +283,17 @@ parseArticle = parseArticleWith fromJSArticle
 parseArticleWithoutLocalizing :: Json -> (Either String Article)
 parseArticleWithoutLocalizing =
   parseArticlePure
-    \jsArticle -> do
+    \(jsArticle :: JSArticle)-> do
       body <- parseArticlePure (fromJSBody (parseArticleStubWithoutLocalizing <<< encodeJson)) $
               encodeJson (jsArticle.body :: Array BodyElementJS)
-      pure $ jsArticle
-        { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
-        , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
-        , tags           = map Tag jsArticle.tags
-        , body           = body
-        , articleType    = fromMaybe NyhetStor $ lookup jsArticle.articleType $ map swap articleTypes
-        }
+      pure $ merge
+        { publishingTime: LocalDateTime <$> parseDateTime jsArticle.publishingTime
+        , publishingTimeUtc: parseDateTime jsArticle.publishingTime
+        , updateTime: LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+        , tags: map Tag jsArticle.tags
+        , body: body
+        , articleType: fromMaybe NyhetStor $ lookup jsArticle.articleType $ map swap articleTypes
+        } jsArticle
 
 parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
@@ -326,26 +336,28 @@ fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags, body, artic
   localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ jsDraft
-    { publishingTime = localPublishingTime
-    , updateTime = localUpdateTime
-    , tags = map Tag tags
-    , body = resolvedBody
-    , articleType = fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
-    }
+  pure $ merge
+    { publishingTime: localPublishingTime
+    , publishingTimeUtc: parseDateTime =<< publishingTime
+    , updateTime: localUpdateTime
+    , tags: map Tag tags
+    , body: resolvedBody
+    , articleType: fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
+    } jsDraft
 
 fromJSArticle :: JSArticle -> Effect Article
 fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body, articleType } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ jsArticle
-    { publishingTime = localPublishingTime
-    , updateTime = localUpdateTime
-    , tags = map Tag tags
-    , body = resolvedBody
-    , articleType = fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
-    }
+  pure $ merge 
+    { publishingTime: localPublishingTime
+    , publishingTimeUtc: parseDateTime publishingTime
+    , updateTime: localUpdateTime
+    , tags: map Tag tags
+    , body: resolvedBody
+    , articleType: fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
+    } jsArticle
 
 fromJSBody :: forall m. Applicative m => (JSArticleStub -> m ArticleStub) -> Array BodyElementJS -> m (Array BodyElement)
 fromJSBody f = map catMaybes <<< traverse fromJSBodyElement
