@@ -16,7 +16,7 @@ footer onStaticPageClick =
         [ DOM.div
             { className: "mosaico-footer__links"
             , children:
-              [ footerLink "Dataskyddsbeskrivning" "dataskyddsbeskrivning"
+              [ externalLink "Dataskyddsbeskrivning" "https://www.ksfmedia.fi/dataskydd"
               , footerLink "Bruksvillkor" "bruksvillkor"
               , footerLink "Kundservice" "kundservice"
               , footerLink "Kontakta oss" "kontaktaoss"
@@ -34,6 +34,11 @@ footer onStaticPageClick =
         ]
     }
   where
+    externalLink caption url =
+      DOM.a
+        { href: url
+        , children: [ DOM.text caption ]
+        }
     footerLink caption link =
       DOM.a
         { href: "/sida/" <> link
