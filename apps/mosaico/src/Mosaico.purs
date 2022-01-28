@@ -7,6 +7,7 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Array (fromFoldable, mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
+import Data.Tuple (Tuple)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
@@ -31,8 +32,10 @@ import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User, magicLogin)
+import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
@@ -120,7 +123,7 @@ app = do
 mosaicoComponent
   :: InitialValues
   -> Props
-  -> Render Unit (UseEffect Routes.MosaicoPage (UseEffect Unit (UseState State Unit))) JSX
+  -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let initialCatMap = categoriesMap props.categoryStructure
   let initialPath = initialValues.locationState.path <> initialValues.locationState.search
@@ -150,6 +153,7 @@ mosaicoComponent initialValues props = React.do
             liftEffect case eitherArticle of
               Right article -> do
                 Article.evalEmbeds article.article
+                sendArticleAnalytics article.article state.user
                 setState _ { article = Just $ Right article }
               Left _ -> setState _ { article = Just $ Left unit }
 
@@ -205,7 +209,7 @@ mosaicoComponent initialValues props = React.do
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
 
-  useEffect state.route do
+  useEffect (state.route /\ map _.cusno state.user) do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
