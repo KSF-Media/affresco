@@ -20,7 +20,9 @@ import Foreign.Object as Object
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage.Models (Hook, toHookRep)
+import Mosaico.Paper (mosaicoPaper)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
@@ -59,7 +61,8 @@ render (List props) = genericRender (\list -> map renderListArticle list) props.
                     [ DOM.a
                         { href: "/artikel/" <> a.uuid
                         , className: "list-article-image"
-                        , children: [ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url (a.listImage <|> a.mainImage) } ]
+                        -- TODO: paper specific fallback img
+                        , children: [ DOM.img { src: maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage) } ]
                         }
                     ,  DOM.div
                           { className: "list-article-liftup"
