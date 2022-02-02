@@ -4,6 +4,7 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
+    "@typeform/embed": "^1.27.1",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "cheerio": "^1.0.0-rc.10",
     "html-to-react": "^1.4.7",
