@@ -22,7 +22,7 @@ import Effect.Exception (throwException)
 -- | We need to pass this flag, otherwise iframes don't work properly.
 -- | See: https://github.com/puppeteer/puppeteer/issues/5123
 launch :: Aff Browser
-launch = Chrome.launch { headless: false, args: ["--disable-features=site-per-process"] }
+launch = Chrome.launch { headless: true, args: ["--disable-features=site-per-process"] }
 
 launchDesktop :: Aff Browser
 launchDesktop = Chrome.launch
