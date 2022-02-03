@@ -5,7 +5,7 @@ import Prelude
 import Data.Newtype (over)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log) as Console
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 type Test = Chrome.Page -> Aff Unit
 

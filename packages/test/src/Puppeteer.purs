@@ -1,5 +1,5 @@
-module Puppeteer
-  ( module Puppeteer
+module KSF.Puppeteer
+  ( module KSF.Puppeteer
   , module Toppokki
   ) where
 
