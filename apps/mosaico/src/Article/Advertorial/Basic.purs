@@ -6,14 +6,16 @@ module Mosaico.Article.Advertorial.Basic
 
 import Prelude
 
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import KSF.Paper (Paper)
+import Data.Maybe (Maybe, fromMaybe)
 import Lettera.Models (FullArticle)
-import Mosaico.Article as Article
-import Mosaico.Article.Image as Image
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+
+getTitle :: FullArticle -> String
+getTitle fullArticle = _.title $ fromFullArticle fullArticle
+
+getPreamble :: FullArticle -> Maybe String
+getPreamble fullArticle = _.preamble $ fromFullArticle fullArticle
 
 type Props =
   { article :: FullArticle
@@ -21,19 +23,22 @@ type Props =
   }
 render :: Props -> JSX
 render props =
-  DOM.div
-    { className: "announcement-header"
-    , children:
-      [ DOM.text "Annons" ]
-    } <> Article.render (Image.render mempty)
-    { paper: props.paper
-    , article: Right props.article
-    , onLogin: mempty
-    , onPaywallEvent: pure unit
-    , onTagClick: const mempty
-    , onArticleClick: const mempty
-    , user: Nothing
-    , mostReadArticles: mempty
-    , latestArticles: mempty
+  let title = getTitle props.article
+  in DOM.article
+    { children:
+      [ DOM.div
+        { className: "advertorial__top-bar"
+        , children:
+          [ DOM.span_ [ DOM.text "Annos: Company name"]
+          ]
+        }
+      , DOM.h1
+        { className: "advertorial__headline"
+        , children: [ DOM.text title ]
+        }
+      , DOM.section
+        { className: "advertorial__preamble"
+        , children: [ DOM.text $ fromMaybe mempty $ getPreamble props.article ]
+        }
+      ]
     }
-
