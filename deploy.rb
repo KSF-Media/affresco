@@ -96,7 +96,8 @@ end
 
 build_commands = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd '#{app['path']}/' run build"
+  "yarn --cwd '#{app['path']}/' run build",
+  "yarn --cwd '#{app['path']}/' run test"
 ]
 
 def deploy_maintenance_page(app_path)
