@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 node -r dotenv/config -e 'require("./output/Main/index").main()' dotenv_config_path=.env.local &
 PIDTOKILL=$! 
 echo "Started server with pid $PIDTOKILL"
