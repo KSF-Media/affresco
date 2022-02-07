@@ -80,6 +80,14 @@ jobs:
       - run: |2
             yarn install --pure-lockfile
             mkdir -p build
+      - name: Setup build cache for Mosaico
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
+          path: |
+            apps/mosaico/.spago
+            apps/mosaico/output
+            apps/mosaico/.cache
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -113,14 +121,13 @@ jobs:
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
-      - name: Setup build cache for Mosaico
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
-          path: |
-            apps/mosaico/.spago
-            apps/mosaico/output
-            apps/mosaico/.cache
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
+        name: Build Mosaico
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico/dist build/mosaico
+        shell: bash
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -181,13 +188,13 @@ jobs:
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
         shell: bash
-      - env:
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
-        name: Build Mosaico
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico/dist build/mosaico
-        shell: bash
+      - name: Upload Mosaico
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/mosaico"
+          parent: 'false'
+          path: build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -251,13 +258,6 @@ jobs:
           destination: "deploy-previews/${{ github.sha }}/prenumerera"
           parent: 'false'
           path: build/prenumerera
-      - name: Upload Mosaico
-        uses: "google-github-actions/upload-cloud-storage@main"
-        with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}/mosaico"
-          parent: 'false'
-          path: build/mosaico
   previews:
     needs:
       - deploy-gs
@@ -272,6 +272,7 @@ jobs:
           check_for_duplicate_msg: 'false'
           msg: |
             Deploy previews are ready :sunglasses:
+            - [Mosaico](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
             - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)
             - [Mitt Konto](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mitt-konto/index.html)
             - [Vetrina (for testing only)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-test/index.html)
@@ -281,7 +282,6 @@ jobs:
             - [Corona banner](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/corona-banner/index.html)
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
             - [Prenumerera](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/prenumerera/index.html)
-            - [Mosaico](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
             - [App article server](${{ needs.deploy-app-article-server.outputs.preview }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews
 on:

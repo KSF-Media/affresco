@@ -16,7 +16,22 @@ let App =
       }
 
 let apps =
-        [ App::{ name = "Scripts", buildDir = "scripts", deployDir = "scripts" }
+        [ App::{
+          , name = "Mosaico"
+          , buildDir = "mosaico"
+          , deployDir = "mosaico"
+          , lockfile = Some "yarn.lock"
+          , env = toMap
+              { LETTERA_URL = "https://lettera.api.ksfmedia.fi/v4beta"
+              }
+          , caches = Some
+          ''
+          apps/mosaico/.spago
+          apps/mosaico/output
+          apps/mosaico/.cache
+          ''
+          }
+        , App::{ name = "Scripts", buildDir = "scripts", deployDir = "scripts" }
         , App::{
           , name = "Mitt Konto"
           , buildDir = "mitt-konto"
@@ -107,21 +122,6 @@ let apps =
           , name = "Prenumerera"
           , buildDir = "prenumerera"
           , deployDir = "prenumerera"
-          }
-        , App::{
-          , name = "Mosaico"
-          , buildDir = "mosaico"
-          , deployDir = "mosaico"
-          , lockfile = Some "yarn.lock"
-          , env = toMap
-              { LETTERA_URL = "https://lettera.api.ksfmedia.fi/v4beta"
-              }
-          , caches = Some
-          ''
-          apps/mosaico/.spago
-          apps/mosaico/output
-          apps/mosaico/.cache
-          ''
           }
         ]
       : List App.Type

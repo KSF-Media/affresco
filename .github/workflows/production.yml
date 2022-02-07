@@ -115,6 +115,14 @@ jobs:
       - run: |2
             yarn install --pure-lockfile
             mkdir -p build
+      - name: Setup build cache for Mosaico
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
+          path: |
+            apps/mosaico/.spago
+            apps/mosaico/output
+            apps/mosaico/.cache
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -148,14 +156,13 @@ jobs:
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
-      - name: Setup build cache for Mosaico
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
-          path: |
-            apps/mosaico/.spago
-            apps/mosaico/output
-            apps/mosaico/.cache
+      - env:
+          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
+        name: Build Mosaico
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico/dist build/mosaico
+        shell: bash
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -216,13 +223,13 @@ jobs:
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
         shell: bash
-      - env:
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
-        name: Build Mosaico
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico/dist build/mosaico
-        shell: bash
+      - name: Upload Mosaico
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends/mosaico
+          parent: 'false'
+          path: build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -286,13 +293,6 @@ jobs:
           destination: ksf-frontends/prenumerera
           parent: 'false'
           path: build/prenumerera
-      - name: Upload Mosaico
-        uses: "google-github-actions/upload-cloud-storage@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends/mosaico
-          parent: 'false'
-          path: build/mosaico
   refresh_cdn_app-article:
     needs: deploy-gs
     runs-on: ubuntu-latest
