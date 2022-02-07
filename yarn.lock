@@ -1421,6 +1421,11 @@
     "@sentry/types" "6.2.5"
     tslib "^1.9.3"
 
+"@typeform/embed@^1.27.1":
+  version "1.27.1"
+  resolved "https://registry.yarnpkg.com/@typeform/embed/-/embed-1.27.1.tgz#372af8daf46f34c76d2fb33f8fa495090afb5c71"
+  integrity sha512-35vXqwqOsCllrmOFiz+YJ3onhQUOrg7RVsOD2W/wMx2H5tqFGI/V4UDYNNi0J6CpWBD5GmCgk3wXbg98a607Tg==
+
 "@types/glob@^7.1.1":
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/@types/glob/-/glob-7.1.3.tgz#e6ba80f36b7daad2c685acd9266382e68985c183"
