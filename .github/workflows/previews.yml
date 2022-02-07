@@ -124,8 +124,10 @@ jobs:
           BOTTEGA_URL: https://bottega.staging.ksfmedia.fi/v1
           ENTITLED_PASSWORD: password
           ENTITLED_USER: "stan.marsh@skug.fi"
+          INSECURE_COOKIE: '1'
           LETTERA_URL: https://lettera.staging.ksfmedia.fi/v4beta
           PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+          PORT: '8080'
           TEST_PASSWORD: password
           TEST_USER: "wendy.testaburger@skug.fi"
         name: Build Mosaico

@@ -29,6 +29,8 @@ let apps =
               , TEST_PASSWORD = "password"
               , ENTITLED_USER = "stan.marsh@skug.fi"
               , ENTITLED_PASSWORD = "password"
+              , PORT = "8080"
+              , INSECURE_COOKIE = "1"
               }
           , caches = Some
           ''
