@@ -25,6 +25,10 @@ let apps =
               { LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v4beta"
               , BOTTEGA_URL = "https://bottega.staging.ksfmedia.fi/v1"
               , PERSONA_URL = "https://persona.staging.ksfmedia.fi/v1"
+              , TEST_USER   = "wendy.testaburger@skug.fi"
+              , TEST_PASSWORD = "password"
+              , ENTITLED_USER = "stan.marsh@skug.fi"
+              , ENTITLED_PASSWORD = "password"
               }
           , caches = Some
           ''
