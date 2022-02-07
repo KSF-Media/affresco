@@ -87,7 +87,6 @@ jobs:
           path: |
             apps/mosaico/.spago
             apps/mosaico/output
-            apps/mosaico/.cache
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -122,7 +121,9 @@ jobs:
             apps/hbl365/.spago
             apps/hbl365/output
       - env:
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
+          BOTTEGA_URL: https://bottega.staging.ksfmedia.fi/v1
+          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v4beta
+          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
         name: Build Mosaico
         run: |2
             ruby deploy.rb mosaico

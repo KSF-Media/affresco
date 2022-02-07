@@ -22,13 +22,14 @@ let apps =
           , deployDir = "mosaico"
           , lockfile = Some "yarn.lock"
           , env = toMap
-              { LETTERA_URL = "https://lettera.api.ksfmedia.fi/v4beta"
+              { LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v4beta"
+              , BOTTEGA_URL = "https://bottega.staging.ksfmedia.fi/v1"
+              , PERSONA_URL = "https://persona.staging.ksfmedia.fi/v1"
               }
           , caches = Some
           ''
           apps/mosaico/.spago
           apps/mosaico/output
-          apps/mosaico/.cache
           ''
           }
         , App::{ name = "Scripts", buildDir = "scripts", deployDir = "scripts" }
