@@ -4,7 +4,7 @@ import Prelude
 
 import Affjax (Error, Response, defaultRequest, request, printError, get) as AX
 import Affjax.RequestHeader (RequestHeader(..)) as AX
-import Affjax.ResponseFormat (json) as AX
+import Affjax.ResponseFormat (json, string) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
@@ -201,10 +201,19 @@ useResponse f (Right response)
   | otherwise =
       pure $ LetteraResponse { maxAge: Nothing, body: Left $ HttpError $ unwrap $ response.status }
 
-getFrontpageHtml :: Paper -> String -> Aff (LetteraResponse String)
-getFrontpageHtml paper category = do
-  let request = letteraFrontPageHtmlUrl <> "?paper=" <> Paper.toString paper  <> "&category=" <> category
-  useResponse (pure <<< pure) =<< AX.get ResponseFormat.string request
+getFrontpageHtml :: Paper -> String -> Boolean -> Aff (LetteraResponse String)
+getFrontpageHtml paper category reset = do
+  let request = AX.defaultRequest
+        { url = letteraFrontPageHtmlUrl
+                <> "?paper=" <> Paper.toString paper
+                <> "&category=" <> category
+        , method = Left GET
+        , responseFormat = AX.string
+        , headers = if reset
+                    then [ AX.RequestHeader "Cache-Control" "no-cache" ]
+                    else []
+        }
+  useResponse (pure <<< pure) =<< AX.request request
 
 parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
 parseArticleStubs response
@@ -212,13 +221,19 @@ parseArticleStubs response
       map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
   | otherwise = pure $ Left ParseError
 
-getFrontpage :: Paper -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
-getFrontpage paper categoryId = do
-  let letteraUrl =
-        letteraFrontPageUrl
-        <> "?paper=" <> Paper.toString paper
-        <> foldMap ("&category=" <> _) categoryId
-  useResponse parseArticleStubs =<< AX.get ResponseFormat.json letteraUrl
+getFrontpage :: Paper -> Maybe String -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
+getFrontpage paper categoryId reset = do
+  let request = AX.defaultRequest
+        { url = letteraFrontPageUrl
+                <> "?paper=" <> Paper.toString paper
+                <> foldMap ("&category=" <> _) categoryId
+        , method = Left GET
+        , responseFormat = AX.json
+        , headers = if reset
+                    then [ AX.RequestHeader "Cache-Control" "no-cache" ]
+                    else []
+        }
+  useResponse parseArticleStubs =<< AX.request request
 
 getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
 getMostRead start limit category paper onlySubscribers =
