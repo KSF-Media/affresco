@@ -51,6 +51,7 @@ import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
+import Mosaico.RSS as RSS
 import Mosaico.Search as Search
 import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage, getInitialStaticPageContent, getInitialStaticPageScript)
 import Mosaico.Webview as Webview
@@ -198,7 +199,8 @@ mosaicoComponent initialValues props = React.do
           SearchFeed q -> Just <<< ArticleList <$> Lettera.search 0 20 mosaicoPaper q
         stamp <- liftEffect Now.nowDateTime
         foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName { stamp, feed } s.frontpageFeeds }) maybeFeed
-      setFrontpage feedName =
+      setFrontpage feedName = do
+        RSS.setFeed mosaicoPaper feedName
         case HashMap.lookup feedName state.frontpageFeeds of
           Nothing -> Aff.launchAff_ $ loadFeed feedName
           Just { stamp } -> do
@@ -238,6 +240,12 @@ mosaicoComponent initialValues props = React.do
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
               _ -> mempty
       Routes.DebugPage _ -> pure unit
+
+    case state.route of
+      Routes.Frontpage -> pure unit
+      Routes.TagPage _ -> pure unit
+      Routes.CategoryPage _ -> pure unit
+      _ -> RSS.delete
 
     case props.mostReadArticles of
       Just mostReads

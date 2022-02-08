@@ -50,6 +50,7 @@ import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header.Menu as Menu
 import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Paper (mosaicoPaper)
+import Mosaico.RSS as RSS
 import Mosaico.Search as Search
 import MosaicoServer (MainContent, MainContentType(..))
 import MosaicoServer as MosaicoServer
@@ -332,7 +333,9 @@ frontpage env { guards: { credentials } } = do
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
                     <> mkArticleFeed (CategoryFeed frontpageCategoryLabel) (Cache.getContent articles)
-            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
+              appendHead (mkWindowVariables windowVars
+                          <> RSS.string (RSS.category mosaicoPaper frontpageCategoryLabel))
   now <- liftEffect nowDateTime
   pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
   where
@@ -431,7 +434,8 @@ tagList env { params: { tag }, guards: { credentials } } = do
                     , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                     ] <> userVar user
                       <> mkArticleFeed (TagFeed tag') (ArticleList (Cache.getContent articles))
-              appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+              appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
+                appendHead (mkWindowVariables windowVars <> RSS.string (RSS.tag mosaicoPaper tag'))
     now <- liftEffect nowDateTime
     pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
   where
@@ -569,10 +573,11 @@ debugList env { params: { uuid }, guards: { credentials } } = do
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category, credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 categoryPage env { params: { categoryName }, guards: { credentials } } = do
+  let label = CategoryLabel categoryName
   { user, articles, mostReadArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Cache.getFrontpage env.cache $ CategoryLabel categoryName)
+    <*> parallel (Cache.getFrontpage env.cache label)
     <*> parallel (Cache.getMostRead env.cache)
   let htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = renderContent user <$> articles <*> mostReadArticles
@@ -582,7 +587,9 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
                     <> mkArticleFeed (CategoryFeed $ CategoryLabel categoryName) (ArticleList $ Cache.getContent articles)
-            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
+            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
+              appendHead (mkWindowVariables windowVars
+                          <> RSS.string (RSS.category mosaicoPaper label))
   now <- liftEffect nowDateTime
   pure $ Cache.addHeader now (isJust user) mosaicoString $
     maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
