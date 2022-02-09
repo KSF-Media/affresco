@@ -1,4 +1,16 @@
-module Mosaico.Article where
+module Mosaico.Article
+  ( Props
+  , component
+  , evalEmbeds
+  , getBody
+  , getPreamble
+  , getRemoveAds
+  , getTitle
+  , isAdvertorial
+  , isPremium
+  , render
+  )
+  where
 
 import Prelude
 
@@ -303,7 +315,7 @@ render imageComponent props =
                   { headline: boxData.headline
                   , title: boxData.title
                   , content: boxData.content
-                  , paper: props.paper
+                  , paper: Just props.paper
                   }
               ]
           }

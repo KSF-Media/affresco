@@ -292,7 +292,7 @@ renderArticle env user article mostReadArticles latestArticles = do
     Right a -> do
       let articleJSX = case a.article.articleType of
             Advertorial ->
-              Advertorial.render { article: a, paper: mosaicoPaper }
+              Advertorial.render (\_ -> mempty) { article: a.article, paper: mosaicoPaper }
             _ ->
               Article.render (Image.render mempty)
                 { paper: mosaicoPaper

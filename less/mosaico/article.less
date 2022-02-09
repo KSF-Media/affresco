@@ -241,6 +241,10 @@
 .article-element {
   margin-bottom: 1rem;
   font: 300 1rem/1.5rem "Roboto", sans-serif;
+  &__full-width-mobile {
+    width: calc(100% + (@mosaico__page-margin * 2));
+    margin: 0 -@mosaico__page-margin;
+  }
   &__html {
     color: @dark-text;
     a {
@@ -429,3 +433,8 @@
   font-size: 1.25rem;
   padding: 15px 20px 30px;
 }
+
+// .advertorial__main-image {
+//   width: calc(100% + 24px);
+//   margin: 0 -12px;
+// }

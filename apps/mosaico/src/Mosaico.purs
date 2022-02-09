@@ -381,7 +381,7 @@ render setState state components router onPaywallEvent =
            if article.uuid == articleId
            -- If we have this article already in `state`, let's pass that to `renderArticle`
            then case article.articleType of
-             Advertorial -> Advertorial.render { article: fullArticle, paper: mosaicoPaper }
+             Advertorial -> Advertorial.render (const mempty) { article, paper: mosaicoPaper }
              _           -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
