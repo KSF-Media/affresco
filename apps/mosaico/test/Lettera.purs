@@ -74,7 +74,7 @@ testCategoryLists page = do
       | c.type == Feed = do
         log $ "test feed category " <> show c.label
         firstArticle <- join <<< map head <<< Lettera.responseBody <$>
-                        (Lettera.getFrontpage HBL $ Just $ show c.label)
+                        (Lettera.getFrontpage HBL (Just $ show c.label) false)
         let catElement = Chrome.Selector $ ".mosaico-header__block:nth-child(3) .mosaico-header__section:nth-of-type(" <> show idx <> ") a"
             (CategoryLabel catLabel) = c.label
         Chrome.waitFor_ catElement page

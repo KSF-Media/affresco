@@ -24,6 +24,19 @@ import Effect.Exception (throwException)
 launch :: Aff Browser
 launch = Chrome.launch { headless: false, args: ["--disable-features=site-per-process"] }
 
+launchDesktop :: Aff Browser
+launchDesktop = Chrome.launch
+                { headless: false
+                , args: ["--disable-features=site-per-process"]
+                , defaultViewport: { deviceScaleFactor: 1.0
+                                   , hasTouch: false
+                                   , width:1920.0
+                                   , height: 1080.0
+                                   , isLandscape: true
+                                   , isMobile: false
+                                   }
+                }
+
 waitFor_ :: forall page. HasFrame page => Selector -> page -> Aff Unit
 waitFor_ selector frame = void $ waitFor selector 30000 frame
 
