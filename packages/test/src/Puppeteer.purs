@@ -19,11 +19,13 @@ import Effect.Aff (Aff, Milliseconds(..))
 import Effect.Class (liftEffect)
 import Effect.Exception (throwException)
 
+foreign import headless :: Boolean
+
 -- | We need to pass this flag, otherwise iframes don't work properly.
 -- | See: https://github.com/puppeteer/puppeteer/issues/5123
 launch :: Aff Browser
 launch = Chrome.launch 
-  { headless: true
+  { headless
   , args: [ "--disable-features=site-per-process"
           , "--disable-gpu"
           , "--disable-dev-shm-usage"
@@ -34,7 +36,7 @@ launch = Chrome.launch
 
 launchDesktop :: Aff Browser
 launchDesktop = Chrome.launch
-                { headless: true
+                { headless
                 , args: ["--disable-features=site-per-process"
                         , "--disable-gpu"
                         , "--disable-dev-shm-usage"
