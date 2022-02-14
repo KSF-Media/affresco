@@ -34,8 +34,13 @@ launch = Chrome.launch
 
 launchDesktop :: Aff Browser
 launchDesktop = Chrome.launch
-                { headless: false
-                , args: ["--disable-features=site-per-process"]
+                { headless: true
+                , args: ["--disable-features=site-per-process"
+                        , "--disable-gpu"
+                        , "--disable-dev-shm-usage"
+                        , "--disable-setuid-sandbox"
+                        , "--no-sandbox"
+                        ] 
                 , defaultViewport: { deviceScaleFactor: 1.0
                                    , hasTouch: false
                                    , width:1920.0

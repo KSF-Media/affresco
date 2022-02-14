@@ -61,7 +61,7 @@ main = launchAff_ do
     case premiumArticleId of
       Just uuid -> do
         log "Test paywall opens, navigation"
-        withBrowserPage $
+        withDesktopBrowserPage $
           Article.testPaywallLogin false uuid entitledUser entitledPassword Article.testPaywallOpen
       _ -> log "Skip paywall open test via navigation"
     log "Test paywall opens, direct"
