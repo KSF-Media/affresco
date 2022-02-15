@@ -6,7 +6,8 @@
   "scripts": {
     "start": "parcel index.html -p 8000",
     "prebuild": "yarn install",
-    "build": "parcel build index.html --public-url ./"
+    "build": "parcel build index.html --public-url ./",
+    "test": "echo 'No testsuite configured'"
   },
   "dependencies": {
     "axios": "^0.21.2",

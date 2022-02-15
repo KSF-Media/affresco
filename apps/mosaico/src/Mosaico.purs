@@ -187,11 +187,11 @@ mosaicoComponent initialValues props = React.do
           CategoryFeed c
             | Just cat <- unwrap <$> Map.lookup c catMap ->
               let label = unwrap c
-                  getArticleList = ArticleList <<< join <<< fromFoldable <$> Lettera.getFrontpage mosaicoPaper (Just label)
+                  getArticleList = ArticleList <<< join <<< fromFoldable <$> Lettera.getFrontpage mosaicoPaper (Just label) false
               in case cat.type of
                 Prerendered ->
                   map Just <<< maybe getArticleList pure =<<
-                  map Html <<< Lettera.responseBody <$> Lettera.getFrontpageHtml mosaicoPaper label
+                  map Html <<< Lettera.responseBody <$> Lettera.getFrontpageHtml mosaicoPaper label false
                 Feed -> Just <$> getArticleList
                 _ -> pure Nothing
           CategoryFeed _ -> pure Nothing

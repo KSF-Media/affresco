@@ -11,7 +11,7 @@ import Effect.Now as Now
 import KSF.Helpers as Helpers
 import KSF.Test (getTimeStamp, formatDateSolid)
 import MittKonto.Test (Test, typeTestAddress)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 testNameChange :: Test
 testNameChange page = do

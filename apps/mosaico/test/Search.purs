@@ -4,7 +4,7 @@ import Prelude hiding (sub)
 
 import Effect.Aff as Aff
 import Mosaico.Test (Test, listArticle, log, site, sub)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 import Test.Unit.Assert as Assert
 
 exampleSearch :: String

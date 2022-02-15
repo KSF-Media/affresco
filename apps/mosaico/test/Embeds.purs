@@ -4,7 +4,7 @@ import Prelude hiding (sub)
 
 import Effect.Aff as Aff
 import Mosaico.Test (Test, log, site, sub)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 exampleArticle :: String
 exampleArticle = "97272947-6d4b-42d4-a907-e1a83f265963"
