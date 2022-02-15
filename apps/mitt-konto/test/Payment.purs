@@ -10,7 +10,7 @@ import KSF.Api (UserAuth)
 import KSF.Helpers as Helpers
 import KSF.Test (getTestCard, typeCreditCard)
 import MittKonto.Test (Test, getFirstSubsno)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 import Test.Unit as Test
 import Test.Unit.Assert as Assert
 

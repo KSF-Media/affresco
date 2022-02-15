@@ -3,7 +3,7 @@ module Mosaico.Test.Tags where
 import Prelude hiding (sub)
 
 import Mosaico.Test (Test, listArticle, log, site, sub)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 -- Hopefully always populated
 exampleTag :: String

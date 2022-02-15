@@ -6,8 +6,6 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class.Console (log)
-import Puppeteer as Chrome
-
 import Mosaico.Test.Account as Account
 import Mosaico.Test.Article as Article
 import Mosaico.Test.Embeds as Embeds
@@ -17,6 +15,8 @@ import Mosaico.Test.Lettera as Lettera
 import Mosaico.Test.Search as Search
 import Mosaico.Test.Static as Static
 import Mosaico.Test.Tags as Tags
+import KSF.Puppeteer as Chrome
+
 
 foreign import testUser :: String
 foreign import testPassword :: String
@@ -61,7 +61,7 @@ main = launchAff_ do
     case premiumArticleId of
       Just uuid -> do
         log "Test paywall opens, navigation"
-        withBrowserPage $
+        withDesktopBrowserPage $
           Article.testPaywallLogin false uuid entitledUser entitledPassword Article.testPaywallOpen
       _ -> log "Skip paywall open test via navigation"
     log "Test paywall opens, direct"

@@ -22,8 +22,12 @@
   "scripts": {
     "start": "node -r dotenv/config -e 'require(\"./output/Main/index\").main()' dotenv_config_path=.env.local",
     "start-dev": "parcel build ./static/* -d ./dist && parcel web/index.html -p 8000 -d ./dist --public-url /assets",
-    "build": "spago build && parcel build web/index.html -d ./dist --public-url ./ && parcel build ./static/* -d ./dist",
+    "build": "yarn run build-app && yarn run build-spa",
     "build-app": "spago build",
-    "build-spa": "parcel build web/index.html -d ./dist --public-url /assets && parcel build ./static/* -d ./dist"
+    "build-spa": "parcel build web/index.html -d ./dist --public-url /assets && parcel build ./static/* -d ./dist",
+    "test": "bash test.sh"
+  },
+  "devDependencies": {
+    "puppeteer": "^13.1.3"
   }
 }
