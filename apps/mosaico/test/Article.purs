@@ -7,7 +7,7 @@ import Control.Monad.Maybe.Trans (runMaybeT, lift)
 import Data.Maybe (Maybe)
 import Effect.Aff (Aff)
 import Mosaico.Test (Test, log, site, sub)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 import Test.Unit.Assert as Assert
 
 type PageIds =

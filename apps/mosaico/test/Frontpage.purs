@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Mosaico.Test (Test, log, site, sub)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 import Test.Unit.Assert as Assert
 
 testHtmlEmbed :: Test

@@ -8,7 +8,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import KSF.Test (getTestCard, getTimeStamp, typeCreditCard)
 import Persona as Persona
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 data PaymentMethod
   = PaperInvoice
