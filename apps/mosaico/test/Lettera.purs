@@ -17,7 +17,7 @@ import Lettera.Models (Category(..), CategoryLabel(..), CategoryType(..))
 import Lettera.Models as Models
 import Mosaico.Test (Test, listArticle, log, site, sub)
 import Partial.Unsafe (unsafePartial)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 import Test.Unit as Unit
 import Test.Unit.Assert as Assert
 

@@ -12,7 +12,7 @@ env:
 jobs:
   check-ci:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-1.1
       options: "--cpus 2"
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +24,7 @@ jobs:
             git diff --exit-code
   deploy-app-article-server:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-1.1
       options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
@@ -69,7 +69,7 @@ jobs:
           ./ci/ae-cleanup.sh app-article-server
   deploy-dispatch-yaml:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-1.1
       options: "--cpus 2"
     needs:
       - deploy-app-article-server
@@ -99,7 +99,7 @@ jobs:
           project_id: ksf-production
   deploy-gs:
     container:
-      image: ksfmedia/diskho:gha-1.0
+      image: ksfmedia/diskho:gha-1.1
       options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
@@ -115,6 +115,13 @@ jobs:
       - run: |2
             yarn install --pure-lockfile
             mkdir -p build
+      - name: Setup build cache for Mosaico
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
+          path: |
+            apps/mosaico/.spago
+            apps/mosaico/output
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -148,14 +155,21 @@ jobs:
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
-      - name: Setup build cache for Mosaico
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
-          path: |
-            apps/mosaico/.spago
-            apps/mosaico/output
-            apps/mosaico/.cache
+      - env:
+          BOTTEGA_URL: https://bottega.staging.ksfmedia.fi/v1
+          ENTITLED_PASSWORD: password
+          ENTITLED_USER: "stan.marsh@skug.fi"
+          INSECURE_COOKIE: '1'
+          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v4beta
+          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
+          PORT: '8080'
+          TEST_PASSWORD: password
+          TEST_USER: "wendy.testaburger@skug.fi"
+        name: Build Mosaico
+        run: |2
+            ruby deploy.rb mosaico
+            cp -R apps/mosaico/dist build/mosaico
+        shell: bash
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -216,13 +230,13 @@ jobs:
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
         shell: bash
-      - env:
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v4beta
-        name: Build Mosaico
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico/dist build/mosaico
-        shell: bash
+      - name: Upload Mosaico
+        uses: "google-github-actions/upload-cloud-storage@main"
+        with:
+          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          destination: ksf-frontends/mosaico
+          parent: 'false'
+          path: build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@main"
         with:
@@ -286,13 +300,6 @@ jobs:
           destination: ksf-frontends/prenumerera
           parent: 'false'
           path: build/prenumerera
-      - name: Upload Mosaico
-        uses: "google-github-actions/upload-cloud-storage@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends/mosaico
-          parent: 'false'
-          path: build/mosaico
   refresh_cdn_app-article:
     needs: deploy-gs
     runs-on: ubuntu-latest
