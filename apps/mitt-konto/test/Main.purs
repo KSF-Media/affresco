@@ -16,7 +16,7 @@ import MittKonto.Test.Payment as Payment
 import MittKonto.Test.Profile as Profile
 import MittKonto.Test.Subscription as Subscription
 import Persona as Persona
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 main :: Effect Unit
 main = launchAff_ do

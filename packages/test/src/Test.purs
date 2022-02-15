@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Now as Now
 import KSF.Helpers as Helpers
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 getTimeStamp :: Effect String
 getTimeStamp = formatDate <$> Now.nowDateTime
