@@ -39,10 +39,11 @@ type ListFrontpageProps =
 type PrerenderedFrontpageProps =
   { content :: Maybe String
   , hooks   :: Array Hook
+  , onClick :: EventHandler
   }
 
 render :: Frontpage -> JSX
-render (List props) = genericRender (\list -> map renderListArticle list) props.content
+render (List props) = genericRender (\list -> map renderListArticle list) mempty props.content
   where
     renderListArticle :: ArticleStub -> JSX
     renderListArticle a =
@@ -103,10 +104,12 @@ render (Prerendered props@{ hooks }) = genericRender
                    }
                 ]
   )
+  props.onClick
   props.content
 
-genericRender :: forall a. (a -> Array JSX) -> Maybe a -> JSX
-genericRender f content = DOM.div
+genericRender :: forall a. (a -> Array JSX) -> EventHandler -> Maybe a -> JSX
+genericRender f onClick content = DOM.div
   { className: "mosaico--article-list"
   , children: maybe [loadingSpinner] f content
+  , onClick
   }
