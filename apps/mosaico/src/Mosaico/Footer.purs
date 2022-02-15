@@ -37,7 +37,8 @@ footer onStaticPageClick =
   where
     externalLink caption url =
       DOM.a
-        { href: url
+        { target: "_blank"
+        , href: url
         , children: [ DOM.text caption ]
         }
     footerLink caption link =
