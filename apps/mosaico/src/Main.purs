@@ -361,6 +361,7 @@ frontpage env { guards: { credentials } } = do
           , hooks: [ Frontpage.MostRead mostReadArticles (const $ pure unit)
                    , Frontpage.ArticleUrltoRelative
                    ]
+          , onClick: mempty
           }
       }
 
