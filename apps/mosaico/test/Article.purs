@@ -20,7 +20,7 @@ relatedExample = "d25bde70-a2a1-4ac6-9c38-22f742b799f7"
 
 navigateToNews :: Chrome.Page -> Aff Unit
 navigateToNews page = do
-  let newsTitle = Chrome.Selector ".mosaico-header__block:nth-child(3) .mosaico-header__section-title a"
+  let newsTitle = Chrome.Selector ".mosaico-header__block:nth-child(3) .mosaico-header__section:nth-child(3) .mosaico-header__section-title a"
   Chrome.click (Chrome.Selector ".mosaico-header__icon-button--menu") page
   Chrome.waitFor_ newsTitle page
   Chrome.click newsTitle page

@@ -18,7 +18,7 @@ hblPremium =
         ]
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
-      { no: 4701
+      { no: 4071
       , id: "1MÅN1 EURO"
       , name: "FÖRSTA MÅNADEN FÖR 1 EURO"
       , length: 1
@@ -73,7 +73,7 @@ vnPremium =
 
 onPremium :: Product
 onPremium =
-  { id: "HBL WEBB"
+  { id: "ÖNY_DIGI"
   , name: "Hufvudstadsbladet Premium"
   , priceCents: 690
   , description:

@@ -13,7 +13,7 @@ function main() {
     const mosaico = (
       <Mosaico
 	article={window.article || null}
-	isPreview={window.isPreview || null}
+	articleType={window.articleType || null}
 	mostReadArticles={window.mostReadArticles || null}
 	staticPageName={window.staticPageName || null}
 	categoryStructure={window.categoryStructure || null}

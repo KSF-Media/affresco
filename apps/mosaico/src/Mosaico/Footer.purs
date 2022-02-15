@@ -19,7 +19,8 @@ footer onStaticPageClick =
               [ footerLink "Dataskyddsbeskrivning" "dataskyddsbeskrivning"
               , footerLink "Bruksvillkor" "bruksvillkor"
               , footerLink "Kundservice" "kundservice"
-              , footerLink "Kontakta oss" "kontaktaoss"
+              , footerLink "Kontakta oss" "kontakt"
+              , footerLink "Tipsa oss" "tipsa-oss"
               ]
             }
         , DOM.hr { className: "mosaico-footer__separator" }

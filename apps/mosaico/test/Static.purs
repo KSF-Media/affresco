@@ -13,12 +13,12 @@ testNavigateToStatic page = do
   -- Bruksvillkor
   log "Navigate to bruksvillkor"
   Chrome.click (Chrome.Selector ".mosaico--footer .mosaico-footer__links a:nth-child(2)") page
-  Chrome.waitFor_ (Chrome.Selector ".ksf-terms") page
+  Chrome.waitFor_ (Chrome.Selector ".terms__text") page
   log "Navigate to front page"
   Chrome.click (Chrome.Selector ".mosaico-header__logo") page
   Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
   Chrome.back page
-  Chrome.waitFor_ (Chrome.Selector ".ksf-terms") page
+  Chrome.waitFor_ (Chrome.Selector ".terms__text") page
 
 testStaticEmbeds :: Test
 testStaticEmbeds page = do

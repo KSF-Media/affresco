@@ -32,8 +32,8 @@ testMostRead strict page = do
       article = Chrome.Selector "article.mosaico-article"
   Chrome.waitFor_ mostReadList page
   Chrome.click (sub " li a" mostReadList) page
-  mostRead <- Lettera.getMostRead 0 1 Nothing HBL true
-  let firstArticleTitle = fromMaybe "" $ _.title <$> head mostRead
+  mostRead <- Lettera.responseBody <$> Lettera.getMostRead 0 1 Nothing HBL true
+  let firstArticleTitle = fromMaybe "" $ _.title <$> (join <<< map head $ mostRead)
   Assert.assert "Got valid title from Lettera" $ firstArticleTitle /= ""
   Chrome.waitFor_ article page
   -- It's very unlikely, but still possible, that most read list

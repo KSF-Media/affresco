@@ -5,7 +5,7 @@ import Prelude
 import Data.Array (head, splitAt)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe, fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
@@ -77,12 +77,12 @@ render props =
                , _data: Object.fromFoldable [Tuple "login" "1"]
                }
             )
-            (\firstName ->
+            (\name ->
                 DOM.div
                   { className: accountClass
-                  , children: [ DOM.text firstName ]
+                  , children: [ DOM.text name ]
                   }
-            ) $ toMaybe <<< _.firstName =<< props.user
+            ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
         , DOM.nav
             { className: block <> "__center-links"
             , children: map mkCategory headerCategories

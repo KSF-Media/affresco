@@ -12,6 +12,7 @@ import Mosaico.Test.Account as Account
 import Mosaico.Test.Article as Article
 import Mosaico.Test.Embeds as Embeds
 import Mosaico.Test.Frontpage as Frontpage
+import Mosaico.Test.Layout as Layout
 import Mosaico.Test.Lettera as Lettera
 import Mosaico.Test.Search as Search
 import Mosaico.Test.Static as Static
@@ -69,11 +70,13 @@ main = launchAff_ do
   log "Test related article links"
   withBrowserPage Article.testRelated
 
+  log "Test CSS has loaded"
+  withBrowserPage Layout.testLayout
   log "Test front page embedded HTML"
   withBrowserPage Frontpage.testHtmlEmbed
   withBrowserPage Frontpage.testHtmlEmbedNavigation
   log "Test most read list"
-  withBrowserPage $ Frontpage.testMostRead false
+  withDesktopBrowserPage $ Frontpage.testMostRead false
   log "Test embed render via navigation"
   withBrowserPage Embeds.testEmbedNavigation
   log "Test embed render, direct"
@@ -95,8 +98,11 @@ main = launchAff_ do
   log "Test categories"
   withBrowserPage Lettera.testCategoryLists
   where
-    withBrowser :: forall a. (Chrome.Browser -> Aff a) -> Aff a
-    withBrowser = bracket Chrome.launch Chrome.close
+    withBrowser :: forall a. Aff Chrome.Browser -> (Chrome.Browser -> Aff a) -> Aff a
+    withBrowser = flip bracket Chrome.close
 
     withBrowserPage :: forall a. (Chrome.Page -> Aff a) -> Aff a
-    withBrowserPage f = withBrowser (f <=< Chrome.newPage)
+    withBrowserPage f = withBrowser Chrome.launch (f <=< Chrome.newPage)
+
+    withDesktopBrowserPage :: forall a. (Chrome.Page -> Aff a) -> Aff a
+    withDesktopBrowserPage f = withBrowser Chrome.launchDesktop (f <=< Chrome.newPage)
