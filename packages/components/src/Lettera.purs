@@ -248,7 +248,7 @@ getMostRead start limit category paper onlySubscribers =
           <> "&onlySubscribers=" <> show onlySubscribers
   )
 
-getLatest :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
+getLatest :: Int -> Int -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getLatest start limit paper =
   useResponse parseArticleStubs =<<
     AX.get ResponseFormat.json (letteraLatestUrl

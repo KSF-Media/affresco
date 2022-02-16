@@ -37,6 +37,7 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
+import Mosaico.Epaper (latestEpaper)
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -49,6 +50,7 @@ import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
+import Mosaico.LatestList as LatestList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
@@ -71,6 +73,7 @@ data ModalView = LoginModal
 type State =
   { article :: Maybe (Either Unit FullArticle)
   , mostReadArticles :: Array ArticleStub
+  , latestArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
   , prevRoute :: Maybe Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
@@ -96,6 +99,7 @@ type Components =
 type Props =
   { article :: Maybe FullArticle
   , mostReadArticles :: Maybe (Array ArticleStub)
+  , latestArticles :: Maybe (Array ArticleStub)
   , staticPageName :: Maybe String
   , categoryStructure :: Array Category
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
@@ -106,6 +110,7 @@ type JSProps =
   { article :: Nullable Json
   , articleType :: Nullable String
   , mostReadArticles :: Nullable (Array Json)
+  , latestArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
   , initialFrontpageFeed :: Nullable JSInitialFeed
@@ -130,6 +135,7 @@ mosaicoComponent initialValues props = React.do
   state /\ setState <- useState initialValues.state
                          { article = Right <$> props.article
                          , mostReadArticles = fold props.mostReadArticles
+                         , latestArticles = fold props.latestArticles
                          , staticPage = map StaticPageResponse $
                                         { pageName:_, pageContent:_, pageScript: initialValues.staticPageScript }
                                         <$> props.staticPageName
@@ -246,6 +252,14 @@ mosaicoComponent initialValues props = React.do
           mostReadArticles <- join <<< fromFoldable <$> Lettera.getMostRead 0 10 Nothing mosaicoPaper true
           liftEffect $ setState \s -> s { mostReadArticles = mostReadArticles }
 
+    case props.latestArticles of
+      Just latest
+        | not $ null latest -> liftEffect $ setState \s -> s { latestArticles = latest }
+      _ ->
+        Aff.launchAff_ do
+          latestArticles <- join <<< fromFoldable <$> Lettera.getLatest 0 10 mosaicoPaper
+          liftEffect $ setState \s -> s { latestArticles = latestArticles }
+
     pure mempty
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
@@ -285,6 +299,7 @@ getInitialValues = do
     { state:
         { article: Nothing
         , mostReadArticles: []
+        , latestArticles: []
         , route: Routes.Frontpage
         , prevRoute: Nothing
         , clickedArticle: Nothing
@@ -317,6 +332,7 @@ fromJSProps jsProps =
                 <$> (readArticleType =<< toMaybe jsProps.articleType)
                 <*> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
       mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
+      latestArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.latestArticles
 
       initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
 
@@ -331,7 +347,7 @@ fromJSProps jsProps =
       -- to and from possible.
       user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
       entitlements = foldMap (hush <<< decodeJson) $ toMaybe jsProps.entitlements
-  in { article, mostReadArticles, initialFrontpageFeed, staticPageName, categoryStructure, user, entitlements }
+  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, user, entitlements }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -460,6 +476,7 @@ render setState state components router onPaywallEvent =
 
     hooks :: Array Frontpage.Hook
     hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler
+            , Frontpage.Latest state.latestArticles onClickHandler
             , Frontpage.ArticleUrltoRelative
             ]
 
@@ -493,6 +510,10 @@ render setState state components router onPaywallEvent =
                       { mostReadArticles: state.mostReadArticles
                       , onClickHandler
                       }
+                  , LatestList.render
+                      { latestArticles: state.latestArticles
+                      , onClickHandler
+                      }
                   ]
               }
           ]
@@ -509,6 +530,7 @@ render setState state components router onPaywallEvent =
         , onTagClick
         , onArticleClick
         , mostReadArticles: state.mostReadArticles
+        , latestArticles: state.latestArticles
         }
 
     onClickHandler articleStub = do

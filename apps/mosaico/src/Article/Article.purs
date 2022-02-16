@@ -62,6 +62,7 @@ type Props =
   , onArticleClick :: ArticleStub -> EventHandler
   , user :: Maybe User
   , mostReadArticles :: Array ArticleStub
+  , latestArticles :: Array ArticleStub
   }
 
 evalEmbeds :: Article -> Effect Unit
