@@ -76,7 +76,7 @@ main = launchAff_ do
   withBrowserPage Frontpage.testHtmlEmbed
   withBrowserPage Frontpage.testHtmlEmbedNavigation
   log "Test most read list"
-  withDesktopBrowserPage $ Frontpage.testMostRead false
+  withDesktopBrowserPage $ Frontpage.testMostRead
   log "Test embed render via navigation"
   withBrowserPage Embeds.testEmbedNavigation
   log "Test embed render, direct"

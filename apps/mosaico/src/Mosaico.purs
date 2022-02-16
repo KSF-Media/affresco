@@ -7,7 +7,6 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Array (fromFoldable, mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
-import Data.Tuple (Tuple)
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldMap)
 import Data.HashMap (HashMap)
@@ -19,11 +18,12 @@ import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Set (Set)
 import Data.Time.Duration (Minutes(..))
+import Data.Tuple (Tuple)
 import Data.UUID as UUID
 import Effect (Effect)
+import Effect.AVar as AVar
 import Effect.Aff as Aff
 import Effect.Aff.AVar as Aff.AVar
-import Effect.AVar as AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
@@ -58,7 +58,6 @@ import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
-import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, useEffect, useEffectOnce, useState, (/\))
 import React.Basic.Hooks as React
 import Routing (match)
@@ -448,14 +447,15 @@ render setState state components router onPaywallEvent =
 
     prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
     prerenderedFrontpage maybeHeader content =
-      mosaicoLayout inner false $ onFrontpageClick $
-      \path -> setState _ { clickedArticle = Nothing } *> simpleRoute path
+      mosaicoLayout inner false
       where
         inner =
           (fromMaybe mempty maybeHeader) <>
           (Frontpage.render $ Frontpage.Prerendered
              { content
              , hooks
+             , onClick: onFrontpageClick $
+                \path -> setState _ { clickedArticle = Nothing } *> simpleRoute path
              })
 
     hooks :: Array Frontpage.Hook
@@ -464,16 +464,15 @@ render setState state components router onPaywallEvent =
             ]
 
     mosaicoDefaultLayout :: JSX -> JSX
-    mosaicoDefaultLayout content = mosaicoLayout content true mempty
+    mosaicoDefaultLayout content = mosaicoLayout content true
 
     mosaicoLayoutNoAside :: JSX -> JSX
-    mosaicoLayoutNoAside content = mosaicoLayout content false mempty
+    mosaicoLayoutNoAside content = mosaicoLayout content false
 
-    mosaicoLayout :: JSX -> Boolean -> EventHandler -> JSX
-    mosaicoLayout content showAside onClick = DOM.div
+    mosaicoLayout :: JSX -> Boolean -> JSX
+    mosaicoLayout content showAside = DOM.div
       { className: "mosaico grid"
       , id: Paper.toString mosaicoPaper
-      , onClick
       , children:
           [ Header.topLine
           , Header.render
