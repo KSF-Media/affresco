@@ -4,14 +4,12 @@ import Prelude
 
 import Data.Array (catMaybes, foldl, intersperse, snoc)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (toUpper)
 import Data.String.Common (trim)
-import Effect (Effect)
-import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
-import KSF.User (User, logout)
+import KSF.User (User)
 import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
 import React.Basic.Events (EventHandler)
@@ -25,7 +23,8 @@ type Props =
   , categoryStructure :: Array Category
   , onCategoryClick :: Category -> EventHandler
   , user :: Maybe User
-  , onLogout :: Effect Unit
+  , onLogin :: EventHandler
+  , onLogout :: EventHandler
   }
 
 data MenuLayoutElement = Section Section
@@ -49,7 +48,7 @@ type Subsection =
   }
 
 render :: Props -> JSX
-render props@{ onLogout } = DOM.div
+render props@{ onLogin, onLogout } = DOM.div
   { className: menuClass
   , children: [ menuContent
               , DOM.div
@@ -111,9 +110,14 @@ render props@{ onLogout } = DOM.div
                     { title: "LOGGA UT"
                     , subsections: []
                     , url: ""
-                    , onClick: capture_ $ launchAff_ do
-                      logout $ const $ pure unit
-                      liftEffect onLogout
+                    , onClick: onLogout
+                    }
+                  , guard (isNothing props.user) $
+                    Just
+                    { title: "LOGGA IN"
+                    , subsections: []
+                    , url: ""
+                    , onClick: onLogin
                     }
                   ]
 

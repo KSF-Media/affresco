@@ -56,7 +56,7 @@ getRemoveAds = either _.removeAds _.article.removeAds
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
-  , onLogin :: Effect Unit
+  , onLogin :: EventHandler
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
