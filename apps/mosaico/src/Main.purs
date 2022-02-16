@@ -112,6 +112,11 @@ spec ::
          { getHealthz ::
               GET "/healthz"
                 { response :: String }
+         , frontpageUpdated ::
+              GET "/api/reset/<category>"
+                { params :: { category :: String }
+                , response :: String
+                }
          , getDraftArticle ::
               GET "/artikel/draft/<aptomaId>/?dp-time=<time>&publicationId=<publication>&user=<user>&hash=<hash>"
                 { response :: ResponseBody
@@ -205,6 +210,7 @@ main = do
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
         handlers =
           { getHealthz
+          , frontpageUpdated: frontpageUpdated env
           , getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
           , assets
@@ -313,6 +319,11 @@ renderArticle env user article mostReadArticles = do
     Left _ ->
       let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
       in notFound env (notFoundArticleContent $ hush =<< user) user maybeMostRead
+
+frontpageUpdated :: Env -> { params :: { category :: String }} -> Aff (Response String)
+frontpageUpdated env { params: { category } } = do
+  Cache.resetCategory env.cache (CategoryLabel category)
+  pure $ Response.ok ""
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist" path
