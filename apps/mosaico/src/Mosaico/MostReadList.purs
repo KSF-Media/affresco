@@ -2,6 +2,7 @@ module Mosaico.MostReadList where
 
 import Prelude
 
+import Data.Maybe (fromMaybe)
 import Data.Monoid (guard)
 import Effect (Effect)
 import Lettera.Models (ArticleStub)
@@ -46,7 +47,7 @@ render props =
                 , DOM.div
                     { className: "list-article-liftup"
                     , children:
-                        [ DOM.h6_ [ DOM.text a.title ]
+                        [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]
                         , guard a.premium $ DOM.div
                             { className: "mosaico--article--meta"
                             , children:
