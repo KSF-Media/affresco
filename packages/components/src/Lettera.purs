@@ -52,6 +52,9 @@ letteraFrontPageHtmlUrl = letteraBaseUrl <> "/list/frontpage/html"
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 
+letteraLatestUrl :: String
+letteraLatestUrl = letteraBaseUrl <> "/list/latest/"
+
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
 
@@ -244,6 +247,15 @@ getMostRead start limit category paper onlySubscribers =
           <> "&paper=" <> Paper.toString paper
           <> "&onlySubscribers=" <> show onlySubscribers
   )
+
+getLatest :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
+getLatest start limit paper =
+  useResponse parseArticleStubs =<<
+    AX.get ResponseFormat.json (letteraLatestUrl
+                                <> "?start=" <> show start
+                                <> "&limit=" <> show limit
+                                <> "&paper=" <> Paper.toString paper
+                              )
 
 getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do
