@@ -30,16 +30,16 @@ data StreamType = JPG | M3U8
 webviewComponent :: Component Props
 webviewComponent = do
   initialRandom <- randomString 10
-  let streamURL "https://www.vastranyland.fi/app-torgkamera/" =
+  let streamURL "https://cdn.ksfmedia.fi/video/vn.torg.html" =
         "http://jpg1.stream.sydweb.fi/radhustorget/lastsnap.jpg"
-      streamURL "https://www.ostnyland.fi/app-borga-torgkamera/" =
+      streamURL "https://cdn.ksfmedia.fi/video/on.torg.html" =
         "https://torget.ostnyland.fi/stream.m3u8"
       streamURL url = url
       initialize (Just JPG) setRandom = do
         (closed :: AVar.AVar Unit) <- (AVar.empty :: Effect (AVar.AVar Unit))
         Aff.launchAff_ do
           _ <- untilJust do
-            Aff.delay $ Aff.Milliseconds 1000.0
+            Aff.delay $ Aff.Milliseconds 500.0
             liftEffect $ setRandom =<< randomString 10
             AffAVar.tryRead closed
           pure unit
