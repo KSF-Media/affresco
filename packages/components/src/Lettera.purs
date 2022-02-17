@@ -204,17 +204,15 @@ useResponse f (Right response)
   | otherwise =
       pure $ LetteraResponse { maxAge: Nothing, body: Left $ HttpError $ unwrap $ response.status }
 
-getFrontpageHtml :: Paper -> String -> Boolean -> Aff (LetteraResponse String)
-getFrontpageHtml paper category reset = do
+getFrontpageHtml :: Paper -> String -> Maybe String -> Aff (LetteraResponse String)
+getFrontpageHtml paper category cacheToken = do
   let request = AX.defaultRequest
         { url = letteraFrontPageHtmlUrl
                 <> "?paper=" <> Paper.toString paper
                 <> "&category=" <> category
+                <> foldMap ("&cacheToken=" <> _) cacheToken
         , method = Left GET
         , responseFormat = AX.string
-        , headers = if reset
-                    then [ AX.RequestHeader "Cache-Control" "no-cache" ]
-                    else []
         }
   useResponse (pure <<< pure) =<< AX.request request
 
@@ -224,17 +222,15 @@ parseArticleStubs response
       map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
   | otherwise = pure $ Left ParseError
 
-getFrontpage :: Paper -> Maybe String -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
-getFrontpage paper categoryId reset = do
+getFrontpage :: Paper -> Maybe String -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
+getFrontpage paper categoryId cacheToken = do
   let request = AX.defaultRequest
         { url = letteraFrontPageUrl
                 <> "?paper=" <> Paper.toString paper
                 <> foldMap ("&category=" <> _) categoryId
+                <> foldMap ("&cacheToken=" <> _) cacheToken
         , method = Left GET
         , responseFormat = AX.json
-        , headers = if reset
-                    then [ AX.RequestHeader "Cache-Control" "no-cache" ]
-                    else []
         }
   useResponse parseArticleStubs =<< AX.request request
 

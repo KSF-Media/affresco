@@ -7,6 +7,7 @@ import Control.Plus (class Plus, empty)
 import Data.Array (filter, fromFoldable)
 import Data.DateTime (DateTime, adjust, diff)
 import Data.Either (Either(..), hush)
+import Data.Formatter.DateTime (formatDateTime)
 import Data.Hashable (class Hashable)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
@@ -73,34 +74,27 @@ type Cache =
   , paper :: Paper
   }
 
-startUpdates :: forall a. (Boolean -> Aff (LetteraResponse a)) -> Effect (UpdateWatch (Maybe a))
+startUpdates :: forall a. (Maybe String -> Aff (LetteraResponse a)) -> Effect (UpdateWatch (Maybe a))
 startUpdates fetch = do
   -- Var is empty only if the update thread is not running.
   var <- Effect.AVar.empty
   resetLock <- Effect.AVar.new unit
-  resetRequested <- Effect.AVar.new false
   updateLock <- Effect.AVar.new unit
   updateDone <- Effect.AVar.empty
   updateStop <- Effect.AVar.empty
   let withLock :: forall b. AVar Unit -> Aff b -> Aff b
       withLock lock = Aff.bracket (AVar.take lock) (flip AVar.put lock) <<< const
       update = untilJust do
-        rst <- withLock resetLock do
-          rst <- AVar.take resetRequested
-          AVar.put false resetRequested
-          pure rst
-        LetteraResponse response <- fetch rst
+        LetteraResponse response <- fetch =<< hush <<< formatDateTime "YYYYMMDDHHmmss"
+                                    <$> liftEffect nowDateTime
         _ <- AVar.tryTake var
         now <- liftEffect nowDateTime
         let validUntil = fromMaybe now $ toValidUntil now response.maxAge
         case response.body of
-          Right value -> do
-            AVar.put (Stamped { validUntil, content: Just value }) var
+          Right content -> do
+            AVar.put (Stamped { validUntil, content }) var
           Left err -> do
             Console.warn $ show err
-            when rst $ withLock resetLock do
-              _ <- AVar.take resetRequested
-              AVar.put true resetRequested
         -- Tell the possible caller to continue, we either have a
         -- value now or they'll just have to do without.
         _ <- AVar.tryTake updateDone
@@ -119,7 +113,7 @@ startUpdates fetch = do
       start = withLock updateLock do
         val <- AVar.tryRead var
         case val of
-          Just v -> pure v
+          Just v -> pure $ map Just v
           Nothing -> do
             AVar.put unit updateDone
             _ <- Aff.forkAff update
@@ -128,10 +122,8 @@ startUpdates fetch = do
             AVar.put unit updateDone
             -- Leave it empty for the next caller.
             AVar.take updateDone
-            AVar.tryRead var >>= maybe emptyStamp pure
+            AVar.tryRead var >>= maybe emptyStamp (map Just >>> pure)
       reset = withLock resetLock do
-        _ <- AVar.take resetRequested
-        AVar.put true resetRequested
         AVar.put unit updateStop
 
   Aff.launchAff_ start
@@ -149,11 +141,12 @@ initCache paper categoryStructure = do
     HashMap.fromArray
     <$> traverse ((map <<< map <<< map <<< map <<< map <<< map) (join <<< fromFoldable) $
                   withCat $ startUpdates <<< Lettera.getFrontpage paper <<< Just) mainFeedCategories
-  prerendered <- HashMap.fromArray <$> traverse (withCat $ startUpdates <<< Lettera.getFrontpageHtml paper) prerenderedCategories
+  prerendered <- HashMap.fromArray <$> traverse
+                 (withCat $ startUpdates <<< Lettera.getFrontpageHtml paper) prerenderedCategories
   mostRead <- (map <<< map <<< map) (join <<< fromFoldable) $
               -- Ditch reset handle for mostRead
               map snd $
-              -- const to ditch reset parameter from the Lettera call
+              -- const to ditch cache stamp from the Lettera call
               startUpdates $ const $ Lettera.getMostRead 0 10 Nothing paper false
 
   latest <- (map <<< map <<< map) (join <<< fromFoldable) $
@@ -205,14 +198,14 @@ getFrontpageHtml cache category =
     useSubPrerendered =
       (map <<< map) (\h -> if null h then Nothing else Just h) $
       getUsingCache cache.subPrerendered category $
-      Lettera.getFrontpageHtml cache.paper (show category) false
+      Lettera.getFrontpageHtml cache.paper (show category) Nothing
 
 getFrontpage :: Cache -> CategoryLabel -> Aff (Stamped (Array ArticleStub))
 getFrontpage cache category = do
   case HashMap.lookup category cache.mainCategoryFeed of
     Just c -> snd c
     Nothing -> getUsingCache cache.subCategoryFeed category $
-               Lettera.getFrontpage cache.paper (Just $ show category) false
+               Lettera.getFrontpage cache.paper (Just $ show category) Nothing
 
 getMostRead :: Cache -> Aff (Stamped (Array ArticleStub))
 getMostRead cache = cache.mostRead
@@ -231,8 +224,6 @@ resetCategory cache category = do
   removeFromActive cache.mainCategoryFeed
   removeFromPassive cache.subCategoryFeed
   removeFromPassive cache.subPrerendered
-  -- TODO Tell Lettera to invalidate on demand cached resources as
-  -- well (or let it know some other way)
   where
     removeFromActive :: forall a. HashMap CategoryLabel (UpdateWatch a) -> Aff Unit
     removeFromActive = HashMap.lookup category >>> maybe (pure unit) fst

@@ -68,10 +68,14 @@
     @media (min-width: @breakpoint-2col) {
       padding-right: 30px;
     }
+    @media (min-width: @breakpoint-3col) {
+      width: 530px;
+    }
   }
   &__aside {
-    grid-area: articlesidebar;
-    background-color: @grey-light;
+    @media (min-width: @breakpoint-2col) {
+      grid-area: articlesidebar;
+    }
   }
 
   &__headline {
@@ -359,6 +363,9 @@
 	color: @on-blue;
       }
     }
+  }
+  iframe {
+    max-width: 100%;
   }
 }
 
