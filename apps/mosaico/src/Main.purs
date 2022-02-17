@@ -438,7 +438,7 @@ tagList env { params: { tag }, guards: { credentials } } = do
   if null $ Cache.getContent articles
     then notFound env { type: TagListContent tag', content: notFoundWithAside } user (Just $ Cache.getContent mostReadArticles)
     else do
-    let mosaicoString = renderContent user <$> articles <*> mostReadArticles <*> latestArticles tag'
+    let mosaicoString = renderContent tag' user <$> articles <*> mostReadArticles <*> latestArticles
     html <- liftEffect do
               let windowVars =
                     [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
@@ -448,15 +448,16 @@ tagList env { params: { tag }, guards: { credentials } } = do
                       <> mkArticleFeed (TagFeed tag') (ArticleList (Cache.getContent articles))
               appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendHead (mkWindowVariables windowVars)
     now <- liftEffect nowDateTime
-    pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+    pure $ Cache.addHeader now (isJust user) mosaicoString $
+      maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
   where
-    renderContent user articles mostReadArticles latestArticles tag' =
+    renderContent tag' user articles mostReadArticles latestArticles =
       DOM.renderToString
       $ MosaicoServer.app
       { mainContent:
           { type: TagListContent tag'
           , content: Frontpage.render $ Frontpage.List
-              { content: articles
+              { content: Just articles
               , onArticleClick: const mempty
               , onTagClick: const mempty
               }
