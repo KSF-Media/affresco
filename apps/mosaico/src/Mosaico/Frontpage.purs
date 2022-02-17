@@ -20,7 +20,9 @@ import Foreign.Object as Object
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage.Models (Hook, toHookRep)
+import Mosaico.Paper (mosaicoPaper)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
@@ -37,10 +39,11 @@ type ListFrontpageProps =
 type PrerenderedFrontpageProps =
   { content :: Maybe String
   , hooks   :: Array Hook
+  , onClick :: EventHandler
   }
 
 render :: Frontpage -> JSX
-render (List props) = genericRender (\list -> map renderListArticle list) props.content
+render (List props) = genericRender (\list -> map renderListArticle list) mempty props.content
   where
     renderListArticle :: ArticleStub -> JSX
     renderListArticle a =
@@ -59,7 +62,8 @@ render (List props) = genericRender (\list -> map renderListArticle list) props.
                     [ DOM.a
                         { href: "/artikel/" <> a.uuid
                         , className: "list-article-image"
-                        , children: [ DOM.img { src: maybe "https://cdn.ksfmedia.fi/mosaico/hbl-fallback-img.png" _.url (a.listImage <|> a.mainImage) } ]
+                        -- TODO: paper specific fallback img
+                        , children: [ DOM.img { src: maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage) } ]
                         }
                     ,  DOM.div
                           { className: "list-article-liftup"
@@ -100,10 +104,12 @@ render (Prerendered props@{ hooks }) = genericRender
                    }
                 ]
   )
+  props.onClick
   props.content
 
-genericRender :: forall a. (a -> Array JSX) -> Maybe a -> JSX
-genericRender f content = DOM.div
+genericRender :: forall a. (a -> Array JSX) -> EventHandler -> Maybe a -> JSX
+genericRender f onClick content = DOM.div
   { className: "mosaico--article-list"
   , children: maybe [loadingSpinner] f content
+  , onClick
   }

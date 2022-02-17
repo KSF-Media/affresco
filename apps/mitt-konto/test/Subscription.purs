@@ -12,7 +12,7 @@ import Effect.Now as Now
 import KSF.Helpers (formatDateDots)
 import KSF.Test (formatDateSolid)
 import MittKonto.Test (Test, getFirstSubsno, typeTestAddress)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 
 testPause :: Test
 testPause page = do
