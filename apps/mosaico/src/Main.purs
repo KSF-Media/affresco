@@ -436,7 +436,12 @@ tagList env { params: { tag }, guards: { credentials } } = do
     <*> parallel (Cache.getMostRead env.cache)
     <*> parallel (Cache.getLatest env.cache)
   if null $ Cache.getContent articles
-    then notFound env { type: TagListContent tag', content: notFoundWithAside } user (Just $ Cache.getContent mostReadArticles)
+    then notFound
+          env
+          { type: TagListContent tag', content: notFoundWithAside }
+          user
+          (Just $ Cache.getContent mostReadArticles)
+          (Just $ Cache.getContent latestArticles)
     else do
     let mosaicoString = renderContent tag' user <$> articles <*> mostReadArticles <*> latestArticles
     html <- liftEffect do
