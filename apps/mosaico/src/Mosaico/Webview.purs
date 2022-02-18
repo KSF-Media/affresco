@@ -21,6 +21,8 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
 import React.Basic.Hooks (Component, component, useEffectOnce, useState', (/\))
 
+foreign import videoJS :: Effect Unit
+
 type Props =
   { category :: Category
   }
@@ -44,6 +46,9 @@ webviewComponent = do
             AffAVar.tryRead closed
           pure unit
         pure $ AVar.tryPut unit closed *> pure unit
+      initialize (Just M3U8) _ = do
+        videoJS
+        pure $ pure unit
       initialize _ _ = pure $ pure unit
 
   component "Webview" $ \ {category: (Category cat)} -> React.do
@@ -72,6 +77,7 @@ render (Just M3U8) url _ =
     , children:
         [ DOM.video
             { className: "video-js"
+            , id: "video-js"
             , controls: true
             , preload: "auto"
             , width: "1140"
