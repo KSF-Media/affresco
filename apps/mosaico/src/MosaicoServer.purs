@@ -34,6 +34,7 @@ data MainContentType
   | TagListContent Tag
   | EpaperContent
   | StaticPageContent String
+  | ProfileContent
   | MenuContent
 
 app :: Props -> JSX
@@ -66,7 +67,9 @@ render router props = DOM.div
                            , catMap: categoriesMap props.categoryStructure
                            , onCategoryClick: const mempty
                            , user: props.user
-                           , onLogin: pure unit
+                           , onLogin: mempty
+                           , onProfile: mempty
+                           , onStaticPageClick: mempty
                            }
            , Header.mainSeparator
            , props.mainContent.content

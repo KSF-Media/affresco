@@ -33,7 +33,9 @@ main :: Effect Unit
 main = launchAff_ do
   if testUser == "" || testPassword == ""
     then log "skip login and logout test, user or password not set"
-    else withBrowserPage $ Account.loginLogout testUser testPassword
+    else do
+    log "Test login and logout"
+    withBrowserPage $ Account.loginLogout testUser testPassword
   log "Test news page and get free article and premium article"
   { articleId, premiumArticleId } <- withBrowserPage Article.testNewsPage
   log $ "Free article " <> show articleId <> " premium " <> show premiumArticleId

@@ -31,7 +31,7 @@ import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.Spinner (loadingSpinner)
-import KSF.User (User, magicLogin)
+import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
@@ -50,6 +50,7 @@ import Mosaico.Header.Menu as Menu
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
 import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Profile as Profile
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
 import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage, getInitialStaticPageContent, getInitialStaticPageScript)
@@ -216,6 +217,7 @@ mosaicoComponent initialValues props = React.do
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
       -- Always uses server side provided article
       Routes.DraftPage -> pure unit
+      Routes.ProfilePage -> pure unit
       Routes.ArticlePage articleId
         | Just articleId == (_.article.uuid <$> (join <<< map hush $ state.article)) -> pure unit
         | otherwise -> loadArticle articleId
@@ -394,9 +396,8 @@ render setState state components router onPaywallEvent =
              , categoryStructure: state.categoryStructure
              , onCategoryClick
              , user: state.user
-             , onLogout: do
-                 setState _ { user = Nothing }
-                 onPaywallEvent
+             , onLogin
+             , onLogout
              }
        Routes.EpaperPage -> mosaicoLayoutNoAside
          $ components.epaperComponent
@@ -404,6 +405,13 @@ render setState state components router onPaywallEvent =
              , entitlements: state.entitlements
              , paper: mosaicoPaper
              , onLogin
+             }
+       Routes.ProfilePage -> mosaicoLayoutNoAside
+         $ Profile.render
+             { user: state.user
+             , onLogin
+             , onLogout
+             , onStaticPageClick
              }
        Routes.DraftPage -> mosaicoLayoutNoAside
          $ renderArticle $ maybe (Right notFoundArticle) Right $ join <<< map hush $ state.article
@@ -482,6 +490,8 @@ render setState state components router onPaywallEvent =
               , onCategoryClick
               , user: state.user
               , onLogin
+              , onProfile
+              , onStaticPageClick
               }
           , Header.mainSeparator
           , content
@@ -521,6 +531,8 @@ render setState state components router onPaywallEvent =
         _ -> capture_ do
           simpleRoute $ "/" <> if c.label == frontpageCategoryLabel then "" else show c.label
 
+    onProfile = capture_ $ simpleRoute "/konto"
+
     onTagClick tag = capture_ do
       simpleRoute $ "/tagg/" <> tagToURIComponent tag
 
@@ -537,7 +549,12 @@ render setState state components router onPaywallEvent =
           void $ Web.scroll 0 0 =<< Web.window
           router.pushState (write {}) ("/sida/" <> link)
 
-    onLogin = setState \s -> s { modalView = Just LoginModal }
+    onLogin = capture_ $ setState \s -> s { modalView = Just LoginModal }
+
+    onLogout = capture_ do
+      Aff.launchAff_ $ logout $ const $ pure unit
+      setState _ { user = Nothing }
+      onPaywallEvent
 
     -- Search is done via the router
     doSearch query = do

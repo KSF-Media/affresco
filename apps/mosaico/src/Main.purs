@@ -50,6 +50,7 @@ import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header.Menu as Menu
 import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Profile as Profile
 import Mosaico.Search as Search
 import MosaicoServer (MainContent, MainContentType(..))
 import MosaicoServer as MosaicoServer
@@ -148,6 +149,11 @@ spec ::
          , menu ::
               GET "/meny"
                 { response :: ResponseBody }
+         , profilePage ::
+              GET "/konto"
+                { response :: ResponseBody
+                , guards :: Guards ("credentials" : Nil)
+                }
          , staticPage ::
               GET "/sida/<pageName>"
                 { response :: ResponseBody
@@ -222,6 +228,7 @@ main = do
           , categoryPage: categoryPage env
           , searchPage: searchPage env
           , notFoundPage: notFoundPage env
+          , profilePage: profilePage env
           , menu: menu env
           }
         guards = { credentials: getCredentials, category: parseCategory env }
@@ -282,7 +289,7 @@ renderArticle env user article mostReadArticles = do
             Article.render (Image.render mempty)
               { paper: mosaicoPaper
               , article: Right a
-              , onLogin: pure unit
+              , onLogin: mempty
               , user: hush =<< user
               , onPaywallEvent: pure unit
               , onTagClick: const mempty
@@ -409,7 +416,8 @@ menu env _ = do
                   { categoryStructure: env.categoryStructure
                   , onCategoryClick: const $ handler_ $ pure unit
                   , user: Nothing
-                  , onLogout: pure unit
+                  , onLogin: mempty
+                  , onLogout: mempty
                   , router: emptyRouter
                   }
               }
@@ -495,7 +503,7 @@ epaperPage env { guards: { credentials } } = do
               -- for Epaper component so avoid that for server side
               -- render.
               { type: EpaperContent
-              , content: Epaper.render (pure unit) mosaicoPaper ((hush =<< user) *> credentials) (Just entitlements)
+              , content: Epaper.render mempty mosaicoPaper ((hush =<< user) *> credentials) (Just entitlements)
               }
           , categoryStructure: env.categoryStructure
           , mostReadArticles
@@ -656,6 +664,37 @@ searchPage env { query: { search }, guards: { credentials } } = do
             appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
   pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
 
+profilePage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
+profilePage env { guards: { credentials }} = do
+  { user, mostReadArticles } <- sequential $
+    { user: _, mostReadArticles: _ }
+    <$> maybe (pure Nothing) (parallel <<< getUser) credentials
+    <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
+  let htmlTemplate = cloneTemplate env.htmlTemplate
+      mosaicoString = DOM.renderToString
+                        $ MosaicoServer.app
+                          { mainContent:
+                              { type: ProfileContent
+                              , content:
+                                  Profile.render
+                                    { user: hush =<< user
+                                    , onLogin: mempty
+                                    , onLogout: mempty
+                                    , onStaticPageClick: const mempty
+                                    }
+                              }
+                          , mostReadArticles
+                          , categoryStructure: env.categoryStructure
+                          , user: hush =<< user
+                          }
+  html <- liftEffect do
+    let windowVars =
+          [ "mostReadArticles" /\ encodeStringifyArticleStubs mostReadArticles
+          , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+          ] <> userVar user
+    appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars)
+  pure $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+
 notFoundPage :: Env -> { params :: { path :: List String }, guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 notFoundPage env { guards: { credentials } } = do
   user <- maybe (pure Nothing) getUser credentials
@@ -667,7 +706,7 @@ notFoundArticleContent user =
   , content: Article.render (Image.render mempty)
     { paper: mosaicoPaper
     , article: Right notFoundArticle
-    , onLogin: pure unit
+    , onLogin: mempty
     , user
     , onPaywallEvent: pure unit
     , onTagClick: const mempty

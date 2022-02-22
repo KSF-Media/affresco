@@ -18,6 +18,7 @@ data MosaicoPage
   = Frontpage -- Should take Paper as parameter
   | DraftPage -- Ignore parameters on client side and just show server side content
   | EpaperPage
+  | ProfilePage
   | ArticlePage String
   | NotFoundPage String
   | StaticPage String
@@ -34,6 +35,7 @@ routes categories = root *> oneOf
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
   , EpaperPage <$ (lit "epaper" *> end)
+  , ProfilePage <$ (lit "konto" *> end)
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
   , Frontpage <$ end
   , MenuPage <$ lit "meny"
