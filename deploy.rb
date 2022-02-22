@@ -120,7 +120,9 @@ elsif app_name == 'scripts'
   run_command("mkdir -p #{app['path']} && cp -R scripts #{app['path']}/dist")
 else
   setup_env(app)
-  ENV['NODE_ENV'] == 'development' 
-    ? build_cmds_staging.each { |c| run_command(c) } 
-    : build_cmds_production.each { |c| run_command(c) }
+  if ENV['NODE_ENV'] == 'development' 
+    build_cmds_staging.each { |c| run_command(c) }
+  else
+    build_cmds_production.each { |c| run_command(c) }
+  end
 end
