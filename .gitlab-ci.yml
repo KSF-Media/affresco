@@ -50,11 +50,14 @@ stages:
     - $CI_SCRIPTS/docker-build.sh
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/docker-push.sh
+    - $CI_SCRIPTS/affresco/app-upload.sh
     # docker buld & push production
+    - eval `${CI_SCRIPTS}/prepare_stage_envvars.py production`
     - cd $CI_PROJECT_DIR/artifacts/production/$SERVICE_NAME
     - $CI_SCRIPTS/docker-build.sh
-    - KSF_ENV_TEXT=production GOOGLE_CREDENTIALS=$PRODUCTION_GOOGLE_CREDENTIALS $CI_SCRIPTS/auth-gcloud.sh
-    - KSF_ENV_TEXT=production $CI_SCRIPTS/docker-push.sh
+    - $CI_SCRIPTS/auth-gcloud.sh
+    - $CI_SCRIPTS/docker-push.sh
+    - $CI_SCRIPTS/affresco/app-upload.sh
 
 # Deploy template
 .deploy:
