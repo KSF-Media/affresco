@@ -6,10 +6,13 @@ It's a server side rendered react thing. The idea is that the first pageload wil
 
 To run things:
 ```
+export PUBLIC_URL=/assets
 yarn install
 yarn build
 yarn start
 ```
+
+As an alternative to exporting PUBLIC_URL for every new shell you can also use [direnv](https://direnv.net/docs/installation.html) to have it done automgically.
 
 ## Development
 
