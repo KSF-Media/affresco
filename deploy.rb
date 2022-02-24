@@ -97,7 +97,6 @@ end
 build_cmds_staging = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
   "yarn --cwd '#{app['path']}/' run build",
-  "env",
   "yarn --cwd '#{app['path']}/' run test"
 ]
 
