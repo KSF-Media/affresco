@@ -387,7 +387,7 @@ frontpage env { guards: { credentials } } = do
       { type: HtmlFrontpageContent
       , content: Frontpage.render $ Frontpage.Prerendered
           { content: Just html
-          , hooks: [ Frontpage.MostRead mostReadArticles (const $ pure unit)
+          , hooks: [ Frontpage.MostRead mostReadArticles (const mempty)
                    , Frontpage.ArticleUrltoRelative
                    ]
           , onClick: mempty

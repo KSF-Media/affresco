@@ -5,16 +5,15 @@ import Prelude
 import Data.Maybe (fromMaybe)
 import Data.Monoid (guard)
 import Data.String (joinWith)
-import Effect (Effect)
 import Lettera.Models (ArticleStub)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler)
+import React.Basic.Events (EventHandler)
+
 
 type Props =
   { mostReadArticles :: Array ArticleStub
-  , onClickHandler :: ArticleStub -> Effect Unit
+  , onClickHandler :: ArticleStub -> EventHandler
   }
 
 render :: Props -> JSX
@@ -35,7 +34,7 @@ render props =
     renderMostreadArticle a =
       DOM.li_
         [ DOM.a
-            { onClick: handler preventDefault $ const $ props.onClickHandler a
+            { onClick: props.onClickHandler a
             , href: "/artikel/" <> a.uuid
             , children:
                 [ DOM.div

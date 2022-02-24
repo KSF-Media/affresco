@@ -5,15 +5,16 @@ import Prelude
 import Data.Array (head)
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), contains, stripPrefix)
-import Effect (Effect)
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
 import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
+import React.Basic.Events (EventHandler)
+
 
 data Hook
-  = MostRead (Array ArticleStub) (ArticleStub -> Effect Unit)
-  | Latest (Array ArticleStub) (ArticleStub -> Effect Unit)
+  = MostRead (Array ArticleStub) (ArticleStub -> EventHandler)
+  | Latest (Array ArticleStub) (ArticleStub -> EventHandler)
   | ArticleUrltoRelative
 
 toHookRep :: Hook -> HtmlRenderer.HookRep
@@ -23,7 +24,7 @@ toHookRep ArticleUrltoRelative               = articleUrltoRelativeHook
 
 mostReadHook
   :: { articles :: Array ArticleStub
-     , onClickHandler :: ArticleStub -> Effect Unit
+     , onClickHandler :: ArticleStub -> EventHandler
      }
      -> HtmlRenderer.HookRep
 mostReadHook { articles, onClickHandler } = HtmlRenderer.replacingHook
@@ -52,7 +53,7 @@ mostReadHook { articles, onClickHandler } = HtmlRenderer.replacingHook
 
 latestHook
   :: { articles :: Array ArticleStub
-     , onClickHandler :: ArticleStub -> Effect Unit
+     , onClickHandler :: ArticleStub -> EventHandler
      }
      -> HtmlRenderer.HookRep
 latestHook { articles, onClickHandler } = HtmlRenderer.replacingHook

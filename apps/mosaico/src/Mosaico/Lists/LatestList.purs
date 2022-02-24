@@ -11,10 +11,11 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
+import React.Basic.Events (EventHandler)
 
 type Props =
   { latestArticles :: Array ArticleStub
-  , onClickHandler :: ArticleStub -> Effect Unit
+  , onClickHandler :: ArticleStub -> EventHandler
   }
 
 render :: Props -> JSX
@@ -35,7 +36,7 @@ render props =
     renderLatestArticle a =
       DOM.li_
         [ DOM.a
-            { onClick: handler preventDefault $ const $ props.onClickHandler a
+            { onClick: props.onClickHandler a
             , href: "/artikel/" <> a.uuid
             , children:
                 [ DOM.div

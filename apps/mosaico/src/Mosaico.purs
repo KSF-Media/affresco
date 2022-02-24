@@ -37,7 +37,6 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
-import Mosaico.Epaper (latestEpaper)
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -543,7 +542,7 @@ render setState state components router onPaywallEvent =
         , latestArticles: state.latestArticles
         }
 
-    onClickHandler articleStub = do
+    onClickHandler articleStub = capture_ do
       setState _ { clickedArticle = Just articleStub }
       simpleRoute $ "/artikel/" <> articleStub.uuid
 

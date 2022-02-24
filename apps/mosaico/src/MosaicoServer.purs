@@ -87,7 +87,7 @@ render router props = DOM.div
       DOM.aside
         { className: "mosaico--aside"
         , children:
-          [ MostReadList.render { mostReadArticles: props.mostReadArticles, onClickHandler: const $ pure unit }
-          , LatestList.render { latestArticles: props.latestArticles, onClickHandler: const $ pure unit }
+          [ MostReadList.render { mostReadArticles: props.mostReadArticles, onClickHandler: const mempty }
+          , LatestList.render { latestArticles: props.latestArticles, onClickHandler: const mempty }
           ]
         }
