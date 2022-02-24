@@ -7,11 +7,9 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Traversable (traverse)
 import KSF.Paper (Paper(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub)
-import Mosaico.Test (Test, log, site, sub)
+import Mosaico.Test (Test, site, sub)
 import KSF.Puppeteer as Chrome
 import Test.Unit (failure)
-import Test.Unit.Assert as Assert
 
 testHtmlEmbed :: Test
 testHtmlEmbed page = do

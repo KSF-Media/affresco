@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Maybe (fromMaybe)
 import Data.Monoid (guard)
+import Data.String (joinWith)
 import Effect (Effect)
 import Lettera.Models (ArticleStub)
 import React.Basic (JSX)
@@ -20,16 +21,13 @@ render :: Props -> JSX
 render props =
   let block =  "mosaico-asidelist"
   in DOM.div
-       { className: block
+       { className: joinWith " " [block, block <> "__latest"]
        , children:
            [ DOM.h6
                { className: block <> "--header"
                , children: [ DOM.text "Senast publicerat" ]
                }
-           , DOM.ul
-               { className: block <> "__latest"
-               , children: map renderLatestArticle props.latestArticles
-               }
+           , DOM.ul_ $ map renderLatestArticle props.latestArticles
            ]
        }
   where
@@ -41,10 +39,6 @@ render props =
             , href: "/artikel/" <> a.uuid
             , children:
                 [ DOM.div
-                    { className: "counter"
-                    , children: [ DOM.div_ [] ]
-                    }
-                , DOM.div
                     { className: "list-article-liftup"
                     , children:
                         [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]

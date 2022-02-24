@@ -13,6 +13,11 @@ import Foreign.Index as Foreign
 import Simple.JSON (class ReadForeign)
 import Simple.JSON as JSON
 
+isRedirect :: Error -> Boolean
+isRedirect err = isJust $ do
+  status <- err # errorField "status"
+  guard $ status >= 300 && status < 400
+
 badRequestError :: Error -> Boolean
 badRequestError err = isJust $ do
   status <- err # errorField "status"

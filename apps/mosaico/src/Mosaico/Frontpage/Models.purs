@@ -69,7 +69,7 @@ latestHook { articles, onClickHandler } = HtmlRenderer.replacingHook
                             Just { name, className, text }
                               | name      == "div"
                               , className == "dre-item__title"
-                              , text      == "Senast publicarat DESKTOP" -> true
+                              , text      == "Senaste nytt DESKTOP" -> true
                             _                                      -> false
                        )
   , processNode: (\_ _ _ -> pure $ LatestList.render

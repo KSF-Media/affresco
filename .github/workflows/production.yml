@@ -44,6 +44,7 @@ jobs:
           HIDE_LOGIN_LINKS: 'true'
           LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
           PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+          PUBLIC_URL: /dist
           SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         name: Build Server App article server
         run: |2
@@ -163,6 +164,7 @@ jobs:
           LETTERA_URL: https://lettera.staging.ksfmedia.fi/v4beta
           PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
           PORT: '8080'
+          PUBLIC_URL: /assets
           TEST_PASSWORD: password
           TEST_USER: "wendy.testaburger@skug.fi"
         name: Build Mosaico
