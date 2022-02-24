@@ -11,7 +11,6 @@ import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
 import React.Basic.Events (EventHandler)
 
-
 data Hook
   = MostRead (Array ArticleStub) (ArticleStub -> EventHandler)
   | Latest (Array ArticleStub) (ArticleStub -> EventHandler)
