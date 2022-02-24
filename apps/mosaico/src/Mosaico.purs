@@ -247,7 +247,7 @@ mosaicoComponent initialValues props = React.do
 
     case props.mostReadArticles of
       Just mostReads
-        | not $ null mostReads -> liftEffect $ setState \s -> s { mostReadArticles = mostReads }
+        | not $ null mostReads -> liftEffect $ setState _ { mostReadArticles = mostReads }
       _ ->
         Aff.launchAff_ do
           mostReadArticles <- join <<< fromFoldable <$> Lettera.getMostRead 0 10 Nothing mosaicoPaper true
@@ -255,7 +255,7 @@ mosaicoComponent initialValues props = React.do
 
     case props.latestArticles of
       Just latest
-        | not $ null latest -> liftEffect $ setState \s -> s { latestArticles = latest }
+        | not $ null latest -> liftEffect $ setState _ { latestArticles = latest }
       _ ->
         Aff.launchAff_ do
           latestArticles <- join <<< fromFoldable <$> Lettera.getLatest 0 10 mosaicoPaper
