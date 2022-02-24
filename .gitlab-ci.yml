@@ -50,14 +50,12 @@ stages:
     - $CI_SCRIPTS/docker-build.sh
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/docker-push.sh
-    - $CI_SCRIPTS/affresco/app-upload.sh
     # docker buld & push production
     - eval `${CI_SCRIPTS}/prepare_stage_envvars.py production`
     - cd $CI_PROJECT_DIR/artifacts/production/$SERVICE_NAME
     - $CI_SCRIPTS/docker-build.sh
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/docker-push.sh
-    - $CI_SCRIPTS/affresco/app-upload.sh
 
 # Deploy template
 .deploy:
@@ -68,6 +66,7 @@ stages:
   script:
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/kubernetes-deployment.sh
+    - $CI_SCRIPTS/affresco/app-upload.sh
 
 # Build apps
 mosaico-build:
@@ -111,6 +110,7 @@ app-article-docker-build:
 deploy-mosaico-hbl-staging:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-hbl
   variables:
     SERVICE_NAME: mosaico-hbl
@@ -119,6 +119,7 @@ deploy-mosaico-hbl-staging:
 deploy-mosaico-vn-staging:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-vn
   variables:
     SERVICE_NAME: mosaico-vn
@@ -127,6 +128,7 @@ deploy-mosaico-vn-staging:
 deploy-mosaico-on-staging:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-on
   variables:
     SERVICE_NAME: mosaico-on
@@ -135,6 +137,7 @@ deploy-mosaico-on-staging:
 deploy-app-article-staging:
   extends: .deploy
   needs: 
+    - app-article-build
     - app-article-docker-build
   variables: *app-article-ci-vars
 
@@ -143,6 +146,7 @@ deploy-app-article-staging:
 deploy-mosaico-hbl-production:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-hbl
   environment: production/$SERVICE_NAME
   when: manual
@@ -153,6 +157,7 @@ deploy-mosaico-hbl-production:
 deploy-mosaico-vn-production:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-vn
   environment: production/$SERVICE_NAME
   when: manual
@@ -163,6 +168,7 @@ deploy-mosaico-vn-production:
 deploy-mosaico-on-production:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-on
   environment: production/$SERVICE_NAME
   when: manual
@@ -173,6 +179,7 @@ deploy-mosaico-on-production:
 deploy-app-article-production:
   extends: .deploy
   needs: 
+    - app-article-build
     - app-article-docker-build
   environment: production/$SERVICE_NAME
   when: manual
