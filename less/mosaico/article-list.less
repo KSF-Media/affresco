@@ -50,7 +50,7 @@
           h2 {
             color: black;
           }
-	}
+	      }
       }
 
       > span:hover {
@@ -66,6 +66,7 @@
 }
 
 .mosaico-asidelist {
+  font: 1rem "Duplex Serif", serif;
 
   &--header {
     font: bold 1.125rem "Roboto", sans-serif;
@@ -97,12 +98,12 @@
         cursor: pointer;
         display: flex;
         text-decoration: none;
-  
+
         .counter {
           flex-basis: @counter-size;
           flex-shrink: 0;
           margin-right: 10px;
-  
+
           > div {
             width: @counter-size;
             height: @counter-size;
@@ -111,20 +112,19 @@
             align-items: center;
             justify-content: center;
 
-	    #HBL & {
-              background-color: @hbl-orange;
-	    }
-	    #VN & {
-              background-color: @vn-red;
-	    }
-	    #ON & {
-              background-color: @on-blue;
-	    }
+            #HBL & {
+                    background-color: @hbl-orange;
+            }
+            #VN & {
+                    background-color: @vn-red;
+            }
+            #ON & {
+                    background-color: @on-blue;
+            }
 
             &::after {
               content: counter(listcounter);
-              font-weight: 500;
-              font-size: 1rem;
+              font: bold 1rem "Roboto", sans-serif;
               color: #fff;
             }
           }
@@ -133,7 +133,7 @@
         .list-article-liftup {
 
           h6 {
-            font: bold 0.9rem/1.125rem "Roboto", sans-serif;
+            font: bold 1rem/1.1em "Duplex Serif", serif;
             color: @grey-warm-mid;
           }
 
