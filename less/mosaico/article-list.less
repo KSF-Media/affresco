@@ -145,4 +145,31 @@
       }
     }
   }
+
+  &__latest {
+      border: solid 1px @hairline-color;
+      padding: 10px;
+
+      li {
+        margin: 0 10px;
+        padding: 10px 0;
+        border-bottom: dotted 1px @hairline-color;
+
+        a {
+          cursor: pointer;
+          text-decoration: none;
+
+          h6 {
+            font: bold 0.9rem/1.125rem "Roboto", sans-serif;
+            color: @grey-warm-mid;
+          }
+
+          .premium-badge {
+            transform: scale(.85);
+            transform-origin: left;
+          }
+        }
+      }
+
+  }
 }
