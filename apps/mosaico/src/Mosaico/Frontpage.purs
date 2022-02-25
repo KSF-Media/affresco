@@ -48,7 +48,7 @@ render (List props) = genericRender (\list -> map renderListArticle list) mempty
     renderListArticle :: ArticleStub -> JSX
     renderListArticle a =
       DOM.div
-        { className: "mosaico--list-article list-article-default"
+        { className: "mosaico--list-article list-article--default"
         , onClick: props.onArticleClick a
         , _data: Object.fromFoldable $
           -- Known bug, exclude from tests
@@ -59,11 +59,12 @@ render (List props) = genericRender (\list -> map renderListArticle list) mempty
         , children:
             [ DOM.span
                 { children:
-                    [ DOM.a
+                    [ -- TODO: paper specific fallback img
+                    let imgSrc = maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage)
+                    in DOM.a
                         { href: "/artikel/" <> a.uuid
                         , className: "list-article-image"
-                        -- TODO: paper specific fallback img
-                        , children: [ DOM.img { src: maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage) } ]
+                        , children: [ DOM.img { src: imgSrc <> "&function=hardcrop&width=200&height=200&q=90" } ]
                         }
                     ,  DOM.div
                           { className: "list-article-liftup"

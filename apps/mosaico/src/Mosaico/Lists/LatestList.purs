@@ -5,12 +5,9 @@ import Prelude
 import Data.Maybe (fromMaybe)
 import Data.Monoid (guard)
 import Data.String (joinWith)
-import Effect (Effect)
 import Lettera.Models (ArticleStub)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler)
 import React.Basic.Events (EventHandler)
 
 type Props =
@@ -24,7 +21,7 @@ render props =
   in DOM.div
        { className: joinWith " " [block, block <> "__latest"]
        , children:
-           [ DOM.h6
+           [ DOM.h3
                { className: block <> "--header"
                , children: [ DOM.text "Senast publicerat" ]
                }
