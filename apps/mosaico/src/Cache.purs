@@ -67,6 +67,7 @@ type Cache =
   { prerendered :: HashMap CategoryLabel (UpdateWatch (Maybe String))
   , mainCategoryFeed :: HashMap CategoryLabel (UpdateWatch (Array ArticleStub))
   , mostRead :: Aff (Stamped (Array ArticleStub))
+  , latest :: Aff (Stamped (Array ArticleStub))
   , subCategoryFeed :: AVar (HashMap CategoryLabel (Stamped (Array ArticleStub)))
   , byTag :: AVar (HashMap Tag (Stamped (Array ArticleStub)))
   , subPrerendered :: AVar (HashMap CategoryLabel (Stamped String))
@@ -148,6 +149,10 @@ initCache paper categoryStructure = do
               -- const to ditch cache stamp from the Lettera call
               startUpdates $ const $ Lettera.getMostRead 0 10 Nothing paper false
 
+  latest <- (map <<< map <<< map) (join <<< fromFoldable) $
+              map snd $
+              startUpdates $ const $ Lettera.getLatest 0 10 paper
+
   subCategoryFeed <- Effect.AVar.new HashMap.empty
   byTag <- Effect.AVar.new HashMap.empty
   subPrerendered <- Effect.AVar.new HashMap.empty
@@ -155,6 +160,7 @@ initCache paper categoryStructure = do
   pure { prerendered
        , mainCategoryFeed
        , mostRead
+       , latest
        , subCategoryFeed
        , byTag
        , subPrerendered
@@ -203,6 +209,9 @@ getFrontpage cache category = do
 
 getMostRead :: Cache -> Aff (Stamped (Array ArticleStub))
 getMostRead cache = cache.mostRead
+
+getLatest :: Cache -> Aff (Stamped (Array ArticleStub))
+getLatest cache = cache.latest
 
 getByTag :: Cache -> Tag -> Aff (Stamped (Array ArticleStub))
 getByTag cache tag =

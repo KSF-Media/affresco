@@ -97,12 +97,12 @@
         cursor: pointer;
         display: flex;
         text-decoration: none;
-  
+
         .counter {
           flex-basis: @counter-size;
           flex-shrink: 0;
           margin-right: 10px;
-  
+
           > div {
             width: @counter-size;
             height: @counter-size;
@@ -111,15 +111,15 @@
             align-items: center;
             justify-content: center;
 
-	    #HBL & {
-              background-color: @hbl-orange;
-	    }
-	    #VN & {
-              background-color: @vn-red;
-	    }
-	    #ON & {
-              background-color: @on-blue;
-	    }
+            #HBL & {
+                    background-color: @hbl-orange;
+            }
+            #VN & {
+                    background-color: @vn-red;
+            }
+            #ON & {
+                    background-color: @on-blue;
+            }
 
             &::after {
               content: counter(listcounter);
@@ -144,5 +144,32 @@
         }
       }
     }
+  }
+
+  &__latest {
+      border: solid 1px @hairline-color;
+      padding: 10px;
+
+      li {
+        margin: 0 10px;
+        padding: 10px 0;
+        border-bottom: dotted 1px @hairline-color;
+
+        a {
+          cursor: pointer;
+          text-decoration: none;
+
+          h6 {
+            font: bold 0.9rem/1.125rem "Roboto", sans-serif;
+            color: @grey-warm-mid;
+          }
+
+          .premium-badge {
+            transform: scale(.85);
+            transform-origin: left;
+          }
+        }
+      }
+
   }
 }
