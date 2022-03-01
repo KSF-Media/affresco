@@ -463,7 +463,8 @@ render setState state components router onPaywallEvent =
     listFrontpage maybeHeader content = mosaicoDefaultLayout $
       (fromMaybe mempty maybeHeader) <>
       (Frontpage.render $ Frontpage.List
-        { content
+        { categoryLabel: Just "Category Label"
+        , content
         , onArticleClick
         , onTagClick
         })
