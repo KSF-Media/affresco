@@ -2,6 +2,17 @@
   grid-area: main;
   max-width: 600px;
 
+  h1 {
+    grid-area: main;
+    font: bold 1.75rem/1 "Roboto", sans-serif;
+    display: inline-block;
+    margin-bottom: 30px;
+    border-bottom: solid 3px #ccc;
+    #HBL & { border-color: @hbl-orange };
+    #ON & { border-color: @on-blue};
+    #VN & { border-color: @vn-red };
+  }
+
   .list-article-image {
     img {
       width: 100%;
