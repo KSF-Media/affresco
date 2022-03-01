@@ -31,7 +31,8 @@ import React.Basic.Events (EventHandler)
 data Frontpage = List ListFrontpageProps | Prerendered PrerenderedFrontpageProps
 
 type ListFrontpageProps =
-  { content :: Maybe (Array ArticleStub)
+  { categoryLabel :: Maybe String
+  , content :: Maybe (Array ArticleStub)
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
   }
@@ -43,62 +44,66 @@ type PrerenderedFrontpageProps =
   }
 
 render :: Frontpage -> JSX
-render (List props) = genericRender (\list -> map renderListArticle list) mempty props.content
-  where
-    renderListArticle :: ArticleStub -> JSX
-    renderListArticle a =
-      DOM.div
-        { className: "mosaico--list-article list-article--default"
-        , onClick: props.onArticleClick a
-        , _data: Object.fromFoldable $
-          -- Known bug, exclude from tests
-          if Just true == (contains (Pattern ":") <<< un Tag <$> head a.tags) then []
-          else [ Tuple "premium" $ if a.premium then "1" else "0"
-                , Tuple "uuid" $ a.uuid
-                ]
-        , children:
-            [ DOM.span
-                { children:
-                    [ -- TODO: paper specific fallback img
-                    let imgSrc = maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage)
-                    in DOM.a
-                        { href: "/artikel/" <> a.uuid
-                        , className: "list-article-image"
-                        , children: [ DOM.img { src: imgSrc <> "&function=hardcrop&width=200&height=200&q=90" } ]
-                        }
-                    ,  DOM.div
-                          { className: "list-article-liftup"
-                          , children:
-                              [ foldMap
-                                  (\tag ->
-                                      DOM.a
-                                        { className: "mosaico-article__tag"
-                                        , onClick: props.onTagClick tag
-                                        , href: "/tagg/" <> tagToURIComponent tag
-                                        , children: [ DOM.text $ un Tag tag ]
-                                        }
-                                  ) $ head a.tags
-                              , DOM.a
-                                  { href: "/artikel/" <> a.uuid
-                                  , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
-                                  }
-                              , guard a.premium $
-                                DOM.div
-                                  { className: "mosaico--article--meta"
-                                  , children:
-                                      [ DOM.div
-                                          { className: "premium-badge"
-                                          , children: [ DOM.text "premium" ]
-                                          }
-                                      ]
-                                  }
-                              ]
-                          }
+render (List props) =
+  let category = fromMaybe mempty props.categoryLabel
+  in DOM.h1_ [ DOM.text category] <>
+      genericRender (\list -> map renderListArticle list) mempty props.content
+      where
+        renderListArticle :: ArticleStub -> JSX
+        renderListArticle a =
+          DOM.div
+            { className: "mosaico--list-article list-article--default"
+            , onClick: props.onArticleClick a
+            , _data: Object.fromFoldable $
+              -- Known bug, exclude from tests
+              if Just true == (contains (Pattern ":") <<< un Tag <$> head a.tags) then []
+              else [ Tuple "premium" $ if a.premium then "1" else "0"
+                    , Tuple "uuid" $ a.uuid
                     ]
-                }
-            ]
-        }
+            , children:
+                [ DOM.span
+                    { children:
+                        [ -- TODO: paper specific fallback img
+                        let imgSrc = maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage)
+                        in DOM.a
+                            { href: "/artikel/" <> a.uuid
+                            , className: "list-article-image"
+                            , children: [ DOM.img { src: imgSrc <> "&function=hardcrop&width=200&height=200&q=90" } ]
+                            }
+                        ,  DOM.div
+                              { className: "list-article-liftup"
+                              , children:
+                                  [ foldMap
+                                      (\tag ->
+                                          DOM.a
+                                            { className: "mosaico-article__tag"
+                                            , onClick: props.onTagClick tag
+                                            , href: "/tagg/" <> tagToURIComponent tag
+                                            , children: [ DOM.text $ un Tag tag ]
+                                            }
+                                      ) $ head a.tags
+                                  , DOM.a
+                                      { href: "/artikel/" <> a.uuid
+                                      , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
+                                      }
+                                  , guard a.premium $
+                                    DOM.div
+                                      { className: "mosaico--article--meta"
+                                      , children:
+                                          [ DOM.div
+                                              { className: "premium-badge"
+                                              , children: [ DOM.text "premium" ]
+                                              }
+                                          ]
+                                      }
+                                  ]
+                              }
+                        ]
+                    }
+                ]
+            }
 render (Prerendered props@{ hooks }) = genericRender
+  
   (\content -> [ HtmlRenderer.render
                    { content
                    , hooks: Just $ toHookRep <$> hooks
