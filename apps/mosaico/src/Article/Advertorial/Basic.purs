@@ -1,7 +1,4 @@
-module Mosaico.Article.Advertorial.Basic
-  ( render
-  )
-  where
+module Mosaico.Article.Advertorial.Basic where
 
 import Prelude
 
@@ -16,11 +13,19 @@ import Mosaico.Article.Image as Image
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component)
 
 type Props =
   { article :: Article
   , paper :: Paper
   }
+
+component :: Component Props
+component = do
+  imageComponent <- Image.component
+  React.component "Advertorial" $ \props -> React.do
+    pure $ render imageComponent props
 
 render :: (Image.Props -> JSX) -> Props -> JSX
 render imageComponent props =

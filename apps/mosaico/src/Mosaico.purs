@@ -95,6 +95,7 @@ type Components =
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
+  , advertorialComponent :: Advertorial.Props -> JSX
   }
 
 type Props =
@@ -292,11 +293,12 @@ getInitialValues = do
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
   staticPageScript <- toMaybe <$> getInitialStaticPageScript
 
-  loginModalComponent <- LoginModal.loginModal
-  searchComponent     <- Search.searchComponent
-  webviewComponent    <- Webview.webviewComponent
-  articleComponent    <- Article.component
-  epaperComponent     <- Epaper.component
+  loginModalComponent  <- LoginModal.loginModal
+  searchComponent      <- Search.searchComponent
+  webviewComponent     <- Webview.webviewComponent
+  articleComponent     <- Article.component
+  epaperComponent      <- Epaper.component
+  advertorialComponent <- Advertorial.component
   pure
     { state:
         { article: Nothing
@@ -319,6 +321,7 @@ getInitialValues = do
         , webviewComponent
         , articleComponent
         , epaperComponent
+        , advertorialComponent
         }
     , catMap
     , nav
@@ -381,7 +384,7 @@ render setState state components router onPaywallEvent =
            if article.uuid == articleId
            -- If we have this article already in `state`, let's pass that to `renderArticle`
            then case article.articleType of
-             Advertorial -> Advertorial.render (const mempty) { article, paper: mosaicoPaper }
+             Advertorial -> components.advertorialComponent { article, paper: mosaicoPaper }
              _           -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
