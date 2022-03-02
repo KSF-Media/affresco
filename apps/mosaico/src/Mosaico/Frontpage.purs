@@ -45,9 +45,13 @@ type PrerenderedFrontpageProps =
 
 render :: Frontpage -> JSX
 render (List props) =
-  let category = fromMaybe mempty props.categoryLabel
-  in DOM.h1_ [ DOM.text category] <>
-      genericRender (\list -> map renderListArticle list) mempty props.content
+    DOM.div
+        { className: "mosaico--article-list"
+        , children:
+          [ maybeCategoryLabel props.categoryLabel
+          , genericRender (\list -> map renderListArticle list) mempty props.content
+          ]
+        }
       where
         renderListArticle :: ArticleStub -> JSX
         renderListArticle a =
@@ -102,8 +106,8 @@ render (List props) =
                     }
                 ]
             }
+
 render (Prerendered props@{ hooks }) = genericRender
-  
   (\content -> [ HtmlRenderer.render
                    { content
                    , hooks: Just $ toHookRep <$> hooks
@@ -113,9 +117,18 @@ render (Prerendered props@{ hooks }) = genericRender
   props.onClick
   props.content
 
+maybeCategoryLabel :: Maybe String -> JSX
+maybeCategoryLabel categoryLabel =
+  case categoryLabel of
+    Just label -> DOM.h1
+                    { className: ""
+                    , children: [ DOM.text label ]
+                    }
+    _          -> mempty
+
 genericRender :: forall a. (a -> Array JSX) -> EventHandler -> Maybe a -> JSX
 genericRender f onClick content = DOM.div
-  { className: "mosaico--article-list"
+  { className: "mosaico-main"
   , children: maybe [loadingSpinner] f content
   , onClick
   }

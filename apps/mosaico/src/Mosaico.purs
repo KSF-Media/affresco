@@ -403,7 +403,7 @@ render setState state components router onPaywallEvent =
           in case maybeFeed of
                Just (ArticleList tagFeed)
                  | null tagFeed -> mosaicoDefaultLayout Error.notFoundWithAside
-               _                -> frontpageNoHeader maybeFeed
+               _                -> frontpageNoHeader Nothing maybeFeed
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ Menu.render
@@ -436,7 +436,7 @@ render setState state components router onPaywallEvent =
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
-       Routes.DebugPage _ -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
+       Routes.DebugPage _ -> frontpageNoHeader Nothing $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
   where
 
     renderCategory :: Category -> JSX
@@ -445,25 +445,25 @@ render setState state components router onPaywallEvent =
       in case c.type of
         Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
         Link -> mempty -- TODO
-        Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader <<< Just) maybeFeed
-        Feed -> frontpageNoHeader maybeFeed
+        Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader Nothing <<< Just) maybeFeed
+        Feed -> frontpageNoHeader (Just c.label) maybeFeed
 
     frontpageWithHeader :: JSX -> Maybe ArticleFeed -> JSX
-    frontpageWithHeader header = frontpage $ Just header
+    frontpageWithHeader header = frontpage (Just header) Nothing
 
-    frontpageNoHeader :: Maybe ArticleFeed -> JSX
+    frontpageNoHeader :: Maybe CategoryLabel -> Maybe ArticleFeed -> JSX
     frontpageNoHeader = frontpage Nothing
 
-    frontpage :: Maybe JSX -> Maybe ArticleFeed -> JSX
-    frontpage maybeHeader (Just (ArticleList list)) = listFrontpage maybeHeader $ Just list
-    frontpage maybeHeader (Just (Html html))        = prerenderedFrontpage maybeHeader $ Just html
-    frontpage maybeHeader _                         = listFrontpage maybeHeader Nothing
+    frontpage :: Maybe JSX -> Maybe CategoryLabel -> Maybe ArticleFeed -> JSX
+    frontpage maybeHeader maybeCategorLabel (Just (ArticleList list)) = listFrontpage maybeHeader maybeCategorLabel $ Just list
+    frontpage maybeHeader _ (Just (Html html))                        = prerenderedFrontpage maybeHeader $ Just html
+    frontpage maybeHeader _ _                                         = listFrontpage maybeHeader Nothing Nothing
 
-    listFrontpage :: Maybe JSX -> Maybe (Array ArticleStub) -> JSX
-    listFrontpage maybeHeader content = mosaicoDefaultLayout $
+    listFrontpage :: Maybe JSX -> Maybe CategoryLabel -> Maybe (Array ArticleStub) -> JSX
+    listFrontpage maybeHeader maybeCategoryLabel content = mosaicoDefaultLayout $
       (fromMaybe mempty maybeHeader) <>
       (Frontpage.render $ Frontpage.List
-        { categoryLabel: Just "Category Label"
+        { categoryLabel: unwrap <$> maybeCategoryLabel
         , content
         , onArticleClick
         , onTagClick
