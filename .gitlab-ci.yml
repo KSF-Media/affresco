@@ -65,7 +65,6 @@ stages:
   only:
     - master
   script:
-    - export LETTERA_URL=$LETTERA_INTERNAL
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/kubernetes-deployment.sh
     - $CI_SCRIPTS/affresco/app-upload.sh
