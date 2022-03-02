@@ -33,6 +33,7 @@ import Effect.Exception (throw)
 import Effect.Now (nowDateTime)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign (unsafeToForeign)
+import Foreign.Object (lookup)
 import JSURI as URI
 import KSF.Api (UserAuth, parseToken)
 import KSF.Api.Error as Api.Error
@@ -45,10 +46,10 @@ import Mosaico.Cache (Stamped(..))
 import Mosaico.Cache as Cache
 import Mosaico.Epaper as Epaper
 import Mosaico.Error (notFoundWithAside)
+import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header.Menu as Menu
-import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Search as Search
@@ -112,7 +113,9 @@ spec ::
     { routes ::
          { getHealthz ::
               GET "/healthz"
-                { response :: String }
+                { response :: String
+                , guards :: Guards ("clientip" : Nil)
+                }
          , frontpageUpdated ::
               GET "/api/reset/<category>"
                 { params :: { category :: String }
@@ -128,7 +131,7 @@ spec ::
               GET "/artikel/<uuidOrSlug>"
                 { response :: ResponseBody
                 , params :: { uuidOrSlug :: String }
-                , guards :: Guards ("credentials" : Nil)
+                , guards :: Guards ("credentials" : "clientip" :Nil)
                 }
          , assets ::
               GET "/assets/<..path>"
@@ -193,6 +196,7 @@ spec ::
     , guards ::
          { credentials :: Maybe UserAuth
          , category :: Category
+         , clientip :: Maybe String
          }
     }
 spec = Spec
@@ -231,11 +235,22 @@ main = do
           , profilePage: profilePage env
           , menu: menu env
           }
-        guards = { credentials: getCredentials, category: parseCategory env }
+        guards = 
+          { credentials: getCredentials
+          , category: parseCategory env
+          , clientip: getClientIP 
+          }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
-getHealthz :: {} -> Aff String
-getHealthz _ = pure "OK"
+getHealthz :: {guards :: {clientip :: Maybe String}} -> Aff String
+getHealthz {guards: {clientip}} =
+  pure $ "OK " <> fromMaybe "" clientip
+
+getClientIP :: HTTP.Request -> Aff (Maybe String)
+getClientIP req =
+   pure $ lookup "x-real-ip" hdr
+   where
+    hdr = HTTP.requestHeaders req
 
 getDraftArticle
   :: Env
@@ -247,19 +262,19 @@ getDraftArticle env { params: {aptomaId}, query } = do
 
 getArticle
   :: Env
-  -> { params :: { uuidOrSlug :: String }, guards :: { credentials :: Maybe UserAuth } }
+  -> { params :: { uuidOrSlug :: String }, guards :: { credentials :: Maybe UserAuth, clientip :: Maybe String } }
   -> Aff (Response ResponseBody)
-getArticle env r@{ params: { uuidOrSlug }, guards: { credentials } }
+getArticle env r@{ params: { uuidOrSlug }, guards: { credentials, clientip } }
   | Just uuid <- UUID.parseUUID uuidOrSlug = do
       { user, article, mostReadArticles, latestArticles } <- sequential $
         { user: _, article: _, mostReadArticles: _, latestArticles: _ }
         <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-        <*> parallel (Lettera.getArticle uuid mosaicoPaper r.guards.credentials)
+        <*> parallel (Lettera.getArticle uuid mosaicoPaper r.guards.credentials clientip)
         <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
         <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
       renderArticle env user article mostReadArticles latestArticles
   | otherwise = do
-    article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials
+    article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials clientip
     case article of
       Right a -> do
         pure $ Response
