@@ -119,7 +119,8 @@ getArticleWithUrl url paper auth clientip = do
                 , AX.RequestHeader "Authorization" ("OAuth " <> authToken)
                 , AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip)
                 ]
-              _ -> mempty
+              _ -> 
+                [ AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip) ]
         }
   articleResponse <- AX.request request
   case articleResponse of
