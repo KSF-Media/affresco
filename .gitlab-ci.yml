@@ -9,8 +9,10 @@ variables:
 .mosaico-ci-variables: &mosaico-ci-vars
   SERVICE_NAME: mosaico
   MULTIPAPER: "true"
+  LETTERA_INTERNAL: http://lettera/v4beta
 .app-article-ci-variables: &app-article-ci-vars
   SERVICE_NAME: app-article-server
+  LETTERA_INTERNAL: http://lettera/v3
 
 before_script:
   - eval `${CI_SCRIPTS}/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
@@ -64,6 +66,7 @@ stages:
   only:
     - master
   script:
+    - export LETTERA_URL=$LETTERA_INTERNAL
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/kubernetes-deployment.sh
     - $CI_SCRIPTS/affresco/app-upload.sh
