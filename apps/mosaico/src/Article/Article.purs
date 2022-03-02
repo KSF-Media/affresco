@@ -261,7 +261,7 @@ render imageComponent props =
         , children: [ DOM.text "ANDRA LÄSER" ]
         } <>
       (Frontpage.render $ Frontpage.List
-        { categoryLabel: Just "Label"
+        { categoryLabel: mempty
         , content: Just articles
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick
