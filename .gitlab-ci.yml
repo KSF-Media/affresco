@@ -11,7 +11,7 @@ variables:
   MULTIPAPER: "true"
 .app-article-ci-variables: &app-article-ci-vars
   SERVICE_NAME: app-article-server
-  LETTERA_INTERNAL: http://lettera/v3
+  LETTERA_INTERNAL: "http://lettera/v3"
 
 before_script:
   - eval `${CI_SCRIPTS}/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
@@ -66,7 +66,7 @@ stages:
     - master
   script:
     - $CI_SCRIPTS/auth-gcloud.sh
-    - $CI_SCRIPTS/kubernetes-deployment.sh
+    - LETTERA_URL=$LETTERA_INTERNAL $CI_SCRIPTS/kubernetes-deployment.sh
     - $CI_SCRIPTS/affresco/app-upload.sh
 
 # Build apps
@@ -116,7 +116,7 @@ deploy-mosaico-hbl-staging:
   variables:
     SERVICE_NAME: mosaico-hbl
     PAPER: "hbl"
-    LETTERA_INTERNAL: http://lettera/v4beta
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-vn-staging:
   extends: .deploy
@@ -126,7 +126,7 @@ deploy-mosaico-vn-staging:
   variables:
     SERVICE_NAME: mosaico-vn
     PAPER: "vn"
-    LETTERA_INTERNAL: http://lettera/v4beta
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-on-staging:
   extends: .deploy
@@ -136,7 +136,7 @@ deploy-mosaico-on-staging:
   variables:
     SERVICE_NAME: mosaico-on
     PAPER: "ön"
-    LETTERA_INTERNAL: http://lettera/v4beta
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-app-article-staging:
   extends: .deploy
@@ -157,7 +157,7 @@ deploy-mosaico-hbl-production:
   variables:
     SERVICE_NAME: mosaico-hbl
     PAPER: "hbl"
-    LETTERA_INTERNAL: http://lettera/v4beta
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-vn-production:
   extends: .deploy
@@ -169,7 +169,7 @@ deploy-mosaico-vn-production:
   variables:
     SERVICE_NAME: mosaico-vn
     PAPER: "vn"
-    LETTERA_INTERNAL: http://lettera/v4beta
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-on-production:
   extends: .deploy
@@ -181,7 +181,7 @@ deploy-mosaico-on-production:
   variables:
     SERVICE_NAME: mosaico-on
     PAPER: "ön"
-    LETTERA_INTERNAL: http://lettera/v4beta
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-app-article-production:
   extends: .deploy
