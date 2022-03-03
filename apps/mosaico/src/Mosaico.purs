@@ -486,6 +486,10 @@ render setState state components router onPaywallEvent =
     hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler
             , Frontpage.Latest state.latestArticles onClickHandler
             , Frontpage.ArticleUrltoRelative
+            , Frontpage.Ad "Box Ad 1 DESKTOP" "mosaico-ad__firstbox"
+            , Frontpage.Ad "Box Ad 2 DESKTOP" "mosaico-ad__sidebar-2"
+            , Frontpage.Ad "Box Ad 3 DESKTOP" "mosaico-ad__sidebar-3"
+            , Frontpage.Ad "Box Ad 4 DESKTOP" "mosaico-ad__sidebar-4"
             ]
 
     mosaicoDefaultLayout :: JSX -> JSX

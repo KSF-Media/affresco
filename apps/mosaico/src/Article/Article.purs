@@ -161,7 +161,7 @@ render imageComponent props =
                                      { latestArticles: props.latestArticles
                                      , onClickHandler: props.onArticleClick
                                      }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__sidebar-1" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
                           ]
                         }
                     ]

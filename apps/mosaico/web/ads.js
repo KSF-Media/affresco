@@ -108,33 +108,33 @@ window.googletag.cmd.push(function () {
       {
         gamId: "FIRSTBOX",
         sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-        targetId: "mosaico-ad__sidebar-1"
+        targetId: "mosaico-ad__firstbox"
       },
-      // {
-      //   gamId: "BOX1",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX2",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX3",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX4",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX5",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
+      {
+        gamId: "BOX1",
+        sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+        targetId: "mosaico-ad__box1"
+      },
+      {
+        gamId: "BOX2",
+        sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+        targetId: "mosaico-ad__box2"
+      },
+      {
+        gamId: "BOX3",
+        sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+        targetId: "mosaico-ad__box3"
+      },
+      {
+        gamId: "BOX4",
+        sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+        targetId: "mosaico-ad__box4"
+      },
+      {
+        gamId: "BOX5",
+        sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+        targetId: "mosaico-ad__sbox5"
+      },
       {
         gamId: "BOX",
         sizes: [ [300,250], [300,300], [300, 431], [300,600] ],
