@@ -393,7 +393,8 @@ frontpage env { guards: { credentials } } = do
     renderFrontpage (ArticleList list) _ =
       { type: FrontpageContent
       , content: Frontpage.render $ Frontpage.List
-          { content: Just list
+          { categoryLabel: mempty
+          , content: Just list
           , onArticleClick: const mempty
           , onTagClick: const mempty
           }
@@ -496,7 +497,8 @@ tagList env { params: { tag }, guards: { credentials } } = do
       { mainContent:
           { type: TagListContent tag'
           , content: Frontpage.render $ Frontpage.List
-              { content: Just articles
+              { categoryLabel: mempty
+              , content: Just articles
               , onArticleClick: const mempty
               , onTagClick: const mempty
               }
@@ -620,7 +622,8 @@ debugList env { params: { uuid }, guards: { credentials } } = do
           { mainContent:
               { type: FrontpageContent
               , content: Frontpage.render $ Frontpage.List
-                  { content: pure <$> article
+                  { categoryLabel: mempty
+                  , content: pure <$> article
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -659,7 +662,8 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
           { mainContent:
               { type: FrontpageContent
               , content: Frontpage.render $ Frontpage.List
-                  { content: Just articles
+                  { categoryLabel: mempty
+                  , content: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
                   }
@@ -694,7 +698,8 @@ searchPage env { query: { search }, guards: { credentials } } = do
                                                   } <>
                                   (guard (not $ null articles) $
                                    Frontpage.render $ Frontpage.List
-                                   { content: Just articles
+                                   { categoryLabel: mempty
+                                   , content: Just articles
                                    , onArticleClick: const mempty
                                    , onTagClick: const mempty
                                    })
