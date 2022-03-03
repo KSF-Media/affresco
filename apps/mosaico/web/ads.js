@@ -60,16 +60,16 @@ window.googletag.cmd.push(function () {
       // },
     ],
     desktop: [
-      // {
-      //   gamId: "JATTEBOX",
-      //   sizes: [468,400],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "DUBBELBOX",
-      //   sizes: [468,600],
-      //   targetId: ""
-      // },
+     {
+        gamId: "JATTEBOX",
+        sizes: [468,400],
+        targetId: "mosaico-ad__bigbox1"
+      },
+      {
+        gamId: "DUBBELBOX",
+        sizes: [468,600],
+        targetId: "mosaico-ad__bigbox2"
+      },
       // {
       //   gamId: "INTERSTIT",
       //   sizes: [958,586],
