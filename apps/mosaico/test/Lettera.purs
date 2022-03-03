@@ -17,7 +17,7 @@ import Lettera.Models (Category(..), CategoryLabel(..), CategoryType(..))
 import Lettera.Models as Models
 import Mosaico.Test (Test, listArticle, log, site, sub)
 import Partial.Unsafe (unsafePartial)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 import Test.Unit as Unit
 import Test.Unit.Assert as Assert
 
@@ -74,14 +74,13 @@ testCategoryLists page = do
       | c.type == Feed = do
         log $ "test feed category " <> show c.label
         firstArticle <- join <<< map head <<< Lettera.responseBody <$>
-                        (Lettera.getFrontpage HBL $ Just $ show c.label)
+                        (Lettera.getFrontpage HBL (Just $ show c.label) Nothing)
         let catElement = Chrome.Selector $ ".mosaico-header__block:nth-child(3) .mosaico-header__section:nth-of-type(" <> show idx <> ") a"
             (CategoryLabel catLabel) = c.label
         Chrome.waitFor_ catElement page
         Chrome.assertContent catElement (toUpper catLabel) page
         Chrome.click catElement page
         Chrome.waitFor_ listArticle page
-        x <- Chrome.getHref (sub " a[href^='/artikel/']" listArticle) page
         uuid <- stripPrefix (Pattern "/artikel/")
                 <$> Chrome.getHref (sub " a[href^='/artikel/']" listArticle) page
         Assert.assert "UUID not found" $ isJust uuid

@@ -10,6 +10,7 @@ import Mosaico.Footer (footer)
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
+import Mosaico.LatestList as LatestList
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (JSX)
 import Routing.PushState (PushStateInterface)
@@ -18,6 +19,7 @@ import Simple.JSON (write)
 type Props =
   { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
+  , latestArticles :: Array ArticleStub
   , categoryStructure :: Array Category
   , user :: Maybe User
   }
@@ -34,6 +36,7 @@ data MainContentType
   | TagListContent Tag
   | EpaperContent
   | StaticPageContent String
+  | ProfileContent
   | MenuContent
 
 app :: Props -> JSX
@@ -66,7 +69,9 @@ render router props = DOM.div
                            , catMap: categoriesMap props.categoryStructure
                            , onCategoryClick: const mempty
                            , user: props.user
-                           , onLogin: pure unit
+                           , onLogin: mempty
+                           , onProfile: mempty
+                           , onStaticPageClick: mempty
                            }
            , Header.mainSeparator
            , props.mainContent.content
@@ -81,5 +86,8 @@ render router props = DOM.div
     aside =
       DOM.aside
         { className: "mosaico--aside"
-        , children: [ MostReadList.render { mostReadArticles: props.mostReadArticles, onClickHandler: const $ pure unit } ]
+        , children:
+          [ MostReadList.render { mostReadArticles: props.mostReadArticles, onClickHandler: const mempty }
+          , LatestList.render { latestArticles: props.latestArticles, onClickHandler: const mempty }
+          ]
         }

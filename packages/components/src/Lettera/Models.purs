@@ -9,14 +9,14 @@ import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Array (catMaybes, fromFoldable)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
-import Data.Foldable (foldMap, foldr)
+import Data.Foldable (foldMap, foldr, lookup)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.Hashable (class Hashable, hash)
 import Data.JSDate as JSDate
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.String (joinWith, toLower)
 import Data.String (Pattern(..), Replacement(..), replaceAll, toLower) as String
@@ -24,6 +24,7 @@ import Data.String.Extra (kebabCase) as String
 import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
 import Data.Traversable (traverse)
+import Data.Tuple (Tuple(..), swap)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
@@ -34,16 +35,16 @@ import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
 import Type.Prelude (Proxy(..))
 
-data ArticleType = FullArticle | PreviewArticle | DraftArticle | ErrorArticle
+data MosaicoArticleType = FullArticle | PreviewArticle | DraftArticle | ErrorArticle
 
-derive instance eqArticleType :: Eq ArticleType
-instance showArticleType :: Show ArticleType where
+derive instance eqMosaicoArticleType :: Eq MosaicoArticleType
+instance showArticleType :: Show MosaicoArticleType where
   show FullArticle = "FullArticle"
   show PreviewArticle = "PreviewArticle"
   show DraftArticle = "DraftArticle"
   show ErrorArticle = "ErrorArticle"
 
-readArticleType :: String -> Maybe ArticleType
+readArticleType :: String -> Maybe MosaicoArticleType
 readArticleType "FullArticle" = Just FullArticle
 readArticleType "PreviewArticle" = Just PreviewArticle
 readArticleType "DraftArticle" = Just DraftArticle
@@ -51,7 +52,7 @@ readArticleType "ErrorArticle" = Just ErrorArticle
 readArticleType _ = Nothing
 
 type FullArticle =
-  { articleType :: ArticleType
+  { articleType :: MosaicoArticleType
   , article :: Article
   }
 
@@ -60,7 +61,10 @@ notFoundArticle =
   { articleType: ErrorArticle
   , article:
     { title: "Hoppsan! Sidan eller artikeln hittades inte"
+    , listTitle: Nothing
     , body: []
+    , analyticsCategory: Nothing
+    , analyticsSection: Nothing
     , mainImage: Nothing
     , tags: []
     , uuid: "notfound"
@@ -69,10 +73,34 @@ notFoundArticle =
     , premium: false
     , removeAds: false
     , publishingTime: Nothing
+    , publishingTimeUtc: Nothing
     , updateTime: Nothing
     , externalScripts: Nothing
+    , articleType: KatastrofLiten
     }
   }
+
+data ArticleType
+  = NyhetStor
+  | NyhetLiten
+  | NyhetRelaterade
+  | Opinion
+  | KatastrofStor
+  | KatastrofLiten
+  | Advertorial
+
+derive instance eqArticleType :: Eq ArticleType
+
+articleTypes :: Array (Tuple ArticleType String)
+articleTypes =
+  [ Tuple NyhetStor "NyhetStor"
+  , Tuple NyhetLiten "NyhetLiten"
+  , Tuple NyhetRelaterade "NyhetRelaterade"
+  , Tuple Opinion "Opinion"
+  , Tuple KatastrofStor "KatastrofStor"
+  , Tuple KatastrofLiten "KatastrofLiten"
+  , Tuple Advertorial "Advertorial"
+  ]
 
 newtype LocalDateTime = LocalDateTime DateTime
 derive instance newtypeLocalDateTime :: Newtype LocalDateTime _
@@ -109,12 +137,14 @@ type ArticleStubCommon =
 type JSArticleStub =
   { publishingTime :: String
   , tags           :: Array String
+  , articleType    :: String
   | ArticleStubCommon
   }
 
 type ArticleStub =
   { publishingTime :: Maybe LocalDateTime
   , tags           :: Array Tag
+  , articleType    :: ArticleType
   | ArticleStubCommon
   }
 
@@ -138,14 +168,17 @@ instance encodeJsonExternalScript :: EncodeJson ExternalScript where
     encodeJson $ String.replaceAll (Pattern "</script>") (Replacement "<\\/script>") script
 
 type ArticleCommon =
-  ( title     :: String
-  , mainImage :: Maybe Image
-  , uuid      :: String
-  , preamble  :: Maybe String
-  , authors   :: Array Author
-  , premium   :: Boolean
-  , removeAds :: Boolean
-  , externalScripts :: Maybe (Array ExternalScript)
+  ( title             :: String
+  , listTitle         :: Maybe String
+  , mainImage         :: Maybe Image
+  , uuid              :: String
+  , preamble          :: Maybe String
+  , authors           :: Array Author
+  , analyticsSection  :: Maybe String
+  , analyticsCategory :: Maybe String
+  , premium           :: Boolean
+  , removeAds         :: Boolean
+  , externalScripts   :: Maybe (Array ExternalScript)
   )
 
 type JSArticle =
@@ -153,14 +186,17 @@ type JSArticle =
   , updateTime     :: Maybe String
   , body           :: Array BodyElementJS
   , tags           :: Array String
+  , articleType    :: String
   | ArticleCommon
   }
 
 type Article =
   { publishingTime :: Maybe LocalDateTime
+  , publishingTimeUtc :: Maybe DateTime
   , updateTime     :: Maybe LocalDateTime
   , body           :: Array BodyElement
   , tags           :: Array Tag
+  , articleType    :: ArticleType
   | ArticleCommon
   }
 
@@ -170,6 +206,7 @@ type JSDraftArticle =
   { publishingTime :: Maybe String
   , updateTime     :: Maybe String
   , tags           :: Array String
+  , articleType    :: String
   , body           :: Array BodyElementJS
   | ArticleCommon
   }
@@ -191,9 +228,11 @@ articleToJson article =
   encodeJson $
     article
       { publishingTime = foldMap formatLocalDateTime article.publishingTime
+      , publishingTimeUtc = foldMap (\x -> format dateTimeFormatter x) article.publishingTimeUtc
       , updateTime     = foldMap formatLocalDateTime article.updateTime
       , tags           = map unwrap article.tags
       , body           = map bodyElementToJson article.body
+      , articleType    = fromMaybe "NyhetStor" $ lookup article.articleType articleTypes
       }
   where
     base = { html: Nothing
@@ -216,7 +255,10 @@ articleToJson article =
     bodyElementToJson (Ad _)              = base
 
 articleStubToJson :: ArticleStub -> Json
-articleStubToJson = encodeJson <<< modify (Proxy :: Proxy "tags") (map unwrap) <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
+articleStubToJson = encodeJson
+                    <<< modify (Proxy :: Proxy "articleType") (fromMaybe "NyhetStor" <<< flip lookup articleTypes)
+                    <<< modify (Proxy :: Proxy "tags") (map unwrap)
+                    <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
 
 formatLocalDateTime :: LocalDateTime -> String
 formatLocalDateTime = format dateTimeFormatter <<< un LocalDateTime
@@ -241,15 +283,17 @@ parseArticle = parseArticleWith fromJSArticle
 parseArticleWithoutLocalizing :: Json -> (Either String Article)
 parseArticleWithoutLocalizing =
   parseArticlePure
-    \jsArticle -> do
+    \(jsArticle :: JSArticle)-> do
       body <- parseArticlePure (fromJSBody (parseArticleStubWithoutLocalizing <<< encodeJson)) $
               encodeJson (jsArticle.body :: Array BodyElementJS)
-      pure $ jsArticle
-        { publishingTime = LocalDateTime <$> parseDateTime jsArticle.publishingTime
-        , updateTime     = LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
-        , tags           = map Tag jsArticle.tags
-        , body           = body
-        }
+      pure $ merge
+        { publishingTime: LocalDateTime <$> parseDateTime jsArticle.publishingTime
+        , publishingTimeUtc: parseDateTime jsArticle.publishingTime
+        , updateTime: LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+        , tags: map Tag jsArticle.tags
+        , body: body
+        , articleType: fromMaybe NyhetStor $ lookup jsArticle.articleType $ map swap articleTypes
+        } jsArticle
 
 parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
@@ -257,6 +301,7 @@ parseArticleStubWithoutLocalizing =
     \jsStub -> pure $
                jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime
                       , tags           = map Tag jsStub.tags
+                      , articleType    = fromMaybe NyhetStor $ lookup jsStub.articleType $ map swap articleTypes
                       }
 
 parseArticlePure :: forall b a. ReadForeign b => (b -> Either String a) -> Json -> (Either String a)
@@ -278,23 +323,41 @@ parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
 
 fromJSArticleStub :: JSArticleStub -> Effect ArticleStub
-fromJSArticleStub jsStub@{ uuid, publishingTime, tags } = do
+fromJSArticleStub jsStub@{ uuid, publishingTime, tags, articleType } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
-  pure jsStub { publishingTime = localPublishingTime, tags = map Tag tags }
+  pure jsStub
+    { publishingTime = localPublishingTime
+    , tags = map Tag tags
+    , articleType = fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
+    }
 
 fromJSDraftArticle :: JSDraftArticle -> Effect Article
-fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags, body } = do
+fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags, body, articleType } = do
   localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ jsDraft { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags, body = resolvedBody }
+  pure $ merge
+    { publishingTime: localPublishingTime
+    , publishingTimeUtc: parseDateTime =<< publishingTime
+    , updateTime: localUpdateTime
+    , tags: map Tag tags
+    , body: resolvedBody
+    , articleType: fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
+    } jsDraft
 
 fromJSArticle :: JSArticle -> Effect Article
-fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body } = do
+fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body, articleType } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ jsArticle { publishingTime = localPublishingTime, updateTime = localUpdateTime, tags = map Tag tags, body = resolvedBody }
+  pure $ merge 
+    { publishingTime: localPublishingTime
+    , publishingTimeUtc: parseDateTime publishingTime
+    , updateTime: localUpdateTime
+    , tags: map Tag tags
+    , body: resolvedBody
+    , articleType: fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
+    } jsArticle
 
 fromJSBody :: forall m. Applicative m => (JSArticleStub -> m ArticleStub) -> Array BodyElementJS -> m (Array BodyElement)
 fromJSBody f = map catMaybes <<< traverse fromJSBodyElement

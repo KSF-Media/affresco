@@ -312,7 +312,13 @@ requestPasswordReset :: String -> Aff (Either String Unit)
 requestPasswordReset email = do
   response <- try $ Persona.requestPasswordReset email
   case response of
-    Left _  -> pure $ Left "error"
+    Left err
+      -- In my testing, redirects (that the POST forgot password link
+      -- sends on success) have gone to the Right case, but let's add
+      -- this just to be safe.
+      | KSF.Error.isRedirect err -> do
+        pure $ Right unit
+      | otherwise -> pure $ Left "error"
     Right _ -> pure $ Right unit
 
 startPasswordReset :: String -> Aff (Either UserError Unit)

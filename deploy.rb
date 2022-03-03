@@ -94,9 +94,15 @@ def generate_production_dot_env(app, app_vars)
   end
 end
 
-build_commands = [
+build_cmds_staging = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd '#{app['path']}/' run build"
+  "yarn --cwd '#{app['path']}/' run build",
+  "yarn --cwd '#{app['path']}/' run test"
+]
+
+build_cmds_production = [
+  "yarn install --pure-lockfile --cache-folder=.yarn-cache",
+  "yarn --cwd '#{app['path']}/' run build",
 ]
 
 def deploy_maintenance_page(app_path)
@@ -113,5 +119,9 @@ elsif app_name == 'scripts'
   run_command("mkdir -p #{app['path']} && cp -R scripts #{app['path']}/dist")
 else
   setup_env(app)
-  build_commands.each { |c| run_command(c) }
+  if ENV['NODE_ENV'] == 'development' 
+    build_cmds_staging.each { |c| run_command(c) }
+  else
+    build_cmds_production.each { |c| run_command(c) }
+  end
 end

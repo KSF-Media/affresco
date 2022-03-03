@@ -5,12 +5,11 @@ import Prelude
 import Data.Array (head, splitAt)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe, fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
-import Effect (Effect)
 import Foreign.Object as Object
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
@@ -28,7 +27,9 @@ type Props =
   , categoryStructure :: Array Category
   , catMap :: Categories
   , onCategoryClick :: Category -> EventHandler
-  , onLogin :: Effect Unit
+  , onLogin :: EventHandler
+  , onProfile :: EventHandler
+  , onStaticPageClick :: String -> EventHandler
   , user :: Maybe User
   }
 
@@ -40,7 +41,11 @@ render props =
         [ DOM.div
             { className: block <> "__left-links"
             , children:
-                [ DOM.a_ [ DOM.text "KONTAKTA OSS" ]
+                [ DOM.a
+                    { href: "/sida/kontakt"
+                    , onClick: props.onStaticPageClick "kontakt"
+                    , children: [ DOM.text "KONTAKTA OSS" ]
+                    }
                 , DOM.text "|"
                 , DOM.a
                     { children: [ DOM.text "E-TIDNINGEN" ]
@@ -72,17 +77,20 @@ render props =
         , maybe
             (DOM.div
                { children: [ DOM.text "LOGGA IN" ]
-               , onClick: handler_ props.onLogin
+               , onClick: props.onLogin
                , className: accountClass <> " " <> accountClass <> "--active"
                , _data: Object.fromFoldable [Tuple "login" "1"]
                }
             )
-            (\firstName ->
-                DOM.div
+            (\name ->
+                DOM.a
                   { className: accountClass
-                  , children: [ DOM.text firstName ]
+                  , onClick: props.onProfile
+                  , href: "/konto"
+                  , children: [ DOM.text name ]
+                  , _data: Object.fromFoldable [Tuple "loggedin" "1"]
                   }
-            ) $ toMaybe <<< _.firstName =<< props.user
+            ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
         , DOM.nav
             { className: block <> "__center-links"
             , children: map mkCategory headerCategories

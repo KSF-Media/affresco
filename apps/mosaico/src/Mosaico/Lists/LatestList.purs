@@ -1,52 +1,45 @@
-module Mosaico.MostReadList where
+module Mosaico.LatestList where
 
 import Prelude
 
+import Data.Maybe (fromMaybe)
 import Data.Monoid (guard)
-import Effect (Effect)
+import Data.String (joinWith)
 import Lettera.Models (ArticleStub)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler)
+import React.Basic.Events (EventHandler)
 
 type Props =
-  { mostReadArticles :: Array ArticleStub
-  , onClickHandler :: ArticleStub -> Effect Unit
+  { latestArticles :: Array ArticleStub
+  , onClickHandler :: ArticleStub -> EventHandler
   }
 
 render :: Props -> JSX
 render props =
   let block =  "mosaico-asidelist"
   in DOM.div
-       { className: block
+       { className: joinWith " " [block, block <> "__latest"]
        , children:
-           [ DOM.h6
+           [ DOM.h3
                { className: block <> "--header"
-               , children: [ DOM.text "Andra läser" ]
+               , children: [ DOM.text "Senast publicerat" ]
                }
-           , DOM.ul
-               { className: block <> "__mostread"
-               , children: map renderMostreadArticle props.mostReadArticles
-               }
+           , DOM.ul_ $ map renderLatestArticle props.latestArticles
            ]
        }
   where
-    renderMostreadArticle :: ArticleStub -> JSX
-    renderMostreadArticle a =
+    renderLatestArticle :: ArticleStub -> JSX
+    renderLatestArticle a =
       DOM.li_
         [ DOM.a
-            { onClick: handler preventDefault $ const $ props.onClickHandler a
+            { onClick: props.onClickHandler a
             , href: "/artikel/" <> a.uuid
             , children:
                 [ DOM.div
-                    { className: "counter"
-                    , children: [ DOM.div_ [] ]
-                    }
-                , DOM.div
                     { className: "list-article-liftup"
                     , children:
-                        [ DOM.h6_ [ DOM.text a.title ]
+                        [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]
                         , guard a.premium $ DOM.div
                             { className: "mosaico--article--meta"
                             , children:

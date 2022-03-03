@@ -9,7 +9,7 @@ exports.renderTemplateHtml = function ($template) {
 }
 
 exports.cloneTemplate = function ($template) {
-  return $template("html").clone();
+  return $template.root().clone();
 }
 
 // Writes mosaico html inside #app

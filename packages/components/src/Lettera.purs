@@ -4,7 +4,7 @@ import Prelude
 
 import Affjax (Error, Response, defaultRequest, request, printError, get) as AX
 import Affjax.RequestHeader (RequestHeader(..)) as AX
-import Affjax.ResponseFormat (json) as AX
+import Affjax.ResponseFormat (json, string) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
@@ -28,7 +28,7 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, ArticleType(..), Category, DraftParams, FullArticle, Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
 
 foreign import letteraBaseUrl :: String
@@ -51,6 +51,9 @@ letteraFrontPageHtmlUrl = letteraBaseUrl <> "/list/frontpage/html"
 
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
+
+letteraLatestUrl :: String
+letteraLatestUrl = letteraBaseUrl <> "/list/latest/"
 
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
@@ -201,10 +204,17 @@ useResponse f (Right response)
   | otherwise =
       pure $ LetteraResponse { maxAge: Nothing, body: Left $ HttpError $ unwrap $ response.status }
 
-getFrontpageHtml :: Paper -> String -> Aff (LetteraResponse String)
-getFrontpageHtml paper category = do
-  let request = letteraFrontPageHtmlUrl <> "?paper=" <> Paper.toString paper  <> "&category=" <> category
-  useResponse (pure <<< pure) =<< AX.get ResponseFormat.string request
+getFrontpageHtml :: Paper -> String -> Maybe String -> Aff (LetteraResponse String)
+getFrontpageHtml paper category cacheToken = do
+  let request = AX.defaultRequest
+        { url = letteraFrontPageHtmlUrl
+                <> "?paper=" <> Paper.toString paper
+                <> "&category=" <> category
+                <> foldMap ("&cacheToken=" <> _) cacheToken
+        , method = Left GET
+        , responseFormat = AX.string
+        }
+  useResponse (pure <<< pure) =<< AX.request request
 
 parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
 parseArticleStubs response
@@ -212,13 +222,17 @@ parseArticleStubs response
       map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
   | otherwise = pure $ Left ParseError
 
-getFrontpage :: Paper -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
-getFrontpage paper categoryId = do
-  let letteraUrl =
-        letteraFrontPageUrl
-        <> "?paper=" <> Paper.toString paper
-        <> foldMap ("&category=" <> _) categoryId
-  useResponse parseArticleStubs =<< AX.get ResponseFormat.json letteraUrl
+getFrontpage :: Paper -> Maybe String -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
+getFrontpage paper categoryId cacheToken = do
+  let request = AX.defaultRequest
+        { url = letteraFrontPageUrl
+                <> "?paper=" <> Paper.toString paper
+                <> foldMap ("&category=" <> _) categoryId
+                <> foldMap ("&cacheToken=" <> _) cacheToken
+        , method = Left GET
+        , responseFormat = AX.json
+        }
+  useResponse parseArticleStubs =<< AX.request request
 
 getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
 getMostRead start limit category paper onlySubscribers =
@@ -229,6 +243,15 @@ getMostRead start limit category paper onlySubscribers =
           <> "&paper=" <> Paper.toString paper
           <> "&onlySubscribers=" <> show onlySubscribers
   )
+
+getLatest :: Int -> Int -> Paper -> Aff (LetteraResponse (Array ArticleStub))
+getLatest start limit paper =
+  useResponse parseArticleStubs =<<
+    AX.get ResponseFormat.json (letteraLatestUrl
+                                <> "?start=" <> show start
+                                <> "&limit=" <> show limit
+                                <> "&paper=" <> Paper.toString paper
+                              )
 
 getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do

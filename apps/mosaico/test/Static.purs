@@ -3,7 +3,7 @@ module Mosaico.Test.Static where
 import Prelude hiding (sub)
 
 import Mosaico.Test (Test, log, site)
-import Puppeteer as Chrome
+import KSF.Puppeteer as Chrome
 import Test.Unit.Assert as Assert
 
 testNavigateToStatic :: Test

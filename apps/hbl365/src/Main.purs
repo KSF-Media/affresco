@@ -148,7 +148,7 @@ render product =
     renderProduct (Just prod) =
       Vetrina.vetrina
         { onClose: Nothing
-        , onLogin: pure unit
+        , onLogin: mempty
         , products: prod
         , unexpectedError: DOM.text "Något gick fel"
         , accessEntitlements: Set.singleton "hbl-365"

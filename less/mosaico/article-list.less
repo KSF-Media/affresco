@@ -1,5 +1,17 @@
 .mosaico--article-list {
   grid-area: main;
+  max-width: 600px;
+
+  h1 {
+    grid-area: main;
+    font: bold 1.75rem/1 "Roboto", sans-serif;
+    display: inline-block;
+    margin-bottom: 30px;
+    border-bottom: solid 3px #ccc;
+    #HBL & { border-color: @hbl-orange };
+    #ON & { border-color: @on-blue};
+    #VN & { border-color: @vn-red };
+  }
 
   .list-article-image {
     img {
@@ -13,48 +25,55 @@
   }
 
   .mosaico--list-article {
-    &.list-article-default {
+
+    &.list-article--default {
+      margin-bottom: 30px;
+
       h2 {
-        margin-bottom: 5px;
+        font: 1.125rem/1.1 "Duplex Serif", serif;
         @media (min-width: @breakpoint-2col) {
-          margin-top: 0;
+          font: 1.5rem/1.1 "Duplex Serif", serif;
         }
+        margin-bottom: 5px;
       }
 
       > span {
         cursor: pointer;
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns: auto 80px;
         grid-template-areas:
-          "left"
-          "right";
+          "left right";
 
         @media (min-width: @breakpoint-2col) {
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: auto 120px;
           grid-column-gap: @block-padding;
           grid-template-areas: "left right";
         }
 
-        .list-article-image {
+        .list-article-liftup {
           grid-area: left;
         }
-
-        .list-article-liftup {
-          grid-area: right;
+        &:hover .list-article-liftup {
+          text-decoration: underline;
         }
 
-        transition: all 0.2s;
+
+        .list-article-image {
+          grid-area: right;
+          width: 80px;
+          height: 80px;
+          @media (min-width: @breakpoint-2col) {
+            width: 120px;
+            height: 120px;
+          }
+        }
 
         a {
           text-decoration: none;
           h2 {
             color: black;
           }
-	}
-      }
-
-      > span:hover {
-        filter: contrast(120%);
+        }
       }
     }
   }
@@ -66,6 +85,18 @@
 }
 
 .mosaico-asidelist {
+  font: 1rem "Duplex Serif", serif;
+
+  h6 {
+    font: bold 1rem/1.15em "Duplex Serif", serif;
+    color: @grey-warm-mid;
+  }
+
+  .premium-badge {
+    transform: scale(.85);
+    transform-origin: left;
+  }
+
 
   &--header {
     font: bold 1.125rem "Roboto", sans-serif;
@@ -97,12 +128,15 @@
         cursor: pointer;
         display: flex;
         text-decoration: none;
-  
+        :hover {
+          text-decoration: underline;
+        }
+
         .counter {
           flex-basis: @counter-size;
           flex-shrink: 0;
           margin-right: 10px;
-  
+
           > div {
             width: @counter-size;
             height: @counter-size;
@@ -111,38 +145,43 @@
             align-items: center;
             justify-content: center;
 
-	    #HBL & {
-              background-color: @hbl-orange;
-	    }
-	    #VN & {
-              background-color: @vn-red;
-	    }
-	    #ON & {
-              background-color: @on-blue;
-	    }
+            #HBL & {
+                    background-color: @hbl-orange;
+            }
+            #VN & {
+                    background-color: @vn-red;
+            }
+            #ON & {
+                    background-color: @on-blue;
+            }
 
             &::after {
               content: counter(listcounter);
-              font-weight: 500;
-              font-size: 1rem;
+              font: bold 1rem "Roboto", sans-serif;
               color: #fff;
             }
           }
         }
-
-        .list-article-liftup {
-
-          h6 {
-            font: bold 0.9rem/1.125rem "Roboto", sans-serif;
-            color: @grey-warm-mid;
-          }
-
-          .premium-badge {
-            transform: scale(.85);
-            transform-origin: left;
-          }
-        }
       }
+    }
+  }
+
+  &__latest {
+    border: solid 1px @hairline-color;
+    padding: 10px;
+
+    li {
+      margin: 0 10px;
+      padding: 10px 0;
+      border-bottom: dotted 1px @hairline-color;
+
+      a {
+        cursor: pointer;
+        text-decoration: none;
+        :hover {
+          text-decoration: underline;
+        }
+     }
     }
   }
 }

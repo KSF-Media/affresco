@@ -20,12 +20,13 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleType(..), ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
+import Mosaico.LatestList as LatestList
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
@@ -56,12 +57,13 @@ getRemoveAds = either _.removeAds _.article.removeAds
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
-  , onLogin :: Effect Unit
+  , onLogin :: EventHandler
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
   , user :: Maybe User
   , mostReadArticles :: Array ArticleStub
+  , latestArticles :: Array ArticleStub
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -154,7 +156,13 @@ render imageComponent props =
                         }
                     , DOM.div
                         { className: "mosaico-article__aside"
-                        , children: [ Mosaico.ad { contentUnit: "mosaico-ad__sidebar-1" } ]
+                        , children:
+                          [ LatestList.render
+                                     { latestArticles: props.latestArticles
+                                     , onClickHandler: props.onArticleClick
+                                     }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__sidebar-1" }
+                          ]
                         }
                     ]
               }
@@ -253,7 +261,8 @@ render imageComponent props =
         , children: [ DOM.text "ANDRA LÄSER" ]
         } <>
       (Frontpage.render $ Frontpage.List
-        { content: Just articles
+        { categoryLabel: mempty
+        , content: Just articles
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick
         })

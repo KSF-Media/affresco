@@ -1,5 +1,5 @@
-module Puppeteer
-  ( module Puppeteer
+module KSF.Puppeteer
+  ( module KSF.Puppeteer
   , module Toppokki
   ) where
 
@@ -19,10 +19,38 @@ import Effect.Aff (Aff, Milliseconds(..))
 import Effect.Class (liftEffect)
 import Effect.Exception (throwException)
 
+foreign import headless :: Boolean
+
 -- | We need to pass this flag, otherwise iframes don't work properly.
 -- | See: https://github.com/puppeteer/puppeteer/issues/5123
 launch :: Aff Browser
-launch = Chrome.launch { headless: false, args: ["--disable-features=site-per-process"] }
+launch = Chrome.launch 
+  { headless
+  , args: [ "--disable-features=site-per-process"
+          , "--disable-gpu"
+          , "--disable-dev-shm-usage"
+          , "--disable-setuid-sandbox"
+          , "--no-sandbox"
+          ] 
+  }
+
+launchDesktop :: Aff Browser
+launchDesktop = Chrome.launch
+                { headless
+                , args: ["--disable-features=site-per-process"
+                        , "--disable-gpu"
+                        , "--disable-dev-shm-usage"
+                        , "--disable-setuid-sandbox"
+                        , "--no-sandbox"
+                        ] 
+                , defaultViewport: { deviceScaleFactor: 1.0
+                                   , hasTouch: false
+                                   , width:1920.0
+                                   , height: 1080.0
+                                   , isLandscape: true
+                                   , isMobile: false
+                                   }
+                }
 
 waitFor_ :: forall page. HasFrame page => Selector -> page -> Aff Unit
 waitFor_ selector frame = void $ waitFor selector 30000 frame

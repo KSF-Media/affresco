@@ -5,7 +5,7 @@
   @logo-size-desktop: 68px;
   @logo-size-mobile: 48px;
   @max-mobile-width: 640px;
-  @font-weight: 400;
+  @font-weight: 500;
 
   grid-area: head;
   display: grid;
@@ -32,6 +32,11 @@
 
     @media (min-width: @breakpoint-3col) {
       display: flex;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
     }
   }
 
@@ -71,17 +76,18 @@
     grid-row-start: 1;
     background-position: center;
     background-size: @logo-size-mobile;
+    cursor: pointer;
 
     grid-column-start: 2;
 
     #HBL & {
-      background-image: url("../images/logo-hbl.svg");
+      background-image: url("@{path-images}/logo-hbl.svg");
     }
     #VN & {
-      background-image: url("../images/logo-vn.svg");
+      background-image: url("@{path-images}/logo-vn.svg");
     }
     #ON & {
-      background-image: url("../images/logo-on.svg");
+      background-image: url("@{path-images}/logo-on.svg");
     }
     background-repeat: no-repeat;
 
@@ -97,6 +103,7 @@
     align-self: center;
     grid-column-start: 1;
     text-transform: uppercase;
+    color: @grey-deepdark;
 
     @media (min-width: @breakpoint-3col) {
       grid-row-start: 3;
@@ -111,6 +118,7 @@
   &__center-links {
     grid-row-start: 3;
     grid-column-start: 2;
+    color: @grey-deepdark;
 
     display: none;
 
@@ -130,6 +138,7 @@
   &__right-buttons {
     grid-row-start: 1;
     grid-column-start: 3;
+    color: @grey-deepdark;
 
     display: flex;
 
@@ -168,12 +177,17 @@
     background-position: top;
     background-size: 100%;
     &--menu {
-      background-image: url("../images/icon-menu.svg");
+      background-image: url("@{path-icons}/icon-menu.svg");
     }
     &--search {
-      background-image: url("../images/icon-search.svg");
+      background-image: url("@{path-icons}/icon-search.svg");
     }
   }
+}
+
+.mosaico-header__account {
+  text-decoration: none;
+  color: inherit;
 }
 
 .mosaico-top-line {
@@ -205,6 +219,7 @@
   background-color: @grey-almostlight;
   width: 100%;
   height: 4px;
+  margin-bottom: 15px;
 
   @media (max-width: @breakpoint-3col) {
     width: calc(100% + 24px);
