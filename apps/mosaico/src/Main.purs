@@ -264,17 +264,17 @@ getArticle
   :: Env
   -> { params :: { uuidOrSlug :: String }, guards :: { credentials :: Maybe UserAuth, clientip :: Maybe String } }
   -> Aff (Response ResponseBody)
-getArticle env r@{ params: { uuidOrSlug }, guards: { credentials, clientip } }
+getArticle env { params: { uuidOrSlug }, guards: { credentials, clientip } }
   | Just uuid <- UUID.parseUUID uuidOrSlug = do
       { user, article, mostReadArticles, latestArticles } <- sequential $
         { user: _, article: _, mostReadArticles: _, latestArticles: _ }
         <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-        <*> parallel (Lettera.getArticle uuid mosaicoPaper r.guards.credentials clientip)
+        <*> parallel (Lettera.getArticle uuid mosaicoPaper credentials clientip)
         <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
         <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
       renderArticle env user article mostReadArticles latestArticles
   | otherwise = do
-    article <- Lettera.getArticleWithSlug uuidOrSlug r.guards.credentials clientip
+    article <- Lettera.getArticleWithSlug uuidOrSlug credentials clientip
     case article of
       Right a -> do
         pure $ Response
