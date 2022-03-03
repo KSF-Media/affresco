@@ -29,7 +29,11 @@ countryDropDown countries disabled onChange value =
     createOption { countryCode, countryName } =
       DOM.option
         { value: countryCode
-        , children: [ DOM.text countryName ]
+        , children:
+            [ DOM.text $ countryName <>
+                          if (fromMaybe mempty value) == countryCode
+                            then " (vald)"
+                            else mempty ]
         , disabled: disabled
         }
     placeholderOption =
