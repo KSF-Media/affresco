@@ -16,7 +16,7 @@ testNavigateToStatic page = do
   Chrome.waitFor_ (Chrome.Selector ".terms__text") page
   log "Navigate to front page"
   Chrome.click (Chrome.Selector ".mosaico-header__logo") page
-  Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
+  Chrome.waitFor_ (Chrome.Selector ".mosaico-main") page
   Chrome.back page
   Chrome.waitFor_ (Chrome.Selector ".terms__text") page
 
@@ -26,7 +26,7 @@ testStaticEmbeds page = do
   testQuestion
   log "Navigate to front page and back"
   Chrome.click (Chrome.Selector ".mosaico-header__logo") page
-  Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
+  Chrome.waitFor_ (Chrome.Selector ".mosaico-main") page
   Chrome.back page
   testQuestion
   where
