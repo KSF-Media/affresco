@@ -80,16 +80,16 @@ window.googletag.cmd.push(function () {
         sizes: [300,431],
         targetId: "mosaico-ad__article-body-1"
       },
-      // {
-      //   gamId: "PARAD",
-      //   sizes: [ [980, 120], [980,400], [980,552] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MAXPARAD",
-      //   sizes: [ [980, 120], [980,400], [980,480], [980,552], [1920,1080] ],
-      //   targetId: "mosaico-ad__top-parade"
-      // },
+      {
+        gamId: "PARAD",
+        sizes: [ [980, 120], [980,400], [980,552] ],
+        targetId: "mosaico-ad__parade"
+      },
+      {
+        gamId: "MAXPARAD",
+        sizes: [ [980, 120], [980,400], [980,480], [980,552], [1920,1080] ],
+        targetId: "mosaico-ad__top-parade"
+      },
       // {
       //   gamId: "PANORAMA",
       //   sizes: [ [980, 120], [980, 400] ],

@@ -35,6 +35,7 @@ import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
 import Mosaico.Epaper as Epaper
@@ -501,39 +502,43 @@ render setState state components router onPaywallEvent =
     mosaicoLayoutNoAside content = mosaicoLayout content false
 
     mosaicoLayout :: JSX -> Boolean -> JSX
-    mosaicoLayout content showAside = DOM.div
-      { className: "mosaico grid"
-      , id: Paper.toString mosaicoPaper
-      , children:
-          [ Header.topLine
-          , Header.render
-              { router
-              , categoryStructure: state.categoryStructure
-              , catMap: state.catMap
-              , onCategoryClick
-              , user: state.user
-              , onLogin
-              , onProfile
-              , onStaticPageClick
-              }
-          , Header.mainSeparator
-          , content
-          , footer onStaticPageClick
-          , guard showAside $ DOM.aside
-              { className: "mosaico--aside"
-              , children:
-                  [ MostReadList.render
-                      { mostReadArticles: state.mostReadArticles
-                      , onClickHandler
-                      }
-                  , LatestList.render
-                      { latestArticles: state.latestArticles
-                      , onClickHandler
-                      }
-                  ]
-              }
-          ]
-      }
+    mosaicoLayout content showAside = DOM.div_
+      [ Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+      , DOM.div
+          { className: "mosaico grid"
+          , id: Paper.toString mosaicoPaper
+          , children:
+              [ Header.topLine
+              , Header.render
+                  { router
+                  , categoryStructure: state.categoryStructure
+                  , catMap: state.catMap
+                  , onCategoryClick
+                  , user: state.user
+                  , onLogin
+                  , onProfile
+                  , onStaticPageClick
+                  }
+              , Header.mainSeparator
+              , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
+              , content
+              , footer onStaticPageClick
+              , guard showAside $ DOM.aside
+                  { className: "mosaico--aside"
+                  , children:
+                      [ MostReadList.render
+                          { mostReadArticles: state.mostReadArticles
+                          , onClickHandler
+                          }
+                      , LatestList.render
+                          { latestArticles: state.latestArticles
+                          , onClickHandler
+                          }
+                      ]
+                  }
+              ]
+          }
+      ]
 
     renderArticle :: Either ArticleStub FullArticle -> JSX
     renderArticle article =
