@@ -430,7 +430,7 @@ render setState state components router onPaywallEvent =
              }
        Routes.DraftPage -> mosaicoLayoutNoAside
          $ renderArticle $ maybe (Right notFoundArticle) Right $ join <<< map hush $ state.article
-       Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
+       Routes.StaticPage _ -> mosaicoLayoutNoAside $ case state.staticPage of
          Nothing -> DOM.text "laddar"
          Just (StaticPageResponse page)  ->
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
