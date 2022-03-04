@@ -7,6 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), contains, stripPrefix)
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
+import Mosaico.Ad (ad) as Mosaico
 import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
 import React.Basic.DOM as DOM
@@ -104,7 +105,7 @@ adHook { placeholderText, targetId } = HtmlRenderer.replacingHook
                               , text      == placeholderText -> true
                             _                                   -> false
                        )
-  , processNode: (\_ _ _ -> pure $ DOM.div { id: targetId }
+  , processNode: (\_ _ _ -> pure $ Mosaico.ad { contentUnit: targetId }
                  )
   }
 
