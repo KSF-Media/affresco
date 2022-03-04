@@ -492,9 +492,9 @@ render setState state components router onPaywallEvent =
             , Frontpage.Latest state.latestArticles onClickHandler
             , Frontpage.ArticleUrltoRelative
             , Frontpage.Ad "Box Ad 1 DESKTOP" "mosaico-ad__firstbox"
-            , Frontpage.Ad "Box Ad 2 DESKTOP" "mosaico-ad__sidebar-2"
-            , Frontpage.Ad "Box Ad 3 DESKTOP" "mosaico-ad__sidebar-3"
-            , Frontpage.Ad "Box Ad 4 DESKTOP" "mosaico-ad__sidebar-4"
+            , Frontpage.Ad "Box Ad 2 DESKTOP" "mosaico-ad__box1"
+            , Frontpage.Ad "Box Ad 3 DESKTOP" "mosaico-ad__box2"
+            , Frontpage.Ad "Box Ad 4 DESKTOP" "mosaico-ad__box3"
             , Frontpage.Ad "Ad 1"             "mosaico-ad__bigbox1"
             , Frontpage.Ad "Ad 2"             "mosaico-ad__bigbox2"
             ]

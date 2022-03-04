@@ -26,7 +26,7 @@ window.googletag.cmd.push(function () {
       {
         gamId: "MOBBOX1",
         sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-        targetId: "mosaico-ad__article-body-2"
+        targetId: "mosaico-ad__box"
       },
       // {
       //   gamId: "MOBBOX2",
@@ -51,7 +51,7 @@ window.googletag.cmd.push(function () {
       {
         gamId: "DIGIHELMOB",
         sizes: [300,431],
-        targetId: "mosaico-ad__article-body-1"
+        targetId: "mosaico-ad__digihekmob"
       },
       // {
       //   gamId: "INTERMOB",
@@ -78,7 +78,7 @@ window.googletag.cmd.push(function () {
       {
         gamId: "DIGIHELMOB",
         sizes: [300,431],
-        targetId: "mosaico-ad__article-body-1"
+        targetId: "mosaico-ad__digihekmob"
       },
       {
         gamId: "PARAD",
@@ -133,12 +133,12 @@ window.googletag.cmd.push(function () {
       {
         gamId: "BOX5",
         sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-        targetId: "mosaico-ad__sbox5"
+        targetId: "mosaico-ad__box5"
       },
       {
         gamId: "BOX",
         sizes: [ [300,250], [300,300], [300, 431], [300,600] ],
-        targetId: "mosaico-ad__article-body-2"
+        targetId: "mosaico-ad__box"
       },
       // {
       //   gamId: "BOXFORPRINT",
