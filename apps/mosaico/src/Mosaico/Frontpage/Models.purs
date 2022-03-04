@@ -10,7 +10,6 @@ import Lettera.Models (ArticleStub)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
-import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 
 data Hook

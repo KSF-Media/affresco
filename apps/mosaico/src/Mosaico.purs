@@ -27,6 +27,7 @@ import Effect.Aff.AVar as Aff.AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
@@ -68,6 +69,8 @@ import Routing.PushState (LocationState, PushStateInterface, locations, makeInte
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
+
+foreign import refreshAdsImpl :: EffectFn1 String Unit
 
 data ModalView = LoginModal
 
@@ -268,6 +271,7 @@ mosaicoComponent initialValues props = React.do
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
+  runEffectFn1 refreshAdsImpl mempty
   case match (Routes.routes c) $ location.pathname <> location.search of
     Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
     Left _     -> pure unit
