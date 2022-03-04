@@ -60,7 +60,7 @@ window.googletag.cmd.push(function () {
       // },
     ],
     desktop: [
-     {
+      {
         gamId: "JATTEBOX",
         sizes: [468,400],
         targetId: "mosaico-ad__bigbox1"
