@@ -66,7 +66,8 @@ import Routing (match)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
-import Web.HTML.Window (scroll) as Web
+import Web.HTML.HTMLDocument (setTitle) as Web
+import Web.HTML.Window (document, scroll) as Web
 
 data ModalView = LoginModal
 
@@ -129,6 +130,7 @@ mosaicoComponent
   -> Props
   -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
+  let setTitle t = Web.setTitle t =<< Web.document =<< Web.window
   let initialCatMap = categoriesMap props.categoryStructure
   let initialPath = initialValues.locationState.path <> initialValues.locationState.search
       maxAge = Minutes 15.0
@@ -153,14 +155,18 @@ mosaicoComponent initialValues props = React.do
         case UUID.parseUUID articleId of
           Nothing -> liftEffect $ setState _ { article = Just $ Left unit }
           Just uuid -> do
+            liftEffect $ setTitle "Laddar..."
             liftEffect $ setState _ { article = Nothing }
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
               Right article -> do
+                liftEffect $ setTitle article.article.title
                 Article.evalEmbeds article.article
                 sendArticleAnalytics article.article state.user
                 setState _ { article = Just $ Right article }
-              Left _ -> setState _ { article = Just $ Left unit }
+              Left _ -> do
+                liftEffect $ setTitle "Något gick fel"
+                setState _ { article = Just $ Left unit }
 
   useEffectOnce do
     foldMap (Article.evalEmbeds <<< _.article) props.article
@@ -260,6 +266,18 @@ mosaicoComponent initialValues props = React.do
         Aff.launchAff_ do
           latestArticles <- join <<< fromFoldable <$> Lettera.getLatest 0 10 mosaicoPaper
           liftEffect $ setState \s -> s { latestArticles = latestArticles }
+
+    case state.route of
+      Routes.Frontpage -> setTitle $ Paper.paperName mosaicoPaper
+      Routes.TagPage tag -> setTitle $ unwrap tag
+      Routes.SearchPage _ -> setTitle "Sök"
+      Routes.ProfilePage -> setTitle "Min profil"
+      Routes.MenuPage -> setTitle "Meny"
+      Routes.NotFoundPage _ -> setTitle "Oops... 404"
+      Routes.CategoryPage (Category c) -> setTitle $ unwrap c.label
+      Routes.EpaperPage -> setTitle "E-Tidningen"
+      Routes.StaticPage page -> setTitle page
+      _ -> pure unit
 
     pure mempty
 
