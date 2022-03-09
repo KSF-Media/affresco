@@ -11,8 +11,10 @@ import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
+import KSF.Paper (toString)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
+import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -59,12 +61,18 @@ render props =
             , children:
                 [ DOM.ul_
                     [ DOM.li_
-                        [ DOM.a_ [ DOM.text "KUNDSERVICE" ]
+                        [ DOM.a 
+                            { children: [ DOM.text "KUNDSERVICE" ]
+                            , href: "/sida/kundservice"
+                            , onClick: props.onStaticPageClick "kundservice"
+                            }
                         ]
                     , DOM.li_
                         [ DOM.a
                             { className: block <> "__prenumerera-link"
                             , children: [ DOM.text "PRENUMERERA" ]
+                            , href: "https://prenumerera.ksfmedia.fi/#/" <> String.toLower (toString mosaicoPaper)
+                            , target: "_blank"
                             }
                         ]
                     ]
