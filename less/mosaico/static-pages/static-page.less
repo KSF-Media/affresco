@@ -2,8 +2,6 @@
 
 .mosaico--static-page {
   grid-area: main;
-  grid-column-start: 2;
-  grid-column-end: 5;
   font: 300 1.07rem "Roboto";
   line-height: 1.2;
   color: #333;
@@ -12,6 +10,8 @@
     padding-right: 40px;
   }
   @media (min-width: @breakpoint-3col) {
+    grid-column-start: 2;
+    grid-column-end: -2;
     padding: 0;
   }
 
