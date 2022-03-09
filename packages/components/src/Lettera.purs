@@ -14,7 +14,7 @@ import Data.Either (Either(..), either, hush, isRight)
 import Data.Foldable (class Foldable, foldMap)
 import Data.Foldable as Foldable
 import Data.HTTP.Method (Method(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (un, unwrap)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
@@ -97,17 +97,17 @@ handleLetteraError = Console.warn <<< show
 getArticleAuth :: UUID -> Paper -> Aff (Either String FullArticle)
 getArticleAuth articleId paper = do
   tokens <- Auth.loadToken
-  getArticle articleId paper tokens
+  getArticle articleId paper tokens Nothing
 
 -- TODO: Instead of String, use some sort of LetteraError or something
-getArticle :: UUID -> Paper -> Maybe UserAuth -> Aff (Either String FullArticle)
-getArticle articleId = getArticleWithUrl (letteraArticleUrl <> (toString articleId)) <<< Just
+getArticle :: UUID -> Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
+getArticle articleId paper = getArticleWithUrl (letteraArticleUrl <> (toString articleId)) (Just paper)
 
-getArticleWithSlug :: String -> Maybe UserAuth -> Aff (Either String FullArticle)
+getArticleWithSlug :: String -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
 getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug) Nothing
 
-getArticleWithUrl :: String -> Maybe Paper -> Maybe UserAuth -> Aff (Either String FullArticle)
-getArticleWithUrl url paper auth = do
+getArticleWithUrl :: String -> Maybe Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
+getArticleWithUrl url paper auth clientip = do
   let request = AX.defaultRequest
         { url = url <> foldMap (\p -> "?paper=" <> Paper.toString p) paper
         , method = Left GET
@@ -117,8 +117,10 @@ getArticleWithUrl url paper auth = do
               Just { userId, authToken: Token authToken } ->
                 [ AX.RequestHeader "AuthUser" $ UUID.toString userId
                 , AX.RequestHeader "Authorization" ("OAuth " <> authToken)
+                , AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip)
                 ]
-              _ -> mempty
+              _ -> 
+                [ AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip) ]
         }
   articleResponse <- AX.request request
   case articleResponse of

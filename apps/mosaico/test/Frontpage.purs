@@ -16,7 +16,7 @@ testHtmlEmbed page = do
   Chrome.goto (Chrome.URL site) page
   -- Not trying to really control what's included but this seems to be
   -- a prefix they're using and we're not
-  Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list *[class^='dre']") page
+  Chrome.waitFor_ (Chrome.Selector ".mosaico-main *[class^='dre']") page
 
 testHtmlEmbedNavigation :: Test
 testHtmlEmbedNavigation page = do
@@ -24,7 +24,7 @@ testHtmlEmbedNavigation page = do
   Chrome.goto (Chrome.URL $ site <> "meny") page
   Chrome.waitFor_ logo page
   Chrome.click logo page
-  Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list *[class^='dre']") page
+  Chrome.waitFor_ (Chrome.Selector ".mosaico-main *[class^='dre']") page
 
 testMostRead :: Test
 testMostRead page = do

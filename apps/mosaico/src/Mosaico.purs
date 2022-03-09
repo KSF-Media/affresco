@@ -67,7 +67,8 @@ import Routing (match)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON (write)
 import Web.HTML (window) as Web
-import Web.HTML.Window (scroll) as Web
+import Web.HTML.HTMLDocument (setTitle) as Web
+import Web.HTML.Window (document, scroll) as Web
 
 data ModalView = LoginModal
 
@@ -131,6 +132,7 @@ mosaicoComponent
   -> Props
   -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
+  let setTitle t = Web.setTitle t =<< Web.document =<< Web.window
   let initialCatMap = categoriesMap props.categoryStructure
   let initialPath = initialValues.locationState.path <> initialValues.locationState.search
       maxAge = Minutes 15.0
@@ -155,14 +157,18 @@ mosaicoComponent initialValues props = React.do
         case UUID.parseUUID articleId of
           Nothing -> liftEffect $ setState _ { article = Just $ Left unit }
           Just uuid -> do
+            liftEffect $ setTitle "Laddar..."
             liftEffect $ setState _ { article = Nothing }
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
               Right article -> do
+                liftEffect $ setTitle article.article.title
                 Article.evalEmbeds article.article
                 sendArticleAnalytics article.article state.user
                 setState _ { article = Just $ Right article }
-              Left _ -> setState _ { article = Just $ Left unit }
+              Left _ -> do
+                liftEffect $ setTitle "Något gick fel"
+                setState _ { article = Just $ Left unit }
 
   useEffectOnce do
     foldMap (Article.evalEmbeds <<< _.article) props.article
@@ -262,6 +268,18 @@ mosaicoComponent initialValues props = React.do
         Aff.launchAff_ do
           latestArticles <- join <<< fromFoldable <$> Lettera.getLatest 0 10 mosaicoPaper
           liftEffect $ setState \s -> s { latestArticles = latestArticles }
+
+    case state.route of
+      Routes.Frontpage -> setTitle $ Paper.paperName mosaicoPaper
+      Routes.TagPage tag -> setTitle $ unwrap tag
+      Routes.SearchPage _ -> setTitle "Sök"
+      Routes.ProfilePage -> setTitle "Min profil"
+      Routes.MenuPage -> setTitle "Meny"
+      Routes.NotFoundPage _ -> setTitle "Oops... 404"
+      Routes.CategoryPage (Category c) -> setTitle $ unwrap c.label
+      Routes.EpaperPage -> setTitle "E-Tidningen"
+      Routes.StaticPage page -> setTitle page
+      _ -> pure unit
 
     pure mempty
 
@@ -409,7 +427,7 @@ render setState state components router onPaywallEvent =
           in case maybeFeed of
                Just (ArticleList tagFeed)
                  | null tagFeed -> mosaicoDefaultLayout Error.notFoundWithAside
-               _                -> frontpageNoHeader maybeFeed
+               _                -> frontpageNoHeader Nothing maybeFeed
        Routes.MenuPage ->
          mosaicoLayoutNoAside
          $ Menu.render
@@ -436,13 +454,13 @@ render setState state components router onPaywallEvent =
              }
        Routes.DraftPage -> mosaicoLayoutNoAside
          $ renderArticle $ maybe (Right notFoundArticle) Right $ join <<< map hush $ state.article
-       Routes.StaticPage _ -> mosaicoDefaultLayout $ case state.staticPage of
+       Routes.StaticPage _ -> mosaicoLayoutNoAside $ case state.staticPage of
          Nothing -> DOM.text "laddar"
          Just (StaticPageResponse page)  ->
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
-       Routes.DebugPage _ -> frontpageNoHeader $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
+       Routes.DebugPage _ -> frontpageNoHeader Nothing $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
   where
 
     renderCategory :: Category -> JSX
@@ -451,25 +469,26 @@ render setState state components router onPaywallEvent =
       in case c.type of
         Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
         Link -> mempty -- TODO
-        Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader <<< Just) maybeFeed
-        Feed -> frontpageNoHeader maybeFeed
+        Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader Nothing <<< Just) maybeFeed
+        Feed -> frontpageNoHeader (Just c.label) maybeFeed
 
     frontpageWithHeader :: JSX -> Maybe ArticleFeed -> JSX
-    frontpageWithHeader header = frontpage $ Just header
+    frontpageWithHeader header = frontpage (Just header) Nothing
 
-    frontpageNoHeader :: Maybe ArticleFeed -> JSX
+    frontpageNoHeader :: Maybe CategoryLabel -> Maybe ArticleFeed -> JSX
     frontpageNoHeader = frontpage Nothing
 
-    frontpage :: Maybe JSX -> Maybe ArticleFeed -> JSX
-    frontpage maybeHeader (Just (ArticleList list)) = listFrontpage maybeHeader $ Just list
-    frontpage maybeHeader (Just (Html html))        = prerenderedFrontpage maybeHeader $ Just html
-    frontpage maybeHeader _                         = listFrontpage maybeHeader Nothing
+    frontpage :: Maybe JSX -> Maybe CategoryLabel -> Maybe ArticleFeed -> JSX
+    frontpage maybeHeader maybeCategorLabel (Just (ArticleList list)) = listFrontpage maybeHeader maybeCategorLabel $ Just list
+    frontpage maybeHeader _ (Just (Html html))                        = prerenderedFrontpage maybeHeader $ Just html
+    frontpage maybeHeader _ _                                         = listFrontpage maybeHeader Nothing Nothing
 
-    listFrontpage :: Maybe JSX -> Maybe (Array ArticleStub) -> JSX
-    listFrontpage maybeHeader content = mosaicoDefaultLayout $
+    listFrontpage :: Maybe JSX -> Maybe CategoryLabel -> Maybe (Array ArticleStub) -> JSX
+    listFrontpage maybeHeader maybeCategoryLabel content = mosaicoDefaultLayout $
       (fromMaybe mempty maybeHeader) <>
       (Frontpage.render $ Frontpage.List
-        { content
+        { categoryLabel: unwrap <$> maybeCategoryLabel
+        , content
         , onArticleClick
         , onTagClick
         })

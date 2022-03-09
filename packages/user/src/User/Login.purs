@@ -344,7 +344,7 @@ renderLoginForm self =
         , children:
             [ foldMap formatErrorMessage self.state.errors.login
             , InputField.inputField
-                { type_: InputField.Text
+                { type_: InputField.Email
                 , placeholder: "E-postadress"
                 , label: Just "E-postadress"
                 , name: "username"

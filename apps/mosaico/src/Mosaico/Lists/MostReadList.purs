@@ -22,7 +22,7 @@ render props =
   in DOM.div
        { className: joinWith " " [block, block <> "__mostread"]
        , children:
-           [ DOM.h6
+           [ DOM.h3
                { className: block <> "--header"
                , children: [ DOM.text "Andra läser" ]
                }
