@@ -3,16 +3,15 @@ module Mosaico.Article.Advertorial.Basic where
 import Prelude
 
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
 import KSF.Paper (Paper)
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle(..), Image, LocalDateTime(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, BodyElement(..))
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler)
 import React.Basic.Hooks as React
 import React.Basic.Hooks (Component)
 
@@ -37,7 +36,7 @@ render imageComponent props =
       [ DOM.div
         { className: "advertorial__top-bar"
         , children:
-          [ DOM.span_ [ DOM.text "Annos: Company name"]
+          [ DOM.span_ [ DOM.text $ maybe "Annons" (("Annons: " <> _) <<< _.description) props.article.articleTypeDetails]
           ]
         }
       , DOM.h1
@@ -50,7 +49,7 @@ render imageComponent props =
         }
       , DOM.img
         { src: foldMap _.url mainImage
-        , className: "article-element__full-width-mobile"
+        , className: "article-element__full-width-mobile advertorial__image"
         }
       , DOM.div
           { className: "mosaico-article__body "
@@ -69,8 +68,8 @@ render imageComponent props =
            { dangerouslySetInnerHTML: { __html: content }
            , className: block <> " " <> block <> "__html"
            }
-      Headline str -> DOM.h4
-        { className: block <> " " <> block <> "__subheadline"
+      Headline str -> DOM.h2
+        { className: block <> " " <> "advertorial__subheadline"
         , children: [ DOM.text str ]
         }
       Image image -> imageComponent
@@ -107,8 +106,8 @@ render imageComponent props =
           , children: [ DOM.text question ]
           }
       -- Advertorials don't list related articles or ads
-      Related related -> mempty
-      Ad contentUnit -> mempty
+      Related _related -> mempty
+      Ad _contentUnit -> mempty
       where
         block = "article-element"
         isDiv = isElem "<div"

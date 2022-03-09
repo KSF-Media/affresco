@@ -77,6 +77,7 @@ notFoundArticle =
     , updateTime: Nothing
     , externalScripts: Nothing
     , articleType: KatastrofLiten
+    , articleTypeDetails: Nothing
     , categories: []
     }
   }
@@ -169,18 +170,19 @@ instance encodeJsonExternalScript :: EncodeJson ExternalScript where
     encodeJson $ String.replaceAll (Pattern "</script>") (Replacement "<\\/script>") script
 
 type ArticleCommon =
-  ( title             :: String
-  , listTitle         :: Maybe String
-  , mainImage         :: Maybe Image
-  , uuid              :: String
-  , preamble          :: Maybe String
-  , authors           :: Array Author
-  , analyticsSection  :: Maybe String
-  , analyticsCategory :: Maybe String
-  , premium           :: Boolean
-  , removeAds         :: Boolean
-  , externalScripts   :: Maybe (Array ExternalScript)
-  , categories        :: Array String
+  ( title              :: String
+  , listTitle          :: Maybe String
+  , mainImage          :: Maybe Image
+  , uuid               :: String
+  , preamble           :: Maybe String
+  , authors            :: Array Author
+  , analyticsSection   :: Maybe String
+  , analyticsCategory  :: Maybe String
+  , premium            :: Boolean
+  , removeAds          :: Boolean
+  , externalScripts    :: Maybe (Array ExternalScript)
+  , categories         :: Array String
+  , articleTypeDetails :: Maybe ArticleTypeDetails
   )
 
 type JSArticle =
@@ -420,6 +422,11 @@ type Image =
   , thumb     :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
+  }
+
+type ArticleTypeDetails =
+  { title       :: String
+  , description :: String
   }
 
 type DraftParams =
