@@ -70,7 +70,7 @@ import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.Window (scroll) as Web
 
-foreign import refreshAdsImpl :: EffectFn1 String Unit
+foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 
 data ModalView = LoginModal
 
@@ -597,6 +597,6 @@ render setState state components router onPaywallEvent =
       router.pushState (write {}) $ "/sök?q=" <> query
 
     simpleRoute path = do
-      runEffectFn1 refreshAdsImpl mempty
+      runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) path
