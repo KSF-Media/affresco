@@ -271,7 +271,6 @@ mosaicoComponent initialValues props = React.do
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
-  runEffectFn1 refreshAdsImpl mempty
   case match (Routes.routes c) $ location.pathname <> location.search of
     Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
     Left _     -> pure unit
@@ -598,5 +597,6 @@ render setState state components router onPaywallEvent =
       router.pushState (write {}) $ "/sök?q=" <> query
 
     simpleRoute path = do
+      runEffectFn1 refreshAdsImpl mempty
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) path
