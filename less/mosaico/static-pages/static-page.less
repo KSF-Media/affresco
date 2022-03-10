@@ -36,15 +36,16 @@
 
   .static-page__back-to-top {
     position: fixed;
-    right: 10px;
+    right: 20px;
     bottom: 20px;
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     cursor: pointer;
     border: 1.5px solid @grey-medium;
-    border-radius: 20px;
+    border-radius: 22.5px;
     background-color: @button-color-tertiary;
     background-image: url("@{path-images}/chevron.svg");
+    background-size: 55%;
     background-repeat: no-repeat;
     background-position: center;
     transform: rotate(180deg);
@@ -54,10 +55,6 @@
     @media (min-width: @breakpoint-2col) {
       bottom: 30px;
       right: 30px;
-      width: 45px;
-      height: 45px;
-      border-radius: 22.5px;
-      background-size: 55%;
     }
     @media (min-width: @breakpoint-3col) {
       right: calc(50% - 430px);
