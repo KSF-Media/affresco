@@ -169,6 +169,7 @@ window.googletag.cmd.push(function () {
       ).addService(googletag.pubads());
     }
   );
+  window.definedSlots = googletag.pubads().getSlots().map(s => s.getSlotElementId())
   googletag.pubads().collapseEmptyDivs();
   googletag.enableServices();
   googletag.pubads().addEventListener('slotRenderEnded', event => {
