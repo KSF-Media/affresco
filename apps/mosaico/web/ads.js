@@ -13,51 +13,51 @@ window.googletag.cmd.push(function () {
         sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
         targetId: "mosaico-ad__top-parade"
       },
-      // {
-      //   gamId: "MOBMITT",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: "gam__articleBodyAd1"
-      // },
-      // {
-      //   gamId: "MOBNER",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: "gam__articleBodyAd2"
-      // },
+      {
+        gamId: "MOBMITT",
+        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+        targetId: "mosaico-ad__bigbox1"
+      },
+      {
+        gamId: "MOBNER",
+        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+        targetId: "mosaico-ad__bigbox2"
+      },
       {
         gamId: "MOBBOX1",
         sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-        targetId: "mosaico-ad__box"
+        targetId: "mosaico-ad__box1"
       },
-      // {
-      //   gamId: "MOBBOX2",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MOBBOX3",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MOBBOX4",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MOBBOX5",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
+      {
+        gamId: "MOBBOX2",
+        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+        targetId: "mosaico-ad__box2"
+      },
+      {
+        gamId: "MOBBOX3",
+        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+        targetId: "mosaico-ad__box3"
+      },
+      {
+        gamId: "MOBBOX4",
+        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+        targetId: "mosaico-ad__box4"
+      },
+      {
+        gamId: "MOBBOX5",
+        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+        targetId: "mosaico-ad__box5"
+      },
       {
         gamId: "DIGIHELMOB",
         sizes: [300,431],
-        targetId: "mosaico-ad__digihekmob"
+        targetId: "mosaico-ad__digihelmob"
       },
-      // {
-      //   gamId: "INTERMOB",
-      //   sizes: [300,500],
-      //   targetId: ""
-      // },
+      {
+        gamId: "INTERMOB",
+        sizes: [300,500],
+        targetId: "mosaico-ad__firstbox"
+      },
     ],
     desktop: [
       {
@@ -78,7 +78,7 @@ window.googletag.cmd.push(function () {
       {
         gamId: "DIGIHELMOB",
         sizes: [300,431],
-        targetId: "mosaico-ad__digihekmob"
+        targetId: "mosaico-ad__digihelmob"
       },
       {
         gamId: "PARAD",

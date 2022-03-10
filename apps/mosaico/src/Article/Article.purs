@@ -83,7 +83,7 @@ render imageComponent props =
         body = getBody props.article
         bodyWithoutAd = map renderElement body
         bodyWithAd = map renderElement
-          <<< insertAdsIntoBodyText "mosaico-ad__digihekmob" "mosaico-ad__box" $ body
+          <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
         draftHeader = case _.articleType <$> props.article of
           Right DraftArticle ->
             DOM.div
