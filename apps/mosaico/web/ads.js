@@ -70,11 +70,6 @@ window.googletag.cmd.push(function () {
         sizes: [468,600],
         targetId: "mosaico-ad__bigbox2"
       },
-      // {
-      //   gamId: "INTERSTIT",
-      //   sizes: [958,586],
-      //   targetId: ""
-      // },
       {
         gamId: "DIGIHELMOB",
         sizes: [300,431],
@@ -91,19 +86,9 @@ window.googletag.cmd.push(function () {
         targetId: "mosaico-ad__top-parade"
       },
       // {
-      //   gamId: "PANORAMA",
-      //   sizes: [ [980, 120], [980, 400] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "PARALLAX",
-      //   sizes: [1,1],
-      //   targetId: ""
-      // },
-      // {
       //   gamId: "STORTAVLA",
       //   sizes: [160,600],
-      //   targetId: ""
+      //   targetId: "mosaico-ad__tallbox"
       // },
       {
         gamId: "FIRSTBOX",
@@ -143,17 +128,12 @@ window.googletag.cmd.push(function () {
       // {
       //   gamId: "BOXFORPRINT",
       //   sizes: [300,300],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "STICKY",
-      //   sizes: [ [300,200], [300,250] ],
-      //   targetId: ""
+      //   targetId: "mosaico-ad__printbox"
       // },
       // {
       //   gamId: "WALLPAPER",
       //   sizes: [ [1600,1200], [1920,1080] ],
-      //   targetId: ""
+      //   targetId: "mosaico-ad__wallpaper"
       // },
     ]
   }
