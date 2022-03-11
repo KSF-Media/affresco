@@ -162,6 +162,12 @@ render imageComponent props =
                                      , onClickHandler: props.onArticleClick
                                      }
                           , Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box5" }
                           ]
                         }
                     ]

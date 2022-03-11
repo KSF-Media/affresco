@@ -491,9 +491,9 @@ render setState state components router onPaywallEvent =
             , Frontpage.Latest state.latestArticles onClickHandler
             , Frontpage.ArticleUrltoRelative
             , Frontpage.Ad "Box Ad 1 DESKTOP" "mosaico-ad__firstbox"
-            , Frontpage.Ad "Box Ad 2 DESKTOP" "mosaico-ad__box1"
-            , Frontpage.Ad "Box Ad 3 DESKTOP" "mosaico-ad__box2"
-            , Frontpage.Ad "Box Ad 4 DESKTOP" "mosaico-ad__box3"
+            , Frontpage.Ad "Box Ad 2 DESKTOP" "mosaico-ad__box"
+            , Frontpage.Ad "Box Ad 3 DESKTOP" "mosaico-ad__box1"
+            , Frontpage.Ad "Box Ad 4 DESKTOP" "mosaico-ad__box2"
             , Frontpage.Ad "Ad 1"             "mosaico-ad__bigbox1"
             , Frontpage.Ad "Ad 2"             "mosaico-ad__bigbox2"
             ]
@@ -529,14 +529,21 @@ render setState state components router onPaywallEvent =
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
-                      [ MostReadList.render
+                      [ Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
+                      , MostReadList.render
                           { mostReadArticles: state.mostReadArticles
                           , onClickHandler
                           }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box" }
                       , LatestList.render
                           { latestArticles: state.latestArticles
                           , onClickHandler
                           }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box5" }
                       ]
                   }
               ]
