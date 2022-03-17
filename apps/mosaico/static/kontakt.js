@@ -86,3 +86,20 @@ if (window.addEventListener) {
 } else if (window.attachEvent) {
   window.attachEvent("onmessage", handleIFrameMessage);
 }
+
+const links = document.querySelectorAll(".static-page__link");
+
+for (const link of links) {
+  link.addEventListener("click", clickHandler);
+}
+
+function clickHandler(e) {
+  e.preventDefault();
+  const href = this.getAttribute("href");
+  const offsetTop = document.querySelector(href).offsetTop;
+
+  scroll({
+    top: offsetTop,
+    behavior: "smooth",
+  });
+}
