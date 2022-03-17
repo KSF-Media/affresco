@@ -28,6 +28,27 @@
     font-family: "Duplex Sans", sans-serif;
   }
 
+  .static-page__links-container {
+    @media (min-width: @breakpoint-2col) {
+      margin-top: 30px;
+    }
+  }
+
+  .static-page__links-list-item {
+    padding: 5px 0;
+  }
+
+  .static-page__list-link {
+    color: @dark-text;
+    font-weight: 400;
+    text-decoration: none;
+  }
+
+  .static-page__list-link::before {
+    content: url("@{path-images}/double-chevron-right.svg");
+    margin-right: 5px;
+  }
+
   .static-page__link:link,
   .static-page__link:visited {
     text-decoration: none;
