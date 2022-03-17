@@ -7,6 +7,8 @@ import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Data.Semiring.Free (free)
 import Data.Map as Map
+import Data.String as String
+import Data.String.CodePoints (codePointFromChar)
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Categories, Category, CategoryLabel(..), Tag, uriComponentToTag)
@@ -28,6 +30,11 @@ data MosaicoPage
   | DebugPage String -- Used for testing
   | MenuPage
 derive instance eqMosaicoPage :: Eq MosaicoPage
+
+-- The URL given from Mosaico module shouldn't have the fragment
+-- already, but in case it happens anyway, use this function
+stripFragment :: String -> String
+stripFragment = String.takeWhile (_ /= codePointFromChar '#')
 
 routes :: Categories -> Match MosaicoPage
 routes categories = root *> oneOf

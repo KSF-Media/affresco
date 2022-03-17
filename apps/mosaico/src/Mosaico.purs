@@ -132,7 +132,8 @@ mosaicoComponent
 mosaicoComponent initialValues props = React.do
   let setTitle t = Web.setTitle t =<< Web.document =<< Web.window
   let initialCatMap = categoriesMap props.categoryStructure
-  let initialPath = initialValues.locationState.path <> initialValues.locationState.search
+  let initialPath = Routes.stripFragment $
+                    initialValues.locationState.path <> initialValues.locationState.search
       maxAge = Minutes 15.0
   state /\ setState <- useState initialValues.state
                          { article = Right <$> props.article
@@ -285,7 +286,7 @@ mosaicoComponent initialValues props = React.do
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
-  case match (Routes.routes c) $ location.pathname <> location.search of
+  case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
     Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
     Left _     -> pure unit
 
