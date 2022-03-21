@@ -42,7 +42,7 @@ const goToTop = () => {
 
 backToTopButton.addEventListener("click", goToTop);
 
-const links = document.querySelectorAll(".faq__qa-section-link");
+const links = document.querySelectorAll(".static-page__list-link");
 
 for (const link of links) {
   link.addEventListener("click", clickHandler);

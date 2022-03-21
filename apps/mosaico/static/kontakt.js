@@ -87,7 +87,7 @@ if (window.addEventListener) {
   window.attachEvent("onmessage", handleIFrameMessage);
 }
 
-const links = document.querySelectorAll(".static-page__link");
+const links = document.querySelectorAll(".sstatic-page__list-link");
 
 for (const link of links) {
   link.addEventListener("click", clickHandler);
