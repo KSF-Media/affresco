@@ -1,24 +1,3 @@
-const questions = document.getElementsByClassName("faq__question");
-
-for (const q of questions) {
-  q.addEventListener("click", function () {
-    for (const q of questions) {
-      if (q === this) {
-        if (q.classList.contains("faq__question--active")) {
-          q.classList.remove("faq__question--active");
-          q.nextElementSibling.style.display = "none";
-        } else {
-          q.classList.add("faq__question--active");
-          q.nextElementSibling.style.display = "block";
-        }
-      } else {
-        q.classList.remove("faq__question--active");
-        q.nextElementSibling.style.display = "none";
-      }
-    }
-  });
-}
-
 const showOnPx = 100;
 const backToTopButton = document.querySelector(".static-page__back-to-top");
 
