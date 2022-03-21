@@ -8,7 +8,7 @@ module Mosaico.Frontpage
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (head)
+import Data.Array (head, null)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
@@ -60,7 +60,7 @@ render (List props) =
             , onClick: props.onArticleClick a
             , _data: Object.fromFoldable $
               -- Known bug, exclude from tests
-              if Just true == (contains (Pattern ":") <<< un Tag <$> head a.tags) then []
+              if null a.tags || Just true == (contains (Pattern ":") <<< un Tag <$> head a.tags) then []
               else [ Tuple "premium" $ if a.premium then "1" else "0"
                     , Tuple "uuid" $ a.uuid
                     ]
