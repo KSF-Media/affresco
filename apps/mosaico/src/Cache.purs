@@ -72,6 +72,8 @@ type Cache =
   , byTag :: AVar (HashMap Tag (Stamped (Array ArticleStub)))
   , subPrerendered :: AVar (HashMap CategoryLabel (Stamped String))
   , paper :: Paper
+  -- Not using UpdateWatch for this, this is controlled by Main.
+  , storedCategoryRender :: AVar (HashMap CategoryLabel (Stamped String))
   }
 
 startUpdates :: forall a. (Maybe String -> Aff (LetteraResponse a)) -> Effect (UpdateWatch (Maybe a))
@@ -156,6 +158,7 @@ initCache paper categoryStructure = do
   subCategoryFeed <- Effect.AVar.new HashMap.empty
   byTag <- Effect.AVar.new HashMap.empty
   subPrerendered <- Effect.AVar.new HashMap.empty
+  storedCategoryRender <- Effect.AVar.new HashMap.empty
 
   pure { prerendered
        , mainCategoryFeed
@@ -165,6 +168,7 @@ initCache paper categoryStructure = do
        , byTag
        , subPrerendered
        , paper
+       , storedCategoryRender
        }
 
 getUsingCache :: forall k m. Hashable k => Monoid m  => AVar (HashMap k (Stamped m)) -> k -> Aff (LetteraResponse m) -> Aff (Stamped m)
@@ -230,6 +234,24 @@ resetCategory cache category = do
     removeFromPassive :: forall a. (AVar (HashMap CategoryLabel a)) -> Aff Unit
     removeFromPassive c =
       flip AVar.put c =<< HashMap.delete category <$> AVar.take c
+
+saveCategoryRender :: Cache -> CategoryLabel -> Stamped String -> Aff Unit
+saveCategoryRender cache category content = do
+  let store = cache.storedCategoryRender
+  flip AVar.put store =<< HashMap.insert category content <$> AVar.take store
+
+readCategoryRender :: Cache -> CategoryLabel -> Aff (Maybe (Stamped String))
+readCategoryRender cache category = do
+  let store = cache.storedCategoryRender
+  cached <- HashMap.lookup category <$> AVar.read store
+  case cached of
+    Nothing -> pure Nothing
+    Just value@(Stamped {validUntil}) -> do
+      now <- liftEffect nowDateTime
+      if now > validUntil then pure $ Just value
+        else do
+        flip AVar.put store =<< HashMap.delete category <$> AVar.take store
+        pure Nothing
 
 addHeader :: forall a b. DateTime -> Boolean -> Stamped b -> Response a -> Response a
 addHeader now private (Stamped { validUntil }) =
