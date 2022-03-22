@@ -256,8 +256,12 @@ readCategoryRender cache category = do
 addHeader :: forall a b. DateTime -> Boolean -> Stamped b -> Response a -> Response a
 addHeader now private (Stamped { validUntil }) =
   if maxAge <= 0 then identity
-  else \(Response response) ->
-    Response $ response { headers = Headers.set "cache-control" control response.headers }
+  else addHeaderAge maxAge private
   where
     maxAge = floor $ un Seconds $ diff validUntil now
+
+addHeaderAge :: forall a. Int -> Boolean -> Response a -> Response a
+addHeaderAge maxAge private (Response response) =
+  Response $ response { headers = Headers.set "cache-control" control response.headers }
+  where
     control = (if private then "private, " else "") <> "max-age=" <> show maxAge
