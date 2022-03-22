@@ -32,7 +32,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -79,7 +79,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -108,7 +108,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -307,7 +307,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -320,7 +320,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -333,7 +333,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production

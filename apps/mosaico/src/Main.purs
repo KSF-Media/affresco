@@ -276,7 +276,8 @@ getArticle env { params: { uuidOrSlug }, guards: { credentials, clientip } }
         <*> parallel (Lettera.getArticle uuid mosaicoPaper credentials clientip)
         <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
         <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
-      renderArticle env user article mostReadArticles latestArticles
+      Cache.addHeaderAge 60 (isJust $ hush =<< user) <$>
+        renderArticle env user article mostReadArticles latestArticles
   | otherwise = do
     article <- Lettera.getArticleWithSlug uuidOrSlug credentials clientip
     case article of
