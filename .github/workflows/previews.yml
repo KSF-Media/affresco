@@ -23,7 +23,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-staging
@@ -74,7 +74,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-staging

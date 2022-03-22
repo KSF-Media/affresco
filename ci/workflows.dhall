@@ -49,7 +49,7 @@ let setupSteps =
           }
         , Step::{
           , name = Some "Setup Cloud SDK"
-          , uses = Some "google-github-actions/setup-gcloud@master"
+          , uses = Some "google-github-actions/setup-gcloud@v0.6.0"
           , `with` = toMap
               { project_id =
                   merge
@@ -298,7 +298,7 @@ let refreshCDNSteps =
       \(cdnName : Text) ->
         [ Step::{
           , name = Some "Install gcloud"
-          , uses = Some "google-github-actions/setup-gcloud@master"
+          , uses = Some "google-github-actions/setup-gcloud@v0.6.0"
           , `with` = toMap
               { project_id = "ksf-production"
               , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
