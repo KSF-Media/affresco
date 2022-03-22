@@ -14,7 +14,7 @@ import Data.Foldable (fold, foldM, foldMap)
 import Data.HashMap as HashMap
 import Data.List (List, intercalate)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Set as Set
@@ -276,7 +276,8 @@ getArticle env { params: { uuidOrSlug }, guards: { credentials, clientip } }
         <*> parallel (Lettera.getArticle uuid mosaicoPaper credentials clientip)
         <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
         <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
-      renderArticle env user article mostReadArticles latestArticles
+      Cache.addHeaderAge 60 (isJust $ hush =<< user) <$>
+        renderArticle env user article mostReadArticles latestArticles
   | otherwise = do
     article <- Lettera.getArticleWithSlug uuidOrSlug credentials clientip
     case article of
@@ -365,6 +366,17 @@ assets { params: { path } } = Handlers.directory "dist" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 frontpage env { guards: { credentials } } = do
+  prerendered <- case credentials of
+    Nothing -> Cache.readCategoryRender env.cache frontpageCategoryLabel
+    Just _ -> pure Nothing
+  case prerendered of
+    Just content -> do
+      now <- liftEffect nowDateTime
+      pure $ Cache.addHeader now false content $ htmlContent $ Response.ok $ StringBody $ Cache.getContent content
+    _ -> renderFrontpage env credentials
+
+renderFrontpage :: Env -> Maybe UserAuth -> Aff (Response ResponseBody)
+renderFrontpage env credentials = do
   { user, articles, mostReadArticles, latestArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _, latestArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
@@ -383,21 +395,24 @@ frontpage env { guards: { credentials } } = do
             appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
               appendHead (makeTitle (Paper.paperName mosaicoPaper))
+  let rendered = renderTemplateHtml html
+  when (isNothing user) $
+    Cache.saveCategoryRender env.cache frontpageCategoryLabel $ mosaicoString $> rendered
   now <- liftEffect nowDateTime
-  pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+  pure $ Cache.addHeader now (isJust user) mosaicoString $ maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody rendered
   where
     renderContent user articles mostReadArticles latestArticles =
       DOM.renderToString
       $ MosaicoServer.app
-          { mainContent: renderFrontpage articles mostReadArticles
+          { mainContent: renderFront articles mostReadArticles
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
           , user: hush =<< user
           }
 
-    renderFrontpage :: ArticleFeed -> Array ArticleStub -> MainContent
-    renderFrontpage (ArticleList list) _ =
+    renderFront :: ArticleFeed -> Array ArticleStub -> MainContent
+    renderFront (ArticleList list) _ =
       { type: FrontpageContent
       , content: Frontpage.render $ Frontpage.List
           { categoryLabel: mempty
@@ -406,7 +421,7 @@ frontpage env { guards: { credentials } } = do
           , onTagClick: const mempty
           }
       }
-    renderFrontpage (Html html) mostReadArticles =
+    renderFront (Html html) mostReadArticles =
       { type: HtmlFrontpageContent
       , content: Frontpage.render $ Frontpage.Prerendered
           { content: Just html
@@ -648,11 +663,23 @@ debugList env { params: { uuid }, guards: { credentials } } = do
           }
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category, credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
-categoryPage env { params: { categoryName }, guards: { credentials } } = do
+categoryPage env { guards: { category, credentials } } = do
+  let (Category { label }) = category
+  prerendered <- case credentials of
+    Nothing -> Cache.readCategoryRender env.cache label
+    Just _ -> pure Nothing
+  case prerendered of
+    Just content -> do
+      now <- liftEffect nowDateTime
+      pure $ Cache.addHeader now false content $ htmlContent $ Response.ok $ StringBody $ Cache.getContent content
+    _ -> renderCategoryPage env label credentials
+
+renderCategoryPage :: Env -> CategoryLabel -> Maybe UserAuth -> Aff (Response ResponseBody)
+renderCategoryPage env category credentials = do
   { user, articles, mostReadArticles, latestArticles } <- sequential $
     { user: _, articles: _, mostReadArticles: _, latestArticles: _ }
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
-    <*> parallel (Cache.getFrontpage env.cache $ CategoryLabel categoryName)
+    <*> parallel (Cache.getFrontpage env.cache category)
     <*> parallel (Cache.getMostRead env.cache)
     <*> parallel (Cache.getLatest env.cache)
   let htmlTemplate = cloneTemplate env.htmlTemplate
@@ -663,13 +690,16 @@ categoryPage env { params: { categoryName }, guards: { credentials } } = do
                   , "latestArticles"    /\ encodeStringifyArticleStubs (Cache.getContent latestArticles)
                   , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
                   ] <> userVar user
-                    <> mkArticleFeed (CategoryFeed $ CategoryLabel categoryName) (ArticleList $ Cache.getContent articles)
+                    <> mkArticleFeed (CategoryFeed category) (ArticleList $ Cache.getContent articles)
             appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
-              appendHead (makeTitle categoryName)
+              appendHead (makeTitle (unwrap category))
+  let rendered = renderTemplateHtml html
+  when (isNothing user) $
+    Cache.saveCategoryRender env.cache category $ mosaicoString $> rendered
   now <- liftEffect nowDateTime
   pure $ Cache.addHeader now (isJust user) mosaicoString $
-    maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
+    maybeInvalidateAuth user $ htmlContent $ Response.ok $ StringBody rendered
   where
     renderContent user articles mostReadArticles latestArticles =
       DOM.renderToString

@@ -20,7 +20,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
@@ -186,7 +186,10 @@ render imageComponent props =
                     [ foldMap
                         (\authorName -> DOM.div
                           { className: "mosaico-article__author"
-                          , children: [ DOM.text authorName]
+                          , children: [ guard (article.articleType == Opinion) $
+                                        renderOpinionType article.articleTypeDetails
+                                      , DOM.text authorName
+                                      ]
                           })
                         (_.byline <$> article.authors)
                     , foldMap
@@ -206,6 +209,12 @@ render imageComponent props =
                 }
             ]
         }
+
+    renderOpinionType detail =
+      foldMap (\opiniontype -> DOM.span
+                              { className: "mosaico-article__opinion-type"
+                              , children: [ DOM.text opiniontype ]
+                              }) $ _.title <$> detail
 
     renderTag tag =
       DOM.a
