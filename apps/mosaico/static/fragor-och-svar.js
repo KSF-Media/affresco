@@ -1,3 +1,18 @@
+const questions = document.getElementsByClassName("faq__question");
+
+for (const q of questions) {
+  q.addEventListener("click", function () {
+    q.classList.toggle("faq__question--active");
+
+    let answer = q.nextElementSibling;
+    if (answer.style.display === "block") {
+      answer.style.display = "none";
+    } else {
+      answer.style.display = "block";
+    }
+  });
+}
+
 const showOnPx = 100;
 const backToTopButton = document.querySelector(".static-page__back-to-top");
 
