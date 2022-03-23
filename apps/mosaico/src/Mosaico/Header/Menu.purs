@@ -50,20 +50,7 @@ type Subsection =
 render :: Props -> JSX
 render props@{ onLogin, onLogout } = DOM.div
   { className: menuClass
-  , children: [ menuContent
-              , DOM.div
-                  { className: menuFooterClass
-                  , children:
-                      [ DOM.div
-                          { className: footerCaptionClass
-                          , children: [ DOM.text "ALLA KSF-TIDNINGAR" ]
-                          }
-                      , logo vnLogoClass vnLogoImageClass "Västra Nyland"
-                      , logo hblLogoClass hblLogoImageClass "Hufvudstadsbladet"
-                      , logo onLogoClass onLogoImageClass "Östnyland"
-                      ]
-                  }
-              ]
+  , children: [ menuContent ]
   }
   where
 
