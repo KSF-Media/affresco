@@ -133,10 +133,14 @@
     a, a:hover, a:focus, a:active {
       text-decoration: none;
       color: inherit;
+      height: 19px;
     }
 
-    @media (min-width: @breakpoint-3col) {
+    @media (min-width: @breakpoint-2col) {
       display: flex;
+      flex-wrap: wrap;
+      height: 19px;
+      overflow-y: hidden;
     }
   }
 
