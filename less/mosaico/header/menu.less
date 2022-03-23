@@ -36,12 +36,14 @@
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-
+    
     row-gap: 1rem;
-
+    
     @media (min-width: @breakpoint-3col) {
       flex-direction: row;
-    }
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      }
   }
 
   &__section {
@@ -49,6 +51,7 @@
     @media (min-width: @breakpoint-3col) {
       display: flex;
       flex-direction: column;
+      width: 160px;
     }
     a, a:hover, a:focus, a:active {
       text-decoration: none;
