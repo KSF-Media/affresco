@@ -95,7 +95,10 @@ render props =
                   { className: accountClass
                   , onClick: props.onProfile
                   , href: "/konto"
-                  , children: [ DOM.text name ]
+                  , children:
+                      [ DOM.span { className: accountClass <> "-icon" }
+                      , DOM.span_ [ DOM.text name ]
+                      ]
                   , _data: Object.fromFoldable [Tuple "loggedin" "1"]
                   }
             ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
@@ -109,8 +112,8 @@ render props =
                 [ searchButton
                 , DOM.div
                     { className: iconButtonClass <> " " <> menuButtonClass
-                    , children: [ DOM.div_ [ DOM.text "MENU" ]
-                                , DOM.div { className: iconClass <> " " <> menuIconClass }
+                    , children: [ DOM.span { className: iconClass <> " " <> menuIconClass }
+                                , DOM.span_ [ DOM.text "MENY" ] 
                                 ]
                     , onClick: handler_ $
                         (\r -> do
@@ -145,8 +148,8 @@ render props =
     searchButton :: JSX
     searchButton = DOM.a
                     { className: iconButtonClass <> " " <> searchButtonClass
-                    , children: [ DOM.div_ [ DOM.text "SÖK" ]
-                                , DOM.div { className: iconClass <> " " <> searchIconClass }
+                    , children: [ DOM.span { className: iconClass <> " " <> searchIconClass }
+                                , DOM.span_ [ DOM.text "SÖK" ]
                                 ]
                     , href: "/sök"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sök"

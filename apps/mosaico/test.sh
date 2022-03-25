@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 error_exit(){
-    echo "Tests failed, killing server."
+    echo "Tests failed! Killing server."
     kill -9 $1
     exit 1
 }

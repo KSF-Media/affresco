@@ -50,20 +50,7 @@ type Subsection =
 render :: Props -> JSX
 render props@{ onLogin, onLogout } = DOM.div
   { className: menuClass
-  , children: [ menuContent
-              , DOM.div
-                  { className: menuFooterClass
-                  , children:
-                      [ DOM.div
-                          { className: footerCaptionClass
-                          , children: [ DOM.text "ALLA KSF-TIDNINGAR" ]
-                          }
-                      , logo vnLogoClass vnLogoImageClass "Västra Nyland"
-                      , logo hblLogoClass hblLogoImageClass "Hufvudstadsbladet"
-                      , logo onLogoClass onLogoImageClass "Östnyland"
-                      ]
-                  }
-              ]
+  , children: [ menuContent ]
   }
   where
 
@@ -213,20 +200,6 @@ render props@{ onLogin, onLogout } = DOM.div
         renderSeparator :: Maybe String -> JSX
         renderSeparator modifierClass = DOM.hr { className: unwords [ separatorClass, fromMaybe mempty modifierClass ] }
 
-    logo :: String -> String ->  String -> JSX
-    logo modifierClass imageModifierClass caption = DOM.div
-      { className: unwords [ logoClass, modifierClass ]
-      , children:
-          [ DOM.div
-              { className: unwords [ logoImageClass, imageModifierClass ]
-              }
-          , DOM.div
-              { className: unwords [ logoCaptionClass ]
-              , children: [ DOM.text caption ]
-              }
-          ]
-      }
-
     headerBlock = "mosaico-header"
 
     menuElement = "__menu"
@@ -234,9 +207,6 @@ render props@{ onLogin, onLogout } = DOM.div
 
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement
-
-    menuFooterElement = "__menu-footer"
-    menuFooterClass = headerBlock <> menuFooterElement
 
     blockElement = "__block"
     blockClass = headerBlock <> blockElement
@@ -261,27 +231,6 @@ render props@{ onLogin, onLogout } = DOM.div
 
     mobileOnlyModifier = "--mobile-only"
     mobileOnlySeparatorClass = separatorClass <> mobileOnlyModifier
-
-    footerCaptionElement = "__footer-caption"
-    footerCaptionClass = headerBlock <> footerCaptionElement
-
-    logoElement =  "__footer-logo"
-    hblLogoModifier = "--hbl"
-    onLogoModifier = "--on"
-    vnLogoModifier = "--vn"
-    logoClass = headerBlock <> logoElement
-    hblLogoClass = logoClass <> hblLogoModifier
-    onLogoClass = logoClass <> onLogoModifier
-    vnLogoClass = logoClass <> vnLogoModifier
-
-    logoImageElement = "__footer-logo-image"
-    logoImageClass = headerBlock <> logoImageElement
-    hblLogoImageClass =  logoImageClass <> hblLogoModifier
-    onLogoImageClass = logoImageClass <> onLogoModifier
-    vnLogoImageClass = logoImageClass <> vnLogoModifier
-
-    logoCaptionElement = "__footer-logo-caption"
-    logoCaptionClass = headerBlock <> logoCaptionElement
 
 unwords :: Array String -> String
 unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty
