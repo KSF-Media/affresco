@@ -287,7 +287,13 @@ mosaicoComponent initialValues props = React.do
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
-    Right path -> setState \s -> s { route = path, prevRoute = Just s.route }
+    Right path -> setState \s -> s { route = path
+                                   , prevRoute = Just s.route
+                                   , clickedArticle = case path of
+                                       Routes.ArticlePage articleId
+                                         | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
+                                       _ -> s.clickedArticle
+                                   }
     Left _     -> pure unit
 
 type InitialValues =
