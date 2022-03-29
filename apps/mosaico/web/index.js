@@ -37,5 +37,5 @@ if (module.hot) {
   });
 }
 
-console.log("startinggggg");
+console.log("starting");
 main();
