@@ -38,4 +38,4 @@ const buildOpts = {
 };
 
 esbuild.build(buildOpts);
-exec("cp ./web/index.html ./dist/index.html");
+exec("mkdir -p dist && cp ./web/index.html ./dist/index.html");
