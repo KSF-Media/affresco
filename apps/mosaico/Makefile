@@ -1,8 +1,10 @@
+all: run-dev
+
 run-dev: run-spago-watch run-esbuild-watch run-browser-sync
 
 run-spago-watch:
 	spago build --watch
 run-browser-sync:
-	node runBrowsersync.js
+	node ./run/hot-reload.js
 run-esbuild-watch:
-	node runBuild.js
+	node ./run/build.js dev

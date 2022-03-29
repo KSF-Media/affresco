@@ -2,23 +2,22 @@ var esbuild = require("esbuild");
 var lessLoader = require("esbuild-plugin-less").lessLoader;
 
 require("dotenv").config();
-
+const watch = process.argv.includes("dev") ? true : false;
 const buildOpts = {
   entryPoints: ["./web/index.js", "./web/ads.js"],
   bundle: true,
-  outdir: "./build/assets",
+  outdir: "./dist/assets",
   plugins: [lessLoader()],
-  assetNames: "static/[name]",
   loader: {
     ".js": "jsx",
-    ".png": "dataurl",
-    ".woff": "dataurl",
-    ".ttf": "dataurl",
-    ".svg": "dataurl",
-    ".otf": "dataurl",
-    ".eot": "dataurl",
-    ".woff2": "dataurl",
-    ".gif": "dataurl",
+    ".png": "file",
+    ".woff": "file",
+    ".ttf": "file",
+    ".svg": "file",
+    ".otf": "file",
+    ".eot": "file",
+    ".woff2": "file",
+    ".gif": "file",
     ".html": "text",
   },
   define: {
@@ -33,8 +32,7 @@ const buildOpts = {
     "process.env.HIDE_LOGIN_LINKS": '"' + process.env.HIDE_LOGIN_LINKS + '"',
     "process.env.SENTRY_DSN": '"' + process.env.SENTRY_DSN + '"',
   },
-  // treeShaking: true,
-  watch: true,
+  treeShaking: true,
+  watch: watch,
 };
-
 esbuild.build(buildOpts);

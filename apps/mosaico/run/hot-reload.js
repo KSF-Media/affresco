@@ -1,10 +1,9 @@
 const { exec } = require("child_process");
 var bs = require("browser-sync").create();
-bs.watch("build/assets/*").on("change", bs.reload);
+bs.watch("dist/assets/*").on("change", bs.reload);
 
 bs.watch("static/*").on("change", () => {
-  console.log("ayoo");
-  exec("cp ./static/* ./build/assets/");
+  exec("cp ./static/* ./dist/assets/");
   bs.reload();
 });
 
@@ -25,7 +24,7 @@ bs.init({
   serveStatic: [
     {
       route: "/assets",
-      dir: "./build/assets",
+      dir: "./dist/assets",
     },
   ],
   middleware: [
