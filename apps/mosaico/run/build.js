@@ -1,7 +1,8 @@
 var esbuild = require("esbuild");
 var lessLoader = require("esbuild-plugin-less").lessLoader;
-
+const { exec } = require("child_process");
 require("dotenv").config();
+
 const watch = process.argv.includes("dev") ? true : false;
 const buildOpts = {
   entryPoints: ["./web/index.js", "./web/ads.js"],
@@ -35,4 +36,6 @@ const buildOpts = {
   treeShaking: true,
   watch: watch,
 };
+
 esbuild.build(buildOpts);
+exec("cp ./web/index.html ./dist/index.html");
