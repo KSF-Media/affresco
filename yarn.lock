@@ -1161,34 +1161,6 @@
     "@babel/helper-validator-identifier" "^7.12.11"
     to-fast-properties "^2.0.0"
 
-"@chialab/esbuild-plugin-html@^0.15.9":
-  version "0.15.9"
-  resolved "https://registry.yarnpkg.com/@chialab/esbuild-plugin-html/-/esbuild-plugin-html-0.15.9.tgz#61141abfe8e036b06b9ec7a78dac4738bb49d23d"
-  integrity sha512-N4gm+NoY/bcw/pJTTr0u7SRpXZV/Xw3VdRXuSAbQgQivHt2lfIl2/V9bdU6m1YR+X/lnKCJPlTMW8FMb4VhVmg==
-  dependencies:
-    "@chialab/esbuild-rna" "^0.15.9"
-    "@chialab/node-resolve" "^0.15.9"
-
-"@chialab/esbuild-rna@^0.15.9":
-  version "0.15.9"
-  resolved "https://registry.yarnpkg.com/@chialab/esbuild-rna/-/esbuild-rna-0.15.9.tgz#1afba7daff8ef5a97461974825e088156dc71777"
-  integrity sha512-VkluZCFE3UZSTqsYmjTbdtHCwQTLk+YYd9vuVeIAXTwnwr1dP5Utjphx+CXNx4eSn/QpBd7kjcvykdVJ136vlQ==
-  dependencies:
-    "@chialab/estransform" "^0.15.3"
-    "@chialab/node-resolve" "^0.15.9"
-
-"@chialab/estransform@^0.15.3":
-  version "0.15.3"
-  resolved "https://registry.yarnpkg.com/@chialab/estransform/-/estransform-0.15.3.tgz#62f29ae99b26181c7fd097f1d33bb677f5b8ba30"
-  integrity sha512-5CxuC4+mgHGNedbxmJ0avDsyHngDRCt5ytlASJNtCGvaeEkcEFhXSKT8SvVBkOJcMOepBBP3Pq0BdBnw50WwLg==
-  dependencies:
-    "@parcel/source-map" "^2.0.0"
-
-"@chialab/node-resolve@^0.15.9":
-  version "0.15.9"
-  resolved "https://registry.yarnpkg.com/@chialab/node-resolve/-/node-resolve-0.15.9.tgz#46985d4f8a468bbb8443bc624ba60bcc4c72b9a8"
-  integrity sha512-4/2GWaGnMV2CLK4QsG4OyJVb6gcz28XPb/bswYWrH9DmYEx6YXVlNEGDswNJxFeYXvXBCIQ5UGzAzjdEMa075A==
-
 "@emotion/babel-utils@^0.6.4":
   version "0.6.10"
   resolved "https://registry.yarnpkg.com/@emotion/babel-utils/-/babel-utils-0.6.10.tgz#83dbf3dfa933fae9fc566e54fbb45f14674c6ccc"
@@ -1364,13 +1336,6 @@
     grapheme-breaker "^0.3.2"
     ora "^2.1.0"
     strip-ansi "^4.0.0"
-
-"@parcel/source-map@^2.0.0":
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/@parcel/source-map/-/source-map-2.0.2.tgz#9aa0b00518cee31d5634de6e9c924a5539b142c1"
-  integrity sha512-NnUrPYLpYB6qyx2v6bcRPn/gVigmGG6M6xL8wIg/i0dP1GLkuY1nf+Hqdf63FzPTqqT7K3k6eE5yHPQVMO5jcA==
-  dependencies:
-    detect-libc "^1.0.3"
 
 "@parcel/utils@^1.11.0":
   version "1.11.0"
@@ -4382,11 +4347,6 @@ detect-indent@^4.0.0:
   integrity sha1-920GQ1LN9Docts5hnE7jqUdd4gg=
   dependencies:
     repeating "^2.0.0"
-
-detect-libc@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-1.0.3.tgz#fa137c4bd698edf55cd5cd02ac559f91a4c4ba9b"
-  integrity sha1-+hN8S9aY7fVc1c0CrFWfkaTEups=
 
 detect-node-es@^1.0.0:
   version "1.1.0"

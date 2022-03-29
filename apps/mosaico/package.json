@@ -30,7 +30,6 @@
     "test": "bash test.sh"
   },
   "devDependencies": {
-    "@chialab/esbuild-plugin-html": "^0.15.9",
     "esbuild-plugin-less": "^1.1.6",
     "puppeteer": "^13.1.3"
   }
