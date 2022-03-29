@@ -32,7 +32,7 @@ function main() {
 
 if (module.hot) {
   module.hot.accept(function () {
-    console.log("running main again");
+    console.log("running main againn");
     main();
   });
 }
