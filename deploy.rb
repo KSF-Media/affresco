@@ -96,7 +96,7 @@ end
 
 build_cmds_staging = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd '#{app['path']}/' run build",
+  "yarn --cwd '#{app['path']}/' run build-staging",
   "yarn --cwd '#{app['path']}/' run test"
 ]
 
@@ -119,7 +119,7 @@ elsif app_name == 'scripts'
   run_command("mkdir -p #{app['path']} && cp -R scripts #{app['path']}/dist")
 else
   setup_env(app)
-  if ENV['NODE_ENV'] == 'development' 
+  if ENV['NODE_ENV'] == 'development'
     build_cmds_staging.each { |c| run_command(c) }
   else
     build_cmds_production.each { |c| run_command(c) }

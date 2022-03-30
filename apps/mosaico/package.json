@@ -23,10 +23,11 @@
   },
   "scripts": {
     "start": "node -r dotenv/config -e 'require(\"./output/Main/index\").main()' dotenv_config_path=.env.local",
-    "start-dev": "parcel build ./static/* -d ./dist && parcel web/index.html -p 8000 -d ./dist --public-url /assets",
+    "start-dev": "spago build && make -j 3",
     "build": "spago build && node run/build.js",
     "build-app": "spago build",
-    "build-spa": "parcel build web/index.html -d ./dist --public-url $PUBLIC_URL && parcel build ./static/* -d ./dist",
+    "build-spa": "node run/build.js",
+    "build-staging": "node run/build.js staging",
     "test": "node run/build.js && bash test.sh"
   },
   "devDependencies": {

@@ -3,15 +3,27 @@ var lessLoader = require("esbuild-plugin-less").lessLoader;
 const { exec } = require("child_process");
 require("dotenv").config();
 
+const fs = require("fs");
+const cheerio = require("cheerio");
+
+const templateFile = "./web/index.html";
+const template = cheerio.load(fs.readFileSync(templateFile, "utf8"));
+
 console.log("Bundling javascript...");
 
 // When developing, run build on file change
 const watch = process.argv.includes("dev") ? true : false;
 
+if (process.argv.includes("staging")) {
+  template("#ads-script").attr("src", "assets/ads.js");
+  template("#index-script").attr("src", "assets/index.js");
+}
+
 const buildOpts = {
   entryPoints: ["./web/index.js", "./web/ads.js"],
   bundle: true,
   outdir: "./dist/assets",
+  minify: true,
   plugins: [lessLoader()],
   loader: {
     ".js": "jsx",
@@ -39,11 +51,14 @@ const buildOpts = {
     "process.env.JANRAIN_FLOW_VERSION": '"' + process.env.JANRAIN_FLOW_VERSION + '"',
     "process.env.JANRAIN_LOGIN_CLIENT_ID": '"' + process.env.JANRAIN_LOGIN_CLIENT_ID + '"',
     "process.env.JANRAIN_SSO_SERVER": '"' + process.env.JANRAIN_SSO_SERVER + '"',
-    "process.env.JANRAIN_XD_RECEIVER_PATH": '"' + process.env.JANRAIN_XD_RECEIVER_PATH + '"',
+    "process.env.JANRAIN_XD_RECEIVER_PATH": '"' + process.env.JANRAIN_XD_RECEIVER + '"',
   },
   treeShaking: true,
   watch: watch,
 };
 
 esbuild.build(buildOpts);
-exec("mkdir -p dist/assets && cp ./web/index.html ./dist/index.html && cp ./static/* ./dist/assets/");
+
+// TODO: add static folder to entryPoints
+exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/");
+fs.writeFile("./dist/index.html", template.html(), () => {});
