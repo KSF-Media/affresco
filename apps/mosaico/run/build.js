@@ -3,6 +3,8 @@ var lessLoader = require("esbuild-plugin-less").lessLoader;
 const { exec } = require("child_process");
 require("dotenv").config();
 
+console.log("Bundling javascript...");
+
 const watch = process.argv.includes("dev") ? true : false;
 const buildOpts = {
   entryPoints: ["./web/index.js", "./web/ads.js"],
