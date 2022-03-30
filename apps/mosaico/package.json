@@ -27,7 +27,7 @@
     "build": "spago build && node run/build.js",
     "build-app": "spago build",
     "build-spa": "parcel build web/index.html -d ./dist --public-url $PUBLIC_URL && parcel build ./static/* -d ./dist",
-    "test": "bash test.sh"
+    "test": "node run/build.js && bash test.sh"
   },
   "devDependencies": {
     "esbuild-plugin-less": "^1.1.6",
