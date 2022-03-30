@@ -18,6 +18,7 @@ function main() {
 	staticPageName={window.staticPageName || null}
 	categoryStructure={window.categoryStructure || null}
 	initialFrontpageFeed={window.frontpageFeed || null}
+	latestArticles={window.latestArticles || null}
 	user={window.user || null}
 	entitlements={window.entitlements || null}
       />

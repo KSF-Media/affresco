@@ -2,7 +2,6 @@ module Mosaico.Test.Account where
 
 import Prelude hiding (sub)
 
-import Effect.Aff as Aff
 import Mosaico.Test (Test, site, sub)
 import KSF.Puppeteer as Chrome
 import Test.Unit.Assert as Assert

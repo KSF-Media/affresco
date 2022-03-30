@@ -2,11 +2,9 @@ module Mosaico.Test.Layout where
 
 import Prelude
 
-import Effect.Aff as Aff
-import Mosaico.Test (Test, log, site, sub)
+import Mosaico.Test (Test, site)
 import KSF.Puppeteer as Chrome
 import Test.Unit.Assert as Assert
-import Debug
 
 testLayout :: Test
 testLayout page = do
