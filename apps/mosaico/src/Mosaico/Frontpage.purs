@@ -31,7 +31,7 @@ import React.Basic.Events (EventHandler)
 data Frontpage = List ListFrontpageProps | Prerendered PrerenderedFrontpageProps
 
 type ListFrontpageProps =
-  { categoryLabel :: Maybe String
+  { label :: Maybe String
   , content :: Maybe (Array ArticleStub)
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
@@ -48,7 +48,7 @@ render (List props) =
     DOM.div
         { className: "mosaico--article-list"
         , children:
-          [ maybeCategoryLabel props.categoryLabel
+          [ maybeLabel props.label
           , genericRender (\list -> map renderListArticle list) mempty props.content
           ]
         }
@@ -119,8 +119,8 @@ render (Prerendered props@{ hooks }) = genericRender
   props.onClick
   props.content
 
-maybeCategoryLabel :: Maybe String -> JSX
-maybeCategoryLabel categoryLabel =
+maybeLabel :: Maybe String -> JSX
+maybeLabel categoryLabel =
   case categoryLabel of
     Just label -> DOM.h1
                     { className: ""
