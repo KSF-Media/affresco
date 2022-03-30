@@ -28,7 +28,7 @@
     "build-app": "spago build",
     "build-spa": "node run/build.js",
     "build-staging": "node run/build.js staging",
-    "test": "node run/build.js && bash test.sh"
+    "test": "node run/build.js staging && bash test.sh"
   },
   "devDependencies": {
     "esbuild-plugin-less": "^1.1.6",
