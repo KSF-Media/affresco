@@ -404,15 +404,15 @@ renderFrontpage env credentials = do
     renderContent user articles mostReadArticles latestArticles =
       DOM.renderToString
       $ MosaicoServer.app
-          { mainContent: renderFront articles mostReadArticles
+          { mainContent: renderFront articles mostReadArticles latestArticles
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
           , user: hush =<< user
           }
 
-    renderFront :: ArticleFeed -> Array ArticleStub -> MainContent
-    renderFront (ArticleList list) _ =
+    renderFront :: ArticleFeed -> Array ArticleStub -> Array ArticleStub -> MainContent
+    renderFront (ArticleList list) _ _ =
       { type: FrontpageContent
       , content: Frontpage.render $ Frontpage.List
           { categoryLabel: mempty
@@ -421,11 +421,12 @@ renderFrontpage env credentials = do
           , onTagClick: const mempty
           }
       }
-    renderFront (Html html) mostReadArticles =
+    renderFront (Html html) mostReadArticles latestArticles =
       { type: HtmlFrontpageContent
       , content: Frontpage.render $ Frontpage.Prerendered
           { content: Just html
           , hooks: [ Frontpage.MostRead mostReadArticles (const mempty)
+                   , Frontpage.Latest latestArticles (const mempty)
                    , Frontpage.ArticleUrltoRelative
                    ]
           , onClick: mempty
@@ -707,7 +708,7 @@ renderCategoryPage env category credentials = do
           { mainContent:
               { type: FrontpageContent
               , content: Frontpage.render $ Frontpage.List
-                  { categoryLabel: mempty
+                  { categoryLabel: Just $ unwrap category
                   , content: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty

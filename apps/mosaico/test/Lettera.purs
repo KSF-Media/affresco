@@ -5,8 +5,8 @@ import Prelude hiding (sub)
 
 import Data.Array (head, length, zip, (..))
 import Data.Either (Either(..))
-import Data.Foldable (traverse_)
-import Data.Maybe (Maybe(..), fromJust, fromMaybe, isJust)
+import Data.Foldable (any, traverse_)
+import Data.Maybe (Maybe(..), fromJust, fromMaybe)
 import Data.String (Pattern(..), stripPrefix, toUpper)
 import Data.Tuple (Tuple(..))
 import Data.UUID (UUID)
@@ -15,7 +15,7 @@ import KSF.Paper (Paper(..))
 import Lettera as Lettera
 import Lettera.Models (Category(..), CategoryLabel(..), CategoryType(..))
 import Lettera.Models as Models
-import Mosaico.Test (Test, listArticle, log, site, sub)
+import Mosaico.Test (Test, listArticle, log, matchTagList, site, sub, tagListWithSelector)
 import Partial.Unsafe (unsafePartial)
 import KSF.Puppeteer as Chrome
 import Test.Unit as Unit
@@ -73,20 +73,25 @@ testCategoryLists page = do
     testCategory (Tuple idx (Category c))
       | c.type == Feed = do
         log $ "test feed category " <> show c.label
-        firstArticle <- join <<< map head <<< Lettera.responseBody <$>
-                        (Lettera.getFrontpage HBL (Just $ show c.label) Nothing)
+        letteraArticles <- fromMaybe [] <<< Lettera.responseBody <$>
+                           Lettera.getFrontpage HBL (Just $ show c.label) Nothing
         let catElement = Chrome.Selector $ ".mosaico-header__block:nth-child(3) .mosaico-header__section:nth-of-type(" <> show idx <> ") a"
             (CategoryLabel catLabel) = c.label
         Chrome.waitFor_ catElement page
         Chrome.assertContent catElement (toUpper catLabel) page
         Chrome.click catElement page
         Chrome.waitFor_ listArticle page
-        uuid <- stripPrefix (Pattern "/artikel/")
-                <$> Chrome.getHref (sub " a[href^='/artikel/']" listArticle) page
-        Assert.assert "UUID not found" $ isJust uuid
-        Assert.assert "Mismatch with page's and feed's UUIDs" $ (_.uuid <$> firstArticle) == uuid
-        Chrome.assertContent (sub " h2" listArticle)
-          (fromMaybe "☃INVALID" $ (\x -> fromMaybe x.title x.listTitle) <$> firstArticle) page
+        uuids <- tagListWithSelector 10 $ \i ->
+          fromMaybe "" <<< stripPrefix (Pattern "/artikel/")
+          <$> Chrome.getHref (sub (":nth-child(" <> show i <> ") a[href^='/artikel/']") listArticle) page
+        Assert.assert "No UUIDs found" $ any (_ /= "") $ map _.content uuids
+        let matching = matchTagList uuids letteraArticles $ \uuid stub -> uuid == stub.uuid
+        case head matching of
+          Nothing ->
+            Unit.failure "No common articles found in Lettera's and Mosaico's category page"
+          Just {i, match} -> do
+            let title = fromMaybe match.title match.listTitle
+            Chrome.assertContent (sub (":nth-child(" <> show i <> ") h2") listArticle) title page
         Chrome.goto (Chrome.URL $ site <> "meny") page
       | otherwise = do
         log $ "No test for category type " <> Models.toString c.type <> " (" <> show c.label <> ")"
