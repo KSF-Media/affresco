@@ -30,11 +30,7 @@ render query setQuery { doSearch, searching, noResults } =
   DOM.div
     { className: "mosaico-search"
     , children:
-        [ DOM.span
-            { className: "mosaico-search__header"
-            , children: [ DOM.text "Sök" ]
-            }
-        , DOM.form
+        [ DOM.form
             { className: "mosaico-search__form"
             , children:
                 [ DOM.span
@@ -43,7 +39,7 @@ render query setQuery { doSearch, searching, noResults } =
                         [ InputField.inputField
                             { type_: InputField.Text
                             , name: "q"
-                            , placeholder: ""
+                            , placeholder: "Sök.."
                             , label: Nothing
                             , value: query
                             , onChange: setQuery
@@ -57,8 +53,8 @@ render query setQuery { doSearch, searching, noResults } =
                     , children:
                         [ DOM.button
                             { type: "submit"
-                            , children: [ DOM.text "Sök" ]
-                            , className: "button-green"
+                            , className: "mosaico-search__button"
+                            , children: [ DOM.span_ [] ]
                             , disabled: isNothing query || query == Just "" || searching
                             }
                         ]
