@@ -212,13 +212,13 @@ class Content extends Component {
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >
-          <div className="ksf-app-ad" id="MOBPARAD"></div>
+          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBPARAD"></div>}
           {this.props.body != null
             ? this.props.body.map((block, key) => {
                 return this.conditionalRendering(block, key);
               })
             : ""}
-          <div className="ksf-app-ad" id="MOBNER"></div>
+          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBNER"></div>}
         </div>
       </div>
     );
