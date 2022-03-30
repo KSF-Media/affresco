@@ -115,6 +115,7 @@ class Article extends Component {
               showHighResolutionImage={this.showHighResolutionImage}
               fontSize={this.props.fontSize}
               darkModeEnabled={this.props.darkModeEnabled}
+              articleType={this.props.articleType}
             />
             <div className={"row"}>
               <div className={"col-sm-12"}>{this.props.isPreview ? <PremiumBox paper={this.props.paper} /> : ""}</div>

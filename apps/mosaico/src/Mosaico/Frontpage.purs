@@ -68,11 +68,13 @@ render (List props) =
                 [ DOM.span
                     { children:
                         [ -- TODO: paper specific fallback img
-                        let imgSrc = maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage)
+                        let imgSrc = maybe (fallbackImage mosaicoPaper)
+                                     ((_ <> "&function=hardcrop&width=200&height=200&q=90") <<< _.url)
+                                     (a.listImage <|> a.mainImage)
                         in DOM.a
                             { href: "/artikel/" <> a.uuid
                             , className: "list-article-image"
-                            , children: [ DOM.img { src: imgSrc <> "&function=hardcrop&width=200&height=200&q=90" } ]
+                            , children: [ DOM.img { src: imgSrc } ]
                             }
                         ,  DOM.div
                               { className: "list-article-liftup"
