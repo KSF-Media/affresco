@@ -5,7 +5,9 @@ require("dotenv").config();
 
 console.log("Bundling javascript...");
 
+// When developing, run build on file change
 const watch = process.argv.includes("dev") ? true : false;
+
 const buildOpts = {
   entryPoints: ["./web/index.js", "./web/ads.js"],
   bundle: true,
@@ -44,4 +46,4 @@ const buildOpts = {
 };
 
 esbuild.build(buildOpts);
-exec("mkdir -p dist && cp ./web/index.html ./dist/index.html");
+exec("mkdir -p dist/assets && cp ./web/index.html ./dist/index.html && cp ./static/* ./dist/assets/");
