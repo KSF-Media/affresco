@@ -2,7 +2,7 @@ window.googletag = window.googletag || { cmd: [] };
 
 window.googletag.cmd.push(function () {
 
-  googletag.pubads().setTargeting("newspaper", "hbl");
+  googletag.pubads().setTargeting("Test", "mosaico_test");
 
   /* Ad slots to use */
   const networkCode = "/21664538223/";
