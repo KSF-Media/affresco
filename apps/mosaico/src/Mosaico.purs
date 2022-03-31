@@ -251,6 +251,7 @@ mosaicoComponent initialValues props = React.do
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
               _ -> mempty
       Routes.DebugPage _ -> pure unit
+      Routes.DeployPreview -> liftEffect $ setState _  { route = Routes.Frontpage }
 
     case props.mostReadArticles of
       Just mostReads
@@ -409,7 +410,7 @@ render setState state components router onPaywallEvent =
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | Nothing <- state.article -> mosaicoLayoutNoAside loadingSpinner
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
-       Routes.Frontpage -> maybe mempty renderCategory $ Map.lookup frontpageCategoryLabel state.catMap
+       Routes.Frontpage -> renderFrontpage
        Routes.SearchPage Nothing ->
           mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
        Routes.SearchPage query@(Just queryString) ->
@@ -462,7 +463,10 @@ render setState state components router onPaywallEvent =
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
        Routes.DebugPage _ -> frontpageNoHeader Nothing $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
+       -- NOTE: This should not ever happen, as we always "redirect" to Frontpage route from DeployPreview
+       Routes.DeployPreview -> renderFrontpage
   where
+    renderFrontpage = maybe mempty renderCategory $ Map.lookup frontpageCategoryLabel state.catMap
 
     renderCategory :: Category -> JSX
     renderCategory category@(Category c) =
