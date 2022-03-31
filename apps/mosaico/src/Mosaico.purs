@@ -422,7 +422,8 @@ render setState state components router onPaywallEvent =
                 _             -> false
               searchProps = { query, doSearch, searching, noResults }
               header = components.searchComponent searchProps
-          in frontpageWithHeader header frontpageArticles
+              label = Just $ "Sökresultat: " <> queryString
+          in frontpage (Just header) label frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
          let maybeFeed = _.feed <$> HashMap.lookup (TagFeed tag) state.frontpageFeeds
@@ -477,22 +478,19 @@ render setState state components router onPaywallEvent =
         Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader Nothing <<< Just) maybeFeed
         Feed -> frontpageNoHeader (Just c.label) maybeFeed
 
-    frontpageWithHeader :: JSX -> Maybe ArticleFeed -> JSX
-    frontpageWithHeader header = frontpage (Just header) Nothing
-
     frontpageNoHeader :: Maybe CategoryLabel -> Maybe ArticleFeed -> JSX
-    frontpageNoHeader = frontpage Nothing
+    frontpageNoHeader = frontpage Nothing <<< map unwrap
 
-    frontpage :: Maybe JSX -> Maybe CategoryLabel -> Maybe ArticleFeed -> JSX
+    frontpage :: Maybe JSX -> Maybe String -> Maybe ArticleFeed -> JSX
     frontpage maybeHeader maybeCategorLabel (Just (ArticleList list)) = listFrontpage maybeHeader maybeCategorLabel $ Just list
     frontpage maybeHeader _ (Just (Html html))                        = prerenderedFrontpage maybeHeader $ Just html
     frontpage maybeHeader _ _                                         = listFrontpage maybeHeader Nothing Nothing
 
-    listFrontpage :: Maybe JSX -> Maybe CategoryLabel -> Maybe (Array ArticleStub) -> JSX
-    listFrontpage maybeHeader maybeCategoryLabel content = mosaicoDefaultLayout $
+    listFrontpage :: Maybe JSX -> Maybe String -> Maybe (Array ArticleStub) -> JSX
+    listFrontpage maybeHeader label content = mosaicoDefaultLayout $
       (fromMaybe mempty maybeHeader) <>
       (Frontpage.render $ Frontpage.List
-        { categoryLabel: unwrap <$> maybeCategoryLabel
+        { label
         , content
         , onArticleClick
         , onTagClick

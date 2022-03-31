@@ -18,14 +18,14 @@
 
   @media (min-width: @breakpoint-3col) {
     max-width: 100%;
-    grid-template-rows: auto 85px auto auto auto auto 500px;
+    grid-template-rows: auto 85px auto minmax(0, 60px) auto auto 500px;
     // don't use repeat, causes error
     grid-template-columns: 1fr @content-block @content-block @content-block 1fr;
     grid-template-areas:
       "line line line line line"
       ". head head head ."
       "separator separator separator separator separator"
-      ". search search search ."
+      ". search search aside ."
       ". main main aside ."
       ". article article article ."
       "foot foot foot foot foot";
