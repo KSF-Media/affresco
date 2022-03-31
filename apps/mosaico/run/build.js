@@ -14,9 +14,17 @@ console.log("Bundling javascript...");
 // When developing, run build on file change
 const watch = process.argv.includes("dev") ? true : false;
 
+// We need to refer to assets a bit differently in our deploy previews
 if (process.argv.includes("staging")) {
-  template("#ads-script").attr("src", "assets/ads.js");
-  template("#index-script").attr("src", "assets/index.js");
+  template(".mosaico-asset").each((ix, elem) => {
+    const src = template(elem).attr("src");
+    const href = template(elem).attr("href");
+    if (src) {
+      template(elem).attr("src", src.replace("/assets/", "assets/"));
+    } else if (href) {
+      template(elem).attr("href", href.replace("/assets/", "assets/"));
+    }
+  });
 }
 
 const buildOpts = {
@@ -35,7 +43,7 @@ const buildOpts = {
     ".eot": "file",
     ".woff2": "file",
     ".gif": "file",
-    ".html": "text",
+    ".html": "file",
   },
   define: {
     "process.env.BOTTEGA_URL": '"' + process.env.BOTTEGA_URL + '"',
@@ -59,6 +67,5 @@ const buildOpts = {
 
 esbuild.build(buildOpts);
 
-// TODO: add static folder to entryPoints
 exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/");
 fs.writeFile("./dist/index.html", template.html(), () => {});
