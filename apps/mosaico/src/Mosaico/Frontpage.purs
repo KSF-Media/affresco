@@ -31,7 +31,7 @@ import React.Basic.Events (EventHandler)
 data Frontpage = List ListFrontpageProps | Prerendered PrerenderedFrontpageProps
 
 type ListFrontpageProps =
-  { categoryLabel :: Maybe String
+  { label :: Maybe String
   , content :: Maybe (Array ArticleStub)
   , onArticleClick :: ArticleStub -> EventHandler
   , onTagClick :: Tag -> EventHandler
@@ -48,7 +48,7 @@ render (List props) =
     DOM.div
         { className: "mosaico--article-list"
         , children:
-          [ maybeCategoryLabel props.categoryLabel
+          [ maybeLabel props.label
           , genericRender (\list -> map renderListArticle list) mempty props.content
           ]
         }
@@ -68,11 +68,13 @@ render (List props) =
                 [ DOM.span
                     { children:
                         [ -- TODO: paper specific fallback img
-                        let imgSrc = maybe (fallbackImage mosaicoPaper) _.url (a.listImage <|> a.mainImage)
+                        let imgSrc = maybe (fallbackImage mosaicoPaper)
+                                     ((_ <> "&function=hardcrop&width=200&height=200&q=90") <<< _.url)
+                                     (a.listImage <|> a.mainImage)
                         in DOM.a
                             { href: "/artikel/" <> a.uuid
                             , className: "list-article-image"
-                            , children: [ DOM.img { src: imgSrc <> "&function=hardcrop&width=200&height=200&q=90" } ]
+                            , children: [ DOM.img { src: imgSrc } ]
                             }
                         ,  DOM.div
                               { className: "list-article-liftup"
@@ -117,8 +119,8 @@ render (Prerendered props@{ hooks }) = genericRender
   props.onClick
   props.content
 
-maybeCategoryLabel :: Maybe String -> JSX
-maybeCategoryLabel categoryLabel =
+maybeLabel :: Maybe String -> JSX
+maybeLabel categoryLabel =
   case categoryLabel of
     Just label -> DOM.h1
                     { className: ""

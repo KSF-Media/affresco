@@ -91,6 +91,9 @@ render imageComponent props =
               , children: [ DOM.text "Förslag" ]
               }
           _ -> mempty
+        mostRead = foldMap renderMostReadArticles $
+          if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
+
     in DOM.article
       { className: "mosaico-article"
       , children:
@@ -145,12 +148,12 @@ render imageComponent props =
                             paywallFade
                             `cons` bodyWithAd
                             `snoc` vetrina
+                            `snoc` mostRead
                           Right DraftArticle ->
                             bodyWithoutAd
                           Right FullArticle ->
                             bodyWithAd <>
-                            (foldMap (pure <<< renderMostReadArticles) $
-                             if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)
+                            pure mostRead
                           Left _ -> [ loadingSpinner ]
                           _ -> mempty
                         }
@@ -276,7 +279,7 @@ render imageComponent props =
         , children: [ DOM.text "ANDRA LÄSER" ]
         } <>
       (Frontpage.render $ Frontpage.List
-        { categoryLabel: mempty
+        { label: mempty
         , content: Just articles
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick

@@ -404,28 +404,29 @@ renderFrontpage env credentials = do
     renderContent user articles mostReadArticles latestArticles =
       DOM.renderToString
       $ MosaicoServer.app
-          { mainContent: renderFront articles mostReadArticles
+          { mainContent: renderFront articles mostReadArticles latestArticles
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
           , user: hush =<< user
           }
 
-    renderFront :: ArticleFeed -> Array ArticleStub -> MainContent
-    renderFront (ArticleList list) _ =
+    renderFront :: ArticleFeed -> Array ArticleStub -> Array ArticleStub -> MainContent
+    renderFront (ArticleList list) _ _ =
       { type: FrontpageContent
       , content: Frontpage.render $ Frontpage.List
-          { categoryLabel: mempty
+          { label: mempty
           , content: Just list
           , onArticleClick: const mempty
           , onTagClick: const mempty
           }
       }
-    renderFront (Html html) mostReadArticles =
+    renderFront (Html html) mostReadArticles latestArticles =
       { type: HtmlFrontpageContent
       , content: Frontpage.render $ Frontpage.Prerendered
           { content: Just html
           , hooks: [ Frontpage.MostRead mostReadArticles (const mempty)
+                   , Frontpage.Latest latestArticles (const mempty)
                    , Frontpage.ArticleUrltoRelative
                    ]
           , onClick: mempty
@@ -523,7 +524,7 @@ tagList env { params: { tag }, guards: { credentials } } = do
       { mainContent:
           { type: TagListContent tag'
           , content: Frontpage.render $ Frontpage.List
-              { categoryLabel: mempty
+              { label: mempty
               , content: Just articles
               , onArticleClick: const mempty
               , onTagClick: const mempty
@@ -650,7 +651,7 @@ debugList env { params: { uuid }, guards: { credentials } } = do
           { mainContent:
               { type: FrontpageContent
               , content: Frontpage.render $ Frontpage.List
-                  { categoryLabel: mempty
+                  { label: mempty
                   , content: pure <$> article
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
@@ -707,7 +708,7 @@ renderCategoryPage env category credentials = do
           { mainContent:
               { type: FrontpageContent
               , content: Frontpage.render $ Frontpage.List
-                  { categoryLabel: mempty
+                  { label: Just $ unwrap category
                   , content: Just articles
                   , onArticleClick: const mempty
                   , onTagClick: const mempty
@@ -743,7 +744,7 @@ searchPage env { query: { search }, guards: { credentials } } = do
                                                   } <>
                                   (guard (not $ null articles) $
                                    Frontpage.render $ Frontpage.List
-                                   { categoryLabel: mempty
+                                   { label: ("Sökresultat: " <> _) <$> query
                                    , content: Just articles
                                    , onArticleClick: const mempty
                                    , onTagClick: const mempty
