@@ -118,7 +118,7 @@ render imageComponent props =
                               [ foldMap renderTag $ head tags
                               , guard (isPremium props.article) $ DOM.div
                                   { className: "premium-badge"
-                                  , children: [ DOM.text "Premium"]
+                                  , children: [ DOM.span_ [ DOM.text "Premium" ]]
                                   }
                               ]
                           }
