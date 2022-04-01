@@ -94,7 +94,7 @@ render (List props) =
                                       }
                                   , guard a.premium $
                                     DOM.div
-                                      { className: "mosaico--article--meta"
+                                      { className: "mosaico-article__meta"
                                       , children:
                                           [ DOM.div
                                               { className: "premium-badge"
