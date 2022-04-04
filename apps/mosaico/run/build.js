@@ -14,18 +14,17 @@ console.log("Bundling javascript...");
 // When developing, run build on file change
 const watch = process.argv.includes("dev") ? true : false;
 
-// We need to refer to assets a bit differently in our deploy previews
-if (process.argv.includes("staging")) {
-  template(".mosaico-asset").each((ix, elem) => {
-    const src = template(elem).attr("src");
-    const href = template(elem).attr("href");
-    if (src) {
-      template(elem).attr("src", src.replace("/assets/", "assets/"));
-    } else if (href) {
-      template(elem).attr("href", href.replace("/assets/", "assets/"));
-    }
-  });
-}
+// Refer to assets according to PUBLIC_URL env var
+// This will replace src or href of script and link tags
+template(".mosaico-asset").each((ix, elem) => {
+  const src = template(elem).attr("src");
+  const href = template(elem).attr("href");
+  if (src) {
+    template(elem).attr("src", process.env.PUBLIC_URL + "/" + src);
+  } else if (href) {
+    template(elem).attr("href", process.env.PUBLIC_URL + "/" + href);
+  }
+});
 
 const buildOpts = {
   entryPoints: ["./web/index.js", "./web/ads.js"],

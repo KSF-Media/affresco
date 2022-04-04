@@ -18,7 +18,7 @@ function redirToRoot(req, res, next) {
 
 bs.init({
   server: {
-    baseDir: "web",
+    baseDir: "dist",
     index: "index.html",
   },
   serveStatic: [

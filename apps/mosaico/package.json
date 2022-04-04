@@ -23,11 +23,11 @@
   },
   "scripts": {
     "start": "node -r dotenv/config -e 'require(\"./output/Main/index\").main()' dotenv_config_path=.env.local",
-    "start-dev": "spago build && make -j 3",
+    "start-dev": "spago build && make run-dev -j 3",
     "build": "spago build && node run/build.js",
     "build-app": "spago build",
     "build-spa": "node run/build.js",
-    "build-staging": "node run/build.js staging",
+    "build-deploy-preview": "node run/build.js deploy-preview",
     "test": "bash test.sh"
   },
   "devDependencies": {
