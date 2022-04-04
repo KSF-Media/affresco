@@ -1,3 +1,5 @@
+@grid-row-gap: 8px;
+
 .mosaico {
   background: white;
   display: grid;
@@ -5,7 +7,7 @@
   min-height: 100%;
   max-width: calc(100% - @page-margin);
   grid-template-columns: minmax(0, 1fr); //minmax used to prevent grid blowout on static pages
-  grid-row-gap: 8px;
+  grid-row-gap: @grid-row-gap;
   grid-template-areas:
     "line"
     "head"
