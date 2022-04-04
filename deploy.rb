@@ -98,8 +98,11 @@ build_cmds_staging = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
   "yarn --cwd '#{app['path']}/' run build",
   "yarn --cwd '#{app['path']}/' run test",
-  "yarn --cwd '#{app['path']}/' run build-staging",
 ]
+
+if app_name == "mosaico"
+  build_cmds_staging.push("yarn --cwd '#{app['path']}/' run build-deploy-preview")
+end
 
 build_cmds_production = [
   "yarn install --pure-lockfile --cache-folder=.yarn-cache",
