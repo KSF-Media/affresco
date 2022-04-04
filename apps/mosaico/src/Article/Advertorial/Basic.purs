@@ -22,7 +22,10 @@ render { article } =
        [ DOM.span
            { className: "advertorial-top-banner"
            , children:
-               [ DOM.span_ [ DOM.text $ "ANNONS: " <> foldMap (String.toUpper <<< companyName) article.articleTypeDetails ]
+               [ DOM.span
+                   { className: "advertorial-top-banner__company"
+                   , children: [ DOM.text $ "ANNONS: " <> foldMap (String.toUpper <<< companyName) article.articleTypeDetails ]
+                   }
                ]
            }
        , DOM.article

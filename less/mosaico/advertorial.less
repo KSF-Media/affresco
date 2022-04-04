@@ -6,6 +6,12 @@
   grid-row-start: 4;
   grid-column-start: 1;
   grid-column-end: 6;
-  margin-top: -(@grid-row-gap + @separator-margin);
-  display: flex;
+  margin-top: -(@mosaico-grid-row-gap + @separator-margin);
+  display: grid;
+  grid-template-columns: @mosaico-grid-columns;
+}
+
+.advertorial-top-banner__company {
+    grid-column-start: 2;
+    align-self: center;
 }
