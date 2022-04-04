@@ -46,11 +46,11 @@ render props =
                     , children:
                         [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]
                         , guard a.premium $ DOM.div
-                            { className: "mosaico--article--meta"
+                            { className: "mosaico-article__meta"
                             , children:
                                 [ DOM.div
                                     { className: "premium-badge"
-                                    , children: [ DOM.text "premium" ]
+                                    , children: [ DOM.span_ [ DOM.text "premium" ]]
                                     }
                                 ]
                             }
