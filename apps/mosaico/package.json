@@ -9,6 +9,7 @@
     "browser-sync": "^2.27.9",
     "cheerio": "^1.0.0-rc.10",
     "esbuild": "^0.14.27",
+    "esbuild-plugin-less": "^1.1.6",
     "html-to-react": "^1.4.7",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
