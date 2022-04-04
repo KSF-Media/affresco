@@ -2,8 +2,10 @@ module Mosaico.Ad where
 
 import Prelude
 
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Foreign.Object as Object
 import Payload.Internal.Utils (toLowerCase)
 import React.Basic (JSX)
 import React.Basic.Classic (make)
@@ -42,9 +44,12 @@ ad = make component
           [ DOM.div
               { id: self.props.contentUnit
               , className: blockClass <> "__content-unit"
+              , _data: Object.fromFoldable [Tuple "ad-unit-id" $ "/" <> networkCode <> "/" <> self.props.contentUnit <> "/" <> "hbl"] 
               }
           ]
         }
       }
       where
         blockClass = "mosaico-ad"
+        networkCode = "21664538223"
+
