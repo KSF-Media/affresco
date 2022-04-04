@@ -29,11 +29,22 @@
     grid-area: image;
     margin-bottom: 30px;
     .wrapper {
-      background: @grey-light;
+      height: 66vw;
+      margin-left: -12px;
+      margin-right: -12px;
+      overflow: hidden;
+      @media (min-width: @breakpoint-2col) {
+        margin: 0;
+      }
+      @media (min-width: @breakpoint-3col) {
+        width: 960px;
+        height: 640px;
+      }
       img {
-        display: block;
-        margin: 0 auto;
-        max-width: 100%;
+        object-position: 50% 50%;
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
       }
     }
     .caption {
@@ -52,11 +63,11 @@
 
   &__main {
     grid-area: body;
-    display: grid;
-    grid-template-areas:
+    @media (min-width: @breakpoint-2col) {
+      display: grid;
+      grid-template-areas:
       "articlemetabyline"
       "articlebody";
-    @media (min-width: @breakpoint-2col) {
       grid-template-columns: 1fr 300px;
       grid-template-areas:
         "articlemetabyline articlesidebar"
