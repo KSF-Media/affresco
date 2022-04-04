@@ -25,7 +25,7 @@
   "scripts": {
     "start": "node -r dotenv/config -e 'require(\"./output/Main/index\").main()' dotenv_config_path=.env.local",
     "start-dev": "spago build && make run-dev -j 3",
-    "build": "spago build && node run/build.js",
+    "build": "yarn run build-app && yarn run build-spa",
     "build-app": "spago build",
     "build-spa": "node run/build.js",
     "build-deploy-preview": "node run/build.js deploy-preview",
