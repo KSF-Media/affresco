@@ -239,10 +239,10 @@ main = do
           , profilePage: profilePage env
           , menu: menu env
           }
-        guards = 
+        guards =
           { credentials: getCredentials
           , category: parseCategory env
-          , clientip: getClientIP 
+          , clientip: getClientIP
           }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
@@ -362,7 +362,7 @@ frontpageUpdated env { params: { category } } = do
   pure $ Response.ok ""
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
-assets { params: { path } } = Handlers.directory "dist" path
+assets { params: { path } } = Handlers.directory "dist/assets" path
 
 frontpage :: Env -> { guards :: { credentials :: Maybe UserAuth } } -> Aff (Response ResponseBody)
 frontpage env { guards: { credentials } } = do
