@@ -77,6 +77,7 @@ render router props = DOM.div_
                            , onStaticPageClick: mempty
                            }
            , Header.mainSeparator
+           , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
            , props.mainContent.content
            , footer mempty
            , case props.mainContent.type of
