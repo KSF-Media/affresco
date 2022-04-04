@@ -24,7 +24,6 @@
   "scripts": {
     "start": "parcel index.html -p 8000",
     "build": "parcel build index.html --public-url ./",
-    "test": "echo 'No testsuite configured'",
-    "build-staging": "yarn build"
+    "test": "echo 'No testsuite configured'"
   }
 }

@@ -8,8 +8,7 @@
     "start": "parcel index.html -p 8000",
     "build-user": "yarn --cwd '../../packages/user' build-npm",
     "build": "yarn build-user && parcel build index.html --public-url ./ && cp _redirects dist/",
-    "test": "echo 'No testsuite configured'",
-    "build-staging": "yarn build"
+    "test": "echo 'No testsuite configured'"
   },
   "dependencies": {
     "@ksf-media/user": "^0.1.2",
