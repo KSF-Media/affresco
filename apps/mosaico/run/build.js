@@ -19,12 +19,11 @@ const watch = process.argv.includes("dev") ? true : false;
 template(".mosaico-asset").each((ix, elem) => {
   const src = template(elem).attr("src");
   const href = template(elem).attr("href");
-  if (process.env.PUBLIC_URL) {
-    if (src) {
-      template(elem).attr("src", process.env.PUBLIC_URL + "/" + src);
-    } else if (href) {
-      template(elem).attr("href", process.env.PUBLIC_URL + "/" + href);
-    }
+  const publicUrl = process.env.PUBLIC_URL || "";
+  if (src) {
+    template(elem).attr("src", publicUrl + "/assets/" + src);
+  } else if (href) {
+    template(elem).attr("href", publicUrl + "/assets/" + href);
   }
 });
 
@@ -68,5 +67,5 @@ const buildOpts = {
 
 esbuild.build(buildOpts);
 
-exec("mkdir -p dist/assets && cp ./static/* ./dist/");
+exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/");
 fs.writeFile("./dist/index.html", template.html(), () => {});
