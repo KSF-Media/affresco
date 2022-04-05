@@ -95,6 +95,7 @@ type Components =
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
+  , advertorialComponent :: Advertorial.Basic.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
   }
 
@@ -322,6 +323,7 @@ getInitialValues = do
   searchComponent     <- Search.searchComponent
   webviewComponent    <- Webview.webviewComponent
   articleComponent    <- Article.component
+  advertorialComponent <- Advertorial.Basic.component
   epaperComponent     <- Epaper.component
   pure
     { state:
@@ -344,6 +346,7 @@ getInitialValues = do
         , searchComponent
         , webviewComponent
         , articleComponent
+        , advertorialComponent
         , epaperComponent
         }
     , catMap
@@ -408,7 +411,7 @@ render setState state components router onPaywallEvent =
            -- If we have this article already in `state`, let's pass that to `renderArticle`
            then
              if article.articleType == Advertorial
-             then Advertorial.Basic.render { article }
+             then components.advertorialComponent { article }
              else renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
