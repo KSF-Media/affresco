@@ -20,9 +20,9 @@ template(".mosaico-asset").each((ix, elem) => {
   const src = template(elem).attr("src");
   const href = template(elem).attr("href");
   if (src) {
-    template(elem).attr("src", process.env.PUBLIC_URL + "/" + src);
+    template(elem).attr("src", process.env.PUBLIC_URL + "/assets/" + src);
   } else if (href) {
-    template(elem).attr("href", process.env.PUBLIC_URL + "/" + href);
+    template(elem).attr("href", process.env.PUBLIC_URL + "/assets/" + href);
   }
 });
 
