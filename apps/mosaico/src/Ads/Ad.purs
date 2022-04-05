@@ -3,6 +3,7 @@ module Mosaico.Ad where
 import Prelude
 
 import Data.Maybe (Maybe(..))
+import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -60,7 +61,7 @@ ad = make component
             [ DOM.div
                 { id: self.props.contentUnit
                 , className: blockClass <> "__content-unit"
-                , _data: Object.fromFoldable [Tuple "ad-unit-id" $ "/" <> networkCode <> "/" <> gamId <> "/" <> "hbl" <> show isLazy] 
+                , _data: Object.fromFoldable [Tuple ((guard isLazy $ "lazy-") <> "ad-unit-id") $ "/" <> networkCode <> "/" <> gamId <> "/" <> "hbl"] 
                 }
             ]
           }
