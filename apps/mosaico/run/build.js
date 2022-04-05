@@ -1,7 +1,7 @@
 var esbuild = require("esbuild");
 var lessLoader = require("esbuild-plugin-less").lessLoader;
 const { exec } = require("child_process");
-require("dotenv").config();
+require("dotenv").config({ path: "../env.local" });
 
 const fs = require("fs");
 const cheerio = require("cheerio");
@@ -67,5 +67,11 @@ const buildOpts = {
 
 esbuild.build(buildOpts);
 
-exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/");
-fs.writeFile("./dist/index.html", template.html(), () => {});
+exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/", (err, stdout, stderr) => {
+  if (err) {
+    console.log("Error when creating dirs and stuff: ", err);
+  }
+  fs.writeFile("./dist/index.html", template.html(), () => {
+    console.log("Wrote index.html");
+  });
+});
