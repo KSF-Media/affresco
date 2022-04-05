@@ -16,6 +16,7 @@ import React.Basic.DOM as DOM
 
 foreign import fetchAdImpl :: EffectFn1 String Unit
 foreign import getGamId :: EffectFn1 String (Nullable String)
+foreign import getIsLazy :: EffectFn1 String (Nullable Boolean)
 
 component :: React.Component Props
 component = React.createComponent "ad"
@@ -33,29 +34,33 @@ type Props =
 type State =
   { populated :: Boolean
   , gamId :: Maybe String
+  , isLazy :: Maybe Boolean
   }
 
 ad :: Props -> JSX
 ad = make component
-  { initialState: { populated: false, gamId: Nothing }
+  { initialState: { populated: false, gamId: Nothing, isLazy: Nothing }
   , didMount: \self -> do
       runEffectFn1 fetchAdImpl self.props.contentUnit
       gamId <- runEffectFn1 getGamId self.props.contentUnit
-      self.setState _ { gamId = toMaybe gamId }
+      isLazy <- runEffectFn1 getIsLazy self.props.contentUnit
+      self.setState _ { gamId = toMaybe gamId, isLazy = toMaybe isLazy }
   , render: render
   }
     where
       blockClass = "mosaico-ad"
       networkCode = "21664538223"
-      render { state: { gamId: Nothing }} = mempty
-      render self@{ state: { gamId: Just gamId }} = 
+      render { state: { gamId: Nothing, isLazy: Nothing }} = mempty
+      render { state: { gamId: Just _, isLazy: Nothing }} = mempty
+      render { state: { gamId: Nothing, isLazy: Just _ }} = mempty
+      render self@{ state: { gamId: Just gamId, isLazy: Just isLazy }} = 
         DOM.div
           { className: blockClass <> " " <> toLowerCase self.props.contentUnit
           , children:
             [ DOM.div
                 { id: self.props.contentUnit
                 , className: blockClass <> "__content-unit"
-                , _data: Object.fromFoldable [Tuple "ad-unit-id" $ "/" <> networkCode <> "/" <> gamId <> "/" <> "hbl"] 
+                , _data: Object.fromFoldable [Tuple "ad-unit-id" $ "/" <> networkCode <> "/" <> gamId <> "/" <> "hbl" <> show isLazy] 
                 }
             ]
           }
