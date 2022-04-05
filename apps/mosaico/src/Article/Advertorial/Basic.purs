@@ -40,6 +40,15 @@ render { article } =
                        { className: "mosaico-article__preamble"
                        , children: [ DOM.text $ fold article.preamble ]
                        }
+                   , DOM.div
+                       { className: "advertorial__tag-n-share"
+                       , children:
+                           [ DOM.div
+                               { className: "advertorial-badge premium-badge"
+                               , children: [ DOM.span_ [ DOM.text "Annons" ] ]
+                               }
+                           ]
+                       }
                    ]
                ]
            }
