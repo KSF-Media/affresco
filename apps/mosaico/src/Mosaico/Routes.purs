@@ -28,6 +28,7 @@ data MosaicoPage
   | TagPage Tag
   | SearchPage (Maybe String)
   | DebugPage String -- Used for testing
+  | DeployPreview -- Used for deploy previews only
   | MenuPage
 derive instance eqMosaicoPage :: Eq MosaicoPage
 
@@ -48,6 +49,7 @@ routes categories = root *> oneOf
   , MenuPage <$ lit "meny"
   , SearchPage <$> (lit "sök" *> optionalMatch (param "q")) <* end
   , DebugPage <$> (lit "debug" *> str)
+  , DeployPreview <$ str <* lit "mosaico" <* lit "index.html" <* end
   , CategoryPage <$> categoryRoute
   , NotFoundPage <$> str
   ]

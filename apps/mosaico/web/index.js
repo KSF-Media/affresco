@@ -2,6 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { BrowserRouter as Router } from "react-router-dom";
 import { rehydrateMarks } from "react-imported-component";
+window.Buffer = window.Buffer || { isBuffer: () => false };
+import "../../../less/mosaico.less";
+import "../../../less/Vetrina.less";
+import "../../../less/Login.less";
 
 // yup, welcome to react 16
 import createReactClass from "create-react-class";
