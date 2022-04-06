@@ -31,7 +31,6 @@ let apps =
               , ENTITLED_PASSWORD = "password"
               , PORT = "8080"
               , INSECURE_COOKIE = "1"
-              , PUBLIC_URL = "/assets"
               }
           , caches = Some
           ''
