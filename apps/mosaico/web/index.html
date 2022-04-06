@@ -11,6 +11,53 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700&display=swap" rel="stylesheet" />
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+
+    <!-- RELEVANT SMART ADS SCRIPT START -->
+
+    <!-- TEST SITE ONLY PART START --> 
+
+    <script> 
+    window.googletag = window.googletag || {cmd: []}; 
+    googletag.cmd.push(function() { 
+    googletag.pubads().set('page_url', 'https://www.hbl.fi/'); 
+    }); 
+    </script> 
+
+     <!--TEST SITE ONLY PART END --> 
+
+    <script async src="https://apps-cdn.relevant-digital.com/static/tags/61bc52c2df5a45f309c9e2bb.js"></script>
+    <script>
+    function loadAds(noSlotReload) {
+    window.relevantDigital = window.relevantDigital || {};
+    relevantDigital.cmd = relevantDigital.cmd || [];
+    relevantDigital.cmd.push(function() {
+    relevantDigital.loadPrebid({
+    configId: '62051785053382a8f839eee5',
+    manageAdserver: true,
+    collapseEmptyDivs: true,
+    collapseBeforeAdFetch: false,
+    allowedDivIds: null, // set to an array to only load certain <div>s, example - ["divId1", "divId2"]
+    noSlotReload: noSlotReload, // set true to only load ad slots that have never been loaded
+    });
+    });
+    }
+    function lazyLoad() {
+    var needLoad;
+    Array.from(document.querySelectorAll('[data-lazy-ad-unit-id]')).forEach((div) => {
+    const { top, bottom } = div.getBoundingClientRect();
+    const CLOSE = 400;
+    if(top > innerHeight + CLOSE || bottom < -CLOSE) {
+    return;
+    }
+    div.setAttribute('data-ad-unit-id', div.getAttribute('data-lazy-ad-unit-id'));
+    div.removeAttribute('data-lazy-ad-unit-id');
+    needLoad = true;
+    });
+    return needLoad;}
+    </script>
+
+    <!-- RELEVANT SMART ADS SCRIPT END -->
+
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
