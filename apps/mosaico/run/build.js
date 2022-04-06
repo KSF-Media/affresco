@@ -73,5 +73,6 @@ exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/", (err, stdout, stder
   }
   fs.writeFile("./dist/index.html", template.html(), () => {
     console.log("Wrote index.html");
+    console.log(template.html());
   });
 });
