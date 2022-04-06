@@ -1,7 +1,7 @@
 var esbuild = require("esbuild");
 var lessLoader = require("esbuild-plugin-less").lessLoader;
 const { exec } = require("child_process");
-require("dotenv").config({ path: "../env.local" });
+require("dotenv").config();
 
 const fs = require("fs");
 const cheerio = require("cheerio");
