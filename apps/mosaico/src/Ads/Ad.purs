@@ -51,9 +51,6 @@ ad = make component
     where
       blockClass = "mosaico-ad"
       networkCode = "21664538223"
-      render { state: { gamId: Nothing, isLazy: Nothing }} = mempty
-      render { state: { gamId: Just _, isLazy: Nothing }} = mempty
-      render { state: { gamId: Nothing, isLazy: Just _ }} = mempty
       render self@{ state: { gamId: Just gamId, isLazy: Just isLazy }} = 
         DOM.div
           { className: blockClass <> " " <> toLowerCase self.props.contentUnit
@@ -65,3 +62,4 @@ ad = make component
                 }
             ]
           }
+      render _ = mempty
