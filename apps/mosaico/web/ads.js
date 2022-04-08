@@ -1,165 +1,176 @@
 window.googletag = window.googletag || { cmd: [] };
 
+// My suggestion would be to set all the ad slots in viewport on the initial
+// page load as non-lazy and all the lower ad slots as lazy.
+// Those would be Maxparad, parad and box_0 on desktop and mobparad_0
+// on mobile I think. Rest can be set as lazy.
+
+window.adSlots = {
+  mobile: [
+    {
+      gamId: "MOBPARAD",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__top-parade",
+      isLazy: false
+    },
+    {
+      gamId: "MOBMITT",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__bigbox1",
+      isLazy: true
+    },
+    {
+      gamId: "MOBNER",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__bigbox2",
+      isLazy: true
+    },
+    {
+      gamId: "MOBBOX1",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__box1",
+      isLazy: true
+    },
+    {
+      gamId: "MOBBOX2",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__box2",
+      isLazy: true
+    },
+    {
+      gamId: "MOBBOX3",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__box3",
+      isLazy: true
+    },
+    {
+      gamId: "MOBBOX4",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__box4",
+      isLazy: true
+    },
+    {
+      gamId: "MOBBOX5",
+      sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
+      targetId: "mosaico-ad__box5",
+      isLazy: true
+    },
+    {
+      gamId: "DIGIHELMOB",
+      sizes: [300,431],
+      targetId: "mosaico-ad__digihelmob",
+      isLazy: true
+    },
+    {
+      gamId: "INTERMOB",
+      sizes: [300,500],
+      targetId: "mosaico-ad__firstbox",
+      isLazy: true
+    },
+  ],
+  desktop: [
+    {
+      gamId: "JATTEBOX",
+      sizes: [468,400],
+      targetId: "mosaico-ad__bigbox1",
+      isLazy: true
+    },
+    {
+      gamId: "DUBBELBOX",
+      sizes: [468,600],
+      targetId: "mosaico-ad__bigbox2",
+      isLazy: true
+    },
+    {
+      gamId: "DIGIHELMOB",
+      sizes: [300,431],
+      targetId: "mosaico-ad__digihelmob",
+      isLazy: true
+    },
+    {
+      gamId: "PARAD",
+      sizes: [ [980, 120], [980,400], [980,552] ],
+      targetId: "mosaico-ad__parade",
+      isLazy: false
+    },
+    {
+      gamId: "MAXPARAD",
+      sizes: [ [980, 120], [980,400], [980,480], [980,552], [1920,1080] ],
+      targetId: "mosaico-ad__top-parade",
+      isLazy: false
+    },
+    // {
+    //   gamId: "STORTAVLA",
+    //   sizes: [160,600],
+    //   targetId: "mosaico-ad__tallbox",
+    //   isLazy: true
+    // },
+    {
+      gamId: "FIRSTBOX",
+      sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__firstbox",
+      isLazy: true
+    },
+    {
+      gamId: "BOX1",
+      sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__box1",
+      isLazy: true
+    },
+    {
+      gamId: "BOX2",
+      sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__box2",
+      isLazy: true
+    },
+    {
+      gamId: "BOX3",
+      sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__box3",
+      isLazy: true
+    },
+    {
+      gamId: "BOX4",
+      sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__box4",
+      isLazy: true
+    },
+    {
+      gamId: "BOX5",
+      sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__box5",
+      isLazy: true
+    },
+    {
+      gamId: "BOX",
+      sizes: [ [300,250], [300,300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__box",
+      isLazy: false
+    },
+    // {
+    //   gamId: "BOXFORPRINT",
+    //   sizes: [300,300],
+    //   targetId: "mosaico-ad__printbox",
+    //   isLazy: true
+    // },
+    // {
+    //   gamId: "WALLPAPER",
+    //   sizes: [ [1600,1200], [1920,1080] ],
+    //   targetId: "mosaico-ad__wallpaper",
+    //   isLazy: true
+    // },
+  ]
+}
+
 window.googletag.cmd.push(function () {
 
-  googletag.pubads().setTargeting("newspaper", "hbl");
+  googletag.pubads().setTargeting("Test", "mosaico_test");
 
   /* Ad slots to use */
   const networkCode = "/21664538223/";
-  const adSlots = {
-    mobile: [
-      {
-        gamId: "MOBPARAD",
-        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-        targetId: "mosaico-ad__top-parade"
-      },
-      // {
-      //   gamId: "MOBMITT",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: "gam__articleBodyAd1"
-      // },
-      // {
-      //   gamId: "MOBNER",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: "gam__articleBodyAd2"
-      // },
-      {
-        gamId: "MOBBOX1",
-        sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-        targetId: "mosaico-ad__article-body-2"
-      },
-      // {
-      //   gamId: "MOBBOX2",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MOBBOX3",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MOBBOX4",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MOBBOX5",
-      //   sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      //   targetId: ""
-      // },
-      {
-        gamId: "DIGIHELMOB",
-        sizes: [300,431],
-        targetId: "mosaico-ad__article-body-1"
-      },
-      // {
-      //   gamId: "INTERMOB",
-      //   sizes: [300,500],
-      //   targetId: ""
-      // },
-    ],
-    desktop: [
-      // {
-      //   gamId: "JATTEBOX",
-      //   sizes: [468,400],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "DUBBELBOX",
-      //   sizes: [468,600],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "INTERSTIT",
-      //   sizes: [958,586],
-      //   targetId: ""
-      // },
-      {
-        gamId: "DIGIHELMOB",
-        sizes: [300,431],
-        targetId: "mosaico-ad__article-body-1"
-      },
-      // {
-      //   gamId: "PARAD",
-      //   sizes: [ [980, 120], [980,400], [980,552] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "MAXPARAD",
-      //   sizes: [ [980, 120], [980,400], [980,480], [980,552], [1920,1080] ],
-      //   targetId: "mosaico-ad__top-parade"
-      // },
-      // {
-      //   gamId: "PANORAMA",
-      //   sizes: [ [980, 120], [980, 400] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "PARALLAX",
-      //   sizes: [1,1],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "STORTAVLA",
-      //   sizes: [160,600],
-      //   targetId: ""
-      // },
-      {
-        gamId: "FIRSTBOX",
-        sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-        targetId: "mosaico-ad__sidebar-1"
-      },
-      // {
-      //   gamId: "BOX1",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX2",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX3",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX4",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "BOX5",
-      //   sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      //   targetId: ""
-      // },
-      {
-        gamId: "BOX",
-        sizes: [ [300,250], [300,300], [300, 431], [300,600] ],
-        targetId: "mosaico-ad__article-body-2"
-      },
-      // {
-      //   gamId: "BOXFORPRINT",
-      //   sizes: [300,300],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "STICKY",
-      //   sizes: [ [300,200], [300,250] ],
-      //   targetId: ""
-      // },
-      // {
-      //   gamId: "WALLPAPER",
-      //   sizes: [ [1600,1200], [1920,1080] ],
-      //   targetId: ""
-      // },
-    ]
-  }
 
   /* define gam slots */
-  const slots = window.innerWidth < 1020 ? adSlots.mobile : adSlots.desktop;
+  const slots = window.innerWidth < 1020 ? window.adSlots.mobile : window.adSlots.desktop;
   slots.map(
     slot => {
       googletag.defineSlot(
@@ -169,6 +180,7 @@ window.googletag.cmd.push(function () {
       ).addService(googletag.pubads());
     }
   );
+  window.definedSlots = googletag.pubads().getSlots().map(s => s.getSlotElementId())
   googletag.pubads().collapseEmptyDivs();
   googletag.enableServices();
   googletag.pubads().addEventListener('slotRenderEnded', event => {

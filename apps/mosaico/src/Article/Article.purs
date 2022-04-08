@@ -83,7 +83,7 @@ render imageComponent props =
         body = getBody props.article
         bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) body
         bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
-          <<< insertAdsIntoBodyText "mosaico-ad__article-body-1" "mosaico-ad__article-body-2" $ body
+          <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
         draftHeader = case _.articleType <$> props.article of
           Right DraftArticle ->
             DOM.div
@@ -164,7 +164,13 @@ render imageComponent props =
                                      { latestArticles: props.latestArticles
                                      , onClickHandler: props.onArticleClick
                                      }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__sidebar-1" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box5" }
                           ]
                         }
                     ]

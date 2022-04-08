@@ -7,6 +7,7 @@ import KSF.Paper as Paper
 import KSF.User (User)
 import Lettera.Models (ArticleStub, Category, Tag, categoriesMap)
 import Mosaico.Footer (footer)
+import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
@@ -59,7 +60,9 @@ app props =
 
 
 render :: PushStateInterface -> Props -> JSX
-render router props = DOM.div
+render router props = DOM.div_
+    [ Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+    , DOM.div
        { className: "mosaico grid"
        , id: Paper.toString mosaicoPaper
        , children:
@@ -74,6 +77,7 @@ render router props = DOM.div
                            , onStaticPageClick: mempty
                            }
            , Header.mainSeparator
+           , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
            , props.mainContent.content
            , footer mempty
            , case props.mainContent.type of
@@ -82,6 +86,7 @@ render router props = DOM.div
                  _ -> mempty
            ]
        }
+    ]
   where
     aside =
       DOM.aside
