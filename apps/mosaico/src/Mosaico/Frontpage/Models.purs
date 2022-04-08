@@ -7,6 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), contains, stripPrefix)
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
+import Mosaico.Ad (ad) as Mosaico
 import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
 import React.Basic.Events (EventHandler)
@@ -14,12 +15,14 @@ import React.Basic.Events (EventHandler)
 data Hook
   = MostRead (Array ArticleStub) (ArticleStub -> EventHandler)
   | Latest (Array ArticleStub) (ArticleStub -> EventHandler)
+  | Ad String String
   | ArticleUrltoRelative
 
 toHookRep :: Hook -> HtmlRenderer.HookRep
 toHookRep (MostRead articles onClickHandler) = mostReadHook { articles, onClickHandler }
-toHookRep (Latest articles onClickHandler) = latestHook { articles, onClickHandler }
+toHookRep (Latest articles onClickHandler)   = latestHook { articles, onClickHandler }
 toHookRep ArticleUrltoRelative               = articleUrltoRelativeHook
+toHookRep (Ad placeholderText targetId)      = adHook { placeholderText, targetId }
 
 mostReadHook
   :: { articles :: Array ArticleStub
@@ -76,6 +79,32 @@ latestHook { articles, onClickHandler } = HtmlRenderer.replacingHook
                                      { latestArticles: articles
                                      , onClickHandler
                                      }
+                 )
+  }
+
+adHook
+  :: { placeholderText :: String
+     , targetId :: String
+     }
+     -> HtmlRenderer.HookRep
+adHook { placeholderText, targetId } = HtmlRenderer.replacingHook
+  { shouldProcessNode: (\n ->
+                          let info = do
+                                name      <- HtmlRenderer.getName n
+                                attribs   <- HtmlRenderer.getAttribs n
+                                className <- attribs.class
+                                children  <- HtmlRenderer.getChildren n
+                                textChild <- head children
+                                text      <- HtmlRenderer.getData textChild
+                                pure { name, className, text }
+                          in case info of
+                            Just { name, className, text }
+                              | name      == "div"
+                              , className == "dre-item__title"
+                              , text      == placeholderText -> true
+                            _                                   -> false
+                       )
+  , processNode: (\_ _ _ -> pure $ Mosaico.ad { contentUnit: targetId }
                  )
   }
 

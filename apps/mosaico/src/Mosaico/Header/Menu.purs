@@ -40,6 +40,7 @@ type Section =
   , subsections :: Array Subsection
   , url :: String
   , onClick :: EventHandler
+  , iconClass :: Maybe String
   }
 
 type Subsection =
@@ -79,18 +80,21 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: "/sök"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sök"
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--search"
                     }
                   , Just
                     { title: "E-TIDNINGEN"
                     , subsections: []
                     , url: "/epaper"
                     , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--epaper"
                     }
                   , Just
                     { title: "KUNDSERVICE"
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
                     }
                   , props.user *>
                     Just
@@ -98,6 +102,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: onLogout
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
                     }
                   , guard (isNothing props.user) $
                     Just
@@ -105,6 +110,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: onLogin
+                    , iconClass: mempty
                     }
                   ]
 
@@ -119,6 +125,7 @@ render props@{ onLogin, onLogout } = DOM.div
               , subsections: map mkSubsection c.subCategories
               , url: "/" <> show c.label
               , onClick: props.onCategoryClick category
+              , iconClass: mempty
               }
       in acc `snoc` section
 
@@ -128,16 +135,19 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: mempty
                     }
                   , { title: "ANNONSERA"
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: mempty
                     }
                   , { title: "JOBBA HOS OSS"
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: mempty
                     }
                   ]
 
@@ -161,7 +171,7 @@ render props@{ onLogin, onLogout } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection { subsections, title, url, onClick } = DOM.div
+        renderSection { subsections, title, url, onClick, iconClass } = DOM.div
           { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
@@ -173,6 +183,7 @@ render props@{ onLogin, onLogout } = DOM.div
                                           { href: url
                                           , children: [ DOM.text title ]
                                           , onClick
+                                          , className: fromMaybe mempty iconClass
                                           }
                                       ]
                                   }
