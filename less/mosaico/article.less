@@ -66,8 +66,8 @@
     @media (min-width: @breakpoint-2col) {
       display: grid;
       grid-template-areas:
-      "articlemetabyline"
-      "articlebody";
+        "articlemetabyline"
+        "articlebody";
       grid-template-columns: 1fr 300px;
       grid-template-rows: auto 1fr;
       grid-template-areas:
@@ -176,6 +176,10 @@
     margin-bottom: 5px;
     color: @dark-text;
     font-weight: 500;
+  }
+
+  &__author:empty {
+    display: none;
   }
 
   &__timestamps {
@@ -365,6 +369,9 @@
         color: @on-blue;
       }
     }
+  }
+  &__letter-author {
+    font-style: italic;
   }
   iframe {
     max-width: 100%;

@@ -215,7 +215,9 @@ type JSDraftArticle =
 
 type Author =
   { byline :: String
+  , email  :: Maybe String
   , image  :: Maybe String
+  , info   :: Maybe String
   }
 
 -- TODO: Could be a type class
@@ -245,6 +247,7 @@ articleToJson article =
            , question: Nothing
            , quote: Nothing
            , related: Nothing
+           , partEnd : Nothing
            }
     bodyElementToJson (Html html)         = merge { html: Just html } base
     bodyElementToJson (Image image)       = merge { image: Just image } base
@@ -254,6 +257,7 @@ articleToJson article =
     bodyElementToJson (Question question) = merge { question: Just question } base
     bodyElementToJson (Quote quote)       = merge { quote: Just quote } base
     bodyElementToJson (Related related)   = merge { related: Just $ map articleStubToJson related } base
+    bodyElementToJson (PartEnd partEnd)   = merge { partEnd: Just partEnd } base
     bodyElementToJson (Ad _)              = base
 
 articleStubToJson :: ArticleStub -> Json
@@ -375,6 +379,7 @@ fromJSBody f = map catMaybes <<< traverse fromJSBodyElement
     fromPure { footnote: Just footnote } = Just $ Footnote footnote
     fromPure { question: Just question } = Just $ Question question
     fromPure { quote: Just quote }       = Just $ Quote quote
+    fromPure { partEnd: Just end }       = Just $ PartEnd end
     -- It'd be a protocol error if we got this.
     fromPure _                           = Nothing
 
@@ -388,6 +393,7 @@ type BodyElementJS =
   , quote    :: Maybe QuoteInfo
   , ad       :: Maybe String
   , related  :: Maybe (Array JSArticleStub)
+  , partEnd  :: Maybe PartInfo
   }
 
 data BodyElement
@@ -398,6 +404,7 @@ data BodyElement
   | Footnote String
   | Question String
   | Quote QuoteInfo
+  | PartEnd PartInfo
   -- Note that Ad does NOT come from Lettera, but was added here to make smart ad placement possible
   | Ad String
   | Related (Array ArticleStub)
@@ -420,6 +427,10 @@ type Image =
   , thumb     :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
+  }
+
+type PartInfo =
+  { author :: Maybe Author
   }
 
 type ArticleTypeDetails =

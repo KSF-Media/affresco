@@ -186,15 +186,23 @@ render imageComponent props =
             [ DOM.div
                 { className: "mosaico-article__authors-and-timestamps"
                 , children:
-                    [ foldMap
-                        (\authorName -> DOM.div
-                          { className: "mosaico-article__author"
-                          , children: [ guard (article.articleType == Opinion) $
-                                        renderOpinionType article.articleTypeDetails
-                                      , DOM.text authorName
-                                      ]
-                          })
-                        (_.byline <$> article.authors)
+                    [ case article.articleType of
+                         Opinion ->
+                           DOM.div
+                             { className: "mosaico-article__author"
+                             , children:
+                               [ renderOpinionType article.articleTypeDetails
+                               , foldMap (DOM.text <<< _.byline) $ head article.authors
+                               ]
+                             }
+                         _ ->
+                           foldMap
+                             (\authorName ->
+                                 DOM.div
+                                   { className: "mosaico-article__author"
+                                   , children: [ DOM.text authorName ]
+                                   })
+                             (_.byline <$> article.authors)
                     , foldMap
                         (\(LocalDateTime publishingTime) -> DOM.div
                           { className: "mosaico-article__timestamps"
@@ -344,6 +352,18 @@ render imageComponent props =
           Mosaico.ad {
             contentUnit
           }
+
+      PartEnd { author: Just { byline, info } } ->
+        DOM.div
+          { className: block <> " " <> block <> "__letter-author"
+          , children:
+              [ DOM.strong_ [ DOM.text $ byline <> foldMap (const ",") info ]
+              , foldMap (DOM.text <<< (" " <> _)) info
+              ]
+          }
+
+      PartEnd _ -> mempty
+
       where
         block = "article-element"
         isDiv = isElem "<div"
