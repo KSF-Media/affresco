@@ -2,11 +2,10 @@ module Mosaico.Article.Advertorial.Basic where
 
 import Prelude
 
-import Data.Foldable (fold, find, foldMap)
+import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import KSF.Helpers (formatArticleTime)
-import Lettera.Models (Article, LocalDateTime(..))
+import Lettera.Models (Article)
 import Mosaico.Article.Image as Image
 import Mosaico.Article as Article
 import React.Basic (fragment)
