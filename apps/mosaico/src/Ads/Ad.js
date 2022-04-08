@@ -13,3 +13,23 @@ exports.fetchAdImpl = function (contentUnit) {
     }
   });
 };
+
+exports.getGamId = function (contentUnit) {
+  const slots = window.innerWidth < 1020 ? window.adSlots.mobile : window.adSlots.desktop;
+  const slot = slots.find(element => contentUnit === element.targetId);
+  if (typeof slot === "undefined") {
+    return null;
+  } else {
+    return slot.gamId;
+  }
+}
+
+exports.getIsLazy = function (contentUnit) {
+  const slots = window.innerWidth < 1020 ? window.adSlots.mobile : window.adSlots.desktop;
+  const slot = slots.find(element => contentUnit === element.targetId);
+  if (typeof slot === "undefined") {
+    return null;
+  } else {
+    return slot.isLazy;
+  }
+}
