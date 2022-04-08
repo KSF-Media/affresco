@@ -368,7 +368,7 @@ renderElement paper imageComponent onArticleClick el = case el of
         [ DOM.a
             { href: "/artikel/" <> article.uuid
             , children: [ DOM.text article.title ]
-            , onClick: maybe mempty (\f -> f article) onArticleClick
+            , onClick: foldMap (\f -> f article) onArticleClick
             }
         ]
 
