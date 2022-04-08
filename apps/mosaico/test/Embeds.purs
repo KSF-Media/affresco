@@ -2,8 +2,7 @@ module Mosaico.Test.Embeds where
 
 import Prelude hiding (sub)
 
-import Effect.Aff as Aff
-import Mosaico.Test (Test, log, site, sub)
+import Mosaico.Test (Test, log, site)
 import KSF.Puppeteer as Chrome
 
 exampleArticle :: String

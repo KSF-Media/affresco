@@ -10,6 +10,7 @@ import Data.Foldable (foldMap, for_, null, maximum)
 import Data.JSDate (toDate)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
 import Data.String (length, splitAt, trim)
 import Data.Tuple (Tuple(..))
@@ -458,9 +459,9 @@ showPausedDates self =
       pauseLine pause =
         let text = "Uppehåll: " <> formatDates pause
         in case Tuple (toDate pause.startDate) (toDate =<< toMaybe pause.endDate) of
-          Tuple (Just _startDate) (Just _endDate) ->
+          Tuple (Just _startDate) (Just endDate) ->
             DOM.div
-              { children: [ changeButton self
+              { children: [ guard (endDate < self.props.now) $ changeButton self
                               (Types.EditSubscriptionPause pause)
                               (pauseSubscriptionComponent self $ Just pause)
                           , DOM.text text

@@ -11,6 +11,7 @@ variables:
   MULTIPAPER: "true"
 .app-article-ci-variables: &app-article-ci-vars
   SERVICE_NAME: app-article-server
+  LETTERA_INTERNAL: "http://lettera/v3"
 
 before_script:
   - eval `${CI_SCRIPTS}/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
@@ -51,10 +52,11 @@ stages:
     - $CI_SCRIPTS/auth-gcloud.sh
     - $CI_SCRIPTS/docker-push.sh
     # docker buld & push production
+    - eval `${CI_SCRIPTS}/prepare_stage_envvars.py production`
     - cd $CI_PROJECT_DIR/artifacts/production/$SERVICE_NAME
     - $CI_SCRIPTS/docker-build.sh
-    - KSF_ENV_TEXT=production GOOGLE_CREDENTIALS=$PRODUCTION_GOOGLE_CREDENTIALS $CI_SCRIPTS/auth-gcloud.sh
-    - KSF_ENV_TEXT=production $CI_SCRIPTS/docker-push.sh
+    - $CI_SCRIPTS/auth-gcloud.sh
+    - $CI_SCRIPTS/docker-push.sh
 
 # Deploy template
 .deploy:
@@ -64,7 +66,8 @@ stages:
     - master
   script:
     - $CI_SCRIPTS/auth-gcloud.sh
-    - $CI_SCRIPTS/kubernetes-deployment.sh
+    - LETTERA_URL=$LETTERA_INTERNAL $CI_SCRIPTS/kubernetes-deployment.sh
+    - $CI_SCRIPTS/affresco/app-upload.sh
 
 # Build apps
 mosaico-build:
@@ -108,30 +111,37 @@ app-article-docker-build:
 deploy-mosaico-hbl-staging:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-hbl
   variables:
     SERVICE_NAME: mosaico-hbl
     PAPER: "hbl"
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-vn-staging:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-vn
   variables:
     SERVICE_NAME: mosaico-vn
     PAPER: "vn"
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-on-staging:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-on
   variables:
     SERVICE_NAME: mosaico-on
     PAPER: "ön"
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-app-article-staging:
   extends: .deploy
   needs: 
+    - app-article-build
     - app-article-docker-build
   variables: *app-article-ci-vars
 
@@ -140,36 +150,43 @@ deploy-app-article-staging:
 deploy-mosaico-hbl-production:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-hbl
   environment: production/$SERVICE_NAME
   when: manual
   variables:
     SERVICE_NAME: mosaico-hbl
     PAPER: "hbl"
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-vn-production:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-vn
   environment: production/$SERVICE_NAME
   when: manual
   variables:
     SERVICE_NAME: mosaico-vn
     PAPER: "vn"
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-mosaico-on-production:
   extends: .deploy
   needs: 
+    - mosaico-build
     - mosaico-docker-build-on
   environment: production/$SERVICE_NAME
   when: manual
   variables:
     SERVICE_NAME: mosaico-on
     PAPER: "ön"
+    LETTERA_INTERNAL: "http://lettera/v4beta"
 
 deploy-app-article-production:
   extends: .deploy
   needs: 
+    - app-article-build
     - app-article-docker-build
   environment: production/$SERVICE_NAME
   when: manual

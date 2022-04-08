@@ -7,9 +7,11 @@ import KSF.Paper as Paper
 import KSF.User (User)
 import Lettera.Models (ArticleStub, Category, Tag, categoriesMap)
 import Mosaico.Footer (footer)
+import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
+import Mosaico.LatestList as LatestList
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (JSX)
 import Routing.PushState (PushStateInterface)
@@ -18,6 +20,7 @@ import Simple.JSON (write)
 type Props =
   { mainContent :: MainContent
   , mostReadArticles :: Array ArticleStub
+  , latestArticles :: Array ArticleStub
   , categoryStructure :: Array Category
   , user :: Maybe User
   }
@@ -34,6 +37,7 @@ data MainContentType
   | TagListContent Tag
   | EpaperContent
   | StaticPageContent String
+  | ProfileContent
   | MenuContent
 
 app :: Props -> JSX
@@ -56,7 +60,9 @@ app props =
 
 
 render :: PushStateInterface -> Props -> JSX
-render router props = DOM.div
+render router props = DOM.div_
+    [ Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+    , DOM.div
        { className: "mosaico grid"
        , id: Paper.toString mosaicoPaper
        , children:
@@ -66,9 +72,12 @@ render router props = DOM.div
                            , catMap: categoriesMap props.categoryStructure
                            , onCategoryClick: const mempty
                            , user: props.user
-                           , onLogin: pure unit
+                           , onLogin: mempty
+                           , onProfile: mempty
+                           , onStaticPageClick: mempty
                            }
            , Header.mainSeparator
+           , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
            , props.mainContent.content
            , footer mempty
            , case props.mainContent.type of
@@ -77,9 +86,13 @@ render router props = DOM.div
                  _ -> mempty
            ]
        }
+    ]
   where
     aside =
       DOM.aside
         { className: "mosaico--aside"
-        , children: [ MostReadList.render { mostReadArticles: props.mostReadArticles, onClickHandler: const $ pure unit } ]
+        , children:
+          [ MostReadList.render { mostReadArticles: props.mostReadArticles, onClickHandler: const mempty }
+          , LatestList.render { latestArticles: props.latestArticles, onClickHandler: const mempty }
+          ]
         }

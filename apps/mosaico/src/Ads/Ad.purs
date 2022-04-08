@@ -10,7 +10,7 @@ import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
-foreign import fetchAd :: EffectFn1 String Unit
+foreign import fetchAdImpl :: EffectFn1 String Unit
 
 component :: React.Component Props
 component = React.createComponent "ad"
@@ -33,7 +33,7 @@ ad :: Props -> JSX
 ad = make component
   { initialState: { populated: false }
   , didMount: \self -> do
-      runEffectFn1 fetchAd self.props.contentUnit
+      runEffectFn1 fetchAdImpl self.props.contentUnit
 
   , render: \self ->
       DOM.div
@@ -48,4 +48,3 @@ ad = make component
       }
       where
         blockClass = "mosaico-ad"
-

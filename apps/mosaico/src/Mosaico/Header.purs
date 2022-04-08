@@ -10,10 +10,11 @@ import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
-import Effect (Effect)
 import Foreign.Object as Object
+import KSF.Paper (toString)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
+import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -28,7 +29,9 @@ type Props =
   , categoryStructure :: Array Category
   , catMap :: Categories
   , onCategoryClick :: Category -> EventHandler
-  , onLogin :: Effect Unit
+  , onLogin :: EventHandler
+  , onProfile :: EventHandler
+  , onStaticPageClick :: String -> EventHandler
   , user :: Maybe User
   }
 
@@ -40,7 +43,11 @@ render props =
         [ DOM.div
             { className: block <> "__left-links"
             , children:
-                [ DOM.a_ [ DOM.text "KONTAKTA OSS" ]
+                [ DOM.a
+                    { href: "/sida/kontakt"
+                    , onClick: props.onStaticPageClick "kontakt"
+                    , children: [ DOM.text "KONTAKTA OSS" ]
+                    }
                 , DOM.text "|"
                 , DOM.a
                     { children: [ DOM.text "E-TIDNINGEN" ]
@@ -54,12 +61,18 @@ render props =
             , children:
                 [ DOM.ul_
                     [ DOM.li_
-                        [ DOM.a_ [ DOM.text "KUNDSERVICE" ]
+                        [ DOM.a 
+                            { children: [ DOM.text "KUNDSERVICE" ]
+                            , href: "/sida/kundservice"
+                            , onClick: props.onStaticPageClick "kundservice"
+                            }
                         ]
                     , DOM.li_
                         [ DOM.a
                             { className: block <> "__prenumerera-link"
                             , children: [ DOM.text "PRENUMERERA" ]
+                            , href: "https://prenumerera.ksfmedia.fi/#/" <> String.toLower (toString mosaicoPaper)
+                            , target: "_blank"
                             }
                         ]
                     ]
@@ -72,15 +85,21 @@ render props =
         , maybe
             (DOM.div
                { children: [ DOM.text "LOGGA IN" ]
-               , onClick: handler_ props.onLogin
+               , onClick: props.onLogin
                , className: accountClass <> " " <> accountClass <> "--active"
                , _data: Object.fromFoldable [Tuple "login" "1"]
                }
             )
             (\name ->
-                DOM.div
+                DOM.a
                   { className: accountClass
-                  , children: [ DOM.text name ]
+                  , onClick: props.onProfile
+                  , href: "/konto"
+                  , children:
+                      [ DOM.span { className: accountClass <> "-icon" }
+                      , DOM.span_ [ DOM.text name ]
+                      ]
+                  , _data: Object.fromFoldable [Tuple "loggedin" "1"]
                   }
             ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
         , DOM.nav
@@ -93,8 +112,8 @@ render props =
                 [ searchButton
                 , DOM.div
                     { className: iconButtonClass <> " " <> menuButtonClass
-                    , children: [ DOM.div_ [ DOM.text "MENU" ]
-                                , DOM.div { className: iconClass <> " " <> menuIconClass }
+                    , children: [ DOM.span { className: iconClass <> " " <> menuIconClass }
+                                , DOM.span_ [ DOM.text "MENY" ] 
                                 ]
                     , onClick: handler_ $
                         (\r -> do
@@ -129,8 +148,8 @@ render props =
     searchButton :: JSX
     searchButton = DOM.a
                     { className: iconButtonClass <> " " <> searchButtonClass
-                    , children: [ DOM.div_ [ DOM.text "SÖK" ]
-                                , DOM.div { className: iconClass <> " " <> searchIconClass }
+                    , children: [ DOM.span { className: iconClass <> " " <> searchIconClass }
+                                , DOM.span_ [ DOM.text "SÖK" ]
                                 ]
                     , href: "/sök"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sök"

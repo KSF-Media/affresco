@@ -4,13 +4,14 @@
   text-align: center;
   &__content-unit {
     &.populated {
+      margin: 10px 0;
       &::before {
         content: "— Annons —";
         font: 400 .75rem "Roboto", sans-serif;
         color: @grey-medium;
         text-transform: uppercase;
         display: block;
-        margin: 0 auto 5px auto;
+        margin: 0 auto 2px auto;
       }
       &::after {
         content: "— Annons slut —";
@@ -18,19 +19,24 @@
         color: @grey-medium;
         text-transform: uppercase;
         display: block;
-        margin: 5px auto 0 auto;
+        margin: 2px auto 0 auto;
       }
     }
   }
 
-  &.mosaico-ad__article-body-1,
-  &.mosaico-ad__article-body-2 {
+  &__digihekmob,
+  &__box {
     margin: 10px auto 20px;
   }
 
-  &.jattebox {
-    text-align: center;
-    margin: 30px auto;
+  &__top-parade {
+    margin: 0 auto;
   }
-
+  &__parade {
+    margin: 0 auto;
+    grid-area: separator;
+  }
+  &__bigbox1 {
+    margin: 0 auto;
+  }
 }

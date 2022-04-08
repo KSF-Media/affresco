@@ -1,0 +1,59 @@
+.mosaico-profile {
+  grid-area: article;
+  font-size: 1.07rem;
+  line-height: 1.5;
+
+  @media (min-width: @breakpoint-2col) {
+    width: 50%;
+  }
+
+  @media (min-width: @breakpoint-3col) {
+    width: 66%;
+  }
+
+  &--header {
+    padding: 50px 0;
+    font-family: 'Roboto', sans-serif;
+    color: @grey-dark;
+    border-bottom: 1px solid @grey-almostlight;
+  }
+
+  &--data {
+    padding: 10px;
+    font-weight: 300;
+    font-family: 'Roboto', sans-serif;
+
+    p {
+      margin-top: 20px;
+    }
+  }
+
+  &--actions {
+    color: @grey-medium;
+    padding: 2em 0;
+    div {
+      padding: 11px;
+      margin-bottom: 5px;
+    }
+    a {
+      font-size: 0.9em;
+      border-radius: 20px;
+      border: solid 1px @grey-almostlight;
+      padding: 11px;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      span {
+        margin-right: 1ex;
+      }
+    }
+  }
+
+  &--help {
+    margin-bottom: 1em;
+    font-weight: 300;
+    a {
+      text-decoration: none;
+    }
+  }
+}

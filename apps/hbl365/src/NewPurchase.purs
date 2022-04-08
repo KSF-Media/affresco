@@ -7,7 +7,6 @@ import Data.Nullable (toMaybe)
 import HBL365.AnotherAccount (anotherAccount)
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
-import Vetrina.Purchase.NewPurchase as NewPurchase
 import Vetrina.Types (AccountStatus(..))
 
 render :: JSX -> AccountStatus -> JSX

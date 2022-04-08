@@ -20,12 +20,13 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleStub, BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
+import Mosaico.LatestList as LatestList
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
@@ -56,12 +57,13 @@ getRemoveAds = either _.removeAds _.article.removeAds
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
-  , onLogin :: Effect Unit
+  , onLogin :: EventHandler
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
   , user :: Maybe User
   , mostReadArticles :: Array ArticleStub
+  , latestArticles :: Array ArticleStub
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -81,7 +83,7 @@ render imageComponent props =
         body = getBody props.article
         bodyWithoutAd = map renderElement body
         bodyWithAd = map renderElement
-          <<< insertAdsIntoBodyText "mosaico-ad__article-body-1" "mosaico-ad__article-body-2" $ body
+          <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
         draftHeader = case _.articleType <$> props.article of
           Right DraftArticle ->
             DOM.div
@@ -89,6 +91,9 @@ render imageComponent props =
               , children: [ DOM.text "Förslag" ]
               }
           _ -> mempty
+        mostRead = foldMap renderMostReadArticles $
+          if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
+
     in DOM.article
       { className: "mosaico-article"
       , children:
@@ -113,7 +118,7 @@ render imageComponent props =
                               [ foldMap renderTag $ head tags
                               , guard (isPremium props.article) $ DOM.div
                                   { className: "premium-badge"
-                                  , children: [ DOM.text "Premium"]
+                                  , children: [ DOM.span_ [ DOM.text "Premium" ]]
                                   }
                               ]
                           }
@@ -143,18 +148,30 @@ render imageComponent props =
                             paywallFade
                             `cons` bodyWithAd
                             `snoc` vetrina
+                            `snoc` mostRead
                           Right DraftArticle ->
                             bodyWithoutAd
                           Right FullArticle ->
                             bodyWithAd <>
-                            (foldMap (pure <<< renderMostReadArticles) $
-                             if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles)
+                            pure mostRead
                           Left _ -> [ loadingSpinner ]
                           _ -> mempty
                         }
                     , DOM.div
                         { className: "mosaico-article__aside"
-                        , children: [ Mosaico.ad { contentUnit: "mosaico-ad__sidebar-1" } ]
+                        , children:
+                          [ LatestList.render
+                                     { latestArticles: props.latestArticles
+                                     , onClickHandler: props.onArticleClick
+                                     }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box5" }
+                          ]
                         }
                     ]
               }
@@ -172,7 +189,10 @@ render imageComponent props =
                     [ foldMap
                         (\authorName -> DOM.div
                           { className: "mosaico-article__author"
-                          , children: [ DOM.text authorName]
+                          , children: [ guard (article.articleType == Opinion) $
+                                        renderOpinionType article.articleTypeDetails
+                                      , DOM.text authorName
+                                      ]
                           })
                         (_.byline <$> article.authors)
                     , foldMap
@@ -192,6 +212,12 @@ render imageComponent props =
                 }
             ]
         }
+
+    renderOpinionType detail =
+      foldMap (\opiniontype -> DOM.span
+                              { className: "mosaico-article__opinion-type"
+                              , children: [ DOM.text opiniontype ]
+                              }) $ _.title <$> detail
 
     renderTag tag =
       DOM.a
@@ -253,7 +279,8 @@ render imageComponent props =
         , children: [ DOM.text "ANDRA LÄSER" ]
         } <>
       (Frontpage.render $ Frontpage.List
-        { content: Just articles
+        { label: mempty
+        , content: Just articles
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick
         })

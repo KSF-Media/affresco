@@ -8,7 +8,6 @@ import Data.Maybe (Maybe(..), isJust, isNothing, fromMaybe,  maybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.UUID as UUID
-import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Auth (loadToken)
@@ -20,7 +19,7 @@ import KSF.User (User)
 import KSF.User as User
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (capture_)
+import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, useEffect, useState', (/\))
 import React.Basic.Hooks as React
 
@@ -29,7 +28,7 @@ type Props =
   { user :: Maybe User
   , entitlements :: Maybe (Set String)
   , paper :: Paper
-  , onLogin :: Effect Unit
+  , onLogin :: EventHandler
   }
 
 component :: Component Props
@@ -54,7 +53,7 @@ component = do
       pure $ pure unit
     pure $ render onLogin paper userAuth entitlements
 
-render :: Effect Unit -> Paper -> Maybe UserAuth -> Maybe (Set String) -> JSX
+render :: EventHandler -> Paper -> Maybe UserAuth -> Maybe (Set String) -> JSX
 render onLogin paper userAuth entitlements =
   DOM.div
     { className: "mosaico-epaper"
@@ -146,7 +145,7 @@ epaperDescription =
       ]
   ]
 
-renderOpen :: Paper -> Effect Unit -> Maybe UserAuth -> Boolean -> JSX
+renderOpen :: Paper -> EventHandler -> Maybe UserAuth -> Boolean -> JSX
 renderOpen paper _ (Just tokens) true =
   fragment
     [ DOM.a
@@ -174,7 +173,7 @@ renderOpen paper _ (Just _) false =
     ]
 renderOpen _ onLogin Nothing _ =
   DOM.a
-    { onClick: capture_ onLogin
+    { onClick: onLogin
     , className: "mosaico-epaper--primary-button"
     , children: [ DOM.text "Logga in" ]
     }

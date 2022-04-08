@@ -32,7 +32,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -44,6 +44,7 @@ jobs:
           HIDE_LOGIN_LINKS: 'true'
           LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
           PERSONA_URL: https://persona.api.ksfmedia.fi/v1
+          PUBLIC_URL: /dist
           SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         name: Build Server App article server
         run: |2
@@ -78,7 +79,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -107,7 +108,7 @@ jobs:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -305,7 +306,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -318,7 +319,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production
@@ -331,7 +332,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install gcloud
-        uses: "google-github-actions/setup-gcloud@master"
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
         with:
           export_default_credentials: 'true'
           project_id: ksf-production

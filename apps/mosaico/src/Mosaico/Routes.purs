@@ -7,6 +7,8 @@ import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Data.Semiring.Free (free)
 import Data.Map as Map
+import Data.String as String
+import Data.String.CodePoints (codePointFromChar)
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Categories, Category, CategoryLabel(..), Tag, uriComponentToTag)
@@ -18,6 +20,7 @@ data MosaicoPage
   = Frontpage -- Should take Paper as parameter
   | DraftPage -- Ignore parameters on client side and just show server side content
   | EpaperPage
+  | ProfilePage
   | ArticlePage String
   | NotFoundPage String
   | StaticPage String
@@ -25,8 +28,14 @@ data MosaicoPage
   | TagPage Tag
   | SearchPage (Maybe String)
   | DebugPage String -- Used for testing
+  | DeployPreview -- Used for deploy previews only
   | MenuPage
 derive instance eqMosaicoPage :: Eq MosaicoPage
+
+-- The URL given from Mosaico module shouldn't have the fragment
+-- already, but in case it happens anyway, use this function
+stripFragment :: String -> String
+stripFragment = String.takeWhile (_ /= codePointFromChar '#')
 
 routes :: Categories -> Match MosaicoPage
 routes categories = root *> oneOf
@@ -34,11 +43,13 @@ routes categories = root *> oneOf
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
   , EpaperPage <$ (lit "epaper" *> end)
+  , ProfilePage <$ (lit "konto" *> end)
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
   , Frontpage <$ end
   , MenuPage <$ lit "meny"
   , SearchPage <$> (lit "sök" *> optionalMatch (param "q")) <* end
   , DebugPage <$> (lit "debug" *> str)
+  , DeployPreview <$ str <* lit "mosaico" <* lit "index.html" <* end
   , CategoryPage <$> categoryRoute
   , NotFoundPage <$> str
   ]

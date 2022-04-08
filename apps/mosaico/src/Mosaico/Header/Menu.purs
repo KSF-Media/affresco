@@ -4,14 +4,12 @@ import Prelude
 
 import Data.Array (catMaybes, foldl, intersperse, snoc)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (toUpper)
 import Data.String.Common (trim)
-import Effect (Effect)
-import Effect.Aff (launchAff_)
-import Effect.Class (liftEffect)
-import KSF.User (User, logout)
+import KSF.User (User)
 import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
 import React.Basic.Events (EventHandler)
@@ -25,7 +23,8 @@ type Props =
   , categoryStructure :: Array Category
   , onCategoryClick :: Category -> EventHandler
   , user :: Maybe User
-  , onLogout :: Effect Unit
+  , onLogin :: EventHandler
+  , onLogout :: EventHandler
   }
 
 data MenuLayoutElement = Section Section
@@ -41,6 +40,7 @@ type Section =
   , subsections :: Array Subsection
   , url :: String
   , onClick :: EventHandler
+  , iconClass :: Maybe String
   }
 
 type Subsection =
@@ -49,22 +49,9 @@ type Subsection =
   }
 
 render :: Props -> JSX
-render props@{ onLogout } = DOM.div
+render props@{ onLogin, onLogout } = DOM.div
   { className: menuClass
-  , children: [ menuContent
-              , DOM.div
-                  { className: menuFooterClass
-                  , children:
-                      [ DOM.div
-                          { className: footerCaptionClass
-                          , children: [ DOM.text "ALLA KSF-TIDNINGAR" ]
-                          }
-                      , logo vnLogoClass vnLogoImageClass "Västra Nyland"
-                      , logo hblLogoClass hblLogoImageClass "Hufvudstadsbladet"
-                      , logo onLogoClass onLogoImageClass "Östnyland"
-                      ]
-                  }
-              ]
+  , children: [ menuContent ]
   }
   where
 
@@ -93,27 +80,37 @@ render props@{ onLogout } = DOM.div
                     , subsections: []
                     , url: "/sök"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sök"
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--search"
                     }
                   , Just
                     { title: "E-TIDNINGEN"
                     , subsections: []
                     , url: "/epaper"
                     , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--epaper"
                     }
                   , Just
                     { title: "KUNDSERVICE"
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
                     }
                   , props.user *>
                     Just
                     { title: "LOGGA UT"
                     , subsections: []
                     , url: ""
-                    , onClick: capture_ $ launchAff_ do
-                      logout $ const $ pure unit
-                      liftEffect onLogout
+                    , onClick: onLogout
+                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
+                    }
+                  , guard (isNothing props.user) $
+                    Just
+                    { title: "LOGGA IN"
+                    , subsections: []
+                    , url: ""
+                    , onClick: onLogin
+                    , iconClass: mempty
                     }
                   ]
 
@@ -128,6 +125,7 @@ render props@{ onLogout } = DOM.div
               , subsections: map mkSubsection c.subCategories
               , url: "/" <> show c.label
               , onClick: props.onCategoryClick category
+              , iconClass: mempty
               }
       in acc `snoc` section
 
@@ -137,16 +135,19 @@ render props@{ onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: mempty
                     }
                   , { title: "ANNONSERA"
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: mempty
                     }
                   , { title: "JOBBA HOS OSS"
                     , subsections: []
                     , url: ""
                     , onClick: mempty
+                    , iconClass: mempty
                     }
                   ]
 
@@ -170,7 +171,7 @@ render props@{ onLogout } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection { subsections, title, url, onClick } = DOM.div
+        renderSection { subsections, title, url, onClick, iconClass } = DOM.div
           { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
@@ -182,6 +183,7 @@ render props@{ onLogout } = DOM.div
                                           { href: url
                                           , children: [ DOM.text title ]
                                           , onClick
+                                          , className: fromMaybe mempty iconClass
                                           }
                                       ]
                                   }
@@ -209,20 +211,6 @@ render props@{ onLogout } = DOM.div
         renderSeparator :: Maybe String -> JSX
         renderSeparator modifierClass = DOM.hr { className: unwords [ separatorClass, fromMaybe mempty modifierClass ] }
 
-    logo :: String -> String ->  String -> JSX
-    logo modifierClass imageModifierClass caption = DOM.div
-      { className: unwords [ logoClass, modifierClass ]
-      , children:
-          [ DOM.div
-              { className: unwords [ logoImageClass, imageModifierClass ]
-              }
-          , DOM.div
-              { className: unwords [ logoCaptionClass ]
-              , children: [ DOM.text caption ]
-              }
-          ]
-      }
-
     headerBlock = "mosaico-header"
 
     menuElement = "__menu"
@@ -230,9 +218,6 @@ render props@{ onLogout } = DOM.div
 
     menuContentElement = "__menu-content"
     menuContentClass = headerBlock <> menuContentElement
-
-    menuFooterElement = "__menu-footer"
-    menuFooterClass = headerBlock <> menuFooterElement
 
     blockElement = "__block"
     blockClass = headerBlock <> blockElement
@@ -257,27 +242,6 @@ render props@{ onLogout } = DOM.div
 
     mobileOnlyModifier = "--mobile-only"
     mobileOnlySeparatorClass = separatorClass <> mobileOnlyModifier
-
-    footerCaptionElement = "__footer-caption"
-    footerCaptionClass = headerBlock <> footerCaptionElement
-
-    logoElement =  "__footer-logo"
-    hblLogoModifier = "--hbl"
-    onLogoModifier = "--on"
-    vnLogoModifier = "--vn"
-    logoClass = headerBlock <> logoElement
-    hblLogoClass = logoClass <> hblLogoModifier
-    onLogoClass = logoClass <> onLogoModifier
-    vnLogoClass = logoClass <> vnLogoModifier
-
-    logoImageElement = "__footer-logo-image"
-    logoImageClass = headerBlock <> logoImageElement
-    hblLogoImageClass =  logoImageClass <> hblLogoModifier
-    onLogoImageClass = logoImageClass <> onLogoModifier
-    vnLogoImageClass = logoImageClass <> vnLogoModifier
-
-    logoCaptionElement = "__footer-logo-caption"
-    logoCaptionClass = headerBlock <> logoCaptionElement
 
 unwords :: Array String -> String
 unwords = trim <<< foldl (\a w -> a <> " " <> w) mempty

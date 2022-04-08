@@ -37,6 +37,7 @@ import KSF.User as User
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
+import React.Basic.Events (EventHandler, handler_)
 import Record (merge)
 import Tracking as Tracking
 import Vetrina.Purchase.AccountForm (mkAccountForm)
@@ -71,7 +72,7 @@ type JSProps =
 type Props =
    -- If onClose is Nothing, the final button in `Completed` view will not be shown
   { onClose            :: Maybe (Effect Unit)
-  , onLogin            :: Effect Unit
+  , onLogin            :: EventHandler
   -- Used to signal from the outside that user status has changed
   , user               :: Maybe User
   , products           :: Either Error (Array Product)
@@ -90,7 +91,7 @@ type Props =
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   { onClose: toMaybe jsProps.onClose
-  , onLogin: fromMaybe (pure unit) $ toMaybe jsProps.onLogin
+  , onLogin: foldMap handler_ $ toMaybe jsProps.onLogin
   , user: Nothing
   , products:
       let productError = error "Did not get any valid products in props!"

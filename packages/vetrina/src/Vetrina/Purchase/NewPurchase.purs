@@ -30,7 +30,7 @@ import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events (handler, handler_)
+import React.Basic.Events (EventHandler, handler, handler_)
 import Vetrina.Types (AccountStatus(..), Product, ProductContent)
 
 type Self = React.Self Props State
@@ -59,7 +59,7 @@ type Props =
   , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
   , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
   , productSelection              :: Maybe Product
-  , onLogin                       :: Effect Unit
+  , onLogin                       :: EventHandler
   , headline                      :: Maybe JSX
   , paper                         :: Maybe Paper
   , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
@@ -365,7 +365,7 @@ loginLink self =
         , DOM.span
             { className:"vetrina--login-callback"
             , children: [ DOM.text "Logga in för att fortsätta läsa" ]
-            , onClick: handler_ self.props.onLogin
+            , onClick: self.props.onLogin
             }
         ]
     }

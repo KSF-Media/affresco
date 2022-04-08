@@ -2,10 +2,8 @@ module Mosaico.Test.Search where
 
 import Prelude hiding (sub)
 
-import Effect.Aff as Aff
 import Mosaico.Test (Test, listArticle, log, site, sub)
 import KSF.Puppeteer as Chrome
-import Test.Unit.Assert as Assert
 
 exampleSearch :: String
 exampleSearch = "hbl"
@@ -14,8 +12,13 @@ exampleSearch = "hbl"
 exampleNegativeSearch :: String
 exampleNegativeSearch = "vsdlkjfdskfajadskfjaoiefjlksadfjlkdsafjdaslakjf"
 
+buttonField :: Chrome.Selector
 buttonField = Chrome.Selector ".mosaico-search button"
+
+searchField :: Chrome.Selector
 searchField = Chrome.Selector ".mosaico-search input"
+
+messageField :: Chrome.Selector
 messageField = Chrome.Selector ".mosaico-search__message"
 
 testSearchNavigation :: Test

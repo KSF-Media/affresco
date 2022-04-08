@@ -17,5 +17,6 @@ in  AppServer::{
             "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
         , PERSONA_URL = "https://persona.api.ksfmedia.fi/v1"
         , LETTERA_URL = "https://lettera.api.ksfmedia.fi/v3"
+        , PUBLIC_URL = "/dist"
         }
     }
