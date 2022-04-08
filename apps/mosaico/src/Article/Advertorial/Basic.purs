@@ -42,7 +42,8 @@ render imageComponent { article } =
                ]
            }
        , DOM.article
-           { className: "mosaico-article"
+           { id: "BRAND-NEUTRAL"
+           , className: "mosaico-article"
            , children:
                [ DOM.header_
                    [ DOM.h1
