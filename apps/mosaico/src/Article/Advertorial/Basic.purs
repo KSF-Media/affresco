@@ -5,8 +5,10 @@ import Prelude
 import Data.Foldable (fold, find, foldMap)
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Lettera.Models (Article)
+import KSF.Helpers (formatArticleTime)
+import Lettera.Models (Article, LocalDateTime(..))
 import Mosaico.Article.Image as Image
+import Mosaico.Article as Article
 import React.Basic (fragment)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (JSX, Component)
@@ -33,6 +35,10 @@ render imageComponent { article } =
                    { className: "advertorial-top-banner__company"
                    , children: [ DOM.text $ "ANNONS: " <> foldMap (String.toUpper <<< companyName) article.articleTypeDetails ]
                    }
+               , DOM.ul
+                   { className: "mosaico-article__some advertorial-some"
+                   , children: map Article.mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
+                   }
                ]
            }
        , DOM.article
@@ -57,14 +63,25 @@ render imageComponent { article } =
                            ]
                        }
                    ]
-                   , foldMap
-              (\image -> imageComponent
-                { clickable: true
-                , main: true
-                , params: Just "&width=960&height=540&q=90"
-                , image
-                })
-              article.mainImage
+               , foldMap
+                   (\image -> imageComponent
+                              { clickable: true
+                              , main: true
+                              , params: Just "&width=960&height=540&q=90"
+                              , image
+                              })
+                   article.mainImage
+               , DOM.div
+                   { className: "mosaico-article__main"
+                   , children:
+                       [ DOM.div
+                           { className: "mosaico-article__body"
+                           , children: map (Article.renderElement Nothing imageComponent Nothing) article.body
+                           }
+                       ]
+
+                   }
+               , DOM.div { className: "mosaico-article__aside" }
                ]
            }
-        ]
+       ]

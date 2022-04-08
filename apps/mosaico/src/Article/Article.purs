@@ -81,8 +81,8 @@ render imageComponent props =
         tags = getTags props.article
         mainImage = getMainImage props.article
         body = getBody props.article
-        bodyWithoutAd = map renderElement body
-        bodyWithAd = map renderElement
+        bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) body
+        bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
           <<< insertAdsIntoBodyText "mosaico-ad__article-body-1" "mosaico-ad__article-body-2" $ body
         draftHeader = case _.articleType <$> props.article of
           Right DraftArticle ->
@@ -221,15 +221,6 @@ render imageComponent props =
         , onClick: props.onTagClick tag
         }
 
-    mkShareIcon someName =
-      DOM.li_
-        [ DOM.a
-            { href: "#"
-            , children: [ DOM.span {} ]
-            , className: "mosaico-article__some--" <> someName
-            }
-        ]
-
     paywallFade =
         DOM.div { className: "mosaico--article-fading-body" }
 
@@ -279,81 +270,6 @@ render imageComponent props =
         , onTagClick: props.onTagClick
         })
 
-    -- TODO: maybe we don't want to deal at all with the error cases
-    -- and we want to throw them away?
-    renderElement :: BodyElement -> JSX
-    renderElement el = case el of
-      Html content ->
-        -- Can't place div's or blockquotes under p's, so place them under div.
-        -- This is usually case with embeds
-        let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
-        in domFn
-           { dangerouslySetInnerHTML: { __html: content }
-           , className: block <> " " <> block <> "__html"
-           }
-      Headline str -> DOM.h4
-        { className: block <> " " <> block <> "__subheadline"
-        , children: [ DOM.text str ]
-        }
-      Image image -> imageComponent
-          { clickable: true
-          , main: false
-          , params: Just "&width=640&q=90"
-          , image
-          }
-      Box boxData ->
-        DOM.div
-          { className: block <> " " <> block <> "__factbox"
-          , children:
-              [ box
-                  { headline: boxData.headline
-                  , title: boxData.title
-                  , content: boxData.content
-                  , paper: props.paper
-                  }
-              ]
-          }
-      Footnote footnote -> DOM.p
-          { className: block <> " " <> block <> "__footnote"
-          , children: [ DOM.text footnote ]
-          }
-      Quote { body, author } -> DOM.figure
-          { className: block <> " " <> block <> "__quote"
-          , children:
-              [ DOM.blockquote_ [ DOM.text body ]
-              , foldMap (DOM.figcaption_ <<< pure <<< DOM.text) author
-              ]
-          }
-      Question question -> DOM.p
-          { className: block <> " " <> block <> "__question"
-          , children: [ DOM.text question ]
-          }
-      Related related -> DOM.figure
-          { className: block <> " " <> block <> "__related"
-          , children:
-              [ DOM.ul_ $ map renderRelatedArticle related
-              ]
-          }
-      Ad contentUnit ->
-          Mosaico.ad {
-            contentUnit
-          }
-      where
-        block = "article-element"
-        isDiv = isElem "<div"
-        isBlockquote = isElem "<blockquote"
-        -- Does the string start with wanted element
-        isElem elemName elemString =
-          Just 0 == String.indexOf (Pattern elemName) elemString
-        renderRelatedArticle article =
-          DOM.li_
-            [ DOM.a
-                { href: "/artikel/" <> article.uuid
-                , children: [ DOM.text article.title ]
-                , onClick: props.onArticleClick article
-                }
-            ]
-
     insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement
     insertAdsIntoBodyText contentUnit1 contentUnit2 body =
       let ad1 = Ad contentUnit1
@@ -374,3 +290,88 @@ render imageComponent props =
           , Just (Html _) <- body' !! (i)
           = i
           | otherwise = findAdSpace body' (i+1)
+
+-- TODO: maybe we don't want to deal at all with the error cases
+-- and we want to throw them away?
+renderElement :: Maybe Paper -> (Image.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> BodyElement -> JSX
+renderElement paper imageComponent onArticleClick el = case el of
+  Html content ->
+    -- Can't place div's or blockquotes under p's, so place them under div.
+    -- This is usually case with embeds
+    let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
+    in domFn
+       { dangerouslySetInnerHTML: { __html: content }
+       , className: block <> " " <> block <> "__html"
+       }
+  Headline str -> DOM.h4
+    { className: block <> " " <> block <> "__subheadline"
+    , children: [ DOM.text str ]
+    }
+  Image image -> imageComponent
+      { clickable: true
+      , main: false
+      , params: Just "&width=640&q=90"
+      , image
+      }
+  Box boxData ->
+    DOM.div
+      { className: block <> " " <> block <> "__factbox"
+      , children:
+          [ box
+              { headline: boxData.headline
+              , title: boxData.title
+              , content: boxData.content
+              , paper: paper
+              }
+          ]
+      }
+  Footnote footnote -> DOM.p
+      { className: block <> " " <> block <> "__footnote"
+      , children: [ DOM.text footnote ]
+      }
+  Quote { body, author } -> DOM.figure
+      { className: block <> " " <> block <> "__quote"
+      , children:
+          [ DOM.blockquote_ [ DOM.text body ]
+          , foldMap (DOM.figcaption_ <<< pure <<< DOM.text) author
+          ]
+      }
+  Question question -> DOM.p
+      { className: block <> " " <> block <> "__question"
+      , children: [ DOM.text question ]
+      }
+  Related related -> DOM.figure
+      { className: block <> " " <> block <> "__related"
+      , children:
+          [ DOM.ul_ $ map renderRelatedArticle related
+          ]
+      }
+  Ad contentUnit ->
+      Mosaico.ad {
+        contentUnit
+      }
+  where
+    block = "article-element"
+    isDiv = isElem "<div"
+    isBlockquote = isElem "<blockquote"
+    -- Does the string start with wanted element
+    isElem elemName elemString =
+      Just 0 == String.indexOf (Pattern elemName) elemString
+    renderRelatedArticle article =
+      DOM.li_
+        [ DOM.a
+            { href: "/artikel/" <> article.uuid
+            , children: [ DOM.text article.title ]
+            , onClick: maybe mempty (\f -> f article) onArticleClick
+            }
+        ]
+
+mkShareIcon :: String -> JSX
+mkShareIcon someName =
+  DOM.li_
+    [ DOM.a
+        { href: "#"
+        , children: [ DOM.span {} ]
+        , className: "mosaico-article__some--" <> someName
+        }
+    ]
