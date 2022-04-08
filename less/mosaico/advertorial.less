@@ -2,60 +2,59 @@
 @import (reference) "./_grid.less";
 
 .advertorial-top-banner {
-    display: flex;
+  display: flex;
+  background: #fff4e6;
+  min-height: 100%;
+  margin-right: -@page-margin;
+  margin-left: -@page-margin;
+  grid-row-start: 3;
+  grid-column: 1;
+  min-height: 60px;
+  margin-top: @separator-height;
+  @media (min-width: @breakpoint-3col) {
+    display: grid;
+    height: 100%;
     background: #fff4e6;
-    min-height: 100%;
-    margin-right: -@page-margin;
-    margin-left: -@page-margin;
-    grid-row-start: 3;
-    grid-column: 1;
-    min-height: 60px;
-    margin-top: @separator-height;
-    @media (min-width: @breakpoint-3col) {
-	display: grid;
-	height: 100%;
-	background: #fff4e6;
-	grid-row-start: 4;
-	grid-column-start: 1;
-	grid-column-end: 6;
-	margin-top: -(@mosaico-grid-row-gap + @separator-margin);
-	grid-template-columns: @mosaico-grid-columns;
-    }
+    grid-row-start: 4;
+    grid-column-start: 1;
+    grid-column-end: 6;
+    margin-top: -(@mosaico-grid-row-gap + @separator-margin);
+    grid-template-columns: @mosaico-grid-columns;
+  }
 }
 
 .advertorial-top-banner__company {
-    align-self: center;
-    width: 50%;
-    margin-left: @page-margin;
-    @media (min-width: @breakpoint-3col) {
-	grid-column-start: 2;
-	width: 100%;
-	margin-left: 0;
-    }
+  align-self: center;
+  width: 50%;
+  margin-left: @page-margin;
+  @media (min-width: @breakpoint-3col) {
+    grid-column-start: 2;
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 .advertorial__tag-n-share {
-    display: flex;
+  display: flex;
 }
 
 .advertorial-badge {
-    color: black;
+  color: black;
 }
 
 .premium-badge {
-    background-color: #dfdad5 !important;
-
+  background-color: #dfdad5 !important;
 }
 
 .advertorial-some {
-    display: flex;
-    @media (min-width: @breakpoint-3col) {
-	grid-column-start: 4;
-	width: 100%;
-	margin-right: 0;
-    }
-    margin-right: @page-margin;
-    width: 50%;
-    justify-content: end;
-    align-self: center;
+  display: flex;
+  @media (min-width: @breakpoint-3col) {
+    grid-column-start: 4;
+    width: 100%;
+    margin-right: 0;
+  }
+  margin-right: @page-margin;
+  width: 50%;
+  justify-content: end;
+  align-self: center;
 }
