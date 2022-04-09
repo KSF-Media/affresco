@@ -190,7 +190,7 @@ class Content extends Component {
 
   renderQuestion(block, key) {
     return (
-      <h4 className={"headline headline-question"} key={key}>
+      <h4 className={`headline headline-question ${this.props.darkModeEnabled ? "darkMode" : ""}`} key={key}>
         <i>{block.question}</i>
       </h4>
     );
