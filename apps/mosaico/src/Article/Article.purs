@@ -186,7 +186,7 @@ render imageComponent props =
                                       , DOM.span_ [ DOM.text author.byline ]
                                       , foldMap
                                         (\authorEmail -> DOM.span
-                                                        {className: "mosaico-article__author-email"
+                                                        { className: "mosaico-article__author-email"
                                                         , children: [ DOM.text authorEmail ]
                                                         }
                                         )
