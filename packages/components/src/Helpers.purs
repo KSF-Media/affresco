@@ -65,7 +65,7 @@ formatArticleTime = format articleFormatter
  where
    articleFormatter =
     fromFoldable
-      [ DayOfMonth
+      [ DayOfMonthTwoDigits
       , Placeholder "."
       , MonthTwoDigits
       , Placeholder "."
