@@ -90,6 +90,7 @@ type State =
   , categoryStructure :: Array Category
   , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
+  , showAds :: Boolean
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -166,11 +167,14 @@ mosaicoComponent initialValues props = React.do
             liftEffect $ setState _ { article = Nothing }
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
-              Right article -> do
-                liftEffect $ setTitle article.article.title
-                Article.evalEmbeds article.article
-                sendArticleAnalytics article.article state.user
-                setState _ { article = Just $ Right article }
+              Right a@{ article } -> do
+                liftEffect $ setTitle article.title
+                Article.evalEmbeds article
+                sendArticleAnalytics article state.user
+                setState _
+                  { article = Just $ Right a
+                  , showAds = not article.removeAds && not (article.articleType == Advertorial)
+                  }
               Left _ -> do
                 liftEffect $ setTitle "Något gick fel"
                 setState _ { article = Just $ Left unit }
@@ -345,6 +349,7 @@ getInitialValues = do
         , categoryStructure: []
         , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
+        , showAds: true
         }
     , components:
         { loginModalComponent
@@ -541,7 +546,7 @@ render setState state components router onPaywallEvent =
 
     mosaicoLayout :: JSX -> Boolean -> JSX
     mosaicoLayout content showAside = DOM.div_
-      [ Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
       , DOM.div
           { className: "mosaico grid"
           , id: Paper.toString mosaicoPaper
@@ -558,23 +563,24 @@ render setState state components router onPaywallEvent =
                   , onStaticPageClick
                   }
               , Header.mainSeparator
-              , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
+              , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
               , footer onStaticPageClick
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
-                      [ Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
+                      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
                       , MostReadList.render
                           { mostReadArticles: state.mostReadArticles
                           , onClickHandler
                           }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                      , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
                       , LatestList.render
                           { latestArticles: state.latestArticles
                           , onClickHandler
                           }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                      ] <> guard state.showAds
+                      [ Mosaico.ad { contentUnit: "mosaico-ad__box1" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
