@@ -62,7 +62,7 @@
     @media (min-width: @breakpoint-3col) {
       display: block;
     }
-    
+
     a {
       text-decoration: none;
       color: inherit;
@@ -171,7 +171,7 @@
   }
 
   &__icon-button {
-    
+
     &--search {
       align-items: center;
       display: flex;
@@ -238,11 +238,14 @@
   margin: 0px;
   background-color: @grey-almostlight;
   width: 100%;
-  height: 4px;
-  margin-bottom: 15px;
+  height: @separator-height;
+  margin-bottom: @separator-margin;
 
   @media (max-width: @breakpoint-3col) {
     width: calc(100% + 24px);
     margin-left: -12px;
   }
 }
+
+@separator-margin: 15px;
+@separator-height: 4px;

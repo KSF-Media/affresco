@@ -35,8 +35,9 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
+import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
 import Mosaico.Epaper as Epaper
@@ -49,9 +50,9 @@ import Mosaico.Frontpage.Events (onFrontpageClick)
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
+import Mosaico.LatestList as LatestList
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.LatestList as LatestList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Routes as Routes
@@ -98,6 +99,7 @@ type Components =
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
+  , advertorialComponent :: Advertorial.Basic.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
   }
 
@@ -326,6 +328,7 @@ getInitialValues = do
   searchComponent     <- Search.searchComponent
   webviewComponent    <- Webview.webviewComponent
   articleComponent    <- Article.component
+  advertorialComponent <- Advertorial.Basic.component
   epaperComponent     <- Epaper.component
   pure
     { state:
@@ -348,6 +351,7 @@ getInitialValues = do
         , searchComponent
         , webviewComponent
         , articleComponent
+        , advertorialComponent
         , epaperComponent
         }
     , catMap
@@ -410,7 +414,10 @@ render setState state components router onPaywallEvent =
          | Just (Right fullArticle@{ article }) <- state.article -> mosaicoLayoutNoAside $
            if article.uuid == articleId
            -- If we have this article already in `state`, let's pass that to `renderArticle`
-           then renderArticle (Right fullArticle)
+           then
+             if article.articleType == Advertorial
+             then components.advertorialComponent { article }
+             else renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | Nothing <- state.article -> mosaicoLayoutNoAside loadingSpinner

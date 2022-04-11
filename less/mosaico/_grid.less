@@ -1,3 +1,6 @@
+@mosaico-grid-row-gap: 8px;
+@mosaico-grid-columns: 1fr @content-block @content-block @content-block 1fr;
+
 .mosaico {
   background: white;
   display: grid;
@@ -5,7 +8,7 @@
   min-height: 100%;
   max-width: calc(100% - @page-margin);
   grid-template-columns: minmax(0, 1fr); //minmax used to prevent grid blowout on static pages
-  grid-row-gap: 8px;
+  grid-row-gap: @mosaico-grid-row-gap;
   grid-template-areas:
     "line"
     "head"
@@ -20,7 +23,7 @@
     max-width: 100%;
     grid-template-rows: auto 85px auto minmax(0, 60px) auto auto 500px;
     // don't use repeat, causes error
-    grid-template-columns: 1fr @content-block @content-block @content-block 1fr;
+    grid-template-columns: @mosaico-grid-columns;
     grid-template-areas:
       "line line line line line"
       ". head head head ."
