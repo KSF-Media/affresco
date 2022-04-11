@@ -27,7 +27,7 @@ render imageComponent { article } =
         | "companyName" <- details.title = fold details.description
         | otherwise = mempty
   in fragment
-       [ DOM.span
+       [ DOM.div
            { className: "advertorial-top-banner"
            , children:
                [ DOM.span
@@ -54,10 +54,10 @@ render imageComponent { article } =
                        , children: [ DOM.text $ fold article.preamble ]
                        }
                    , DOM.div
-                       { className: "advertorial__tag-n-share"
+                       { className: "advertorial-badge"
                        , children:
                            [ DOM.div
-                               { className: "advertorial-badge premium-badge"
+                               { className: "premium-badge"
                                , children: [ DOM.span_ [ DOM.text "Annons" ] ]
                                }
                            ]
