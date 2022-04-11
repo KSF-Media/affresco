@@ -1,6 +1,9 @@
-module Mosaico.Footer where
+module Mosaico.Footer
+  ( footer
+  ) where
 
 import Prelude
+import Data.String (Pattern(..), Replacement(..), replaceAll)
 import KSF.Paper (Paper(..), cssName, homepage, paperName)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -45,7 +48,126 @@ footer mosaicoPaper onStaticPageClick =
 contactInfo :: Paper -> (String -> EventHandler) -> JSX
 contactInfo ON = ostnylandContactInfo
 
+contactInfo VN = vastranylandContactInfo
+
+contactInfo HBL = hblContactInfo
+
 contactInfo _ = footerLinks
+
+hblContactInfo :: (String -> EventHandler) -> JSX
+hblContactInfo onStaticPageClick =
+  DOM.div
+    { className: "mosaico-footer__contact-info"
+    , children:
+        [ DOM.div
+            { className: "mosaico-footer__contact-info__columns"
+            , children:
+                [ column firstColumn
+                , column secondColumn
+                , column thirdColumn
+                ]
+            }
+        , footerLinks onStaticPageClick
+        ]
+    }
+  where
+  firstColumn =
+    [ section "Besöksadress"
+        [ DOM.text "Mannerheimvägen 18"
+        , DOM.br {}
+        , DOM.text "00100 Helsingfors"
+        ]
+    , section "Växel: " [ tel "09 125 31" ]
+    , section "E-post: " [ DOM.text "fornamn.efternamn@hbl.fi" ]
+    , section "Prenumerationer och Kundservice: "
+        [ tel "09 125 35 00"
+        , DOM.text ", "
+        , email "pren@ksfmedia.fi"
+        , DOM.br {}
+        , DOM.text "(mån-fre kl. 8.00-12.00 och 13.00-16.00."
+        , DOM.text "På onsdagar stänger kundservice kl. 15.00)"
+        ]
+    , section "Annonser: "
+        [ tel "09 125 35 58"
+        , DOM.text ", "
+        , email "annons@hbl.fi"
+        ]
+    ]
+
+  secondColumn =
+    [ section "Erja Yläjärvi" [ DOM.text "Chefredaktör och ansvarig utgivare" ]
+    , section "Lena Skogberg" [ DOM.text "Biträdande chefredaktör och redaktionschef (Kultur och samhälle)" ]
+    , section "Gunilla Celvin" [ DOM.text "nyheter och sport" ]
+    , section "Steffen Ørsted" [ DOM.text "Redaktionschef (visuellt och utveckling)" ]
+    , section "Nyhetstips"
+        [ tel "09 125 32 22"
+        , email "nyheter@hbl.fi"
+        ]
+    , section "Insändare: " [ DOM.a { href: "#", children: [ DOM.text "Skriv din insändare här" ] } ]
+    , section "Mejla din insändäre: " [ email "debatt@hbl.fi" ]
+    ]
+
+  thirdColumn =
+    [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
+    , section "" [ DOM.a { href: "#", children: [ DOM.text "Jobba hos oss" ] } ]
+    , section "Dataskydd: " [ DOM.a { href: "#", children: [ DOM.text "Hantera dataskydd" ] } ]
+    ]
+
+vastranylandContactInfo :: (String -> EventHandler) -> JSX
+vastranylandContactInfo onStaticPageClick =
+  DOM.div
+    { className: "mosaico-footer__contact-info"
+    , children:
+        [ DOM.div
+            { className: "mosaico-footer__contact-info__columns"
+            , children:
+                [ column firstColumn
+                , column secondColumn
+                , column thirdColumn
+                ]
+            }
+        , footerLinks onStaticPageClick
+        ]
+    }
+  where
+  firstColumn =
+    [ section "Kontakta Västra Nyland: "
+        [ DOM.text "Genvägen 8"
+        , DOM.br {}
+        , DOM.text "10650 Ekenäs"
+        ]
+    , section "Prenumerationer: "
+        [ tel "09 1253 500"
+        , DOM.br {}
+        , DOM.text "(mån-fre kl. 8.00-12.00 och 13.00-16.00."
+        , DOM.text "På onsdagar stänger kundservice kl. 15.00)"
+        , DOM.text ", "
+        , email "pren@ostnyland.fi"
+        ]
+    , section "Redaktionen: "
+        [ tel "019 222 822"
+        , DOM.text ", "
+        , email "vnred@vastranyland.fi"
+        ]
+    , section "Annonser: "
+        [ tel "09 1253 558"
+        , DOM.text ", "
+        , email "annons@vastranyland.fi"
+        ]
+    ]
+
+  secondColumn =
+    [ section "Ansvarig utgivare: " [ DOM.text "Erja Yläjärvi" ]
+    , section "Chefredaktör för tidningen och nyhetschef: " [ DOM.text "Marina Holmberg" ]
+    , section "Insändare: " [ DOM.a { href: "#", children: [ DOM.text "Skriv din insändare här" ] } ]
+    , section "" [ DOM.text "Det lokala kommer först." ]
+    ]
+
+  thirdColumn =
+    [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
+    , section "" [ DOM.a { href: "#", children: [ DOM.text "Jobba hos oss" ] } ]
+    , section "Dataskydd: " [ DOM.a { href: "#", children: [ DOM.text "Hantera dataskydd" ] } ]
+    ]
 
 ostnylandContactInfo :: (String -> EventHandler) -> JSX
 ostnylandContactInfo onStaticPageClick =
@@ -66,26 +188,26 @@ ostnylandContactInfo onStaticPageClick =
   where
   firstColumn =
     [ section "Kontakta Östnyland: "
-        [ DOM.text "Lundagatan 8"
+        [ DOM.text "Lundgatan 8"
         , DOM.br {}
         , DOM.text "06100 Borgå"
         ]
-    , section "Växel: " [ DOM.a { href: "tel:0912531", children: [ DOM.text "09 12531" ] } ]
+    , section "Växel: " [ tel "09 12531" ]
     , section "Prenumerationer: "
-        [ DOM.a { href: "tel:091253500", children: [ DOM.text "09 1253 500" ] }
+        [ tel "09 1253 500"
         , DOM.br {}
         , DOM.text "(mån-fre kl. 8.00-12.00 och 13.00-16.00."
         , DOM.text "På onsdagar stänger kundservice kl. 15.00)"
         ]
     , section "Redaktionen: "
-        [ DOM.a { href: "tel:0447776000", children: [ DOM.text "044 777 6000" ] }
+        [ tel "044 777 6000"
         , DOM.text ", "
-        , DOM.a { href: "mailto:redaktion@ostnyland.fi", children: [ DOM.text "redaktion@ostnyland.fi" ] }
+        , email "redaktion@ostnyland.fi"
         ]
     , section "Annonser: "
-        [ DOM.a { href: "tel:091253558", children: [ DOM.text "09 1253 558" ] }
+        [ tel "09 1253 558"
         , DOM.text ", "
-        , DOM.a { href: "mailto:annons@ostnyland.fi", children: [ DOM.text "annons@ostnyland.fi" ] }
+        , email "annons@ostnyland.fi"
         ]
     ]
 
@@ -93,28 +215,17 @@ ostnylandContactInfo onStaticPageClick =
     [ section "Ansvarig utgivare: " [ DOM.text "Erja Yläjärvi" ]
     , section "Chefredaktör för tidningen och nyhetschef: "
         [ DOM.text "Helén Kurri "
-        , DOM.a { href: "tel:0405063977", children: [ DOM.text "040 506 3977" ] }
+        , tel "040 506 3977"
         ]
-    , section "Insändare: " [ DOM.a {href: "#", children: [DOM.text "Skriv din insändare här" ]} ]
+    , section "Insändare: " [ DOM.a { href: "#", children: [ DOM.text "Skriv din insändare här" ] } ]
     , section "" [ DOM.text "Det lokala kommer först." ]
     ]
 
   thirdColumn =
     [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
     , section "" [ DOM.a { href: "#", children: [ DOM.text "Jobba hos oss" ] } ]
-    , section "Dataskydd: " [DOM.a {href: "#", children: [ DOM.text "Hantera dataskydd" ]}] 
+    , section "Dataskydd: " [ DOM.a { href: "#", children: [ DOM.text "Hantera dataskydd" ] } ]
     ]
-
-  column children = DOM.div { className: "mosaico-footer__contact-info__column", children: children }
-
-  section title children =
-    DOM.p
-      { className: "mosaico-footer__contact-info__section"
-      , children:
-          [ DOM.b { children: [ DOM.text title ] }
-          , DOM.div { children: children }
-          ]
-      }
 
 footerLinks :: (String -> EventHandler) -> JSX
 footerLinks onStaticPageClick =
@@ -141,3 +252,26 @@ footerLinks onStaticPageClick =
       , children: [ DOM.text caption ]
       , onClick: onStaticPageClick link
       }
+
+column :: Array JSX -> JSX
+column children = DOM.div { className: "mosaico-footer__contact-info__column", children: children }
+
+section :: String -> Array JSX -> JSX
+section title children =
+  DOM.p
+    { className: "mosaico-footer__contact-info__section"
+    , children:
+        [ DOM.b { children: [ DOM.text title ] }
+        , DOM.div { children: children }
+        ]
+    }
+
+email :: String -> JSX
+email address = DOM.a { href: "mailto:" <> address, children: [ DOM.text address ] }
+
+tel :: String -> JSX
+tel number =
+  DOM.a
+    { href: "tel:" <> replaceAll (Pattern " ") (Replacement "") number
+    , children: [ DOM.text number ]
+    }
