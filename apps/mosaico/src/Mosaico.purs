@@ -114,6 +114,7 @@ type Props =
   , user :: Maybe User
   , entitlements :: Maybe (Set String)
   }
+
 type JSProps =
   { article :: Nullable Json
   , articleType :: Nullable String
@@ -222,11 +223,13 @@ mosaicoComponent initialValues props = React.do
         foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName { stamp, feed } s.frontpageFeeds }) maybeFeed
       setFrontpage feedName =
         case HashMap.lookup feedName state.frontpageFeeds of
-          Nothing -> Aff.launchAff_ $ loadFeed feedName
+          Nothing -> do
+            Aff.launchAff_ $ loadFeed feedName
+            setState _ { showAds = true }
           Just { stamp } -> do
             now <- Now.nowDateTime
             when (DateTime.diff now stamp > maxAge) do
-              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
+              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds, showAds = true }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
@@ -241,21 +244,24 @@ mosaicoComponent initialValues props = React.do
       Routes.DraftPage -> pure unit
       Routes.ProfilePage -> pure unit
       Routes.ArticlePage articleId
-        | Just articleId == (_.article.uuid <$> (join <<< map hush $ state.article)) -> pure unit
+        | Just article <- map _.article (join $ map hush $ state.article)
+        , articleId == article.uuid
+        -> setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
-      Routes.MenuPage -> pure unit
-      Routes.NotFoundPage _path -> pure unit
+      Routes.MenuPage -> setState _ { showAds = true }
+      Routes.NotFoundPage _path -> setState _ { showAds = true }
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
-      Routes.EpaperPage -> pure unit
+      Routes.EpaperPage -> setState _ { showAds = true }
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
         -> when (isJust state.prevRoute) do
              foldMap (\p -> evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]) r.pageScript
+             setState _ { showAds = true }
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
-            liftEffect $ setState _  { staticPage = Just staticPage }
+            liftEffect $ setState _  { staticPage = Just staticPage, showAds = true }
             case staticPage of
               StaticPageResponse r
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
