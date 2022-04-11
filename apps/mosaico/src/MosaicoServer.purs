@@ -79,7 +79,7 @@ render router props = DOM.div_
            , Header.mainSeparator
            , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
            , props.mainContent.content
-           , footer mempty
+           , footer mosaicoPaper mempty
            , case props.mainContent.type of
                  FrontpageContent -> aside
                  TagListContent _ -> aside
