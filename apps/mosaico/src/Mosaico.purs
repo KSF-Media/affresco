@@ -248,7 +248,7 @@ mosaicoComponent initialValues props = React.do
         , articleId == article.uuid
         -> setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
-      Routes.MenuPage -> setState _ { showAds = true }
+      Routes.MenuPage -> setState _ { showAds = false }
       Routes.NotFoundPage _path -> setState _ { showAds = true }
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
       Routes.EpaperPage -> setState _ { showAds = true }
@@ -257,11 +257,11 @@ mosaicoComponent initialValues props = React.do
         , r.pageName == page
         -> when (isJust state.prevRoute) do
              foldMap (\p -> evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]) r.pageScript
-             setState _ { showAds = true }
+             setState _ { showAds = false }
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
-            liftEffect $ setState _  { staticPage = Just staticPage, showAds = true }
+            liftEffect $ setState _  { staticPage = Just staticPage, showAds = false }
             case staticPage of
               StaticPageResponse r
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
