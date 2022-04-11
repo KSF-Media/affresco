@@ -178,16 +178,23 @@ render imageComponent props =
             [ DOM.div
                 { className: "mosaico-article__authors-and-timestamps"
                 , children:
-                    [ foldMap
-                        (\authorName -> DOM.div
+                    map
+                        (\author -> DOM.div
                           { className: "mosaico-article__author"
                           , children: [ guard (article.articleType == Opinion) $
                                         renderOpinionType article.articleTypeDetails
-                                      , DOM.text authorName
+                                      , DOM.span_ [ DOM.text author.byline ]
+                                      , foldMap
+                                        (\authorEmail -> DOM.span
+                                                        {className: "mosaico-article__author-email"
+                                                        , children: [ DOM.text authorEmail ]
+                                                        }
+                                        )
+                                        author.email
                                       ]
                           })
-                        (_.byline <$> article.authors)
-                    , foldMap
+                        article.authors
+                    <> [foldMap
                         (\(LocalDateTime publishingTime) -> DOM.div
                           { className: "mosaico-article__timestamps"
                           , children:
