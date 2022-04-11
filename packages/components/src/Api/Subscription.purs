@@ -10,6 +10,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int as Int
 import Data.JSDate (JSDate, toDate)
 import Data.Maybe (Maybe, maybe)
+import Data.Newtype (class Newtype)
 import Data.Nullable (Nullable, toMaybe)
 import Foreign (Foreign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum)
@@ -42,7 +43,7 @@ type PendingAddressChange =
   , endDate   :: Nullable JSDate
   }
 
-type Subscription = BaseSubscription SubscriptionPaymentMethod
+type Subscription = BaseSubscription SubscriptionPaymentMethod 
 
 type BaseSubscription p =
   { subsno                :: Subsno
@@ -72,10 +73,18 @@ data SubscriptionPaymentMethod
   | Email
   | UnknownPaymentMethod
 
+newtype SleepType = SleepType String
+
+derive instance newtypeSleepType :: Newtype SleepType _
+
 type PausedSubscription =
   { startDate :: JSDate
   , endDate   :: Nullable JSDate
+  , sleepType :: SleepType
   }
+
+isPause :: SleepType -> Boolean
+isPause (SleepType s) = s == "Pause"
 
 -- | Parse Foreign values of a 'raw' subscription into a Subscription
 parseSubscription :: forall r. { paymentMethod :: Foreign | r } -> { paymentMethod :: SubscriptionPaymentMethod | r }
