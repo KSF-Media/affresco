@@ -84,13 +84,6 @@ render imageComponent props =
         bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) body
         bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
           <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
-        draftHeader = case _.articleType <$> props.article of
-          Right DraftArticle ->
-            DOM.div
-              { className: "mosaico-article--draft"
-              , children: [ DOM.text "Förslag" ]
-              }
-          _ -> mempty
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
 
@@ -98,8 +91,7 @@ render imageComponent props =
       { className: "mosaico-article"
       , children:
           [ DOM.header_
-            [ draftHeader
-            , DOM.h1
+            [ DOM.h1
                 { className: "mosaico-article__headline"
                 , children: [ DOM.text title ]
                 }
