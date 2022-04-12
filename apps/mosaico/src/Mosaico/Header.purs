@@ -96,7 +96,10 @@ render props =
                   , onClick: props.onProfile
                   , href: "/konto"
                   , children:
-                      [ DOM.span { className: accountClass <> "-icon" }
+                      [ DOM.span
+                          { className: accountClass <> "-icon"
+                          , children: [ DOM.span_ [] ]
+                          }
                       , DOM.span_ [ DOM.text name ]
                       ]
                   , _data: Object.fromFoldable [Tuple "loggedin" "1"]

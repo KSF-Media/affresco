@@ -35,8 +35,9 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
+import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
 import Mosaico.Epaper as Epaper
@@ -49,9 +50,9 @@ import Mosaico.Frontpage.Events (onFrontpageClick)
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header as Header
 import Mosaico.Header.Menu as Menu
+import Mosaico.LatestList as LatestList
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.LatestList as LatestList
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Routes as Routes
@@ -89,6 +90,7 @@ type State =
   , categoryStructure :: Array Category
   , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
+  , showAds :: Boolean
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -98,6 +100,7 @@ type Components =
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
+  , advertorialComponent :: Advertorial.Basic.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
   }
 
@@ -111,6 +114,7 @@ type Props =
   , user :: Maybe User
   , entitlements :: Maybe (Set String)
   }
+
 type JSProps =
   { article :: Nullable Json
   , articleType :: Nullable String
@@ -164,11 +168,14 @@ mosaicoComponent initialValues props = React.do
             liftEffect $ setState _ { article = Nothing }
             eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
-              Right article -> do
-                liftEffect $ setTitle article.article.title
-                Article.evalEmbeds article.article
-                sendArticleAnalytics article.article state.user
-                setState _ { article = Just $ Right article }
+              Right a@{ article } -> do
+                liftEffect $ setTitle article.title
+                Article.evalEmbeds article
+                sendArticleAnalytics article state.user
+                setState _
+                  { article = Just $ Right a
+                  , showAds = not article.removeAds && not (article.articleType == Advertorial)
+                  }
               Left _ -> do
                 liftEffect $ setTitle "Något gick fel"
                 setState _ { article = Just $ Left unit }
@@ -216,11 +223,13 @@ mosaicoComponent initialValues props = React.do
         foldMap (\feed -> liftEffect $ setState \s -> s { frontpageFeeds = HashMap.insert feedName { stamp, feed } s.frontpageFeeds }) maybeFeed
       setFrontpage feedName =
         case HashMap.lookup feedName state.frontpageFeeds of
-          Nothing -> Aff.launchAff_ $ loadFeed feedName
+          Nothing -> do
+            Aff.launchAff_ $ loadFeed feedName
+            setState _ { showAds = true }
           Just { stamp } -> do
             now <- Now.nowDateTime
             when (DateTime.diff now stamp > maxAge) do
-              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
+              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds, showAds = true }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
@@ -235,21 +244,24 @@ mosaicoComponent initialValues props = React.do
       Routes.DraftPage -> pure unit
       Routes.ProfilePage -> pure unit
       Routes.ArticlePage articleId
-        | Just articleId == (_.article.uuid <$> (join <<< map hush $ state.article)) -> pure unit
+        | Just article <- map _.article (join $ map hush $ state.article)
+        , articleId == article.uuid
+        -> setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
-      Routes.MenuPage -> pure unit
-      Routes.NotFoundPage _path -> pure unit
+      Routes.MenuPage -> setState _ { showAds = false }
+      Routes.NotFoundPage _path -> setState _ { showAds = true }
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
-      Routes.EpaperPage -> pure unit
+      Routes.EpaperPage -> setState _ { showAds = true }
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
         -> when (isJust state.prevRoute) do
              foldMap (\p -> evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]) r.pageScript
+             setState _ { showAds = false }
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
-            liftEffect $ setState _  { staticPage = Just staticPage }
+            liftEffect $ setState _  { staticPage = Just staticPage, showAds = false }
             case staticPage of
               StaticPageResponse r
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
@@ -326,6 +338,7 @@ getInitialValues = do
   searchComponent     <- Search.searchComponent
   webviewComponent    <- Webview.webviewComponent
   articleComponent    <- Article.component
+  advertorialComponent <- Advertorial.Basic.component
   epaperComponent     <- Epaper.component
   pure
     { state:
@@ -342,12 +355,14 @@ getInitialValues = do
         , categoryStructure: []
         , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
+        , showAds: true
         }
     , components:
         { loginModalComponent
         , searchComponent
         , webviewComponent
         , articleComponent
+        , advertorialComponent
         , epaperComponent
         }
     , catMap
@@ -410,7 +425,10 @@ render setState state components router onPaywallEvent =
          | Just (Right fullArticle@{ article }) <- state.article -> mosaicoLayoutNoAside $
            if article.uuid == articleId
            -- If we have this article already in `state`, let's pass that to `renderArticle`
-           then renderArticle (Right fullArticle)
+           then
+             if article.articleType == Advertorial
+             then components.advertorialComponent { article }
+             else renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | Nothing <- state.article -> mosaicoLayoutNoAside loadingSpinner
@@ -534,7 +552,7 @@ render setState state components router onPaywallEvent =
 
     mosaicoLayout :: JSX -> Boolean -> JSX
     mosaicoLayout content showAside = DOM.div_
-      [ Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
       , DOM.div
           { className: "mosaico grid"
           , id: Paper.toString mosaicoPaper
@@ -551,23 +569,24 @@ render setState state components router onPaywallEvent =
                   , onStaticPageClick
                   }
               , Header.mainSeparator
-              , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
+              , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
               , footer onStaticPageClick
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
-                      [ Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
+                      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
                       , MostReadList.render
                           { mostReadArticles: state.mostReadArticles
                           , onClickHandler
                           }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                      , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
                       , LatestList.render
                           { latestArticles: state.latestArticles
                           , onClickHandler
                           }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                      ] <> guard state.showAds
+                      [ Mosaico.ad { contentUnit: "mosaico-ad__box1" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box4" }

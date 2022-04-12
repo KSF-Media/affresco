@@ -3,7 +3,7 @@ module Mosaico.Article.Box where
 import Prelude
 
 import Data.Foldable (fold)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe, maybe)
 import Data.Monoid (guard)
 import Data.String (joinWith, length)
 import KSF.Paper (Paper)
@@ -20,7 +20,7 @@ type Props =
   { title :: Maybe String
   , headline :: Maybe String
   , content :: Array String
-  , paper :: Paper
+  , paper :: Maybe Paper
   }
 
 autoExpand :: Array String -> Boolean
@@ -32,8 +32,9 @@ box = make component
   , didMount: \self ->
       self.setState \_ -> { expanded: autoExpand self.props.content }
   , render: \self ->
-      DOM.section
-        { className: "boxinfo border-" <> Paper.cssName self.props.paper
+      let paperCss = maybe "brand-neutral" Paper.cssName self.props.paper
+      in DOM.section
+        { className: "boxinfo border-" <> paperCss
         , children:
             [ DOM.header
               { className: "boxinfo__header"
@@ -41,7 +42,7 @@ box = make component
                   [ DOM.h3
                       { className: "boxinfo__label"
                       , children: [ DOM.text $ fold self.props.headline ]
-                      }   
+                      }
                   , DOM.h2
                       { className: "boxinfo__title"
                       , children: [ DOM.text $ fold self.props.title ]
@@ -63,7 +64,7 @@ box = make component
               , className: "boxinfo__toggle"
               , children: guard (not self.state.expanded) $
                   [ DOM.a
-                    { className: "color-" <> Paper.cssName self.props.paper
+                    { className: "color-" <> paperCss
                     , children: [ DOM.text "Vik ut ▼" ]
                     }
                   ]

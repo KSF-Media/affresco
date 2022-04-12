@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Array (filter, find, mapMaybe)
 import Data.Array as Array
+import Data.Date (Date)
 import Data.Either (Either(..))
 import Data.Enum (enumFromTo)
 import Data.Foldable (foldMap, for_, null, maximum)
@@ -11,13 +12,14 @@ import Data.JSDate (toDate)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String (length, splitAt, trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Foreign (unsafeToForeign)
-import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
+import KSF.Api.Subscription (PausedSubscription, SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable, isPause)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
@@ -155,7 +157,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
 
     paperOnlyActions =
       [ if isSubscriptionPausable sub then pauseIcon else mempty
-      , if maybe true (Array.null <<< filter (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate))
+      , if maybe true (Array.null <<< filter (isRemovablePause now))
            self.state.pausedSubscriptions
           then mempty
           else removeSubscriptionPauses
@@ -453,15 +455,24 @@ temporaryAddressChangeComponent self@{ props: props@{ subscription: { package } 
       , temporaryName: toMaybe tmp.temporaryName
       }
 
+isRemovablePause :: Date -> PausedSubscription -> Boolean
+isRemovablePause now pause =
+  isPause pause.sleepType &&
+  (not <<< Helpers.isPeriodExpired true now <<< toMaybe <<< _.endDate) pause
+
 showPausedDates :: Types.Self -> Array User.PausedSubscription -> Array JSX
 showPausedDates self =
   let formatDates { startDate, endDate } = Helpers.formatDateString startDate $ toMaybe endDate
       pauseLine pause =
-        let text = "Uppehåll: " <> formatDates pause
+        let pauseTypeText = case unwrap pause.sleepType of
+              "Pause" -> "Uppehåll"
+              "Rebate" -> "Kompensation"
+              _ -> "Uppehåll"
+            text = pauseTypeText <> ": " <> formatDates pause
         in case Tuple (toDate pause.startDate) (toDate =<< toMaybe pause.endDate) of
-          Tuple (Just _startDate) (Just endDate) ->
+          Tuple (Just _startDate) (Just _endDate) ->
             DOM.div
-              { children: [ guard (endDate < self.props.now) $ changeButton self
+              { children: [ guard (isRemovablePause self.props.now pause) $ changeButton self
                               (Types.EditSubscriptionPause pause)
                               (pauseSubscriptionComponent self $ Just pause)
                           , DOM.text text
