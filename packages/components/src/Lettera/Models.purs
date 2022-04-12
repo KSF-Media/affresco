@@ -216,6 +216,7 @@ type JSDraftArticle =
 type Author =
   { byline :: String
   , image  :: Maybe String
+  , email  :: Maybe String
   }
 
 -- TODO: Could be a type class
