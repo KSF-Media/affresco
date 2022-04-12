@@ -117,12 +117,18 @@
       align-self: stretch;
     }
 
-   &-icon {
-     display: inline-block;
-     height: 19px;
-     width: 19px;
-     margin-right: 5px;
-     background-image: url("@{path-images}/icon-mosaico-profile.svg");
+    &-icon {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: 19px;
+      margin-right: 5px;
+      span {
+        width: 19px;
+        height: 19px;
+        background-image: url("@{path-images}/icon-mosaico-profile.svg");
+        background-repeat: no-repeat;
+      }
     }
 
     &--active {
@@ -140,7 +146,10 @@
     gap: 6%;
     justify-content: center;
 
-    a, a:hover, a:focus, a:active {
+    a,
+    a:hover,
+    a:focus,
+    a:active {
       text-decoration: none;
       color: inherit;
       height: 19px;
@@ -171,7 +180,6 @@
   }
 
   &__icon-button {
-
     &--search {
       align-items: center;
       display: flex;
