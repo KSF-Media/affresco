@@ -45,7 +45,7 @@ getTitle = either _.title _.article.title
 getMainImage :: Either ArticleStub FullArticle -> Maybe Image
 getMainImage = either _.mainImage _.article.mainImage
 
-getPreamble :: Either ArticleStub FullArticle -> Maybe String
+getPreamble :: Either ArticleStub FullArticle -> Array String
 getPreamble = either _.preamble _.article.preamble
 
 getBody :: Either ArticleStub FullArticle -> Array BodyElement
@@ -97,7 +97,7 @@ render imageComponent props =
                 }
             , DOM.section
                 { className: "mosaico-article__preamble"
-                , children: [ DOM.text $ fromMaybe mempty $ getPreamble props.article ]
+                , children: map (DOM.p_ <<< pure <<< DOM.text) $ getPreamble props.article
                 }
             -- We don't want to be able to share error articles
             , guard (maybe true ((_ /= ErrorArticle) <<< _.articleType) $ hush props.article)
