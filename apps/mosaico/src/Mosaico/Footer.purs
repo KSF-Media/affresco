@@ -5,9 +5,11 @@ module Mosaico.Footer
 import Prelude
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import KSF.Paper (Paper(..), cssName, homepage, paperName)
+import Mosaico.Ad (openConsentRevocationMessage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler)
+import React.Basic.Events (handler, EventHandler)
+import React.Basic.DOM.Events (preventDefault)
 
 footer :: Paper -> (String -> EventHandler) -> JSX
 footer mosaicoPaper onStaticPageClick =
@@ -97,20 +99,20 @@ hblContactInfo onStaticPageClick =
   secondColumn =
     [ section "Erja Yläjärvi" [ DOM.text "Chefredaktör och ansvarig utgivare" ]
     , section "Lena Skogberg" [ DOM.text "Biträdande chefredaktör och redaktionschef (Kultur och samhälle)" ]
-    , section "Gunilla Celvin" [ DOM.text "nyheter och sport" ]
+    , section "Gunilla Celvin" [ DOM.text "Redaktionschef (nyheter och sport)" ]
     , section "Steffen Ørsted" [ DOM.text "Redaktionschef (visuellt och utveckling)" ]
     , section "Nyhetstips"
         [ tel "09 125 32 22"
+        , DOM.text ", "
         , email "nyheter@hbl.fi"
         ]
-    , section "Insändare: " [ DOM.a { href: "#", children: [ DOM.text "Skriv din insändare här" ] } ]
+    , section "Insändare: "
+        [ DOM.a
+            { href: "#"
+            , children: [ DOM.text "Skriv din insändare här" ]
+            }
+        ]
     , section "Mejla din insändäre: " [ email "debatt@hbl.fi" ]
-    ]
-
-  thirdColumn =
-    [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
-    , section "" [ DOM.a { href: "#", children: [ DOM.text "Jobba hos oss" ] } ]
-    , section "Dataskydd: " [ DOM.a { href: "#", children: [ DOM.text "Hantera dataskydd" ] } ]
     ]
 
 vastranylandContactInfo :: (String -> EventHandler) -> JSX
@@ -159,14 +161,13 @@ vastranylandContactInfo onStaticPageClick =
   secondColumn =
     [ section "Ansvarig utgivare: " [ DOM.text "Erja Yläjärvi" ]
     , section "Chefredaktör för tidningen och nyhetschef: " [ DOM.text "Marina Holmberg" ]
-    , section "Insändare: " [ DOM.a { href: "#", children: [ DOM.text "Skriv din insändare här" ] } ]
+    , section "Insändare: "
+        [ DOM.a
+            { href: "#"
+            , children: [ DOM.text "Skriv din insändare här" ]
+            }
+        ]
     , section "" [ DOM.text "Det lokala kommer först." ]
-    ]
-
-  thirdColumn =
-    [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
-    , section "" [ DOM.a { href: "#", children: [ DOM.text "Jobba hos oss" ] } ]
-    , section "Dataskydd: " [ DOM.a { href: "#", children: [ DOM.text "Hantera dataskydd" ] } ]
     ]
 
 ostnylandContactInfo :: (String -> EventHandler) -> JSX
@@ -217,14 +218,13 @@ ostnylandContactInfo onStaticPageClick =
         [ DOM.text "Helén Kurri "
         , tel "040 506 3977"
         ]
-    , section "Insändare: " [ DOM.a { href: "#", children: [ DOM.text "Skriv din insändare här" ] } ]
+    , section "Insändare: "
+        [ DOM.a
+            { href: "#"
+            , children: [ DOM.text "Skriv din insändare här" ]
+            }
+        ]
     , section "" [ DOM.text "Det lokala kommer först." ]
-    ]
-
-  thirdColumn =
-    [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
-    , section "" [ DOM.a { href: "#", children: [ DOM.text "Jobba hos oss" ] } ]
-    , section "Dataskydd: " [ DOM.a { href: "#", children: [ DOM.text "Hantera dataskydd" ] } ]
     ]
 
 footerLinks :: (String -> EventHandler) -> JSX
@@ -275,3 +275,21 @@ tel number =
     { href: "tel:" <> replaceAll (Pattern " ") (Replacement "") number
     , children: [ DOM.text number ]
     }
+
+thirdColumn :: Array JSX
+thirdColumn =
+  [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
+  , section ""
+      [ DOM.a
+          { href: "#"
+          , children: [ DOM.text "Jobba hos oss" ]
+          }
+      ]
+  , section "Dataskydd: "
+      [ DOM.a
+          { href: "#"
+          , onClick: handler preventDefault openConsentRevocationMessage
+          , children: [ DOM.text "Hantera dataskydd" ]
+          }
+      ]
+  ]

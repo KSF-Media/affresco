@@ -33,3 +33,7 @@ exports.getIsLazy = function (contentUnit) {
     return slot.isLazy;
   }
 }
+
+exports.showConsentRevocationMessage = function () {
+  window.googlefc && window.googlefc.showRevocationMessage();
+}
