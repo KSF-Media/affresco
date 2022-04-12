@@ -61,8 +61,7 @@ app props =
 
 render :: PushStateInterface -> Props -> JSX
 render router props = DOM.div_
-    [ Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
-    , DOM.div
+    [ DOM.div
        { className: "mosaico grid"
        , id: Paper.toString mosaicoPaper
        , children:
@@ -77,7 +76,6 @@ render router props = DOM.div_
                            , onStaticPageClick: mempty
                            }
            , Header.mainSeparator
-           , Mosaico.ad { contentUnit: "mosaico-ad__parade" }
            , props.mainContent.content
            , footer mempty
            , case props.mainContent.type of
