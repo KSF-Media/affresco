@@ -430,7 +430,7 @@ render setState state components router onPaywallEvent =
            then
              case article.articleType of
                Advertorial
-                 | elem "Basic"    article.categories
+                 | elem "Basic" article.categories
                  -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                  | elem "Standard" article.categories
                  -> Advertorial.Standard.render components.imageComponent { article }
