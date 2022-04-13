@@ -44,7 +44,9 @@ articleImage onClick props =
         , DOM.div
             { className: "caption"
             , children:
-                [ DOM.text caption
+                [ DOM.span
+                    { dangerouslySetInnerHTML: { __html: caption }
+                    }
                 , DOM.span
                     { className: "byline"
                     , children: [ DOM.text byline ]

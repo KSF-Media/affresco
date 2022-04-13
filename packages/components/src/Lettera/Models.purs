@@ -68,7 +68,7 @@ notFoundArticle =
     , mainImage: Nothing
     , tags: []
     , uuid: "notfound"
-    , preamble: Nothing
+    , preamble: []
     , authors: []
     , premium: false
     , removeAds: false
@@ -128,7 +128,7 @@ type ArticleStubCommon =
   ( title     :: String
   , listTitle :: Maybe String
   , uuid      :: String
-  , preamble  :: Maybe String
+  , preamble  :: Array String
   , mainImage :: Maybe Image
   , listImage :: Maybe Image
   , premium   :: Boolean
@@ -173,7 +173,7 @@ type ArticleCommon =
   , listTitle          :: Maybe String
   , mainImage          :: Maybe Image
   , uuid               :: String
-  , preamble           :: Maybe String
+  , preamble           :: Array String
   , authors            :: Array Author
   , analyticsSection   :: Maybe String
   , analyticsCategory  :: Maybe String
@@ -216,6 +216,7 @@ type JSDraftArticle =
 type Author =
   { byline :: String
   , image  :: Maybe String
+  , email  :: Maybe String
   }
 
 -- TODO: Could be a type class
