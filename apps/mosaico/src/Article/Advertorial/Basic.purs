@@ -80,7 +80,7 @@ defaultImageProps :: Image -> Image.Props
 defaultImageProps image =
    { clickable: true
    , main: true
-   , params: Just "&width=960&height=540&q=90"
+   , params: Nothing
    , image
    , fullWidth: false
    }
