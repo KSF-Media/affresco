@@ -3,6 +3,7 @@ module Mosaico.Article.Image where
 import Prelude
 
 import Data.Maybe (Maybe)
+import Data.Monoid (guard)
 import Data.Foldable (fold)
 import Lettera.Models (Image)
 import React.Basic (JSX)
@@ -18,6 +19,7 @@ type Props =
   , main      :: Boolean
   , params    :: Maybe String
   , image     :: Image
+  , fullWidth :: Boolean
   }
 
 component :: Component Props
@@ -65,7 +67,7 @@ articleImage onClick props =
 articleMainImage :: EventHandler -> Props -> JSX
 articleMainImage onClick props =
   DOM.div
-    { className: "mosaico-article__main-image"
+    { className: "mosaico-article__main-image" <> guard props.fullWidth " full-width"
     , children:
         [ DOM.div
             { className: "wrapper"
