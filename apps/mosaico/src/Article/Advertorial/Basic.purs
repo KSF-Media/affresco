@@ -3,9 +3,9 @@ module Mosaico.Article.Advertorial.Basic where
 import Prelude
 
 import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
-import Lettera.Models (Article)
+import Lettera.Models (Article, Image)
 import Mosaico.Article.Image as Image
 import Mosaico.Article as Article
 import React.Basic (fragment)
@@ -13,16 +13,14 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks (JSX, Component)
 import React.Basic.Hooks as React
 
-type Props = { article :: Article }
-
-component :: Component Props
-component = do
-  imageComponent <- Image.component
-  React.component "AdvertorialBasic" \props -> React.do
-    pure $ render imageComponent props
+type Props =
+  { article :: Article
+  , imageProps :: Maybe (Image -> Image.Props)
+  , advertorialClassName :: Maybe String
+  }
 
 render :: (Image.Props -> JSX) -> Props -> JSX
-render imageComponent { article } =
+render imageComponent { article, imageProps, advertorialClassName } =
   let companyName details
         | "companyName" <- details.title = fold details.description
         | otherwise = mempty
@@ -42,7 +40,7 @@ render imageComponent { article } =
            }
        , DOM.article
            { id: "BRAND-NEUTRAL"
-           , className: "mosaico-article"
+           , className: "mosaico-article " <> fold advertorialClassName
            , children:
                [ DOM.header_
                    [ DOM.h1
@@ -64,12 +62,7 @@ render imageComponent { article } =
                        }
                    ]
                , foldMap
-                   (\image -> imageComponent
-                              { clickable: true
-                              , main: true
-                              , params: Just "&width=960&height=540&q=90"
-                              , image
-                              })
+                   (\image -> imageComponent $ (fromMaybe defaultImageProps imageProps) image)
                    article.mainImage
                , DOM.div
                    { className: "mosaico-article__main"
@@ -85,3 +78,11 @@ render imageComponent { article } =
                ]
            }
        ]
+
+defaultImageProps image =
+   { clickable: true
+   , main: true
+   , params: Just "&width=960&height=540&q=90"
+   , image
+   , fullWidth: false
+   }
