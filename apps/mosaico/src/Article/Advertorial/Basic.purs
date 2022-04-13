@@ -60,9 +60,7 @@ render imageComponent { article, imageProps, advertorialClassName } =
                            ]
                        }
                    ]
-               , foldMap
-                   (\image -> imageComponent $ (fromMaybe defaultImageProps imageProps) image)
-                   article.mainImage
+               , foldMap (imageComponent <<< fromMaybe defaultImageProps imageProps) article.mainImage
                , DOM.div
                    { className: "mosaico-article__main"
                    , children:
