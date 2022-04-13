@@ -45,18 +45,11 @@
 
   }
 
-  &__block {
-    .mosaico-header__section {
-      border-bottom: 1px solid @grey-mediumlight;
-    }
-  }
-
   &__block:first-child {
     column-gap: 80px;
     .mosaico-header__section {
       width: auto;
       padding-left: 0;
-      border-bottom: none;
     }
   }
 
@@ -104,9 +97,9 @@
   }
 
   &__section-header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+    //display: flex;
+    //flex-direction: row;
+    //justify-content: space-between;
     font-size: .9375rem;
   }
 
@@ -129,6 +122,9 @@
 
   &__subsection {
     font: 400 13px "Roboto", sans-serif;
+    a {
+      padding-bottom: 10px;
+    }
   }
 
   &__separator {
@@ -223,3 +219,11 @@
     justify-self: center;
   }
 }
+
+.mosaico-menu__category-headline {
+  display: block;
+  padding: 10px 0;
+  border-top: 1px solid @grey-mediumlight;
+
+}
+
