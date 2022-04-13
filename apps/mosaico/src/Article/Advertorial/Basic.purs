@@ -10,8 +10,7 @@ import Mosaico.Article.Image as Image
 import Mosaico.Article as Article
 import React.Basic (fragment)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (JSX, Component)
-import React.Basic.Hooks as React
+import React.Basic.Hooks (JSX)
 
 type Props =
   { article :: Article
@@ -79,6 +78,7 @@ render imageComponent { article, imageProps, advertorialClassName } =
            }
        ]
 
+defaultImageProps :: Image -> Image.Props
 defaultImageProps image =
    { clickable: true
    , main: true
