@@ -1,4 +1,7 @@
 @import (reference) "../ksf-colors";
+@import (reference) "_grid";
+
+@article-side-margin: 100px;
 
 .mosaico-article {
   grid-area: article;
@@ -14,16 +17,20 @@
       "body";
   }
   @media (min-width: @breakpoint-3col) {
-    grid-template-columns: 100px 1fr 100px;
+    grid-template-columns: @mosaico-grid-columns;
     grid-template-areas:
-      ".     head  ."
-      "image image image"
-      ".     body  body";
+      ". head  head  head  ."
+      ". image image image ."
+      ". body  body  body  .";
   }
 
   header {
     grid-area: head;
     margin-bottom: 15px;
+    @media (min-width: @breakpoint-3col) {
+      margin-left: @article-side-margin;
+      margin-right: @article-side-margin;
+    }
   }
   &__main-image {
     grid-area: image;
@@ -63,6 +70,9 @@
 
   &__main {
     grid-area: body;
+    @media (min-width: @breakpoint-3col) {
+      margin-left: @article-side-margin;
+    }
     @media (min-width: @breakpoint-2col) {
       display: grid;
       grid-template-areas:
