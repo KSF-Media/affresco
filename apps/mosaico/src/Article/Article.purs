@@ -45,7 +45,7 @@ getTitle = either _.title _.article.title
 getMainImage :: Either ArticleStub FullArticle -> Maybe Image
 getMainImage = either _.mainImage _.article.mainImage
 
-getPreamble :: Either ArticleStub FullArticle -> Maybe String
+getPreamble :: Either ArticleStub FullArticle -> Array String
 getPreamble = either _.preamble _.article.preamble
 
 getBody :: Either ArticleStub FullArticle -> Array BodyElement
@@ -97,7 +97,7 @@ render imageComponent props =
                 }
             , DOM.section
                 { className: "mosaico-article__preamble"
-                , children: [ DOM.text $ fromMaybe mempty $ getPreamble props.article ]
+                , children: map (DOM.p_ <<< pure <<< DOM.text) $ getPreamble props.article
                 }
             -- We don't want to be able to share error articles
             , guard (maybe true ((_ /= ErrorArticle) <<< _.articleType) $ hush props.article)
@@ -178,16 +178,23 @@ render imageComponent props =
             [ DOM.div
                 { className: "mosaico-article__authors-and-timestamps"
                 , children:
-                    [ foldMap
-                        (\authorName -> DOM.div
+                    map
+                        (\author -> DOM.div
                           { className: "mosaico-article__author"
                           , children: [ guard (article.articleType == Opinion) $
                                         renderOpinionType article.articleTypeDetails
-                                      , DOM.text authorName
+                                      , DOM.span_ [ DOM.text author.byline ]
+                                      , foldMap
+                                        (\authorEmail -> DOM.span
+                                                        { className: "mosaico-article__author-email"
+                                                        , children: [ DOM.text authorEmail ]
+                                                        }
+                                        )
+                                        author.email
                                       ]
                           })
-                        (_.byline <$> article.authors)
-                    , foldMap
+                        article.authors
+                    <> [foldMap
                         (\(LocalDateTime publishingTime) -> DOM.div
                           { className: "mosaico-article__timestamps"
                           , children:
