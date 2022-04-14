@@ -67,23 +67,23 @@ module.exports.runBuild = function () {
       // The esbuild generated files are named like "index-EDGJWUC6.js"
       const assetRegex = new RegExp(asset[0] + "-\\w+\\." + asset[1]);
       const assetPath = outfiles.reduce((acc, fileName) => {
-	const matchingPath = fileName.match(assetRegex);
-	return matchingPath ? matchingPath[0] : acc;
+        const matchingPath = fileName.match(assetRegex);
+        return matchingPath ? matchingPath[0] : acc;
       }, null);
 
       const publicUrl = process.env.PUBLIC_URL || "";
       if (src) {
-	template(elem).attr("src", publicUrl + "/assets/" + assetPath);
+        template(elem).attr("src", publicUrl + "/assets/" + assetPath);
       } else if (href) {
-	template(elem).attr("href", publicUrl + "/assets/" + assetPath);
+        template(elem).attr("href", publicUrl + "/assets/" + assetPath);
       }
     });
     exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/", (err, stdout, stderr) => {
       if (err) {
-	console.log("Error when creating dirs and stuff: ", err);
+        console.log("Error when creating dirs and stuff: ", err);
       }
       fs.writeFile("./dist/index.html", template.html(), () => {
-	console.log("Wrote index.html");
+        console.log("Wrote index.html");
       });
     });
   });
