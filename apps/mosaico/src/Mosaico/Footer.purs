@@ -261,7 +261,7 @@ section title children =
   DOM.p
     { className: "mosaico-footer__contact-info__section"
     , children:
-        [ DOM.b { children: [ DOM.text title ] }
+        [ DOM.b { children: [ DOM.text title, DOM.text " " ] }
         , DOM.div { children: children }
         ]
     }
