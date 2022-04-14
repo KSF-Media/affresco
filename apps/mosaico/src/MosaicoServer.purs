@@ -77,7 +77,7 @@ render router props = DOM.div_
                            }
            , Header.mainSeparator
            , props.mainContent.content
-           , footer mempty
+           , footer mosaicoPaper mempty
            , case props.mainContent.type of
                  FrontpageContent -> aside
                  TagListContent _ -> aside
