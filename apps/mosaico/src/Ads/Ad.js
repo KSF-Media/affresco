@@ -44,4 +44,8 @@ exports.getIsLazy = function (contentUnit) {
   } catch (err) {
     return null;
   }
-};
+}
+
+exports.showConsentRevocationMessage = function () {
+  window.googlefc && window.googlefc.showRevocationMessage();
+}
