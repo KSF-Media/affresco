@@ -72,3 +72,8 @@ exports.setAttribsImpl = (node, attribs) => {
     if (node)
       node.attribs = attribs;
 }
+
+exports.setAttribImpl = (node, name, value) => {
+    if (node)
+        node.attribs[name] = value;
+}
