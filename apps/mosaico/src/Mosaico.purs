@@ -571,7 +571,7 @@ render setState state components router onPaywallEvent =
               , Header.mainSeparator
               , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
-              , footer onStaticPageClick
+              , footer mosaicoPaper onStaticPageClick
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
