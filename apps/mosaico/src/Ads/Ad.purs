@@ -18,6 +18,7 @@ import React.Basic.DOM as DOM
 foreign import fetchAdImpl :: EffectFn1 String Unit
 foreign import getGamId :: EffectFn1 String (Nullable String)
 foreign import getIsLazy :: EffectFn1 String (Nullable Boolean)
+foreign import showConsentRevocationMessage :: forall a. EffectFn1 a Unit
 
 component :: React.Component Props
 component = React.createComponent "ad"
@@ -63,3 +64,6 @@ ad = make component
             ]
           }
       render _ = mempty
+
+openConsentRevocationMessage :: forall a. a -> Effect Unit
+openConsentRevocationMessage = runEffectFn1 showConsentRevocationMessage
