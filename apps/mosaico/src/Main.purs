@@ -282,7 +282,7 @@ renderArticle
   -> Array ArticleStub
   -> Array ArticleStub
   -> Aff (Response ResponseBody)
-renderArticle env article mostReadArticles latestArticles = do
+renderArticle env fullArticle mostReadArticles latestArticles = do
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
   case fullArticle of
@@ -299,6 +299,7 @@ renderArticle env article mostReadArticles latestArticles = do
                   { paper: mosaicoPaper
                   , article: Right a
                   , onLogin: mempty
+                  , user: Nothing
                   , onPaywallEvent: pure unit
                   , onTagClick: const mempty
                   , onArticleClick: const mempty
@@ -629,9 +630,7 @@ debugList env { params: { uuid } } = do
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category} } -> Aff (Response ResponseBody)
 categoryPage env { guards: { category} } = do
   let (Category { label }) = category
-  prerendered <- case Nothing of
-    Nothing -> Cache.readCategoryRender env.cache label
-    Just _ -> pure Nothing
+  prerendered <- Cache.readCategoryRender env.cache label
   case prerendered of
     Just content -> do
       now <- liftEffect nowDateTime
