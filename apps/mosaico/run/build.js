@@ -11,24 +11,9 @@ const template = cheerio.load(fs.readFileSync(templateFile, "utf8"));
 
 console.log("Bundling javascript...");
 
-// When developing, run build on file change
-const watch = process.argv.includes("dev") ? true : false;
-
-// Refer to assets according to PUBLIC_URL env var
-// This will replace src or href of script and link tags
-template(".mosaico-asset").each((ix, elem) => {
-  const src = template(elem).attr("src");
-  const href = template(elem).attr("href");
-  const publicUrl = process.env.PUBLIC_URL || "";
-  if (src) {
-    template(elem).attr("src", publicUrl + "/assets/" + src);
-  } else if (href) {
-    template(elem).attr("href", publicUrl + "/assets/" + href);
-  }
-});
-
 const buildOpts = {
   entryPoints: ["./web/index.js", "./web/ads.js"],
+  entryNames: "[name]-[hash]",
   bundle: true,
   outdir: "./dist/assets",
   minify: true,
@@ -62,17 +47,48 @@ const buildOpts = {
     "process.env.JANRAIN_XD_RECEIVER_PATH": '"' + process.env.JANRAIN_XD_RECEIVER + '"',
   },
   treeShaking: true,
-  watch: watch,
+  watch: process.argv.includes("dev") ? true : false, // When developing, run build on file change
 };
 
 esbuild.build(buildOpts);
 
-exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/", (err, stdout, stderr) => {
-  if (err) {
-    console.log("Error when creating dirs and stuff: ", err);
-  }
-  fs.writeFile("./dist/index.html", template.html(), () => {
-    console.log("Wrote index.html");
-    console.log(template.html());
+let buildToMemoryOpts = Object.assign({}, buildOpts);
+buildToMemoryOpts.write = false;
+console.log(buildToMemoryOpts);
+esbuild.build(buildToMemoryOpts).then((result) => {
+  // Refer to assets according to PUBLIC_URL env var
+  // This will replace src or href of script and link tags
+  let outfiles = result.outputFiles.map((x) => x.path);
+
+  template(".mosaico-asset").each((ix, elem) => {
+    const src = template(elem).attr("src");
+    const href = template(elem).attr("href");
+
+    const assetName = src || href;
+    const asset = assetName.split(".");
+
+    // Makes a regex e.g. "/index-\w+\.js/"
+    // The esbuild generated files are named like "index-EDGJWUC6.js"
+    const assetRegex = new RegExp(asset[0] + "-\\w+\\." + asset[1]);
+    const assetPath = outfiles.reduce((acc, fileName) => {
+      const matchingPath = fileName.match(assetRegex);
+      return matchingPath ? matchingPath[0] : acc;
+    }, null);
+
+    const publicUrl = process.env.PUBLIC_URL || "";
+    if (src) {
+      template(elem).attr("src", publicUrl + "/assets/" + assetPath);
+    } else if (href) {
+      template(elem).attr("href", publicUrl + "/assets/" + assetPath);
+    }
+  });
+  exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/", (err, stdout, stderr) => {
+    if (err) {
+      console.log("Error when creating dirs and stuff: ", err);
+    }
+    fs.writeFile("./dist/index.html", template.html(), () => {
+      console.log("Wrote index.html");
+      console.log(template.html());
+    });
   });
 });
