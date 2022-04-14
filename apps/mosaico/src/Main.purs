@@ -430,7 +430,8 @@ renderFrontpage env credentials = do
       { type: HtmlFrontpageContent
       , content: Frontpage.render $ Frontpage.Prerendered
           { content: Just html
-          , hooks: [ Frontpage.MostRead mostReadArticles (const mempty)
+          , hooks: [ Frontpage.RemoveTooltips
+                   , Frontpage.MostRead mostReadArticles (const mempty)
                    , Frontpage.Latest latestArticles (const mempty)
                    , Frontpage.ArticleUrltoRelative
                    ]
