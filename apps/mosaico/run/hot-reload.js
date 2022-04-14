@@ -1,10 +1,15 @@
 const { exec } = require("child_process");
 var bs = require("browser-sync").create();
+var build = require("./build");
 bs.watch("dist/assets/*").on("change", bs.reload);
 
 bs.watch("static/*").on("change", () => {
   exec("cp ./static/* ./dist/assets/");
   bs.reload();
+});
+
+bs.watch("./web/*").on("change", () => {
+  build.runBuild();
 });
 
 function redirToRoot(req, res, next) {
