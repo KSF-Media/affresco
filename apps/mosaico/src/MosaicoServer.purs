@@ -66,7 +66,7 @@ render router props = DOM.div_
        , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
-           , Header.render { router
+           , Header.header { router
                            , categoryStructure: props.categoryStructure
                            , catMap: categoriesMap props.categoryStructure
                            , onCategoryClick: const mempty

@@ -581,7 +581,7 @@ render setState state components router onPaywallEvent =
           , id: Paper.toString mosaicoPaper
           , children:
               [ Header.topLine
-              , Header.render
+              , Header.header
                   { router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
