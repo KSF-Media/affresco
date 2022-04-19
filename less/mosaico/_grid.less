@@ -21,7 +21,9 @@
 
   @media (min-width: @breakpoint-3col) {
     max-width: 100%;
-    grid-template-rows: auto 85px auto minmax(0, 60px) auto auto 500px;
+    // 1fr used to push footer to bottom of page on short pages (AKA sticky footer)
+    // Works in conjunction with _sticky-footer.less styles
+    grid-template-rows: auto 85px auto minmax(0, 60px) auto 1fr 500px;
     // don't use repeat, causes error
     grid-template-columns: @mosaico-grid-columns;
     grid-template-areas:
