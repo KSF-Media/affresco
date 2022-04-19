@@ -23,7 +23,7 @@
     <script>
       window.googletag = window.googletag || { cmd: [] };
       googletag.cmd.push(function () {
-	googletag.pubads().set("page_url", "https://www.hbl.fi/");
+        googletag.pubads().set("page_url", "https://www.hbl.fi/");
       });
     </script>
 
@@ -32,32 +32,32 @@
     <script async src="https://apps-cdn.relevant-digital.com/static/tags/61bc52c2df5a45f309c9e2bb.js"></script>
     <script>
       function loadAds(noSlotReload) {
-	window.relevantDigital = window.relevantDigital || {};
-	relevantDigital.cmd = relevantDigital.cmd || [];
-	relevantDigital.cmd.push(function () {
-	  relevantDigital.loadPrebid({
-	    configId: "62051785053382a8f839eee5",
-	    manageAdserver: true,
-	    collapseEmptyDivs: true,
-	    collapseBeforeAdFetch: false,
-	    allowedDivIds: null, // set to an array to only load certain <div>s, example - ["divId1", "divId2"]
-	    noSlotReload: noSlotReload, // set true to only load ad slots that have never been loaded
-	  });
-	});
+        window.relevantDigital = window.relevantDigital || {};
+        relevantDigital.cmd = relevantDigital.cmd || [];
+        relevantDigital.cmd.push(function () {
+          relevantDigital.loadPrebid({
+            configId: "62051785053382a8f839eee5",
+            manageAdserver: true,
+            collapseEmptyDivs: true,
+            collapseBeforeAdFetch: false,
+            allowedDivIds: null, // set to an array to only load certain <div>s, example - ["divId1", "divId2"]
+            noSlotReload: noSlotReload, // set true to only load ad slots that have never been loaded
+          });
+        });
       }
       function lazyLoad() {
-	var needLoad;
-	Array.from(document.querySelectorAll("[data-lazy-ad-unit-id]")).forEach((div) => {
-	  const { top, bottom } = div.getBoundingClientRect();
-	  const CLOSE = 400;
-	  if (top > innerHeight + CLOSE || bottom < -CLOSE) {
-	    return;
-	  }
-	  div.setAttribute("data-ad-unit-id", div.getAttribute("data-lazy-ad-unit-id"));
-	  div.removeAttribute("data-lazy-ad-unit-id");
-	  needLoad = true;
-	});
-	return needLoad;
+        var needLoad;
+        Array.from(document.querySelectorAll("[data-lazy-ad-unit-id]")).forEach((div) => {
+          const { top, bottom } = div.getBoundingClientRect();
+          const CLOSE = 400;
+          if (top > innerHeight + CLOSE || bottom < -CLOSE) {
+            return;
+          }
+          div.setAttribute("data-ad-unit-id", div.getAttribute("data-lazy-ad-unit-id"));
+          div.removeAttribute("data-lazy-ad-unit-id");
+          needLoad = true;
+        });
+        return needLoad;
       }
     </script>
 
@@ -66,14 +66,14 @@
     <!-- Google Tag Manager -->
     <script>
       (function (w, d, s, l, i) {
-	w[l] = w[l] || [];
-	w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-	var f = d.getElementsByTagName(s)[0],
-	  j = d.createElement(s),
-	  dl = l != "dataLayer" ? "&l=" + l : "";
-	j.async = true;
-	j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-	f.parentNode.insertBefore(j, f);
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
       })(window, document, "script", "dataLayer", "GTM-KB4TVP");
     </script>
     <!-- End Google Tag Manager -->
