@@ -533,7 +533,7 @@ render setState state components router onPaywallEvent =
              })
 
     hooks :: Array Frontpage.Hook
-    hooks = [ Frontpage.MostRead state.mostReadArticles onClickHandler
+    hooks = [ Frontpage.RemoveTooltips, Frontpage.MostRead state.mostReadArticles onClickHandler
             , Frontpage.Latest state.latestArticles onClickHandler
             , Frontpage.ArticleUrltoRelative
             , Frontpage.Ad "Box Ad 1 DESKTOP" "mosaico-ad__firstbox"

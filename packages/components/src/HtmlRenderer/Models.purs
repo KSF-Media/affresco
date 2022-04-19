@@ -6,7 +6,7 @@ import Data.Function.Uncurried (Fn1, runFn1)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
-import Effect.Uncurried (EffectFn2, EffectFn3, mkEffectFn2, mkEffectFn3, runEffectFn2)
+import Effect.Uncurried (EffectFn2, EffectFn3, mkEffectFn2, mkEffectFn3, runEffectFn2, runEffectFn3)
 import React.Basic (JSX)
 
 -- | Represents a node object returned by html-to-react
@@ -44,6 +44,7 @@ foreign import setDataImpl    :: EffectFn2 Node String Unit
 foreign import setTypeImpl    :: EffectFn2 Node String Unit
 foreign import setNameImpl    :: EffectFn2 Node String Unit
 foreign import setAttribsImpl :: EffectFn2 Node JSHTMLAttributes Unit
+foreign import setAttribImpl  :: EffectFn3 Node String (Nullable String) Unit
 
 setRaw :: Node -> String -> Effect Unit
 setRaw = runEffectFn2 setRawImpl
@@ -60,6 +61,8 @@ setName = runEffectFn2 setNameImpl
 setAttribs :: Node -> HTMLAttributes -> Effect Unit
 setAttribs n as = runEffectFn2 setAttribsImpl n $ toJSHTMLAttributes as
 
+setAttrib :: Node -> String -> Maybe String -> Effect Unit
+setAttrib n name = runEffectFn3 setAttribImpl n name <<< toNullable
 
 -- | Utility to turn a hook into a generic one
 class ToGenericHook h where

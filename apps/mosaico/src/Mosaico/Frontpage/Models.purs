@@ -3,7 +3,7 @@ module Mosaico.Frontpage.Models where
 import Prelude
 
 import Data.Array (head)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.String (Pattern(..), contains, stripPrefix)
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
@@ -17,11 +17,13 @@ data Hook
   | Latest (Array ArticleStub) (ArticleStub -> EventHandler)
   | Ad String String
   | ArticleUrltoRelative
+  | RemoveTooltips
 
 toHookRep :: Hook -> HtmlRenderer.HookRep
 toHookRep (MostRead articles onClickHandler) = mostReadHook { articles, onClickHandler }
 toHookRep (Latest articles onClickHandler)   = latestHook { articles, onClickHandler }
 toHookRep ArticleUrltoRelative               = articleUrltoRelativeHook
+toHookRep RemoveTooltips                     = removeTooltipsHook
 toHookRep (Ad placeholderText targetId)      = adHook { placeholderText, targetId }
 
 mostReadHook
@@ -138,3 +140,11 @@ articleUrltoRelativeHook = HtmlRenderer.modifyingHook
   where
     hblUrlPrefix        = Pattern "https://www.hbl.fi"
     hblArticleUrlPrefix = Pattern "https://www.hbl.fi/artikel"
+
+removeTooltipsHook :: HtmlRenderer.HookRep
+removeTooltipsHook = HtmlRenderer.modifyingHook
+  { shouldProcessNode: maybe false (isJust <<< _.title) <<< HtmlRenderer.getAttribs
+  , processNode: \n _ -> do
+    HtmlRenderer.setAttrib n "title" Nothing
+    pure n
+  }
