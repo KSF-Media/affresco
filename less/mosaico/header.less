@@ -233,13 +233,7 @@
   }
 
   &__icon-button {
-    &--search {
-      align-items: center;
-      display: flex;
-      text-decoration: none;
-      color: black;
-    }
-    &--menu {
+    &--search, &--menu {
       align-items: center;
       display: flex;
       text-decoration: none;
@@ -259,6 +253,11 @@
     margin-right: 5px;
     &--menu {
       background-image: url("@{path-icons}/icon-mosaico-menu.svg");
+      .menu-open & {
+        background-image: url("@{path-icons}/icon-close-mosaico.svg");
+        background-size: 13px;
+        background-position: center;
+      }
     }
     &--search {
       background-image: url("@{path-icons}/icon-mosaico-search.svg");
