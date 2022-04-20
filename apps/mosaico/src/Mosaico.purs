@@ -455,7 +455,7 @@ render setState state components router onPaywallEvent =
                  | null tagFeed -> mosaicoDefaultLayout Error.notFoundWithAside
                _                -> frontpageNoHeader Nothing maybeFeed
        Routes.MenuPage ->
-         mosaicoLayoutNoAside
+         flip (mosaicoLayout "menu-open") false
          $ Menu.render
              { router
              , categoryStructure: state.categoryStructure
@@ -521,7 +521,7 @@ render setState state components router onPaywallEvent =
 
     prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
     prerenderedFrontpage maybeHeader content =
-      mosaicoLayout inner false
+      mosaicoLayout "" inner false
       where
         inner =
           (fromMaybe mempty maybeHeader) <>
@@ -545,16 +545,16 @@ render setState state components router onPaywallEvent =
             ]
 
     mosaicoDefaultLayout :: JSX -> JSX
-    mosaicoDefaultLayout content = mosaicoLayout content true
+    mosaicoDefaultLayout content = mosaicoLayout "" content true
 
     mosaicoLayoutNoAside :: JSX -> JSX
-    mosaicoLayoutNoAside content = mosaicoLayout content false
+    mosaicoLayoutNoAside content = mosaicoLayout "" content false
 
-    mosaicoLayout :: JSX -> Boolean -> JSX
-    mosaicoLayout content showAside = DOM.div_
+    mosaicoLayout :: String -> JSX -> Boolean -> JSX
+    mosaicoLayout extraClasses content showAside = DOM.div_
       [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
       , DOM.div
-          { className: "mosaico grid"
+          { className: "mosaico grid " <> extraClasses
           , id: Paper.toString mosaicoPaper
           , children:
               [ Header.topLine
