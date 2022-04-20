@@ -209,8 +209,7 @@ render props@{ onLogin, onLogout } = DOM.div
           }
 
         renderSeparator :: Maybe String -> JSX
-        renderSeparator modifierClass = mempty
-        --renderSeparator modifierClass = DOM.hr { className: unwords [ separatorClass, fromMaybe mempty modifierClass ] }
+        renderSeparator modifierClass = DOM.hr { className: unwords [ separatorClass, fromMaybe mempty modifierClass ] }
 
     headerBlock = "mosaico-header"
 
