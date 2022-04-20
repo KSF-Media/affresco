@@ -61,7 +61,7 @@ render props =
             , children:
                 [ DOM.ul_
                     [ DOM.li_
-                        [ DOM.a 
+                        [ DOM.a
                             { children: [ DOM.text "KUNDSERVICE" ]
                             , href: "/sida/kundservice"
                             , onClick: props.onStaticPageClick "kundservice"
@@ -100,7 +100,10 @@ render props =
                           { className: accountClass <> "-icon"
                           , children: [ DOM.span_ [] ]
                           }
-                      , DOM.span_ [ DOM.text name ]
+                      , DOM.span
+                          { className: "menu-label"
+                          , children: [ DOM.text name ]
+                          }
                       ]
                   , _data: Object.fromFoldable [Tuple "loggedin" "1"]
                   }
@@ -116,7 +119,10 @@ render props =
                 , DOM.div
                     { className: iconButtonClass <> " " <> menuButtonClass
                     , children: [ DOM.span { className: iconClass <> " " <> menuIconClass }
-                                , DOM.span_ [ DOM.text "MENY" ] 
+                                , DOM.span
+                                    { className: "menu-label"
+                                    , children: [ DOM.text "MENY" ]
+                                    }
                                 ]
                     , onClick: handler_ $
                         (\r -> do
@@ -152,7 +158,10 @@ render props =
     searchButton = DOM.a
                     { className: iconButtonClass <> " " <> searchButtonClass
                     , children: [ DOM.span { className: iconClass <> " " <> searchIconClass }
-                                , DOM.span_ [ DOM.text "SÖK" ]
+                                , DOM.span
+                                    { className: "menu-label"
+                                    , children: [ DOM.text "SÖK" ]
+                                    }
                                 ]
                     , href: "/sök"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sök"
