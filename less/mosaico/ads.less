@@ -24,7 +24,7 @@
     }
   }
 
-  &__digihekmob,
+  &__digihelmob,
   &__box {
     margin: 10px auto 20px;
   }
@@ -38,5 +38,8 @@
   }
   &__bigbox1 {
     margin: 0 auto;
+    @media (min-width: @breakpoint-3col) {
+      margin-left: -100px;
+    }
   }
 }
