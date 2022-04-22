@@ -76,8 +76,8 @@ window.adSlots = {
       isLazy: true
     },
     {
-      gamId: "DUBBELBOX",
-      sizes: [468,600],
+      gamId: "JATTEBOX",
+      sizes: [468,400],
       targetId: "mosaico-ad__bigbox2",
       isLazy: true
     },
@@ -164,8 +164,8 @@ window.adSlots = {
 
 window.googletag.cmd.push(function () {
 
-  googletag.pubads().setTargeting("Test", "mosaico_test");
-  // googletag.pubads().setTargeting("Newspaper", process.env.PAPER || "hbl");
+  // googletag.pubads().setTargeting("Test", "mosaico_test");
+  googletag.pubads().setTargeting("Newspaper", process.env.PAPER || "hbl");
 
   /* Ad slots to use */
   const networkCode = "/21664538223/";
