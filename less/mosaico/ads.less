@@ -38,8 +38,10 @@
   }
   &__bigbox1 {
     margin: 0 auto;
-    @media (min-width: @breakpoint-3col) {
-      margin-left: -100px;
+    article & {
+      @media (min-width: @breakpoint-3col) {
+        margin-left: -100px;
+      }
     }
   }
 }
