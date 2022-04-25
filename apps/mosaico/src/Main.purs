@@ -10,7 +10,7 @@ import Data.Argonaut.Encode (encodeJson)
 import Data.Array (find, foldl, fromFoldable, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
-import Data.Foldable (fold, foldM, foldMap)
+import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
 import Data.List (List, intercalate)
 import Data.Map as Map
@@ -43,6 +43,7 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, ArticleType(..), encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
+import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
 import Mosaico.Article.Image as Image
 import Mosaico.Cache (Stamped(..))
 import Mosaico.Cache as Cache
@@ -311,21 +312,24 @@ renderArticle env user fullArticle mostReadArticles latestArticles = do
   case fullArticle of
     Right a@{ article } -> do
       let articleJSX =
-            if article.articleType == Advertorial
-            then
-              Advertorial.Basic.render (Image.render mempty) { article }
-            else
-              Article.render (Image.render mempty)
-                { paper: mosaicoPaper
-                , article: Right a
-                , onLogin: mempty
-                , user: hush =<< user
-                , onPaywallEvent: pure unit
-                , onTagClick: const mempty
-                , onArticleClick: const mempty
-                , mostReadArticles
-                , latestArticles
-                }
+            case article.articleType of
+              Advertorial
+                | elem "Basic" article.categories
+                -> Advertorial.Basic.render (Image.render mempty) { article, imageProps: Nothing, advertorialClassName: Nothing }
+                | elem "Standard" article.categories -> Advertorial.Standard.render (Image.render mempty) { article }
+                | otherwise -> Advertorial.Standard.render (Image.render mempty) { article }
+              _ ->
+                Article.render (Image.render mempty)
+                  { paper: mosaicoPaper
+                  , article: Right a
+                  , onLogin: mempty
+                  , user: hush =<< user
+                  , onPaywallEvent: pure unit
+                  , onTagClick: const mempty
+                  , onArticleClick: const mempty
+                  , mostReadArticles
+                  , latestArticles
+                  }
           mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: { type: ArticleContent, content: articleJSX }
