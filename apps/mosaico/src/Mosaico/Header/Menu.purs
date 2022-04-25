@@ -4,11 +4,11 @@ import Prelude
 
 import Data.Array (catMaybes, foldl, intersperse, snoc)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
-import Data.Monoid (guard)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
 import Data.String (toUpper)
 import Data.String.Common (trim)
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Category(..), CategoryLabel)
 import React.Basic (JSX)
@@ -22,12 +22,14 @@ type Props =
   { router :: PushStateInterface
   , categoryStructure :: Array Category
   , onCategoryClick :: Category -> EventHandler
-  , user :: Maybe User
+    -- Nothing for loading state, Just Nothing for no user
+  , user :: Maybe (Maybe User)
   , onLogin :: EventHandler
   , onLogout :: EventHandler
   }
 
 data MenuLayoutElement = Section Section
+                       | Loading
                        | Separator (Maybe String)
                        -- ^ The String-typed parameter is the BEM modifier to apply to the separator
 
@@ -59,7 +61,23 @@ render props@{ onLogin, onLogout } = DOM.div
     menuLayout = [ upperBlock, separatorBlock, middleBlock, separatorBlock, bottomBlock ]
 
     upperBlock :: MenuBlock
-    upperBlock = topSections
+    upperBlock = topSections `snoc`
+                 case props.user of
+                   Nothing -> Loading
+                   Just (Just _) -> Section
+                                    { title: "LOGGA UT"
+                                    , subsections: []
+                                    , url: ""
+                                    , onClick: onLogout
+                                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
+                                    }
+                   Just Nothing ->  Section
+                                    { title: "LOGGA IN"
+                                    , subsections: []
+                                    , url: ""
+                                    , onClick: onLogin
+                                    , iconClass: mempty
+                                    }
 
     middleBlock :: MenuBlock
     middleBlock = (intersperse mobileOnlySeparator) $ foldl mkSection [] props.categoryStructure
@@ -95,22 +113,6 @@ render props@{ onLogin, onLogout } = DOM.div
                     , url: "/sida/kundservice"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sida/kundservice"
                     , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
-                    }
-                  , props.user *>
-                    Just
-                    { title: "LOGGA UT"
-                    , subsections: []
-                    , url: ""
-                    , onClick: onLogout
-                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
-                    }
-                  , guard (isNothing props.user) $
-                    Just
-                    { title: "LOGGA IN"
-                    , subsections: []
-                    , url: ""
-                    , onClick: onLogin
-                    , iconClass: mempty
                     }
                   ]
 
@@ -167,6 +169,15 @@ render props@{ onLogin, onLogout } = DOM.div
           }
 
         renderMenuLayoutElement :: MenuLayoutElement -> JSX
+        renderMenuLayoutElement Loading = DOM.div
+          { className: unwords [ sectionClass ]
+          , children:
+              [ DOM.div
+                  { className : sectionHeaderClass
+                  , children: [ loadingSpinner ]
+                  }
+              ]
+          }
         renderMenuLayoutElement (Section section) = renderSection section
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 

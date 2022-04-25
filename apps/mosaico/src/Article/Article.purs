@@ -6,7 +6,7 @@ import Bottega.Models.Order (OrderSource(..))
 import Data.Array (cons, head, insertAt, length, null, snoc, take, (!!))
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
 import Data.Set as Set
@@ -61,7 +61,7 @@ type Props =
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
-  , user :: Maybe User
+  , user :: Maybe (Maybe User)
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   }
@@ -140,7 +140,7 @@ render imageComponent props =
                           Right PreviewArticle ->
                             paywallFade
                             `cons` bodyWithAd
-                            `snoc` vetrina
+                            `snoc` (if isNothing props.user then loadingSpinner else vetrina)
                             `snoc` mostRead
                           Right DraftArticle ->
                             bodyWithoutAd
@@ -234,7 +234,7 @@ render imageComponent props =
       Vetrina.vetrina
         { onClose: Just props.onPaywallEvent
         , onLogin: props.onLogin
-        , user: props.user
+        , user: join props.user
         , products: Right case props.paper of
             HBL -> [ hblPremium ]
             ON -> [ onPremium ]

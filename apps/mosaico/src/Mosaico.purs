@@ -2,7 +2,7 @@ module Mosaico where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, stringify)
+import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (fromFoldable, mapMaybe, null)
 import Data.DateTime (DateTime)
@@ -17,7 +17,7 @@ import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Set (Set)
-import Data.Time.Duration (Minutes(..))
+import Data.Time.Duration (Minutes(..), Milliseconds(..))
 import Data.Tuple (Tuple)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -26,9 +26,9 @@ import Effect.Aff as Aff
 import Effect.Aff.AVar as Aff.AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Exception as Exception
 import Effect.Now as Now
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
 import KSF.Spinner (loadingSpinner)
@@ -61,7 +61,6 @@ import Mosaico.Routes as Routes
 import Mosaico.Search as Search
 import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage, getInitialStaticPageContent, getInitialStaticPageScript)
 import Mosaico.Webview as Webview
-import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
@@ -86,7 +85,7 @@ type State =
   , prevRoute :: Maybe Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
-  , user :: Maybe User
+  , user :: Maybe (Maybe User)
   , entitlements :: Maybe (Set String)
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
@@ -114,8 +113,6 @@ type Props =
   , staticPageName :: Maybe String
   , categoryStructure :: Array Category
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
-  , user :: Maybe User
-  , entitlements :: Maybe (Set String)
   }
 
 type JSProps =
@@ -126,8 +123,6 @@ type JSProps =
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
   , initialFrontpageFeed :: Nullable JSInitialFeed
-  , user :: Nullable Json
-  , entitlements :: Nullable Json
   }
 
 app :: Component Props
@@ -159,8 +154,8 @@ mosaicoComponent initialValues props = React.do
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
-                         , user = props.user
-                         , entitlements = props.entitlements
+                         , user = Nothing
+                         , entitlements = Nothing
                          , ssrPreview = true
                          }
 
@@ -175,7 +170,7 @@ mosaicoComponent initialValues props = React.do
               Right a@{ article } -> do
                 liftEffect $ setTitle article.title
                 Article.evalEmbeds article
-                sendArticleAnalytics article state.user
+                sendArticleAnalytics article $ join state.user
                 setState _
                   { article = Just $ Right a
                   , showAds = not article.removeAds && not (article.articleType == Advertorial)
@@ -186,10 +181,21 @@ mosaicoComponent initialValues props = React.do
                 setState _ { article = Just $ Left unit }
 
   useEffectOnce do
+    withLoginLock <- (\l -> Aff.bracket (Aff.AVar.put unit l)
+                            (const $ Aff.AVar.take l) <<< const) <$> AVar.empty
+    alreadySentInitialAnalytics <- AVar.new false
+    let initialSendAnalytics = case props.article of
+          Just a -> sendArticleAnalytics a.article
+          Nothing -> const $ pure unit
+    giveUpLogin <- Aff.killFiber (Exception.error "give up login") <$> Aff.launchAff do
+      Aff.delay $ Milliseconds 2000.0
+      withLoginLock do
+        liftEffect $ setState _ { user = Just Nothing }
+        liftEffect $ initialSendAnalytics Nothing
+        _ <- Aff.AVar.take alreadySentInitialAnalytics
+        Aff.AVar.put true alreadySentInitialAnalytics
+
     foldMap (Article.evalEmbeds <<< _.article) props.article
-    case props.article of
-      Just a -> sendArticleAnalytics a.article props.user
-      Nothing -> pure unit
     Aff.launchAff_ do
       when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
@@ -203,11 +209,13 @@ mosaicoComponent initialValues props = React.do
         -- Listen for route changes and set state accordingly
         void $ locations (routeListener catMap setState) initialValues.nav
       when (Map.isEmpty initialCatMap) $ Aff.AVar.put catMap initialValues.catMap
-      when (isNothing props.user) $
-        magicLogin Nothing $ \u -> case u of
-          Right user -> setState _ { user = Just user }
-          _ -> pure unit
-    pure mempty
+      -- magicLogin doesn't actually call the callback if it fails
+      magicLogin Nothing $ hush >>> \u -> Aff.launchAff_ $ withLoginLock do
+        giveUpLogin
+        liftEffect $ setState _ { user = Just u }
+        alreadySent <- Aff.AVar.take alreadySentInitialAnalytics
+        when (not alreadySent) $ liftEffect $ initialSendAnalytics u
+    pure $ Aff.launchAff_ giveUpLogin
 
   let loadFeed feedName = do
         -- In SPA mode, this may be called before catMap has been
@@ -242,7 +250,7 @@ mosaicoComponent initialValues props = React.do
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
 
-  useEffect (state.route /\ map _.cusno state.user) do
+  useEffect (state.route /\ map _.cusno (join state.user)) do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
@@ -400,13 +408,7 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
-      -- User comes directly from the server, which uses the same
-      -- version of User.  User is alreay quite close to native
-      -- JavaScript representation, which should make raw conversion
-      -- to and from possible.
-      user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
-      entitlements = foldMap (hush <<< decodeJson) $ toMaybe jsProps.entitlements
-  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, user, entitlements }
+  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -422,7 +424,7 @@ render setState state components router onPaywallEvent =
         { onUserFetch: \user ->
            case user of
              Right u -> do
-               setState _ { modalView = Nothing, user = Just u }
+               setState _ { modalView = Nothing, user = Just $ Just u }
                onPaywallEvent
              Left _err -> do
                onPaywallEvent
@@ -666,7 +668,7 @@ render setState state components router onPaywallEvent =
 
     onLogout = capture_ do
       Aff.launchAff_ $ logout $ const $ pure unit
-      setState _ { user = Nothing }
+      setState _ { user = Just Nothing }
       onPaywallEvent
 
     -- Search is done via the router

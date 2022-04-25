@@ -5,13 +5,14 @@ import Prelude
 import Data.Array (head, splitAt)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe, fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
 import KSF.Paper (toString)
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
 import Mosaico.Paper (mosaicoPaper)
@@ -32,7 +33,8 @@ type Props =
   , onLogin :: EventHandler
   , onProfile :: EventHandler
   , onStaticPageClick :: String -> EventHandler
-  , user :: Maybe User
+    -- Nothing for loading state, Just Nothing for no user
+  , user :: Maybe (Maybe User)
   }
 
 render :: Props -> JSX
@@ -82,29 +84,7 @@ render props =
             { className: block <> "__logo"
             , onClick: foldMap props.onCategoryClick frontpageCategory
             }
-        , maybe
-            (DOM.div
-               { children: [ DOM.text "LOGGA IN" ]
-               , onClick: props.onLogin
-               , className: accountClass <> " " <> accountClass <> "--active"
-               , _data: Object.fromFoldable [Tuple "login" "1"]
-               }
-            )
-            (\name ->
-                DOM.a
-                  { className: accountClass
-                  , onClick: props.onProfile
-                  , href: "/konto"
-                  , children:
-                      [ DOM.span
-                          { className: accountClass <> "-icon"
-                          , children: [ DOM.span_ [] ]
-                          }
-                      , DOM.span_ [ DOM.text name ]
-                      ]
-                  , _data: Object.fromFoldable [Tuple "loggedin" "1"]
-                  }
-            ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
+        , renderLoginLink props.user
         , DOM.nav
             { className: block <> "__center-links"
             , children: map mkCategory headerCategories
@@ -175,6 +155,34 @@ render props =
     iconClass = block <> iconElement
     searchIconClass = iconClass <> searchModifier
     menuIconClass = iconClass <> menuModifier
+
+    renderLoginLink Nothing =
+      loadingSpinner
+    renderLoginLink (Just user) =
+      maybe
+        (DOM.div
+          { children: [ DOM.text "LOGGA IN" ]
+          , onClick: props.onLogin
+          , className: accountClass <> " " <> accountClass <> "--active"
+          , _data: Object.fromFoldable [Tuple "login" "1"]
+          }
+        )
+        (\name ->
+            DOM.a
+              { className: accountClass
+              , onClick: props.onProfile
+              , href: "/konto"
+              , children:
+                  [ DOM.span
+                      { className: accountClass <> "-icon"
+                      , children: [ DOM.span_ [] ]
+                      }
+                  , DOM.span_ [ DOM.text name ]
+                  ]
+              , _data: Object.fromFoldable [Tuple "loggedin" "1"]
+              }
+        ) $ (\u -> fromMaybe "INLOGGAD" $ toMaybe u.firstName) <$> user
+
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX
