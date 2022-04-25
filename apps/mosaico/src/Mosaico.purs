@@ -437,8 +437,8 @@ render setState state components router onPaywallEvent =
                  | elem "Standard" article.categories
                  -> Advertorial.Standard.render components.imageComponent { article }
                  -- In a case we can't match the category of an advertorial article
-                 -- let's show it as a "Standard" advertorial, rather than a regular article
-                 | otherwise -> Advertorial.Standard.render components.imageComponent { article }
+                 -- let's show it as a "Basic" advertorial, rather than a regular article
+                 | otherwise -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                _ -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
