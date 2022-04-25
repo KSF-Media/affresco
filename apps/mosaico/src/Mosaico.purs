@@ -241,7 +241,7 @@ mosaicoComponent initialValues props = React.do
       Routes.SearchPage Nothing -> pure unit
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
       -- Always uses server side provided article
-      Routes.DraftPage -> pure unit
+      Routes.DraftPage -> setState _  { showAds = false }
       Routes.ProfilePage -> pure unit
       Routes.ArticlePage articleId
         | Just article <- map _.article (join $ map hush $ state.article)
@@ -419,7 +419,9 @@ render setState state components router onPaywallEvent =
         , onClose: setState \s -> s { modalView = Nothing }
         }
     _ -> mempty
-  <> case state.route of
+  <> renderRouteContent state.route
+  where
+    renderRouteContent = case _ of
        Routes.CategoryPage category -> renderCategory category
        Routes.ArticlePage articleId
          | Just (Right fullArticle@{ article }) <- state.article -> mosaicoLayoutNoAside $
@@ -478,8 +480,11 @@ render setState state components router onPaywallEvent =
              , onLogout
              , onStaticPageClick
              }
-       Routes.DraftPage -> mosaicoLayoutNoAside
-         $ renderArticle $ maybe (Right notFoundArticle) Right $ join <<< map hush $ state.article
+       Routes.DraftPage ->
+         maybe
+           (mosaicoLayoutNoAside $ renderArticle $ Right notFoundArticle)
+           (renderRouteContent <<< Routes.ArticlePage <<< _.uuid <<< _.article)
+           $ join <<< map hush $ state.article
        Routes.StaticPage _ -> mosaicoLayoutNoAside $ case state.staticPage of
          Nothing -> DOM.text "laddar"
          Just (StaticPageResponse page)  ->
@@ -489,7 +494,6 @@ render setState state components router onPaywallEvent =
        Routes.DebugPage _ -> frontpageNoHeader Nothing $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
        -- NOTE: This should not ever happen, as we always "redirect" to Frontpage route from DeployPreview
        Routes.DeployPreview -> renderFrontpage
-  where
     renderFrontpage = maybe mempty renderCategory $ Map.lookup frontpageCategoryLabel state.catMap
 
     renderCategory :: Category -> JSX
