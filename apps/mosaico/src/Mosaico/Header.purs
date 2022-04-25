@@ -11,7 +11,7 @@ import Data.Array (head, splitAt)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
 import Data.Int (ceil)
-import Data.Maybe (Maybe, fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
@@ -19,6 +19,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Foreign.Object as Object
 import KSF.Paper (toString)
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
 import Mosaico.Paper (mosaicoPaper)
@@ -44,7 +45,8 @@ type Props
     , onLogin :: EventHandler
     , onProfile :: EventHandler
     , onStaticPageClick :: String -> EventHandler
-    , user :: Maybe User
+    -- Nothing for loading state, Just Nothing for no user
+    , user :: Maybe (Maybe User)
     }
 
 component :: React.Component Props
@@ -120,41 +122,7 @@ render scrollPosition props =
                     , href: "/"
                     , onClick: foldMap props.onCategoryClick frontpageCategory
                     }
-                , maybe
-                    (DOM.div
-                    { children:
-                            [ DOM.span
-                                { className: accountClass <> "-icon"
-                                , children: [ DOM.span_ [] ]
-                                }
-                            , DOM.span
-                                { className: "menu-label"
-                                , children: [ DOM.text "LOGGA IN" ]
-                                }
-                            ]
-                    , onClick: props.onLogin
-                    , className: accountClass <> " " <> accountClass <> "--active"
-                    , _data: Object.fromFoldable [Tuple "login" "1"]
-                    }
-                    )
-                    (\name ->
-                        DOM.a
-                        { className: accountClass
-                        , onClick: props.onProfile
-                        , href: "/konto"
-                        , children:
-                            [ DOM.span
-                                { className: accountClass <> "-icon"
-                                , children: [ DOM.span_ [] ]
-                                }
-                            , DOM.span
-                                { className: "menu-label"
-                                , children: [ DOM.text name ]
-                                }
-                            ]
-                        , _data: Object.fromFoldable [Tuple "loggedin" "1"]
-                        }
-                    ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
+                , renderLoginLink props.user
                 , DOM.nav
                     { className: block <> "__center-links"
                     , children: map mkCategory headerCategories
@@ -237,6 +205,43 @@ render scrollPosition props =
     iconClass = block <> iconElement
     searchIconClass = iconClass <> searchModifier
     menuIconClass = iconClass <> menuModifier
+
+    renderLoginLink Nothing =
+      loadingSpinner
+    renderLoginLink (Just Nothing) =
+      DOM.div
+         { children:
+             [ DOM.span
+                 { className: accountClass <> "-icon"
+                 , children: [ DOM.span_ [] ]
+                 }
+             , DOM.span
+                 { children: [ DOM.text "LOGGA IN" ]
+                 , onClick: props.onLogin
+                 }
+             ]
+         , onClick: props.onLogin
+         , className: accountClass <> " " <> accountClass <> "--active"
+         , _data: Object.fromFoldable [Tuple "login" "1"]
+         }
+    renderLoginLink (Just (Just user)) =
+      let name = fromMaybe "INLOGGAD" $ toMaybe user.firstName
+      in DOM.a
+           { className: accountClass
+           , onClick: props.onProfile
+           , href: "/konto"
+           , children:
+               [ DOM.span
+                   { className: accountClass <> "-icon"
+                   , children: [ DOM.span_ [] ]
+                   }
+               , DOM.span
+                   { className: "menu-label"
+                   , children: [ DOM.text name ]
+                   }
+               ]
+           , _data: Object.fromFoldable [Tuple "loggedin" "1"]
+           }
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX
