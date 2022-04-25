@@ -5,12 +5,14 @@
   display: flex;
   background: #fff4e6;
   min-height: 100%;
-  margin-right: -@page-margin;
-  margin-left: -@page-margin;
   grid-row-start: 3;
   grid-column: 1;
   min-height: 60px;
   margin-top: @separator-height;
+  @media (max-width: @breakpoint-3col) {
+    margin-right: calc(-@page-margin / 2);
+    margin-left: -@page-margin;
+  }
   @media (min-width: @breakpoint-3col) {
     display: grid;
     height: 100%;

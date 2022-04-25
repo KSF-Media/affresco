@@ -8,7 +8,7 @@ import Data.Array (fromFoldable, mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
-import Data.Foldable (fold, foldMap)
+import Data.Foldable (fold, foldMap, elem)
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Data.Map as Map
@@ -38,8 +38,10 @@ import Lettera as Lettera
 import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
+import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
 import Mosaico.Analytics (sendArticleAnalytics)
 import Mosaico.Article as Article
+import Mosaico.Article.Image as Image
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -100,8 +102,8 @@ type Components =
   , searchComponent :: Search.Props -> JSX
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
-  , advertorialComponent :: Advertorial.Basic.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
+  , imageComponent :: Image.Props -> JSX
   }
 
 type Props =
@@ -338,8 +340,8 @@ getInitialValues = do
   searchComponent     <- Search.searchComponent
   webviewComponent    <- Webview.webviewComponent
   articleComponent    <- Article.component
-  advertorialComponent <- Advertorial.Basic.component
   epaperComponent     <- Epaper.component
+  imageComponent      <- Image.component
   pure
     { state:
         { article: Nothing
@@ -362,8 +364,8 @@ getInitialValues = do
         , searchComponent
         , webviewComponent
         , articleComponent
-        , advertorialComponent
         , epaperComponent
+        , imageComponent
         }
     , catMap
     , nav
@@ -426,11 +428,18 @@ render setState state components router onPaywallEvent =
        Routes.ArticlePage articleId
          | Just (Right fullArticle@{ article }) <- state.article -> mosaicoLayoutNoAside $
            if article.uuid == articleId
-           -- If we have this article already in `state`, let's pass that to `renderArticle`
+           -- If we have this article already in `state`, let's render it
            then
-             if article.articleType == Advertorial
-             then components.advertorialComponent { article }
-             else renderArticle (Right fullArticle)
+             case article.articleType of
+               Advertorial
+                 | elem "Basic" article.categories
+                 -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
+                 | elem "Standard" article.categories
+                 -> Advertorial.Standard.render components.imageComponent { article }
+                 -- In a case we can't match the category of an advertorial article
+                 -- let's show it as a "Standard" advertorial, rather than a regular article
+                 | otherwise -> Advertorial.Standard.render components.imageComponent { article }
+               _ -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
          | Nothing <- state.article -> mosaicoLayoutNoAside loadingSpinner
