@@ -18,7 +18,7 @@
       text-decoration: none;
       color: @dark-text;
       @media (max-width: @breakpoint-2col) {
-	margin: 5px auto 5px auto;
+        margin: 5px auto 5px auto;
       }
       font: 400 14px Roboto, sans-serif;
     }
@@ -128,5 +128,45 @@
     font: 400 12px "Roboto", sans-serif;
     color: @grey-mediumlight;
     white-space: nowrap;
+  }
+
+  &__contact-info {
+    &__columns {
+      display: flex;
+      flex-direction: row;
+      font: 400 14px "Roboto", sans-serif;
+      color: @grey-mediumdark;
+
+      a {
+        color: @link;
+        text-decoration: none;
+      }
+    }
+    @media (max-width: @breakpoint-2col) {
+      &__columns {
+        display: inline;
+        b,
+        div {
+          display: inline;
+        }
+      }
+    }
+    &__column {
+      max-width: 300px;
+    }
+    &__section {
+      margin-top: 14px;
+      margin-bottom: 7px;
+      padding-left: 5px;
+      padding-right: 5px;
+
+      b {
+        font: 900 14px "Roboto", sans-serif;
+      }
+      a {
+        color: @link;
+        text-decoration: none;
+      }
+    }
   }
 }

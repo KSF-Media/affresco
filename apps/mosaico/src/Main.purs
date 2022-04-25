@@ -306,10 +306,10 @@ renderArticle
   -> Array ArticleStub
   -> Array ArticleStub
   -> Aff (Response ResponseBody)
-renderArticle env user article mostReadArticles latestArticles = do
+renderArticle env user fullArticle mostReadArticles latestArticles = do
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
-  case article of
+  case fullArticle of
     Right a@{ article } -> do
       let articleJSX =
             case article.articleType of
@@ -434,7 +434,8 @@ renderFrontpage env credentials = do
       { type: HtmlFrontpageContent
       , content: Frontpage.render $ Frontpage.Prerendered
           { content: Just html
-          , hooks: [ Frontpage.MostRead mostReadArticles (const mempty)
+          , hooks: [ Frontpage.RemoveTooltips
+                   , Frontpage.MostRead mostReadArticles (const mempty)
                    , Frontpage.Latest latestArticles (const mempty)
                    , Frontpage.ArticleUrltoRelative
                    ]

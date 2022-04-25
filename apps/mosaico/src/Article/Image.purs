@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe)
 import Data.Monoid (guard)
-import Data.Foldable (fold)
+import Data.Foldable (fold, foldMap)
 import Lettera.Models (Image)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -41,28 +41,15 @@ articleImage onClick props =
     , children:
         [ DOM.img
             { src: img.url <> params
-            , title: caption
+            , title: fold img.caption
             }
-        , DOM.div
-            { className: "caption"
-            , children:
-                [ DOM.span
-                    { dangerouslySetInnerHTML: { __html: caption }
-                    }
-                , DOM.span
-                    { className: "byline"
-                    , children: [ DOM.text byline ]
-                    }
-                ]
-            }
+        , foldMap (renderCaption img.byline) img.caption
         ]
     , onClick
     }
   where
     img = props.image
     params = fold props.params
-    caption = fold img.caption
-    byline  = fold img.byline
 
 articleMainImage :: EventHandler -> Props -> JSX
 articleMainImage onClick props =
@@ -74,28 +61,30 @@ articleMainImage onClick props =
             , children:
                 [ DOM.img
                     { src: img.url <> params
-                    , title: caption
+                    , title: fold img.caption
                     }
                 ]
             }
-        , DOM.div
-            { className: "caption"
-            , children:
-                [ DOM.text caption
-                , DOM.span
-                    { className: "byline"
-                    , children: [ DOM.text byline ]
-                    }
-                ]
-            }
+        , foldMap (renderCaption img.byline) img.caption
         ]
     , onClick
     }
   where
     img = props.image
     params = fold props.params
-    caption = fold img.caption
-    byline  = fold img.byline
+
+renderCaption :: Maybe String -> String -> JSX
+renderCaption byline caption =
+  DOM.div
+    { className: "caption"
+    , children:
+        [ DOM.span { dangerouslySetInnerHTML: { __html: caption } }
+        , DOM.span
+            { className: "byline"
+            , children: [ DOM.text $ fold byline ]
+            }
+        ]
+    }
 
 articleFullScreen :: EventHandler -> Props -> JSX
 articleFullScreen onClick props =
