@@ -305,10 +305,10 @@ renderArticle
   -> Array ArticleStub
   -> Array ArticleStub
   -> Aff (Response ResponseBody)
-renderArticle env user article mostReadArticles latestArticles = do
+renderArticle env user fullArticle mostReadArticles latestArticles = do
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
-  case article of
+  case fullArticle of
     Right a@{ article } -> do
       let articleJSX =
             if article.articleType == Advertorial
