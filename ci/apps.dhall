@@ -10,9 +10,10 @@ let App =
           , env : Map Text Text
           , lockfile : Optional Text
           , caches : Optional Text
+          , production : Bool
           }
       , default =
-        { env = [] : Map Text Text, lockfile = None Text, caches = None Text }
+        { env = [] : Map Text Text, lockfile = None Text, caches = None Text, production = True }
       }
 
 let apps =
@@ -21,6 +22,7 @@ let apps =
           , buildDir = "mosaico"
           , deployDir = "mosaico"
           , lockfile = Some "yarn.lock"
+          , production = False
           , env = toMap
               { LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v4beta"
               , BOTTEGA_URL = "https://bottega.staging.ksfmedia.fi/v1"
