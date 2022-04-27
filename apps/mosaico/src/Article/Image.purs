@@ -2,8 +2,10 @@ module Mosaico.Article.Image where
 
 import Prelude
 
+import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe)
-import Data.Foldable (fold)
+import Data.Monoid (guard)
+import Data.String as String
 import Lettera.Models (Image)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -16,8 +18,10 @@ import React.Basic.Hooks (Component, useState, (/\))
 type Props =
   { clickable :: Boolean
   , main      :: Boolean
+    -- Params are only applied on imengine images
   , params    :: Maybe String
   , image     :: Image
+  , fullWidth :: Boolean
   }
 
 component :: Component Props
@@ -33,67 +37,55 @@ render onClick props =
   if props.main then articleMainImage onClick props else articleImage onClick props
 
 articleImage :: EventHandler -> Props -> JSX
-articleImage onClick props =
+articleImage onClick props@{ image: img } =
   DOM.div
     { className: "mosaico-article__image"
     , children:
         [ DOM.img
-            { src: img.url <> params
-            , title: caption
+            { src: url props
+            , title: fold img.caption
             }
-        , DOM.div
-            { className: "caption"
-            , children:
-                [ DOM.span
-                    { dangerouslySetInnerHTML: { __html: caption }
-                    }
-                , DOM.span
-                    { className: "byline"
-                    , children: [ DOM.text byline ]
-                    }
-                ]
-            }
+        , foldMap (renderCaption img.byline) img.caption
         ]
     , onClick
     }
-  where
-    img = props.image
-    params = fold props.params
-    caption = fold img.caption
-    byline  = fold img.byline
 
 articleMainImage :: EventHandler -> Props -> JSX
-articleMainImage onClick props =
+articleMainImage onClick props@{ image: img } =
   DOM.div
-    { className: "mosaico-article__main-image"
+    { className: "mosaico-article__main-image" <> guard props.fullWidth " full-width"
     , children:
         [ DOM.div
             { className: "wrapper"
             , children:
                 [ DOM.img
-                    { src: img.url <> params
-                    , title: caption
+                    { src: url props
+                    , title: fold img.caption
                     }
                 ]
             }
-        , DOM.div
-            { className: "caption"
-            , children:
-                [ DOM.text caption
-                , DOM.span
-                    { className: "byline"
-                    , children: [ DOM.text byline ]
-                    }
-                ]
-            }
+        , foldMap (renderCaption img.byline) img.caption
         ]
     , onClick
     }
-  where
-    img = props.image
-    params = fold props.params
-    caption = fold img.caption
-    byline  = fold img.byline
+
+url :: Props -> String
+url props =
+  props.image.url <>
+  if String.take 16 props.image.url == "https://imengine" then fold props.params else ""
+
+renderCaption :: Maybe String -> String -> JSX
+renderCaption byline caption =
+  DOM.div
+    { className: "caption"
+    , children:
+        [ DOM.span { dangerouslySetInnerHTML: { __html: caption } }
+        , DOM.span
+            { className: "byline"
+            , children: [ DOM.text $ fold byline ]
+            }
+        ]
+    }
 
 articleFullScreen :: EventHandler -> Props -> JSX
 articleFullScreen onClick props =
