@@ -12,7 +12,8 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
-import Data.List (List, intercalate)
+import Data.List (List, union, intercalate, (:), snoc)
+import Data.List as List
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
@@ -27,6 +28,7 @@ import Data.Tuple.Nested ((/\))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Console (log)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
@@ -60,6 +62,7 @@ import MosaicoServer (MainContent, MainContentType(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync as FS
+import Node.FS.Stats as FS
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
@@ -207,12 +210,29 @@ spec ::
     }
 spec = Spec
 
+readDir :: String -> Effect (List String)
+readDir dir = do
+  let go :: List String -> List String -> Effect (List String)
+      go acc List.Nil = pure acc
+      go acc (c : tail) = do
+        let fullFilePath = dir <> "/" <> c
+        fileStats <- FS.stat fullFilePath
+        if FS.isFile fileStats
+        then go (acc `snoc` fullFilePath) tail
+        else do
+           contents <- readDir fullFilePath
+           go (acc `union` contents) tail
+
+  contents <- FS.readdir dir
+  go mempty $ List.fromFoldable contents
+
 main :: Effect Unit
 main = do
   staticPages  <- do
-      staticPageNames <- FS.readdir "./static/"
+      staticPageNames <- readDir "./static"
+      log $ show staticPageNames
       let makeMap acc staticPageFileName = do
-            pageContent <- FS.readTextFile UTF8 $ "./static/" <> staticPageFileName
+            pageContent <- FS.readTextFile UTF8 staticPageFileName
             pure $ HashMap.insert staticPageFileName pageContent acc
       foldM makeMap HashMap.empty staticPageNames
   htmlTemplate <- parseTemplate <$> FS.readTextFile UTF8 indexHtmlFileLocation
