@@ -13,6 +13,7 @@ import Data.Newtype (un, unwrap)
 import Data.Set as Set
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
+import Data.Traversable (scanl)
 import Effect (Effect)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
@@ -21,7 +22,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), PartStartInfo, Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
@@ -35,6 +36,17 @@ import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
 import React.Basic.Hooks (Component)
 import React.Basic.Events (EventHandler)
+
+type BodyElementParts =
+  { partStart :: Maybe PartStartInfo
+    -- First elements of a part may use styling based on this
+  , firstOfPart :: Boolean
+    -- Used to clean partStart if not inside a part
+  , partEnd :: Boolean
+    -- Bookkeeping to retain tags to the first element of a part
+  , afterPart :: Boolean
+  , el :: BodyElement
+  }
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
 isPremium = either _.premium _.article.premium
@@ -88,8 +100,9 @@ render imageComponent props =
         tags = getTags props.article
         mainImage = getMainImage props.article
         body = getBody props.article
-        bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) body
+        bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) <<< tagParts $ body
         bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
+          <<< tagParts
           <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
@@ -186,7 +199,9 @@ render imageComponent props =
             [ DOM.div
                 { className: "mosaico-article__authors-and-timestamps"
                 , children:
-                    map
+                    (if null article.authors && article.articleType == Opinion
+                     then [ renderOpinionType article.articleTypeDetails ]
+                     else map
                         (\author -> DOM.div
                           { className: "mosaico-article__author"
                           , children: [ guard (article.articleType == Opinion) $
@@ -202,6 +217,7 @@ render imageComponent props =
                                       ]
                           })
                         article.authors
+                    )
                     <> [foldMap
                         (\(LocalDateTime publishingTime) -> DOM.div
                           { className: "mosaico-article__timestamps"
@@ -330,14 +346,18 @@ render imageComponent props =
 
 -- TODO: maybe we don't want to deal at all with the error cases
 -- and we want to throw them away?
-renderElement :: Maybe Paper -> (Image.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> BodyElement -> JSX
-renderElement paper imageComponent onArticleClick el = case el of
+renderElement :: Maybe Paper -> (Image.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> BodyElementParts -> JSX
+renderElement paper imageComponent onArticleClick el = case el.el of
   Html content ->
     -- Can't place div's or blockquotes under p's, so place them under div.
     -- This is usually case with embeds
     let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
+        taggedContent = if el.firstOfPart
+                        then (_ <> content) $ foldMap ((\x -> "<b>" <> x <> "</b> ")) $
+                             _.type =<< el.partStart
+                        else content
     in domFn
-       { dangerouslySetInnerHTML: { __html: content }
+       { dangerouslySetInnerHTML: { __html: taggedContent }
        , className: block <> " " <> block <> "__html"
        }
   Headline str -> DOM.h4
@@ -384,6 +404,9 @@ renderElement paper imageComponent onArticleClick el = case el of
           [ DOM.ul_ $ map renderRelatedArticle related
           ]
       }
+  PartStart _ -> mempty
+  PartEnd _ -> foldMap (foldMap renderAuthor <<< _.authors) el.partStart
+
   Ad contentUnit ->
       Mosaico.ad {
         contentUnit
@@ -403,3 +426,44 @@ renderElement paper imageComponent onArticleClick el = case el of
             , onClick: foldMap (\f -> f article) onArticleClick
             }
         ]
+
+    renderAuthor { byline, info } =
+      DOM.p
+        { className: block <> " " <> block <> "__author"
+        , children:
+            [ DOM.strong_ [ DOM.text $ byline <> foldMap (const ",") info ]
+            , foldMap (DOM.text <<< (" " <> _)) info
+            ]
+        }
+
+tagParts :: Array BodyElement -> Array BodyElementParts
+tagParts = scanl tag { partStart: Nothing
+                     , firstOfPart: false
+                     , partEnd: false
+                     , afterPart: false
+                       -- Dummy value, will be discarded
+                     , el: PartEnd []
+                     }
+  where
+    tag _ el@(PartStart start) =
+      { partStart: Just start, firstOfPart: true, afterPart: true, partEnd: false,  el }
+    tag tagged el@(PartEnd _)  =
+      tagged { partEnd = true, afterPart = true, el = el }
+    tag tagged@{ afterPart: true } el =
+      tagged { afterPart = false, el = el }
+    tag tagged@{ partEnd, partStart } el =
+      tagged { firstOfPart = false
+             , partEnd = false
+             , partStart = if partEnd then Nothing else partStart
+             , el = el
+             }
+
+mkShareIcon :: String -> JSX
+mkShareIcon someName =
+  DOM.li_
+    [ DOM.a
+        { href: "#"
+        , children: [ DOM.span {} ]
+        , className: "mosaico-article__some--" <> someName
+        }
+    ]

@@ -222,6 +222,7 @@ type Author =
   { byline :: String
   , image  :: Maybe String
   , email  :: Maybe String
+  , info   :: Maybe String
   }
 
 -- TODO: Could be a type class
@@ -251,6 +252,8 @@ articleToJson article =
            , question: Nothing
            , quote: Nothing
            , related: Nothing
+           , partStart: Nothing
+           , partEnd: Nothing
            }
     bodyElementToJson (Html html)         = merge { html: Just html } base
     bodyElementToJson (Image image)       = merge { image: Just image } base
@@ -260,6 +263,8 @@ articleToJson article =
     bodyElementToJson (Question question) = merge { question: Just question } base
     bodyElementToJson (Quote quote)       = merge { quote: Just quote } base
     bodyElementToJson (Related related)   = merge { related: Just $ map articleStubToJson related } base
+    bodyElementToJson (PartStart part)    = merge { partStart: Just part } base
+    bodyElementToJson (PartEnd end)       = merge { partEnd: Just end } base
     bodyElementToJson (Ad _)              = base
 
 articleStubToJson :: ArticleStub -> Json
@@ -381,6 +386,8 @@ fromJSBody f = map catMaybes <<< traverse fromJSBodyElement
     fromPure { footnote: Just footnote } = Just $ Footnote footnote
     fromPure { question: Just question } = Just $ Question question
     fromPure { quote: Just quote }       = Just $ Quote quote
+    fromPure { partStart: Just start }   = Just $ PartStart start
+    fromPure { partEnd: Just end }       = Just $ PartEnd end
     -- It'd be a protocol error if we got this.
     fromPure _                           = Nothing
 
@@ -392,6 +399,8 @@ type BodyElementJS =
   , footnote :: Maybe String
   , question :: Maybe String
   , quote    :: Maybe QuoteInfo
+  , partStart :: Maybe PartStartInfo
+  , partEnd  :: Maybe (Array String)
   , ad       :: Maybe String
   , related  :: Maybe (Array JSArticleStub)
   }
@@ -406,6 +415,9 @@ data BodyElement
   | Quote QuoteInfo
   -- Note that Ad does NOT come from Lettera, but was added here to make smart ad placement possible
   | Ad String
+  | PartStart PartStartInfo
+  -- Always empty array
+  | PartEnd (Array String)
   | Related (Array ArticleStub)
 derive instance bodyElementGeneric :: Generic BodyElement _
 
@@ -426,6 +438,11 @@ type Image =
   , thumb     :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
+  }
+
+type PartStartInfo =
+  { authors :: Array Author
+  , type    :: Maybe String
   }
 
 type ArticleTypeDetails =
