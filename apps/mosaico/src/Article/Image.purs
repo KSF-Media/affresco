@@ -2,9 +2,10 @@ module Mosaico.Article.Image where
 
 import Prelude
 
+import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe)
 import Data.Monoid (guard)
-import Data.Foldable (fold, foldMap)
+import Data.String as String
 import Lettera.Models (Image)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -17,6 +18,7 @@ import React.Basic.Hooks (Component, useState, (/\))
 type Props =
   { clickable :: Boolean
   , main      :: Boolean
+    -- Params are only applied on imengine images
   , params    :: Maybe String
   , image     :: Image
   , fullWidth :: Boolean
@@ -35,24 +37,21 @@ render onClick props =
   if props.main then articleMainImage onClick props else articleImage onClick props
 
 articleImage :: EventHandler -> Props -> JSX
-articleImage onClick props =
+articleImage onClick props@{ image: img } =
   DOM.div
     { className: "mosaico-article__image"
     , children:
         [ DOM.img
-            { src: img.url <> params
+            { src: url props
             , title: fold img.caption
             }
         , foldMap (renderCaption img.byline) img.caption
         ]
     , onClick
     }
-  where
-    img = props.image
-    params = fold props.params
 
 articleMainImage :: EventHandler -> Props -> JSX
-articleMainImage onClick props =
+articleMainImage onClick props@{ image: img } =
   DOM.div
     { className: "mosaico-article__main-image" <> guard props.fullWidth " full-width"
     , children:
@@ -60,7 +59,7 @@ articleMainImage onClick props =
             { className: "wrapper"
             , children:
                 [ DOM.img
-                    { src: img.url <> params
+                    { src: url props
                     , title: fold img.caption
                     }
                 ]
@@ -69,9 +68,11 @@ articleMainImage onClick props =
         ]
     , onClick
     }
-  where
-    img = props.image
-    params = fold props.params
+
+url :: Props -> String
+url props =
+  props.image.url <>
+  if String.take 16 props.image.url == "https://imengine" then fold props.params else ""
 
 renderCaption :: Maybe String -> String -> JSX
 renderCaption byline caption =
