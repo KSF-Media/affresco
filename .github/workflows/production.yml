@@ -58,7 +58,7 @@ jobs:
         shell: bash
       - id: deploy-app-article-server-production
         name: Deploy App article server
-        uses: "google-github-actions/deploy-appengine@main"
+        uses: "google-github-actions/deploy-appengine@v0.8.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           project_id: ksf-production
@@ -93,7 +93,7 @@ jobs:
             cat dispatch.yaml
         shell: bash
       - name: Deploy AppEngine domain map
-        uses: "google-github-actions/deploy-appengine@main"
+        uses: "google-github-actions/deploy-appengine@v0.8.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           deliverables: dispatch.yaml
@@ -116,13 +116,6 @@ jobs:
       - run: |2
             yarn install --pure-lockfile
             mkdir -p build
-      - name: Setup build cache for Mosaico
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
-          path: |
-            apps/mosaico/.spago
-            apps/mosaico/output
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -156,21 +149,6 @@ jobs:
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
-      - env:
-          BOTTEGA_URL: https://bottega.staging.ksfmedia.fi/v1
-          ENTITLED_PASSWORD: password
-          ENTITLED_USER: "stan.marsh@skug.fi"
-          INSECURE_COOKIE: '1'
-          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v4beta
-          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
-          PORT: '8080'
-          TEST_PASSWORD: password
-          TEST_USER: "wendy.testaburger@skug.fi"
-        name: Build Mosaico
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico/dist build/mosaico
-        shell: bash
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -231,71 +209,64 @@ jobs:
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
         shell: bash
-      - name: Upload Mosaico
-        uses: "google-github-actions/upload-cloud-storage@main"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends/mosaico
-          parent: 'false'
-          path: build/mosaico
       - name: Upload Scripts
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/scripts
           parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/mitt-konto
           parent: 'false'
           path: build/mitt-konto
       - name: "Upload Vetrina (for testing only)"
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/vetrina-test
           parent: 'false'
           path: build/vetrina-test
       - name: "Upload Elections (EU)"
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/elections-eu
           parent: 'false'
           path: build/elections-eu
       - name: "Upload Elections (Parliament)"
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/elections
           parent: 'false'
           path: build/elections
       - name: Upload App article
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/app-article
           parent: 'false'
           path: build/app-article
       - name: Upload Corona banner
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/corona-banner
           parent: 'false'
           path: build/corona-banner
       - name: Upload HBL365
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/hbl365
           parent: 'false'
           path: build/hbl365
       - name: Upload Prenumerera
-        uses: "google-github-actions/upload-cloud-storage@main"
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
           credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/prenumerera
