@@ -1,17 +1,22 @@
-module Mosaico.Header where
+module Mosaico.Header
+  ( Props
+  , header
+  , mainSeparator
+  , topLine
+  )
+  where
 
 import Prelude
 import Data.Array (head, splitAt)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Int (fromNumber)
+import Data.Int (ceil)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
-import Effect.Class (liftEffect)
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object as Object
 import KSF.Paper (toString)
@@ -30,7 +35,7 @@ import Simple.JSON (E, read, write)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (addEventListener, eventListener, removeEventListener)
 import Web.HTML (window)
-import Web.HTML.Window (scroll, scrollY, toEventTarget)
+import Web.HTML.Window (scrollY, toEventTarget)
 
 type Props
   = { router :: PushStateInterface
@@ -54,22 +59,18 @@ mkHeader = do
     scrollPosition /\ setScrollPosition <- React.useState 0
     React.useEffect unit do
       w <- window
-      let
-        updatePosition = \n -> setScrollPosition n
-      yPosition <- scrollY w
-      _ <- setScrollPosition (const $ fromMaybe 0 $ fromNumber yPosition)
       listener <-
         eventListener
           ( \_ -> do
               yPosition <- scrollY w
-              case fromNumber yPosition of
-                Nothing -> pure unit
-                Just pos -> do
-                  setScrollPosition (const pos)
-                  pure unit
+              setScrollPosition (const $ ceil yPosition)
+              pure unit
           )
       addEventListener (EventType "scroll") listener false (toEventTarget w)
-      pure $ removeEventListener (EventType "scroll") listener false (toEventTarget w)
+      addEventListener (EventType "pageshow") listener false (toEventTarget w)
+      pure $ do
+        _ <- removeEventListener (EventType "scroll") listener false (toEventTarget w)
+        removeEventListener (EventType "pageshow") listener false (toEventTarget w)
     pure
       $ DOM.header
           { className: "header-container" <> (if scrollPosition == 0 then "" else " static-header")
