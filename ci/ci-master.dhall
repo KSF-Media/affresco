@@ -9,9 +9,10 @@ let Actions = ./workflows.dhall
 
 let A = ./apps.dhall
 
-let apps = A.apps
-
 let App = A.App
+
+let apps = Prelude.List.filter App.Type (\(a: App.Type) -> a.production)  A.apps
+
 
 let AE = ./app-servers.dhall
 
