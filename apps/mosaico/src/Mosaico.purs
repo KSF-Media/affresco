@@ -667,6 +667,5 @@ render setState state components router onPaywallEvent =
       router.pushState (write {}) $ "/sök?q=" <> query
 
     simpleRoute path = do
-      runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) path
