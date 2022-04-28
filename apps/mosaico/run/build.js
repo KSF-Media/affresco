@@ -78,7 +78,7 @@ module.exports.runBuild = function () {
         template(elem).attr("href", publicUrl + "/assets/" + assetPath);
       }
     });
-    exec("mkdir -p dist/assets && cp ./static/* ./dist/assets/", (err, stdout, stderr) => {
+    exec("mkdir -p dist/assets && cp -R ./static/* ./dist/assets/", (err, stdout, stderr) => {
       if (err) {
         console.log("Error when creating dirs and stuff: ", err);
       }
