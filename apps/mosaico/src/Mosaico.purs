@@ -184,6 +184,9 @@ mosaicoComponent initialValues props = React.do
 
   useEffectOnce do
     foldMap (Article.evalEmbeds <<< _.article) props.article
+    case props.article of
+      Just a -> sendArticleAnalytics a.article props.user
+      Nothing -> pure unit
     Aff.launchAff_ do
       when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
