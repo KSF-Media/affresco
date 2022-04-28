@@ -255,7 +255,7 @@ mosaicoComponent initialValues props = React.do
         | Just article <- map _.article (join $ map hush $ state.article)
         , articleId == article.uuid
         -> do
-          when state.ssrPreview $
+          when (state.ssrPreview && _.premium article) $
             loadArticle articleId
           setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
