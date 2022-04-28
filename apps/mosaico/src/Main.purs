@@ -55,7 +55,7 @@ import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
 import Mosaico.Header.Menu as Menu
-import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Paper (mosaicoPaper, _mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Search as Search
 import MosaicoServer (MainContent, MainContentType(..))
@@ -618,7 +618,7 @@ staticPage env { params: { pageName }, guards: { credentials } } = do
     <$> maybe (pure Nothing) (parallel <<< getUser) credentials
     <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
     <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
-  case HashMap.lookup (pageName <> ".html") env.staticPages of
+  case HashMap.lookup ("./static/" <> _mosaicoPaper <> "/" <> pageName <> ".html") env.staticPages of
     Just staticPageContent -> do
       let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
           mosaico = MosaicoServer.app
