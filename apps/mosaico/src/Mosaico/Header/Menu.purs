@@ -94,7 +94,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: "/sida/kundservice"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sida/kundservice"
-                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
                     }
                   , props.user *>
                     Just
@@ -135,7 +135,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: "/sida/kontakt"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sida/kontakt"
-                    , iconClass: mempty
+                    , addClass: mempty
                     }
                   , { title: "ANNONSERA"
                     , subsections: []
