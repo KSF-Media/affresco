@@ -4,16 +4,17 @@ import Prelude
 
 import Bottega.Models.Order (OrderSource(..))
 import Control.Alt ((<|>))
+import Data.Array as Array
 import Data.Array (head, insertAt, length, null, snoc, take, (!!))
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
+import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
 import Data.Set as Set
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
-import Data.Traversable (scanl)
 import Effect (Effect)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
@@ -25,6 +26,7 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), PartStartInfo, Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
+import Mosaico.Article.Renderer (renderReviewStars)
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
@@ -37,15 +39,17 @@ import React.Basic.Hooks as React
 import React.Basic.Hooks (Component)
 import React.Basic.Events (EventHandler)
 
-type BodyElementParts =
-  { partStart :: Maybe PartStartInfo
-    -- First elements of a part may use styling based on this
-  , firstOfPart :: Boolean
-    -- Used to clean partStart if not inside a part
-  , partEnd :: Boolean
-    -- Bookkeeping to retain tags to the first element of a part
-  , afterPart :: Boolean
-  , el :: BodyElement
+type RenderElement =
+  { el :: BodyElement
+  , reviewRow :: Boolean
+  , partLabel :: Maybe String
+  }
+
+type GroupedElements =
+  { els :: Array BodyElement
+    -- Set true for the inner content of review block
+  , reviewRow :: Boolean
+  , partStart :: Maybe PartStartInfo
   }
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
@@ -100,9 +104,9 @@ render imageComponent props =
         tags = getTags props.article
         mainImage = getMainImage props.article
         body = getBody props.article
-        bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) <<< tagParts $ body
-        bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
-          <<< tagParts
+        bodyWithoutAd = map (renderGroup (Just props.paper) imageComponent (Just props.onArticleClick)) <<< groupParts $ body
+        bodyWithAd = map (renderGroup (Just props.paper) imageComponent (Just props.onArticleClick))
+          <<< groupParts
           <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
@@ -346,20 +350,26 @@ render imageComponent props =
 
 -- TODO: maybe we don't want to deal at all with the error cases
 -- and we want to throw them away?
-renderElement :: Maybe Paper -> (Image.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> BodyElementParts -> JSX
+renderElement :: Maybe Paper -> (Image.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> RenderElement -> JSX
 renderElement paper imageComponent onArticleClick el = case el.el of
   Html content ->
     -- Can't place div's or blockquotes under p's, so place them under div.
     -- This is usually case with embeds
-    let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
-        taggedContent = if el.firstOfPart
-                        then (_ <> content) $ foldMap ((\x -> "<b>" <> x <> "</b> ")) $
-                             _.type =<< el.partStart
-                        else content
-    in domFn
-       { dangerouslySetInnerHTML: { __html: taggedContent }
-       , className: block <> " " <> block <> "__html"
-       }
+    let taggedContent = case el.partLabel of
+          Nothing -> content
+          Just label -> "<b>" <> label <> "</b> " <> content
+    in
+       if el.reviewRow
+       then
+         DOM.div
+         { children: [ renderReviewStars content ]
+         , className: block <> " " <> block <> "__html"
+         }
+       else
+         (if isDiv content || isBlockquote content then DOM.div else DOM.p)
+         { dangerouslySetInnerHTML: { __html: taggedContent }
+         , className: block <> " " <> block <> "__html"
+         }
   Headline str -> DOM.h4
     { className: block <> " " <> block <> "__subheadline"
     , children: [ DOM.text str ]
@@ -405,8 +415,7 @@ renderElement paper imageComponent onArticleClick el = case el.el of
           ]
       }
   PartStart _ -> mempty
-  PartEnd _ -> foldMap (foldMap renderAuthor <<< _.authors) el.partStart
-
+  PartEnd _ -> mempty
   Ad contentUnit ->
       Mosaico.ad {
         contentUnit
@@ -427,36 +436,34 @@ renderElement paper imageComponent onArticleClick el = case el.el of
             }
         ]
 
+renderGroup :: Maybe Paper -> (Image.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> GroupedElements -> JSX
+renderGroup paper imageComponent onArticleClick { els, partStart, reviewRow } =
+  case _.type =<< partStart of
+    Just "Recension" ->
+      DOM.div
+        { className: "article-element__review-info"
+        , children: [ renderGroup paper imageComponent onArticleClick
+                      { els, partStart: Nothing, reviewRow: true }
+                    ]
+        }
+    _ ->
+      (_ <> (foldMap renderAuthor <<< join <<< Array.fromFoldable $ _.authors <$> partStart)) <<<
+      foldMap (renderElement paper imageComponent onArticleClick) <<< maybeAddPartLabel $
+      map (\el -> {el, partLabel: Nothing, reviewRow}) els
+  where
+    maybeAddPartLabel :: Array RenderElement -> Array RenderElement
+    maybeAddPartLabel = case _.type =<< partStart of
+      label@(Just _) -> fromMaybe mempty <<< Array.modifyAt 0 (_ { partLabel = label })
+      _              -> identity
+
     renderAuthor { byline, info } =
       DOM.p
-        { className: block <> " " <> block <> "__author"
+        { className: "article-element article-element__author"
         , children:
             [ DOM.strong_ [ DOM.text $ byline <> foldMap (const ",") info ]
             , foldMap (DOM.text <<< (" " <> _)) info
             ]
         }
-
-tagParts :: Array BodyElement -> Array BodyElementParts
-tagParts = scanl tag { partStart: Nothing
-                     , firstOfPart: false
-                     , partEnd: false
-                     , afterPart: false
-                       -- Dummy value, will be discarded
-                     , el: PartEnd []
-                     }
-  where
-    tag _ el@(PartStart start) =
-      { partStart: Just start, firstOfPart: true, afterPart: true, partEnd: false,  el }
-    tag tagged el@(PartEnd _)  =
-      tagged { partEnd = true, afterPart = true, el = el }
-    tag tagged@{ afterPart: true } el =
-      tagged { afterPart = false, el = el }
-    tag tagged@{ partEnd, partStart } el =
-      tagged { firstOfPart = false
-             , partEnd = false
-             , partStart = if partEnd then Nothing else partStart
-             , el = el
-             }
 
 mkShareIcon :: String -> JSX
 mkShareIcon someName =
@@ -467,3 +474,17 @@ mkShareIcon someName =
         , className: "mosaico-article__some--" <> someName
         }
     ]
+
+groupParts :: Array BodyElement -> Array GroupedElements
+groupParts = Array.reverse <<<
+       map (\part -> { els: Array.reverse $ Array.fromFoldable part.els
+                     , reviewRow: false
+                     , partStart: part.partStart }) <<<
+       Array.fromFoldable <<< Array.foldl (flip f) mempty
+  where
+    f (PartStart info) = List.Cons { els: mempty, partStart: Just info, done: false }
+    f (PartEnd _) = fromMaybe mempty <<< List.modifyAt 0 (\x -> x { done = true })
+    f x = \xs -> case List.head xs of
+      Just { done: false } -> fromMaybe mempty $ List.modifyAt 0
+           (\part@{ els } -> part { els = List.Cons x els }) xs
+      _ -> List.Cons { els: List.singleton x, partStart: Nothing, done: true } xs

@@ -2,7 +2,7 @@ module KSF.HtmlRenderer.Models where
 
 import Prelude
 
-import Data.Function.Uncurried (Fn1, runFn1)
+import Data.Function.Uncurried (Fn1, Fn2, runFn1, runFn2)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
@@ -18,6 +18,7 @@ foreign import getDataImpl     :: Fn1 Node (Nullable String)
 foreign import getTypeImpl     :: Fn1 Node (Nullable String)
 foreign import getNameImpl     :: Fn1 Node (Nullable String)
 foreign import getAttribsImpl  :: Fn1 Node (Nullable JSHTMLAttributes)
+foreign import getAttribImpl   :: Fn2 String Node (Nullable String)
 foreign import getChildrenImpl :: Fn1 Node (Nullable (Array Node))
 
 getRaw :: Node -> Maybe String
@@ -34,6 +35,9 @@ getName n = toMaybe $ runFn1 getNameImpl n
 
 getAttribs :: Node -> Maybe HTMLAttributes
 getAttribs n = fromJSAttributes <$> (toMaybe $ runFn1 getAttribsImpl n)
+
+getAttrib :: String -> Node -> Maybe String
+getAttrib name n = toMaybe $ runFn2 getAttribImpl name n
 
 getChildren :: Node -> Maybe (Array Node)
 getChildren n = toMaybe $ runFn1 getChildrenImpl n

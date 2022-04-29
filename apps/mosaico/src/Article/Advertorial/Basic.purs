@@ -64,8 +64,8 @@ render imageComponent { article, imageProps, advertorialClassName } =
                    , children:
                        [ DOM.div
                            { className: "mosaico-article__body"
-                           , children: map (Article.renderElement Nothing imageComponent Nothing)
-                             <<< Article.tagParts $ article.body
+                           , children: map (Article.renderGroup Nothing imageComponent Nothing)
+                             <<< Article.groupParts $ article.body
                            }
                        ]
 
