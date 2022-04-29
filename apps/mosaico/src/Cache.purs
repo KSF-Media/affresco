@@ -253,15 +253,15 @@ readCategoryRender cache category = do
         flip AVar.put store =<< HashMap.delete category <$> AVar.take store
         pure Nothing
 
-addHeader :: forall a b. DateTime -> Boolean -> Stamped b -> Response a -> Response a
-addHeader now private (Stamped { validUntil }) =
+addHeader :: forall a b. DateTime -> Stamped b -> Response a -> Response a
+addHeader now (Stamped { validUntil }) =
   if maxAge <= 0 then identity
-  else addHeaderAge maxAge private
+  else addHeaderAge maxAge
   where
     maxAge = floor $ un Seconds $ diff validUntil now
 
-addHeaderAge :: forall a. Int -> Boolean -> Response a -> Response a
-addHeaderAge maxAge private (Response response) =
+addHeaderAge :: forall a. Int -> Response a -> Response a
+addHeaderAge maxAge (Response response) =
   Response $ response { headers = Headers.set "cache-control" control response.headers }
   where
-    control = (if private then "private, " else "") <> "max-age=" <> show maxAge
+    control = "max-age=" <> show maxAge

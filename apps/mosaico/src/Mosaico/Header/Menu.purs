@@ -92,8 +92,8 @@ render props@{ onLogin, onLogout } = DOM.div
                   , Just
                     { title: "KUNDSERVICE"
                     , subsections: []
-                    , url: ""
-                    , onClick: mempty
+                    , url: "/sida/kundservice"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/sida/kundservice"
                     , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
                     }
                   , props.user *>
@@ -133,13 +133,13 @@ render props@{ onLogin, onLogout } = DOM.div
     bottomSections = Section <$>
                   [ { title: "KONTAKTA OSS"
                     , subsections: []
-                    , url: ""
-                    , onClick: mempty
+                    , url: "/sida/kontakt"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/sida/kontakt"
                     , iconClass: mempty
                     }
                   , { title: "ANNONSERA"
                     , subsections: []
-                    , url: ""
+                    , url: "https://www.ksfmedia.fi/"
                     , onClick: mempty
                     , iconClass: mempty
                     }
