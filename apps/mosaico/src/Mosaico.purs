@@ -93,6 +93,7 @@ type State =
   , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
   , showAds :: Boolean
+  , ssrPreview :: Boolean
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -160,6 +161,7 @@ mosaicoComponent initialValues props = React.do
                                    match (Routes.routes initialCatMap) initialPath
                          , user = props.user
                          , entitlements = props.entitlements
+                         , ssrPreview = true
                          }
 
   let loadArticle articleId = Aff.launchAff_ do
@@ -177,6 +179,7 @@ mosaicoComponent initialValues props = React.do
                 setState _
                   { article = Just $ Right a
                   , showAds = not article.removeAds && not (article.articleType == Advertorial)
+                  , ssrPreview = false
                   }
               Left _ -> do
                 liftEffect $ setTitle "Något gick fel"
@@ -251,7 +254,10 @@ mosaicoComponent initialValues props = React.do
       Routes.ArticlePage articleId
         | Just article <- map _.article (join $ map hush $ state.article)
         , articleId == article.uuid
-        -> setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
+        -> do
+          when (state.ssrPreview && _.premium article) $
+            loadArticle articleId
+          setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> setState _ { showAds = false }
       Routes.NotFoundPage _path -> setState _ { showAds = true }
@@ -361,6 +367,7 @@ getInitialValues = do
         , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
         , showAds: true
+        , ssrPreview: true
         }
     , components:
         { loginModalComponent
@@ -667,6 +674,5 @@ render setState state components router onPaywallEvent =
       router.pushState (write {}) $ "/sök?q=" <> query
 
     simpleRoute path = do
-      runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) path
