@@ -110,7 +110,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: onLogin
-                    , addClass: mempty
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
                     }
                   ]
 

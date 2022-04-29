@@ -84,7 +84,16 @@ render props =
             }
         , maybe
             (DOM.div
-               { children: [ DOM.text "LOGGA IN" ]
+               { children: 
+                    [ DOM.span
+                          { className: accountClass <> "-icon"
+                          , children: [ DOM.span_ [] ]
+                          }
+                    ,DOM.span
+                          { className: "menu-label"
+                          , children: [ DOM.text "LOGGA IN" ]
+                          }
+                    ]
                , onClick: props.onLogin
                , className: accountClass <> " " <> accountClass <> "--active"
                , _data: Object.fromFoldable [Tuple "login" "1"]
