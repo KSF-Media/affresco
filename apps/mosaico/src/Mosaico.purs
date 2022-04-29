@@ -184,6 +184,9 @@ mosaicoComponent initialValues props = React.do
 
   useEffectOnce do
     foldMap (Article.evalEmbeds <<< _.article) props.article
+    case props.article of
+      Just a -> sendArticleAnalytics a.article props.user
+      Nothing -> pure unit
     Aff.launchAff_ do
       when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
@@ -664,6 +667,5 @@ render setState state components router onPaywallEvent =
       router.pushState (write {}) $ "/sök?q=" <> query
 
     simpleRoute path = do
-      runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) path

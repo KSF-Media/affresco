@@ -132,7 +132,7 @@ let mkUploadStep =
       \(app : App.Type) ->
         Step::{
         , name = Some "Upload ${app.name}"
-        , uses = Some "google-github-actions/upload-cloud-storage@main"
+        , uses = Some "google-github-actions/upload-cloud-storage@v0.9.0"
         , `with` = toMap
             { path = "build/${app.deployDir}"
             , destination =
@@ -164,7 +164,7 @@ let mkAppEngineStep =
               }
               env
         , name = Some "Deploy ${app.name}"
-        , uses = Some "google-github-actions/deploy-appengine@main"
+        , uses = Some "google-github-actions/deploy-appengine@v0.8.0"
         , `with` = toMap
             { working_directory = "build/${app.deployDir}"
             , promote
@@ -185,7 +185,7 @@ let deployDispatchYamlStep =
       \(env : Env) ->
         Step::{
         , name = Some "Deploy AppEngine domain map"
-        , uses = Some "google-github-actions/deploy-appengine@main"
+        , uses = Some "google-github-actions/deploy-appengine@v0.8.0"
         , `with` = toMap
             { deliverables = "dispatch.yaml"
             , project_id =
