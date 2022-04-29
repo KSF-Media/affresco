@@ -78,6 +78,7 @@ notFoundArticle =
     , externalScripts: Nothing
     , articleType: KatastrofLiten
     , articleTypeDetails: Nothing
+    , categories: []
     }
   }
 
@@ -181,6 +182,7 @@ type ArticleCommon =
   , removeAds          :: Boolean
   , externalScripts    :: Maybe (Array ExternalScript)
   , articleTypeDetails :: Maybe ArticleTypeDetails
+  , categories         :: Array String
   )
 
 type JSArticle =
@@ -353,7 +355,7 @@ fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body, articleT
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ merge 
+  pure $ merge
     { publishingTime: localPublishingTime
     , publishingTimeUtc: parseDateTime publishingTime
     , updateTime: localUpdateTime

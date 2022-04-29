@@ -127,6 +127,7 @@ render imageComponent props =
                 , main: true
                 , params: Just "&width=960&height=540&q=90"
                 , image
+                , fullWidth: false
                 })
               mainImage
           , DOM.div
@@ -317,6 +318,7 @@ renderElement paper imageComponent onArticleClick el = case el of
       , main: false
       , params: Just "&width=640&q=90"
       , image
+      , fullWidth: false
       }
   Box boxData ->
     DOM.div

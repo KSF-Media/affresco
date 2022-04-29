@@ -1,4 +1,16 @@
 @import (reference) "../ksf-colors";
+@import (reference) "_grid";
+@import (reference) "_breakpoints";
+
+@article-side-margin: 100px;
+@full-width-image: @content-block * 6; // == 1920px
+
+.mosaico-article.advertorial-standard {
+  grid-template-areas:
+    ". head  head  head  ."
+    "image image image image image"
+    ". body  body  body  .";
+}
 
 .mosaico-article {
   grid-area: article;
@@ -14,16 +26,19 @@
       "body";
   }
   @media (min-width: @breakpoint-3col) {
-    grid-template-columns: 100px 1fr 100px;
+    grid-template-columns: @mosaico-grid-columns;
     grid-template-areas:
-      ".     head  ."
-      "image image image"
-      ".     body  body";
+      ". head  head  head  ."
+      ". image image image ."
+      ". body  body  body  .";
   }
-
   header {
     grid-area: head;
     margin-bottom: 15px;
+    @media (min-width: @breakpoint-3col) {
+      margin-left: @article-side-margin;
+      margin-right: @article-side-margin;
+    }
   }
   &__main-image {
     grid-area: image;
@@ -60,9 +75,41 @@
       }
     }
   }
+  &__main-image.full-width {
+    @media (min-width: @breakpoint-3col) {
+      display: grid;
+      grid-template-columns: @mosaico-grid-columns;
+      grid-template-areas:
+        "image image image image image"
+        "caption caption  caption  caption caption";
+    }
+    @media (min-width: @full-width-image) {
+      grid-template-columns: 1fr @full-width-image 1fr;
+      grid-template-areas:
+        ". image ."
+        ". caption .";
+    }
+    .wrapper {
+      height: unset;
+      @media (min-width: @breakpoint-3col) {
+        width: unset;
+        max-width: @full-width-image;
+        grid-area: image;
+      }
+    }
+    .caption {
+      @media (min-width: @breakpoint-3col) {
+        grid-area: caption;
+        margin-left: 10px;
+      }
+    }
+  }
 
   &__main {
     grid-area: body;
+    @media (min-width: @breakpoint-3col) {
+      margin-left: @article-side-margin;
+    }
     @media (min-width: @breakpoint-2col) {
       display: grid;
       grid-template-areas:
@@ -82,6 +129,7 @@
     }
     @media (min-width: @breakpoint-3col) {
       width: 530px;
+      box-sizing: content-box;
     }
   }
   &__aside {

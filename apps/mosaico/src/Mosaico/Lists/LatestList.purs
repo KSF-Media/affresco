@@ -2,9 +2,12 @@ module Mosaico.LatestList where
 
 import Prelude
 
+import Data.Foldable (foldMap)
 import Data.Maybe (fromMaybe)
 import Data.Monoid (guard)
+import Data.Newtype (unwrap)
 import Data.String (joinWith)
+import KSF.Helpers (formatArticleTime)
 import Lettera.Models (ArticleStub)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -40,6 +43,13 @@ render props =
                     { className: "list-article-liftup"
                     , children:
                         [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]
+                        , foldMap (\publishingTime ->
+                            DOM.span
+                              { className: "mosaico-asidelist__timestamp"
+                              , children:
+                                  [ DOM.span_ [ DOM.text $ formatArticleTime $ unwrap publishingTime ] ]
+                              }
+                          ) $ a.publishingTime
                         , guard a.premium $ DOM.div
                             { className: "mosaico-article__meta"
                             , children:
