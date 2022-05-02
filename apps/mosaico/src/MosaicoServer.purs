@@ -66,15 +66,16 @@ render router props = DOM.div_
        , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
-           , Header.header { router
-                           , categoryStructure: props.categoryStructure
-                           , catMap: categoriesMap props.categoryStructure
-                           , onCategoryClick: const mempty
-                           , user: props.user
-                           , onLogin: mempty
-                           , onProfile: mempty
-                           , onStaticPageClick: mempty
-                           }
+           , Header.render 0
+             { router
+             , categoryStructure: props.categoryStructure
+             , catMap: categoriesMap props.categoryStructure
+             , onCategoryClick: const mempty
+             , user: props.user
+             , onLogin: mempty
+             , onProfile: mempty
+             , onStaticPageClick: mempty
+             }
            , Header.mainSeparator
            , props.mainContent.content
            , footer mosaicoPaper mempty
