@@ -258,13 +258,18 @@ column children = DOM.div { className: "mosaico-footer__contact-info__column", c
 
 section :: String -> Array JSX -> JSX
 section title children =
-  DOM.p
-    { className: "mosaico-footer__contact-info__section"
-    , children:
-        [ DOM.b { children: [ DOM.text title, DOM.text " " ] }
-        , DOM.div { children: children }
-        ]
-    }
+  DOM.div_
+    -- WTF: this div does nothing... except that it prevents some really weird
+    -- React bug which removes classes from every second child. This only happens
+    -- with the production build (eg. NODE_ENV=production yarn build && NODE_ENV=production yarn start)
+    [ DOM.p
+        { className: "mosaico-footer__contact-info__section"
+        , children:
+            [ DOM.b { children: [ DOM.text title, DOM.text " " ] }
+            , DOM.div { children: children }
+            ]
+        }
+    ]
 
 email :: String -> JSX
 email address = DOM.a { href: "mailto:" <> address, children: [ DOM.text address ] }
