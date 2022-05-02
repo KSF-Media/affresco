@@ -305,6 +305,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , onArticleClick: const mempty
                   , mostReadArticles
                   , latestArticles
+                  , advertorial: Nothing
                   }
           mosaicoString = DOM.renderToString
                           $ mosaico
@@ -776,6 +777,7 @@ notFoundArticleContent =
     , onArticleClick: const mempty
     , mostReadArticles: mempty
     , latestArticles: mempty
+    , advertorial: Nothing
     }
   }
 
