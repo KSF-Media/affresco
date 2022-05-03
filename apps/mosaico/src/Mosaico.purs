@@ -105,6 +105,7 @@ type Components =
   , articleComponent :: Article.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
   , imageComponent :: Image.Props -> JSX
+  , headerComponent :: Header.Props -> JSX
   }
 
 type Props =
@@ -359,6 +360,7 @@ getInitialValues = do
   articleComponent    <- Article.component
   epaperComponent     <- Epaper.component
   imageComponent      <- Image.component
+  headerComponent     <- Header.component
   pure
     { state:
         { article: Nothing
@@ -384,6 +386,7 @@ getInitialValues = do
         , articleComponent
         , epaperComponent
         , imageComponent
+        , headerComponent
         }
     , catMap
     , nav
@@ -590,7 +593,7 @@ render setState state components router onPaywallEvent =
           , id: Paper.toString mosaicoPaper
           , children:
               [ Header.topLine
-              , Header.render
+              , components.headerComponent
                   { router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
