@@ -93,6 +93,7 @@ type State =
   , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
   , showAds :: Boolean
+  , ssrPreview :: Boolean
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -104,6 +105,7 @@ type Components =
   , articleComponent :: Article.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
   , imageComponent :: Image.Props -> JSX
+  , headerComponent :: Header.Props -> JSX
   }
 
 type Props =
@@ -112,6 +114,7 @@ type Props =
   , latestArticles :: Maybe (Array ArticleStub)
   , staticPageName :: Maybe String
   , categoryStructure :: Array Category
+  , globalDisableAds :: Boolean
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
   , user :: Maybe User
   , entitlements :: Maybe (Set String)
@@ -124,6 +127,7 @@ type JSProps =
   , latestArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
+  , globalDisableAds :: Nullable Boolean
   , initialFrontpageFeed :: Nullable JSInitialFeed
   , user :: Nullable Json
   , entitlements :: Nullable Json
@@ -145,7 +149,7 @@ mosaicoComponent initialValues props = React.do
   let initialPath = Routes.stripFragment $
                     initialValues.locationState.path <> initialValues.locationState.search
       maxAge = Minutes 15.0
-  state /\ setState <- useState initialValues.state
+  state /\ setState_ <- useState initialValues.state
                          { article = Right <$> props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , latestArticles = fold props.latestArticles
@@ -154,13 +158,20 @@ mosaicoComponent initialValues props = React.do
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
+                         , showAds = not props.globalDisableAds && initialValues.state.showAds
                          , catMap = initialCatMap
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
                          , user = props.user
                          , entitlements = props.entitlements
+                         , ssrPreview = true
                          }
+
+  -- For tests, they are prone to break in uninteresting ways with ads
+  let setState = if not props.globalDisableAds
+                 then setState_
+                 else \f -> setState_ $ \s -> (f s) { showAds = false }
 
   let loadArticle articleId = Aff.launchAff_ do
         case UUID.parseUUID articleId of
@@ -177,6 +188,7 @@ mosaicoComponent initialValues props = React.do
                 setState _
                   { article = Just $ Right a
                   , showAds = not article.removeAds && not (article.articleType == Advertorial)
+                  , ssrPreview = false
                   }
               Left _ -> do
                 liftEffect $ setTitle "Något gick fel"
@@ -251,7 +263,10 @@ mosaicoComponent initialValues props = React.do
       Routes.ArticlePage articleId
         | Just article <- map _.article (join $ map hush $ state.article)
         , articleId == article.uuid
-        -> setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
+        -> do
+          when (state.ssrPreview && _.premium article) $
+            loadArticle articleId
+          setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> setState _ { showAds = false }
       Routes.NotFoundPage _path -> setState _ { showAds = true }
@@ -345,6 +360,7 @@ getInitialValues = do
   articleComponent    <- Article.component
   epaperComponent     <- Epaper.component
   imageComponent      <- Image.component
+  headerComponent     <- Header.component
   pure
     { state:
         { article: Nothing
@@ -361,6 +377,7 @@ getInitialValues = do
         , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
         , showAds: true
+        , ssrPreview: true
         }
     , components:
         { loginModalComponent
@@ -369,6 +386,7 @@ getInitialValues = do
         , articleComponent
         , epaperComponent
         , imageComponent
+        , headerComponent
         }
     , catMap
     , nav
@@ -393,13 +411,14 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
+      globalDisableAds = fromMaybe false $ toMaybe jsProps.globalDisableAds
       -- User comes directly from the server, which uses the same
       -- version of User.  User is alreay quite close to native
       -- JavaScript representation, which should make raw conversion
       -- to and from possible.
       user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
       entitlements = foldMap (hush <<< decodeJson) $ toMaybe jsProps.entitlements
-  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, user, entitlements }
+  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, globalDisableAds, user, entitlements }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -574,7 +593,7 @@ render setState state components router onPaywallEvent =
           , id: Paper.toString mosaicoPaper
           , children:
               [ Header.topLine
-              , Header.render
+              , components.headerComponent
                   { router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
