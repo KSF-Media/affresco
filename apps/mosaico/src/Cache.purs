@@ -249,10 +249,11 @@ readCategoryRender cache category = do
     Nothing -> pure Nothing
     Just value@(Stamped {validUntil}) -> do
       now <- liftEffect nowDateTime
-      if now > validUntil then pure $ Just value
-        else do
+      if now > validUntil
+        then do
         flip AVar.put store =<< HashMap.delete category <$> AVar.take store
         pure Nothing
+        else pure $ Just value
 
 addHeader :: forall a b. DateTime -> Stamped b -> Response a -> Response a
 addHeader now (Stamped { validUntil }) =
