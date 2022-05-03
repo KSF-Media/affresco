@@ -13,7 +13,7 @@ module.exports.runBuild = function () {
   const template = cheerio.load(fs.readFileSync(templateFile, "utf8"));
 
   const buildOpts = {
-    entryPoints: ["./web/index.js", "./web/ads.js"],
+    entryPoints: ["./web/index.js"],
     entryNames: "[name]-[hash]",
     bundle: true,
     outdir: "./dist/assets",
