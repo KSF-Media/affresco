@@ -5,7 +5,7 @@ import Prelude
 import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
-import Data.Array (find, foldl, fromFoldable, null)
+import Data.Array (cons, find, foldl, fromFoldable, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap, elem)
@@ -92,6 +92,7 @@ appendVars :: String -> Template -> Effect Template
 appendVars = runEffectFn2 appendVarsImpl
 
 foreign import serverPort :: Int
+foreign import globalDisableAds :: Boolean
 
 type Env =
   { htmlTemplate :: TemplateMaster
@@ -829,7 +830,8 @@ htmlContent (Response response) =
 
 mkWindowVariables :: Array (Tuple String String) -> String
 mkWindowVariables vars =
-  let jsVars = map (\(name /\ value) -> "window." <> name <> "=" <> value <> ";") vars
+  let jsVars = map (\(name /\ value) -> "window." <> name <> "=" <> value <> ";") $
+               cons ("globalDisableAds" /\ show globalDisableAds) vars
   in "<script>" <> intercalate "" jsVars <> "</script>"
 
 makeTitle :: String -> String

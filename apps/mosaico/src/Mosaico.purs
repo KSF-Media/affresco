@@ -114,6 +114,7 @@ type Props =
   , latestArticles :: Maybe (Array ArticleStub)
   , staticPageName :: Maybe String
   , categoryStructure :: Array Category
+  , globalDisableAds :: Boolean
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
   , user :: Maybe User
   , entitlements :: Maybe (Set String)
@@ -126,6 +127,7 @@ type JSProps =
   , latestArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
+  , globalDisableAds :: Nullable Boolean
   , initialFrontpageFeed :: Nullable JSInitialFeed
   , user :: Nullable Json
   , entitlements :: Nullable Json
@@ -147,7 +149,7 @@ mosaicoComponent initialValues props = React.do
   let initialPath = Routes.stripFragment $
                     initialValues.locationState.path <> initialValues.locationState.search
       maxAge = Minutes 15.0
-  state /\ setState <- useState initialValues.state
+  state /\ setState_ <- useState initialValues.state
                          { article = Right <$> props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , latestArticles = fold props.latestArticles
@@ -156,6 +158,7 @@ mosaicoComponent initialValues props = React.do
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
+                         , showAds = not props.globalDisableAds && initialValues.state.showAds
                          , catMap = initialCatMap
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
@@ -164,6 +167,11 @@ mosaicoComponent initialValues props = React.do
                          , entitlements = props.entitlements
                          , ssrPreview = true
                          }
+
+  -- For tests, they are prone to break in uninteresting ways with ads
+  let setState = if not props.globalDisableAds
+                 then setState_
+                 else \f -> setState_ $ \s -> (f s) { showAds = false }
 
   let loadArticle articleId = Aff.launchAff_ do
         case UUID.parseUUID articleId of
@@ -403,13 +411,14 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
+      globalDisableAds = fromMaybe false $ toMaybe jsProps.globalDisableAds
       -- User comes directly from the server, which uses the same
       -- version of User.  User is alreay quite close to native
       -- JavaScript representation, which should make raw conversion
       -- to and from possible.
       user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
       entitlements = foldMap (hush <<< decodeJson) $ toMaybe jsProps.entitlements
-  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, user, entitlements }
+  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, globalDisableAds, user, entitlements }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
