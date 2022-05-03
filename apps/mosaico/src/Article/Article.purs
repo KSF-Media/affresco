@@ -87,7 +87,7 @@ render imageComponent props =
         bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) body
         bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
           <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
-        advertorial = fromMaybe (DOM.div_ []) (renderAdvertorialTeaser <$> props.advertorial)
+        advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
 
@@ -286,7 +286,7 @@ render imageComponent props =
       let
         imgSrc =
           maybe (fallbackImage props.paper)
-            ((_ <> "&function=hardcrop&width=200&height=200&q=90") <<< _.url)
+            _.thumb
             (article.listImage <|> article.mainImage)
       in
         DOM.a
