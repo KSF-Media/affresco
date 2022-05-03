@@ -1,21 +1,71 @@
 @import (reference) "../ksf-colors";
 @import "./header/menu.less";
 
+.header-container {
+  z-index: 10;
+
+  display: grid;
+  grid-row-gap: @mosaico-grid-row-gap;
+  grid-template-rows: auto auto;
+  grid-template-columns: 5px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 5px;
+
+  @media (min-width: @breakpoint-3col) {
+    max-width: 100%;
+    grid-template-columns: @mosaico-grid-columns;
+  }
+
+  @media (max-width: @breakpoint-3col) {
+    width: calc(100% + 24px);
+    margin-left: -12px;
+  }
+
+  grid-row: 2;
+  grid-column: 1 / span 5;
+  background-color: white;
+  padding-top: 6px;
+
+  * {
+    transition: all 0.2s;
+  }
+
+  transition: all 0.2s;
+}
+
+.header-container.static-header {
+  position: sticky;
+  top: 10px;
+  border-bottom: 1px solid gray;
+
+  .mosaico-header {
+    &__logo {
+      background-size: 30px;
+      height: 26px;
+    }
+
+    &__right-links {
+      grid-row: 1;
+      > ul {
+        flex-direction: row;
+        justify-content: flex-end;
+        > li:first-child {
+          margin-right: 5px;
+        }
+      }
+    }
+  }
+}
+
 .mosaico-header {
   @logo-size-desktop: 68px;
   @logo-size-mobile: 48px;
   @max-mobile-width: 640px;
   @font-weight: 500;
 
-  grid-area: head;
   display: grid;
+  grid-column: 2 / span 3;
 
-  grid-template-rows: @logo-size-mobile;
+  grid-template-rows: auto;
   grid-template-columns: 15% 1fr 15%;
-
-  @media (min-width: @breakpoint-3col) {
-    grid-template-rows: 1fr 55px 1fr;
-  }
 
   font: @font-weight 16px "Roboto", sans-serif;
 
@@ -55,6 +105,9 @@
 
       margin-top: 0px;
       list-style-type: none;
+      li {
+        transition: none;
+      }
     }
 
     display: none;
@@ -84,6 +137,7 @@
     cursor: pointer;
 
     grid-column-start: 2;
+    height: @logo-size-mobile;
 
     #HBL & {
       background-image: url("@{path-images}/logo-hbl.svg");
@@ -97,9 +151,8 @@
     background-repeat: no-repeat;
 
     @media (min-width: @breakpoint-3col) {
-      grid-row-start: 2;
-      background-position: top;
       background-size: @logo-size-desktop;
+      height: @logo-size-desktop;
     }
   }
 
@@ -113,7 +166,7 @@
     align-items: center;
 
     @media (min-width: @breakpoint-3col) {
-      grid-row-start: 3;
+      grid-row-start: 2;
       align-self: stretch;
     }
 
@@ -137,7 +190,7 @@
   }
 
   &__center-links {
-    grid-row-start: 3;
+    grid-row-start: 2;
     grid-column-start: 2;
     color: @grey-deepdark;
 
@@ -175,7 +228,7 @@
     gap: 6%;
 
     @media (min-width: @breakpoint-3col) {
-      grid-row-start: 3;
+      grid-row-start: 2;
     }
   }
 
@@ -219,7 +272,10 @@
 }
 
 .mosaico-top-line {
+  z-index: 10;
   grid-area: line;
+  position: sticky;
+  top: 0;
   #HBL & {
     background-color: @hbl-orange;
   }
