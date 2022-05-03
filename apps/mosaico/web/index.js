@@ -21,6 +21,7 @@ function main() {
 	mostReadArticles={window.mostReadArticles || null}
 	staticPageName={window.staticPageName || null}
 	categoryStructure={window.categoryStructure || null}
+	globalDisableAds={window.globalDisableAds || null}
 	initialFrontpageFeed={window.frontpageFeed || null}
 	latestArticles={window.latestArticles || null}
 	user={window.user || null}
