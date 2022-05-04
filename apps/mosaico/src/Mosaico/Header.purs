@@ -84,12 +84,12 @@ render props =
             }
         , maybe
             (DOM.div
-               { children: 
+               { children:
                     [ DOM.span
                           { className: accountClass <> "-icon"
                           , children: [ DOM.span_ [] ]
                           }
-                    ,DOM.span
+                    , DOM.span
                           { className: "menu-label"
                           , children: [ DOM.text "LOGGA IN" ]
                           }
