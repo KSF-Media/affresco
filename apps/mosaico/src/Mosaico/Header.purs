@@ -92,76 +92,56 @@ render scrollPosition props =
                             , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
                             }
                         ]
-                    }
-                , DOM.div
-                    { className: block <> "__right-links"
-                    , children:
-                        [ DOM.ul_
-                            [ DOM.li_
-                                [ DOM.a
-                                    { children: [ DOM.text "KUNDSERVICE" ]
-                                    , href: "/sida/kundservice"
-                                    , onClick: props.onStaticPageClick "kundservice"
-                                    }
-                                ]
-                            , DOM.li_
-                                [ DOM.a
-                                    { className: block <> "__prenumerera-link"
-                                    , children: [ DOM.text "PRENUMERERA" ]
-                                    , href: "https://prenumerera.ksfmedia.fi/#/" <> String.toLower (toString mosaicoPaper)
-                                    , target: "_blank"
-                                    }
-                                ]
-                            ]
-                        ]
-                    }
-                , DOM.div
-                    { className: block <> "__logo"
-                    , onClick: foldMap props.onCategoryClick frontpageCategory
-                    }
-                , maybe
-                    (DOM.div
-                    { children:
-                            [ DOM.span
-                                { className: accountClass <> "-icon"
-                                , children: [ DOM.span_ [] ]
-                                }
-                            , DOM.span
-                                { className: "menu-label"
-                                , children: [ DOM.text "LOGGA IN" ]
-                                }
-                            ]
-                    , onClick: props.onLogin
-                    , className: accountClass <> " " <> accountClass <> "--active"
-                    , _data: Object.fromFoldable [Tuple "login" "1"]
-                    }
-                    )
-                    (\name ->
-                        DOM.a
-                        { className: accountClass
-                        , onClick: props.onProfile
-                        , href: "/konto"
-                        , children:
-                            [ DOM.span
-                                { className: accountClass <> "-icon"
-                                , children: [ DOM.span_ [] ]
-                                }
-                            , DOM.span
-                                { className: "menu-label"
-                                , children: [ DOM.text name ]
-                                }
-                            ]
-                        , _data: Object.fromFoldable [Tuple "loggedin" "1"]
+                    ]
+                ]
+            }
+        , DOM.div
+            { className: block <> "__logo"
+            , onClick: foldMap props.onCategoryClick frontpageCategory
+            }
+        , maybe
+            (DOM.div
+            { children:
+                    [ DOM.span
+                        { className: accountClass <> "-icon"
+                        , children: [ DOM.span_ [] ]
                         }
-                    ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
-                , DOM.nav
-                    { className: block <> "__center-links"
-                    , children: map mkCategory headerCategories
-                    }
-                , DOM.div
-                    { className: block <> "__right-buttons"
-                    , children:
-                        [ searchButton
+                    , DOM.span
+                        { className: "menu-label"
+                        , children: [ DOM.text "LOGGA IN" ]
+                        }
+                    ]
+            , onClick: props.onLogin
+            , className: accountClass <> " " <> accountClass <> "--active"
+            , _data: Object.fromFoldable [Tuple "login" "1"]
+            }
+            )
+            (\name ->
+                DOM.a
+                { className: accountClass
+                , onClick: props.onProfile
+                , href: "/konto"
+                , children:
+                    [ DOM.span
+                        { className: accountClass <> "-icon"
+                        , children: [ DOM.span_ [] ]
+                        }
+                    , DOM.span
+                        { className: "menu-label"
+                        , children: [ DOM.text name ]
+                        }
+                    ]
+                , _data: Object.fromFoldable [Tuple "loggedin" "1"]
+                }
+            ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
+        , DOM.nav
+            { className: block <> "__center-links"
+            , children: map mkCategory headerCategories
+            }
+        , DOM.div
+            { className: block <> "__right-buttons"
+            , children:
+                [ searchButton
                 , DOM.div
                     { className: iconButtonClass <> " " <> menuButtonClass
                     , children: [ DOM.span { className: iconClass <> " " <> menuIconClass }
