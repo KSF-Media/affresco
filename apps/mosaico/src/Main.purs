@@ -99,7 +99,6 @@ type Env =
   , categoryStructure :: Array Category
   , categoryRegex :: Regex
   , staticPages :: HashMap.HashMap String String
-  , adsTxt :: String
   , cache :: Cache.Cache
   }
 
@@ -131,6 +130,9 @@ spec ::
                 , params :: { uuidOrSlug :: String }
                 , guards :: Guards ("clientip" :Nil)
                 }
+         , adsTxt ::
+              GET "/ads.txt"
+                { response :: File }
          , assets ::
               GET "/assets/<..path>"
                 { params :: { path :: List String }
@@ -176,10 +178,6 @@ spec ::
                 { response :: ResponseBody
                 , query :: { search :: Maybe String }
                 }
-          , adsTxt ::
-              GET "/ads.txt"
-                { response :: ResponseBody
-                }
           , notFoundPage ::
               GET "/<..path>"
                 { response :: ResponseBody
@@ -202,7 +200,6 @@ main = do
             pure $ HashMap.insert staticPageFileName pageContent acc
       foldM makeMap HashMap.empty staticPageNames
   htmlTemplate <- parseTemplate <$> FS.readTextFile UTF8 indexHtmlFileLocation
-  adsTxtContent <- FS.readTextFile UTF8 "./web/ads.txt"
   Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure mosaicoPaper
     cache <- liftEffect $ Cache.initCache mosaicoPaper categoryStructure
@@ -210,7 +207,7 @@ main = do
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
-    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache, adsTxt: adsTxtContent }
+    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
         handlers =
           { getHealthz
           , frontpageUpdated: frontpageUpdated env
@@ -227,7 +224,7 @@ main = do
           , notFoundPage: notFoundPage env
           , profilePage: profilePage env
           , menu: menu env
-          , adsTxt: adsTxt env
+          , adsTxt
           }
         guards =
           { category: parseCategory env
@@ -356,6 +353,9 @@ frontpageUpdated env { params: { category } } = do
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/assets" path
+
+adsTxt :: forall r. { | r} -> Aff File
+adsTxt = Handlers.file "dist/assets/ads.txt"
 
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
@@ -764,10 +764,6 @@ profilePage env {} = do
       appendVars (mkWindowVariables windowVars) >>=
       appendHead (makeTitle "Min profil")
   pure $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
-
-adsTxt :: Env -> {} -> Aff (Response ResponseBody)
-adsTxt env _ = do
-  pure $ htmlContent $ Response.ok $ StringBody env.adsTxt
 
 notFoundPage
   :: Env
