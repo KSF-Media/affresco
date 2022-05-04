@@ -120,30 +120,40 @@ render scrollPosition props =
                     , onClick: foldMap props.onCategoryClick frontpageCategory
                     }
                 , maybe
-                    ( DOM.div
-                        { children: [ DOM.text "LOGGA IN" ]
-                        , onClick: props.onLogin
-                        , className: accountClass <> " " <> accountClass <> "--active"
-                        , _data: Object.fromFoldable [ Tuple "login" "1" ]
-                        }
+                    (DOM.div
+                    { children:
+                            [ DOM.span
+                                { className: accountClass <> "-icon"
+                                , children: [ DOM.span_ [] ]
+                                }
+                            , DOM.span
+                                { className: "menu-label"
+                                , children: [ DOM.text "LOGGA IN" ]
+                                }
+                            ]
+                    , onClick: props.onLogin
+                    , className: accountClass <> " " <> accountClass <> "--active"
+                    , _data: Object.fromFoldable [Tuple "login" "1"]
+                    }
                     )
-                    ( \name ->
+                    (\name ->
                         DOM.a
-                          { className: accountClass
-                          , onClick: props.onProfile
-                          , href: "/konto"
-                          , children:
-                              [ DOM.span
-                                  { className: accountClass <> "-icon"
-                                  , children: [ DOM.span_ [] ]
-                                  }
-                              , DOM.span_ [ DOM.text name ]
-                              ]
-                          , _data: Object.fromFoldable [ Tuple "loggedin" "1" ]
-                          }
-                    )
-                    $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName)
-                    <$> props.user
+                        { className: accountClass
+                        , onClick: props.onProfile
+                        , href: "/konto"
+                        , children:
+                            [ DOM.span
+                                { className: accountClass <> "-icon"
+                                , children: [ DOM.span_ [] ]
+                                }
+                            , DOM.span
+                                { className: "menu-label"
+                                , children: [ DOM.text name ]
+                                }
+                            ]
+                        , _data: Object.fromFoldable [Tuple "loggedin" "1"]
+                        }
+                    ) $ (\user -> fromMaybe "INLOGGAD" $ toMaybe user.firstName) <$> props.user
                 , DOM.nav
                     { className: block <> "__center-links"
                     , children: map mkCategory headerCategories
@@ -152,11 +162,13 @@ render scrollPosition props =
                     { className: block <> "__right-buttons"
                     , children:
                         [ searchButton
-                        , DOM.div
-                            { className: iconButtonClass <> " " <> menuButtonClass
-                            , children:
-                                [ DOM.span { className: iconClass <> " " <> menuIconClass }
-                                , DOM.span_ [ DOM.text "MENY" ]
+                , DOM.div
+                    { className: iconButtonClass <> " " <> menuButtonClass
+                    , children: [ DOM.span { className: iconClass <> " " <> menuIconClass }
+                                , DOM.span
+                                    { className: "menu-label"
+                                    , children: [ DOM.text "MENY" ]
+                                    }
                                 ]
                             , onClick:
                                 handler_
@@ -195,16 +207,17 @@ render scrollPosition props =
         { frontpageCategory: head before, headerCategories: after }
 
     searchButton :: JSX
-    searchButton =
-        DOM.a
-        { className: iconButtonClass <> " " <> searchButtonClass
-        , children:
-            [ DOM.span { className: iconClass <> " " <> searchIconClass }
-            , DOM.span_ [ DOM.text "SÖK" ]
-            ]
-        , href: "/sök"
-        , onClick: capture_ $ props.router.pushState (write {}) "/sök"
-        }
+    searchButton = DOM.a
+                    { className: iconButtonClass <> " " <> searchButtonClass
+                    , children: [ DOM.span { className: iconClass <> " " <> searchIconClass }
+                                , DOM.span
+                                    { className: "menu-label"
+                                    , children: [ DOM.text "SÖK" ]
+                                    }
+                                ]
+                    , href: "/sök"
+                    , onClick: capture_ $ props.router.pushState (write {}) "/sök"
+                    }
 
     block = "mosaico-header"
 
