@@ -62,7 +62,7 @@ app props =
 render :: PushStateInterface -> Props -> JSX
 render router props = DOM.div_
     [ DOM.div
-       { className: "mosaico grid"
+       { className: "mosaico grid " <> menuOpen
        , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
@@ -94,3 +94,6 @@ render router props = DOM.div_
           , LatestList.render { latestArticles: props.latestArticles, onClickHandler: const mempty }
           ]
         }
+    menuOpen = case props.mainContent.type of
+      MenuContent -> "menu-open"
+      _           -> mempty

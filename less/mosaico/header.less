@@ -144,6 +144,13 @@
 
     &--active {
       cursor: pointer;
+      .mosaico-header__account-icon {
+        span {
+          @media (min-width: @breakpoint-2col) {
+          }
+          background-image: url("@{path-images}/icon-mosaico-login.svg");
+        }
+      }
     }
   }
 
