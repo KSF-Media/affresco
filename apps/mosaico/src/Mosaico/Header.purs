@@ -115,8 +115,9 @@ render scrollPosition props =
                             ]
                         ]
                     }
-                , DOM.div
+                , DOM.a
                     { className: block <> "__logo"
+                    , href: "/"
                     , onClick: foldMap props.onCategoryClick frontpageCategory
                     }
                 , maybe
