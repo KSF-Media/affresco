@@ -7,7 +7,6 @@ import KSF.Paper as Paper
 import KSF.User (User)
 import Lettera.Models (ArticleStub, Category, Tag, categoriesMap)
 import Mosaico.Footer (footer)
-import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
