@@ -14,6 +14,11 @@ bs.watch("./web/*").on("change", file => {
   bs.reload(file);
 });
 
+bs.watch("./output/Mosaico/index.js").on("change", () => {
+  build.runBuild();
+  bs.reload();
+});
+
 bs.watch("../../less/**/*").on("change", file => {
   build.runBuild();
   bs.reload(file);
