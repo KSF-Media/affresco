@@ -12,6 +12,8 @@ variables:
 .app-article-ci-variables: &app-article-ci-vars
   SERVICE_NAME: app-article-server
   LETTERA_INTERNAL: "http://lettera/v3"
+  AAS_LETTERA_URL: "https://lettera.staging.ksfmedia.fi/v3"
+  AAP_LETTERA_URL: "https://lettera.api.ksfmedia.fi/v3"
 
 before_script:
   - eval `${CI_SCRIPTS}/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
