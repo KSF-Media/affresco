@@ -101,15 +101,15 @@ render scrollPosition props =
             }
         , maybe
             (DOM.div
-            { children:
+               { children:
                     [ DOM.span
-                        { className: accountClass <> "-icon"
-                        , children: [ DOM.span_ [] ]
-                        }
+                          { className: accountClass <> "-icon"
+                          , children: [ DOM.span_ [] ]
+                          }
                     , DOM.span
-                        { className: "menu-label"
-                        , children: [ DOM.text "LOGGA IN" ]
-                        }
+                          { className: "menu-label"
+                          , children: [ DOM.text "LOGGA IN" ]
+                          }
                     ]
             , onClick: props.onLogin
             , className: accountClass <> " " <> accountClass <> "--active"
