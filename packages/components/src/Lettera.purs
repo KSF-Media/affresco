@@ -103,8 +103,8 @@ getArticleAuth articleId paper = do
 getArticle :: UUID -> Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
 getArticle articleId paper = getArticleWithUrl (letteraArticleUrl <> (toString articleId)) (Just paper)
 
-getArticleWithSlug :: String -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
-getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug) Nothing
+getArticleWithSlug :: String -> Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
+getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug) <<< Just
 
 getArticleWithUrl :: String -> Maybe Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
 getArticleWithUrl url paper auth clientip = do
@@ -119,7 +119,7 @@ getArticleWithUrl url paper auth clientip = do
                 , AX.RequestHeader "Authorization" ("OAuth " <> authToken)
                 , AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip)
                 ]
-              _ -> 
+              _ ->
                 [ AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip) ]
         }
   articleResponse <- AX.request request
