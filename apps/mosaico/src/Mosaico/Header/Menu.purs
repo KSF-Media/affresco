@@ -102,7 +102,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: onLogout
-                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--logout"
                     }
                   , guard (isNothing props.user) $
                     Just
@@ -110,7 +110,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: onLogin
-                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--login"
                     }
                   ]
 
