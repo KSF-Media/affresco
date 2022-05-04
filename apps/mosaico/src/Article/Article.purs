@@ -29,6 +29,7 @@ import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.LatestList as LatestList
+import Mosaico.Share as Share
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
@@ -67,6 +68,7 @@ type Props =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , advertorial :: Maybe ArticleStub
+  , currentUrl :: String
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -118,10 +120,7 @@ render imageComponent props =
                                   }
                               ]
                           }
-                      , DOM.ul
-                          { className: "mosaico-article__some"
-                          , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-                          }
+                      , Share.articleShareButtons title props.currentUrl
                       ]
                   }
             ]
@@ -402,13 +401,3 @@ renderElement paper imageComponent onArticleClick el = case el of
             , onClick: foldMap (\f -> f article) onArticleClick
             }
         ]
-
-mkShareIcon :: String -> JSX
-mkShareIcon someName =
-  DOM.li_
-    [ DOM.a
-        { href: "#"
-        , children: [ DOM.span {} ]
-        , className: "mosaico-article__some--" <> someName
-        }
-    ]

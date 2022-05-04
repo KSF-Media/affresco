@@ -74,7 +74,8 @@ import Routing.PushState (LocationState, PushStateInterface, locations, makeInte
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
-import Web.HTML.Window (document, scroll) as Web
+import Web.HTML.Window (document, scroll, location) as Web
+import Web.HTML.Location as Location
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
@@ -100,6 +101,7 @@ type State =
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
   , logger :: Sentry.Logger
+  , currentUrl :: String
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -141,15 +143,17 @@ app = do
   initialValues <- getInitialValues
   component "Mosaico" $ mosaicoComponent initialValues
 
+getPathFromLocationState :: LocationState -> String
+getPathFromLocationState locationState = Routes.stripFragment $ locationState.path <> locationState.search
+
 mosaicoComponent
   :: InitialValues
   -> Props
   -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let setTitle t = Web.setTitle t =<< Web.document =<< Web.window
-  let initialCatMap = categoriesMap props.categoryStructure
-  let initialPath = Routes.stripFragment $
-                    initialValues.locationState.path <> initialValues.locationState.search
+      initialCatMap = categoriesMap props.categoryStructure
+      initialPath = getPathFromLocationState initialValues.locationState
       maxAge = Minutes 15.0
   state /\ setState_ <- useState initialValues.state
                          { article = Right <$> props.article
@@ -355,13 +359,16 @@ pickRandomElement elements = do
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
-  case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
+  baseUrl <- Web.window >>= Web.location >>= Location.origin
+
+  case match (Routes.routes c) $ getPathFromLocationState location of
     Right path -> setState \s -> s { route = path
                                    , prevRoute = Just s.route
                                    , clickedArticle = case path of
                                        Routes.ArticlePage articleId
                                          | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
                                        _ -> s.clickedArticle
+                                   , currentUrl = baseUrl <> getPathFromLocationState location
                                    }
     Left _     -> pure unit
 
@@ -415,6 +422,7 @@ getInitialValues = do
         , advertorials: Nothing
         , singleAdvertorial: Nothing
         , logger
+        , currentUrl: getPathFromLocationState locationState
         }
     , components:
         { loginModalComponent
@@ -486,12 +494,25 @@ render setState state components router onPaywallEvent =
              case article.articleType of
                Advertorial
                  | elem "Basic" article.categories
-                 -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
+                 -> Advertorial.Basic.render components.imageComponent
+                   { article
+                   , imageProps: Nothing
+                   , advertorialClassName: Nothing
+                   , currentUrl: state.currentUrl
+                   }
                  | elem "Standard" article.categories
-                 -> Advertorial.Standard.render components.imageComponent { article }
+                 -> Advertorial.Standard.render components.imageComponent
+                   { article
+                   , currentUrl: state.currentUrl
+                   }
                  -- In a case we can't match the category of an advertorial article
                  -- let's show it as a "Basic" advertorial, rather than a regular article
-                 | otherwise -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
+                 | otherwise -> Advertorial.Basic.render components.imageComponent
+                   { article
+                   , imageProps: Nothing
+                   , advertorialClassName: Nothing
+                   , currentUrl: state.currentUrl
+                   }
                _ -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
@@ -676,6 +697,7 @@ render setState state components router onPaywallEvent =
         , mostReadArticles: state.mostReadArticles
         , latestArticles: state.latestArticles
         , advertorial: state.singleAdvertorial
+        , currentUrl: state.currentUrl
         }
 
     onClickHandler articleStub = capture_ do
