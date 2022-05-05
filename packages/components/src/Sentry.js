@@ -1,7 +1,17 @@
+/*
+   Note for debugging/testing! I spent a lot of time wondering why events were not sent.
+   From Sentry docs:
+
+   "Errors triggered from within Browser DevTools are sandboxed, so will not trigger an error handler.
+   Place the snippet directly in your code instead."
+
+   https://docs.sentry.io/platforms/javascript/
+ */
 exports.initSentry_ = function (sentryDsn) {
   var Sentry = require("@sentry/browser");
+  var Tracing = require("@sentry/tracing");
   if (sentryDsn && sentryDsn.length > 1) {
-    Sentry.init({ dsn: sentryDsn });
+    Sentry.init({ dsn: sentryDsn, integrations: [new Tracing.BrowserTracing()], tracesSampleRate: 0.8 });
     return Sentry;
   } else {
     console.warn("Could not setup Sentry, dsn is faulty. Look into your env variables.");
