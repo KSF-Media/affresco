@@ -58,7 +58,7 @@ import Mosaico.Header.Menu as Menu
 import Mosaico.LatestList as LatestList
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Paper (mosaicoPaper, _mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
@@ -378,6 +378,7 @@ getInitialValues = do
   staticPageScript <- toMaybe <$> getInitialStaticPageScript
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mosaico"
+  logger.setTag "paper" _mosaicoPaper
 
   loginModalComponent <- LoginModal.loginModal
   searchComponent     <- Search.searchComponent
