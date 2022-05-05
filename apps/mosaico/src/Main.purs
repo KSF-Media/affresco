@@ -264,7 +264,7 @@ getArticle env { params: { uuidOrSlug }, guards: { clientip } }
       Cache.addHeaderAge 60 <$>
         renderArticle env article mostReadArticles latestArticles
   | otherwise = do
-    article <- Lettera.getArticleWithSlug uuidOrSlug Nothing clientip
+    article <- Lettera.getArticleWithSlug uuidOrSlug mosaicoPaper Nothing clientip
     case article of
       Right a -> do
         pure $ Response
@@ -310,6 +310,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , onArticleClick: const mempty
                   , mostReadArticles
                   , latestArticles
+                  , advertorial: Nothing
                   }
           mosaicoString = DOM.renderToString
                           $ mosaico
@@ -784,6 +785,7 @@ notFoundArticleContent =
     , onArticleClick: const mempty
     , mostReadArticles: mempty
     , latestArticles: mempty
+    , advertorial: Nothing
     }
   }
 
