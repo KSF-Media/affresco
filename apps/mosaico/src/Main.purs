@@ -260,7 +260,7 @@ getArticle env { params: { uuidOrSlug }, guards: { clientip } }
       Cache.addHeaderAge 60 <$>
         renderArticle env article mostReadArticles latestArticles
   | otherwise = do
-    article <- Lettera.getArticleWithSlug uuidOrSlug Nothing clientip
+    article <- Lettera.getArticleWithSlug uuidOrSlug mosaicoPaper Nothing clientip
     case article of
       Right a -> do
         pure $ Response
