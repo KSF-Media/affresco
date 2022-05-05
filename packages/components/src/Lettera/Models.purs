@@ -79,6 +79,7 @@ notFoundArticle =
     , articleType: KatastrofLiten
     , articleTypeDetails: Nothing
     , categories: []
+    , shareUrl: Nothing
     }
   }
 
@@ -134,6 +135,7 @@ type ArticleStubCommon =
   , listImage :: Maybe Image
   , premium   :: Boolean
   , removeAds :: Boolean
+  , shareUrl  :: Maybe String
   )
 
 type JSArticleStub =
@@ -183,6 +185,7 @@ type ArticleCommon =
   , externalScripts    :: Maybe (Array ExternalScript)
   , articleTypeDetails :: Maybe ArticleTypeDetails
   , categories         :: Array String
+  , shareUrl           :: Maybe String
   )
 
 type JSArticle =

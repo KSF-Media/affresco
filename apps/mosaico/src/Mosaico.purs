@@ -101,7 +101,6 @@ type State =
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
   , logger :: Sentry.Logger
-  , currentUrl :: String
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -359,7 +358,6 @@ pickRandomElement elements = do
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
-  baseUrl <- Web.window >>= Web.location >>= Location.origin
 
   case match (Routes.routes c) $ getPathFromLocationState location of
     Right path -> setState \s -> s { route = path
@@ -368,7 +366,6 @@ routeListener c setState _oldLoc location = do
                                        Routes.ArticlePage articleId
                                          | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
                                        _ -> s.clickedArticle
-                                   , currentUrl = baseUrl <> getPathFromLocationState location
                                    }
     Left _     -> pure unit
 
@@ -422,7 +419,6 @@ getInitialValues = do
         , advertorials: Nothing
         , singleAdvertorial: Nothing
         , logger
-        , currentUrl: getPathFromLocationState locationState
         }
     , components:
         { loginModalComponent
@@ -494,25 +490,12 @@ render setState state components router onPaywallEvent =
              case article.articleType of
                Advertorial
                  | elem "Basic" article.categories
-                 -> Advertorial.Basic.render components.imageComponent
-                   { article
-                   , imageProps: Nothing
-                   , advertorialClassName: Nothing
-                   , currentUrl: state.currentUrl
-                   }
+                 -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                  | elem "Standard" article.categories
-                 -> Advertorial.Standard.render components.imageComponent
-                   { article
-                   , currentUrl: state.currentUrl
-                   }
+                 -> Advertorial.Standard.render components.imageComponent { article }
                  -- In a case we can't match the category of an advertorial article
                  -- let's show it as a "Basic" advertorial, rather than a regular article
-                 | otherwise -> Advertorial.Basic.render components.imageComponent
-                   { article
-                   , imageProps: Nothing
-                   , advertorialClassName: Nothing
-                   , currentUrl: state.currentUrl
-                   }
+                 | otherwise -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                _ -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
@@ -697,7 +680,6 @@ render setState state components router onPaywallEvent =
         , mostReadArticles: state.mostReadArticles
         , latestArticles: state.latestArticles
         , advertorial: state.singleAdvertorial
-        , currentUrl: state.currentUrl
         }
 
     onClickHandler articleStub = capture_ do

@@ -17,11 +17,10 @@ type Props =
   { article :: Article
   , imageProps :: Maybe (Image -> Image.Props)
   , advertorialClassName :: Maybe String
-  , currentUrl :: String
   }
 
 render :: (Image.Props -> JSX) -> Props -> JSX
-render imageComponent { article, imageProps, advertorialClassName, currentUrl } =
+render imageComponent { article, imageProps, advertorialClassName } =
   let companyName details
         | "companyName" <- details.title = fold details.description
         | otherwise = mempty
@@ -33,7 +32,7 @@ render imageComponent { article, imageProps, advertorialClassName, currentUrl } 
                    { className: "advertorial-top-banner__company"
                    , children: [ DOM.text $ "ANNONS: " <> foldMap (String.toUpper <<< companyName) article.articleTypeDetails ]
                    }
-               , Share.articleShareButtons article.title currentUrl
+               , Share.articleShareButtons article.title article.shareUrl
                ]
            }
        , DOM.article

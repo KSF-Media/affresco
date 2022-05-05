@@ -57,6 +57,9 @@ getBody = either (const mempty) _.article.body
 getRemoveAds :: Either ArticleStub FullArticle -> Boolean
 getRemoveAds = either _.removeAds _.article.removeAds
 
+getShareUrl :: Either ArticleStub FullArticle -> Maybe String
+getShareUrl = either _.shareUrl _.article.shareUrl
+
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
@@ -68,7 +71,6 @@ type Props =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , advertorial :: Maybe ArticleStub
-  , currentUrl :: String
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -92,6 +94,7 @@ render imageComponent props =
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
+        shareUrl = getShareUrl props.article
 
     in DOM.article
       { className: "mosaico-article"
@@ -120,7 +123,7 @@ render imageComponent props =
                                   }
                               ]
                           }
-                      , Share.articleShareButtons title props.currentUrl
+                      , Share.articleShareButtons title shareUrl
                       ]
                   }
             ]

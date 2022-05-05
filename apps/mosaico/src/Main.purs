@@ -304,20 +304,9 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
             case article.articleType of
               Advertorial
                 | elem "Basic" article.categories
-                -> Advertorial.Basic.render (Image.render mempty)
-                  { article
-                  , imageProps: Nothing
-                  , advertorialClassName: Nothing
-                  , currentUrl: ""
-                  }
-                | elem "Standard" article.categories -> Advertorial.Standard.render (Image.render mempty)
-                  { article
-                  , currentUrl: ""
-                  }
-                | otherwise -> Advertorial.Standard.render (Image.render mempty)
-                  { article
-                  , currentUrl: ""
-                  }
+                -> Advertorial.Basic.render (Image.render mempty) { article, imageProps: Nothing, advertorialClassName: Nothing }
+                | elem "Standard" article.categories -> Advertorial.Standard.render (Image.render mempty) { article }
+                | otherwise -> Advertorial.Standard.render (Image.render mempty) { article }
               _ ->
                 Article.render (Image.render mempty)
                   { paper: mosaicoPaper
@@ -330,7 +319,6 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , mostReadArticles
                   , latestArticles
                   , advertorial: Nothing
-                  , currentUrl: ""
                   }
           mosaicoString = DOM.renderToString
                           $ mosaico
@@ -796,7 +784,6 @@ notFoundArticleContent =
     , mostReadArticles: mempty
     , latestArticles: mempty
     , advertorial: Nothing
-    , currentUrl: ""
     }
   }
 

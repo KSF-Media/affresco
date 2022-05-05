@@ -6,18 +6,14 @@ import           Mosaico.Article.Advertorial.Basic as Basic
 import           Mosaico.Article.Image             as Image
 import           React.Basic.Hooks                 (JSX)
 
-type Props =
-  { article :: Article
-  , currentUrl :: String
-  }
+type Props = { article :: Article }
 
 render :: (Image.Props -> JSX) -> Props -> JSX
-render imageComponent { article, currentUrl } =
+render imageComponent { article } =
   Basic.render imageComponent
     { article
     , imageProps: Just defaultImageProps
     , advertorialClassName: Just "advertorial-standard"
-    , currentUrl
     }
 
 defaultImageProps :: Image -> Image.Props

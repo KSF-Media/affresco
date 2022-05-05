@@ -3,6 +3,7 @@ module Mosaico.Share
   ) where
 
 import Prelude
+import Data.Foldable (foldMap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -54,21 +55,21 @@ mkShareIcon onClick href someName =
         }
     ]
 
-articleShareButtons :: String -> String -> JSX
-articleShareButtons title currentUrl =
+articleShareButtons :: String -> Maybe String -> JSX
+articleShareButtons title maybeShareUrl =
   DOM.ul
     { className: "mosaico-article__some"
-    , children: if currentUrl /= "" then shareIcons else mempty
+    , children: foldMap shareIcons maybeShareUrl
     }
   where
-  shareIcons =
+  shareIcons currentUrl =
     [ mkShareIcon Nothing (shareUrl makeFacebookUrl title currentUrl) "facebook"
     , mkShareIcon Nothing (shareUrl makeTwitterUrl title currentUrl) "twitter"
     , mkShareIcon Nothing (shareUrl makeLinkedinUrl title currentUrl) "linkedin"
     , mkShareIcon Nothing (shareUrl makeMailUrl title currentUrl) "mail"
     , case (toMaybe nativeShare) of
         Nothing -> mempty
-        Just doShare -> nativeShareIcon $ runEffectFn1 doShare
+        Just doShare -> nativeShareIcon currentUrl $ runEffectFn1 doShare
     ]
 
-  nativeShareIcon doShare = mkShareIcon (Just $ \_ -> doShare { title, url: currentUrl }) "#" "native"
+  nativeShareIcon url doShare = mkShareIcon (Just $ \_ -> doShare { title, url }) "#" "native"
