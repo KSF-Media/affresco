@@ -232,7 +232,7 @@ mosaicoComponent initialValues props = React.do
         giveUpLogin
         liftEffect $ do
           setState _ { user = Just u }
-          state.logger.setUser $ Just user
+          state.logger.setUser u
         alreadySent <- Aff.AVar.take alreadySentInitialAnalytics
         when (not alreadySent) $ liftEffect $ initialSendAnalytics u
       advertorials <- Lettera.responseBody <$> Lettera.getAdvertorials mosaicoPaper
