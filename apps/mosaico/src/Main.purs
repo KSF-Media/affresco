@@ -128,7 +128,7 @@ spec ::
          , getArticle ::
               GET "/artikel/<..uuidOrSlug>"
                 { response :: ResponseBody
-                , params :: { uuidOrSlug ::List String }
+                , params :: { uuidOrSlug :: List String }
                 , guards :: Guards ("clientip" : Nil)
                 }
          , assets ::
