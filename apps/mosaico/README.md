@@ -6,13 +6,10 @@ It's a server side rendered react thing. The idea is that the first pageload wil
 
 To run things:
 ```
-export PUBLIC_URL=/assets
 yarn install
 yarn build
 yarn start
 ```
-
-As an alternative to exporting PUBLIC_URL for every new shell you can also use [direnv](https://direnv.net/docs/installation.html) to have it done automgically.
 
 ## Development
 
@@ -60,7 +57,9 @@ On static pages, the app initialization expects the selector "#app .mosaico--sta
 
 ## Tests
 
-Launch site as described in the Development sections.
+Launch site as described in the Development sections.  The tests may
+fail with ads, consider using `export DISABLE_ADS=1` before launching
+Mosaico if that happens.
 
 The test expects to get account data for testing from environment
 variables.

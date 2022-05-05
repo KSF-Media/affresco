@@ -2,9 +2,10 @@ module Mosaico where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (fromFoldable, mapMaybe, null)
+import Data.Array (fromFoldable, index, length, mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
@@ -27,6 +28,7 @@ import Effect.Aff.AVar as Aff.AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import Effect.Random (randomInt)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
@@ -93,6 +95,9 @@ type State =
   , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
   , showAds :: Boolean
+  , ssrPreview :: Boolean
+  , advertorials :: Maybe (Array ArticleStub)
+  , singleAdvertorial :: Maybe ArticleStub
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -104,6 +109,7 @@ type Components =
   , articleComponent :: Article.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
   , imageComponent :: Image.Props -> JSX
+  , headerComponent :: Header.Props -> JSX
   }
 
 type Props =
@@ -112,6 +118,7 @@ type Props =
   , latestArticles :: Maybe (Array ArticleStub)
   , staticPageName :: Maybe String
   , categoryStructure :: Array Category
+  , globalDisableAds :: Boolean
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
   , user :: Maybe User
   , entitlements :: Maybe (Set String)
@@ -124,6 +131,7 @@ type JSProps =
   , latestArticles :: Nullable (Array Json)
   , staticPageName :: Nullable String
   , categoryStructure :: Nullable (Array Json)
+  , globalDisableAds :: Nullable Boolean
   , initialFrontpageFeed :: Nullable JSInitialFeed
   , user :: Nullable Json
   , entitlements :: Nullable Json
@@ -145,7 +153,7 @@ mosaicoComponent initialValues props = React.do
   let initialPath = Routes.stripFragment $
                     initialValues.locationState.path <> initialValues.locationState.search
       maxAge = Minutes 15.0
-  state /\ setState <- useState initialValues.state
+  state /\ setState_ <- useState initialValues.state
                          { article = Right <$> props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , latestArticles = fold props.latestArticles
@@ -154,13 +162,20 @@ mosaicoComponent initialValues props = React.do
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
+                         , showAds = not props.globalDisableAds && initialValues.state.showAds
                          , catMap = initialCatMap
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
                          , user = props.user
                          , entitlements = props.entitlements
+                         , ssrPreview = true
                          }
+
+  -- For tests, they are prone to break in uninteresting ways with ads
+  let setState = if not props.globalDisableAds
+                 then setState_
+                 else \f -> setState_ $ \s -> (f s) { showAds = false }
 
   let loadArticle articleId = Aff.launchAff_ do
         case UUID.parseUUID articleId of
@@ -174,9 +189,12 @@ mosaicoComponent initialValues props = React.do
                 liftEffect $ setTitle article.title
                 Article.evalEmbeds article
                 sendArticleAnalytics article state.user
+                randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
                 setState _
                   { article = Just $ Right a
                   , showAds = not article.removeAds && not (article.articleType == Advertorial)
+                  , ssrPreview = false
+                  , singleAdvertorial = randomAdvertorial
                   }
               Left _ -> do
                 liftEffect $ setTitle "Något gick fel"
@@ -184,6 +202,9 @@ mosaicoComponent initialValues props = React.do
 
   useEffectOnce do
     foldMap (Article.evalEmbeds <<< _.article) props.article
+    case props.article of
+      Just a -> sendArticleAnalytics a.article props.user
+      Nothing -> pure unit
     Aff.launchAff_ do
       when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
@@ -201,6 +222,12 @@ mosaicoComponent initialValues props = React.do
         magicLogin Nothing $ \u -> case u of
           Right user -> setState _ { user = Just user }
           _ -> pure unit
+      advertorials <- Lettera.responseBody <$> Lettera.getAdvertorials mosaicoPaper
+      randomAdvertorial <- liftEffect $ pickRandomElement $ fromMaybe [] advertorials
+      liftEffect $ setState \s -> s
+        { advertorials = advertorials
+        , singleAdvertorial = s.singleAdvertorial <|> randomAdvertorial
+        }
     pure mempty
 
   let loadFeed feedName = do
@@ -248,7 +275,10 @@ mosaicoComponent initialValues props = React.do
       Routes.ArticlePage articleId
         | Just article <- map _.article (join $ map hush $ state.article)
         , articleId == article.uuid
-        -> setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
+        -> do
+          when (state.ssrPreview && _.premium article) $
+            loadArticle articleId
+          setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
       Routes.MenuPage -> setState _ { showAds = false }
       Routes.NotFoundPage _path -> setState _ { showAds = true }
@@ -303,6 +333,12 @@ mosaicoComponent initialValues props = React.do
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
 
+pickRandomElement :: forall a. Array a -> Effect (Maybe a)
+pickRandomElement [] = pure Nothing
+pickRandomElement elements = do
+  randomIndex <- randomInt 0 (length elements - 1)
+  pure $ index elements randomIndex
+
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
@@ -342,6 +378,7 @@ getInitialValues = do
   articleComponent    <- Article.component
   epaperComponent     <- Epaper.component
   imageComponent      <- Image.component
+  headerComponent     <- Header.component
   pure
     { state:
         { article: Nothing
@@ -358,6 +395,9 @@ getInitialValues = do
         , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
         , showAds: true
+        , ssrPreview: true
+        , advertorials: Nothing
+        , singleAdvertorial: Nothing
         }
     , components:
         { loginModalComponent
@@ -366,6 +406,7 @@ getInitialValues = do
         , articleComponent
         , epaperComponent
         , imageComponent
+        , headerComponent
         }
     , catMap
     , nav
@@ -390,13 +431,14 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
+      globalDisableAds = fromMaybe false $ toMaybe jsProps.globalDisableAds
       -- User comes directly from the server, which uses the same
       -- version of User.  User is alreay quite close to native
       -- JavaScript representation, which should make raw conversion
       -- to and from possible.
       user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
       entitlements = foldMap (hush <<< decodeJson) $ toMaybe jsProps.entitlements
-  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, user, entitlements }
+  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, globalDisableAds, user, entitlements }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -466,7 +508,7 @@ render setState state components router onPaywallEvent =
                  | null tagFeed -> mosaicoDefaultLayout Error.notFoundWithAside
                _                -> frontpageNoHeader Nothing maybeFeed
        Routes.MenuPage ->
-         mosaicoLayoutNoAside
+         flip (mosaicoLayout "menu-open") false
          $ Menu.render
              { router
              , categoryStructure: state.categoryStructure
@@ -534,7 +576,7 @@ render setState state components router onPaywallEvent =
 
     prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
     prerenderedFrontpage maybeHeader content =
-      mosaicoLayout inner false
+      mosaicoLayout "" inner false
       where
         inner =
           (fromMaybe mempty maybeHeader) <>
@@ -558,20 +600,20 @@ render setState state components router onPaywallEvent =
             ]
 
     mosaicoDefaultLayout :: JSX -> JSX
-    mosaicoDefaultLayout content = mosaicoLayout content true
+    mosaicoDefaultLayout content = mosaicoLayout "" content true
 
     mosaicoLayoutNoAside :: JSX -> JSX
-    mosaicoLayoutNoAside content = mosaicoLayout content false
+    mosaicoLayoutNoAside content = mosaicoLayout "" content false
 
-    mosaicoLayout :: JSX -> Boolean -> JSX
-    mosaicoLayout content showAside = DOM.div_
+    mosaicoLayout :: String -> JSX -> Boolean -> JSX
+    mosaicoLayout extraClasses content showAside = DOM.div_
       [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
       , DOM.div
-          { className: "mosaico grid"
+          { className: "mosaico grid " <> extraClasses
           , id: Paper.toString mosaicoPaper
           , children:
               [ Header.topLine
-              , Header.render
+              , components.headerComponent
                   { router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
@@ -622,6 +664,7 @@ render setState state components router onPaywallEvent =
         , onArticleClick
         , mostReadArticles: state.mostReadArticles
         , latestArticles: state.latestArticles
+        , advertorial: state.singleAdvertorial
         }
 
     onClickHandler articleStub = capture_ do
@@ -664,6 +707,5 @@ render setState state components router onPaywallEvent =
       router.pushState (write {}) $ "/sök?q=" <> query
 
     simpleRoute path = do
-      runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
       void $ Web.scroll 0 0 =<< Web.window
       router.pushState (write {}) path
