@@ -147,7 +147,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     }
                   , { title: "JOBBA HOS OSS"
                     , subsections: []
-                    , url: ""
+                    , url: "https://www.ksfmedia.fi/jobba-hos-oss"
                     , onClick: mempty
                     , addClass: mempty
                     }
