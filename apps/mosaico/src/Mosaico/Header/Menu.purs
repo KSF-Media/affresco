@@ -40,7 +40,7 @@ type Section =
   , subsections :: Array Subsection
   , url :: String
   , onClick :: EventHandler
-  , iconClass :: Maybe String
+  , addClass :: Maybe String
   }
 
 type Subsection =
@@ -80,21 +80,21 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: "/sök"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sök"
-                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--search"
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--search"
                     }
                   , Just
                     { title: "E-TIDNINGEN"
                     , subsections: []
                     , url: "/epaper"
                     , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
-                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--epaper"
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--epaper"
                     }
                   , Just
                     { title: "KUNDSERVICE"
                     , subsections: []
                     , url: "/sida/kundservice"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sida/kundservice"
-                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
                     }
                   , props.user *>
                     Just
@@ -102,7 +102,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: onLogout
-                    , iconClass: Just "mosaico-menu__icon mosaico-menu__icon--account"
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--logout"
                     }
                   , guard (isNothing props.user) $
                     Just
@@ -110,7 +110,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: ""
                     , onClick: onLogin
-                    , iconClass: mempty
+                    , addClass: Just "mosaico-menu__icon mosaico-menu__icon--login"
                     }
                   ]
 
@@ -125,7 +125,7 @@ render props@{ onLogin, onLogout } = DOM.div
               , subsections: map mkSubsection c.subCategories
               , url: "/" <> show c.label
               , onClick: props.onCategoryClick category
-              , iconClass: mempty
+              , addClass: Just "mosaico-menu__category-headline"
               }
       in acc `snoc` section
 
@@ -135,19 +135,19 @@ render props@{ onLogin, onLogout } = DOM.div
                     , subsections: []
                     , url: "/sida/kontakt"
                     , onClick: capture_ $ props.router.pushState (write {}) "/sida/kontakt"
-                    , iconClass: mempty
+                    , addClass: mempty
                     }
                   , { title: "ANNONSERA"
                     , subsections: []
                     , url: "https://www.ksfmedia.fi/"
                     , onClick: mempty
-                    , iconClass: mempty
+                    , addClass: mempty
                     }
                   , { title: "JOBBA HOS OSS"
                     , subsections: []
                     , url: ""
                     , onClick: mempty
-                    , iconClass: mempty
+                    , addClass: mempty
                     }
                   ]
 
@@ -171,7 +171,7 @@ render props@{ onLogin, onLogout } = DOM.div
         renderMenuLayoutElement (Separator modifier) = renderSeparator modifier
 
         renderSection :: Section -> JSX
-        renderSection { subsections, title, url, onClick, iconClass } = DOM.div
+        renderSection { subsections, title, url, onClick, addClass } = DOM.div
           { className: unwords [ sectionClass ]
           , children: [ DOM.div
                           { className: sectionHeaderClass
@@ -183,7 +183,7 @@ render props@{ onLogin, onLogout } = DOM.div
                                           { href: url
                                           , children: [ DOM.text title ]
                                           , onClick
-                                          , className: fromMaybe mempty iconClass
+                                          , className: fromMaybe mempty addClass
                                           }
                                       ]
                                   }
