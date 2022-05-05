@@ -25,7 +25,7 @@ import React.Basic.Hooks as React
 
 -- TODO: Show some loading indicator if trying SSO
 type Props =
-  { user :: Maybe User
+  { user :: Maybe (Maybe User)
   , entitlements :: Maybe (Set String)
   , paper :: Paper
   , onLogin :: EventHandler
@@ -39,8 +39,8 @@ component = do
     userAuth /\ setUserAuth <- useState' initialTokens
     -- Used to prevent reloading entitlements if they were in props
     initializing /\ setInitializing <- useState' true
-    useEffect (_.uuid <$> user) do
-      when (isNothing user) $ setEntitlements Nothing
+    useEffect (_.uuid <$> join user) do
+      when (isNothing $ join user) $ setEntitlements Nothing
       when (not initializing || isNothing entitlements && isJust user) do
         setEntitlements Nothing
         tokens <- loadToken
@@ -51,10 +51,10 @@ component = do
                                <<< fromMaybe Set.empty <<< hush <=< User.getUserEntitlements)) tokens
       setInitializing false
       pure $ pure unit
-    pure $ render onLogin paper userAuth entitlements
+    pure $ render onLogin paper (isJust user) userAuth entitlements
 
-render :: EventHandler -> Paper -> Maybe UserAuth -> Maybe (Set String) -> JSX
-render onLogin paper userAuth entitlements =
+render :: EventHandler -> Paper -> Boolean -> Maybe UserAuth -> Maybe (Set String) -> JSX
+render onLogin paper loadingUser userAuth entitlements =
   DOM.div
     { className: "mosaico-epaper"
     , children:
@@ -107,7 +107,7 @@ render onLogin paper userAuth entitlements =
                 }
             ]
         }
-    loading = isJust userAuth && isNothing entitlements
+    loading = loadingUser || isJust userAuth && isNothing entitlements
     entitlementNeeded = [ HBL /\ "hbl-epaper"
                         , VN /\ "vn-epaper"
                         , ON /\ "on-epaper"
