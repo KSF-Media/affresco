@@ -64,6 +64,9 @@ letteraTagUrl = letteraBaseUrl <> "/list/tag/"
 letteraSearchUrl :: String
 letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
+letteraAdvertorialUrl :: String
+letteraAdvertorialUrl = letteraBaseUrl <> "/list/advertorial"
+
 data LetteraError
   = ResponseError AX.Error
   | HttpError Int
@@ -103,8 +106,8 @@ getArticleAuth articleId paper = do
 getArticle :: UUID -> Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
 getArticle articleId paper = getArticleWithUrl (letteraArticleUrl <> (toString articleId)) (Just paper)
 
-getArticleWithSlug :: String -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
-getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug) Nothing
+getArticleWithSlug :: String -> Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
+getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug) <<< Just
 
 getArticleWithUrl :: String -> Maybe Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
 getArticleWithUrl url paper auth clientip = do
@@ -119,7 +122,7 @@ getArticleWithUrl url paper auth clientip = do
                 , AX.RequestHeader "Authorization" ("OAuth " <> authToken)
                 , AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip)
                 ]
-              _ -> 
+              _ ->
                 [ AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip) ]
         }
   articleResponse <- AX.request request
@@ -297,6 +300,15 @@ getCategoryStructure p = do
     Left err -> do
       Console.warn $ "Error while getting categories: " <> AX.printError err
       pure mempty
+
+getAdvertorials :: Paper -> Aff (LetteraResponse (Array ArticleStub))
+getAdvertorials paper =
+  useResponse parseArticleStubs
+    =<< AX.get ResponseFormat.json
+        ( letteraAdvertorialUrl
+            <> "?paper="
+            <> Paper.toString paper
+        )
 
 takeRights :: forall a b. Array (Either b a) -> Array a
 takeRights =
