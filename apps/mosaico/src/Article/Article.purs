@@ -7,7 +7,7 @@ import Control.Alt ((<|>))
 import Data.Array (head, insertAt, length, null, snoc, take, (!!))
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
 import Data.Set as Set
@@ -63,7 +63,7 @@ type Props =
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
-  , user :: Maybe User
+  , user :: Maybe (Maybe User)
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , advertorial :: Maybe ArticleStub
@@ -144,7 +144,7 @@ render imageComponent props =
                           Right PreviewArticle ->
                             bodyWithAd
                             `snoc` paywallFade
-                            `snoc` vetrina
+                            `snoc` (if isNothing props.user then loadingSpinner else vetrina)
                             `snoc` advertorial
                             `snoc` mostRead
                           Right DraftArticle ->
@@ -240,7 +240,7 @@ render imageComponent props =
       Vetrina.vetrina
         { onClose: Just props.onPaywallEvent
         , onLogin: props.onLogin
-        , user: props.user
+        , user: join props.user
         , products: Right case props.paper of
             HBL -> [ hblPremium ]
             ON -> [ onPremium ]
