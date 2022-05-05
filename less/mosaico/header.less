@@ -67,6 +67,24 @@
   grid-template-rows: auto;
   grid-template-columns: 15% 1fr 15%;
 
+  @media (min-width: @breakpoint-3col) {
+    // grid-template-rows: 1fr 55px 1fr;
+  }
+
+  .menu-label {
+    display: none;
+    @media (min-width: @breakpoint-2col) {
+      display: inline-block;
+    }
+  }
+
+  .menu-label {
+    display: none;
+    @media (min-width: @breakpoint-2col) {
+      display: inline-block;
+    }
+  }
+
   font: @font-weight 16px "Roboto", sans-serif;
 
   &__left-links {
@@ -177,8 +195,12 @@
       width: 19px;
       margin-right: 5px;
       span {
-        width: 19px;
-        height: 19px;
+        width: 30px;
+        height: 30px;
+        @media (min-width: @breakpoint-2col) {
+          width: 19px;
+          height: 19px;
+        }
         background-image: url("@{path-images}/icon-mosaico-profile.svg");
         background-repeat: no-repeat;
       }
@@ -186,6 +208,13 @@
 
     &--active {
       cursor: pointer;
+      .mosaico-header__account-icon {
+        span {
+          @media (min-width: @breakpoint-2col) {
+          }
+          background-image: url("@{path-images}/icon-mosaico-login.svg");
+        }
+      }
     }
   }
 
@@ -196,7 +225,7 @@
 
     display: none;
 
-    gap: 6%;
+    gap: 15px;
     justify-content: center;
 
     a,
@@ -225,7 +254,7 @@
 
     justify-content: flex-end;
     align-items: center;
-    gap: 6%;
+    gap: 15px;
 
     @media (min-width: @breakpoint-3col) {
       grid-row-start: 2;
@@ -233,13 +262,7 @@
   }
 
   &__icon-button {
-    &--search {
-      align-items: center;
-      display: flex;
-      text-decoration: none;
-      color: black;
-    }
-    &--menu {
+    &--search, &--menu {
       align-items: center;
       display: flex;
       text-decoration: none;
@@ -249,16 +272,28 @@
   }
 
   &__icon {
+    width: 30px;
+    height: 30px;
+    @media (min-width: @breakpoint-2col) {
+      width: 19px;
+      height: 19px;
+    }
     display: inline-block;
     margin-top: 1px;
-    width: 19px;
-    height: 19px;
     background-repeat: no-repeat;
     background-position: top;
     background-size: 100%;
     margin-right: 5px;
     &--menu {
       background-image: url("@{path-icons}/icon-mosaico-menu.svg");
+      .menu-open & {
+        background-image: url("@{path-icons}/icon-close-mosaico.svg");
+        background-size: 20px;
+        @media (min-width: @breakpoint-2col) {
+          background-size: 13px;
+        }
+        background-position: center;
+      }
     }
     &--search {
       background-image: url("@{path-icons}/icon-mosaico-search.svg");
