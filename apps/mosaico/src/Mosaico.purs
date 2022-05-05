@@ -2,9 +2,10 @@ module Mosaico where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, stringify)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (fromFoldable, mapMaybe, null)
+import Data.Array (fromFoldable, index, length, mapMaybe, null)
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
@@ -27,6 +28,7 @@ import Effect.Aff.AVar as Aff.AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
+import Effect.Random (randomInt)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
@@ -94,6 +96,8 @@ type State =
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
   , showAds :: Boolean
   , ssrPreview :: Boolean
+  , advertorials :: Maybe (Array ArticleStub)
+  , singleAdvertorial :: Maybe ArticleStub
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -185,10 +189,12 @@ mosaicoComponent initialValues props = React.do
                 liftEffect $ setTitle article.title
                 Article.evalEmbeds article
                 sendArticleAnalytics article state.user
+                randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
                 setState _
                   { article = Just $ Right a
                   , showAds = not article.removeAds && not (article.articleType == Advertorial)
                   , ssrPreview = false
+                  , singleAdvertorial = randomAdvertorial
                   }
               Left _ -> do
                 liftEffect $ setTitle "Något gick fel"
@@ -216,6 +222,12 @@ mosaicoComponent initialValues props = React.do
         magicLogin Nothing $ \u -> case u of
           Right user -> setState _ { user = Just user }
           _ -> pure unit
+      advertorials <- Lettera.responseBody <$> Lettera.getAdvertorials mosaicoPaper
+      randomAdvertorial <- liftEffect $ pickRandomElement $ fromMaybe [] advertorials
+      liftEffect $ setState \s -> s
+        { advertorials = advertorials
+        , singleAdvertorial = s.singleAdvertorial <|> randomAdvertorial
+        }
     pure mempty
 
   let loadFeed feedName = do
@@ -321,6 +333,12 @@ mosaicoComponent initialValues props = React.do
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
 
+pickRandomElement :: forall a. Array a -> Effect (Maybe a)
+pickRandomElement [] = pure Nothing
+pickRandomElement elements = do
+  randomIndex <- randomInt 0 (length elements - 1)
+  pure $ index elements randomIndex
+
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
@@ -378,6 +396,8 @@ getInitialValues = do
         , frontpageFeeds: HashMap.empty
         , showAds: true
         , ssrPreview: true
+        , advertorials: Nothing
+        , singleAdvertorial: Nothing
         }
     , components:
         { loginModalComponent
@@ -644,6 +664,7 @@ render setState state components router onPaywallEvent =
         , onArticleClick
         , mostReadArticles: state.mostReadArticles
         , latestArticles: state.latestArticles
+        , advertorial: state.singleAdvertorial
         }
 
     onClickHandler articleStub = capture_ do

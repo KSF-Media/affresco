@@ -64,6 +64,9 @@ letteraTagUrl = letteraBaseUrl <> "/list/tag/"
 letteraSearchUrl :: String
 letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
+letteraAdvertorialUrl :: String
+letteraAdvertorialUrl = letteraBaseUrl <> "/list/advertorial"
+
 data LetteraError
   = ResponseError AX.Error
   | HttpError Int
@@ -297,6 +300,15 @@ getCategoryStructure p = do
     Left err -> do
       Console.warn $ "Error while getting categories: " <> AX.printError err
       pure mempty
+
+getAdvertorials :: Paper -> Aff (LetteraResponse (Array ArticleStub))
+getAdvertorials paper =
+  useResponse parseArticleStubs
+    =<< AX.get ResponseFormat.json
+        ( letteraAdvertorialUrl
+            <> "?paper="
+            <> Paper.toString paper
+        )
 
 takeRights :: forall a b. Array (Either b a) -> Array a
 takeRights =

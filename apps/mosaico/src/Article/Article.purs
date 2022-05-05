@@ -3,7 +3,8 @@ module Mosaico.Article where
 import Prelude
 
 import Bottega.Models.Order (OrderSource(..))
-import Data.Array (cons, head, insertAt, length, null, snoc, take, (!!))
+import Control.Alt ((<|>))
+import Data.Array (head, insertAt, length, null, snoc, take, (!!))
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -25,6 +26,7 @@ import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.LatestList as LatestList
 import React.Basic (JSX)
@@ -64,6 +66,7 @@ type Props =
   , user :: Maybe User
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
+  , advertorial :: Maybe ArticleStub
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -84,6 +87,7 @@ render imageComponent props =
         bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) body
         bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
           <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
+        advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
 
@@ -138,15 +142,17 @@ render imageComponent props =
                         { className: "mosaico-article__body "
                         , children: case _.articleType <$> props.article of
                           Right PreviewArticle ->
-                            paywallFade
-                            `cons` bodyWithAd
+                            bodyWithAd
+                            `snoc` paywallFade
                             `snoc` vetrina
+                            `snoc` advertorial
                             `snoc` mostRead
                           Right DraftArticle ->
                             bodyWithoutAd
                           Right FullArticle ->
-                            bodyWithAd <>
-                            pure mostRead
+                            bodyWithAd
+                            `snoc` advertorial
+                            `snoc` mostRead
                           Left _ -> [ loadingSpinner ]
                           _ -> mempty
                         }
@@ -275,6 +281,30 @@ render imageComponent props =
         , onArticleClick: props.onArticleClick
         , onTagClick: props.onTagClick
         })
+
+    renderAdvertorialTeaser article =
+      let
+        imgSrc =
+          maybe (fallbackImage props.paper)
+            _.thumb
+            (article.listImage <|> article.mainImage)
+      in
+        DOM.a
+          { className: "mosaico--list-article-advertorial"
+          , href: "/artikel/" <> article.uuid
+          , onClick: props.onArticleClick article
+          , children:
+              [ DOM.img
+                  { className: "mosaico--list-article-advertorial__image"
+                  , src: imgSrc
+                  }
+              , DOM.h2
+                  { className: "mosaico--list-article-advertorial__title"
+                  , children: [ DOM.text $ fromMaybe article.title article.listTitle ]
+                  }
+              ]
+          }
+
 
     insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement
     insertAdsIntoBodyText contentUnit1 contentUnit2 body =
