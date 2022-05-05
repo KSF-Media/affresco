@@ -8,30 +8,58 @@
       padding: 5px;
       margin: 0;
       display: block;
+
       span {
-	width: 20px;
-	height: 20px;
-	display: block;
-	background-repeat: no-repeat;
-	background-size: contain;
+        width: 20px;
+        height: 20px;
+        display: block;
+        background-repeat: no-repeat;
+        background-size: contain;
       }
     }
+
     &:first-of-type {
       a {
-	padding-left: 0;
+        padding-left: 0;
       }
     }
   }
 
-  &--facebook { .mk-some-icon("@{path-icons}/icon-facebook.svg") }
-  &--twitter  { .mk-some-icon("@{path-icons}/icon-twitter.svg") }
-  &--linkedin { .mk-some-icon("@{path-icons}/icon-linkedin.svg") }
-  &--whatsapp { .mk-some-icon("@{path-icons}/icon-whatsapp.svg") }
-  &--mail     { .mk-some-icon("@{path-icons}/icon-mail.svg") }
-  &--native   { .mk-some-icon("@{path-icons}/icon-share-native.svg") }
+  &--facebook {
+    .mk-some-icon("@{path-icons}/icon-facebook.svg");
+  }
+
+  &--twitter {
+    .mk-some-icon("@{path-icons}/icon-twitter.svg");
+  }
+
+  &--linkedin {
+    .mk-some-icon("@{path-icons}/icon-linkedin.svg");
+  }
+
+  &--whatsapp {
+    .mk-some-icon("@{path-icons}/icon-whatsapp.svg");
+  }
+
+  &--mail {
+    .mk-some-icon("@{path-icons}/icon-mail.svg");
+  }
+
+  &--native {
+    .mk-some-icon("@{path-icons}/icon-share-native.svg");
+  }
 }
 
 .mk-some-icon(@image) {
-    span { background-image: url(@image) }
+  span {
+    background-image: url(@image);
+  }
+}
 
+.advertorial-top-banner {
+  .mosaico-article__some {
+    grid-column: 4;
+    align-self: center;
+    justify-self: end;
+  }
 }
