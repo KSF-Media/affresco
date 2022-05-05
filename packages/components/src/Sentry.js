@@ -40,7 +40,7 @@ function sendSentryEvent(sentry, appName, fnName, ...args) {
     return sentry.withScope(function (scope) {
       // Let's add app name tag for this call only, if `appName` is defined
       if (typeof appName === "string") {
-	scope.setTag("appName", appName);
+        scope.setTag("appName", appName);
       }
       sentry[fnName](...args);
     });
