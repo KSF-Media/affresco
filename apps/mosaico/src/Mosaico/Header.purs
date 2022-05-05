@@ -35,7 +35,7 @@ import Simple.JSON (E, read, write)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (addEventListener, eventListener, removeEventListener)
 import Web.HTML (window)
-import Web.HTML.Window (scrollY, toEventTarget)
+import Web.HTML.Window (scroll, scrollY, toEventTarget)
 
 type Props
   = { router :: PushStateInterface
@@ -151,7 +151,9 @@ render scrollPosition props =
                                                         case eitherState of
                                                           Right state -> r.pushState (write {}) state.previousPath
                                                           Left _ -> pure unit
-                                                    _ -> r.pushState (write { previousPath: locationState.pathname }) "/meny"
+                                                    _ -> do
+                                                      void $ scroll 0 0 =<< window
+                                                      r.pushState (write { previousPath: locationState.pathname }) "/meny"
                                             )
                                             props.router
                             }
