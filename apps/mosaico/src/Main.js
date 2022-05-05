@@ -32,3 +32,6 @@ exports.appendVarsImpl = function (script, $template) {
 
 // Server Port
 exports.serverPort = process.env.PORT;
+
+// Tests are prone to failing with ads
+exports.globalDisableAds = !!process.env.DISABLE_ADS;
