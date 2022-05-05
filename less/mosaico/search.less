@@ -44,6 +44,7 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      position: relative;
       span {
         mask-image: url("@{path-icons}/icon-mosaico-search.svg");
         -webkit-mask-image: url("@{path-icons}/icon-mosaico-search.svg");
@@ -60,6 +61,10 @@
         display: inline-block;
         width: 23px;
         height: 23px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
       }
       background-color: @button-color-primary;
       border: none;
