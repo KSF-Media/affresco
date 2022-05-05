@@ -181,3 +181,42 @@
     }
   }
 }
+
+.mosaico--list-article-advertorial {
+  display: block;
+  position: relative;
+  background-color: #c2e4e5;
+  text-decoration: none;
+  color: black;
+
+  &::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 5px 10px;
+    display: inline-block;
+    content: 'ANNONS';
+    font-size: 11px;
+    line-height: 12px;
+    font-weight: bold;
+    background-color: #c2e4e5;
+  }
+
+  &__image {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 400px;
+  }
+
+  &__title {
+    font: 1.125rem/1.1 "Duplex Serif", serif;
+
+    @media (min-width: @breakpoint-2col) {
+      font: 1.5rem/1.1 "Duplex Serif", serif;
+    }
+
+    margin-bottom: 5px;
+    padding: 30px;
+  }
+}

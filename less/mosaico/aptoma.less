@@ -7,3 +7,16 @@
     padding-top: 0 !important;
   }
 }
+
+@media (min-width: 768px) and (max-width: 999px) {
+  // Show senast publicerat and andra läser at the bottom on this screen size,
+  // not at the top
+  .front>.dre-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dre-group--third-list-right {
+    order: 1;
+  }
+}
