@@ -19,7 +19,7 @@ import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
-import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Lettera.Models (ArticleStub, Tag(..), formatLocalDateTimeAsArticleTime, tagToURIComponent)
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage.Models (Hook, toHookRep)
 import Mosaico.Paper (mosaicoPaper)
@@ -92,6 +92,10 @@ render (List props) =
                                       { href: "/artikel/" <> a.uuid
                                       , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
                                       }
+                                  , DOM.span
+                                    { className: "list-article-timestamp"
+                                    , children: [ DOM.text $ foldMap formatLocalDateTimeAsArticleTime a.publishingTime ]
+                                    }
                                   , guard a.premium $
                                     DOM.div
                                       { className: "mosaico-article__meta"
