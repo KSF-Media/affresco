@@ -10,11 +10,12 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
-import Data.List (List, intercalate)
+import Data.List (List, intercalate, (:))
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (trim)
+import Data.String as String
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
 import Data.String.Regex.Flags (ignoreCase) as Regex
@@ -125,10 +126,10 @@ spec ::
                 , query :: DraftParams
                 }
          , getArticle ::
-              GET "/artikel/<uuidOrSlug>"
+              GET "/artikel/<..uuidOrSlug>"
                 { response :: ResponseBody
-                , params :: { uuidOrSlug :: String }
-                , guards :: Guards ("clientip" :Nil)
+                , params :: { uuidOrSlug :: List String }
+                , guards :: Guards ("clientip" : Nil)
                 }
          , assets ::
               GET "/assets/<..path>"
@@ -248,34 +249,41 @@ getDraftArticle env { params: {aptomaId}, query } = do
 
 getArticle
   :: Env
-  -> { params :: { uuidOrSlug :: String }, guards :: { clientip :: Maybe String } }
+  -> { params :: { uuidOrSlug :: List String }, guards :: { clientip :: Maybe String } }
   -> Aff (Response ResponseBody)
-getArticle env { params: { uuidOrSlug }, guards: { clientip } }
-  | Just uuid <- UUID.parseUUID uuidOrSlug = do
+getArticle env { params: { uuidOrSlug: (uuid : _) }, guards: { clientip } }
+  | Just articleId <- UUID.parseUUID uuid = do
       { article, mostReadArticles, latestArticles } <- sequential $
         { article: _, mostReadArticles: _, latestArticles: _ }
-        <$> parallel (Lettera.getArticle uuid mosaicoPaper Nothing clientip)
+        <$> parallel (Lettera.getArticle articleId mosaicoPaper Nothing clientip)
         <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
         <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
       Cache.addHeaderAge 60 <$>
         renderArticle env article mostReadArticles latestArticles
-  | otherwise = do
-    article <- Lettera.getArticleWithSlug uuidOrSlug mosaicoPaper Nothing clientip
-    case article of
-      Right a -> do
-        pure $ Response
-          { status: Status.found
-          , body: EmptyBody
-          , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> a.article.uuid ]
-          }
-      Left _ -> do
-        { mostReadArticles, latestArticles } <- sequential $
-          { mostReadArticles: _, latestArticles: _ }
-          <$> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
-          <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
-        let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-            maybeLatest = if null latestArticles then Nothing else Just latestArticles
-        notFound env notFoundArticleContent maybeMostRead maybeLatest
+getArticle env { params: { uuidOrSlug: path }, guards: { clientip } }
+  | (slug : _) <- path
+  , not $ String.null slug
+  = do
+      article <- Lettera.getArticleWithSlug slug mosaicoPaper Nothing clientip
+      case article of
+        Right a -> do
+          pure $ Response
+            { status: Status.found
+            , body: EmptyBody
+            , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> a.article.uuid ]
+            }
+        Left _ -> renderNotFound env
+   | otherwise = renderNotFound env
+
+renderNotFound :: Env -> Aff (Response ResponseBody)
+renderNotFound env = do
+  feeds <- sequential $
+    { mostReadArticles: _, latestArticles: _ }
+    <$> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
+    <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
+  let maybeMostRead = if null feeds.mostReadArticles then Nothing else Just feeds.mostReadArticles
+      maybeLatest   = if null feeds.latestArticles then Nothing else Just feeds.latestArticles
+  notFound env notFoundArticleContent maybeMostRead maybeLatest
 
 renderArticle
   :: Env
