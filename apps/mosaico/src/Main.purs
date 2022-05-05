@@ -138,6 +138,9 @@ spec ::
                 , params :: { uuidOrSlug :: List String }
                 , guards :: Guards ("clientip" : Nil)
                 }
+         , adsTxt ::
+              GET "/ads.txt"
+                { response :: File }
          , assets ::
               GET "/assets/<..path>"
                 { params :: { path :: List String }
@@ -245,6 +248,7 @@ main = do
           , notFoundPage: notFoundPage env
           , profilePage: profilePage env
           , menu: menu env
+          , adsTxt
           }
         guards =
           { category: parseCategory env
@@ -381,6 +385,9 @@ frontpageUpdated env { params: { category } } = do
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/assets" path
+
+adsTxt :: forall r. { | r} -> Aff File
+adsTxt = Handlers.file "dist/assets/ads.txt"
 
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
