@@ -33,6 +33,7 @@ import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
+import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
@@ -77,6 +78,7 @@ import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, scroll) as Web
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
+foreign import sentryDsn_ :: Effect String
 
 data ModalView = LoginModal
 
@@ -98,6 +100,7 @@ type State =
   , ssrPreview :: Boolean
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
+  , logger :: Sentry.Logger
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -220,7 +223,9 @@ mosaicoComponent initialValues props = React.do
       when (Map.isEmpty initialCatMap) $ Aff.AVar.put catMap initialValues.catMap
       when (isNothing props.user) $
         magicLogin Nothing $ \u -> case u of
-          Right user -> setState _ { user = Just user }
+          Right user -> do
+            setState _ { user = Just user }
+            state.logger.setUser $ Just user
           _ -> pure unit
       advertorials <- Lettera.responseBody <$> Lettera.getAdvertorials mosaicoPaper
       randomAdvertorial <- liftEffect $ pickRandomElement $ fromMaybe [] advertorials
@@ -371,6 +376,8 @@ getInitialValues = do
   locationState <- nav.locationState
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
   staticPageScript <- toMaybe <$> getInitialStaticPageScript
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing "mosaico"
 
   loginModalComponent <- LoginModal.loginModal
   searchComponent     <- Search.searchComponent
@@ -398,6 +405,7 @@ getInitialValues = do
         , ssrPreview: true
         , advertorials: Nothing
         , singleAdvertorial: Nothing
+        , logger
         }
     , components:
         { loginModalComponent
@@ -455,6 +463,7 @@ render setState state components router onPaywallEvent =
            case user of
              Right u -> do
                setState _ { modalView = Nothing, user = Just u }
+               state.logger.setUser $ Just u
                onPaywallEvent
              Left _err -> do
                onPaywallEvent
@@ -700,6 +709,7 @@ render setState state components router onPaywallEvent =
     onLogout = capture_ do
       Aff.launchAff_ $ logout $ const $ pure unit
       setState _ { user = Nothing }
+      state.logger.setUser Nothing
       onPaywallEvent
 
     -- Search is done via the router
