@@ -33,6 +33,7 @@ import Effect.Random (randomInt)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
+import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
@@ -57,7 +58,7 @@ import Mosaico.Header.Menu as Menu
 import Mosaico.LatestList as LatestList
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Paper (mosaicoPaper, _mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
@@ -76,6 +77,7 @@ import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, scroll) as Web
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
+foreign import sentryDsn_ :: Effect String
 
 data ModalView = LoginModal
 
@@ -97,6 +99,7 @@ type State =
   , ssrPreview :: Boolean
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
+  , logger :: Sentry.Logger
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -227,7 +230,9 @@ mosaicoComponent initialValues props = React.do
       -- magicLogin doesn't actually call the callback if it fails
       magicLogin Nothing $ hush >>> \u -> Aff.launchAff_ $ withLoginLock do
         giveUpLogin
-        liftEffect $ setState _ { user = Just u }
+        liftEffect $ do
+          setState _ { user = Just u }
+          state.logger.setUser u
         alreadySent <- Aff.AVar.take alreadySentInitialAnalytics
         when (not alreadySent) $ liftEffect $ initialSendAnalytics u
       advertorials <- Lettera.responseBody <$> Lettera.getAdvertorials mosaicoPaper
@@ -379,6 +384,9 @@ getInitialValues = do
   locationState <- nav.locationState
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
   staticPageScript <- toMaybe <$> getInitialStaticPageScript
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing "mosaico"
+  logger.setTag "paper" _mosaicoPaper
 
   loginModalComponent <- LoginModal.loginModal
   searchComponent     <- Search.searchComponent
@@ -406,6 +414,7 @@ getInitialValues = do
         , ssrPreview: true
         , advertorials: Nothing
         , singleAdvertorial: Nothing
+        , logger
         }
     , components:
         { loginModalComponent
@@ -456,6 +465,7 @@ render setState state components router onPaywallEvent =
            case user of
              Right u -> do
                setState _ { modalView = Nothing, user = Just $ Just u }
+               state.logger.setUser $ Just u
                onPaywallEvent
              Left _err -> do
                onPaywallEvent
@@ -701,6 +711,7 @@ render setState state components router onPaywallEvent =
     onLogout = capture_ do
       Aff.launchAff_ $ logout $ const $ pure unit
       setState _ { user = Just Nothing }
+      state.logger.setUser Nothing
       onPaywallEvent
 
     -- Search is done via the router
