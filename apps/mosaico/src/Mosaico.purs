@@ -3,7 +3,7 @@ module Mosaico where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Argonaut.Core (Json, stringify)
+import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (fromFoldable, index, length, mapMaybe, null)
 import Data.DateTime (DateTime)
@@ -18,7 +18,7 @@ import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Set (Set)
-import Data.Time.Duration (Minutes(..))
+import Data.Time.Duration (Minutes(..), Milliseconds(..))
 import Data.Tuple (Tuple)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -27,12 +27,13 @@ import Effect.Aff as Aff
 import Effect.Aff.AVar as Aff.AVar
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Exception as Exception
 import Effect.Now as Now
 import Effect.Random (randomInt)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import Foreign (unsafeFromForeign)
 import KSF.Auth (enableCookieLogin) as Auth
 import KSF.Paper as Paper
+import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
@@ -57,13 +58,12 @@ import Mosaico.Header.Menu as Menu
 import Mosaico.LatestList as LatestList
 import Mosaico.LoginModal as LoginModal
 import Mosaico.MostReadList as MostReadList
-import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Paper (mosaicoPaper, _mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Routes as Routes
 import Mosaico.Search as Search
 import Mosaico.StaticPage (StaticPageResponse(..), fetchStaticPage, getInitialStaticPageContent, getInitialStaticPageScript)
 import Mosaico.Webview as Webview
-import Persona as Persona
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
@@ -77,6 +77,7 @@ import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, scroll) as Web
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
+foreign import sentryDsn_ :: Effect String
 
 data ModalView = LoginModal
 
@@ -88,7 +89,7 @@ type State =
   , prevRoute :: Maybe Routes.MosaicoPage
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
-  , user :: Maybe User
+  , user :: Maybe (Maybe User)
   , entitlements :: Maybe (Set String)
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
@@ -98,6 +99,7 @@ type State =
   , ssrPreview :: Boolean
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
+  , logger :: Sentry.Logger
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -120,8 +122,6 @@ type Props =
   , categoryStructure :: Array Category
   , globalDisableAds :: Boolean
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
-  , user :: Maybe User
-  , entitlements :: Maybe (Set String)
   }
 
 type JSProps =
@@ -133,8 +133,6 @@ type JSProps =
   , categoryStructure :: Nullable (Array Json)
   , globalDisableAds :: Nullable Boolean
   , initialFrontpageFeed :: Nullable JSInitialFeed
-  , user :: Nullable Json
-  , entitlements :: Nullable Json
   }
 
 app :: Component Props
@@ -167,8 +165,8 @@ mosaicoComponent initialValues props = React.do
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
-                         , user = props.user
-                         , entitlements = props.entitlements
+                         , user = Nothing
+                         , entitlements = Nothing
                          , ssrPreview = true
                          }
 
@@ -188,7 +186,7 @@ mosaicoComponent initialValues props = React.do
               Right a@{ article } -> do
                 liftEffect $ setTitle article.title
                 Article.evalEmbeds article
-                sendArticleAnalytics article state.user
+                sendArticleAnalytics article $ join state.user
                 randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
                 setState _
                   { article = Just $ Right a
@@ -201,10 +199,21 @@ mosaicoComponent initialValues props = React.do
                 setState _ { article = Just $ Left unit }
 
   useEffectOnce do
+    withLoginLock <- (\l -> Aff.bracket (Aff.AVar.put unit l)
+                            (const $ Aff.AVar.take l) <<< const) <$> AVar.empty
+    alreadySentInitialAnalytics <- AVar.new false
+    let initialSendAnalytics = case props.article of
+          Just a -> sendArticleAnalytics a.article
+          Nothing -> const $ pure unit
+    giveUpLogin <- Aff.killFiber (Exception.error "give up login") <$> Aff.launchAff do
+      Aff.delay $ Milliseconds 2000.0
+      withLoginLock do
+        liftEffect $ setState _ { user = Just Nothing }
+        liftEffect $ initialSendAnalytics Nothing
+        _ <- Aff.AVar.take alreadySentInitialAnalytics
+        Aff.AVar.put true alreadySentInitialAnalytics
+
     foldMap (Article.evalEmbeds <<< _.article) props.article
-    case props.article of
-      Just a -> sendArticleAnalytics a.article props.user
-      Nothing -> pure unit
     Aff.launchAff_ do
       when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
@@ -218,17 +227,21 @@ mosaicoComponent initialValues props = React.do
         -- Listen for route changes and set state accordingly
         void $ locations (routeListener catMap setState) initialValues.nav
       when (Map.isEmpty initialCatMap) $ Aff.AVar.put catMap initialValues.catMap
-      when (isNothing props.user) $
-        magicLogin Nothing $ \u -> case u of
-          Right user -> setState _ { user = Just user }
-          _ -> pure unit
+      -- magicLogin doesn't actually call the callback if it fails
+      magicLogin Nothing $ hush >>> \u -> Aff.launchAff_ $ withLoginLock do
+        giveUpLogin
+        liftEffect $ do
+          setState _ { user = Just u }
+          state.logger.setUser u
+        alreadySent <- Aff.AVar.take alreadySentInitialAnalytics
+        when (not alreadySent) $ liftEffect $ initialSendAnalytics u
       advertorials <- Lettera.responseBody <$> Lettera.getAdvertorials mosaicoPaper
       randomAdvertorial <- liftEffect $ pickRandomElement $ fromMaybe [] advertorials
       liftEffect $ setState \s -> s
         { advertorials = advertorials
         , singleAdvertorial = s.singleAdvertorial <|> randomAdvertorial
         }
-    pure mempty
+    pure $ Aff.launchAff_ giveUpLogin
 
   let loadFeed feedName = do
         -- In SPA mode, this may be called before catMap has been
@@ -263,7 +276,7 @@ mosaicoComponent initialValues props = React.do
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
 
-  useEffect (state.route /\ map _.cusno state.user) do
+  useEffect (state.route /\ map _.cusno (join state.user)) do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
@@ -371,6 +384,9 @@ getInitialValues = do
   locationState <- nav.locationState
   staticPageContent <- toMaybe <$> getInitialStaticPageContent
   staticPageScript <- toMaybe <$> getInitialStaticPageScript
+  sentryDsn <- sentryDsn_
+  logger <- Sentry.mkLogger sentryDsn Nothing "mosaico"
+  logger.setTag "paper" _mosaicoPaper
 
   loginModalComponent <- LoginModal.loginModal
   searchComponent     <- Search.searchComponent
@@ -398,6 +414,7 @@ getInitialValues = do
         , ssrPreview: true
         , advertorials: Nothing
         , singleAdvertorial: Nothing
+        , logger
         }
     , components:
         { loginModalComponent
@@ -425,20 +442,13 @@ fromJSProps jsProps =
       latestArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.latestArticles
 
       initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
-
+      globalDisableAds = fromMaybe false $ toMaybe jsProps.globalDisableAds
       staticPageName = toMaybe jsProps.staticPageName
       -- Decoding errors are being hushed here, although if this
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
-      globalDisableAds = fromMaybe false $ toMaybe jsProps.globalDisableAds
-      -- User comes directly from the server, which uses the same
-      -- version of User.  User is alreay quite close to native
-      -- JavaScript representation, which should make raw conversion
-      -- to and from possible.
-      user = unsafeFromForeign <<< Persona.rawJSONParse <<< stringify <$> toMaybe jsProps.user
-      entitlements = foldMap (hush <<< decodeJson) $ toMaybe jsProps.entitlements
-  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, globalDisableAds, user, entitlements }
+  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, globalDisableAds }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -454,7 +464,8 @@ render setState state components router onPaywallEvent =
         { onUserFetch: \user ->
            case user of
              Right u -> do
-               setState _ { modalView = Nothing, user = Just u }
+               setState _ { modalView = Nothing, user = Just $ Just u }
+               state.logger.setUser $ Just u
                onPaywallEvent
              Left _err -> do
                onPaywallEvent
@@ -699,7 +710,8 @@ render setState state components router onPaywallEvent =
 
     onLogout = capture_ do
       Aff.launchAff_ $ logout $ const $ pure unit
-      setState _ { user = Nothing }
+      setState _ { user = Just Nothing }
+      state.logger.setUser Nothing
       onPaywallEvent
 
     -- Search is done via the router
