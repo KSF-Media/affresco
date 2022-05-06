@@ -26,7 +26,11 @@
 
   &__digihelmob,
   &__box {
-    margin: 10px auto 20px;
+    .mosaico-ad__content-unit {
+      &.populated {
+        margin: 0 auto 20px;
+      }
+    }
   }
 
   &__top-parade {
@@ -42,6 +46,13 @@
       @media (min-width: @breakpoint-3col) {
         margin-left: -80px;
       }
+    }
+  }
+  .mosaico-article__aside &.mosaico-ad__box:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    .mosaico-ad__content-unit {
+      margin-top: 0;
     }
   }
 }
