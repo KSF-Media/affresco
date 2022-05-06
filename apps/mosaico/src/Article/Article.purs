@@ -250,7 +250,7 @@ render imageComponent props =
         , headline: Just
           $ DOM.div_
               [ DOM.text $ "Läs " <> paperName <> " digitalt för "
-              , DOM.span { className: "vetrina--price-headline", children: [ DOM.text "Endast 1€" ] }
+              , DOM.span { className: "vetrina--price-headline", children: [ DOM.text "endast 1€" ] }
               ]
         , paper: Just props.paper
         , paymentMethods: []
