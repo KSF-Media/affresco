@@ -159,12 +159,11 @@ render imageComponent props =
                     , DOM.div
                         { className: "mosaico-article__aside"
                         , children:
-                          [ LatestList.render
+                          [ Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                          , LatestList.render
                                      { latestArticles: props.latestArticles
                                      , onClickHandler: props.onArticleClick
                                      }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__box" }
                           , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
                           , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
                           , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
