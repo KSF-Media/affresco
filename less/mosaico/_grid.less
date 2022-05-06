@@ -10,7 +10,6 @@
   grid-template-columns: minmax(0, 1fr); //minmax used to prevent grid blowout on static pages
   grid-row-gap: @mosaico-grid-row-gap;
   grid-template-areas:
-    "line"
     "head"
     "separator"
     "search"
@@ -21,11 +20,10 @@
 
   @media (min-width: @breakpoint-3col) {
     max-width: 100%;
-    grid-template-rows: auto auto auto minmax(0, 30px) auto auto minmax(500px, auto);
+    grid-template-rows: auto auto minmax(0, 30px) auto auto minmax(500px, auto);
     // don't use repeat, causes error
     grid-template-columns: @mosaico-grid-columns;
     grid-template-areas:
-      "line line line line line"
       ". head head head ."
       "separator separator separator separator separator"
       ". search search aside ."
@@ -33,11 +31,6 @@
       "article article article article article"
       "foot foot foot foot foot";
   }
-}
-
-.mosaico--header {
-  grid-area: head;
-  background: @grey-light;
 }
 
 .mosaico-main {

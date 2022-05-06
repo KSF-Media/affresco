@@ -625,8 +625,7 @@ render setState state components router onPaywallEvent =
           { className: "mosaico grid " <> extraClasses
           , id: Paper.toString mosaicoPaper
           , children:
-              [ Header.topLine
-              , components.headerComponent
+              [ components.headerComponent
                   { router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
@@ -636,7 +635,6 @@ render setState state components router onPaywallEvent =
                   , onProfile
                   , onStaticPageClick
                   }
-              , Header.mainSeparator
               , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
               , footer mosaicoPaper onStaticPageClick

@@ -62,8 +62,7 @@ render router props = DOM.div_
        { className: "mosaico grid " <> menuOpen
        , id: Paper.toString mosaicoPaper
        , children:
-           [ Header.topLine
-           , Header.render 0
+           [ Header.render 0 0
              { router
              , categoryStructure: props.categoryStructure
              , catMap: categoriesMap props.categoryStructure
@@ -73,7 +72,6 @@ render router props = DOM.div_
              , onProfile: mempty
              , onStaticPageClick: mempty
              }
-           , Header.mainSeparator
            , props.mainContent.content
            , footer mosaicoPaper mempty
            , case props.mainContent.type of
