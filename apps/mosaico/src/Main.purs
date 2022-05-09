@@ -5,16 +5,17 @@ import Prelude
 import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
-import Data.Array (find, foldl, fromFoldable, null)
+import Data.Array (cons, find, foldl, fromFoldable, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
-import Data.List (List, intercalate)
+import Data.List (List, intercalate, (:))
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (trim)
+import Data.String as String
 import Data.String.Regex (Regex)
 import Data.String.Regex (match, regex) as Regex
 import Data.String.Regex.Flags (ignoreCase) as Regex
@@ -92,6 +93,7 @@ appendVars :: String -> Template -> Effect Template
 appendVars = runEffectFn2 appendVarsImpl
 
 foreign import serverPort :: Int
+foreign import globalDisableAds :: Boolean
 
 type Env =
   { htmlTemplate :: TemplateMaster
@@ -124,11 +126,14 @@ spec ::
                 , query :: DraftParams
                 }
          , getArticle ::
-              GET "/artikel/<uuidOrSlug>"
+              GET "/artikel/<..uuidOrSlug>"
                 { response :: ResponseBody
-                , params :: { uuidOrSlug :: String }
-                , guards :: Guards ("clientip" :Nil)
+                , params :: { uuidOrSlug :: List String }
+                , guards :: Guards ("clientip" : Nil)
                 }
+         , adsTxt ::
+              GET "/ads.txt"
+                { response :: File }
          , assets ::
               GET "/assets/<..path>"
                 { params :: { path :: List String }
@@ -220,6 +225,7 @@ main = do
           , notFoundPage: notFoundPage env
           , profilePage: profilePage env
           , menu: menu env
+          , adsTxt
           }
         guards =
           { category: parseCategory env
@@ -247,34 +253,41 @@ getDraftArticle env { params: {aptomaId}, query } = do
 
 getArticle
   :: Env
-  -> { params :: { uuidOrSlug :: String }, guards :: { clientip :: Maybe String } }
+  -> { params :: { uuidOrSlug :: List String }, guards :: { clientip :: Maybe String } }
   -> Aff (Response ResponseBody)
-getArticle env { params: { uuidOrSlug }, guards: { clientip } }
-  | Just uuid <- UUID.parseUUID uuidOrSlug = do
+getArticle env { params: { uuidOrSlug: (uuid : _) }, guards: { clientip } }
+  | Just articleId <- UUID.parseUUID uuid = do
       { article, mostReadArticles, latestArticles } <- sequential $
         { article: _, mostReadArticles: _, latestArticles: _ }
-        <$> parallel (Lettera.getArticle uuid mosaicoPaper Nothing clientip)
+        <$> parallel (Lettera.getArticle articleId mosaicoPaper Nothing clientip)
         <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
         <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
       Cache.addHeaderAge 60 <$>
         renderArticle env article mostReadArticles latestArticles
-  | otherwise = do
-    article <- Lettera.getArticleWithSlug uuidOrSlug Nothing clientip
-    case article of
-      Right a -> do
-        pure $ Response
-          { status: Status.found
-          , body: EmptyBody
-          , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> a.article.uuid ]
-          }
-      Left _ -> do
-        { mostReadArticles, latestArticles } <- sequential $
-          { mostReadArticles: _, latestArticles: _ }
-          <$> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
-          <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
-        let maybeMostRead = if null mostReadArticles then Nothing else Just mostReadArticles
-            maybeLatest = if null latestArticles then Nothing else Just latestArticles
-        notFound env notFoundArticleContent maybeMostRead maybeLatest
+getArticle env { params: { uuidOrSlug: path }, guards: { clientip } }
+  | (slug : _) <- path
+  , not $ String.null slug
+  = do
+      article <- Lettera.getArticleWithSlug slug mosaicoPaper Nothing clientip
+      case article of
+        Right a -> do
+          pure $ Response
+            { status: Status.found
+            , body: EmptyBody
+            , headers: Headers.fromFoldable [ Tuple "Location" $ "/artikel/" <> a.article.uuid ]
+            }
+        Left _ -> renderNotFound env
+   | otherwise = renderNotFound env
+
+renderNotFound :: Env -> Aff (Response ResponseBody)
+renderNotFound env = do
+  feeds <- sequential $
+    { mostReadArticles: _, latestArticles: _ }
+    <$> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
+    <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
+  let maybeMostRead = if null feeds.mostReadArticles then Nothing else Just feeds.mostReadArticles
+      maybeLatest   = if null feeds.latestArticles then Nothing else Just feeds.latestArticles
+  notFound env notFoundArticleContent maybeMostRead maybeLatest
 
 renderArticle
   :: Env
@@ -305,6 +318,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , onArticleClick: const mempty
                   , mostReadArticles
                   , latestArticles
+                  , advertorial: Nothing
                   }
           mosaicoString = DOM.renderToString
                           $ mosaico
@@ -312,7 +326,6 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                             , mostReadArticles
                             , latestArticles
                             , categoryStructure: env.categoryStructure
-                            , user: Nothing
                             }
 
       html <- liftEffect do
@@ -348,6 +361,9 @@ frontpageUpdated env { params: { category } } = do
 
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/assets" path
+
+adsTxt :: forall r. { | r} -> Aff File
+adsTxt = Handlers.file "dist/assets/ads.txt"
 
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
@@ -388,7 +404,6 @@ renderFrontpage env = do
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
-          , user: Nothing
           }
 
     renderFront :: ArticleFeed -> Array ArticleStub -> Array ArticleStub -> MainContent
@@ -455,7 +470,6 @@ menu env _ = do
             , mostReadArticles: mempty
             , latestArticles: mempty
             , categoryStructure: env.categoryStructure
-            , user: Nothing
           }
   html <- liftEffect do
             let windowVars =
@@ -511,7 +525,6 @@ tagList env { params: { tag } } = do
       , categoryStructure: env.categoryStructure
       , mostReadArticles
       , latestArticles
-      , user: Nothing
       }
 
 epaperPage :: Env -> {} -> Aff (Response ResponseBody)
@@ -539,12 +552,11 @@ epaperPage env { } = do
         $ MosaicoServer.app
           { mainContent:
               { type: EpaperContent
-              , content: Epaper.render mempty mosaicoPaper Nothing Nothing
+              , content: Epaper.render mempty mosaicoPaper true Nothing Nothing
               }
           , categoryStructure: env.categoryStructure
           , mostReadArticles
           , latestArticles
-          , user: Nothing
           }
 
 
@@ -576,7 +588,6 @@ staticPage env { params: { pageName } } = do
               , mostReadArticles
               , latestArticles
               , categoryStructure: env.categoryStructure
-              , user: Nothing
               }
       html <- liftEffect do
         let windowVars =
@@ -624,7 +635,6 @@ debugList env { params: { uuid } } = do
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
-          , user: Nothing
           }
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category} } -> Aff (Response ResponseBody)
@@ -676,7 +686,6 @@ renderCategoryPage env category = do
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
-          , user: Nothing
           }
 
 searchPage :: Env -> { query :: { search :: Maybe String } } -> Aff (Response ResponseBody)
@@ -711,7 +720,6 @@ searchPage env { query: { search } } = do
                           , mostReadArticles
                           , latestArticles
                           , categoryStructure: env.categoryStructure
-                          , user: Nothing
                           }
   html <- liftEffect do
             let windowVars =
@@ -745,7 +753,6 @@ profilePage env {} = do
                           , mostReadArticles
                           , latestArticles
                           , categoryStructure: env.categoryStructure
-                          , user: Nothing
                           }
   html <- liftEffect do
     let windowVars =
@@ -776,6 +783,7 @@ notFoundArticleContent =
     , onArticleClick: const mempty
     , mostReadArticles: mempty
     , latestArticles: mempty
+    , advertorial: Nothing
     }
   }
 
@@ -793,7 +801,6 @@ notFound env mainContent maybeMostReadArticles maybeLatestArticles = do
                         , mostReadArticles: fromMaybe [] maybeMostReadArticles
                         , latestArticles: fromMaybe [] maybeLatestArticles
                         , categoryStructure: env.categoryStructure
-                        , user: Nothing
                         }
   html <- liftEffect $ do
     let windowVars =
@@ -829,7 +836,8 @@ htmlContent (Response response) =
 
 mkWindowVariables :: Array (Tuple String String) -> String
 mkWindowVariables vars =
-  let jsVars = map (\(name /\ value) -> "window." <> name <> "=" <> value <> ";") vars
+  let jsVars = map (\(name /\ value) -> "window." <> name <> "=" <> value <> ";") $
+               cons ("globalDisableAds" /\ show globalDisableAds) vars
   in "<script>" <> intercalate "" jsVars <> "</script>"
 
 makeTitle :: String -> String

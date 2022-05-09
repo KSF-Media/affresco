@@ -1,20 +1,92 @@
 @import (reference) "../ksf-colors";
 @import "./header/menu.less";
 
+.header-container {
+  z-index: 10;
+
+  display: grid;
+  grid-row-gap: @mosaico-grid-row-gap;
+  grid-template-rows: auto auto;
+  grid-template-columns: 5px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 5px;
+
+  @media (min-width: @breakpoint-3col) {
+    max-width: 100%;
+    grid-template-columns: @mosaico-grid-columns;
+  }
+
+  @media (max-width: @breakpoint-3col) {
+    width: calc(100% + 24px);
+    margin-left: -12px;
+  }
+
+  grid-row: 2;
+  grid-column: 1 / span 5;
+  background-color: white;
+  padding-top: 8px;
+
+  * {
+    transition: all 0.2s;
+  }
+
+  transition: all 0.2s;
+}
+
+.header-container.static-header {
+  position: sticky;
+  top: 10px;
+  border-bottom: 1px solid gray;
+
+  .mosaico-header {
+    &__logo {
+      background-size: 30px;
+      height: 26px;
+
+      @media (max-width: @breakpoint-2col) {
+        height: 30px;
+      }
+    }
+
+    &__right-links {
+      grid-row: 1;
+      > ul {
+        flex-direction: row;
+        justify-content: flex-end;
+        > li:first-child {
+          margin-right: 5px;
+        }
+      }
+    }
+  }
+}
+
 .mosaico-header {
   @logo-size-desktop: 68px;
   @logo-size-mobile: 48px;
   @max-mobile-width: 640px;
   @font-weight: 500;
 
-  grid-area: head;
   display: grid;
+  grid-column: 2 / span 3;
 
-  grid-template-rows: @logo-size-mobile;
+  grid-template-rows: auto;
   grid-template-columns: 15% 1fr 15%;
 
   @media (min-width: @breakpoint-3col) {
-    grid-template-rows: 1fr 55px 1fr;
+    // grid-template-rows: 1fr 55px 1fr;
+  }
+
+  .menu-label {
+    display: none;
+    @media (min-width: @breakpoint-2col) {
+      display: inline-block;
+    }
+  }
+
+  .menu-label {
+    display: none;
+    @media (min-width: @breakpoint-2col) {
+      display: inline-block;
+    }
   }
 
   font: @font-weight 16px "Roboto", sans-serif;
@@ -55,6 +127,9 @@
 
       margin-top: 0px;
       list-style-type: none;
+      li {
+        transition: none;
+      }
     }
 
     display: none;
@@ -84,6 +159,7 @@
     cursor: pointer;
 
     grid-column-start: 2;
+    height: @logo-size-mobile;
 
     #HBL & {
       background-image: url("@{path-images}/logo-hbl.svg");
@@ -97,9 +173,8 @@
     background-repeat: no-repeat;
 
     @media (min-width: @breakpoint-3col) {
-      grid-row-start: 2;
-      background-position: top;
       background-size: @logo-size-desktop;
+      height: @logo-size-desktop;
     }
   }
 
@@ -113,7 +188,7 @@
     align-items: center;
 
     @media (min-width: @breakpoint-3col) {
-      grid-row-start: 3;
+      grid-row-start: 2;
       align-self: stretch;
     }
 
@@ -124,8 +199,12 @@
       width: 19px;
       margin-right: 5px;
       span {
-        width: 19px;
-        height: 19px;
+        width: 30px;
+        height: 30px;
+        @media (min-width: @breakpoint-2col) {
+          width: 19px;
+          height: 19px;
+        }
         background-image: url("@{path-images}/icon-mosaico-profile.svg");
         background-repeat: no-repeat;
       }
@@ -133,17 +212,24 @@
 
     &--active {
       cursor: pointer;
+      .mosaico-header__account-icon {
+        span {
+          @media (min-width: @breakpoint-2col) {
+          }
+          background-image: url("@{path-images}/icon-mosaico-login.svg");
+        }
+      }
     }
   }
 
   &__center-links {
-    grid-row-start: 3;
+    grid-row-start: 2;
     grid-column-start: 2;
     color: @grey-deepdark;
 
     display: none;
 
-    gap: 6%;
+    gap: 15px;
     justify-content: center;
 
     a,
@@ -172,21 +258,15 @@
 
     justify-content: flex-end;
     align-items: center;
-    gap: 6%;
+    gap: 15px;
 
     @media (min-width: @breakpoint-3col) {
-      grid-row-start: 3;
+      grid-row-start: 2;
     }
   }
 
   &__icon-button {
-    &--search {
-      align-items: center;
-      display: flex;
-      text-decoration: none;
-      color: black;
-    }
-    &--menu {
+    &--search, &--menu {
       align-items: center;
       display: flex;
       text-decoration: none;
@@ -196,16 +276,28 @@
   }
 
   &__icon {
+    width: 30px;
+    height: 30px;
+    @media (min-width: @breakpoint-2col) {
+      width: 19px;
+      height: 19px;
+    }
     display: inline-block;
     margin-top: 1px;
-    width: 19px;
-    height: 19px;
     background-repeat: no-repeat;
     background-position: top;
     background-size: 100%;
     margin-right: 5px;
     &--menu {
       background-image: url("@{path-icons}/icon-mosaico-menu.svg");
+      .menu-open & {
+        background-image: url("@{path-icons}/icon-close-mosaico.svg");
+        background-size: 20px;
+        @media (min-width: @breakpoint-2col) {
+          background-size: 13px;
+        }
+        background-position: center;
+      }
     }
     &--search {
       background-image: url("@{path-icons}/icon-mosaico-search.svg");
@@ -219,7 +311,10 @@
 }
 
 .mosaico-top-line {
+  z-index: 10;
   grid-area: line;
+  position: sticky;
+  top: 0;
   #HBL & {
     background-color: @hbl-orange;
   }
@@ -253,6 +348,20 @@
     width: calc(100% + 24px);
     margin-left: -12px;
   }
+}
+
+.mosaico-header .spinner--loading-spinner {
+  background: initial;
+  display: initial;
+  grid-row-start: 3;
+  margin-top: -40px;
+  @media (min-width: @breakpoint-2col) {
+    margin-top: -30px;
+  }
+}
+
+.mosaico-header__menu .mosaico-header__section .spinner--loading-spinner {
+  background: initial;
 }
 
 @separator-margin: 15px;

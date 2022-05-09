@@ -286,7 +286,7 @@ thirdColumn =
   [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
   , section ""
       [ DOM.a
-          { href: "#"
+          { href: "https://www.ksfmedia.fi/jobba-hos-oss"
           , children: [ DOM.text "Jobba hos oss" ]
           }
       ]

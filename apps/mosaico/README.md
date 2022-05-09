@@ -57,7 +57,9 @@ On static pages, the app initialization expects the selector "#app .mosaico--sta
 
 ## Tests
 
-Launch site as described in the Development sections.
+Launch site as described in the Development sections.  The tests may
+fail with ads, consider using `export DISABLE_ADS=1` before launching
+Mosaico if that happens.
 
 The test expects to get account data for testing from environment
 variables.

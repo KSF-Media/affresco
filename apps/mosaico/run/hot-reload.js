@@ -1,15 +1,27 @@
 const { exec } = require("child_process");
 var bs = require("browser-sync").create();
 var build = require("./build");
-bs.watch("dist/assets/*").on("change", bs.reload);
 
-bs.watch("static/*").on("change", () => {
+bs.watch("dist/assets/*").on("change", file => bs.reload(file));
+
+bs.watch("static/*").on("change", file => {
   exec("cp ./static/* ./dist/assets/");
+  bs.reload(file);
+});
+
+bs.watch("./web/*").on("change", file => {
+  build.runBuild();
+  bs.reload(file);
+});
+
+bs.watch("./output/Mosaico/index.js").on("change", () => {
+  build.runBuild();
   bs.reload();
 });
 
-bs.watch("./web/*").on("change", () => {
+bs.watch("../../less/**/*").on("change", file => {
   build.runBuild();
+  bs.reload(file);
 });
 
 function redirToRoot(req, res, next) {

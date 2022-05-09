@@ -1,25 +1,23 @@
 .mosaico-profile {
-  grid-area: article;
+  grid-area: main;
+  grid-column: 2 / 4;
+  width: 100%;
   font-size: 1.07rem;
   line-height: 1.5;
 
-  @media (min-width: @breakpoint-2col) {
-    width: 50%;
-  }
-
-  @media (min-width: @breakpoint-3col) {
-    width: 66%;
+  @media (max-width: @breakpoint-3col) {
+    grid-column: 1;
   }
 
   &--header {
-    padding: 50px 0;
+    padding-bottom: 50px;
     font-family: 'Roboto', sans-serif;
     color: @grey-dark;
     border-bottom: 1px solid @grey-almostlight;
   }
 
   &--data {
-    padding: 10px;
+    padding: 10px 0;
     font-weight: 300;
     font-family: 'Roboto', sans-serif;
 
@@ -32,7 +30,7 @@
     color: @grey-medium;
     padding: 2em 0;
     div {
-      padding: 11px;
+      padding: 11px 0;
       margin-bottom: 5px;
     }
     a {

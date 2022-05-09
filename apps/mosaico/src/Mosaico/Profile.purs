@@ -4,13 +4,14 @@ import Prelude
 
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toMaybe)
+import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 
 type Props =
-  { user :: Maybe User
+  { user :: Maybe (Maybe User)
   , onLogin :: EventHandler
   , onLogout :: EventHandler
   , onStaticPageClick :: String -> EventHandler
@@ -25,7 +26,7 @@ render props@{ onLogin, onLogout, onStaticPageClick } =
             { className: "mosaico-profile--header"
             , children: [ DOM.text "MIN PROFIL" ]
             }
-        , maybe renderMissing renderUser props.user
+        , maybe loadingSpinner (maybe renderMissing renderUser) props.user
         , DOM.div
             { className: "mosaico-profile--help"
             , children:

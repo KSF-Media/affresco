@@ -56,7 +56,8 @@ getContent (Stamped { content }) = content
 
 toValidUntil :: DateTime -> Maybe Int -> Maybe DateTime
 toValidUntil now maxAge =
-  flip adjust now <<< Seconds <<< toNumber =<< maxAge
+  -- Sanity check, allow at most 10 minutes
+  flip adjust now <<< Seconds <<< toNumber =<< max 600 <$> maxAge
 
 -- Reset handle and a value that's being kept updated
 type UpdateWatch a = Tuple (Aff Unit) (Aff (Stamped a))
@@ -248,10 +249,11 @@ readCategoryRender cache category = do
     Nothing -> pure Nothing
     Just value@(Stamped {validUntil}) -> do
       now <- liftEffect nowDateTime
-      if now > validUntil then pure $ Just value
-        else do
+      if now > validUntil
+        then do
         flip AVar.put store =<< HashMap.delete category <$> AVar.take store
         pure Nothing
+        else pure $ Just value
 
 addHeader :: forall a b. DateTime -> Stamped b -> Response a -> Response a
 addHeader now (Stamped { validUntil }) =
