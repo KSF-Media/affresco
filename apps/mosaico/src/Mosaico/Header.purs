@@ -94,7 +94,6 @@ render scrollPosition props =
                             , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
                             }
                         ]
-
                     }
                 , DOM.div
                     { className: block <> "__right-links"
