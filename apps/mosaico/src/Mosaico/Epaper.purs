@@ -23,10 +23,8 @@ import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, useEffect, useState', (/\))
 import React.Basic.Hooks as React
 
--- TODO: Show some loading indicator if trying SSO
 type Props =
   { user :: Maybe (Maybe User)
-  , entitlements :: Maybe (Set String)
   , paper :: Paper
   , onLogin :: EventHandler
   }
@@ -34,14 +32,12 @@ type Props =
 component :: Component Props
 component = do
   initialTokens <- loadToken
-  React.component "Epaper" $ \props@{user, paper, onLogin} -> React.do
-    entitlements /\ setEntitlements <- useState' props.entitlements
+  React.component "Epaper" $ \{user, paper, onLogin} -> React.do
+    entitlements /\ setEntitlements <- useState' Nothing
     userAuth /\ setUserAuth <- useState' initialTokens
-    -- Used to prevent reloading entitlements if they were in props
-    initializing /\ setInitializing <- useState' true
     useEffect (_.uuid <$> join user) do
       when (isNothing $ join user) $ setEntitlements Nothing
-      when (not initializing || isNothing entitlements && isJust user) do
+      when (isNothing entitlements && isJust (join user)) do
         setEntitlements Nothing
         tokens <- loadToken
         setUserAuth tokens
@@ -49,9 +45,8 @@ component = do
           (setEntitlements $ Just mempty)
           (Aff.launchAff_ <<< (liftEffect <<< setEntitlements <<< Just
                                <<< fromMaybe Set.empty <<< hush <=< User.getUserEntitlements)) tokens
-      setInitializing false
       pure $ pure unit
-    pure $ render onLogin paper (isJust user) userAuth entitlements
+    pure $ render onLogin paper (isNothing user) (join user *> userAuth) entitlements
 
 render :: EventHandler -> Paper -> Boolean -> Maybe UserAuth -> Maybe (Set String) -> JSX
 render onLogin paper loadingUser userAuth entitlements =
