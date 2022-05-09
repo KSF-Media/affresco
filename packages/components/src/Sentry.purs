@@ -38,6 +38,7 @@ type Logger =
   { log     :: String -> LogLevel -> Effect Unit
   , setUser :: Maybe User.User -> Effect Unit
   , error   :: Error -> Effect Unit
+  , setTag  :: String -> String -> Effect Unit
   }
 
 emptyLogger :: Logger
@@ -45,6 +46,7 @@ emptyLogger =
   { log: \_msg _level -> Console.warn "Tried to log to Sentry, but it's not initialized"
   , setUser: const $ pure unit
   , error: const $ pure unit
+  , setTag: \_ _ -> pure unit
   }
 
 mkLogger :: String -> Maybe User.User -> String -> Effect Logger
@@ -60,10 +62,14 @@ mkLogger sentryDsn maybeUser appNameTag = do
     { log: log sentry appNameTag
     , setUser: setUser sentry
     , error: captureException sentry appNameTag
+    , setTag: setTag sentry
     }
 
 setUser :: Sentry -> Maybe User.User -> Effect Unit
 setUser sentry user = runEffectFn2 setUser_ sentry $ toNullable (((\(Cusno c) -> c) <<< _.cusno) <$> user)
+
+setTag :: Sentry -> String -> String -> Effect Unit
+setTag sentry tagName tagValue = runEffectFn3 setTag_ sentry tagName tagValue
 
 log :: Sentry -> String -> String -> LogLevel -> Effect Unit
 log sentry appNameTag msg level = runEffectFn4 captureMessage_ sentry appNameTag msg $ show level

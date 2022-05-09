@@ -4,6 +4,8 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
+    "@sentry/browser": "^6.19.7",
+    "@sentry/tracing": "^6.19.7",
     "@typeform/embed": "^1.27.1",
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "browser-sync": "^2.27.9",
