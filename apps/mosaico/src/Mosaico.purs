@@ -326,12 +326,12 @@ routeListener c setState _oldLoc location = do
   case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
     Right path -> do
       setState \s -> s { route = path
-                                     , prevRoute = Just s.route
-                                     , clickedArticle = case path of
-                                         Routes.ArticlePage articleId
-                                         | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
-                                         _ -> s.clickedArticle
-                                     }
+                       , prevRoute = Just s.route
+                       , clickedArticle = case path of
+                           Routes.ArticlePage articleId
+                             | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
+                           _ -> s.clickedArticle
+                       }
       case path of
         Routes.ArticlePage _ -> pure unit
         _ -> sendPageView
