@@ -22,7 +22,7 @@
   grid-row: 2;
   grid-column: 1 / span 5;
   background-color: white;
-  padding-top: 6px;
+  padding-top: 8px;
 
   * {
     transition: all 0.2s;
@@ -40,6 +40,10 @@
     &__logo {
       background-size: 30px;
       height: 26px;
+
+      @media (max-width: @breakpoint-2col) {
+        height: 30px;
+      }
     }
 
     &__right-links {
@@ -344,6 +348,20 @@
     width: calc(100% + 24px);
     margin-left: -12px;
   }
+}
+
+.mosaico-header .spinner--loading-spinner {
+  background: initial;
+  display: initial;
+  grid-row-start: 3;
+  margin-top: -40px;
+  @media (min-width: @breakpoint-2col) {
+    margin-top: -30px;
+  }
+}
+
+.mosaico-header__menu .mosaico-header__section .spinner--loading-spinner {
+  background: initial;
 }
 
 @separator-margin: 15px;

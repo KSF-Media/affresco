@@ -1,39 +1,59 @@
-const showOnPx = 100;
-const backToTopButton = document.querySelector(".static-page__back-to-top");
-
-const scrollContainer = () => {
-  return document.documentElement || document.body;
-};
-
-document.addEventListener("scroll", () => {
-  if (scrollContainer().scrollTop > showOnPx) {
-    backToTopButton.style.opacity = "100%";
-  } else {
-    backToTopButton.style.opacity = "0%";
+(function init() {
+  function addHandler(element, handler, type) {
+    if (type === undefined) {
+      type = "click";
+    }
+    if (element._hasEventHandler) {
+      element.removeEventListener
+        ? element.removeEventListener(type, element._hasEventHandler)
+        : element.detachEvent("on" + type, element._hasEventHandler);
+    }
+    element.addEventListener ? element.addEventListener(type, handler) : element.attachEvent("on" + type, handler);
+    element._hasEventHandler = handler;
   }
-});
 
-const goToTop = () => {
-  document.body.scrollIntoView({
-    behavior: "smooth",
-  });
-};
+  const showOnPx = 100;
+  const backToTopButton = document.querySelector(".static-page__back-to-top");
 
-backToTopButton.addEventListener("click", goToTop);
+  const scrollContainer = () => {
+    return document.documentElement || document.body;
+  };
 
-const links = document.querySelectorAll(".static-page__list-link");
+  addHandler(document, () => {
+    if (scrollContainer().scrollTop > showOnPx) {
+      backToTopButton.style.opacity = "100%";
+    } else {
+      backToTopButton.style.opacity = "0%";
+    }
+  }, "scroll");
 
-for (const link of links) {
-  link.addEventListener("click", clickHandler);
-}
+  const goToTop = () => {
+    document.body.scrollIntoView({
+      behavior: "smooth",
+    });
+  };
 
-function clickHandler(e) {
-  e.preventDefault();
-  const href = this.getAttribute("href");
-  const offsetTop = document.querySelector(href).offsetTop;
+  addHandler(backToTopButton, goToTop);
 
-  scroll({
-    top: offsetTop,
-    behavior: "smooth",
-  });
-}
+  const links = document.querySelectorAll(".static-page__list-link");
+
+  for (const link of links) {
+    addHandler(link, clickHandler);
+  }
+
+  function clickHandler(e) {
+    const href = this.getAttribute("href");
+    if (!href.startsWith("#")) {
+      /* bubble event up, ie. open external links */
+      return;
+    }
+    e.preventDefault();
+    history.pushState(undefined, "", href);
+    const offsetTop = document.querySelector(href).offsetTop;
+
+    scroll({
+      top: offsetTop,
+      behavior: "smooth",
+    });
+  }
+})();

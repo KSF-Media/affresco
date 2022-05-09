@@ -7,7 +7,7 @@ import Control.Alt ((<|>))
 import Data.Array (head, insertAt, length, null, snoc, take, (!!))
 import Data.Either (Either(..), either, hush)
 import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
 import Data.Set as Set
@@ -29,6 +29,7 @@ import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.LatestList as LatestList
+import Mosaico.Share as Share
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
@@ -56,6 +57,9 @@ getBody = either (const mempty) _.article.body
 getRemoveAds :: Either ArticleStub FullArticle -> Boolean
 getRemoveAds = either _.removeAds _.article.removeAds
 
+getShareUrl :: Either ArticleStub FullArticle -> Maybe String
+getShareUrl = either _.shareUrl _.article.shareUrl
+
 type Props =
   { paper :: Paper
   , article :: Either ArticleStub FullArticle
@@ -63,7 +67,7 @@ type Props =
   , onPaywallEvent :: Effect Unit
   , onTagClick :: Tag -> EventHandler
   , onArticleClick :: ArticleStub -> EventHandler
-  , user :: Maybe User
+  , user :: Maybe (Maybe User)
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , advertorial :: Maybe ArticleStub
@@ -90,6 +94,7 @@ render imageComponent props =
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
+        shareUrl = getShareUrl props.article
 
     in DOM.article
       { className: "mosaico-article"
@@ -118,10 +123,7 @@ render imageComponent props =
                                   }
                               ]
                           }
-                      , DOM.ul
-                          { className: "mosaico-article__some"
-                          , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-                          }
+                      , Share.articleShareButtons title shareUrl
                       ]
                   }
             ]
@@ -144,7 +146,7 @@ render imageComponent props =
                           Right PreviewArticle ->
                             bodyWithAd
                             `snoc` paywallFade
-                            `snoc` vetrina
+                            `snoc` (if isNothing props.user then loadingSpinner else vetrina)
                             `snoc` advertorial
                             `snoc` mostRead
                           Right DraftArticle ->
@@ -240,7 +242,7 @@ render imageComponent props =
       Vetrina.vetrina
         { onClose: Just props.onPaywallEvent
         , onLogin: props.onLogin
-        , user: props.user
+        , user: join props.user
         , products: Right case props.paper of
             HBL -> [ hblPremium ]
             ON -> [ onPremium ]
@@ -250,7 +252,7 @@ render imageComponent props =
         , headline: Just
           $ DOM.div_
               [ DOM.text $ "Läs " <> paperName <> " digitalt för "
-              , DOM.span { className: "vetrina--price-headline", children: [ DOM.text "Endast 1€" ] }
+              , DOM.span { className: "vetrina--price-headline", children: [ DOM.text "endast 1€" ] }
               ]
         , paper: Just props.paper
         , paymentMethods: []
@@ -402,13 +404,3 @@ renderElement paper imageComponent onArticleClick el = case el of
             , onClick: foldMap (\f -> f article) onArticleClick
             }
         ]
-
-mkShareIcon :: String -> JSX
-mkShareIcon someName =
-  DOM.li_
-    [ DOM.a
-        { href: "#"
-        , children: [ DOM.span {} ]
-        , className: "mosaico-article__some--" <> someName
-        }
-    ]

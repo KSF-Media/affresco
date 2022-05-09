@@ -349,7 +349,6 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                             , mostReadArticles
                             , latestArticles
                             , categoryStructure: env.categoryStructure
-                            , user: Nothing
                             }
 
       html <- liftEffect do
@@ -428,7 +427,6 @@ renderFrontpage env = do
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
-          , user: Nothing
           }
 
     renderFront :: ArticleFeed -> Array ArticleStub -> Array ArticleStub -> MainContent
@@ -495,7 +493,6 @@ menu env _ = do
             , mostReadArticles: mempty
             , latestArticles: mempty
             , categoryStructure: env.categoryStructure
-            , user: Nothing
           }
   html <- liftEffect do
             let windowVars =
@@ -551,7 +548,6 @@ tagList env { params: { tag } } = do
       , categoryStructure: env.categoryStructure
       , mostReadArticles
       , latestArticles
-      , user: Nothing
       }
 
 epaperPage :: Env -> {} -> Aff (Response ResponseBody)
@@ -579,12 +575,11 @@ epaperPage env { } = do
         $ MosaicoServer.app
           { mainContent:
               { type: EpaperContent
-              , content: Epaper.render mempty mosaicoPaper Nothing Nothing
+              , content: Epaper.render mempty mosaicoPaper true Nothing Nothing
               }
           , categoryStructure: env.categoryStructure
           , mostReadArticles
           , latestArticles
-          , user: Nothing
           }
 
 
@@ -616,7 +611,6 @@ staticPage env { params: { pageName } } = do
               , mostReadArticles
               , latestArticles
               , categoryStructure: env.categoryStructure
-              , user: Nothing
               }
       html <- liftEffect do
         let windowVars =
@@ -664,7 +658,6 @@ debugList env { params: { uuid } } = do
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
-          , user: Nothing
           }
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category} } -> Aff (Response ResponseBody)
@@ -716,7 +709,6 @@ renderCategoryPage env category = do
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
-          , user: Nothing
           }
 
 searchPage :: Env -> { query :: { search :: Maybe String } } -> Aff (Response ResponseBody)
@@ -751,7 +743,6 @@ searchPage env { query: { search } } = do
                           , mostReadArticles
                           , latestArticles
                           , categoryStructure: env.categoryStructure
-                          , user: Nothing
                           }
   html <- liftEffect do
             let windowVars =
@@ -785,7 +776,6 @@ profilePage env {} = do
                           , mostReadArticles
                           , latestArticles
                           , categoryStructure: env.categoryStructure
-                          , user: Nothing
                           }
   html <- liftEffect do
     let windowVars =
@@ -834,7 +824,6 @@ notFound env mainContent maybeMostReadArticles maybeLatestArticles = do
                         , mostReadArticles: fromMaybe [] maybeMostReadArticles
                         , latestArticles: fromMaybe [] maybeLatestArticles
                         , categoryStructure: env.categoryStructure
-                        , user: Nothing
                         }
   html <- liftEffect $ do
     let windowVars =
