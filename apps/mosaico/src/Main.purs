@@ -591,7 +591,7 @@ staticPage env { params: { pageName } } = do
     <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
   case HashMap.lookup ("./static/" <> _mosaicoPaper <> "/" <> pageName <> ".html") env.staticPages of
     Just staticPageContent -> do
-      let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
+      let staticPageScript = HashMap.lookup ("./static/" <> pageName <> ".js") env.staticPages
           mosaico = MosaicoServer.app
           htmlTemplate = cloneTemplate env.htmlTemplate
           staticPageJsx =

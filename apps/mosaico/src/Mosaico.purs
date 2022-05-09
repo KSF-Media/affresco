@@ -40,10 +40,10 @@ import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
+import Mosaico.Analytics (sendArticleAnalytics, sendPageView)
+import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
-import Mosaico.Analytics (sendArticleAnalytics)
-import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
@@ -74,7 +74,8 @@ import Routing.PushState (LocationState, PushStateInterface, locations, makeInte
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
-import Web.HTML.Window (document, scroll) as Web
+import Web.HTML.Window (document, scroll, location) as Web
+import Web.HTML.Location as Location
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
@@ -141,15 +142,17 @@ app = do
   initialValues <- getInitialValues
   component "Mosaico" $ mosaicoComponent initialValues
 
+getPathFromLocationState :: LocationState -> String
+getPathFromLocationState locationState = Routes.stripFragment $ locationState.path <> locationState.search
+
 mosaicoComponent
   :: InitialValues
   -> Props
   -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let setTitle t = Web.setTitle t =<< Web.document =<< Web.window
-  let initialCatMap = categoriesMap props.categoryStructure
-  let initialPath = Routes.stripFragment $
-                    initialValues.locationState.path <> initialValues.locationState.search
+      initialCatMap = categoriesMap props.categoryStructure
+      initialPath = getPathFromLocationState initialValues.locationState
       maxAge = Minutes 15.0
   state /\ setState_ <- useState initialValues.state
                          { article = Right <$> props.article
@@ -355,14 +358,19 @@ pickRandomElement elements = do
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
 routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
+
   case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
-    Right path -> setState \s -> s { route = path
-                                   , prevRoute = Just s.route
-                                   , clickedArticle = case path of
-                                       Routes.ArticlePage articleId
-                                         | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
-                                       _ -> s.clickedArticle
-                                   }
+    Right path -> do
+      setState \s -> s { route = path
+                       , prevRoute = Just s.route
+                       , clickedArticle = case path of
+                           Routes.ArticlePage articleId
+                             | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
+                           _ -> s.clickedArticle
+                       }
+      case path of
+        Routes.ArticlePage _ -> pure unit
+        _                    -> sendPageView
     Left _     -> pure unit
 
 type InitialValues =

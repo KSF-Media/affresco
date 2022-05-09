@@ -1,5 +1,17 @@
-function init() {
-  window.bruksvillkorInitialized = true;
+(function init() {
+  function addHandler(element, handler, type) {
+    if (type === undefined) {
+      type = "click";
+    }
+    if (element._hasEventHandler) {
+      element.removeEventListener
+        ? element.removeEventListener(type, element._hasEventHandler)
+        : element.detachEvent("on" + type, element._hasEventHandler);
+    }
+    element.addEventListener ? element.addEventListener(type, handler) : element.attachEvent("on" + type, handler);
+    element._hasEventHandler = handler;
+  }
+
   const showOnPx = 100;
   const backToTopButton = document.querySelector(".static-page__back-to-top");
 
@@ -7,13 +19,13 @@ function init() {
     return document.documentElement || document.body;
   };
 
-  document.addEventListener("scroll", () => {
+  addHandler(document, () => {
     if (scrollContainer().scrollTop > showOnPx) {
       backToTopButton.style.opacity = "100%";
     } else {
       backToTopButton.style.opacity = "0%";
     }
-  });
+  }, "scroll");
 
   const goToTop = () => {
     document.body.scrollIntoView({
@@ -21,12 +33,12 @@ function init() {
     });
   };
 
-  backToTopButton.addEventListener("click", goToTop);
+  addHandler(backToTopButton, goToTop);
 
   const links = document.querySelectorAll(".static-page__list-link");
 
   for (const link of links) {
-    link.addEventListener("click", clickHandler);
+    addHandler(link, clickHandler);
   }
 
   function clickHandler(e) {
@@ -44,7 +56,4 @@ function init() {
       behavior: "smooth",
     });
   }
-}
-if (!window.bruksvillkorInitialized) {
-  init();
-}
+})();

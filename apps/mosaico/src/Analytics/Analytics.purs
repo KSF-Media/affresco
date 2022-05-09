@@ -27,6 +27,10 @@ type StringArticleMetadata =
   , userSubs :: String
   }
 
+foreign import _sendPageView :: Effect Unit
+sendPageView :: Effect Unit
+sendPageView = _sendPageView
+
 foreign import _pushToDataLayer :: EffectFn1 StringArticleMetadata Unit
 pushToDataLayer :: StringArticleMetadata -> Effect Unit
 pushToDataLayer = runEffectFn1 _pushToDataLayer

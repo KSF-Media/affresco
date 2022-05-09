@@ -29,6 +29,7 @@ import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.LatestList as LatestList
+import Mosaico.Share as Share
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
@@ -55,6 +56,9 @@ getBody = either (const mempty) _.article.body
 
 getRemoveAds :: Either ArticleStub FullArticle -> Boolean
 getRemoveAds = either _.removeAds _.article.removeAds
+
+getShareUrl :: Either ArticleStub FullArticle -> Maybe String
+getShareUrl = either _.shareUrl _.article.shareUrl
 
 type Props =
   { paper :: Paper
@@ -90,6 +94,7 @@ render imageComponent props =
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
+        shareUrl = getShareUrl props.article
 
     in DOM.article
       { className: "mosaico-article"
@@ -118,10 +123,7 @@ render imageComponent props =
                                   }
                               ]
                           }
-                      , DOM.ul
-                          { className: "mosaico-article__some"
-                          , children: map mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-                          }
+                      , Share.articleShareButtons title shareUrl
                       ]
                   }
             ]
@@ -402,13 +404,3 @@ renderElement paper imageComponent onArticleClick el = case el of
             , onClick: foldMap (\f -> f article) onArticleClick
             }
         ]
-
-mkShareIcon :: String -> JSX
-mkShareIcon someName =
-  DOM.li_
-    [ DOM.a
-        { href: "#"
-        , children: [ DOM.span {} ]
-        , className: "mosaico-article__some--" <> someName
-        }
-    ]
