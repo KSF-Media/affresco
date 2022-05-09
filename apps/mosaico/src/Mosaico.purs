@@ -17,7 +17,6 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
-import Data.Set (Set)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
 import Data.Tuple (Tuple)
 import Data.UUID as UUID
@@ -74,8 +73,7 @@ import Routing.PushState (LocationState, PushStateInterface, locations, makeInte
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
-import Web.HTML.Window (document, scroll, location) as Web
-import Web.HTML.Location as Location
+import Web.HTML.Window (document, scroll) as Web
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
@@ -91,7 +89,6 @@ type State =
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe (Maybe User)
-  , entitlements :: Maybe (Set String)
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
   , catMap :: Categories
@@ -169,7 +166,6 @@ mosaicoComponent initialValues props = React.do
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
                          , user = Nothing
-                         , entitlements = Nothing
                          , ssrPreview = true
                          }
 
@@ -413,7 +409,6 @@ getInitialValues = do
         , clickedArticle: Nothing
         , modalView: Nothing
         , user: Nothing
-        , entitlements: Nothing
         , staticPage: Nothing
         , categoryStructure: []
         , catMap: Map.empty
@@ -539,7 +534,6 @@ render setState state components router onPaywallEvent =
        Routes.EpaperPage -> mosaicoLayoutNoAside
          $ components.epaperComponent
              { user: state.user
-             , entitlements: state.entitlements
              , paper: mosaicoPaper
              , onLogin
              }
