@@ -207,8 +207,8 @@ window.adSlots = {
 
 window.googletag.cmd.push(function () {
 
-  googletag.pubads().setTargeting("Test", "mosaico_test");
-  // googletag.pubads().setTargeting("Newspaper", process.env.PAPER || "hbl");
+  // googletag.pubads().setTargeting("Test", "mosaico_test");
+  googletag.pubads().setTargeting("Newspaper", process.env.PAPER || "hbl");
 
   /* Ad slots to use */
   const networkCode = "/21664538223/";
