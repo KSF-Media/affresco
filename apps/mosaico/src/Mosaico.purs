@@ -370,7 +370,7 @@ routeListener c setState _oldLoc location = do
                        }
       case path of
         Routes.ArticlePage _ -> pure unit
-        _ -> sendPageView
+        _                    -> sendPageView
     Left _     -> pure unit
 
 type InitialValues =
