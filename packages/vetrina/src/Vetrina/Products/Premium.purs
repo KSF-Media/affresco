@@ -1,9 +1,11 @@
 module KSF.Vetrina.Products.Premium where
 
+import Prelude
+
 import Data.Maybe (Maybe(..))
 import KSF.Api.Package (CampaignLengthUnit(..))
 import React.Basic.DOM as DOM
-import Vetrina.Types
+import Vetrina.Types (Product)
 
 hblPremium :: Product
 hblPremium =
@@ -41,7 +43,7 @@ hblPremium =
 vnPremium :: Product
 vnPremium =
   { id: "VN_DIGI"
-  , name: "VN Premium"
+  , name: "Västra Nyland Premium"
   , priceCents: 690
   , description:
       DOM.div_
@@ -58,23 +60,13 @@ vnPremium =
       , lengthUnit: Month
       , priceEur: 1.0
       }
-  , contents:
-      [ { title: "Premium"
-        , description: "Alla artiklar på vastranyland.fi"
-        }
-      , { title: "Nyhetsappen VN Nyheter"
-        , description: "Nyheter på mobilen och surfplattan, pushnotiser"
-        }
-      , { title: "Digitalt månadsbrev"
-        , description: "Nyheter & förmåner"
-        }
-      ]
+  , contents: commonDescription "vastranyland.fi" "VN" "Västra Nyland"
   }
 
 onPremium :: Product
 onPremium =
   { id: "ÖNY_DIGI"
-  , name: "Hufvudstadsbladet Premium"
+  , name: "Östnyland Premium"
   , priceCents: 690
   , description:
       DOM.div_
@@ -91,15 +83,24 @@ onPremium =
       , name: "FÖRSTA MÅNADEN 1 EURO"
       , id: "1MÅN1EURO"
       }
-  , contents:
-      [ { title: "Premium"
-        , description: "Alla artiklar på ostnyland.fi"
-        }
-      , { title: "Nyhetsappen ÖN Nyheter"
-        , description: "Nyheter på mobilen och surfplattan, pushnotiser"
-        }
-      , { title: "Digitalt månadsbrev"
-        , description: "Nyheter & förmåner"
-        }
-      ]
+  , contents: commonDescription "ostnyland.fi" "ÖN" "Östnyland"
   }
+
+commonDescription :: String -> String -> String -> Array { title :: String, description :: String }
+commonDescription url id name =
+  [ { title: "Premium"
+    , description: "Alla artiklar på " <> url
+    }
+  , { title: id <> " Nyheter"
+    , description: "Alla artiklar i nyhetsappen " <> id <> " Nyheter"
+    }
+  , { title: id <> " i HBL 365"
+    , description: name <> " som e-tidning i mobilen och på surfplattan"
+    }
+  , { title: "E-tidningen"
+    , description: "Läs e-tidningen på dator"
+    }
+  , { title: "Digitalt månadsbrev"
+    , description: "Nyheter & förmåner"
+    }
+  ]
