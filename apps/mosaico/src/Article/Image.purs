@@ -29,7 +29,7 @@ component = do
   React.component "Image" $ \props -> React.do
     opened /\ setOpened <- useState false
     let toggleOpen = capture_ $ setOpened not
-        openedImage = if opened then articleFullScreen toggleOpen props else mempty
+        openedImage = if opened then articleImageFullScreen toggleOpen props else mempty
     pure $ (render toggleOpen props) <> openedImage
 
 render :: EventHandler -> Props -> JSX
@@ -77,7 +77,7 @@ url props =
 renderCaption :: Maybe String -> String -> JSX
 renderCaption byline caption =
   DOM.div
-    { className: "caption"
+    { className: "caption mosaico-article__main-image__caption"
     , children:
         [ DOM.span { dangerouslySetInnerHTML: { __html: caption } }
         , DOM.span
@@ -87,8 +87,8 @@ renderCaption byline caption =
         ]
     }
 
-articleFullScreen :: EventHandler -> Props -> JSX
-articleFullScreen onClick props =
+articleImageFullScreen :: EventHandler -> Props -> JSX
+articleImageFullScreen onClick props =
   DOM.div
     { className: "mosaico-article__focus-image"
     , children:
@@ -98,6 +98,9 @@ articleFullScreen onClick props =
                 [ DOM.img
                     { src: props.image.url <> "&width=1600&height=1065&q=75"
                     }
+                -- this close button does nothing, clicking anywhere on the image closes it
+                , DOM.i { className: "mosaico-article__focus-image__close-button" }
+                , foldMap (renderCaption props.image.byline) props.image.caption
                 ]
             }
         ]

@@ -59,19 +59,20 @@ app props =
 render :: PushStateInterface -> Props -> JSX
 render router props = DOM.div_
     [ DOM.div
-       { className: "mosaico grid"
+       { className: "mosaico grid " <> menuOpen
        , id: Paper.toString mosaicoPaper
        , children:
            [ Header.topLine
-           , Header.render { router
-                           , categoryStructure: props.categoryStructure
-                           , catMap: categoriesMap props.categoryStructure
-                           , onCategoryClick: const mempty
-                           , user: Nothing
-                           , onLogin: mempty
-                           , onProfile: mempty
-                           , onStaticPageClick: mempty
-                           }
+           , Header.render 0
+             { router
+             , categoryStructure: props.categoryStructure
+             , catMap: categoriesMap props.categoryStructure
+             , onCategoryClick: const mempty
+             , user: Nothing
+             , onLogin: mempty
+             , onProfile: mempty
+             , onStaticPageClick: mempty
+             }
            , Header.mainSeparator
            , props.mainContent.content
            , footer mosaicoPaper mempty
@@ -91,3 +92,6 @@ render router props = DOM.div_
           , LatestList.render { latestArticles: props.latestArticles, onClickHandler: const mempty }
           ]
         }
+    menuOpen = case props.mainContent.type of
+      MenuContent -> "menu-open"
+      _           -> mempty

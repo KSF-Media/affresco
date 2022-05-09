@@ -8,6 +8,7 @@ import Data.String as String
 import Lettera.Models (Article, Image)
 import Mosaico.Article.Image as Image
 import Mosaico.Article as Article
+import Mosaico.Share as Share
 import React.Basic (fragment)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (JSX)
@@ -31,10 +32,7 @@ render imageComponent { article, imageProps, advertorialClassName } =
                    { className: "advertorial-top-banner__company"
                    , children: [ DOM.text $ "ANNONS: " <> foldMap (String.toUpper <<< companyName) article.articleTypeDetails ]
                    }
-               , DOM.ul
-                   { className: "mosaico-article__some advertorial-some"
-                   , children: map Article.mkShareIcon [ "facebook", "twitter", "linkedin", "whatsapp", "mail" ]
-                   }
+               , Share.articleShareButtons article.title article.shareUrl
                ]
            }
        , DOM.article
