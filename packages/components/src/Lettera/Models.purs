@@ -29,7 +29,7 @@ import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
 import Foreign.Object as Object
-import KSF.Helpers (dateTimeFormatter, formatArticleTime)
+import KSF.Helpers (dateTimeFormatter)
 import Record (merge, modify)
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
@@ -270,9 +270,6 @@ articleStubToJson = encodeJson
 
 formatLocalDateTime :: LocalDateTime -> String
 formatLocalDateTime = format dateTimeFormatter <<< un LocalDateTime
-
-formatLocalDateTimeAsArticleTime :: LocalDateTime -> String
-formatLocalDateTimeAsArticleTime (LocalDateTime publishingTime) = formatArticleTime publishingTime
 
 parseArticleWith :: forall a b. ReadForeign b => (b -> Effect a) -> Json -> Effect (Either String a)
 parseArticleWith parseFn articleResponse = do

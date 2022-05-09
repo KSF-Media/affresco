@@ -12,14 +12,15 @@ import Data.Array (head, null)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
-import Data.Newtype (un)
+import Data.Newtype (un, unwrap)
 import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
+import KSF.Helpers (formatArticleTime)
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
-import Lettera.Models (ArticleStub, Tag(..), formatLocalDateTimeAsArticleTime, tagToURIComponent)
+import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage.Models (Hook, toHookRep)
 import Mosaico.Paper (mosaicoPaper)
@@ -94,7 +95,7 @@ render (List props) =
                                       }
                                   , DOM.span
                                       { className: "list-article-timestamp"
-                                      , children: [ DOM.text $ foldMap formatLocalDateTimeAsArticleTime a.publishingTime ]
+                                      , children: [ DOM.text $ foldMap (formatArticleTime <<< unwrap) a.publishingTime ]
                                       }
                                   , guard a.premium $
                                     DOM.div
