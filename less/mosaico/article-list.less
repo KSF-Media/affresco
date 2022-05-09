@@ -2,6 +2,10 @@
   grid-area: main;
   max-width: 600px;
 
+  @media (max-width: @breakpoint-3col) {
+    justify-self: center;
+  }
+
   h1 {
     grid-area: main;
     font: bold 1.75rem/1 "Roboto", sans-serif;
