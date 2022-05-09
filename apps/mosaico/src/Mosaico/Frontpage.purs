@@ -93,9 +93,9 @@ render (List props) =
                                       , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
                                       }
                                   , DOM.span
-                                    { className: "list-article-timestamp"
-                                    , children: [ DOM.text $ foldMap formatLocalDateTimeAsArticleTime a.publishingTime ]
-                                    }
+                                      { className: "list-article-timestamp"
+                                      , children: [ DOM.text $ foldMap formatLocalDateTimeAsArticleTime a.publishingTime ]
+                                      }
                                   , guard a.premium $
                                     DOM.div
                                       { className: "mosaico-article__meta"
