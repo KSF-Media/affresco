@@ -40,10 +40,10 @@ import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
+import Mosaico.Analytics (sendArticleAnalytics, sendPageView)
+import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
-import Mosaico.Analytics (sendArticleAnalytics)
-import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
@@ -360,13 +360,17 @@ routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
   case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
-    Right path -> setState \s -> s { route = path
-                                   , prevRoute = Just s.route
-                                   , clickedArticle = case path of
-                                       Routes.ArticlePage articleId
-                                         | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
-                                       _ -> s.clickedArticle
-                                   }
+    Right path -> do
+      setState \s -> s { route = path
+                       , prevRoute = Just s.route
+                       , clickedArticle = case path of
+                           Routes.ArticlePage articleId
+                             | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
+                           _ -> s.clickedArticle
+                       }
+      case path of
+        Routes.ArticlePage _ -> pure unit
+        _                    -> sendPageView
     Left _     -> pure unit
 
 type InitialValues =
