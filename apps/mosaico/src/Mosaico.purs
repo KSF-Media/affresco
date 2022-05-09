@@ -359,7 +359,7 @@ routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe Locati
 routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
-  case match (Routes.routes c) $ getPathFromLocationState location of
+  case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
     Right path -> setState \s -> s { route = path
                                    , prevRoute = Just s.route
                                    , clickedArticle = case path of
