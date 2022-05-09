@@ -513,6 +513,12 @@
   z-index: 2;
 }
 
+.mosaico .vetrina--container {
+  @media (min-width: @breakpoint-3col) {
+    grid-template-columns: 3em minmax(auto,600px) 3em;
+  }
+}
+
 .mosaico .mosaico-article__body .spinner--loading-spinner {
   background: initial;
   height: 100px;
