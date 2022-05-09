@@ -1,4 +1,17 @@
-function init() {
+(function init() {
+  function addHandler(element, handler, type) {
+    if (type === undefined) {
+      type = "click";
+    }
+    if (element._hasEventHandler) {
+      element.removeEventListener
+        ? element.removeEventListener(type, element._hasEventHandler)
+        : element.detachEvent("on" + type, element._hasEventHandler);
+    }
+    element.addEventListener ? element.addEventListener(type, handler) : element.attachEvent("on" + type, handler);
+    element._hasEventHandler = handler;
+  }
+
   window.kontaktInitialized = true;
   var ifr = document.getElementById("JotFormIFrame-220901406282043");
   if (ifr) {
@@ -110,12 +123,12 @@ function init() {
     });
   };
 
-  backToTopButton.addEventListener("click", goToTop);
+  addHandler(backToTopButton, goToTop);
 
   const links = document.querySelectorAll(".static-page__list-link");
 
   for (const link of links) {
-    link.addEventListener("click", clickHandler);
+    addHandler(link, clickHandler);
   }
 
   function clickHandler(e) {
@@ -133,7 +146,4 @@ function init() {
       behavior: "smooth",
     });
   }
-}
-if (!window.kontaktInitialized) {
-  init();
-}
+})();
