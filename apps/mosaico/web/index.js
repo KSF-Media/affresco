@@ -207,8 +207,8 @@ window.adSlots = {
 
 window.googletag.cmd.push(function () {
 
-  // googletag.pubads().setTargeting("Test", "mosaico_test");
-  googletag.pubads().setTargeting("Newspaper", process.env.PAPER || "hbl");
+  googletag.pubads().setTargeting("Test", "mosaico_test");
+  // googletag.pubads().setTargeting("Newspaper", process.env.PAPER || "hbl");
 
   /* Ad slots to use */
   const networkCode = "/21664538223/";
@@ -233,6 +233,26 @@ window.googletag.cmd.push(function () {
       document.querySelector("#" + elementId).classList.add("populated");
     };
   });
+  window.addEventListener("message", event => {
+    let message = event.data
+    if ( ["BIGMAX", "WALLPAPER"].indexOf(message.cmd) != -1 ) {
+      switch (message.cmd) {
+        case "BIGMAX":
+          var cu = document.getElementById("mosaico-ad__top-parade");
+          cu.classList.add("BIGMAX");
+          cu.innerHTML = `
+            <div>
+              <a target="_blank" href="${message.link}">
+                <img src="${message.img}">
+              </a>
+              <div onclick="closeAdDiv('.mosaico-ad.mosaico-ad__top-parade')" class="ad-close">Stäng</div>
+            </div>`;
+      }
+    }
+  })
 });
+window.closeAdDiv = function (adDiv) {
+  document.querySelector(adDiv).innerHTML = "";
+}
 
 main();
