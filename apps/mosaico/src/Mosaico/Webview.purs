@@ -83,6 +83,8 @@ render (Just M3U8) url _ =
             , width: "1140"
             , height: "700"
             , _data: Object.fromFoldable [ Tuple "setup" "{}" ]
+            , autoPlay: true
+            , muted: true
             , children:
                 [ DOM.source
                     { src: url
