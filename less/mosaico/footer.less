@@ -4,7 +4,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 50px 0;
+  padding: 50px 6px;
+  margin: 0 -12px;
+
+  @media (min-width: @breakpoint-3col) {
+    padding: 50px 0px;
+    margin: 0;
+  }
 }
 
 .mosaico-footer {
