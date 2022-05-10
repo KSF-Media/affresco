@@ -6,9 +6,11 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toMaybe)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
+import Mosaico.Ad (openConsentRevocationMessage)
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler)
+import React.Basic.Events (handler, EventHandler)
+import React.Basic.DOM.Events (preventDefault)
 
 type Props =
   { user :: Maybe (Maybe User)
@@ -73,10 +75,11 @@ render props@{ onLogin, onLogout, onStaticPageClick } =
                                   , DOM.text "Gå till Mitt konto" ]
                       }
                   ]
-              -- TODO: Open Google consent popup
               , DOM.div_
                   [ DOM.a
-                      { children: [ DOM.span { className: "glyphicon glyphicon-edit" }
+                      { href: "#"
+                      , onClick: handler preventDefault openConsentRevocationMessage
+                      , children: [ DOM.span { className: "glyphicon glyphicon-edit" }
                                   , DOM.text "Hantera dataskydd" ]
                       }
                   ]
