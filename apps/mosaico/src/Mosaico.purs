@@ -17,7 +17,6 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
-import Data.Set (Set)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
 import Data.Tuple (Tuple)
 import Data.UUID as UUID
@@ -40,10 +39,10 @@ import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
+import Mosaico.Analytics (sendArticleAnalytics, sendPageView)
+import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
-import Mosaico.Analytics (sendArticleAnalytics)
-import Mosaico.Article as Article
 import Mosaico.Article.Image as Image
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
@@ -74,8 +73,7 @@ import Routing.PushState (LocationState, PushStateInterface, locations, makeInte
 import Simple.JSON (write)
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
-import Web.HTML.Window (document, scroll, location) as Web
-import Web.HTML.Location as Location
+import Web.HTML.Window (document, scroll) as Web
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
@@ -91,7 +89,6 @@ type State =
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe (Maybe User)
-  , entitlements :: Maybe (Set String)
   , staticPage :: Maybe StaticPageResponse
   , categoryStructure :: Array Category
   , catMap :: Categories
@@ -169,7 +166,6 @@ mosaicoComponent initialValues props = React.do
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
                          , user = Nothing
-                         , entitlements = Nothing
                          , ssrPreview = true
                          }
 
@@ -360,13 +356,17 @@ routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
   case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
-    Right path -> setState \s -> s { route = path
-                                   , prevRoute = Just s.route
-                                   , clickedArticle = case path of
-                                       Routes.ArticlePage articleId
-                                         | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
-                                       _ -> s.clickedArticle
-                                   }
+    Right path -> do
+      setState \s -> s { route = path
+                       , prevRoute = Just s.route
+                       , clickedArticle = case path of
+                           Routes.ArticlePage articleId
+                             | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
+                           _ -> s.clickedArticle
+                       }
+      case path of
+        Routes.ArticlePage _ -> pure unit
+        _                    -> sendPageView
     Left _     -> pure unit
 
 type InitialValues =
@@ -409,7 +409,6 @@ getInitialValues = do
         , clickedArticle: Nothing
         , modalView: Nothing
         , user: Nothing
-        , entitlements: Nothing
         , staticPage: Nothing
         , categoryStructure: []
         , catMap: Map.empty
@@ -535,7 +534,6 @@ render setState state components router onPaywallEvent =
        Routes.EpaperPage -> mosaicoLayoutNoAside
          $ components.epaperComponent
              { user: state.user
-             , entitlements: state.entitlements
              , paper: mosaicoPaper
              , onLogin
              }
@@ -606,10 +604,10 @@ render setState state components router onPaywallEvent =
     hooks = [ Frontpage.RemoveTooltips, Frontpage.MostRead state.mostReadArticles onClickHandler
             , Frontpage.Latest state.latestArticles onClickHandler
             , Frontpage.ArticleUrltoRelative
-            , Frontpage.Ad "Box Ad 1 DESKTOP" "mosaico-ad__firstbox"
-            , Frontpage.Ad "Box Ad 2 DESKTOP" "mosaico-ad__box"
-            , Frontpage.Ad "Box Ad 3 DESKTOP" "mosaico-ad__box1"
-            , Frontpage.Ad "Box Ad 4 DESKTOP" "mosaico-ad__box2"
+            , Frontpage.Ad "Box Ad 1 DESKTOP" "mosaico-ad__box"
+            , Frontpage.Ad "Box Ad 2 DESKTOP" "mosaico-ad__box1"
+            , Frontpage.Ad "Box Ad 3 DESKTOP" "mosaico-ad__box2"
+            , Frontpage.Ad "Box Ad 4 DESKTOP" "mosaico-ad__box3"
             , Frontpage.Ad "Ad 1"             "mosaico-ad__bigbox1"
             , Frontpage.Ad "Ad 2"             "mosaico-ad__bigbox2"
             ]
@@ -645,19 +643,18 @@ render setState state components router onPaywallEvent =
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
-                      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__firstbox" }
+                      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
                       , MostReadList.render
                           { mostReadArticles: state.mostReadArticles
                           , onClickHandler
                           }
-                      , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                      , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box1" }
                       , LatestList.render
                           { latestArticles: state.latestArticles
                           , onClickHandler
                           }
                       ] <> guard state.showAds
-                      [ Mosaico.ad { contentUnit: "mosaico-ad__box1" }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
+                      [ Mosaico.ad { contentUnit: "mosaico-ad__box2" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box5" }
