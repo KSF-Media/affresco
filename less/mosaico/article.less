@@ -447,10 +447,10 @@
     font-style: italic;
   }
   &__review-info {
-      padding: 15px;
-      margin: 15px 0;
-      background: @grey-light;
-      border: solid 1px @hairline-color;
+    padding: 15px;
+    margin: 15px 0;
+    background: @grey-light;
+    border: solid 1px @hairline-color;
   }
   iframe {
     max-width: 100%;
@@ -524,11 +524,30 @@
 
 .mosaico .vetrina--container {
   @media (min-width: @breakpoint-3col) {
-    grid-template-columns: 3em minmax(auto,600px) 3em;
+    grid-template-columns: 3em minmax(auto, 600px) 3em;
   }
 }
 
 .mosaico .mosaico-article__body .spinner--loading-spinner {
   background: initial;
   height: 100px;
+}
+
+.ksf-bright-star,
+.ksf-dim-star {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: "Glyphicons Halflings";
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+}
+
+.ksf-bright-star::before {
+  content: "\e006";
+}
+
+.ksf-dim-star {
+  content: "\e007";
 }

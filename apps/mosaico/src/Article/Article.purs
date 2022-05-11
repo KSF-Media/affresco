@@ -26,7 +26,6 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), PartStartInfo, Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box (box)
-import Mosaico.Article.Renderer (renderReviewStars)
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
@@ -355,21 +354,14 @@ renderElement paper imageComponent onArticleClick el = case el.el of
   Html content ->
     -- Can't place div's or blockquotes under p's, so place them under div.
     -- This is usually case with embeds
-    let taggedContent = case el.partLabel of
+    let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
+        taggedContent = case el.partLabel of
           Nothing -> content
           Just label -> "<b>" <> label <> "</b> " <> content
-    in
-       if el.reviewRow
-       then
-         DOM.div
-         { children: [ renderReviewStars content ]
-         , className: block <> " " <> block <> "__html"
-         }
-       else
-         (if isDiv content || isBlockquote content then DOM.div else DOM.p)
-         { dangerouslySetInnerHTML: { __html: taggedContent }
-         , className: block <> " " <> block <> "__html"
-         }
+    in domFn
+       { dangerouslySetInnerHTML: { __html: content }
+       , className: block <> " " <> block <> "__html"
+       }
   Headline str -> DOM.h4
     { className: block <> " " <> block <> "__subheadline"
     , children: [ DOM.text str ]

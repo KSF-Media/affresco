@@ -40,13 +40,6 @@ exports.getAttribsImpl = (node) => {
     return null;
 }
 
-exports.getAttribImpl = (name, node) => {
-  if (node && node.attribs && typeof node.attribs[name] !== 'undefined')
-    return node.attribs[name];
-
-  return null;
-}
-
 exports.getChildrenImpl = (node) => {
     if (node && node.children)
       return node.children;
