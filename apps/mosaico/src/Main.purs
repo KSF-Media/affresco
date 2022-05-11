@@ -218,7 +218,7 @@ readDir dir = do
 main :: Effect Unit
 main = do
   staticPages  <- do
-      staticPageNames <- readDir "./static"
+      staticPageNames <- readDir "./dist/static"
       let makeMap acc staticPageFileName = do
             pageContent <- FS.readTextFile UTF8 staticPageFileName
             pure $ HashMap.insert staticPageFileName pageContent acc
