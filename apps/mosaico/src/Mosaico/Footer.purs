@@ -189,7 +189,7 @@ ostnylandContactInfo onStaticPageClick =
   where
   firstColumn =
     [ section "Kontakta Östnyland: "
-        [ DOM.text "Lundgatan 8"
+        [ DOM.text "Lundagatan 8"
         , DOM.br {}
         , DOM.text "06100 Borgå"
         ]
@@ -198,6 +198,7 @@ ostnylandContactInfo onStaticPageClick =
         [ tel "09 1253 500"
         , DOM.br {}
         , DOM.text "(mån-fre kl. 8.00-12.00 och 13.00-16.00."
+        , DOM.br {}
         , DOM.text "På onsdagar stänger kundservice kl. 15.00)"
         ]
     , section "Redaktionen: "
