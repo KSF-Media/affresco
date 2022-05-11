@@ -194,8 +194,10 @@ ostnylandContactInfo onStaticPageClick =
         , DOM.text "06100 Borgå"
         ]
     , section "Växel: " [ tel "09 12531" ]
-    , section "Prenumerationer: "
+    , section "Prenumerationer och kundservice:"
         [ tel "09 1253 500"
+        , DOM.br {}
+        , DOM.a { href: "mailto:pren@ksfmedia.fi", children: [ DOM.text "pren@ksfmedia.fi" ] }
         , DOM.br {}
         , DOM.text "(mån-fre kl. 8.00-12.00 och 13.00-16.00."
         , DOM.br {}
