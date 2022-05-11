@@ -26,11 +26,36 @@
 
   &__digihelmob,
   &__box {
-    margin: 10px auto 20px;
+    .mosaico-ad__content-unit {
+      &.populated {
+        margin: 0 auto 20px;
+      }
+    }
   }
 
   &__top-parade {
     margin: 0 auto;
+    .BIGMAX {
+      div {
+        position: relative;
+        display: inline-block;
+        img {
+          width: 100%;
+          max-width: 1920px;
+          height: auto;
+        }
+        .ad-close {
+          position: absolute;
+          z-index: 2;
+          top: 10px;
+          right: 10px;
+          background: rgba(255,255,255,.6);
+          padding: 5px;
+          border-radius: 3px;
+          cursor: pointer;
+        }
+      }
+    }
   }
   &__parade {
     margin: 0 auto;
@@ -42,6 +67,13 @@
       @media (min-width: @breakpoint-3col) {
         margin-left: -80px;
       }
+    }
+  }
+  .mosaico-article__aside &.mosaico-ad__box:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    .mosaico-ad__content-unit {
+      margin-top: 0;
     }
   }
 }

@@ -107,7 +107,7 @@ window.adSlots = {
     {
       gamId: "INTERMOB",
       sizes: [300,500],
-      targetId: "mosaico-ad__firstbox",
+      targetId: "mosaico-ad__box",
       isLazy: true
     },
   ],
@@ -142,17 +142,11 @@ window.adSlots = {
       targetId: "mosaico-ad__top-parade",
       isLazy: false
     },
-    // {
-    //   gamId: "STORTAVLA",
-    //   sizes: [160,600],
-    //   targetId: "mosaico-ad__tallbox",
-    //   isLazy: true
-    // },
     {
-      gamId: "FIRSTBOX",
-      sizes: [ [300, 250], [300, 300], [300, 431], [300,600] ],
-      targetId: "mosaico-ad__firstbox",
-      isLazy: true
+      gamId: "BOX",
+      sizes: [ [300,250], [300,300], [300, 431], [300,600] ],
+      targetId: "mosaico-ad__box",
+      isLazy: false
     },
     {
       gamId: "BOX1",
@@ -184,18 +178,6 @@ window.adSlots = {
       targetId: "mosaico-ad__box5",
       isLazy: true
     },
-    {
-      gamId: "BOX",
-      sizes: [ [300,250], [300,300], [300, 431], [300,600] ],
-      targetId: "mosaico-ad__box",
-      isLazy: false
-    },
-    // {
-    //   gamId: "BOXFORPRINT",
-    //   sizes: [300,300],
-    //   targetId: "mosaico-ad__printbox",
-    //   isLazy: true
-    // },
     // {
     //   gamId: "WALLPAPER",
     //   sizes: [ [1600,1200], [1920,1080] ],
@@ -233,6 +215,26 @@ window.googletag.cmd.push(function () {
       document.querySelector("#" + elementId).classList.add("populated");
     };
   });
+  window.addEventListener("message", event => {
+    let message = event.data
+    if ( ["BIGMAX", "WALLPAPER"].indexOf(message.cmd) != -1 ) {
+      switch (message.cmd) {
+        case "BIGMAX":
+          var cu = document.getElementById("mosaico-ad__top-parade");
+          cu.classList.add("BIGMAX");
+          cu.innerHTML = `
+            <div>
+              <a target="_blank" href="${message.link}">
+                <img src="${message.img}">
+              </a>
+              <div onclick="closeAdDiv('.mosaico-ad.mosaico-ad__top-parade')" class="ad-close">Stäng</div>
+            </div>`;
+      }
+    }
+  })
 });
+window.closeAdDiv = function (adDiv) {
+  document.querySelector(adDiv).innerHTML = "";
+}
 
 main();
