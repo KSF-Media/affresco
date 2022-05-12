@@ -1,3 +1,5 @@
+env:
+  NODE_ENV: production
 jobs:
   check-ci:
     container:
