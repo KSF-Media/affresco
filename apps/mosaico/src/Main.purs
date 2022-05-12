@@ -483,7 +483,7 @@ menu env _ = do
                   , user: Nothing
                   , onLogin: mempty
                   , onLogout: mempty
-                  , router: emptyRouter
+                  , changeRoute: const mempty
                   }
               }
             , mostReadArticles: mempty

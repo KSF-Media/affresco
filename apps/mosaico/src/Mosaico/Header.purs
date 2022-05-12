@@ -7,6 +7,7 @@ module Mosaico.Header
   ) where
 
 import Prelude
+
 import Data.Array (head, splitAt)
 import Data.Either (Either(..))
 import Data.Foldable (foldMap)
@@ -17,7 +18,9 @@ import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
+import Effect (Effect)
 import Foreign.Object as Object
+import Effect.Class.Console as Console
 import KSF.Paper (toString)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
@@ -38,13 +41,14 @@ import Web.HTML (window)
 import Web.HTML.Window (scroll, scrollY, toEventTarget)
 
 type Props
-  = { router :: PushStateInterface
+  = { changeRoute :: String -> Effect Unit
     , categoryStructure :: Array Category
     , catMap :: Categories
     , onCategoryClick :: Category -> EventHandler
     , onLogin :: EventHandler
     , onProfile :: EventHandler
     , onStaticPageClick :: String -> EventHandler
+    , switchRoute :: Effect Unit
     -- Nothing for loading state, Just Nothing for no user
     , user :: Maybe (Maybe User)
     }
@@ -91,7 +95,7 @@ render scrollPosition props =
                         , DOM.a
                             { children: [ DOM.text "E-TIDNINGEN" ]
                             , href: "/epaper"
-                            , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
+                            , onClick: capture_ $ props.changeRoute "/epaper"
                             }
                         ]
                     }
@@ -139,23 +143,7 @@ render scrollPosition props =
                                             , children: [ DOM.text "MENY" ]
                                             }
                                         ]
-                                    , onClick:
-                                        handler_
-                                        $ ( \r -> do
-                                                locationState <- r.locationState
-                                                case match (routes props.catMap) locationState.pathname of
-                                                    Right MenuPage -> do
-                                                        let
-                                                          eitherState :: E { previousPath :: String }
-                                                          eitherState = read locationState.state
-                                                        case eitherState of
-                                                          Right state -> r.pushState (write {}) state.previousPath
-                                                          Left _ -> pure unit
-                                                    _ -> do
-                                                      void $ scroll 0 0 =<< window
-                                                      r.pushState (write { previousPath: locationState.pathname }) "/meny"
-                                            )
-                                            props.router
+                            , onClick: handler_ props.switchRoute
                             }
                         ]
                     }
@@ -187,7 +175,7 @@ render scrollPosition props =
                                     }
                                 ]
                     , href: "/sök"
-                    , onClick: capture_ $ props.router.pushState (write {}) "/sök"
+                    , onClick: capture_ $ props.changeRoute "/sök"
                     }
 
     block = "mosaico-header"
