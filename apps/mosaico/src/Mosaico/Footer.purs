@@ -108,7 +108,7 @@ hblContactInfo onStaticPageClick =
         ]
     , section "Insändare: "
         [ DOM.a
-            { href: "#"
+            { href: "/sida/insandare"
             , children: [ DOM.text "Skriv din insändare här" ]
             }
         ]
@@ -163,7 +163,7 @@ vastranylandContactInfo onStaticPageClick =
     , section "Chefredaktör för tidningen och nyhetschef: " [ DOM.text "Marina Holmberg" ]
     , section "Insändare: "
         [ DOM.a
-            { href: "#"
+            { href: "/sida/insandare"
             , children: [ DOM.text "Skriv din insändare här" ]
             }
         ]
@@ -223,7 +223,7 @@ ostnylandContactInfo onStaticPageClick =
         ]
     , section "Insändare: "
         [ DOM.a
-            { href: "#"
+            { href: "/sida/insandare"
             , children: [ DOM.text "Skriv din insändare här" ]
             }
         ]
