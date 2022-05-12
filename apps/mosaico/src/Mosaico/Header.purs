@@ -48,7 +48,7 @@ type Props
     , onLogin :: EventHandler
     , onProfile :: EventHandler
     , onStaticPageClick :: String -> EventHandler
-    , switchRoute :: Effect Unit
+    , onMenuClick :: Effect Unit
     -- Nothing for loading state, Just Nothing for no user
     , user :: Maybe (Maybe User)
     }
@@ -143,7 +143,7 @@ render scrollPosition props =
                                             , children: [ DOM.text "MENY" ]
                                             }
                                         ]
-                            , onClick: handler_ props.switchRoute
+                            , onClick: handler_ props.onMenuClick
                             }
                         ]
                     }

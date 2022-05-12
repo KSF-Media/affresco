@@ -379,9 +379,8 @@ routeListener c setState oldLoc location
       -- browser history is a bit buggy currently. This is because each time we land on an article page,
       -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
       -- If we want to fix this, we'd have to keep prev article in state too.
-      foldMap (case _ of
-                  Routes.ArticlePage _ -> scrollToTop
-                  _                    -> mempty)
+      foldMap (case _ of Routes.ArticlePage _ -> scrollToTop
+                         _                    -> mempty)
               (hush newRoute)
 
       case newRoute of
@@ -664,7 +663,7 @@ render setState state components router onPaywallEvent =
                   , onLogin
                   , onProfile
                   , onStaticPageClick
-                  , switchRoute:
+                  , onMenuClick:
                       case state.route of
                         Routes.MenuPage
                           | Just prevRoute <- state.prevRoute

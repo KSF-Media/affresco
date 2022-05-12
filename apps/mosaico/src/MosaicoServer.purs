@@ -57,7 +57,7 @@ render props = DOM.div_
              , onLogin: mempty
              , onProfile: mempty
              , onStaticPageClick: mempty
-             , switchRoute: mempty
+             , onMenuClick: mempty
              }
            , Header.mainSeparator
            , props.mainContent.content
