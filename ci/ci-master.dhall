@@ -84,7 +84,8 @@ in  { name = "production"
             }
         //  refreshCDNJobs
     , env =
-      { PRODUCTION_FACEBOOK_APP_ID = "894000011480431"
+      { NODE_ENV = "production"
+      , PRODUCTION_FACEBOOK_APP_ID = "894000011480431"
       , PRODUCTION_GOOGLE_CLIENT_ID =
           "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"
       , PRODUCTION_JANRAIN_FLOW_VERSION = "20201223120649370442"
