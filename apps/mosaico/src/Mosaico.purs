@@ -70,7 +70,7 @@ import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, use
 import React.Basic.Hooks as React
 import Routing (match)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Simple.JSON (write)
+import Simple.JSON as JSON
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, scroll) as Web
@@ -276,6 +276,11 @@ mosaicoComponent initialValues props = React.do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
 
   useEffect (state.route /\ map _.cusno (join state.user)) do
+    -- When the route has changed, let's set `goingForward` to `false`, as we use this value
+    -- to recognize should the page be scrolled to the top or not. When one moves backwards in browser history,
+    -- the page should be in the same y position it was when `goingForward`
+    initialValues.nav.replaceState (JSON.write { goingForward: false }) <<< _.pathname =<< initialValues.nav.locationState
+
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
@@ -345,6 +350,9 @@ mosaicoComponent initialValues props = React.do
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
 
+scrollToTop :: Effect Unit
+scrollToTop = Web.scroll 0 0 =<< Web.window
+
 pickRandomElement :: forall a. Array a -> Effect (Maybe a)
 pickRandomElement [] = pure Nothing
 pickRandomElement elements = do
@@ -355,7 +363,22 @@ routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe Locati
 routeListener c setState _oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
-  case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
+  let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
+      locationState = hush $ JSON.read location.state
+
+  -- When we navigate the site, let's scroll to top of the page whenever we are `goingForward`
+  foldMap (\(s :: Routes.RouteState) -> when s.goingForward scrollToTop) locationState
+
+  -- Let's always scroll to top with article pages, as the behaviour of going back in
+  -- browser history is a bit buggy currently. This is because each time we land on an article page,
+  -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
+  -- If we want to fix this, we'd have to keep prev article in state too.
+  foldMap (case _ of
+              Routes.ArticlePage _ -> scrollToTop
+              _                    -> mempty)
+          (hush newRoute)
+
+  case newRoute of
     Right path -> do
       setState \s -> s { route = path
                        , prevRoute = Just s.route
@@ -703,9 +726,7 @@ render setState state components router onPaywallEvent =
     onStaticPageClick link =
       case state.route of
         Routes.StaticPage page | page == link -> mempty
-        _ -> capture_ do
-          void $ Web.scroll 0 0 =<< Web.window
-          router.pushState (write {}) ("/sida/" <> link)
+        _ -> capture_ $ Routes.changeRoute router ("/sida/" <> link)
 
     onLogin = capture_ $ setState \s -> s { modalView = Just LoginModal }
 
@@ -716,9 +737,6 @@ render setState state components router onPaywallEvent =
       onPaywallEvent
 
     -- Search is done via the router
-    doSearch query = do
-      router.pushState (write {}) $ "/sök?q=" <> query
+    doSearch query = Routes.changeRoute router ("/sök?q=" <> query)
 
-    simpleRoute path = do
-      void $ Web.scroll 0 0 =<< Web.window
-      router.pushState (write {}) path
+    simpleRoute = Routes.changeRoute router

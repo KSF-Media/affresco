@@ -2,6 +2,7 @@ module Mosaico.Routes where
 
 import Prelude
 
+import Effect (Effect)
 import Data.Foldable (oneOf)
 import Data.List (List(..))
 import Data.Maybe (Maybe(..))
@@ -13,8 +14,10 @@ import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Categories, Category, CategoryLabel(..), Tag, uriComponentToTag)
 import Routing.Match (Match(..), end, lit, optionalMatch, param, root, str)
+import Routing.PushState (PushStateInterface)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
+import Simple.JSON (write)
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -61,3 +64,8 @@ routes categories = root *> oneOf
             = pure $ Tuple rs category
             | otherwise = invalid $ free $ Fail "Not a category"
       in Match matchRoute
+
+type RouteState = { goingForward :: Boolean }
+
+changeRoute :: PushStateInterface -> String -> Effect Unit
+changeRoute router route = router.pushState (write { goingForward: true }) route
