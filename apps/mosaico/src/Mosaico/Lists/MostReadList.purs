@@ -44,7 +44,7 @@ render props =
                 , DOM.div
                     { className: "list-article-liftup"
                     , children:
-                        [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]
+                        [ DOM.h3_ [ DOM.text $ fromMaybe a.title a.listTitle ]
                         , guard a.premium $ DOM.div
                             { className: "mosaico-article__meta"
                             , children:

@@ -24,7 +24,7 @@ render props =
   in DOM.div
        { className: joinWith " " [block, block <> "__latest"]
        , children:
-           [ DOM.h3
+           [ DOM.h2
                { className: block <> "--header"
                , children: [ DOM.text "Senast publicerat" ]
                }
@@ -42,7 +42,7 @@ render props =
                 [ DOM.div
                     { className: "list-article-liftup"
                     , children:
-                        [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]
+                        [ DOM.h3_ [ DOM.text $ fromMaybe a.title a.listTitle ]
                         , foldMap (\publishingTime ->
                             DOM.span
                               { className: "mosaico-asidelist__timestamp"
