@@ -18,7 +18,7 @@ import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
-import Data.Tuple (Tuple)
+import Data.Tuple (Tuple (..), snd)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -85,7 +85,7 @@ type State =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
-  , prevRoute :: Maybe Routes.MosaicoPage
+  , prevRoute :: Maybe (Tuple Routes.MosaicoPage String)
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe (Maybe User)
@@ -360,37 +360,43 @@ pickRandomElement elements = do
   pure $ index elements randomIndex
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
-routeListener c setState _oldLoc location = do
-  runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
+routeListener c setState oldLoc location
+  -- If the prev and current route are the same, let's not do anything.
+  -- The routeListener gets triggered twice, as we are replacing the route state
+  -- to set `goingForward = false` after every route switch
+  | maybe false ((_ == location.pathname) <<< _.pathname) oldLoc = mempty
+  | otherwise = do
+      runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
-  let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
-      locationState = hush $ JSON.read location.state
+      let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
+          locationState = hush $ JSON.read location.state
+          oldPath = maybe "" (\l -> l.pathname <> l.search) oldLoc
 
-  -- When we navigate the site, let's scroll to top of the page whenever we are `goingForward`
-  foldMap (\(s :: Routes.RouteState) -> when s.goingForward scrollToTop) locationState
+      -- When we navigate the site, let's scroll to top of the page whenever we are `goingForward`
+      foldMap (\(s :: Routes.RouteState) -> when s.goingForward scrollToTop) locationState
 
-  -- Let's always scroll to top with article pages, as the behaviour of going back in
-  -- browser history is a bit buggy currently. This is because each time we land on an article page,
-  -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
-  -- If we want to fix this, we'd have to keep prev article in state too.
-  foldMap (case _ of
-              Routes.ArticlePage _ -> scrollToTop
-              _                    -> mempty)
-          (hush newRoute)
+      -- Let's always scroll to top with article pages, as the behaviour of going back in
+      -- browser history is a bit buggy currently. This is because each time we land on an article page,
+      -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
+      -- If we want to fix this, we'd have to keep prev article in state too.
+      foldMap (case _ of
+                  Routes.ArticlePage _ -> scrollToTop
+                  _                    -> mempty)
+              (hush newRoute)
 
-  case newRoute of
-    Right path -> do
-      setState \s -> s { route = path
-                       , prevRoute = Just s.route
-                       , clickedArticle = case path of
-                           Routes.ArticlePage articleId
-                             | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
-                           _ -> s.clickedArticle
-                       }
-      case path of
-        Routes.ArticlePage _ -> pure unit
-        _                    -> sendPageView
-    Left _     -> pure unit
+      case newRoute of
+        Right path -> do
+          setState \s -> s { route = path
+                           , prevRoute = Just (Tuple s.route oldPath)
+                           , clickedArticle = case path of
+                               Routes.ArticlePage articleId
+                                 | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
+                               _ -> s.clickedArticle
+                           }
+          case path of
+            Routes.ArticlePage _ -> pure unit
+            _                    -> sendPageView
+        Left _     -> pure unit
 
 type InitialValues =
   { state :: State
@@ -547,7 +553,7 @@ render setState state components router onPaywallEvent =
        Routes.MenuPage ->
          flip (mosaicoLayout "menu-open") false
          $ Menu.render
-             { router
+             { changeRoute: Routes.changeRoute router
              , categoryStructure: state.categoryStructure
              , onCategoryClick
              , user: state.user
@@ -650,7 +656,7 @@ render setState state components router onPaywallEvent =
           , children:
               [ Header.topLine
               , components.headerComponent
-                  { router
+                  { changeRoute: Routes.changeRoute router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
                   , onCategoryClick
@@ -658,6 +664,12 @@ render setState state components router onPaywallEvent =
                   , onLogin
                   , onProfile
                   , onStaticPageClick
+                  , switchRoute:
+                      case state.route of
+                        Routes.MenuPage
+                          | Just prevRoute <- state.prevRoute
+                          -> Routes.changeRoute router $ snd prevRoute
+                        _ -> Routes.changeRoute router "/meny"
                   }
               , Header.mainSeparator
               , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
