@@ -636,7 +636,6 @@ render setState state components router onPaywallEvent =
                   , onProfile
                   , onStaticPageClick
                   }
-              , Header.mainSeparator
               , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
               , footer mosaicoPaper onStaticPageClick
@@ -683,6 +682,8 @@ render setState state components router onPaywallEvent =
       setState _ { clickedArticle = Just articleStub }
       simpleRoute $ "/artikel/" <> articleStub.uuid
 
+    onCategoryClick (Category { type: Webview }) =
+      mempty
     onCategoryClick cat@(Category c) =
       case state.route of
         Routes.CategoryPage category | category == cat -> mempty
