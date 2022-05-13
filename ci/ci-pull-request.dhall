@@ -83,4 +83,7 @@ in  { name = "previews"
           [ "deploy-gs", "deploy-app-article-server" ]
         }
       }
+    , env =
+      { NODE_ENV = "production"
+      }
     }

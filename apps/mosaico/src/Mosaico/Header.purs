@@ -161,6 +161,7 @@ render scrollPosition props =
                     }
                 ]
             }
+        , mainSeparator
         ]
     }
   where
