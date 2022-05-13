@@ -6,12 +6,14 @@ import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Lettera.Models (Article, Image)
+import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
 import Mosaico.Article as Article
 import Mosaico.Share as Share
-import React.Basic (fragment)
+import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (JSX)
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component)
 
 type Props =
   { article :: Article
@@ -19,8 +21,15 @@ type Props =
   , advertorialClassName :: Maybe String
   }
 
-render :: (Image.Props -> JSX) -> Props -> JSX
-render imageComponent { article, imageProps, advertorialClassName } =
+component :: Component Props
+component = do
+  imageComponent <- Image.component
+  boxComponent <- Box.component
+  React.component "Basic" $ \props -> React.do
+    pure $ render imageComponent boxComponent props
+
+render :: (Image.Props -> JSX) -> (Box.Props -> JSX) -> Props -> JSX
+render imageComponent boxComponent { article, imageProps, advertorialClassName } =
   let companyName details
         | "companyName" <- details.title = fold details.description
         | otherwise = mempty
@@ -64,7 +73,7 @@ render imageComponent { article, imageProps, advertorialClassName } =
                    , children:
                        [ DOM.div
                            { className: "mosaico-article__body"
-                           , children: map (Article.renderElement Nothing imageComponent Nothing) article.body
+                           , children: map (Article.renderElement imageComponent boxComponent Nothing) article.body
                            }
                        ]
 
