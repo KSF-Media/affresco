@@ -108,7 +108,7 @@ hblContactInfo onStaticPageClick =
         ]
     , section "Insändare: "
         [ DOM.a
-            { href: "#"
+            { href: "/sida/insandare"
             , children: [ DOM.text "Skriv din insändare här" ]
             }
         ]
@@ -163,7 +163,7 @@ vastranylandContactInfo onStaticPageClick =
     , section "Chefredaktör för tidningen och nyhetschef: " [ DOM.text "Marina Holmberg" ]
     , section "Insändare: "
         [ DOM.a
-            { href: "#"
+            { href: "/sida/insandare"
             , children: [ DOM.text "Skriv din insändare här" ]
             }
         ]
@@ -194,8 +194,10 @@ ostnylandContactInfo onStaticPageClick =
         , DOM.text "06100 Borgå"
         ]
     , section "Växel: " [ tel "09 12531" ]
-    , section "Prenumerationer: "
+    , section "Prenumerationer och kundservice:"
         [ tel "09 1253 500"
+        , DOM.br {}
+        , DOM.a { href: "mailto:pren@ksfmedia.fi", children: [ DOM.text "pren@ksfmedia.fi" ] }
         , DOM.br {}
         , DOM.text "(mån-fre kl. 8.00-12.00 och 13.00-16.00."
         , DOM.br {}
@@ -221,7 +223,7 @@ ostnylandContactInfo onStaticPageClick =
         ]
     , section "Insändare: "
         [ DOM.a
-            { href: "#"
+            { href: "/sida/insandare"
             , children: [ DOM.text "Skriv din insändare här" ]
             }
         ]
@@ -259,18 +261,13 @@ column children = DOM.div { className: "mosaico-footer__contact-info__column", c
 
 section :: String -> Array JSX -> JSX
 section title children =
-  DOM.div_
-    -- WTF: this div does nothing... except that it prevents some really weird
-    -- React bug which removes classes from every second child. This only happens
-    -- with the production build (eg. NODE_ENV=production yarn build && NODE_ENV=production yarn start)
-    [ DOM.p
-        { className: "mosaico-footer__contact-info__section"
-        , children:
-            [ DOM.b { children: [ DOM.text title, DOM.text " " ] }
-            , DOM.div { children: children }
-            ]
-        }
-    ]
+  DOM.div
+    { className: "mosaico-footer__contact-info__section"
+    , children:
+        [ DOM.b { children: [ DOM.text title, DOM.text " " ] }
+        , DOM.div { children: children }
+        ]
+    }
 
 email :: String -> JSX
 email address = DOM.a { href: "mailto:" <> address, children: [ DOM.text address ] }
