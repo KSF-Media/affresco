@@ -34,7 +34,6 @@
 .header-container.static-header {
   position: sticky;
   top: 10px;
-  border-bottom: 1px solid gray;
 
   .mosaico-header {
     &__logo {
@@ -96,6 +95,8 @@
     grid-column: 1 / span 2;
 
     gap: 1%;
+    width: fit-content;
+    white-space: nowrap;
 
     font: @font-weight 13px "Roboto", sans-serif;
     color: @grey-medium;
@@ -337,13 +338,13 @@
 }
 
 .mosaico-main-separator {
-  grid-area: separator;
   border: 0px;
   margin: 0px;
   background-color: @grey-almostlight;
-  width: 100%;
   height: @separator-height;
-  margin-bottom: @separator-margin;
+
+  width: 100%;
+  grid-column: 1 / -1;
 
   @media (max-width: @breakpoint-3col) {
     width: calc(100% + 24px);
