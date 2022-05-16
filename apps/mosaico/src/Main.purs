@@ -35,7 +35,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Now (nowDateTime)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Foreign.Object (lookup)
+import Foreign.Object (Object, lookup)
 import JSURI as URI
 import KSF.Paper as Paper
 import Lettera as Lettera
@@ -167,8 +167,11 @@ spec ::
                 , params :: { pageName :: String }
                 }
          , epaperPage ::
-              GET "/epaper"
+              GET "/epaper/<..path>?<..query>"
                 { response :: ResponseBody
+                , params :: { path :: List String }
+                , query :: { query :: Object (Array String) }
+                , guards :: Guards ("epaper" : Nil)
                 }
          , debugList ::
               GET "/debug/<uuid>"
@@ -195,6 +198,7 @@ spec ::
     , guards ::
          { category :: Category
          , clientip :: Maybe String
+         , epaper :: Unit
          }
     }
 spec = Spec
@@ -253,6 +257,7 @@ main = do
         guards =
           { category: parseCategory env
           , clientip: getClientIP
+          , epaper: epaperGuard
           }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
@@ -550,8 +555,14 @@ tagList env { params: { tag } } = do
       , latestArticles
       }
 
-epaperPage :: Env -> {} -> Aff (Response ResponseBody)
-epaperPage env { } = do
+epaperGuard :: HTTP.Request -> Aff (Either Failure Unit)
+epaperGuard req = do
+  let url = HTTP.requestURL req
+  pure $ if url == "/epaper/" || String.take 9 url == "/epaper/?"
+         then Right unit else Left (Forward "not exact match with epaper page")
+
+epaperPage :: Env -> { params :: { path :: List String }, query :: { query :: Object (Array String) }, guards :: { epaper :: Unit } } -> Aff (Response ResponseBody)
+epaperPage env {query: { query }} = do
   { mostReadArticles, latestArticles } <- sequential $
     { mostReadArticles: _, latestArticles: _ }
     <$> parallel (Cache.getMostRead env.cache)

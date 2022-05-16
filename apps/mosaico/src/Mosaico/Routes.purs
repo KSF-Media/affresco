@@ -12,7 +12,7 @@ import Data.String.CodePoints (codePointFromChar)
 import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Categories, Category, CategoryLabel(..), Tag, uriComponentToTag)
-import Routing.Match (Match(..), end, lit, optionalMatch, param, root, str)
+import Routing.Match (Match(..), end, lit, optionalMatch, param, params, root, str)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
 
@@ -42,7 +42,7 @@ routes categories = root *> oneOf
   [ DraftPage <$ (lit "artikel" *> lit "draft" *> str)
   , ArticlePage <$> (lit "artikel" *> str)
   , StaticPage <$> (lit "sida" *> str)
-  , EpaperPage <$ (lit "epaper" *> end)
+  , EpaperPage <$ (lit "epaper" *> optionalMatch params *> end)
   , ProfilePage <$ (lit "konto" *> end)
   , TagPage <<< uriComponentToTag <$> (lit "tagg" *> str)
   , Frontpage <$ end
