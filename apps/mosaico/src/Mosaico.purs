@@ -286,18 +286,9 @@ mosaicoComponent initialValues props = React.do
     -- the page should be in the same y position it was when `goingForward`
     Routes.replaceRoute initialValues.nav <<< _.pathname =<< initialValues.nav.locationState
 
-    case state.movingDirection of
-      MovingBackward pos -> do
-        Aff.launchAff_ do
-          Aff.delay (Milliseconds 1000.0)
-          liftEffect do
-            Console.log $ "Scrolling to y: " <> show pos
-            w <- Web.window
-            Web.scroll 0 (ceil pos) w
-      _ -> scrollToTop
-
     case state.route of
-      Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
+      Routes.Frontpage -> do
+        setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
       Routes.SearchPage Nothing -> pure unit
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
@@ -360,6 +351,14 @@ mosaicoComponent initialValues props = React.do
       Routes.EpaperPage -> setTitle "E-Tidningen"
       Routes.StaticPage page -> setTitle page
       _ -> pure unit
+
+
+    case state.movingDirection of
+      MovingForward -> scrollToTop
+      MovingBackward pos -> do
+        Console.log $ "Scrolling to y: " <> show pos
+        w <- Web.window
+        Web.scroll 0 (ceil pos) w
 
     pure mempty
 
