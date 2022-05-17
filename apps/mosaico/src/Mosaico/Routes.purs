@@ -3,6 +3,7 @@ module Mosaico.Routes where
 import Prelude
 
 import Effect (Effect)
+import Foreign (Foreign)
 import Data.Foldable (oneOf)
 import Data.List (List(..))
 import Data.Maybe (Maybe(..))
@@ -17,6 +18,9 @@ import Routing.Match (Match(..), end, lit, optionalMatch, param, root, str)
 import Routing.PushState (PushStateInterface)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
+import Web.HTML (window)
+import Web.HTML.Window (scroll, scrollY, toEventTarget)
+
 import Simple.JSON (write)
 
 data MosaicoPage
@@ -65,7 +69,31 @@ routes categories = root *> oneOf
             | otherwise = invalid $ free $ Fail "Not a category"
       in Match matchRoute
 
-type RouteState = { goingForward :: Boolean }
+type RouteState =
+  { goingForward :: Boolean
+  , position :: { y :: Number }
+  }
+
+data RouterAction
+  = RouterPush
+  | RouterReplace
+
+derive instance eqRouterAction :: Eq RouterAction
 
 changeRoute :: PushStateInterface -> String -> Effect Unit
-changeRoute router route = router.pushState (write { goingForward: true }) route
+changeRoute router route = do
+  -- TODO: X and Y pos
+  position <- getPosition
+  runRouteEffect router.pushState { goingForward: true, position: position } route
+
+replaceRoute :: PushStateInterface -> String -> Effect Unit
+replaceRoute router route = do
+  position <- getPosition
+  runRouteEffect router.replaceState { goingForward: false, position } route
+
+runRouteEffect :: (Foreign -> String -> Effect Unit) -> RouteState -> String -> Effect Unit
+runRouteEffect f state route = f (write state) route
+
+getPosition :: Effect { y :: Number }
+getPosition = do
+  map (\y -> { y }) <<< scrollY =<< window

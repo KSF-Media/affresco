@@ -16,6 +16,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.Int (ceil)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
 import Data.Tuple (Tuple (..), snd)
@@ -79,6 +80,9 @@ foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
 
 data ModalView = LoginModal
+data MovingDirection
+  = MovingForward
+  | MovingBackward Number
 
 type State =
   { article :: Maybe (Either Unit FullArticle)
@@ -98,6 +102,7 @@ type State =
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
   , logger :: Sentry.Logger
+  , movingDirection :: MovingDirection
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -279,7 +284,17 @@ mosaicoComponent initialValues props = React.do
     -- When the route has changed, let's set `goingForward` to `false`, as we use this value
     -- to recognize should the page be scrolled to the top or not. When one moves backwards in browser history,
     -- the page should be in the same y position it was when `goingForward`
-    initialValues.nav.replaceState (JSON.write { goingForward: false }) <<< _.pathname =<< initialValues.nav.locationState
+    Routes.replaceRoute initialValues.nav <<< _.pathname =<< initialValues.nav.locationState
+
+    case state.movingDirection of
+      MovingBackward pos -> do
+        Aff.launchAff_ do
+          Aff.delay (Milliseconds 1000.0)
+          liftEffect do
+            Console.log $ "Scrolling to y: " <> show pos
+            w <- Web.window
+            Web.scroll 0 (ceil pos) w
+      _ -> scrollToTop
 
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
@@ -364,16 +379,47 @@ routeListener c setState oldLoc location
   -- If the prev and current route are the same, let's not do anything.
   -- The routeListener gets triggered twice, as we are replacing the route state
   -- to set `goingForward = false` after every route switch
-  | maybe false ((_ == location.pathname) <<< _.pathname) oldLoc = mempty
+  | maybe false ((_ == location.pathname) <<< _.pathname) oldLoc = do
+      let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
+      --    locationState = hush $ JSON.read location.state
+          (oldLocState :: Maybe Routes.RouteState) = hush <<< JSON.read <<< _.state =<< oldLoc
+      foldMap (\(s :: Routes.RouteState) -> do
+                  Console.log $ "In limbo, y: " <> show s.position.y
+                  setState _ { movingDirection = MovingBackward s.position.y }) oldLocState
+
+      -- foldMap (\(s :: Routes.RouteState) -> do
+      --               Console.log $ "1 OLD Y POS!!! " <> show s.position.y) oldLocState
+      mempty
   | otherwise = do
       runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
       let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
           locationState = hush $ JSON.read location.state
+          (oldLocState :: Maybe Routes.RouteState) = hush <<< JSON.read <<< _.state =<< oldLoc
           oldPath = maybe "" (\l -> l.pathname <> l.search) oldLoc
 
       -- When we navigate the site, let's scroll to top of the page whenever we are `goingForward`
-      foldMap (\(s :: Routes.RouteState) -> when s.goingForward scrollToTop) locationState
+      foldMap (\(s :: Routes.RouteState) -> do
+                  if s.goingForward
+                  then do
+
+                    Console.log "moving forward"
+                    setState _ { movingDirection = MovingForward }
+                  else do
+                    Console.log "moving backward"
+                    -- setState _ { movingDirection = MovingBackward s.position.y }
+                  -- Console.log $ "2 Y POS " <> show s.position.y
+                  -- when s.goingForward do
+                  --   setState _ { prevYPos = s.position.y  }
+                  --   scrollToTop
+                  -- when (not $ s.goingForward) do
+                  --   Console.log $ "PREV POS IN STATE: " <> show
+              )
+        locationState
+
+      -- foldMap (\(s :: Routes.RouteState) -> do
+      --             Console.log $ "2 OLD Y POS!!! " <> show s.position.y) oldLocState
+
 
       -- Let's always scroll to top with article pages, as the behaviour of going back in
       -- browser history is a bit buggy currently. This is because each time we land on an article page,
@@ -446,6 +492,7 @@ getInitialValues = do
         , advertorials: Nothing
         , singleAdvertorial: Nothing
         , logger
+        , movingDirection: MovingForward
         }
     , components:
         { loginModalComponent
