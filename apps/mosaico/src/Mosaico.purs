@@ -93,7 +93,6 @@ type State =
   , categoryStructure :: Array Category
   , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
-  , showAds :: Boolean
   , ssrPreview :: Boolean
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
@@ -118,6 +117,7 @@ type Props =
   , latestArticles :: Maybe (Array ArticleStub)
   , staticPageName :: Maybe String
   , categoryStructure :: Array Category
+  -- For tests, they are prone to break in uninteresting ways with ads
   , globalDisableAds :: Boolean
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
   }
@@ -151,7 +151,7 @@ mosaicoComponent initialValues props = React.do
       initialCatMap = categoriesMap props.categoryStructure
       initialPath = getPathFromLocationState initialValues.locationState
       maxAge = Minutes 15.0
-  state /\ setState_ <- useState initialValues.state
+  state /\ setState <- useState initialValues.state
                          { article = Right <$> props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , latestArticles = fold props.latestArticles
@@ -160,7 +160,6 @@ mosaicoComponent initialValues props = React.do
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
-                         , showAds = not props.globalDisableAds && initialValues.state.showAds
                          , catMap = initialCatMap
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
@@ -168,11 +167,6 @@ mosaicoComponent initialValues props = React.do
                          , user = Nothing
                          , ssrPreview = true
                          }
-
-  -- For tests, they are prone to break in uninteresting ways with ads
-  let setState = if not props.globalDisableAds
-                 then setState_
-                 else \f -> setState_ $ \s -> (f s) { showAds = false }
 
   let loadArticle articleId = Aff.launchAff_ do
         case UUID.parseUUID articleId of
@@ -189,7 +183,6 @@ mosaicoComponent initialValues props = React.do
                 randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
                 setState _
                   { article = Just $ Right a
-                  , showAds = not article.removeAds && not (article.articleType == Advertorial)
                   , ssrPreview = false
                   , singleAdvertorial = randomAdvertorial
                   }
@@ -266,11 +259,10 @@ mosaicoComponent initialValues props = React.do
         case HashMap.lookup feedName state.frontpageFeeds of
           Nothing -> do
             Aff.launchAff_ $ loadFeed feedName
-            setState _ { showAds = true }
           Just { stamp } -> do
             now <- Now.nowDateTime
             when (DateTime.diff now stamp > maxAge) do
-              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds, showAds = true }
+              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
@@ -279,39 +271,30 @@ mosaicoComponent initialValues props = React.do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
-      Routes.SearchPage Nothing -> pure unit
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
-      -- Always uses server side provided article
-      Routes.DraftPage -> setState _  { showAds = false }
-      Routes.ProfilePage -> pure unit
       Routes.ArticlePage articleId
         | Just article <- map _.article (join $ map hush $ state.article)
         , articleId == article.uuid
         -> do
           when (state.ssrPreview && _.premium article) $
             loadArticle articleId
-          setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
-      Routes.MenuPage -> setState _ { showAds = false }
-      Routes.NotFoundPage _path -> setState _ { showAds = true }
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
-      Routes.EpaperPage -> setState _ { showAds = true }
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
         -> when (isJust state.prevRoute) do
              foldMap (\p -> evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]) r.pageScript
-             setState _ { showAds = false }
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
-            liftEffect $ setState _  { staticPage = Just staticPage, showAds = false }
+            liftEffect $ setState _  { staticPage = Just staticPage }
             case staticPage of
               StaticPageResponse r
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
               _ -> mempty
-      Routes.DebugPage _ -> pure unit
       Routes.DeployPreview -> liftEffect $ setState _  { route = Routes.Frontpage }
+      _ -> pure unit
 
     case props.mostReadArticles of
       Just mostReads
@@ -343,7 +326,7 @@ mosaicoComponent initialValues props = React.do
 
     pure mempty
 
-  pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
+  pure $ render props setState state initialValues.components initialValues.nav onPaywallEvent
 
 pickRandomElement :: forall a. Array a -> Effect (Maybe a)
 pickRandomElement [] = pure Nothing
@@ -413,7 +396,6 @@ getInitialValues = do
         , categoryStructure: []
         , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
-        , showAds: true
         , ssrPreview: true
         , advertorials: Nothing
         , singleAdvertorial: Nothing
@@ -459,8 +441,8 @@ jsApp = do
   initialValues <- getInitialValues
   React.reactComponent "Mosaico" $ mosaicoComponent initialValues <<< fromJSProps
 
-render :: SetState -> State -> Components -> PushStateInterface -> Effect Unit -> JSX
-render setState state components router onPaywallEvent =
+render :: Props -> SetState -> State -> Components -> PushStateInterface -> Effect Unit -> JSX
+render props setState state components router onPaywallEvent =
   case state.modalView of
     Just LoginModal ->
       components.loginModalComponent
@@ -621,7 +603,7 @@ render setState state components router onPaywallEvent =
 
     mosaicoLayout :: String -> JSX -> Boolean -> JSX
     mosaicoLayout extraClasses content showAside = DOM.div_
-      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
       , DOM.div
           { className: "mosaico grid " <> extraClasses
           , id: Paper.toString mosaicoPaper
@@ -637,23 +619,23 @@ render setState state components router onPaywallEvent =
                   , onProfile
                   , onStaticPageClick
                   }
-              , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
+              , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
               , footer mosaicoPaper onStaticPageClick
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
-                      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
                       , MostReadList.render
                           { mostReadArticles: state.mostReadArticles
                           , onClickHandler
                           }
-                      , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                      , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box1" }
                       , LatestList.render
                           { latestArticles: state.latestArticles
                           , onClickHandler
                           }
-                      ] <> guard state.showAds
+                      ] <> guard showAds
                       [ Mosaico.ad { contentUnit: "mosaico-ad__box2" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
@@ -663,6 +645,26 @@ render setState state components router onPaywallEvent =
               ]
           }
       ]
+
+    showAds = not props.globalDisableAds && case state.route of
+      Routes.Frontpage -> true
+      Routes.TagPage _ -> true
+      Routes.SearchPage _ -> true
+      Routes.DraftPage -> false
+      Routes.ProfilePage -> false
+      Routes.ArticlePage _ -> case state.article of
+        Nothing -> true
+        Just eitherArticle -> case eitherArticle of
+          Right { article: article} ->
+            not article.removeAds && not (article.articleType == Advertorial)
+          Left _ -> false
+      Routes.MenuPage -> false
+      Routes.NotFoundPage _ -> false
+      Routes.CategoryPage _ -> true
+      Routes.EpaperPage -> true
+      Routes.StaticPage _ -> false
+      Routes.DebugPage _ -> false
+      Routes.DeployPreview -> false
 
     renderArticle :: Either ArticleStub FullArticle -> JSX
     renderArticle article =
