@@ -2,8 +2,6 @@ module Mosaico.EpaperBanner where
 
 import Prelude
 
-import KSF.Paper (Paper(..))
-import Mosaico.Paper (mosaicoPaper)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 

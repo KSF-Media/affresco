@@ -4,20 +4,14 @@ import Prelude
 
 import Data.Array (head)
 import Data.Maybe (Maybe(..), isJust, maybe)
-import Data.Set (Set)
-import Data.Set as Set
 import Data.String (Pattern(..), contains, stripPrefix)
-import KSF.Api (UserAuth, Token(..))
 import KSF.HtmlRenderer.Models as HtmlRenderer
-import KSF.Paper (Paper(..))
-import KSF.Paper as Paper
 import Lettera.Models (ArticleStub)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.EpaperBanner as EpaperBanner
 import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
 import React.Basic.Events (EventHandler)
-import React.Basic.DOM as DOM
 
 data Hook
   = MostRead (Array ArticleStub) (ArticleStub -> EventHandler)
