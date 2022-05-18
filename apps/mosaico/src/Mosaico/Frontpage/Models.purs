@@ -134,10 +134,10 @@ epaperBannerHook = HtmlRenderer.replacingHook
                             Just { name, className, text }
                               | name      == "div"
                               , className == "dre-item__title"
-                              , text      == "Senaste tidning" -> true
-                            _                                  -> false
+                              , text      == "E-tidningen DESKTOP" -> true
+                            _                                      -> false
                        )
-  , processNode: (\_ _ _ -> pure $ DOM.div_ [ DOM.text "Test" ]
+  , processNode: (\_ _ _ -> pure $ EpaperBanner.render
                  )
   }
 

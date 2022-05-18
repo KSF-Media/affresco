@@ -452,6 +452,7 @@ renderFrontpage env = do
                    , Frontpage.MostRead mostReadArticles (const mempty)
                    , Frontpage.Latest latestArticles (const mempty)
                    , Frontpage.ArticleUrltoRelative
+                   , Frontpage.EpaperBanner
                    ]
           , onClick: mempty
           }
