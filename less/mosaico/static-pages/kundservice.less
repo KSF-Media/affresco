@@ -3,12 +3,39 @@
 .static-page__customer-service {
   display: flex;
   flex-direction: column;
+  margin-bottom: 30px;
+  @media (min-width: @breakpoint-2col) {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 
 .customer-service__background-img {
+  align-self: center;
   background-image: url("@{path-images}/illu-kundservice.svg");
   background-size: contain;
-  width: 100px;
-  height: 100px;
+  background-repeat: no-repeat;
+  width: 250px;
+  height: 200px;
+  @media (min-width: 481px) {
+    align-self: flex-start;
+  }
+  @media (min-width: @breakpoint-2col) {
+    width: 35%;
+  }
+  @media (min-width: @breakpoint-3col) {
+    width: 30%;
+  }
+}
+
+.customer-service__info {
+  @media (min-width: @breakpoint-2col) {
+    width: 65%;
+    align-self: center;
+    padding-right: 35px;
+  }
+  @media (min-width: @breakpoint-3col) {
+    width: 70%;
+  }
 }
 
   .customer-service__headline {
@@ -25,9 +52,10 @@
     gap: 25px;
     margin-top: 30px;
     margin-bottom: 30px;
+    width: 100%;
     @media (min-width: @breakpoint-2col) {
       padding: 0 35px;
-      gap: 30px;
+      gap: 40px;
     }
     @media (min-width: @breakpoint-3col) {
       grid-template-columns: 1fr 1fr;
