@@ -1,3 +1,8 @@
+@coverHBL: 'https://www.e-pages.dk/hbl/teasers/3271/medium.jpg';
+@coverVN: 'https://www.e-pages.dk/vastranyland/teasers/3668/medium.jpg';
+@coverON: 'https://www.e-pages.dk/ostnyland/teasers/3669/medium.jpg';
+@coverJunior: 'https://www.e-pages.dk/hbljunior/teasers/12509/medium.jpg';
+
 .mosaico-epaper {
   grid-area: main;
 
@@ -34,16 +39,16 @@
     }
 
     #HBL & {
-      background-image: url('https://www.e-pages.dk/hbl/teasers/3271/medium.jpg');
+      background-image: url('@{coverHBL}');
     }
     #VN & {
-      background-image: url('https://www.e-pages.dk/vastranyland/teasers/3668/medium.jpg');
+      background-image: url('@{coverVN}');
     }
     #ON & {
-      background-image: url('https://www.e-pages.dk/ostnyland/teasers/3669/medium.jpg');
+      background-image: url('@{coverON}');
     }
     &__junior {
-      background-image: url('https://www.e-pages.dk/hbljunior/teasers/12509/medium.jpg') !important;
+      background-image: url('@{coverJunior}');
       height: 295px;
       box-shadow: 0px 0px 45px -10px rgba(0,0,0,0.3), inset 0px -50px 46px -38px rgba(0,0,0,0.22);
     }
@@ -102,6 +107,30 @@
       color: @grey-medium;
       padding: 1px;
       background-color: transparent;
+    }
+  }
+
+  &__liftup {
+    &--cover {
+      width: 300px;
+      height: 300px;
+      background-size: contain;
+      background-position: top center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+      display: block;
+      #HBL & {
+        background-image: url('@{coverHBL}');
+      }
+      #VN & {
+        background-image: url('@{coverVN}');
+      }
+      #ON & {
+        background-image: url('@{coverON}');
+      }
+    }
+    &--container {
+      display: block;
     }
   }
 }
