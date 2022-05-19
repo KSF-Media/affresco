@@ -459,20 +459,7 @@ menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
-  let (emptyRouter :: PushStateInterface) =
-        { listen: const $ pure $ pure unit
-        , locationState:
-            pure
-              { hash: mempty
-              , path: mempty
-              , pathname: mempty
-              , search: mempty
-              , state: write {}
-              }
-        , pushState: const $ const mempty
-        , replaceState: const $ const mempty
-        }
-  let mosaicoString =
+      mosaicoString =
         DOM.renderToString
         $ mosaico
           { mainContent:

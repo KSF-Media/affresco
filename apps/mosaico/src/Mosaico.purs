@@ -344,22 +344,20 @@ mosaicoComponent initialValues props = React.do
       Routes.StaticPage page -> setTitle page
       _ -> pure unit
 
-
+    let scrollToYPos y = Web.window >>= Web.scroll 0 y
     case state.scrollToYPosition, state.route of
       -- Let's always scroll to top with article pages, as the behaviour of going back in
       -- browser history is a bit buggy currently. This is because each time we land on an article page,
       -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
       -- If we want to fix this, we'd have to keep prev article in state too.
-      _, Routes.ArticlePage _ -> scrollToTop
-      Just y,  _              -> Web.window >>= Web.scroll 0 (ceil y)
-      Nothing, _              -> scrollToTop
+      _, Routes.ArticlePage _ -> scrollToYPos 0
+      Just y,  _              -> scrollToYPos (ceil y)
+      Nothing, _              -> scrollToYPos 0
 
     pure mempty
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
 
-scrollToTop :: Effect Unit
-scrollToTop = Web.scroll 0 0 =<< Web.window
 
 pickRandomElement :: forall a. Array a -> Effect (Maybe a)
 pickRandomElement [] = pure Nothing
@@ -373,7 +371,6 @@ routeListener c setState oldLoc location = do
 
   let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
       (locationState :: Maybe Routes.RouteState) = hush $ JSON.read location.state
-      (oldLocState :: Maybe Routes.RouteState) = hush <<< JSON.read <<< _.state =<< oldLoc
       oldPath = maybe "" (\l -> l.pathname <> l.search) oldLoc
 
   -- If the location we moved to was previosly visited, let's scroll to the last y position it had.

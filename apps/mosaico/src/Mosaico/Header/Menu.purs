@@ -16,8 +16,6 @@ import React.Basic (JSX)
 import React.Basic.Events (EventHandler)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
-import Routing.PushState (PushStateInterface)
-import Simple.JSON (write)
 
 type Props =
   { changeRoute :: String -> Effect Unit

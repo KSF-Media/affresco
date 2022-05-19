@@ -19,7 +19,7 @@ import Routing.PushState (PushStateInterface)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
 import Web.HTML (window)
-import Web.HTML.Window (scroll, scrollY, toEventTarget)
+import Web.HTML.Window (scrollY)
 
 import Simple.JSON (write)
 

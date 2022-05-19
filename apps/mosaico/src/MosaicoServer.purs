@@ -13,8 +13,6 @@ import Mosaico.LatestList as LatestList
 import Mosaico.Routes as Routes
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (JSX)
-import Routing.PushState (PushStateInterface)
-import Simple.JSON (write)
 
 type Props =
   { mainContent :: MainContent
