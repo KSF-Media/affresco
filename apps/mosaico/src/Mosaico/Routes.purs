@@ -69,31 +69,16 @@ routes categories = root *> oneOf
             | otherwise = invalid $ free $ Fail "Not a category"
       in Match matchRoute
 
-type RouteState =
-  { goingForward :: Boolean
-  , position :: { y :: Number }
-  }
-
-data RouterAction
-  = RouterPush
-  | RouterReplace
-
-derive instance eqRouterAction :: Eq RouterAction
+type RouteState = { yPositionOnLeave :: Maybe Number }
 
 changeRoute :: PushStateInterface -> String -> Effect Unit
 changeRoute router route = do
-  -- TODO: X and Y pos
-  position <- getPosition
-  runRouteEffect router.pushState { goingForward: true, position: position } route
-
-replaceRoute :: PushStateInterface -> String -> Effect Unit
-replaceRoute router route = do
-  position <- getPosition
-  runRouteEffect router.replaceState { goingForward: false, position } route
+  currentRoute <- _.pathname <$> router.locationState
+  currentY     <- scrollY =<< window
+  -- Before changing the route, let's write the y scroll position to the state of the current
+  -- location, as this is needed for recovery if users go back in browser history
+  runRouteEffect router.replaceState { yPositionOnLeave: Just currentY } currentRoute
+  runRouteEffect router.pushState { yPositionOnLeave: Nothing } route
 
 runRouteEffect :: (Foreign -> String -> Effect Unit) -> RouteState -> String -> Effect Unit
 runRouteEffect f state route = f (write state) route
-
-getPosition :: Effect { y :: Number }
-getPosition = do
-  map (\y -> { y }) <<< scrollY =<< window
