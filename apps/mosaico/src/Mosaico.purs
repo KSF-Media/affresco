@@ -279,8 +279,7 @@ mosaicoComponent initialValues props = React.do
 
   useEffect (state.route /\ map _.cusno (join state.user)) do
     case state.route of
-      Routes.Frontpage -> do
-        setFrontpage (CategoryFeed frontpageCategoryLabel)
+      Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
       Routes.SearchPage Nothing -> pure unit
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
@@ -288,7 +287,7 @@ mosaicoComponent initialValues props = React.do
       Routes.DraftPage -> setState _  { showAds = false }
       Routes.ProfilePage -> pure unit
       Routes.ArticlePage articleId
-        | Just article <- map _.article (join $ map hush  state.article)
+        | Just article <- map _.article (join $ map hush state.article)
         , articleId == article.uuid
         -> do
           when (state.ssrPreview && _.premium article) $
@@ -357,7 +356,6 @@ mosaicoComponent initialValues props = React.do
     pure mempty
 
   pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
-
 
 pickRandomElement :: forall a. Array a -> Effect (Maybe a)
 pickRandomElement [] = pure Nothing
