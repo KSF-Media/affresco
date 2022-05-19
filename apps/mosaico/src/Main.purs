@@ -720,6 +720,7 @@ searchPage env { query: { search } } = do
     <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
+      noResults = isJust query && null articles
       mosaicoString = DOM.renderToString
                         $ mosaico
                           { mainContent:
@@ -728,11 +729,12 @@ searchPage env { query: { search } } = do
                                   searchComponent { query
                                                   , doSearch: const $ pure unit
                                                   , searching: false
-                                                  , noResults: isJust query && null articles
                                                   } <>
                                   (guard (not $ null articles) $
                                    Frontpage.render $ Frontpage.List
-                                   { label: ("Sökresultat: " <> _) <$> query
+                                   { label: if noResults
+                                            then Just "Inga resultat"
+                                            else ("Sökresultat: " <> _) <$> query
                                    , content: Just articles
                                    , onArticleClick: const mempty
                                    , onTagClick: const mempty

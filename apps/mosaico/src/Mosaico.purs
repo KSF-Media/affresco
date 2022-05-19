@@ -511,7 +511,7 @@ render props setState state components router onPaywallEvent =
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.Frontpage -> renderFrontpage
        Routes.SearchPage Nothing ->
-          mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
+          mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false }
        Routes.SearchPage query@(Just queryString) ->
           let frontpageArticles = _.feed <$> HashMap.lookup (SearchFeed queryString) state.frontpageFeeds
               searching = isNothing frontpageArticles
@@ -519,9 +519,11 @@ render props setState state components router onPaywallEvent =
                 Just (ArticleList list)
                   | null list -> true
                 _             -> false
-              searchProps = { query, doSearch, searching, noResults }
+              searchProps = { query, doSearch, searching }
               header = components.searchComponent searchProps
-              label = Just $ "Sökresultat: " <> queryString
+              label = if noResults
+                      then Just "Inga resultat"
+                      else Just $ "Sökresultat: " <> queryString
           in frontpage (Just header) label frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
