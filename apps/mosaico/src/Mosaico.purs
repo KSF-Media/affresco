@@ -16,9 +16,10 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.Int (ceil)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
-import Data.Tuple (Tuple)
+import Data.Tuple (Tuple (..), snd)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -70,7 +71,7 @@ import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, use
 import React.Basic.Hooks as React
 import Routing (match)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Simple.JSON (write)
+import Simple.JSON as JSON
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, scroll) as Web
@@ -85,7 +86,7 @@ type State =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
-  , prevRoute :: Maybe Routes.MosaicoPage
+  , prevRoute :: Maybe (Tuple Routes.MosaicoPage String)
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe (Maybe User)
@@ -97,6 +98,7 @@ type State =
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
   , logger :: Sentry.Logger
+  , scrollToYPosition :: Maybe Number
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -273,7 +275,7 @@ mosaicoComponent initialValues props = React.do
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
       Routes.ArticlePage articleId
-        | Just article <- map _.article (join $ map hush $ state.article)
+        | Just article <- map _.article (join $ map hush state.article)
         , articleId == article.uuid
         -> do
           when (state.ssrPreview && _.premium article) $
@@ -324,6 +326,16 @@ mosaicoComponent initialValues props = React.do
       Routes.StaticPage page -> setTitle page
       _ -> pure unit
 
+    let scrollToYPos y = Web.window >>= Web.scroll 0 y
+    case state.scrollToYPosition, state.route of
+      -- Let's always scroll to top with article pages, as the behaviour of going back in
+      -- browser history is a bit buggy currently. This is because each time we land on an article page,
+      -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
+      -- If we want to fix this, we'd have to keep prev article in state too.
+      _, Routes.ArticlePage _ -> scrollToYPos 0
+      Just y,  _              -> scrollToYPos (ceil y)
+      Nothing, _              -> scrollToYPos 0
+
     pure mempty
 
   pure $ render props setState state initialValues.components initialValues.nav onPaywallEvent
@@ -335,13 +347,25 @@ pickRandomElement elements = do
   pure $ index elements randomIndex
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
-routeListener c setState _oldLoc location = do
+routeListener c setState oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
-  case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
+  let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
+      (locationState :: Maybe Routes.RouteState) = hush $ JSON.read location.state
+      oldPath = maybe "" (\l -> l.pathname <> l.search) oldLoc
+
+  -- If the location we moved to was previosly visited, let's scroll to the last y position it had.
+  -- Note that we cannot scroll the page yet, but we need to do it via Mosaico's state
+  -- as the content is rendered that way too (the page is empty at this point, or showing
+  -- old content)
+  let setYPosition { yPositionOnLeave: Just y } = setState _ { scrollToYPosition = Just y }
+      setYPosition _ = setState _ { scrollToYPosition = Nothing }
+  foldMap setYPosition locationState
+
+  case newRoute of
     Right path -> do
       setState \s -> s { route = path
-                       , prevRoute = Just s.route
+                       , prevRoute = Just (Tuple s.route oldPath)
                        , clickedArticle = case path of
                            Routes.ArticlePage articleId
                              | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
@@ -400,6 +424,7 @@ getInitialValues = do
         , advertorials: Nothing
         , singleAdvertorial: Nothing
         , logger
+        , scrollToYPosition: Nothing
         }
     , components:
         { loginModalComponent
@@ -506,7 +531,7 @@ render props setState state components router onPaywallEvent =
        Routes.MenuPage ->
          flip (mosaicoLayout "menu-open") false
          $ Menu.render
-             { router
+             { changeRoute: Routes.changeRoute router
              , categoryStructure: state.categoryStructure
              , onCategoryClick
              , user: state.user
@@ -609,7 +634,7 @@ render props setState state components router onPaywallEvent =
           , children:
               [ Header.topLine
               , components.headerComponent
-                  { router
+                  { changeRoute: Routes.changeRoute router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
                   , onCategoryClick
@@ -617,6 +642,12 @@ render props setState state components router onPaywallEvent =
                   , onLogin
                   , onProfile
                   , onStaticPageClick
+                  , onMenuClick:
+                      case state.route of
+                        Routes.MenuPage
+                          | Just prevRoute <- state.prevRoute
+                          -> Routes.changeRoute router $ snd prevRoute
+                        _ -> Routes.changeRoute router "/meny"
                   }
               , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
@@ -706,9 +737,7 @@ render props setState state components router onPaywallEvent =
     onStaticPageClick link =
       case state.route of
         Routes.StaticPage page | page == link -> mempty
-        _ -> capture_ do
-          void $ Web.scroll 0 0 =<< Web.window
-          router.pushState (write {}) ("/sida/" <> link)
+        _ -> capture_ $ Routes.changeRoute router ("/sida/" <> link)
 
     onLogin = capture_ $ setState \s -> s { modalView = Just LoginModal }
 
@@ -719,9 +748,6 @@ render props setState state components router onPaywallEvent =
       onPaywallEvent
 
     -- Search is done via the router
-    doSearch query = do
-      router.pushState (write {}) $ "/sök?q=" <> query
+    doSearch query = Routes.changeRoute router ("/sök?q=" <> query)
 
-    simpleRoute path = do
-      void $ Web.scroll 0 0 =<< Web.window
-      router.pushState (write {}) path
+    simpleRoute = Routes.changeRoute router
