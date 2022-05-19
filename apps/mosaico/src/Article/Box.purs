@@ -3,72 +3,64 @@ module Mosaico.Article.Box where
 import Prelude
 
 import Data.Foldable (fold)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe)
 import Data.Monoid (guard)
 import Data.String (joinWith, length)
-import KSF.Paper (Paper)
-import KSF.Paper as Paper
-import React.Basic.Classic (Component, JSX, createComponent, make)
+import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
-
+import React.Basic.Events (EventHandler)
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component, useState', (/\))
 
 component :: Component Props
-component = createComponent "Box"
+component = do
+  React.component "Box" $ \props -> React.do
+    expanded /\ setExpanded <- useState' props.expanded
+    pure $ render (capture_ $ setExpanded true) (props { expanded = expanded })
 
 type Props =
   { title :: Maybe String
   , headline :: Maybe String
   , content :: Array String
-  , paper :: Maybe Paper
+  , expanded :: Boolean
   }
 
 autoExpand :: Array String -> Boolean
 autoExpand a = (length $ joinWith mempty a) < 600
 
-box :: Props -> JSX
-box = make component
-  { initialState: { expanded: false }
-  , didMount: \self ->
-      self.setState \_ -> { expanded: autoExpand self.props.content }
-  , render: \self ->
-      let paperCss = maybe "brand-neutral" Paper.cssName self.props.paper
-      in DOM.section
-        { className: "boxinfo border-" <> paperCss
-        , children:
-            [ DOM.header
-              { className: "boxinfo__header"
-              , children:
-                  [ DOM.h3
-                      { className: "boxinfo__label"
-                      , children: [ DOM.text $ fold self.props.headline ]
-                      }
-                  , DOM.h2
-                      { className: "boxinfo__title"
-                      , children: [ DOM.text $ fold self.props.title ]
-                      }
-                  ]
-              }
-            , DOM.div
-              { className: "boxinfo__body" <> guard self.state.expanded "--expanded"
-              , children:
-                  [ DOM.div
+render :: EventHandler -> Props -> JSX
+render setExpanded props =
+  DOM.section
+    { className: "boxinfo"
+    , children:
+        [ DOM.header
+            { className: "boxinfo__header"
+            , children:
+                [ DOM.h3
+                    { className: "boxinfo__label"
+                    , children: [ DOM.text $ fold props.headline ]
+                    }
+                , DOM.h2
+                    { className: "boxinfo__title"
+                    , children: [ DOM.text $ fold props.title ]
+                    }
+                ]
+            }
+        , DOM.div
+            { className: "boxinfo__body" <> guard props.expanded "--expanded"
+            , children:
+                [ DOM.div
                     { className: "boxinfo-body__content"
-                    , children: map (\p -> DOM.p { dangerouslySetInnerHTML: { __html: p } }) self.props.content
+                    , children: map (\p -> DOM.p { dangerouslySetInnerHTML: { __html: p } }) props.content
                     }
-                  , guard (not self.state.expanded) $ DOM.div { className: "boxinfo-body__fader" }
-                  ]
-              }
-            , DOM.footer
-              { onClick: capture_ $ self.setState \_ -> { expanded: not self.state.expanded }
-              , className: "boxinfo__toggle"
-              , children: guard (not self.state.expanded) $
-                  [ DOM.a
-                    { className: "color-" <> paperCss
-                    , children: [ DOM.text "Vik ut ▼" ]
-                    }
-                  ]
-              }
-            ]
-        }
-  }
+                , guard (not props.expanded) $ DOM.div { className: "boxinfo-body__fader" }
+                ]
+            }
+        , DOM.footer
+            { onClick: setExpanded
+            , className: "boxinfo__toggle"
+            , children: guard (not props.expanded) [ DOM.a_ [ DOM.text "Vik ut ▼" ] ]
+            }
+        ]
+    }

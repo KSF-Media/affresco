@@ -16,7 +16,6 @@ type Props =
   { query :: Maybe String
   , doSearch :: String -> Effect Unit
   , searching :: Boolean
-  , noResults :: Boolean
   }
 
 searchComponent :: Component Props
@@ -26,7 +25,7 @@ searchComponent = do
     pure $ render query setQuery props
 
 render :: Maybe String -> (Maybe String -> Effect Unit) -> Props -> JSX
-render query setQuery { doSearch, searching, noResults } =
+render query setQuery { doSearch, searching } =
   DOM.div
     { className: "mosaico-search"
     , children:
@@ -66,10 +65,5 @@ render query setQuery { doSearch, searching, noResults } =
                   Just "" -> pure unit
                   Just q -> doSearch q
             }
-        , guard noResults $
-            DOM.div
-              { className: "mosaico-search__message"
-              , children: [ DOM.text "Inga resultat" ]
-              }
         ]
     }
