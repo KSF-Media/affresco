@@ -1,6 +1,5 @@
 import { addHandler } from "./common";
-
-var ifr = document.getElementById("JotFormIFrame-220901406282043");
+var ifr = document.getElementById("JotFormIFrame-221311845167351");
 if (ifr) {
   var src = ifr.src;
   var iframeParams = [];
@@ -83,53 +82,4 @@ window.isPermitted = function (originUrl, whitelisted_domains) {
     return result;
   }
 };
-if (window.addEventListener) {
-  window.addEventListener("message", handleIFrameMessage, false);
-} else if (window.attachEvent) {
-  window.attachEvent("onmessage", handleIFrameMessage);
-}
-
-const showOnPx = 100;
-const backToTopButton = document.querySelector(".static-page__back-to-top");
-
-const scrollContainer = () => {
-  return document.documentElement || document.body;
-};
-
-document.addEventListener("scroll", () => {
-  if (scrollContainer().scrollTop > showOnPx) {
-    backToTopButton.style.opacity = "100%";
-  } else {
-    backToTopButton.style.opacity = "0%";
-  }
-});
-
-const goToTop = () => {
-  document.body.scrollIntoView({
-    behavior: "smooth",
-  });
-};
-
-addHandler(backToTopButton, goToTop);
-
-const links = document.querySelectorAll(".static-page__list-link");
-
-for (const link of links) {
-  addHandler(link, clickHandler);
-}
-
-function clickHandler(e) {
-  const href = this.getAttribute("href");
-  if (!href.startsWith("#")) {
-    /* bubble event up, ie. open external links */
-    return;
-  }
-  e.preventDefault();
-  history.pushState(undefined, "", href);
-  const offsetTop = document.querySelector(href).offsetTop;
-
-  scroll({
-    top: offsetTop,
-    behavior: "smooth",
-  });
-}
+addHandler(window, handleIFrameMessage, "message");

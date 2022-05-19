@@ -90,7 +90,7 @@ render scrollPosition props =
                         , DOM.a
                             { children: [ DOM.text "E-TIDNINGEN" ]
                             , href: "/epaper"
-                            , onClick: capture_ $ props.changeRoute "/epaper"
+                            , onClick: capture_ $ props.changeRoute "/epaper/"
                             }
                         ]
                     }
@@ -144,6 +144,7 @@ render scrollPosition props =
                     }
                 ]
             }
+        , mainSeparator
         ]
     }
   where

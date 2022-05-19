@@ -19,6 +19,10 @@
     "head"
     "image"
     "body";
+
+  @media (max-width: 350px) {
+    display: block;
+  }
   @media (min-width: @breakpoint-2col) {
     grid-template-areas:
       "head"
@@ -32,7 +36,7 @@
       ". image image image ."
       ". body  body  body  .";
   }
-  header {
+  > header {
     grid-area: head;
     margin-bottom: 15px;
     @media (min-width: @breakpoint-3col) {
@@ -179,6 +183,10 @@
     justify-content: space-between;
     align-items: center;
     gap: 5px;
+
+    @media (max-width: 400px) {
+      flex-direction: column;
+    }
   }
   &__tag-n-premium {
     align-items: baseline;

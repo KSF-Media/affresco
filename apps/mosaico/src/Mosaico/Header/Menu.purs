@@ -103,7 +103,7 @@ render props@{ onLogin, onLogout } = DOM.div
                     { title: "E-TIDNINGEN"
                     , subsections: []
                     , url: "/epaper"
-                    , onClick: capture_ $ props.changeRoute "/epaper"
+                    , onClick: capture_ $ props.changeRoute "/epaper/"
                     , addClass: Just "mosaico-menu__icon mosaico-menu__icon--epaper"
                     }
                   , Just
