@@ -531,3 +531,22 @@
   background: initial;
   height: 100px;
 }
+
+.ksf-bright-star,
+.ksf-dim-star {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: "Glyphicons Halflings";
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+}
+
+.ksf-bright-star::before {
+  content: "\e006";
+}
+
+.ksf-dim-star {
+  content: "\e007";
+}
