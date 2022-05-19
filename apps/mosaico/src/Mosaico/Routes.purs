@@ -2,6 +2,8 @@ module Mosaico.Routes where
 
 import Prelude
 
+import Effect (Effect)
+import Foreign (Foreign)
 import Data.Foldable (oneOf)
 import Data.List (List(..))
 import Data.Maybe (Maybe(..))
@@ -13,8 +15,13 @@ import Data.Tuple (Tuple(..))
 import Data.Validation.Semiring (invalid)
 import Lettera.Models (Categories, Category, CategoryLabel(..), Tag, uriComponentToTag)
 import Routing.Match (Match(..), end, lit, optionalMatch, param, params, root, str)
+import Routing.PushState (PushStateInterface)
 import Routing.Match.Error (MatchError(..))
 import Routing.Types (RoutePart(..))
+import Web.HTML (window)
+import Web.HTML.Window (scrollY)
+
+import Simple.JSON (write)
 
 data MosaicoPage
   = Frontpage -- Should take Paper as parameter
@@ -61,3 +68,17 @@ routes categories = root *> oneOf
             = pure $ Tuple rs category
             | otherwise = invalid $ free $ Fail "Not a category"
       in Match matchRoute
+
+type RouteState = { yPositionOnLeave :: Maybe Number }
+
+changeRoute :: PushStateInterface -> String -> Effect Unit
+changeRoute router route = do
+  currentRoute <- _.pathname <$> router.locationState
+  currentY     <- scrollY =<< window
+  -- Before changing the route, let's write the y scroll position to the state of the current
+  -- location, as this is needed for recovery if users go back in browser history
+  runRouteEffect router.replaceState { yPositionOnLeave: Just currentY } currentRoute
+  runRouteEffect router.pushState { yPositionOnLeave: Nothing } route
+
+runRouteEffect :: (Foreign -> String -> Effect Unit) -> RouteState -> String -> Effect Unit
+runRouteEffect f state route = f (write state) route

@@ -38,6 +38,7 @@ You can edit this file as you like.
   , "payload"
   , "prelude"
   , "psci-support"
+  , "random"
   , "react-basic"
   , "react-basic-classic"
   , "react-basic-dom"

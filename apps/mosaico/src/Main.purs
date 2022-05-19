@@ -12,11 +12,8 @@ import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
 import Data.List (List, union, intercalate, (:), snoc)
 import Data.List as List
-import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
-import Data.List (List, intercalate)
-import Data.List (List, intercalate, (:))
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.List (List, intercalate, (:))
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (trim)
@@ -29,7 +26,6 @@ import Data.Tuple.Nested ((/\))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Console (log)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
@@ -58,8 +54,8 @@ import Mosaico.Search as Search
 import MosaicoServer (MainContent, MainContentType(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
-import Node.FS.Sync as FS
-import Node.FS.Stats as FS
+import Node.FS.Sync (readTextFile, readdir, stat) as FS
+import Node.FS.Stats (isFile) as FS
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
@@ -468,20 +464,7 @@ menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
-  let (emptyRouter :: PushStateInterface) =
-        { listen: const $ pure $ pure unit
-        , locationState:
-            pure
-              { hash: mempty
-              , path: mempty
-              , pathname: mempty
-              , search: mempty
-              , state: write {}
-              }
-        , pushState: const $ const mempty
-        , replaceState: const $ const mempty
-        }
-  let mosaicoString =
+      mosaicoString =
         DOM.renderToString
         $ mosaico
           { mainContent:
@@ -492,7 +475,7 @@ menu env _ = do
                   , user: Nothing
                   , onLogin: mempty
                   , onLogout: mempty
-                  , router: emptyRouter
+                  , changeRoute: const mempty
                   }
               }
             , mostReadArticles: mempty
