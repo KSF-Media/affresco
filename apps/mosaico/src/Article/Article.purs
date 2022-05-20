@@ -21,7 +21,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
@@ -204,18 +204,19 @@ render imageComponent boxComponent props =
                           })
                         article.authors
                     <> [foldMap
-                        (\(LocalDateTime publishingTime) -> DOM.div
+                        (\publishingTime -> DOM.div
                           { className: "mosaico-article__timestamps"
                           , children:
-                              [ DOM.span_ [ DOM.text $ formatArticleTime publishingTime]
+                              [ DOM.span_ [ DOM.text publishingTime ]
                               , foldMap
-                                (\(LocalDateTime updateTime) -> DOM.span_
-                                  [ DOM.text $ " UPPDATERAD " <> formatArticleTime updateTime]
+                                (\updateTime -> DOM.span_
+                                  [ DOM.text $ " UPPDATERAD " <> updateTime]
                                 )
-                                article.updateTime
+                                ((\x -> guard (x /= publishingTime) $ Just x) =<<
+                                 formatArticleTime <<< unwrap <$> article.updateTime)
                               ]
                           })
-                        article.publishingTime
+                        (formatArticleTime <<< unwrap <$> article.publishingTime)
                     ]
                 }
             ]
