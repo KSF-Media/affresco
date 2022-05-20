@@ -167,6 +167,12 @@ vastranylandContactInfo onStaticPageClick =
             , children: [ DOM.text "Skriv din insändare här" ]
             }
         ]
+    , section "Anslagstavlan: "
+        [ DOM.a
+            { href: "/sida/anslagstavlan"
+            , children: [ DOM.text "Skicka in din händelse här" ]
+            }
+        ]
     , section "" [ DOM.text "Det lokala kommer först." ]
     ]
 
