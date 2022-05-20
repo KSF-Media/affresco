@@ -170,7 +170,7 @@ mosaicoComponent initialValues props = React.do
                          , ssrPreview = true
                          }
 
-  let loadArticle articleId = Aff.launchAff_ do
+  let loadArticle articleId withAnalytics = Aff.launchAff_ do
         case UUID.parseUUID articleId of
           Nothing -> liftEffect $ setState _ { article = Just $ Left unit }
           Just uuid -> do
@@ -181,7 +181,8 @@ mosaicoComponent initialValues props = React.do
               Right a@{ article } -> do
                 liftEffect $ setTitle article.title
                 Article.evalEmbeds article
-                sendArticleAnalytics article $ join state.user
+                when withAnalytics $
+                  sendArticleAnalytics article $ join state.user
                 randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
                 setState _
                   { article = Just $ Right a
@@ -267,7 +268,7 @@ mosaicoComponent initialValues props = React.do
               setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
-        maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
+        maybe (pure unit) (\u -> loadArticle u true) $ _.article.uuid <$> (join <<< map hush $ state.article)
 
   useEffect (state.route /\ map _.cusno (join state.user)) do
     case state.route of
@@ -278,9 +279,11 @@ mosaicoComponent initialValues props = React.do
         | Just article <- map _.article (join $ map hush state.article)
         , articleId == article.uuid
         -> do
-          when (state.ssrPreview && _.premium article) $
-            loadArticle articleId
-        | otherwise -> loadArticle articleId
+          when (state.ssrPreview && _.premium article) do
+            -- When we're in a SSR premium article, don't send analytics events
+            -- We already get it when trying to resolve authed user on startup
+            loadArticle articleId false
+        | otherwise -> loadArticle articleId true
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
