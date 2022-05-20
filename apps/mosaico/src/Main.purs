@@ -12,11 +12,8 @@ import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
 import Data.List (List, union, intercalate, (:), snoc)
 import Data.List as List
-import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
-import Data.List (List, intercalate)
-import Data.List (List, intercalate, (:))
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.List (List, intercalate, (:))
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (trim)
@@ -29,13 +26,12 @@ import Data.Tuple.Nested ((/\))
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Console (log)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Now (nowDateTime)
 import Effect.Uncurried (EffectFn2, runEffectFn2)
-import Foreign.Object (lookup)
+import Foreign.Object (Object, lookup)
 import JSURI as URI
 import KSF.Paper as Paper
 import Lettera as Lettera
@@ -43,6 +39,7 @@ import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
+import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
 import Mosaico.Cache (Stamped(..))
 import Mosaico.Cache as Cache
@@ -58,8 +55,8 @@ import Mosaico.Search as Search
 import MosaicoServer (MainContent, MainContentType(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
-import Node.FS.Sync as FS
-import Node.FS.Stats as FS
+import Node.FS.Sync (readTextFile, readdir, stat) as FS
+import Node.FS.Stats (isFile) as FS
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
@@ -70,6 +67,7 @@ import Payload.Server.Handlers as Handlers
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
+import React.Basic (JSX)
 import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta, script, text, title) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
@@ -167,8 +165,11 @@ spec ::
                 , params :: { pageName :: String }
                 }
          , epaperPage ::
-              GET "/epaper"
+              GET "/epaper/<..path>?<..query>"
                 { response :: ResponseBody
+                , params :: { path :: List String }
+                , query :: { query :: Object (Array String) }
+                , guards :: Guards ("epaper" : Nil)
                 }
          , debugList ::
               GET "/debug/<uuid>"
@@ -195,6 +196,7 @@ spec ::
     , guards ::
          { category :: Category
          , clientip :: Maybe String
+         , epaper :: Unit
          }
     }
 spec = Spec
@@ -253,6 +255,7 @@ main = do
         guards =
           { category: parseCategory env
           , clientip: getClientIP
+          , epaper: epaperGuard
           }
     Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
 
@@ -327,11 +330,11 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
             case article.articleType of
               Advertorial
                 | elem "Basic" article.categories
-                -> Advertorial.Basic.render (Image.render mempty) { article, imageProps: Nothing, advertorialClassName: Nothing }
-                | elem "Standard" article.categories -> Advertorial.Standard.render (Image.render mempty) { article }
-                | otherwise -> Advertorial.Standard.render (Image.render mempty) { article }
+                -> renderWithComponents Advertorial.Basic.render { article, imageProps: Nothing, advertorialClassName: Nothing }
+                | elem "Standard" article.categories -> renderWithComponents Advertorial.Standard.render { article }
+                | otherwise -> renderWithComponents Advertorial.Standard.render { article }
               _ ->
-                Article.render (Image.render mempty)
+                renderWithComponents Article.render
                   { paper: mosaicoPaper
                   , article: Right a
                   , onLogin: mempty
@@ -343,6 +346,8 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , latestArticles
                   , advertorial: Nothing
                   }
+          renderWithComponents :: forall a. ((Image.Props -> JSX) -> (Box.Props -> JSX) -> a -> JSX) -> a -> JSX
+          renderWithComponents f = f (Image.render mempty) (Box.render mempty)
           mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: { type: ArticleContent, content: articleJSX }
@@ -463,20 +468,7 @@ menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
-  let (emptyRouter :: PushStateInterface) =
-        { listen: const $ pure $ pure unit
-        , locationState:
-            pure
-              { hash: mempty
-              , path: mempty
-              , pathname: mempty
-              , search: mempty
-              , state: write {}
-              }
-        , pushState: const $ const mempty
-        , replaceState: const $ const mempty
-        }
-  let mosaicoString =
+      mosaicoString =
         DOM.renderToString
         $ mosaico
           { mainContent:
@@ -487,7 +479,7 @@ menu env _ = do
                   , user: Nothing
                   , onLogin: mempty
                   , onLogout: mempty
-                  , router: emptyRouter
+                  , changeRoute: const mempty
                   }
               }
             , mostReadArticles: mempty
@@ -550,8 +542,14 @@ tagList env { params: { tag } } = do
       , latestArticles
       }
 
-epaperPage :: Env -> {} -> Aff (Response ResponseBody)
-epaperPage env { } = do
+epaperGuard :: HTTP.Request -> Aff (Either Failure Unit)
+epaperGuard req = do
+  let url = HTTP.requestURL req
+  pure $ if url == "/epaper/" || String.take 9 url == "/epaper/?"
+         then Right unit else Left (Forward "not exact match with epaper page")
+
+epaperPage :: Env -> { params :: { path :: List String }, query :: { query :: Object (Array String) }, guards :: { epaper :: Unit } } -> Aff (Response ResponseBody)
+epaperPage env {} = do
   { mostReadArticles, latestArticles } <- sequential $
     { mostReadArticles: _, latestArticles: _ }
     <$> parallel (Cache.getMostRead env.cache)
@@ -722,6 +720,7 @@ searchPage env { query: { search } } = do
     <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
+      noResults = isJust query && null articles
       mosaicoString = DOM.renderToString
                         $ mosaico
                           { mainContent:
@@ -730,11 +729,12 @@ searchPage env { query: { search } } = do
                                   searchComponent { query
                                                   , doSearch: const $ pure unit
                                                   , searching: false
-                                                  , noResults: isJust query && null articles
                                                   } <>
                                   (guard (not $ null articles) $
                                    Frontpage.render $ Frontpage.List
-                                   { label: ("Sökresultat: " <> _) <$> query
+                                   { label: if noResults
+                                            then Just "Inga resultat"
+                                            else ("Sökresultat: " <> _) <$> query
                                    , content: Just articles
                                    , onArticleClick: const mempty
                                    , onTagClick: const mempty
@@ -796,7 +796,7 @@ notFoundPage env {} = notFound env notFoundArticleContent mempty mempty
 notFoundArticleContent :: MainContent
 notFoundArticleContent =
   { type: ArticleContent
-  , content: Article.render (Image.render mempty)
+  , content: Article.render (Image.render mempty) (Box.render mempty)
     { paper: mosaicoPaper
     , article: Right notFoundArticle
     , onLogin: mempty
