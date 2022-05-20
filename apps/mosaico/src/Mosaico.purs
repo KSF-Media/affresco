@@ -16,9 +16,10 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.Int (ceil)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
-import Data.Tuple (Tuple)
+import Data.Tuple (Tuple (..), snd)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -43,7 +44,6 @@ import Mosaico.Analytics (sendArticleAnalytics, sendPageView)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
-import Mosaico.Article.Image as Image
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -70,7 +70,7 @@ import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, use
 import React.Basic.Hooks as React
 import Routing (match)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Simple.JSON (write)
+import Simple.JSON as JSON
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, scroll) as Web
@@ -85,7 +85,7 @@ type State =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , route :: Routes.MosaicoPage
-  , prevRoute :: Maybe Routes.MosaicoPage
+  , prevRoute :: Maybe (Tuple Routes.MosaicoPage String)
   , clickedArticle :: Maybe ArticleStub
   , modalView :: Maybe ModalView
   , user :: Maybe (Maybe User)
@@ -93,11 +93,11 @@ type State =
   , categoryStructure :: Array Category
   , catMap :: Categories
   , frontpageFeeds :: HashMap ArticleFeedType FeedSnapshot
-  , showAds :: Boolean
   , ssrPreview :: Boolean
   , advertorials :: Maybe (Array ArticleStub)
   , singleAdvertorial :: Maybe ArticleStub
   , logger :: Sentry.Logger
+  , scrollToYPosition :: Maybe Number
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -108,7 +108,8 @@ type Components =
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
-  , imageComponent :: Image.Props -> JSX
+  , basicAdvertorialComponent :: Advertorial.Basic.Props -> JSX
+  , standardAdvertorialComponent :: Advertorial.Standard.Props -> JSX
   , headerComponent :: Header.Props -> JSX
   }
 
@@ -118,6 +119,7 @@ type Props =
   , latestArticles :: Maybe (Array ArticleStub)
   , staticPageName :: Maybe String
   , categoryStructure :: Array Category
+  -- For tests, they are prone to break in uninteresting ways with ads
   , globalDisableAds :: Boolean
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
   }
@@ -151,7 +153,7 @@ mosaicoComponent initialValues props = React.do
       initialCatMap = categoriesMap props.categoryStructure
       initialPath = getPathFromLocationState initialValues.locationState
       maxAge = Minutes 15.0
-  state /\ setState_ <- useState initialValues.state
+  state /\ setState <- useState initialValues.state
                          { article = Right <$> props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , latestArticles = fold props.latestArticles
@@ -160,7 +162,6 @@ mosaicoComponent initialValues props = React.do
                                         <$> props.staticPageName
                                         <*> initialValues.staticPageContent
                          , categoryStructure = props.categoryStructure
-                         , showAds = not props.globalDisableAds && initialValues.state.showAds
                          , catMap = initialCatMap
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
                          , route = fromMaybe Routes.Frontpage $ hush $
@@ -168,11 +169,6 @@ mosaicoComponent initialValues props = React.do
                          , user = Nothing
                          , ssrPreview = true
                          }
-
-  -- For tests, they are prone to break in uninteresting ways with ads
-  let setState = if not props.globalDisableAds
-                 then setState_
-                 else \f -> setState_ $ \s -> (f s) { showAds = false }
 
   let loadArticle articleId = Aff.launchAff_ do
         case UUID.parseUUID articleId of
@@ -189,7 +185,6 @@ mosaicoComponent initialValues props = React.do
                 randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
                 setState _
                   { article = Just $ Right a
-                  , showAds = not article.removeAds && not (article.articleType == Advertorial)
                   , ssrPreview = false
                   , singleAdvertorial = randomAdvertorial
                   }
@@ -266,11 +261,10 @@ mosaicoComponent initialValues props = React.do
         case HashMap.lookup feedName state.frontpageFeeds of
           Nothing -> do
             Aff.launchAff_ $ loadFeed feedName
-            setState _ { showAds = true }
           Just { stamp } -> do
             now <- Now.nowDateTime
             when (DateTime.diff now stamp > maxAge) do
-              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds, showAds = true }
+              setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
         maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
@@ -279,39 +273,30 @@ mosaicoComponent initialValues props = React.do
     case state.route of
       Routes.Frontpage -> setFrontpage (CategoryFeed frontpageCategoryLabel)
       Routes.TagPage tag -> setFrontpage (TagFeed tag)
-      Routes.SearchPage Nothing -> pure unit
       Routes.SearchPage (Just query) -> setFrontpage (SearchFeed query)
-      -- Always uses server side provided article
-      Routes.DraftPage -> setState _  { showAds = false }
-      Routes.ProfilePage -> pure unit
       Routes.ArticlePage articleId
-        | Just article <- map _.article (join $ map hush $ state.article)
+        | Just article <- map _.article (join $ map hush state.article)
         , articleId == article.uuid
         -> do
           when (state.ssrPreview && _.premium article) $
             loadArticle articleId
-          setState _ { showAds = not article.removeAds && not (article.articleType == Advertorial) }
         | otherwise -> loadArticle articleId
-      Routes.MenuPage -> setState _ { showAds = false }
-      Routes.NotFoundPage _path -> setState _ { showAds = true }
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
-      Routes.EpaperPage -> setState _ { showAds = true }
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
         , r.pageName == page
         -> when (isJust state.prevRoute) do
              foldMap (\p -> evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]) r.pageScript
-             setState _ { showAds = false }
         | otherwise ->
           Aff.launchAff_ do
             staticPage <- fetchStaticPage page
-            liftEffect $ setState _  { staticPage = Just staticPage, showAds = false }
+            liftEffect $ setState _  { staticPage = Just staticPage }
             case staticPage of
               StaticPageResponse r
                 | Just p <- r.pageScript -> liftEffect $ evalExternalScripts [ScriptTag $ "<script>" <> p <> "</script>"]
               _ -> mempty
-      Routes.DebugPage _ -> pure unit
       Routes.DeployPreview -> liftEffect $ setState _  { route = Routes.Frontpage }
+      _ -> pure unit
 
     case props.mostReadArticles of
       Just mostReads
@@ -341,9 +326,19 @@ mosaicoComponent initialValues props = React.do
       Routes.StaticPage page -> setTitle page
       _ -> pure unit
 
+    let scrollToYPos y = Web.window >>= Web.scroll 0 y
+    case state.scrollToYPosition, state.route of
+      -- Let's always scroll to top with article pages, as the behaviour of going back in
+      -- browser history is a bit buggy currently. This is because each time we land on an article page,
+      -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
+      -- If we want to fix this, we'd have to keep prev article in state too.
+      _, Routes.ArticlePage _ -> scrollToYPos 0
+      Just y,  _              -> scrollToYPos (ceil y)
+      Nothing, _              -> scrollToYPos 0
+
     pure mempty
 
-  pure $ render setState state initialValues.components initialValues.nav onPaywallEvent
+  pure $ render props setState state initialValues.components initialValues.nav onPaywallEvent
 
 pickRandomElement :: forall a. Array a -> Effect (Maybe a)
 pickRandomElement [] = pure Nothing
@@ -352,13 +347,25 @@ pickRandomElement elements = do
   pure $ index elements randomIndex
 
 routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe LocationState -> LocationState -> Effect Unit
-routeListener c setState _oldLoc location = do
+routeListener c setState oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
-  case match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search of
+  let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
+      (locationState :: Maybe Routes.RouteState) = hush $ JSON.read location.state
+      oldPath = maybe "" (\l -> l.pathname <> l.search) oldLoc
+
+  -- If the location we moved to was previosly visited, let's scroll to the last y position it had.
+  -- Note that we cannot scroll the page yet, but we need to do it via Mosaico's state
+  -- as the content is rendered that way too (the page is empty at this point, or showing
+  -- old content)
+  let setYPosition { yPositionOnLeave: Just y } = setState _ { scrollToYPosition = Just y }
+      setYPosition _ = setState _ { scrollToYPosition = Nothing }
+  foldMap setYPosition locationState
+
+  case newRoute of
     Right path -> do
       setState \s -> s { route = path
-                       , prevRoute = Just s.route
+                       , prevRoute = Just (Tuple s.route oldPath)
                        , clickedArticle = case path of
                            Routes.ArticlePage articleId
                              | Just articleId /= (_.uuid <$> s.clickedArticle) -> Nothing
@@ -392,13 +399,14 @@ getInitialValues = do
   logger <- Sentry.mkLogger sentryDsn Nothing "mosaico"
   logger.setTag "paper" _mosaicoPaper
 
-  loginModalComponent <- LoginModal.loginModal
-  searchComponent     <- Search.searchComponent
-  webviewComponent    <- Webview.webviewComponent
-  articleComponent    <- Article.component
-  epaperComponent     <- Epaper.component
-  imageComponent      <- Image.component
-  headerComponent     <- Header.component
+  loginModalComponent          <- LoginModal.loginModal
+  searchComponent              <- Search.searchComponent
+  webviewComponent             <- Webview.webviewComponent
+  articleComponent             <- Article.component
+  epaperComponent              <- Epaper.component
+  basicAdvertorialComponent    <- Advertorial.Basic.component
+  standardAdvertorialComponent <- Advertorial.Standard.component
+  headerComponent              <- Header.component
   pure
     { state:
         { article: Nothing
@@ -413,11 +421,11 @@ getInitialValues = do
         , categoryStructure: []
         , catMap: Map.empty
         , frontpageFeeds: HashMap.empty
-        , showAds: true
         , ssrPreview: true
         , advertorials: Nothing
         , singleAdvertorial: Nothing
         , logger
+        , scrollToYPosition: Nothing
         }
     , components:
         { loginModalComponent
@@ -425,7 +433,8 @@ getInitialValues = do
         , webviewComponent
         , articleComponent
         , epaperComponent
-        , imageComponent
+        , basicAdvertorialComponent
+        , standardAdvertorialComponent
         , headerComponent
         }
     , catMap
@@ -459,8 +468,8 @@ jsApp = do
   initialValues <- getInitialValues
   React.reactComponent "Mosaico" $ mosaicoComponent initialValues <<< fromJSProps
 
-render :: SetState -> State -> Components -> PushStateInterface -> Effect Unit -> JSX
-render setState state components router onPaywallEvent =
+render :: Props -> SetState -> State -> Components -> PushStateInterface -> Effect Unit -> JSX
+render props setState state components router onPaywallEvent =
   case state.modalView of
     Just LoginModal ->
       components.loginModalComponent
@@ -489,12 +498,12 @@ render setState state components router onPaywallEvent =
              case article.articleType of
                Advertorial
                  | elem "Basic" article.categories
-                 -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
+                 -> components.basicAdvertorialComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                  | elem "Standard" article.categories
-                 -> Advertorial.Standard.render components.imageComponent { article }
+                 -> components.standardAdvertorialComponent { article }
                  -- In a case we can't match the category of an advertorial article
                  -- let's show it as a "Basic" advertorial, rather than a regular article
-                 | otherwise -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
+                 | otherwise -> components.basicAdvertorialComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                _ -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
@@ -502,7 +511,7 @@ render setState state components router onPaywallEvent =
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.Frontpage -> renderFrontpage
        Routes.SearchPage Nothing ->
-          mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
+          mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false }
        Routes.SearchPage query@(Just queryString) ->
           let frontpageArticles = _.feed <$> HashMap.lookup (SearchFeed queryString) state.frontpageFeeds
               searching = isNothing frontpageArticles
@@ -510,9 +519,11 @@ render setState state components router onPaywallEvent =
                 Just (ArticleList list)
                   | null list -> true
                 _             -> false
-              searchProps = { query, doSearch, searching, noResults }
+              searchProps = { query, doSearch, searching }
               header = components.searchComponent searchProps
-              label = Just $ "Sökresultat: " <> queryString
+              label = if noResults
+                      then Just "Inga resultat"
+                      else Just $ "Sökresultat: " <> queryString
           in frontpage (Just header) label frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
@@ -524,7 +535,7 @@ render setState state components router onPaywallEvent =
        Routes.MenuPage ->
          flip (mosaicoLayout "menu-open") false
          $ Menu.render
-             { router
+             { changeRoute: Routes.changeRoute router
              , categoryStructure: state.categoryStructure
              , onCategoryClick
              , user: state.user
@@ -620,14 +631,14 @@ render setState state components router onPaywallEvent =
 
     mosaicoLayout :: String -> JSX -> Boolean -> JSX
     mosaicoLayout extraClasses content showAside = DOM.div_
-      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
       , DOM.div
           { className: "mosaico grid " <> extraClasses
           , id: Paper.toString mosaicoPaper
           , children:
               [ Header.topLine
               , components.headerComponent
-                  { router
+                  { changeRoute: Routes.changeRoute router
                   , categoryStructure: state.categoryStructure
                   , catMap: state.catMap
                   , onCategoryClick
@@ -635,24 +646,30 @@ render setState state components router onPaywallEvent =
                   , onLogin
                   , onProfile
                   , onStaticPageClick
+                  , onMenuClick:
+                      case state.route of
+                        Routes.MenuPage
+                          | Just prevRoute <- state.prevRoute
+                          -> Routes.changeRoute router $ snd prevRoute
+                        _ -> Routes.changeRoute router "/meny"
                   }
-              , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
+              , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
               , content
               , footer mosaicoPaper onStaticPageClick
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
-                      [ guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
                       , MostReadList.render
                           { mostReadArticles: state.mostReadArticles
                           , onClickHandler
                           }
-                      , guard state.showAds Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                      , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box1" }
                       , LatestList.render
                           { latestArticles: state.latestArticles
                           , onClickHandler
                           }
-                      ] <> guard state.showAds
+                      ] <> guard showAds
                       [ Mosaico.ad { contentUnit: "mosaico-ad__box2" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
                       , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
@@ -662,6 +679,26 @@ render setState state components router onPaywallEvent =
               ]
           }
       ]
+
+    showAds = not props.globalDisableAds && case state.route of
+      Routes.Frontpage -> true
+      Routes.TagPage _ -> true
+      Routes.SearchPage _ -> true
+      Routes.DraftPage -> false
+      Routes.ProfilePage -> false
+      Routes.ArticlePage _ -> case state.article of
+        Nothing -> true
+        Just eitherArticle -> case eitherArticle of
+          Right { article: article} ->
+            not article.removeAds && not (article.articleType == Advertorial)
+          Left _ -> false
+      Routes.MenuPage -> false
+      Routes.NotFoundPage _ -> false
+      Routes.CategoryPage _ -> true
+      Routes.EpaperPage -> true
+      Routes.StaticPage _ -> false
+      Routes.DebugPage _ -> false
+      Routes.DeployPreview -> false
 
     renderArticle :: Either ArticleStub FullArticle -> JSX
     renderArticle article =
@@ -704,9 +741,7 @@ render setState state components router onPaywallEvent =
     onStaticPageClick link =
       case state.route of
         Routes.StaticPage page | page == link -> mempty
-        _ -> capture_ do
-          void $ Web.scroll 0 0 =<< Web.window
-          router.pushState (write {}) ("/sida/" <> link)
+        _ -> capture_ $ Routes.changeRoute router ("/sida/" <> link)
 
     onLogin = capture_ $ setState \s -> s { modalView = Just LoginModal }
 
@@ -717,9 +752,6 @@ render setState state components router onPaywallEvent =
       onPaywallEvent
 
     -- Search is done via the router
-    doSearch query = do
-      router.pushState (write {}) $ "/sök?q=" <> query
+    doSearch query = Routes.changeRoute router ("/sök?q=" <> query)
 
-    simpleRoute path = do
-      void $ Web.scroll 0 0 =<< Web.window
-      router.pushState (write {}) path
+    simpleRoute = Routes.changeRoute router

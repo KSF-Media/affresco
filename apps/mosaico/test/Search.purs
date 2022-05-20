@@ -18,8 +18,8 @@ buttonField = Chrome.Selector ".mosaico-search button"
 searchField :: Chrome.Selector
 searchField = Chrome.Selector ".mosaico-search input"
 
-messageField :: Chrome.Selector
-messageField = Chrome.Selector ".mosaico-search__message"
+pageTitle :: Chrome.Selector
+pageTitle = Chrome.Selector ".mosaico--article-list > h1"
 
 testSearchNavigation :: Test
 testSearchNavigation page = do
@@ -43,7 +43,8 @@ testExampleSearch page = do
   Chrome.click buttonField page
   log "Wait for search results"
   Chrome.waitFor_ listArticle page
-  Chrome.assertNotFound messageField page
+  Chrome.waitFor_ pageTitle page
+  Chrome.assertContent pageTitle ("Sökresultat: " <> exampleSearch) page
 
 testFailingSearch :: Test
 testFailingSearch page = do
@@ -51,6 +52,6 @@ testFailingSearch page = do
   Chrome.waitFor_ searchField page
   Chrome.type_ (Chrome.Selector ".mosaico-search input") exampleNegativeSearch page
   Chrome.click buttonField page
-  Chrome.waitFor_ messageField page
-  Chrome.assertContent messageField "Inga resultat" page
+  Chrome.waitFor_ pageTitle page
+  Chrome.assertContent pageTitle "Inga resultat" page
   Chrome.assertNotFound listArticle page

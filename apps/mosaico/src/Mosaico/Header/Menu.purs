@@ -3,6 +3,7 @@ module Mosaico.Header.Menu where
 import Prelude
 
 import Data.Array (catMaybes, foldl, intersperse, snoc)
+import Effect (Effect)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
@@ -15,11 +16,9 @@ import React.Basic (JSX)
 import React.Basic.Events (EventHandler)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
-import Routing.PushState (PushStateInterface)
-import Simple.JSON (write)
 
 type Props =
-  { router :: PushStateInterface
+  { changeRoute :: String -> Effect Unit
   , categoryStructure :: Array Category
   , onCategoryClick :: Category -> EventHandler
     -- Nothing for loading state, Just Nothing for no user
@@ -97,21 +96,21 @@ render props@{ onLogin, onLogout } = DOM.div
                     { title: "SÖK"
                     , subsections: []
                     , url: "/sök"
-                    , onClick: capture_ $ props.router.pushState (write {}) "/sök"
+                    , onClick: capture_ $ props.changeRoute "/sök"
                     , addClass: Just "mosaico-menu__icon mosaico-menu__icon--search"
                     }
                   , Just
                     { title: "E-TIDNINGEN"
                     , subsections: []
                     , url: "/epaper"
-                    , onClick: capture_ $ props.router.pushState (write {}) "/epaper"
+                    , onClick: capture_ $ props.changeRoute "/epaper/"
                     , addClass: Just "mosaico-menu__icon mosaico-menu__icon--epaper"
                     }
                   , Just
                     { title: "KUNDSERVICE"
                     , subsections: []
                     , url: "/sida/kundservice"
-                    , onClick: capture_ $ props.router.pushState (write {}) "/sida/kundservice"
+                    , onClick: capture_ $ props.changeRoute "/sida/kundservice"
                     , addClass: Just "mosaico-menu__icon mosaico-menu__icon--customer-service"
                     }
                   ]
@@ -136,7 +135,7 @@ render props@{ onLogin, onLogout } = DOM.div
                   [ { title: "KONTAKTA OSS"
                     , subsections: []
                     , url: "/sida/kontakt"
-                    , onClick: capture_ $ props.router.pushState (write {}) "/sida/kontakt"
+                    , onClick: capture_ $ props.changeRoute "/sida/kontakt"
                     , addClass: mempty
                     }
                   , { title: "ANNONSERA"

@@ -98,12 +98,12 @@ window.adSlots = {
       targetId: "mosaico-ad__box5",
       isLazy: true
     },
-    {
-      gamId: "DIGIHELMOB",
-      sizes: [300,431],
-      targetId: "mosaico-ad__digihelmob",
-      isLazy: true
-    },
+    // {
+    //   gamId: "DIGIHELMOB",
+    //   sizes: [300,431],
+    //   targetId: "mosaico-ad__bigbox1",
+    //   isLazy: true
+    // },
     {
       gamId: "INTERMOB",
       sizes: [300,500],
@@ -122,12 +122,6 @@ window.adSlots = {
       gamId: "JATTEBOX",
       sizes: [468,400],
       targetId: "mosaico-ad__bigbox2",
-      isLazy: true
-    },
-    {
-      gamId: "DIGIHELMOB",
-      sizes: [300,431],
-      targetId: "mosaico-ad__digihelmob",
       isLazy: true
     },
     {
