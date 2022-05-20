@@ -59,13 +59,13 @@ window.adSlots = {
     {
       gamId: "MOBMITT",
       sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      targetId: "mosaico-ad__bigbox1",
+      targetId: "mosaico-ad__bigbox2",
       isLazy: true
     },
     {
       gamId: "MOBNER",
       sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      targetId: "mosaico-ad__bigbox2",
+      targetId: "mosaico-ad__box",
       isLazy: true
     },
     {
@@ -98,18 +98,18 @@ window.adSlots = {
       targetId: "mosaico-ad__box5",
       isLazy: true
     },
-    // {
-    //   gamId: "DIGIHELMOB",
-    //   sizes: [300,431],
-    //   targetId: "mosaico-ad__bigbox1",
-    //   isLazy: true
-    // },
     {
-      gamId: "INTERMOB",
-      sizes: [300,500],
-      targetId: "mosaico-ad__box",
+      gamId: "DIGIHELMOB",
+      sizes: [300,431],
+      targetId: "mosaico-ad__bigbox1",
       isLazy: true
     },
+    // {
+    //   gamId: "INTERMOB",
+    //   sizes: [300,500],
+    //   targetId: "mosaico-ad__box",
+    //   isLazy: true
+    // },
   ],
   desktop: [
     {
