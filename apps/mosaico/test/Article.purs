@@ -4,10 +4,12 @@ import Prelude hiding (sub)
 
 import Control.Alternative (guard)
 import Control.Monad.Maybe.Trans (runMaybeT, lift)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Effect.Aff (Aff)
-import Mosaico.Test (Test, log, site, sub)
+import KSF.Paper (Paper(..))
 import KSF.Puppeteer as Chrome
+import Mosaico.Paper (mosaicoPaper)
+import Mosaico.Test (Test, log, site, sub)
 import Test.Unit.Assert as Assert
 
 type PageIds =
@@ -15,8 +17,13 @@ type PageIds =
   , premiumArticleId :: Maybe String
   }
 
-relatedExample :: String
-relatedExample = "d25bde70-a2a1-4ac6-9c38-22f742b799f7"
+-- TODO find examples for all papers
+relatedExample :: Maybe String
+relatedExample = case mosaicoPaper of
+  HBL -> Just "d25bde70-a2a1-4ac6-9c38-22f742b799f7"
+  VN -> Nothing
+  ON -> Nothing
+  _ -> Nothing
 
 navigateToNews :: Chrome.Page -> Aff Unit
 navigateToNews page = do
@@ -143,6 +150,9 @@ testPaywallOpen article originalBlocks page = do
       let articleList = Chrome.Selector ".mosaico--article-list"
           item = (sub " .mosaico--list-article[data-premium='1']" articleList)
       Chrome.waitFor_ articleList page
+      -- Without this, the click to open article seems to sometimes
+      -- pick the first one.  Dunno why.
+      Chrome.waitFor_ (sub " .mosaico-article__tag" articleList) page
       nPremium <- Chrome.countElements articleList item page
       if nPremium == 0 then log "No premium articles on news page, skip navigation test"
         else do
@@ -159,8 +169,12 @@ testPaywallHolds article originalBlocks page = do
   Chrome.waitFor_ (sub " .mosaico-article__main .mosaico-article__body .vetrina--container" article) page
 
 testRelated :: Test
-testRelated page = do
-  Chrome.goto (Chrome.URL $ site <> "artikel/" <> relatedExample) page
+testRelated =
+  maybe (const $ log "No example related defined for paper, skip") testRelatedWith relatedExample
+
+testRelatedWith :: String -> Test
+testRelatedWith example page = do
+  Chrome.goto (Chrome.URL $ site <> "artikel/" <> example) page
   Chrome.waitFor_ (Chrome.Selector "article.mosaico-article .article-element__related") page
   originalTitle <- Chrome.getContent (Chrome.Selector "article.mosaico-article .mosaico-article__headline") page
   Chrome.click (Chrome.Selector "article.mosaico-article .article-element__related a") page
