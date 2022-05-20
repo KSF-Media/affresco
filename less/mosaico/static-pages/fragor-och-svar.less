@@ -4,10 +4,45 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 40px;
+  @media (min-width: 481px) {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .faq__background-img {
+    background-image: url("@{path-images}/illu-qa.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    width: 100%;
+    height: 200px;
+    @media (min-width: 481px) {
+      width: 50%;
+      height: 250px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    @media (min-width: @breakpoint-2col) {
+      width: 45%;
+      height: 300px;
+      background-position: center;
+    }
+    @media (min-width: @breakpoint-3col) {
+      width: 40%;
+      margin-left: 50px;
+    }
+  }
+
+  .faq__info {
+    @media (min-width: 481px) {
+      order: -1;
+    }
+  }
 
   .faq__qa-container {
     display: flex;
     flex-direction: column;
+    width: 100%;
   }
 
   .faq__qa-section {
