@@ -413,6 +413,7 @@ type BoxInfo =
   { title :: Maybe String
   , headline :: Maybe String
   , content :: Array String
+  , type :: String
   }
 
 type QuoteInfo =

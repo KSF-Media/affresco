@@ -44,7 +44,6 @@ import Mosaico.Analytics (sendArticleAnalytics, sendPageView)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
-import Mosaico.Article.Image as Image
 import Mosaico.Epaper as Epaper
 import Mosaico.Error as Error
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
@@ -109,7 +108,8 @@ type Components =
   , webviewComponent :: Webview.Props -> JSX
   , articleComponent :: Article.Props -> JSX
   , epaperComponent :: Epaper.Props -> JSX
-  , imageComponent :: Image.Props -> JSX
+  , basicAdvertorialComponent :: Advertorial.Basic.Props -> JSX
+  , standardAdvertorialComponent :: Advertorial.Standard.Props -> JSX
   , headerComponent :: Header.Props -> JSX
   }
 
@@ -170,7 +170,7 @@ mosaicoComponent initialValues props = React.do
                          , ssrPreview = true
                          }
 
-  let loadArticle articleId = Aff.launchAff_ do
+  let loadArticle articleId withAnalytics = Aff.launchAff_ do
         case UUID.parseUUID articleId of
           Nothing -> liftEffect $ setState _ { article = Just $ Left unit }
           Just uuid -> do
@@ -181,7 +181,8 @@ mosaicoComponent initialValues props = React.do
               Right a@{ article } -> do
                 liftEffect $ setTitle article.title
                 Article.evalEmbeds article
-                sendArticleAnalytics article $ join state.user
+                when withAnalytics $
+                  sendArticleAnalytics article $ join state.user
                 randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
                 setState _
                   { article = Just $ Right a
@@ -267,7 +268,7 @@ mosaicoComponent initialValues props = React.do
               setState \s -> s { frontpageFeeds = HashMap.delete feedName s.frontpageFeeds }
               Aff.launchAff_ $ loadFeed feedName
       onPaywallEvent = do
-        maybe (pure unit) loadArticle $ _.article.uuid <$> (join <<< map hush $ state.article)
+        maybe (pure unit) (\u -> loadArticle u true) $ _.article.uuid <$> (join <<< map hush $ state.article)
 
   useEffect (state.route /\ map _.cusno (join state.user)) do
     case state.route of
@@ -278,9 +279,11 @@ mosaicoComponent initialValues props = React.do
         | Just article <- map _.article (join $ map hush state.article)
         , articleId == article.uuid
         -> do
-          when (state.ssrPreview && _.premium article) $
-            loadArticle articleId
-        | otherwise -> loadArticle articleId
+          when (state.ssrPreview && _.premium article) do
+            -- When we're in a SSR premium article, don't send analytics events
+            -- We already get it when trying to resolve authed user on startup
+            loadArticle articleId false
+        | otherwise -> loadArticle articleId true
       Routes.CategoryPage (Category c) -> setFrontpage (CategoryFeed c.label)
       Routes.StaticPage page
         | Just (StaticPageResponse r) <- state.staticPage
@@ -399,13 +402,14 @@ getInitialValues = do
   logger <- Sentry.mkLogger sentryDsn Nothing "mosaico"
   logger.setTag "paper" _mosaicoPaper
 
-  loginModalComponent <- LoginModal.loginModal
-  searchComponent     <- Search.searchComponent
-  webviewComponent    <- Webview.webviewComponent
-  articleComponent    <- Article.component
-  epaperComponent     <- Epaper.component
-  imageComponent      <- Image.component
-  headerComponent     <- Header.component
+  loginModalComponent          <- LoginModal.loginModal
+  searchComponent              <- Search.searchComponent
+  webviewComponent             <- Webview.webviewComponent
+  articleComponent             <- Article.component
+  epaperComponent              <- Epaper.component
+  basicAdvertorialComponent    <- Advertorial.Basic.component
+  standardAdvertorialComponent <- Advertorial.Standard.component
+  headerComponent              <- Header.component
   pure
     { state:
         { article: Nothing
@@ -432,7 +436,8 @@ getInitialValues = do
         , webviewComponent
         , articleComponent
         , epaperComponent
-        , imageComponent
+        , basicAdvertorialComponent
+        , standardAdvertorialComponent
         , headerComponent
         }
     , catMap
@@ -496,12 +501,12 @@ render props setState state components router onPaywallEvent =
              case article.articleType of
                Advertorial
                  | elem "Basic" article.categories
-                 -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
+                 -> components.basicAdvertorialComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                  | elem "Standard" article.categories
-                 -> Advertorial.Standard.render components.imageComponent { article }
+                 -> components.standardAdvertorialComponent { article }
                  -- In a case we can't match the category of an advertorial article
                  -- let's show it as a "Basic" advertorial, rather than a regular article
-                 | otherwise -> Advertorial.Basic.render components.imageComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
+                 | otherwise -> components.basicAdvertorialComponent { article, imageProps: Nothing, advertorialClassName: Nothing }
                _ -> renderArticle (Right fullArticle)
            else loadingSpinner
          | Just stub <- state.clickedArticle -> mosaicoLayoutNoAside $ renderArticle $ Left stub
@@ -509,7 +514,7 @@ render props setState state components router onPaywallEvent =
          | otherwise -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.Frontpage -> renderFrontpage
        Routes.SearchPage Nothing ->
-          mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false, noResults: false }
+          mosaicoDefaultLayout $ components.searchComponent { query: Nothing, doSearch, searching: false }
        Routes.SearchPage query@(Just queryString) ->
           let frontpageArticles = _.feed <$> HashMap.lookup (SearchFeed queryString) state.frontpageFeeds
               searching = isNothing frontpageArticles
@@ -517,9 +522,11 @@ render props setState state components router onPaywallEvent =
                 Just (ArticleList list)
                   | null list -> true
                 _             -> false
-              searchProps = { query, doSearch, searching, noResults }
+              searchProps = { query, doSearch, searching }
               header = components.searchComponent searchProps
-              label = Just $ "Sökresultat: " <> queryString
+              label = if noResults
+                      then Just "Inga resultat"
+                      else Just $ "Sökresultat: " <> queryString
           in frontpage (Just header) label frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
