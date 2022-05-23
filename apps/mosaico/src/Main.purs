@@ -791,7 +791,21 @@ notFoundPage
   :: Env
   -> { params :: { path :: List String } }
   -> Aff (Response ResponseBody)
-notFoundPage env {} = notFound env notFoundArticleContent mempty mempty
+notFoundPage env {params: { path } } = do
+  -- TODO move redirect logic behind its own guard and route
+  let redir to =
+        (\(Response r) -> Response $ r { headers = Headers.set "Location" to r.headers }) $
+        Response.found EmptyBody
+      pass = notFound env notFoundArticleContent mempty mempty
+  -- TODO 2 make these editable somewhere else
+  case fromFoldable path of
+    ["sommar"] -> pure $ redir "https://www.ksfmedia.fi/sommar"
+    ["annonskiosken"] -> case mosaicoPaper of
+      Paper.HBL -> pure $ redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
+      Paper.VN  -> pure $ redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
+      Paper.ON  -> pure $ redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
+      _         -> pass
+    _ -> pass
 
 notFoundArticleContent :: MainContent
 notFoundArticleContent =
