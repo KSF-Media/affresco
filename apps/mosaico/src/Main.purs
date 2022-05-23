@@ -793,18 +793,27 @@ notFoundPage
   -> Aff (Response ResponseBody)
 notFoundPage env {params: { path } } = do
   -- TODO move redirect logic behind its own guard and route
-  let redir to =
+  let redir to = pure $
         (\(Response r) -> Response $ r { headers = Headers.set "Location" to r.headers }) $
         Response.found EmptyBody
       pass = notFound env notFoundArticleContent mempty mempty
   -- TODO 2 make these editable somewhere else
-  case fromFoldable path of
-    ["sommar"] -> pure $ redir "https://www.ksfmedia.fi/sommar"
-    ["annonskiosken"] -> case mosaicoPaper of
-      Paper.HBL -> pure $ redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
-      Paper.VN  -> pure $ redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
-      Paper.ON  -> pure $ redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
-      _         -> pass
+  case fromFoldable path /\ mosaicoPaper of
+    ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
+    ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
+    ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
+    ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
+    ["kampanj"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/kampanj-hbl"
+    ["kampanj"] /\ Paper.VN  -> redir "https://www.ksfmedia.fi/kampanj-vn"
+    ["kampanj"] /\ Paper.ON  -> redir "https://www.ksfmedia.fi/kampanj-on"
+    ["akademen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/akademen"
+    ["studierabatt"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/studierabatt"
+    ["hbljunior"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/hbljunior"
+    ["boknas"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/boknas"
+    ["svenskadagen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/svenskadagen"
+    ["medlem"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
+    ["digital"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
+    ["homefound"] /\ Paper.VN -> redir "https://www.ksfmedia.fi/vn-homefound"
     _ -> pass
 
 notFoundArticleContent :: MainContent
