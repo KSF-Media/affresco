@@ -211,11 +211,22 @@ window.googletag.cmd.push(function () {
   });
   window.addEventListener("message", event => {
     let message = event.data
-    if ( ["BIGMAX", "WALLPAPER"].indexOf(message.cmd) != -1 ) {
+    if ( ["BIGMAX", "BIGMOB", "WALLPAPER"].indexOf(message.cmd) != -1 ) {
       switch (message.cmd) {
         case "BIGMAX":
           var cu = document.getElementById("mosaico-ad__top-parade");
           cu.classList.add("BIGMAX");
+          cu.innerHTML = `
+            <div>
+              <a target="_blank" href="${message.link}">
+                <img src="${message.img}">
+              </a>
+              <div onclick="closeAdDiv('.mosaico-ad.mosaico-ad__top-parade')" class="ad-close">Stäng</div>
+            </div>`;
+
+        case "BIGMOB":
+          var cu = document.getElementById("mosaico-ad__top-parade");
+          cu.classList.add("BIGMOB");
           cu.innerHTML = `
             <div>
               <a target="_blank" href="${message.link}">
