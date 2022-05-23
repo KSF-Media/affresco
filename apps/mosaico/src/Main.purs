@@ -791,7 +791,13 @@ notFoundPage
   :: Env
   -> { params :: { path :: List String } }
   -> Aff (Response ResponseBody)
-notFoundPage env {} = notFound env notFoundArticleContent mempty mempty
+notFoundPage env {params: { path } } = do
+  let redir to =
+        (\(Response r) -> Response $ r { headers = Headers.set "Location" to r.headers }) $
+        Response.found EmptyBody
+  case fromFoldable path of
+    ["sommar"] -> pure $ redir "https://www.ksfmedia.fi/sommar"
+    _ -> notFound env notFoundArticleContent mempty mempty
 
 notFoundArticleContent :: MainContent
 notFoundArticleContent =
