@@ -21,9 +21,9 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
-import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, LocalDateTime(..), MosaicoArticleType(..), Tag(..), tagToURIComponent)
+import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
-import Mosaico.Article.Box (box)
+import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
@@ -32,9 +32,9 @@ import Mosaico.LatestList as LatestList
 import Mosaico.Share as Share
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Events (EventHandler)
 import React.Basic.Hooks as React
 import React.Basic.Hooks (Component)
-import React.Basic.Events (EventHandler)
 
 isPremium :: Either ArticleStub FullArticle -> Boolean
 isPremium = either _.premium _.article.premium
@@ -79,17 +79,18 @@ evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _
 component :: Component Props
 component = do
   imageComponent <- Image.component
+  boxComponent <- Box.component
   React.component "Article" $ \props -> React.do
-    pure $ render imageComponent props
+    pure $ render imageComponent boxComponent props
 
-render :: (Image.Props -> JSX) -> Props -> JSX
-render imageComponent props =
+render :: (Image.Props -> JSX) -> (Box.Props -> JSX) -> Props -> JSX
+render imageComponent boxComponent props =
     let title = getTitle props.article
         tags = getTags props.article
         mainImage = getMainImage props.article
         body = getBody props.article
-        bodyWithoutAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick)) body
-        bodyWithAd = map (renderElement (Just props.paper) imageComponent (Just props.onArticleClick))
+        bodyWithoutAd = map (renderElement imageComponent boxComponent (Just props.onArticleClick)) body
+        bodyWithAd = map (renderElement imageComponent boxComponent (Just props.onArticleClick))
           <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
@@ -203,18 +204,19 @@ render imageComponent props =
                           })
                         article.authors
                     <> [foldMap
-                        (\(LocalDateTime publishingTime) -> DOM.div
+                        (\publishingTime -> DOM.div
                           { className: "mosaico-article__timestamps"
                           , children:
-                              [ DOM.span_ [ DOM.text $ formatArticleTime publishingTime]
+                              [ DOM.span_ [ DOM.text publishingTime ]
                               , foldMap
-                                (\(LocalDateTime updateTime) -> DOM.span_
-                                  [ DOM.text $ " UPPDATERAD " <> formatArticleTime updateTime]
+                                (\updateTime -> DOM.span_
+                                  [ DOM.text $ " UPPDATERAD " <> updateTime]
                                 )
-                                article.updateTime
+                                ((\x -> guard (x /= publishingTime) $ Just x) =<<
+                                 formatArticleTime <<< unwrap <$> article.updateTime)
                               ]
                           })
-                        article.publishingTime
+                        (formatArticleTime <<< unwrap <$> article.publishingTime)
                     ]
                 }
             ]
@@ -330,8 +332,8 @@ render imageComponent props =
 
 -- TODO: maybe we don't want to deal at all with the error cases
 -- and we want to throw them away?
-renderElement :: Maybe Paper -> (Image.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> BodyElement -> JSX
-renderElement paper imageComponent onArticleClick el = case el of
+renderElement :: (Image.Props -> JSX) -> (Box.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> BodyElement -> JSX
+renderElement imageComponent boxComponent onArticleClick el = case el of
   Html content ->
     -- Can't place div's or blockquotes under p's, so place them under div.
     -- This is usually case with embeds
@@ -353,16 +355,20 @@ renderElement paper imageComponent onArticleClick el = case el of
       }
   Box boxData ->
     DOM.div
-      { className: block <> " " <> block <> "__factbox"
+      { className: block <> " " <> block <> "__" <> boxCSSType
       , children:
-          [ box
+          [ boxComponent
               { headline: boxData.headline
               , title: boxData.title
               , content: boxData.content
-              , paper: paper
+              , expanded: boxData.type == "review" || Box.autoExpand boxData.content
               }
           ]
       }
+    where
+      boxCSSType = case boxData.type of
+        "review" -> "reviewbox"
+        _        -> "factbox"
   Footnote footnote -> DOM.p
       { className: block <> " " <> block <> "__footnote"
       , children: [ DOM.text footnote ]

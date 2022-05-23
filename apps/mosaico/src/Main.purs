@@ -39,6 +39,7 @@ import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
+import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
 import Mosaico.Cache (Stamped(..))
 import Mosaico.Cache as Cache
@@ -66,6 +67,7 @@ import Payload.Server.Handlers as Handlers
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (type (:), GET, Guards, Spec(Spec), Nil)
+import React.Basic (JSX)
 import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta, script, text, title) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
@@ -328,11 +330,11 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
             case article.articleType of
               Advertorial
                 | elem "Basic" article.categories
-                -> Advertorial.Basic.render (Image.render mempty) { article, imageProps: Nothing, advertorialClassName: Nothing }
-                | elem "Standard" article.categories -> Advertorial.Standard.render (Image.render mempty) { article }
-                | otherwise -> Advertorial.Standard.render (Image.render mempty) { article }
+                -> renderWithComponents Advertorial.Basic.render { article, imageProps: Nothing, advertorialClassName: Nothing }
+                | elem "Standard" article.categories -> renderWithComponents Advertorial.Standard.render { article }
+                | otherwise -> renderWithComponents Advertorial.Standard.render { article }
               _ ->
-                Article.render (Image.render mempty)
+                renderWithComponents Article.render
                   { paper: mosaicoPaper
                   , article: Right a
                   , onLogin: mempty
@@ -344,6 +346,8 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , latestArticles
                   , advertorial: Nothing
                   }
+          renderWithComponents :: forall a. ((Image.Props -> JSX) -> (Box.Props -> JSX) -> a -> JSX) -> a -> JSX
+          renderWithComponents f = f (Image.render mempty) (Box.render mempty)
           mosaicoString = DOM.renderToString
                           $ mosaico
                             { mainContent: { type: ArticleContent, content: articleJSX }
@@ -546,7 +550,7 @@ epaperGuard req = do
          then Right unit else Left (Forward "not exact match with epaper page")
 
 epaperPage :: Env -> { params :: { path :: List String }, query :: { query :: Object (Array String) }, guards :: { epaper :: Unit } } -> Aff (Response ResponseBody)
-epaperPage env {query: { query }} = do
+epaperPage env {} = do
   { mostReadArticles, latestArticles } <- sequential $
     { mostReadArticles: _, latestArticles: _ }
     <$> parallel (Cache.getMostRead env.cache)
@@ -717,6 +721,7 @@ searchPage env { query: { search } } = do
     <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
+      noResults = isJust query && null articles
       mosaicoString = DOM.renderToString
                         $ mosaico
                           { mainContent:
@@ -725,11 +730,12 @@ searchPage env { query: { search } } = do
                                   searchComponent { query
                                                   , doSearch: const $ pure unit
                                                   , searching: false
-                                                  , noResults: isJust query && null articles
                                                   } <>
                                   (guard (not $ null articles) $
                                    Frontpage.render $ Frontpage.List
-                                   { label: ("Sökresultat: " <> _) <$> query
+                                   { label: if noResults
+                                            then Just "Inga resultat"
+                                            else ("Sökresultat: " <> _) <$> query
                                    , content: Just articles
                                    , onArticleClick: const mempty
                                    , onTagClick: const mempty
@@ -786,12 +792,35 @@ notFoundPage
   :: Env
   -> { params :: { path :: List String } }
   -> Aff (Response ResponseBody)
-notFoundPage env {} = notFound env notFoundArticleContent mempty mempty
+notFoundPage env {params: { path } } = do
+  -- TODO move redirect logic behind its own guard and route
+  let redir to = pure $
+        (\(Response r) -> Response $ r { headers = Headers.set "Location" to r.headers }) $
+        Response.found EmptyBody
+      pass = notFound env notFoundArticleContent mempty mempty
+  -- TODO 2 make these editable somewhere else
+  case fromFoldable path /\ mosaicoPaper of
+    ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
+    ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
+    ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
+    ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
+    ["kampanj"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/kampanj-hbl"
+    ["kampanj"] /\ Paper.VN  -> redir "https://www.ksfmedia.fi/kampanj-vn"
+    ["kampanj"] /\ Paper.ON  -> redir "https://www.ksfmedia.fi/kampanj-on"
+    ["akademen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/akademen"
+    ["studierabatt"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/studierabatt"
+    ["hbljunior"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/hbljunior"
+    ["boknas"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/boknas"
+    ["svenskadagen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/svenskadagen"
+    ["medlem"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
+    ["digital"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
+    ["homefound"] /\ Paper.VN -> redir "https://www.ksfmedia.fi/vn-homefound"
+    _ -> pass
 
 notFoundArticleContent :: MainContent
 notFoundArticleContent =
   { type: ArticleContent
-  , content: Article.render (Image.render mempty)
+  , content: Article.render (Image.render mempty) (Box.render mempty)
     { paper: mosaicoPaper
     , article: Right notFoundArticle
     , onLogin: mempty
