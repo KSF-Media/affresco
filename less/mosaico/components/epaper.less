@@ -65,7 +65,7 @@
       background-image: url('@{coverON}');
     }
     &__junior {
-      background-image: url('@{coverJunior}');
+      background-image: url('@{coverJunior}') !important;
       min-height: 295px;
       height: 295px;
       box-shadow: 0px 0px 45px -10px rgba(0,0,0,0.3), inset 0px -50px 46px -38px rgba(0,0,0,0.22);
@@ -129,6 +129,26 @@
   }
 
   &__liftup {
+    background: #F7F5F3;
+    margin-bottom: 10px;
+    header {
+      padding: 10px 0;
+      text-align: center;
+      h1 {
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &:before {
+          content: "";
+          width: 10px;
+          height: 10px;
+          margin-right: 5px;
+          display: inline-block;
+          background-color: #00a1ab;
+        }
+      }
+    }
     &--cover {
       width: 300px;
       height: 300px;
