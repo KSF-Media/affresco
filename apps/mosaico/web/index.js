@@ -59,13 +59,13 @@ window.adSlots = {
     {
       gamId: "MOBMITT",
       sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      targetId: "mosaico-ad__bigbox1",
+      targetId: "mosaico-ad__bigbox2",
       isLazy: true
     },
     {
       gamId: "MOBNER",
       sizes: [ [300,100], [300,250], [300,300], [300,431], [300,600] ],
-      targetId: "mosaico-ad__bigbox2",
+      targetId: "mosaico-ad__box",
       isLazy: true
     },
     {
@@ -98,18 +98,18 @@ window.adSlots = {
       targetId: "mosaico-ad__box5",
       isLazy: true
     },
-    // {
-    //   gamId: "DIGIHELMOB",
-    //   sizes: [300,431],
-    //   targetId: "mosaico-ad__bigbox1",
-    //   isLazy: true
-    // },
     {
-      gamId: "INTERMOB",
-      sizes: [300,500],
-      targetId: "mosaico-ad__box",
+      gamId: "DIGIHELMOB",
+      sizes: [300,431],
+      targetId: "mosaico-ad__bigbox1",
       isLazy: true
     },
+    // {
+    //   gamId: "INTERMOB",
+    //   sizes: [300,500],
+    //   targetId: "mosaico-ad__box",
+    //   isLazy: true
+    // },
   ],
   desktop: [
     {
@@ -211,11 +211,22 @@ window.googletag.cmd.push(function () {
   });
   window.addEventListener("message", event => {
     let message = event.data
-    if ( ["BIGMAX", "WALLPAPER"].indexOf(message.cmd) != -1 ) {
+    if ( ["BIGMAX", "BIGMOB", "WALLPAPER"].indexOf(message.cmd) != -1 ) {
       switch (message.cmd) {
         case "BIGMAX":
           var cu = document.getElementById("mosaico-ad__top-parade");
           cu.classList.add("BIGMAX");
+          cu.innerHTML = `
+            <div>
+              <a target="_blank" href="${message.link}">
+                <img src="${message.img}">
+              </a>
+              <div onclick="closeAdDiv('.mosaico-ad.mosaico-ad__top-parade')" class="ad-close">Stäng</div>
+            </div>`;
+
+        case "BIGMOB":
+          var cu = document.getElementById("mosaico-ad__top-parade");
+          cu.classList.add("BIGMOB");
           cu.innerHTML = `
             <div>
               <a target="_blank" href="${message.link}">

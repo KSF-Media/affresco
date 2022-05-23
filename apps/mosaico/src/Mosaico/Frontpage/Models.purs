@@ -8,6 +8,7 @@ import Data.String (Pattern(..), contains, stripPrefix)
 import KSF.HtmlRenderer.Models as HtmlRenderer
 import Lettera.Models (ArticleStub)
 import Mosaico.Ad (ad) as Mosaico
+import Mosaico.EpaperBanner as EpaperBanner
 import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
 import React.Basic.Events (EventHandler)
@@ -17,6 +18,7 @@ data Hook
   | Latest (Array ArticleStub) (ArticleStub -> EventHandler)
   | Ad String String
   | ArticleUrltoRelative
+  | EpaperBanner
   | RemoveTooltips
 
 toHookRep :: Hook -> HtmlRenderer.HookRep
@@ -24,6 +26,7 @@ toHookRep (MostRead articles onClickHandler) = mostReadHook { articles, onClickH
 toHookRep (Latest articles onClickHandler)   = latestHook { articles, onClickHandler }
 toHookRep ArticleUrltoRelative               = articleUrltoRelativeHook
 toHookRep RemoveTooltips                     = removeTooltipsHook
+toHookRep EpaperBanner                       = epaperBannerHook
 toHookRep (Ad placeholderText targetId)      = adHook { placeholderText, targetId }
 
 mostReadHook
@@ -107,6 +110,28 @@ adHook { placeholderText, targetId } = HtmlRenderer.replacingHook
                             _                                   -> false
                        )
   , processNode: (\_ _ _ -> pure $ Mosaico.ad { contentUnit: targetId }
+                 )
+  }
+
+epaperBannerHook :: HtmlRenderer.HookRep
+epaperBannerHook = HtmlRenderer.replacingHook
+  { shouldProcessNode: (\n ->
+                          let info = do
+                                name      <- HtmlRenderer.getName n
+                                attribs   <- HtmlRenderer.getAttribs n
+                                className <- attribs.class
+                                children  <- HtmlRenderer.getChildren n
+                                textChild <- head children
+                                text      <- HtmlRenderer.getData textChild
+                                pure { name, className, text }
+                          in case info of
+                            Just { name, className, text }
+                              | name      == "div"
+                              , className == "dre-item__title"
+                              , text      == "E-tidningen DESKTOP" -> true
+                            _                                      -> false
+                       )
+  , processNode: (\_ _ _ -> pure $ EpaperBanner.render
                  )
   }
 
