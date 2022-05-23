@@ -12,14 +12,12 @@ render =
   in DOM.section
       { className: blockClass
       , children:
-        [ DOM.header_
-          [ DOM.h1_ [ DOM.text "E-tidningen" ]
-          , DOM.a
-            { href: "/epaper"
-            , className: blockClass <> "--container"
-            , children:
-              [ DOM.span { className: blockClass <> "--cover" } ]
-            }
-          ]
+        [ DOM.header_ [ DOM.h1_ [ DOM.text "E-tidningen" ] ]
+        , DOM.a
+          { href: "/epaper"
+          , className: blockClass <> "--container"
+          , children:
+            [ DOM.span { className: blockClass <> "--cover" } ]
+          }
         ]
       }
