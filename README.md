@@ -21,7 +21,7 @@ Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautifu
 
 To install all packages run `npm install` in the root of the repo.
 
-You might also want to install the tools globally for more convenience: `npm install -g purescript spago parcel`
+You might also want to install the tools globally for more convenience: `npm install -g purescript spago esbuild`
 
 We have different kinds of apps, and they require different initial setup. Move inside of some app's folder (e.g. `apps/mitt-konto`), and then:
 - JavaScript only: no setup needed
