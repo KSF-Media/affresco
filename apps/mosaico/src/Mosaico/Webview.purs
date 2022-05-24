@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Rec.Class (untilJust)
 import Data.Array (last)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.String (split)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (Tuple(..))
@@ -29,15 +29,23 @@ type Props =
 
 data StreamType = JPG | M3U8
 
+streamURL :: String -> String
+streamURL "https://cdn.ksfmedia.fi/video/vn.torg.html" =
+  "http://jpg1.stream.sydweb.fi/radhustorget/lastsnap.jpg"
+streamURL "https://cdn.ksfmedia.fi/video/on.torg.html" =
+  "https://torget.ostnyland.fi/stream.m3u8"
+streamURL url = url
+
+parseStreamType :: String -> Maybe StreamType
+parseStreamType url = case last $ split (Pattern ".") url of
+  Just "jpg"  -> Just JPG
+  Just "m3u8" -> Just M3U8
+  _           -> Nothing
+
 webviewComponent :: Component Props
 webviewComponent = do
   initialRandom <- randomString 10
-  let streamURL "https://cdn.ksfmedia.fi/video/vn.torg.html" =
-        "http://jpg1.stream.sydweb.fi/radhustorget/lastsnap.jpg"
-      streamURL "https://cdn.ksfmedia.fi/video/on.torg.html" =
-        "https://torget.ostnyland.fi/stream.m3u8"
-      streamURL url = url
-      initialize (Just JPG) setRandom = do
+  let initialize (Just JPG) setRandom = do
         (closed :: AVar.AVar Unit) <- (AVar.empty :: Effect (AVar.AVar Unit))
         Aff.launchAff_ do
           _ <- untilJust do
@@ -52,11 +60,8 @@ webviewComponent = do
       initialize _ _ = pure $ pure unit
 
   component "Webview" $ \ {category: (Category cat)} -> React.do
-    let url = streamURL $ fromMaybe "" cat.url
-        streamType = case last $ split (Pattern ".") url of
-          Just "jpg" -> Just JPG
-          Just "m3u8" -> Just M3U8
-          _ -> Nothing
+    let url = maybe "" streamURL cat.url
+        streamType = parseStreamType url
     random /\ setRandom <- useState' initialRandom
     useEffectOnce $ initialize streamType setRandom
     pure $ render streamType url random

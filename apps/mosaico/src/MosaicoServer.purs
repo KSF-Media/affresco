@@ -10,7 +10,6 @@ import Mosaico.Header as Header
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
-import Mosaico.Routes as Routes
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (JSX)
 
@@ -30,6 +29,7 @@ data MainContentType
   = ArticleContent
   | FrontpageContent
   | HtmlFrontpageContent
+  | WebviewContent
   | TagListContent Tag
   | EpaperContent
   | StaticPageContent String

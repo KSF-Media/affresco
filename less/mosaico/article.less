@@ -313,18 +313,19 @@
     color: @dark-text;
     a {
       color: @dark-text;
-      text-decoration: none;
+      text-decoration-style: underline;
+      text-decoration-thickness: 2px;
       #HBL & {
-        border-bottom: solid 1px @hbl-orange;
+        text-decoration-color: @hbl-orange;
       }
       #VN & {
-        border-bottom: solid 1px @vn-red;
+        text-decoration-color: @vn-red;
       }
       #ON & {
-        border-bottom: solid 1px @on-blue;
+        text-decoration-color: @on-blue;
       }
       #BRAND-NEUTRAL & {
-        border-bottom: solid 1px @brand-neutral !important;
+        text-decoration-color: @brand-neutral !important;
       }
       &:hover {
         color: lighten(@dark-text, 20%);

@@ -65,7 +65,7 @@ letteraSearchUrl :: String
 letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
 letteraAdvertorialUrl :: String
-letteraAdvertorialUrl = letteraBaseUrl <> "/list/advertorial"
+letteraAdvertorialUrl = letteraBaseUrl <> "/list/active-advertorial"
 
 data LetteraError
   = ResponseError AX.Error

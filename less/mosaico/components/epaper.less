@@ -1,8 +1,19 @@
+@coverHBL: 'https://www.e-pages.dk/hbl/teasers/3271/medium.jpg';
+@coverVN: 'https://www.e-pages.dk/vastranyland/teasers/3668/medium.jpg';
+@coverON: 'https://www.e-pages.dk/ostnyland/teasers/3669/medium.jpg';
+@coverJunior: 'https://www.e-pages.dk/hbljunior/teasers/12509/medium.jpg';
+
 .mosaico-epaper {
   grid-area: main;
 
   .mosaico-epaper--section {
     overflow-y: hidden;
+
+    @media (max-width: @breakpoint-2col) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
   }
 
   .mosaico-epaper--section:nth-of-type(2n+1) {
@@ -14,19 +25,30 @@
   }
 
   &--section {
+    padding: 20px;
     padding-top: 60px;
     display: flex;
     flex-direction: row;
+
+    @media (max-width: @breakpoint-2col) {
+      padding-top: 20px;
+    }
   }
 
   &--teaser {
     flex: 0 0 50%;
     font-weight: 300;
-    max-width: 500px;
+    width: 100%;
     height: 400px;
     background-size: 83%;
     background-repeat: no-repeat;
     background-position: center 30px;
+
+    @media (max-width: @breakpoint-2col) {
+      max-height: 300px;
+      overflow: hidden;
+    }
+
     img {
       width: 100%;
       height: auto;
@@ -34,16 +56,17 @@
     }
 
     #HBL & {
-      background-image: url('https://www.e-pages.dk/hbl/teasers/3271/medium.jpg');
+      background-image: url('@{coverHBL}');
     }
     #VN & {
-      background-image: url('https://www.e-pages.dk/vastranyland/teasers/3668/medium.jpg');
+      background-image: url('@{coverVN}');
     }
     #ON & {
-      background-image: url('https://www.e-pages.dk/ostnyland/teasers/3669/medium.jpg');
+      background-image: url('@{coverON}');
     }
     &__junior {
-      background-image: url('https://www.e-pages.dk/hbljunior/teasers/12509/medium.jpg') !important;
+      background-image: url('@{coverJunior}') !important;
+      min-height: 295px;
       height: 295px;
       box-shadow: 0px 0px 45px -10px rgba(0,0,0,0.3), inset 0px -50px 46px -38px rgba(0,0,0,0.22);
     }
@@ -102,6 +125,50 @@
       color: @grey-medium;
       padding: 1px;
       background-color: transparent;
+    }
+  }
+
+  &__liftup {
+    background: #F7F5F3;
+    margin-bottom: 10px;
+    header {
+      padding: 10px 0;
+      text-align: center;
+      h1 {
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &:before {
+          content: "";
+          width: 10px;
+          height: 10px;
+          margin-right: 5px;
+          display: inline-block;
+          background-color: #00a1ab;
+        }
+      }
+    }
+    &--cover {
+      width: 300px;
+      height: 300px;
+      background-size: contain;
+      background-position: top center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+      display: block;
+      #HBL & {
+        background-image: url('@{coverHBL}');
+      }
+      #VN & {
+        background-image: url('@{coverVN}');
+      }
+      #ON & {
+        background-image: url('@{coverON}');
+      }
+    }
+    &--container {
+      display: block;
     }
   }
 }
