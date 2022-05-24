@@ -24,7 +24,6 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
 import Mosaico.Paper (mosaicoPaper)
-import Mosaico.Routes (MosaicoPage(..), routes)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)

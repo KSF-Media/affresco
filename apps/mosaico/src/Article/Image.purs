@@ -2,7 +2,7 @@ module Mosaico.Article.Image where
 
 import Prelude
 
-import Data.Foldable (fold, foldMap)
+import Data.Foldable (fold)
 import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
 import Data.String as String
