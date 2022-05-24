@@ -4,13 +4,14 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "parcel index.html -p 8000",
+    "start": "PORT=8000 node build.mjs serve",
     "prebuild": "npm install",
-    "build": "parcel build index.html --public-url ./",
+    "build": "node build.mjs",
     "test": "echo 'No testsuite configured'"
   },
   "dependencies": {
     "axios": "^0.21.2",
+    "dotenv": "^16.0.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1"
   }
