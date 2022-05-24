@@ -45,6 +45,9 @@
     background-position: center 30px;
 
     @media (max-width: @breakpoint-2col) {
+      // iOS Safari is being buggy with heights... but only occassionally.
+      min-height: 300px;
+      height: 300px;
       max-height: 300px;
       overflow: hidden;
     }
