@@ -155,9 +155,7 @@ render props@{ onLogin, onLogout } = DOM.div
                   ] <> paperSpecificLinks mosaicoPaper
 
     paperSpecificLinks :: Paper -> Array Section
-    --paperSpecificLinks ON = ostnylandMenuLinks
     paperSpecificLinks VN = vastranylandMenuLinks
-    --paperSpecificLinks HBL = hblMenuLinks
     paperSpecificLinks _ = mempty
 
     vastranylandMenuLinks :: Array Section
