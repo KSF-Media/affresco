@@ -124,11 +124,6 @@ spec ::
          , googleSiteVerification ::
               GET "/google8c22fe93f3684c84.html"
                 { response :: File }
-         , frontpageUpdated ::
-              GET "/api/reset/<category>"
-                { params :: { category :: String }
-                , response :: String
-                }
          , getDraftArticle ::
               GET "/artikel/draft/<aptomaId>/?dp-time=<time>&publicationId=<publication>&user=<user>&hash=<hash>"
                 { response :: ResponseBody
@@ -249,7 +244,6 @@ main = do
         handlers =
           { getHealthz
           , googleSiteVerification
-          , frontpageUpdated: frontpageUpdated env
           , getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
           , assets
@@ -406,11 +400,6 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
           maybeLatest = if null latestArticles then Nothing else Just latestArticles
       in notFound env notFoundArticleContent maybeMostRead maybeLatest
 
-frontpageUpdated :: Env -> { params :: { category :: String }} -> Aff (Response String)
-frontpageUpdated env { params: { category } } = do
-  Cache.resetCategory env.cache (CategoryLabel category)
-  pure $ Response.ok ""
-
 assets :: { params :: { path :: List String } } -> Aff (Either Failure File)
 assets { params: { path } } = Handlers.directory "dist/assets" path
 
@@ -422,14 +411,9 @@ googleSiteVerification = Handlers.file "dist/assets/google8c22fe93f3684c84.html"
 
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
-  prerendered <- Cache.readCategoryRender env.cache frontpageCategoryLabel
-  case prerendered of
-    Just content -> do
-      now <- liftEffect nowDateTime
-      pure $ Cache.addHeader now content $ htmlContent $ Response.ok $ StringBody $ Cache.getContent content
-    _ -> case head env.categoryStructure of
-      Just frontpageCategory -> renderCategoryPage env frontpageCategory
-      _ -> pure $ Response.internalError $ StringBody "no categorystructure defined"
+  case head env.categoryStructure of
+    Just frontpageCategory ->   renderCategoryPage env frontpageCategory
+    _ -> pure $ Response.internalError $ StringBody "no categorystructure defined"
 
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
@@ -612,13 +596,8 @@ debugList env { params: { uuid } } = do
           }
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category} } -> Aff (Response ResponseBody)
-categoryPage env { guards: { category: category@(Category{label})}} = do
-  prerendered <- Cache.readCategoryRender env.cache label
-  case prerendered of
-    Just content -> do
-      now <- liftEffect nowDateTime
-      pure $ Cache.addHeader now content $ htmlContent $ Response.ok $ StringBody $ Cache.getContent content
-    _ -> renderCategoryPage env category
+categoryPage env { guards: { category }} = do
+  renderCategoryPage env category
 
 renderCategoryPage :: Env -> Category -> Aff (Response ResponseBody)
 renderCategoryPage env (Category category@{ label, type: categoryType, url}) = do
@@ -727,7 +706,6 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
               maybe pure appendHead (guard (label == frontpageCategoryLabel) $ Just startpageMeta) >>=
               appendHead (makeTitle title)
       let rendered = renderTemplateHtml html
-      Cache.saveCategoryRender env.cache label $ mosaicoString $> rendered
       now <- liftEffect nowDateTime
       pure $ Cache.addHeader now mosaicoString $
         htmlContent $ Response.ok $ StringBody rendered

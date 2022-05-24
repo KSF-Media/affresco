@@ -4,6 +4,7 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/pubsub": "^2.19.4",
     "@sentry/browser": "^6.19.7",
     "@sentry/tracing": "^6.19.7",
     "@typeform/embed": "^1.27.1",
