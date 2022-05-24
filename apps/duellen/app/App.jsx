@@ -8,7 +8,7 @@ import Question from './components/Question.jsx';
 import Resultat from './components/Resultat.jsx';
 
 export default () => (
-    <BrowserRouter  history={browserHistory}>
+    <BrowserRouter>
       <Switch>
         <Route exact path="/" exact component={Start} />
         <Route exact path="/Intro" exact component={Intro} />

@@ -5,9 +5,9 @@
   "author": "KSF Media",
   "license": "MIT",
   "scripts": {
-    "start": "parcel index.html -p 8000",
+    "start": "PORT=8000 node -r dotenv/config build.mjs serve",
     "build-user": "npm --prefix '../../packages/user' run build-npm",
-    "build": "npm run build-user && parcel build index.html --public-url ./ && cp _redirects dist/",
+    "build": "npm run build-user && node -r dotenv/config build.mjs && cp _redirects dist/",
     "test": "echo 'No testsuite configured'"
   },
   "dependencies": {
@@ -20,12 +20,12 @@
     "bootstrap": "^4.3.1",
     "cogo-toast": "^4.1.1",
     "core-js": "^3.22.7",
+    "dotenv": "^16.0.1",
     "jquery": "^3.5.0",
     "jsonp": "^0.2.1",
     "material-ui": "^0.20.0",
     "material-ui-superselectfield": "^1.9.0",
     "moment": "^2.29.2",
-    "parcel-bundler": "^1.12.3",
     "path": "^0.12.7",
     "popper.js": "^1.16.0",
     "react": "^16.3.0",
