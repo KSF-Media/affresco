@@ -55,6 +55,19 @@ After that, we run `node -e 'require(\"./run/build\").runBuild()` (`yarn run bui
 
 On static pages, the app initialization expects the selector "#app .mosaico--static-content" to match with the element containing the static content.  This assumption isn't checked at build time.
 
+### Pubsub
+
+To test pubsub frontpage updates, create a service account key to
+ksf-dev with Pub/Sub Editor and Pub/Sub Subscriber roles.  Just
+Subscriber is not enough since it creates a new subscription at start
+up time.
+
+```
+export GOOGLE_APPLICATION_CREDENTIALS=
+```
+
+Where credentials is the JSON file downloaded from Google's cloud.
+
 ## Tests
 
 Launch site as described in the Development sections.  The tests may
