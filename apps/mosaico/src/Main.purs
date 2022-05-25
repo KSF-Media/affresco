@@ -5,7 +5,7 @@ import Prelude
 import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
-import Data.Array (cons, find, foldl, fromFoldable, null)
+import Data.Array (cons, find, foldl, fromFoldable, head, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap, elem)
@@ -13,7 +13,6 @@ import Data.HashMap as HashMap
 import Data.List (List, union, intercalate, (:), snoc)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
-import Data.List (List, intercalate, (:))
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.String (trim)
@@ -34,8 +33,9 @@ import Effect.Uncurried (EffectFn2, runEffectFn2)
 import Foreign.Object (Object, lookup)
 import JSURI as URI
 import KSF.Paper as Paper
+import KSF.Random (randomString)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), DraftParams, FullArticle, ArticleType(..), encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
@@ -52,6 +52,7 @@ import Mosaico.Header.Menu as Menu
 import Mosaico.Paper (mosaicoPaper, _mosaicoPaper)
 import Mosaico.Profile as Profile
 import Mosaico.Search as Search
+import Mosaico.Webview as Webview
 import MosaicoServer (MainContent, MainContentType(..))
 import MosaicoServer as MosaicoServer
 import Node.Encoding (Encoding(..))
@@ -72,8 +73,6 @@ import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta, script, text, title) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
 import React.Basic.Events (handler_)
-import Routing.PushState (PushStateInterface)
-import Simple.JSON (write)
 
 foreign import data Template :: Type
 foreign import data TemplateMaster :: Type
@@ -283,13 +282,10 @@ getArticle
   -> Aff (Response ResponseBody)
 getArticle env { params: { uuidOrSlug: (uuid : _) }, guards: { clientip } }
   | Just articleId <- UUID.parseUUID uuid = do
-      { article, mostReadArticles, latestArticles } <- sequential $
-        { article: _, mostReadArticles: _, latestArticles: _ }
-        <$> parallel (Lettera.getArticle articleId mosaicoPaper Nothing clientip)
-        <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
-        <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
+      { pageContent: article, mostReadArticles, latestArticles } <-
+        parallelWithCommonLists env $ Lettera.getArticle articleId mosaicoPaper Nothing clientip
       Cache.addHeaderAge 60 <$>
-        renderArticle env article mostReadArticles latestArticles
+        renderArticle env article (Cache.getContent mostReadArticles) (Cache.getContent latestArticles)
 getArticle env { params: { uuidOrSlug: path }, guards: { clientip } }
   | (slug : _) <- path
   , not $ String.null slug
@@ -400,63 +396,9 @@ frontpage env {} = do
     Just content -> do
       now <- liftEffect nowDateTime
       pure $ Cache.addHeader now content $ htmlContent $ Response.ok $ StringBody $ Cache.getContent content
-    _ -> renderFrontpage env
-
-renderFrontpage :: Env -> Aff (Response ResponseBody)
-renderFrontpage env = do
-  { articles, mostReadArticles, latestArticles } <- sequential $
-    { articles: _, mostReadArticles: _, latestArticles: _ }
-    <$> parallel (getFrontpage env.cache frontpageCategoryLabel)
-    <*> parallel (Cache.getMostRead env.cache)
-    <*> parallel (Cache.getLatest env.cache)
-  let htmlTemplate = cloneTemplate env.htmlTemplate
-      mosaicoString = renderContent <$> articles <*> mostReadArticles <*> latestArticles
-  html <- liftEffect do
-            let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
-                  , "latestArticles"    /\ encodeStringifyArticleStubs (Cache.getContent latestArticles)
-                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                  ] <> mkArticleFeed (CategoryFeed frontpageCategoryLabel) (Cache.getContent articles)
-            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
-              appendVars (mkWindowVariables windowVars) >>=
-              appendHead (makeTitle (Paper.paperName mosaicoPaper))
-  let rendered = renderTemplateHtml html
-  Cache.saveCategoryRender env.cache frontpageCategoryLabel $ mosaicoString $> rendered
-  now <- liftEffect nowDateTime
-  pure $ Cache.addHeader now mosaicoString $ htmlContent $ Response.ok $ StringBody rendered
-  where
-    renderContent articles mostReadArticles latestArticles =
-      DOM.renderToString
-      $ MosaicoServer.app
-          { mainContent: renderFront articles mostReadArticles latestArticles
-          , mostReadArticles
-          , latestArticles
-          , categoryStructure: env.categoryStructure
-          }
-
-    renderFront :: ArticleFeed -> Array ArticleStub -> Array ArticleStub -> MainContent
-    renderFront (ArticleList list) _ _ =
-      { type: FrontpageContent
-      , content: Frontpage.render $ Frontpage.List
-          { label: mempty
-          , content: Just list
-          , onArticleClick: const mempty
-          , onTagClick: const mempty
-          }
-      }
-    renderFront (Html html) mostReadArticles latestArticles =
-      { type: HtmlFrontpageContent
-      , content: Frontpage.render $ Frontpage.Prerendered
-          { content: Just html
-          , hooks: [ Frontpage.RemoveTooltips
-                   , Frontpage.MostRead mostReadArticles (const mempty)
-                   , Frontpage.Latest latestArticles (const mempty)
-                   , Frontpage.ArticleUrltoRelative
-                   , Frontpage.EpaperBanner
-                   ]
-          , onClick: mempty
-          }
-      }
+    _ -> case head env.categoryStructure of
+      Just frontpageCategory -> renderCategoryPage env frontpageCategory
+      _ -> pure $ Response.internalError $ StringBody "no categorystructure defined"
 
 getFrontpage :: Cache.Cache -> CategoryLabel -> Aff (Stamped ArticleFeed)
 getFrontpage cache category = do
@@ -500,11 +442,8 @@ tagList :: Env -> { params :: { tag :: String } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
   let tag' = uriComponentToTag tag
       htmlTemplate = cloneTemplate env.htmlTemplate
-  { articles, mostReadArticles, latestArticles } <- sequential $
-    { articles: _, mostReadArticles: _, latestArticles: _ }
-    <$> parallel (Cache.getByTag env.cache tag')
-    <*> parallel (Cache.getMostRead env.cache)
-    <*> parallel (Cache.getLatest env.cache)
+  { pageContent: articles, mostReadArticles, latestArticles } <-
+    parallelWithCommonLists env $ Cache.getByTag env.cache tag'
   if null $ Cache.getContent articles
     then notFound
           env
@@ -515,10 +454,8 @@ tagList env { params: { tag } } = do
     let mosaicoString = renderContent tag' <$> articles <*> mostReadArticles <*> latestArticles
     html <- liftEffect do
               let windowVars =
-                    [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
-                    , "latestArticles"    /\ encodeStringifyArticleStubs (Cache.getContent latestArticles)
-                    , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                    ] <> mkArticleFeed (TagFeed tag') (ArticleList (Cache.getContent articles))
+                    stdVars env mostReadArticles latestArticles
+                    <> mkArticleFeed (TagFeed tag') (ArticleList (Cache.getContent articles))
               appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
                 appendVars (mkWindowVariables windowVars) >>=
                 appendHead (makeTitle tag)
@@ -551,18 +488,12 @@ epaperGuard req = do
 
 epaperPage :: Env -> { params :: { path :: List String }, query :: { query :: Object (Array String) }, guards :: { epaper :: Unit } } -> Aff (Response ResponseBody)
 epaperPage env {} = do
-  { mostReadArticles, latestArticles } <- sequential $
-    { mostReadArticles: _, latestArticles: _ }
-    <$> parallel (Cache.getMostRead env.cache)
-    <*> parallel (Cache.getLatest env.cache)
+  { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
   let htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = renderContent <$> mostReadArticles <*> latestArticles
   html <- liftEffect do
             let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
-                  , "latestArticles"    /\ encodeStringifyArticleStubs (Cache.getContent latestArticles)
-                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                  ]
+                  stdVars env mostReadArticles latestArticles
             appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
               appendHead (makeTitle "E-Tidningen")
@@ -627,18 +558,15 @@ staticPage env { params: { pageName } } = do
 
 debugList :: Env -> { params :: { uuid :: String } } -> Aff (Response ResponseBody)
 debugList env { params: { uuid } } = do
-  { article, mostReadArticles, latestArticles } <- sequential $
-    { article: _, mostReadArticles: _, latestArticles: _ }
-    <$> maybe (pure Nothing) (parallel <<< map hush <<< Lettera.getArticleStub) (UUID.parseUUID uuid)
-    <*> parallel (Cache.getMostRead env.cache)
-    <*> parallel (Cache.getLatest env.cache)
+  { pageContent: article, mostReadArticles, latestArticles } <-
+    parallelWithCommonLists env $
+    maybe (pure Nothing) (map hush <<< Lettera.getArticleStub) (UUID.parseUUID uuid)
   let htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = renderContent article <$> mostReadArticles <*> latestArticles
   html <- liftEffect do
             let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
-                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                  ] <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
+                  stdVars env mostReadArticles latestArticles
+                  <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
             appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendVars (mkWindowVariables windowVars)
   pure $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
   where
@@ -660,51 +588,110 @@ debugList env { params: { uuid } } = do
           }
 
 categoryPage :: Env -> { params :: { categoryName :: String }, guards :: { category :: Category} } -> Aff (Response ResponseBody)
-categoryPage env { guards: { category} } = do
-  let (Category { label }) = category
+categoryPage env { guards: { category: category@(Category{label})}} = do
   prerendered <- Cache.readCategoryRender env.cache label
   case prerendered of
     Just content -> do
       now <- liftEffect nowDateTime
       pure $ Cache.addHeader now content $ htmlContent $ Response.ok $ StringBody $ Cache.getContent content
-    _ -> renderCategoryPage env label
+    _ -> renderCategoryPage env category
 
-renderCategoryPage :: Env -> CategoryLabel -> Aff (Response ResponseBody)
-renderCategoryPage env category = do
-  { articles, mostReadArticles, latestArticles } <- sequential $
-    { articles: _, mostReadArticles: _, latestArticles: _ }
-    <$> parallel (Cache.getFrontpage env.cache category)
-    <*> parallel (Cache.getMostRead env.cache)
-    <*> parallel (Cache.getLatest env.cache)
+renderCategoryPage :: Env -> Category -> Aff (Response ResponseBody)
+renderCategoryPage env (Category { label, type: categoryType, url}) = do
+  { feed, mainContent, mostReadArticles, latestArticles } <- do
+    case categoryType of
+      Feed -> do
+        { pageContent, mostReadArticles, latestArticles } <-
+          parallelWithCommonLists env $ Cache.getFrontpage env.cache label
+        pure { feed: Just $ ArticleList $ Cache.getContent pageContent
+             , mainContent:
+                 (\articles ->
+                     { type: FrontpageContent
+                     , content: Frontpage.render $ Frontpage.List
+                                  { label: Just $ unwrap label
+                                  , content: Just articles
+                                  , onArticleClick: const mempty
+                                  , onTagClick: const mempty
+                                  }
+                     }) <$> pageContent
+             , mostReadArticles
+             , latestArticles
+             }
+      Prerendered -> do
+        -- TODO: Error handling
+        { pageContent, mostReadArticles, latestArticles } <-
+          parallelWithCommonLists env $ map (fromMaybe "") <$> Cache.getFrontpageHtml env.cache label
+        let hooks = [ Frontpage.RemoveTooltips
+                    , Frontpage.MostRead (Cache.getContent mostReadArticles) (const mempty)
+                    , Frontpage.Latest (Cache.getContent latestArticles) (const mempty)
+                    , Frontpage.ArticleUrltoRelative
+                    , Frontpage.EpaperBanner
+                    ]
+        pure { feed: Just $ Html $ Cache.getContent pageContent
+             , mainContent:
+                 ((\html ->
+                     { type: HtmlFrontpageContent
+                     , content: Frontpage.render $ Frontpage.Prerendered
+                                  { content: Just html
+                                  , hooks
+                                  , onClick: mempty
+                                  }
+                     }) <$> pageContent)
+             , mostReadArticles
+             , latestArticles
+             }
+      Link -> do
+        { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
+        pure { feed: Nothing
+             , mainContent: mostReadArticles *> latestArticles $>
+                            { type: StaticPageContent "link"
+                            -- TODO
+                            , content: mempty
+                            }
+             , mostReadArticles
+             , latestArticles
+             }
+      Webview -> do
+        initialRandom <- liftEffect $ randomString 10
+        { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
+        -- video.js fails if it tries to initialize an M3U8 stream for a second time.
+        -- If it had the webview component rendered on server side, React's hydrate
+        -- would count as a second initialization.
+        let streamURL = Webview.streamURL <$> url
+            streamType = streamURL >>= Webview.parseStreamType
+            content = case streamType of
+              Just Webview.M3U8 -> DOM.div
+                                     { className: "mosaico-webview"
+                                     , children: [ DOM.text "Laddar..." ]
+                                     }
+              _                 -> Webview.render streamType (fromMaybe "" streamURL) initialRandom
+            mainContent = mostReadArticles *> latestArticles $>
+                          { type: WebviewContent
+                          , content
+                          }
+        pure { feed: Nothing
+             , mainContent
+             , mostReadArticles
+             , latestArticles
+             }
+
   let htmlTemplate = cloneTemplate env.htmlTemplate
-      mosaicoString = renderContent <$> articles <*> mostReadArticles <*> latestArticles
-  html <- liftEffect do
-            let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
-                  , "latestArticles"    /\ encodeStringifyArticleStubs (Cache.getContent latestArticles)
-                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                  ] <> mkArticleFeed (CategoryFeed category) (ArticleList $ Cache.getContent articles)
-            appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
-              appendVars (mkWindowVariables windowVars) >>=
-              appendHead (makeTitle (unwrap category))
+      mosaicoString = renderContent <$> mainContent <*> mostReadArticles <*> latestArticles
+      windowVars = stdVars env mostReadArticles latestArticles
+                   <> foldMap (mkArticleFeed $ CategoryFeed label) feed
+  html <- liftEffect $ appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
+          appendVars (mkWindowVariables windowVars) >>=
+          appendHead (makeTitle (unwrap label))
   let rendered = renderTemplateHtml html
-  Cache.saveCategoryRender env.cache category $ mosaicoString $> rendered
+  Cache.saveCategoryRender env.cache label $ mosaicoString $> rendered
   now <- liftEffect nowDateTime
   pure $ Cache.addHeader now mosaicoString $
     htmlContent $ Response.ok $ StringBody rendered
   where
-    renderContent articles mostReadArticles latestArticles =
+    renderContent mainContent mostReadArticles latestArticles =
       DOM.renderToString
       $ MosaicoServer.app
-          { mainContent:
-              { type: FrontpageContent
-              , content: Frontpage.render $ Frontpage.List
-                  { label: Just $ unwrap category
-                  , content: Just articles
-                  , onArticleClick: const mempty
-                  , onTagClick: const mempty
-                  }
-              }
+          { mainContent
           , mostReadArticles
           , latestArticles
           , categoryStructure: env.categoryStructure
@@ -714,11 +701,8 @@ searchPage :: Env -> { query :: { search :: Maybe String } } -> Aff (Response Re
 searchPage env { query: { search } } = do
   let query = if (trim <$> search) == Just "" then Nothing else search
   searchComponent <- liftEffect Search.searchComponent
-  { articles, mostReadArticles, latestArticles } <- sequential $
-    { articles: _, mostReadArticles: _, latestArticles: _ }
-    <$> maybe (pure mempty) (parallel <<< Lettera.search 0 20 mosaicoPaper) query
-    <*> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
-    <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
+  { pageContent: articles, mostReadArticles, latestArticles } <-
+    parallelWithCommonLists env $ maybe (pure mempty) (Lettera.search 0 20 mosaicoPaper) query
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
       noResults = isJust query && null articles
@@ -741,15 +725,14 @@ searchPage env { query: { search } } = do
                                    , onTagClick: const mempty
                                    })
                               }
-                          , mostReadArticles
-                          , latestArticles
+                          , mostReadArticles: Cache.getContent mostReadArticles
+                          , latestArticles: Cache.getContent latestArticles
                           , categoryStructure: env.categoryStructure
                           }
   html <- liftEffect do
             let windowVars =
-                  [ "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
-                  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-                  ] <> mkArticleFeed (SearchFeed $ fromMaybe "" query) (ArticleList articles)
+                  stdVars env mostReadArticles latestArticles
+                  <> mkArticleFeed (SearchFeed $ fromMaybe "" query) (ArticleList articles)
             appendMosaico mosaicoString htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
               appendHead (makeTitle "Sök")
@@ -757,10 +740,7 @@ searchPage env { query: { search } } = do
 
 profilePage :: Env -> {} -> Aff (Response ResponseBody)
 profilePage env {} = do
-  { mostReadArticles, latestArticles } <- sequential $
-    { mostReadArticles: _, latestArticles: _ }
-    <$> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
-    <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
+  { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
   let htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString
                         $ MosaicoServer.app
@@ -774,15 +754,13 @@ profilePage env {} = do
                                     , onStaticPageClick: const mempty
                                     }
                               }
-                          , mostReadArticles
-                          , latestArticles
+                          , mostReadArticles: Cache.getContent mostReadArticles
+                          , latestArticles: Cache.getContent latestArticles
                           , categoryStructure: env.categoryStructure
                           }
   html <- liftEffect do
     let windowVars =
-          [ "mostReadArticles" /\ encodeStringifyArticleStubs mostReadArticles
-          , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
-          ]
+          stdVars env mostReadArticles latestArticles
     appendMosaico mosaicoString htmlTemplate >>=
       appendVars (mkWindowVariables windowVars) >>=
       appendHead (makeTitle "Min profil")
@@ -801,6 +779,7 @@ notFoundPage env {params: { path } } = do
   -- TODO 2 make these editable somewhere else
   case fromFoldable path /\ mosaicoPaper of
     ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
+    ["shop"] /\ _ -> redir "https://shop.hbl.fi"
     ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
     ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
     ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
@@ -880,6 +859,26 @@ parseCategory { categoryRegex, categoryStructure } req = do
 htmlContent :: forall a. Response a -> Response a
 htmlContent (Response response) =
   Response $ response { headers = Headers.set "content-type" ContentType.html response.headers }
+
+type CommonLists a =
+  { pageContent :: a
+  , mostReadArticles :: Stamped (Array ArticleStub)
+  , latestArticles :: Stamped (Array ArticleStub)
+  }
+
+parallelWithCommonLists :: forall a. Env -> Aff a -> Aff (CommonLists a)
+parallelWithCommonLists env f =
+  sequential $ { pageContent: _, mostReadArticles: _, latestArticles: _ }
+  <$> parallel f
+  <*> parallel (Cache.getMostRead env.cache)
+  <*> parallel (Cache.getLatest env.cache)
+
+stdVars :: Env -> Stamped (Array ArticleStub) -> Stamped (Array ArticleStub) -> Array (Tuple String String)
+stdVars env mostReadArticles latestArticles =
+  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
+  , "latestArticles"    /\ encodeStringifyArticleStubs (Cache.getContent latestArticles)
+  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+  ]
 
 mkWindowVariables :: Array (Tuple String String) -> String
 mkWindowVariables vars =

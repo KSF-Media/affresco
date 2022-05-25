@@ -2,8 +2,8 @@ module Mosaico.Article.Image where
 
 import Prelude
 
-import Data.Foldable (fold, foldMap)
-import Data.Maybe (Maybe)
+import Data.Foldable (fold)
+import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
 import Data.String as String
 import Lettera.Models (Image)
@@ -45,7 +45,7 @@ articleImage onClick props@{ image: img } =
             { src: url props
             , title: fold img.caption
             }
-        , foldMap (renderCaption img.byline) img.caption
+        , renderCaption img.byline img.caption
         ]
     , onClick
     }
@@ -64,7 +64,7 @@ articleMainImage onClick props@{ image: img } =
                     }
                 ]
             }
-        , foldMap (renderCaption img.byline) img.caption
+        , renderCaption img.byline img.caption
         ]
     , onClick
     }
@@ -74,12 +74,13 @@ url props =
   props.image.url <>
   if String.take 16 props.image.url == "https://imengine" then fold props.params else ""
 
-renderCaption :: Maybe String -> String -> JSX
+renderCaption :: Maybe String -> Maybe String -> JSX
+renderCaption Nothing Nothing = mempty
 renderCaption byline caption =
   DOM.div
     { className: "caption mosaico-article__main-image__caption"
     , children:
-        [ DOM.span { dangerouslySetInnerHTML: { __html: caption } }
+        [ DOM.span_ [DOM.text $ fold caption]
         , DOM.span
             { className: "byline"
             , children: [ DOM.text $ fold byline ]
@@ -100,7 +101,7 @@ articleImageFullScreen onClick props =
                     }
                 -- this close button does nothing, clicking anywhere on the image closes it
                 , DOM.i { className: "mosaico-article__focus-image__close-button" }
-                , foldMap (renderCaption props.image.byline) props.image.caption
+                , renderCaption props.image.byline props.image.caption
                 ]
             }
         ]
