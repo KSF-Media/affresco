@@ -5,11 +5,13 @@ import Prelude hiding (sub)
 import Control.Alternative (guard)
 import Control.Monad.Maybe.Trans (runMaybeT, lift)
 import Data.Maybe (Maybe(..), maybe)
-import Effect.Aff (Aff)
+import Effect.Aff as Aff
+import Effect.Aff (Aff, Milliseconds(..))
 import KSF.Paper (Paper(..))
 import KSF.Puppeteer as Chrome
 import Mosaico.Paper (mosaicoPaper)
 import Mosaico.Test (Test, log, site, sub)
+import Mosaico.Test.Account as Account
 import Test.Unit.Assert as Assert
 
 type PageIds =
@@ -124,11 +126,7 @@ testPaywallLogin loadDirect uuid user password f page = do
   originalBlocks <- Chrome.countElements article (Chrome.Selector ".mosaico-article__body .article-element") page
   Assert.assert "One or no content blocks shown in paywall" $ originalBlocks < 2
   -- Test login
-  Chrome.click (sub " .vetrina--login-callback" article) page
-  Chrome.waitFor_ login page
-  Chrome.type_ (sub " .input-field--container:nth-of-type(1) input" login) user page
-  Chrome.type_ (sub " .input-field--container:nth-of-type(2) input" login) password page
-  Chrome.click (sub " input[type=\"submit\"]" login) page
+  Account.login user password (sub " .vetrina--login-callback" article) 2 page
   f article originalBlocks page
 
 testPaywallOpen :: Chrome.Selector -> Int -> Test
