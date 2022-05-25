@@ -779,7 +779,8 @@ notFoundPage env {params: { path } } = do
   -- TODO 2 make these editable somewhere else
   case fromFoldable path /\ mosaicoPaper of
     ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
-    ["shop"] /\ _ -> redir "https://shop.hbl.fi"
+    ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
+    ["ingen-tidning"] /\ _ -> redir "https://konto.ksfmedia.fi/"
     ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
     ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
     ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
@@ -794,6 +795,7 @@ notFoundPage env {params: { path } } = do
     ["medlem"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
     ["digital"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
     ["homefound"] /\ Paper.VN -> redir "https://www.ksfmedia.fi/vn-homefound"
+    ["fiskecupen"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/fiskecupen"
     _ -> pass
 
 notFoundArticleContent :: MainContent
