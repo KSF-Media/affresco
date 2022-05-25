@@ -794,6 +794,10 @@ notFoundPage env {params: { path } } = do
     ["medlem"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
     ["digital"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
     ["homefound"] /\ Paper.VN -> redir "https://www.ksfmedia.fi/vn-homefound"
+    -- Old RSS URLs
+    ["rss.xml"] /\ Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
+    ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
+    ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
     _ -> pass
 
 notFoundArticleContent :: MainContent
