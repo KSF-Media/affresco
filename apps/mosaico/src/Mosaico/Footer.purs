@@ -93,6 +93,12 @@ hblContactInfo onStaticPageClick =
         [ tel "09 125 35 58"
         , DOM.text ", "
         , email "annons@hbl.fi"
+        , DOM.br {}
+        , DOM.text "Annonskiosken: "
+        , DOM.a
+            { href: "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
+            , children: [ DOM.text "hbl.fi/annonskiosken"]
+            }
         ]
     ]
 
@@ -155,6 +161,12 @@ vastranylandContactInfo onStaticPageClick =
         [ tel "09 1253 558"
         , DOM.text ", "
         , email "annons@vastranyland.fi"
+        , DOM.br {}
+        , DOM.text "Annonskiosken: "
+        , DOM.a
+            { href: "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
+            , children: [ DOM.text "vastranyland.fi/annonskiosken"]
+            }
         ]
     ]
 
@@ -218,6 +230,12 @@ ostnylandContactInfo onStaticPageClick =
         [ tel "09 1253 558"
         , DOM.text ", "
         , email "annons@ostnyland.fi"
+        , DOM.br {}
+        , DOM.text "Annonskiosken: "
+        , DOM.a
+            { href: "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
+            , children: [ DOM.text "ostnyland.fi/annonskiosken"]
+            }
         ]
     ]
 
