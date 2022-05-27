@@ -7,6 +7,7 @@ import Effect.Aff as Aff
 import Effect.Aff (Aff, Milliseconds(..))
 import Mosaico.Test (Test, site, sub)
 import KSF.Puppeteer as Chrome
+import Test.Unit (failure)
 import Test.Unit.Assert as Assert
 
 accountSelector :: Chrome.Selector
@@ -20,9 +21,17 @@ loginLogout user password page = do
   runTest
   runTest
   where
+    menu = Chrome.Selector ".mosaico-header__menu-content"
+    menuItem n = sub (" .mosaico-header__block:nth-child(1) .mosaico-header__section:nth-child(" <> show n <> ") a") menu
+    findLogoutSelector n = do
+      let sel = menuItem n
+      Chrome.waitFor_ sel page
+      content <- Chrome.getContent sel page
+      case content of
+        "LOGGA IN" -> pure sel
+        _ -> findLogoutSelector $ n+1
     runTest = do
-      let menu = Chrome.Selector ".mosaico-header__menu-content"
-          logoutSelector = sub " .mosaico-header__block:nth-child(1) .mosaico-header__section:nth-child(5) a" menu
+      logoutSelector <- findLogoutSelector 1
       Chrome.waitFor_ logoutSelector page
       Chrome.assertContent logoutSelector "LOGGA IN" page
       Chrome.assertContent accountSelector "LOGGA IN" page
