@@ -7,11 +7,14 @@ import Effect (Effect)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
+import Data.String as String
 import Data.String (toUpper)
 import Data.String.Common (trim)
+import KSF.Paper (Paper(..), toString)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Category(..), CategoryLabel)
+import Mosaico.Paper (mosaicoPaper)
 import React.Basic (JSX)
 import React.Basic.Events (EventHandler)
 import React.Basic.DOM as DOM
@@ -93,6 +96,13 @@ render props@{ onLogin, onLogout } = DOM.div
     topSections :: MenuBlock
     topSections = Section <$> catMaybes
                   [ Just
+                    { title: "PRENUMERERA"
+                    , subsections: []
+                    , url: "https://prenumerera.ksfmedia.fi/#/" <> String.toLower (toString mosaicoPaper)
+                    , onClick: mempty
+                    , addClass: Just "mosaico-menu__subscribe-link"
+                    }
+                  , Just
                     { title: "SÖK"
                     , subsections: []
                     , url: "/sök"
@@ -150,7 +160,21 @@ render props@{ onLogin, onLogout } = DOM.div
                     , onClick: mempty
                     , addClass: mempty
                     }
-                  ]
+                  ] <> paperSpecificLinks mosaicoPaper
+
+    paperSpecificLinks :: Paper -> Array Section
+    paperSpecificLinks VN = vastranylandMenuLinks
+    paperSpecificLinks _ = mempty
+
+    vastranylandMenuLinks :: Array Section
+    vastranylandMenuLinks =
+      [ { title: "ANSLAGSTAVLAN"
+        , subsections: []
+        , url: "/sida/anslagstavlan"
+        , onClick: capture_ $ props.changeRoute "/sida/anslagstavlan"
+        , addClass: Just "mosaico-menu__link-headline"
+        }
+      ]
 
     menuContent :: JSX
     menuContent = DOM.div
