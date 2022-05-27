@@ -22,7 +22,7 @@ loginLogout user password page = do
   where
     runTest = do
       let menu = Chrome.Selector ".mosaico-header__menu-content"
-          logoutSelector = sub " .mosaico-header__block:nth-child(1) .mosaico-header__section:nth-child(4) a" menu
+          logoutSelector = sub " .mosaico-header__block:nth-child(1) .mosaico-header__section:nth-child(5) a" menu
       Chrome.waitFor_ logoutSelector page
       Chrome.assertContent logoutSelector "LOGGA IN" page
       Chrome.assertContent accountSelector "LOGGA IN" page
