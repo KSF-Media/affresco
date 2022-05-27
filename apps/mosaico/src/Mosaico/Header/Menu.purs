@@ -7,9 +7,10 @@ import Effect (Effect)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
+import Data.String as String
 import Data.String (toUpper)
 import Data.String.Common (trim)
-import KSF.Paper (Paper(..))
+import KSF.Paper (Paper(..), toString)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Category(..), CategoryLabel)
@@ -95,6 +96,13 @@ render props@{ onLogin, onLogout } = DOM.div
     topSections :: MenuBlock
     topSections = Section <$> catMaybes
                   [ Just
+                    { title: "PRENUMERERA"
+                    , subsections: []
+                    , url: "https://prenumerera.ksfmedia.fi/#/" <> String.toLower (toString mosaicoPaper)
+                    , onClick: mempty
+                    , addClass: Just "mosaico-menu__subscribe-link"
+                    }
+                  , Just
                     { title: "SÖK"
                     , subsections: []
                     , url: "/sök"
