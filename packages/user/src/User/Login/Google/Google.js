@@ -1,6 +1,19 @@
 var googleClientId = process.env.GOOGLE_CLIENT_ID;
 
 exports.loadGapi_ = function (args) {
+  if (window.gapi === undefined) {
+    var script = document.createElement("script");
+    script.onload = function () {
+      loadGapi();
+    };
+    script.src = "https://apis.google.com/js/platform.js";
+    document.head.appendChild(script);
+  } else {
+    loadGapi();
+  }
+};
+
+function loadGapi() {
   gapi.load("auth2", function () {
     var auth2 = gapi.auth2
       .init({
@@ -10,7 +23,7 @@ exports.loadGapi_ = function (args) {
       .then(initSuccess(args), initError(args));
   });
   return {};
-};
+}
 
 function initSuccess(args) {
   return function () {
