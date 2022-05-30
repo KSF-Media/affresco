@@ -190,6 +190,7 @@ type ArticleCommon =
 
 type JSArticle =
   { publishingTime :: String
+  , publishingTimeUtc :: Maybe String -- does not come from Lettera
   , updateTime     :: Maybe String
   , body           :: Array BodyElementJS
   , tags           :: Array String
@@ -199,7 +200,7 @@ type JSArticle =
 
 type Article =
   { publishingTime :: Maybe LocalDateTime
-  , publishingTimeUtc :: Maybe DateTime
+  , publishingTimeUtc :: Maybe DateTime -- does not come from Lettera
   , updateTime     :: Maybe LocalDateTime
   , body           :: Array BodyElement
   , tags           :: Array Tag
@@ -296,7 +297,7 @@ parseArticleWithoutLocalizing =
               encodeJson (jsArticle.body :: Array BodyElementJS)
       pure $ merge
         { publishingTime: LocalDateTime <$> parseDateTime jsArticle.publishingTime
-        , publishingTimeUtc: parseDateTime jsArticle.publishingTime
+        , publishingTimeUtc: parseDateTime =<< jsArticle.publishingTimeUtc
         , updateTime: LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
         , tags: map Tag jsArticle.tags
         , body: body

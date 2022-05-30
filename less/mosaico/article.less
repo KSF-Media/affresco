@@ -150,7 +150,6 @@
     font: 700 1.92rem "Duplex Serif Web", serif;
     color: #333;
     margin: 1rem auto 1.5rem auto;
-    letter-spacing: -0.015em;
     @media (min-width: @breakpoint-2col) {
       font-size: 2.75rem;
     }
@@ -166,16 +165,13 @@
     font: 500 0.75rem "Roboto", sans-serif;
   }
   &__preamble {
-    font: 400 1.1rem "Duplex Sans", sans-serif;
-    line-height: 1.55rem;
+    font: 300 1.4rem/1.2 "Duplex Sans", sans-serif;
     margin-bottom: 30px;
     @media (min-width: @breakpoint-2col) {
-      font-size: 1.2rem;
-      line-height: 1.75rem;
+      font-size: 1.5rem;
     }
     @media (min-width: @breakpoint-3col) {
-      font-size: 1.3rem;
-      line-height: 1.95rem;
+      font-size: 1.6rem;
     }
   }
   &__tag-n-share {
@@ -286,9 +282,9 @@
           margin-bottom: 5px;
         }
         h2 {
-          font: 400 1rem/1.1 "Duplex Serif Web", serif;
+          font: 400 1.1rem/1.1 "Duplex Serif", serif;
           @media (min-width: @breakpoint-2col) {
-            font: 400 1.25rem/1.1 "Duplex Serif Web", serif;
+            font-size: 1.3rem;
           }
         }
       }
@@ -313,18 +309,19 @@
     color: @dark-text;
     a {
       color: @dark-text;
-      text-decoration: none;
+      text-decoration-style: underline;
+      text-decoration-thickness: 2px;
       #HBL & {
-        border-bottom: solid 1px @hbl-orange;
+        text-decoration-color: @hbl-orange;
       }
       #VN & {
-        border-bottom: solid 1px @vn-red;
+        text-decoration-color: @vn-red;
       }
       #ON & {
-        border-bottom: solid 1px @on-blue;
+        text-decoration-color: @on-blue;
       }
       #BRAND-NEUTRAL & {
-        border-bottom: solid 1px @brand-neutral !important;
+        text-decoration-color: @brand-neutral !important;
       }
       &:hover {
         color: lighten(@dark-text, 20%);
