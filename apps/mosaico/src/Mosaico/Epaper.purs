@@ -59,7 +59,7 @@ render onLogin paper loadingUser userAuth entitlements =
                 [ DOM.a
                     { className: "mosaico-epaper--teaser"
                     , href: if entitled then latestEpaper paper else "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName paper
-                    , children: [ DOM.img { src: "https://cdn.ksfmedia.fi/mosaico/tablet.png" } ]
+                    , children: [ DOM.img { src: "https://cdn.ksfmedia.fi/mosaico/tablet-bg.png" } ]
                     }
                 , DOM.div
                     { className: "mosaico-epaper--body"
@@ -86,6 +86,7 @@ render onLogin paper loadingUser userAuth entitlements =
         , children:
             [ DOM.div
                 { className: "mosaico-epaper--teaser mosaico-epaper--teaser__junior"
+                , children: [ DOM.img { src: "https://cdn.ksfmedia.fi/mosaico/tablet-bg.png" } ]
                 }
             , DOM.div
                 { className: "mosaico-epaper--body"
