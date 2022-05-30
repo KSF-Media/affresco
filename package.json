@@ -2,6 +2,8 @@
   "private": true,
   "name": "affresco",
   "dependencies": {
+    "@babel/core": "^7.18.2",
+    "@babel/preset-env": "^7.18.2",
     "dhall-to-json-cli": "^1.7.6",
     "dhall-to-yaml-cli": "^1.7.6",
     "purescript": "^0.14.9",
@@ -23,5 +25,10 @@
   },
   "overrides": {
     "cheerio": "1.0.0-rc.9"
-  }
+  },
+  "browserslist": [
+    "> 0.25%",
+    "not dead",
+    "IE 11"
+  ]
 }

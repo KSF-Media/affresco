@@ -1,7 +1,14 @@
 import esbuild from "esbuild";
+import babel from "@babel/core";
+import htmlPlugin from "@chialab/esbuild-plugin-html";
+import { lessLoader } from "esbuild-plugin-less";
+import * as util from "util";
+import * as fs from "fs";
+
+const writeFile = util.promisify(fs.writeFile);
 
 export function buildOrServe(buildOptions) {
-  if (process.argv[2] == "serve") {
+  if (process.argv.some((arg) => arg == "serve")) {
     const port = parseInt(process.env.PORT, 10) || 3000;
     console.log("Running in http://localhost:" + port);
     return esbuild.serve(
@@ -12,14 +19,41 @@ export function buildOrServe(buildOptions) {
       buildOptions
     );
   }
-  return esbuild.build(buildOptions);
+  return esbuild.build(buildOptions).then(transpileIfMinify(buildOptions));
+}
+
+export function transpileIfMinify(buildOptions) {
+  return buildOptions.minify ? transpile : () => Promise.resolve(undefined);
+}
+
+export function transpile(buildResult) {
+  console.log("Transpiling results with Babel");
+  return Promise.all(
+    buildResult.metafile.outputs.map((file) =>
+      file.endsWith(".js")
+      ? babel
+      .transformFileAsync(file, {
+        presets: [
+          [
+            "@babel/preset-env",
+            {
+              modules: false,
+            },
+          ],
+          "@babel/preset-react",
+        ],
+      })
+      .then(({ code }) => writeFile(file, code))
+      : Promise.resolve(undefined)
+    )
+  );
 }
 
 export const buildSettings = {
   bundle: true,
   minify: process.env.NODE_ENV === "production",
   treeShaking: true,
-  sourcemap: 'external',
+  sourcemap: "external",
   outdir: "dist",
   assetNames: "[name]-[hash]",
   chunkNames: "[name]-[hash]",
@@ -52,4 +86,8 @@ export const buildSettings = {
     "process.env.JANRAIN_SSO_SERVER": '"' + process.env.JANRAIN_SSO_SERVER + '"',
     "process.env.JANRAIN_XD_RECEIVER_PATH": '"' + process.env.JANRAIN_XD_RECEIVER + '"',
   },
+  plugins: [
+    htmlPlugin(),
+    lessLoader(),
+  ],
 };

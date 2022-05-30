@@ -26,19 +26,25 @@
   },
   "scripts": {
     "start": "node -r dotenv/config -e 'require(\"./output/Main/index\").main()' dotenv_config_path=.env.local",
-    "start-dev": "spago build && npm run build-spa && make run-dev -j 2",
+    "start-dev": "npm run build:watch",
     "build": "npm run build-app && npm run build-spa",
+    "build:watch": "concurrently \"npm:build-app:watch\" \"npm:build-spa:watch\"",
     "build-app": "spago build",
-    "build-spa": "node --input-type=module -e 'import {runBuild} from \"./run/build.mjs\"; runBuild();'",
+    "build-app:watch": "spago build --watch",
+    "build-spa": "node -r dotenv/config build.mjs dotenv_config_path=.env.local",
+    "build-spa:watch": "node -r dotenv/config build.mjs dotenv_config_path=.env.local serve",
     "build-deploy-preview": "npm run build-spa",
-    "test": "bash test.sh"
+    "pre-test": "cp .env.local .env.test && echo 'DISABLE_ADS=1' >> .env.test",
+    "test": "npm run pre-test && start-server-and-test start http://localhost:8080 'spago -x test.dhall test'"
   },
   "devDependencies": {
     "@babel/core": "^7.18.2",
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-react": "^7.17.12",
+    "concurrently": "^7.2.1",
     "esbuild-plugin-less": "^1.1.6",
     "puppeteer": "^14.1.1",
+    "start-server-and-test": "^1.14.0",
     "tiny-glob": "^0.2.9"
   },
   "browserslist": [
