@@ -533,7 +533,7 @@ facebookLogin self =
       { className: "login--some-disabled-note"
       , children: [ DOM.text "Möjligheten att logga in med Facebook har tagits bort. Du kan logga in med den e-postadress som är kopplad till din Facebook, "
                   , DOM.a
-                      { href: "https://www.hbl.fi/losenord/"
+                      { href: "https://konto.ksfmedia.fi/#lösenord"
                       , children: [ DOM.text "bara återställ lösenordet här." ]
                       }
                   ]
@@ -597,7 +597,7 @@ forgotPassword =
     { children:
       [ DOM.text "Glömt lösenordet? "
         , DOM.a
-            { href: "https://www.hbl.fi/losenord/"
+            { href: "https://konto.ksfmedia.fi/#lösenord"
             , children: [ DOM.text "Klicka här!" ]
             }
         ]
@@ -637,7 +637,7 @@ formatErrorMessage err =
                 """Inloggning med Googlekonto kräver att webbläsaren tillåter tredjepartskakor.
                    Du kan istället logga in med din epostadress. Ange lösenord """
             , DOM.a
-                { href: "https://www.hbl.fi/losenord/"
+                { href: "https://konto.ksfmedia.fi/#lösenord"
                 , target: "_blank"
                 , children: [ DOM.text "här" ]
                 }
