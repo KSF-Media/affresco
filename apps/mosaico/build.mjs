@@ -11,7 +11,6 @@ const mainSettings = {
   ...buildSettings,
   outdir: "dist/assets",
   entryPoints: ["./web/index.html"],
-  plugins: [htmlPlugin(), lessLoader()],
 };
 
 export function buildMain() {
@@ -29,7 +28,7 @@ export async function buildStatic(watch) {
           The browser static pages are loaded from ./dist/assets.
      */
 
-  await exec("mkdir -p dist/static && cp -R ./static/* ./dist/static/");
+  await exec("mkdir -p dist/static && mkdir -p dist/assets && cp -R ./static/* ./dist/static/");
 
   const staticEntryPoints = await glob("./static/**/*.js");
   const staticBuildOpts = {
@@ -50,8 +49,9 @@ function runBuild() {
 async function buildOrServe() {
   if (process.argv.some((arg) => arg == "serve")) {
     const port = parseInt(process.env.PORT, 10) || 3000;
-    console.log("Running in http://localhost:" + port);
+    await buildStatic(false);
     buildStatic(true);
+    console.log("Running in http://localhost:" + port);
     return esbuild.serve(
       {
         servedir: mainSettings.outdir,
