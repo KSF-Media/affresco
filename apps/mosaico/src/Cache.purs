@@ -56,8 +56,8 @@ getContent (Stamped { content }) = content
 
 toValidUntil :: DateTime -> Maybe Int -> Maybe DateTime
 toValidUntil now maxAge =
-  -- Sanity check, allow at most 10 minutes
-  flip adjust now <<< Seconds <<< toNumber =<< max 600 <$> maxAge
+  -- Sanity check, allow at most 1 minute
+  flip adjust now <<< Seconds <<< toNumber =<< max 60 <$> maxAge
 
 -- Reset handle and a value that's being kept updated
 type UpdateWatch a = Tuple (Aff Unit) (Aff (Stamped a))
