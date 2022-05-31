@@ -1,4 +1,4 @@
-FROM node:12
+FROM node:16
 
 COPY dist /app/dist
 COPY package.json /app/

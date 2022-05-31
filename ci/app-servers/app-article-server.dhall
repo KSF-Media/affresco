@@ -8,7 +8,7 @@ in  AppServer::{
     , buildDir = "app-article-server"
     , deployDir = "app-article-server"
     , previewUrl = "article/c7da734f-9e2b-45be-b645-5f4742766486"
-    , runtime = "nodejs12"
+    , runtime = "nodejs16"
     , entrypoint = "node dist/server"
     , instance_class = Some "F4"
     , env = toMap
