@@ -14,19 +14,20 @@ jobs:
   check-ci:
     container:
       image: ksfmedia/diskho:gha-1.2
-      options: "--cpus 2"
+      options: "--cpus 2 --user root"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Check CI script has been generated from Dhall
         run: |2
+            chown root:root .
             make
             git diff --exit-code
   deploy-app-article-server:
     container:
       image: ksfmedia/diskho:gha-1.2
-      options: "--cpus 2"
+      options: "--cpus 2 --user root"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +73,7 @@ jobs:
   deploy-dispatch-yaml:
     container:
       image: ksfmedia/diskho:gha-1.2
-      options: "--cpus 2"
+      options: "--cpus 2 --user root"
     needs:
       - deploy-app-article-server
     runs-on: ubuntu-latest
@@ -102,7 +103,7 @@ jobs:
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-1.2
-      options: "--cpus 2"
+      options: "--cpus 2 --user root"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:

@@ -207,6 +207,7 @@ let checkCISteps =
         , name = Some "Check CI script has been generated from Dhall"
         , run = Some
             ''
+              chown root:root .
               make
               git diff --exit-code
             ''
