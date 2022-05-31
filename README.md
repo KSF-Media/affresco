@@ -19,16 +19,16 @@ Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautifu
 
 ## Developing
 
-To install all packages run `yarn install` in the root of the repo.
+To install all packages run `npm install` in the root of the repo.
 
 You might also want to install the tools globally for more convenience: `npm install -g purescript spago parcel`
 
 We have different kinds of apps, and they require different initial setup. Move inside of some app's folder (e.g. `apps/mitt-konto`), and then:
 - JavaScript only: no setup needed
 - PureScript only: run `spago build --watch` to get a file-watching build, or use some editor integration to do this watch/rebuild for you (e.g. see [here](https://github.com/purescript/documentation/blob/master/ecosystem/Editor-and-tool-support.md) for the things mentioning "ide")
-- Mixed JavaScript/PureScript: run `yarn build-purs` to get the compiled PureScript bundle in the right place
+- Mixed JavaScript/PureScript: run `npm run build-purs` to get the compiled PureScript bundle in the right place
 
-After this initial setup, running `yarn start` should give you a hot reloading local dev server.
+After this initial setup, running `npm run start` should give you a hot reloading local dev server.
 
 ### Structure
 

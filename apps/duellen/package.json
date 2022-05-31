@@ -6,8 +6,8 @@
   "license": "MIT",
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "build-user": "yarn --cwd '../../packages/user' build-npm",
-    "build": "yarn build-user && parcel build index.html --public-url ./ && cp _redirects dist/",
+    "build-user": "npm --prefix '../../packages/user' build-npm",
+    "build": "npm run build-user && parcel build index.html --public-url ./ && cp _redirects dist/",
     "test": "echo 'No testsuite configured'"
   },
   "dependencies": {
