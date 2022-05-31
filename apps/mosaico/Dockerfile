@@ -1,4 +1,4 @@
-FROM node:12
+FROM node:16
 
 RUN ln -sf /usr/share/zoneinfo/Europe/Helsinki /etc/localtime
 
