@@ -10,6 +10,7 @@
     "bootstrap-css-only": "^4.3.1",
     "js-cookie": "^2.2.1",
     "react": "^16.8.3",
+    "react-device-detect": "^1.6.2",
     "react-dom": "^16.8.3",
     "react-image-lightbox": "^5.1.0",
     "uuid": "^8.3.2"
