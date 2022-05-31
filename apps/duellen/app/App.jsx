@@ -1,5 +1,5 @@
 import React from 'react';
-import "babel-polyfill";
+import "core-js/stable";
 import {BrowserRouter, Route, Switch, browserHistory} from 'react-router-dom';
 
 import Start from './components/Start.jsx';
