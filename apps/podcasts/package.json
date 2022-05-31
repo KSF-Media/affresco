@@ -12,8 +12,7 @@
     "react-dom": "^16.12.0",
     "slugify": "^1.4.0",
     "xml-js": "^1.6.11",
-    "uglify-js": "^3.6.0",
-    "yarn": "^1.17.3"
+    "uglify-js": "^3.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-0",
@@ -23,7 +22,7 @@
   },
   "scripts": {
     "start": "parcel ./src/index.html --https",
-    "prebuild": "yarn install",
+    "prebuild": "npm install",
     "build": "parcel build ./src/index.html --public-url ./",
     "postbuild": "netlify-lambda build functions",
     "lambda-serve": "netlify-lambda serve functions",

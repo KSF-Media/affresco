@@ -67,7 +67,7 @@ let setupSteps =
         , Step::{
           , run = Some
               ''
-                yarn install --pure-lockfile
+                npm ci
                 mkdir -p build
               ''
           }
