@@ -14,3 +14,7 @@ exports.refreshAdsImpl = function (slotArray) {
 exports.sentryDsn_ = function () {
   return process.env.SENTRY_DSN;
 };
+
+exports.setManualScrollRestoration = function () {
+  history.scrollRestoration = 'manual';
+}
