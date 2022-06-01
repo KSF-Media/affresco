@@ -1,6 +1,6 @@
 import React from 'react';
 import "core-js/stable";
-import {BrowserRouter, Route, Switch, browserHistory} from 'react-router-dom';
+import {BrowserRouter, Route, Switch} from 'react-router-dom';
 
 import Start from './components/Start.jsx';
 import Intro from './components/Intro.jsx';
