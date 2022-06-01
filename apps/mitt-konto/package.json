@@ -13,7 +13,8 @@
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",
-    "react-router-dom": "^5.2.0"
+    "react-router-dom": "^5.2.0",
+    "xhr2": "^0.2.1"
   },
   "devDependencies": {
     "puppeteer": "^8.0.0"
