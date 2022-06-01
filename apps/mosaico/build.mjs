@@ -9,7 +9,9 @@ const exec = util.promisify(child_process.exec);
 
 const mainSettings = {
   ...buildSettings,
-  outdir: "dist/assets",
+  assetNames: "assets/[name]-[hash]",
+  chunkNames: "assets/[name]-[hash]",
+  outdir: "dist",
   entryPoints: ["./web/index.html"],
 };
 
