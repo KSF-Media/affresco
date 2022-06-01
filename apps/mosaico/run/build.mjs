@@ -1,14 +1,42 @@
-var esbuild = require("esbuild");
-var lessLoader = require("esbuild-plugin-less").lessLoader;
-require("dotenv").config();
-const glob = require("tiny-glob");
+import * as esbuild from "esbuild";
+import babel from "esbuild-plugin-babel";
+import {lessLoader} from "esbuild-plugin-less";
+import {config} from "dotenv";
+config();
+import glob from "tiny-glob";
 
-const fs = require("fs");
-const cheerio = require("cheerio");
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+import * as fs from "fs";
+import cheerio from "cheerio";
+import * as util from "util";
+import * as cp from "child_process";
+const exec = util.promisify(cp.exec);
 
-module.exports.runBuild = async function () {
+const minify = process.env.NODE_ENV === "production";
+
+const plugins = minify
+  ? [
+      lessLoader(),
+      // We use babel only for prod build, as esbuild would run it for every
+      // page load in local, which is very slow.
+      babel({
+        filter: /output\/.*\.js$/,
+        config: {
+          presets: [
+            [
+              "@babel/preset-env",
+              {
+                modules: false,
+              },
+            ],
+            "@babel/preset-react",
+          ],
+        },
+      }),
+    ]
+  : [lessLoader()];
+
+
+export async function runBuild() {
   try {
     console.log("Bundling javascript...");
 
@@ -20,9 +48,9 @@ module.exports.runBuild = async function () {
       entryNames: "[name]-[hash]",
       bundle: true,
       outdir: "./dist/assets",
-      minify: process.env.NODE_ENV === "production",
+      minify,
       metafile: true,
-      plugins: [lessLoader()],
+      plugins,
       loader: {
         ".js": "jsx",
         ".png": "file",
@@ -86,7 +114,8 @@ module.exports.runBuild = async function () {
       entryPoints: staticEntryPoints,
       bundle: true,
       outdir: "./dist/static",
-      minify: process.env.NODE_ENV === "production",
+      minify,
+      plugins,
       treeShaking: true,
     };
 
