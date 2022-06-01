@@ -33,9 +33,9 @@ exports.getNameImpl = (node) => {
     return null;
 }
 
-exports.getAttribsImpl = (node) => {
+exports.getStringAttribImpl = (name, node) => {
     if (node && node.attribs)
-      return node.attribs;
+      return node.attribs[name];
 
     return null;
 }
@@ -47,33 +47,14 @@ exports.getChildrenImpl = (node) => {
     return null;
 }
 
-// Setters
-exports.setRawImpl = (node, raw) => {
-    if (node)
-      node.raw = raw;
+exports.setStringAttribImpl = (name, value, node) => {
+    if (node && node.attribs)
+	node.attribs[name] = value;
+    return node;
 }
 
-exports.setDataImpl = (node, data) => {
-    if (node)
-      node.data = data;
-}
-
-exports.setTypeImpl = (node, type) => {
-    if (node)
-      node.type = type;
-}
-
-exports.setNameImpl = (node, name) => {
-    if (node)
-      node.name = name;
-}
-
-exports.setAttribsImpl = (node, attribs) => {
-    if (node)
-      node.attribs = attribs;
-}
-
-exports.setAttribImpl = (node, name, value) => {
-    if (node)
-        node.attribs[name] = value;
+exports.removeAttribImpl = (name, node) => {
+    if (node && node.attribs)
+	delete node.attribs[name];
+    return node;
 }
