@@ -1,5 +1,6 @@
 env:
   NODE_ENV: production
+  OPENSSL_CONF: /dev/null
   PRODUCTION_BOTTEGA_URL: https://bottega.api.ksfmedia.fi/v1
   PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi
   PRODUCTION_FACEBOOK_APP_ID: '894000011480431'

@@ -1,5 +1,6 @@
 env:
   NODE_ENV: production
+  OPENSSL_CONF: /dev/null
 jobs:
   check-ci:
     container:
