@@ -193,6 +193,8 @@ app = do
           InvoiceList -> paymentView
           InvoiceDetail invno -> paymentDetailView invno
           PasswordRecovery -> passwordResetView Nothing
+          PasswordRecovery2 -> passwordResetView Nothing
+          PasswordRecovery3 -> passwordResetView Nothing
           PasswordRecoveryCode code -> passwordResetView $ Just code
           CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno) state.activeUser
         content = if isNothing state.activeUser && needsLogin route
