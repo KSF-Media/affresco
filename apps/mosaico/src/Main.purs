@@ -41,7 +41,7 @@ import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
 import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
-import Mosaico.Cache (Stamped(..))
+import Mosaico.Cache (Stamped)
 import Mosaico.Cache as Cache
 import Mosaico.Epaper as Epaper
 import Mosaico.Error (notFoundWithAside)
@@ -400,13 +400,6 @@ frontpage env {} = do
       Just frontpageCategory -> renderCategoryPage env frontpageCategory
       _ -> pure $ Response.internalError $ StringBody "no categorystructure defined"
 
-getFrontpage :: Cache.Cache -> CategoryLabel -> Aff (Stamped ArticleFeed)
-getFrontpage cache category = do
-  maybeHtml <- Cache.getFrontpageHtml cache category
-  case maybeHtml of
-    html@(Stamped {content: Just content}) -> pure $ (const $ Html content) <$> html
-    _ -> map ArticleList <$> Cache.getFrontpage cache category
-
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
   let mosaico = MosaicoServer.app
@@ -619,16 +612,20 @@ renderCategoryPage env (Category { label, type: categoryType, url}) = do
              }
       Prerendered -> do
         -- TODO: Error handling
-        { pageContent, mostReadArticles, latestArticles } <-
-          parallelWithCommonLists env $ map (fromMaybe "") <$> Cache.getFrontpageHtml env.cache label
+        { pageContent, mostReadArticles, latestArticles, articleStubs } <- sequential $
+          { pageContent:_, mostReadArticles: _, latestArticles: _, articleStubs: _ }
+          <$> parallel (map (fromMaybe "") <$> Cache.getFrontpageHtml env.cache label)
+          <*> parallel (Cache.getMostRead env.cache)
+          <*> parallel (Cache.getLatest env.cache)
+          <*> parallel (Cache.getFrontpage env.cache label)
         let hooks = [ Frontpage.RemoveTooltips
                     , Frontpage.MostRead (Cache.getContent mostReadArticles) (const mempty)
                     , Frontpage.Latest (Cache.getContent latestArticles) (const mempty)
                     , Frontpage.ArticleUrltoRelative
                     , Frontpage.EpaperBanner
                     ]
-        pure { feed: Just $ Html $ Cache.getContent pageContent
-             , mainContent:
+        pure { feed: Just $ Html (Cache.getContent pageContent) (Cache.getContent articleStubs)
+             , mainContent: articleStubs *>
                  ((\html ->
                      { type: HtmlFrontpageContent
                      , content: Frontpage.render $ Frontpage.Prerendered
