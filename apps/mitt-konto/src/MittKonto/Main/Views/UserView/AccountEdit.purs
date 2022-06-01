@@ -16,7 +16,7 @@ accountEdit router = DOM.div
       [ IconAction.iconAction
           { iconClassName: passwordChangeClass
           , description: "Byt lösenord"
-          , onClick: IconAction.Href "https://www.hbl.fi/losenord"
+          , onClick: IconAction.Href "/#lösenord"
           , router
           }
       , IconAction.iconAction
