@@ -77,6 +77,7 @@ import Web.HTML.Window (document, scroll) as Web
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
+foreign import setManualScrollRestoration :: Effect Unit
 
 data ModalView = LoginModal
 
@@ -194,6 +195,7 @@ mosaicoComponent initialValues props = React.do
                 setState _ { article = Just $ Left unit }
 
   useEffectOnce do
+    setManualScrollRestoration
     withLoginLock <- (\l -> Aff.bracket (Aff.AVar.put unit l)
                             (const $ Aff.AVar.take l) <<< const) <$> AVar.empty
     alreadySentInitialAnalytics <- AVar.new false

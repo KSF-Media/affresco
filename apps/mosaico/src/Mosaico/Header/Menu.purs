@@ -174,6 +174,13 @@ render props@{ onLogin, onLogout } = DOM.div
         , onClick: capture_ $ props.changeRoute "/sida/anslagstavlan"
         , addClass: Just "mosaico-menu__link-headline"
         }
+      , { title: "FISKECUPEN"
+        , subsections: []
+        , url: "/sida/fiskecupen"
+        , onClick: capture_ $ props.changeRoute "/sida/fiskecupen"
+        , addClass: Just "mosaico-menu__link-headline"
+
+        }
       ]
 
     menuContent :: JSX

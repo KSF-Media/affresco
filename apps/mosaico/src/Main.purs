@@ -781,6 +781,8 @@ notFoundPage env {params: { path } } = do
     ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
     ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
     ["ingen-tidning"] /\ _ -> redir "https://konto.ksfmedia.fi/"
+    ["losenord"] /\ _ -> redir "https://konto.ksfmedia.fi/#lösenord"
+    ["losenord", ""] /\ _ -> redir "https://konto.ksfmedia.fi/#lösenord"
     ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
     ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
     ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"

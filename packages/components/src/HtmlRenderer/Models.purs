@@ -156,7 +156,6 @@ type HTMLAttributes =
   , alt               :: Maybe String
   , async             :: Maybe String
   , autocomplete      :: Maybe String
-  , autofocus         :: Maybe String
   , autoplay          :: Maybe String
   , capture           :: Maybe String
   , cellpadding       :: Maybe String
@@ -281,7 +280,6 @@ type JSHTMLAttributes =
   , alt               :: Nullable String
   , async             :: Nullable String
   , autocomplete      :: Nullable String
-  , autofocus         :: Nullable String
   , autoplay          :: Nullable String
   , capture           :: Nullable String
   , cellpadding       :: Nullable String
@@ -407,7 +405,6 @@ toJSHTMLAttributes as =
   , alt:                toNullable as.alt
   , async:              toNullable as.async
   , autocomplete:       toNullable as.autocomplete
-  , autofocus:          toNullable as.autofocus
   , autoplay:           toNullable as.autoplay
   , capture:            toNullable as.capture
   , cellpadding:        toNullable as.cellpadding
@@ -533,7 +530,6 @@ fromJSAttributes as =
   , alt:                toMaybe as.alt
   , async:              toMaybe as.async
   , autocomplete:       toMaybe as.autocomplete
-  , autofocus:          toMaybe as.autofocus
   , autoplay:           toMaybe as.autoplay
   , capture:            toMaybe as.capture
   , cellpadding:        toMaybe as.cellpadding
