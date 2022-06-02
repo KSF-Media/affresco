@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 30px;
-  
+
   .contact__form-new-site {
     margin: 5px 0;
     font-size: 1.1rem;
@@ -12,7 +12,7 @@
   }
 
   .contact__form-new-site:last-child {
-    margin-bottom: 20px
+    margin-bottom: 20px;
   }
 
   .contact__info-links-container {
@@ -39,20 +39,47 @@
   }
 
   .contact__info-headline {
-    font-size: 1.7rem;
-    padding-top: 30px;
-  }
-
-  .contact__info-headline:last-of-type {
-    margin-bottom: 7px;
+    font-size: 1.8rem;
+    padding-top: 70px;
+    @media (min-width: @breakpoint-2col) {
+      padding-top: 110px;
+    }
+    @media (min-width: @breakpoint-3col) {
+      padding-top: 130px;
+    }
   }
 
   .contact__info-subheadline {
     margin-top: 20px;
     margin-bottom: 7px;
+    font-size: 1.5rem;
+    @media (min-width: @breakpoint-2col) {
+      margin-top: 40px;
+    }
+    @media (min-width: @breakpoint-3col) {
+      margin-top: 60px;
+    }
+  }
+
+  .contact__info-subheadline:last-of-type {
+    margin-top: 0;
+    padding-top: 70px;
+    @media (min-width: @breakpoint-2col) {
+      padding-top: 110px;
+    }
+    @media (min-width: @breakpoint-3col) {
+      padding-top: 130px;
+    }
   }
 
   .contact__info-editorial {
     margin-top: 20px;
+  }
+
+  .contact__info-editorial:last-of-type {
+    margin-bottom: 50px;
+    @media (min-width: @breakpoint-3col) {
+      margin-bottom: 100px;
+    }
   }
 }
