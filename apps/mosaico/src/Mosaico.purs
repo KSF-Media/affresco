@@ -637,7 +637,7 @@ render props setState state components router onPaywallEvent =
 
     mosaicoLayout :: String -> JSX -> Boolean -> JSX
     mosaicoLayout extraClasses content showAside = DOM.div_
-      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade" }
+      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade", inBody: false }
       , DOM.div
           { className: "mosaico grid " <> extraClasses
           , id: Paper.toString mosaicoPaper
@@ -659,27 +659,27 @@ render props setState state components router onPaywallEvent =
                           -> Routes.changeRoute router $ snd prevRoute
                         _ -> Routes.changeRoute router "/meny"
                   }
-              , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
+              , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade", inBody: false }
               , content
               , footer mosaicoPaper onStaticPageClick
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:
-                      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box", inBody: false }
                       , MostReadList.render
                           { mostReadArticles: state.mostReadArticles
                           , onClickHandler
                           }
-                      , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box1" }
+                      , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box1", inBody: false }
                       , LatestList.render
                           { latestArticles: state.latestArticles
                           , onClickHandler
                           }
                       ] <> guard showAds
-                      [ Mosaico.ad { contentUnit: "mosaico-ad__box2" }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box5" }
+                      [ Mosaico.ad { contentUnit: "mosaico-ad__box2", inBody: false }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box3", inBody: false }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box4", inBody: false }
+                      , Mosaico.ad { contentUnit: "mosaico-ad__box5", inBody: false }
                       ]
                   }
               ]

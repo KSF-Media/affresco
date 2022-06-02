@@ -109,7 +109,7 @@ adHook { placeholderText, targetId } = HtmlRenderer.replacingHook
                               , text      == placeholderText -> true
                             _                                   -> false
                        )
-  , processNode: (\_ _ _ -> pure $ Mosaico.ad { contentUnit: targetId }
+  , processNode: (\_ _ _ -> pure $ Mosaico.ad { contentUnit: targetId, inBody: false }
                  )
   }
 

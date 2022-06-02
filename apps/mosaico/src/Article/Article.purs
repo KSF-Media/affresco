@@ -162,16 +162,16 @@ render imageComponent boxComponent props =
                     , DOM.div
                         { className: "mosaico-article__aside"
                         , children:
-                          [ Mosaico.ad { contentUnit: "mosaico-ad__box" }
+                          [ Mosaico.ad { contentUnit: "mosaico-ad__box", inBody: false }
                           , LatestList.render
                                      { latestArticles: props.latestArticles
                                      , onClickHandler: props.onArticleClick
                                      }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__box1" }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__box2" }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__box3" }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__box4" }
-                          , Mosaico.ad { contentUnit: "mosaico-ad__box5" }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box1", inBody: false }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box2", inBody: false }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box3", inBody: false }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box4", inBody: false }
+                          , Mosaico.ad { contentUnit: "mosaico-ad__box5", inBody: false }
                           ]
                         }
                     ]
@@ -310,16 +310,14 @@ render imageComponent boxComponent props =
 
 
     insertAdsIntoBodyText :: String -> String -> Array BodyElement -> Array BodyElement
-    insertAdsIntoBodyText contentUnit1 contentUnit2 body =
-      let ad1 = Ad contentUnit1
-          ad2 = Ad contentUnit2
-      in if elements > 15
+    insertAdsIntoBodyText cu1 cu2 body =
+      if elements > 15
         then fromMaybe body $ do
-          bodyWithAd <- insertAt (findAdSpace body $ elements/3) ad1 body
-          insertAt (findAdSpace bodyWithAd $ 2 * elements/3) ad2 bodyWithAd
+          bodyWithAd <- insertAt (findAdSpace body $ elements/3) (Ad { contentUnit: cu1, inBody: true }) body
+          insertAt (findAdSpace bodyWithAd $ 2 * elements/3) (Ad { contentUnit: cu2, inBody: true }) bodyWithAd
         else if elements > 6
-          then fromMaybe body $ insertAt (findAdSpace body $ elements/2) ad1 body
-          else body `snoc` ad1
+          then fromMaybe body $ insertAt (findAdSpace body $ elements/2) (Ad { contentUnit: cu1, inBody: true }) body
+          else body `snoc` (Ad { contentUnit: cu1, inBody: false })
       where
         elements = length body
         findAdSpace :: Array BodyElement -> Int -> Int
@@ -390,9 +388,10 @@ renderElement imageComponent boxComponent onArticleClick el = case el of
           [ DOM.ul_ $ map renderRelatedArticle related
           ]
       }
-  Ad contentUnit ->
+  Ad { contentUnit, inBody} ->
       Mosaico.ad {
-        contentUnit
+        contentUnit,
+        inBody
       }
   where
     block = "article-element"
