@@ -16,6 +16,8 @@ data MittKontoRoute
   | InvoiceList
   | PasswordRecoveryCode String
   | PasswordRecovery
+  | PasswordRecovery2
+  | PasswordRecovery3
   | CreditCardUpdate Subsno
   | Search
   | MittKonto
@@ -40,6 +42,8 @@ routes = root $ G.sum
   , "InvoiceList": "fakturor" `prefix` end G.noArgs
   , "PasswordRecoveryCode": hash "l%C3%B6senord" $ param "code"
   , "PasswordRecovery": hash "l%C3%B6senord" G.noArgs
+  , "PasswordRecovery2": hash "losenord" G.noArgs
+  , "PasswordRecovery3": hash "l%F6senord" G.noArgs
   , "CreditCardUpdate": "prenumerationer" `prefix` subsno segment `suffix` "kreditkort" `suffix` "uppdatera"
   , "Search": "sök" `prefix` end G.noArgs
   , "MittKonto": end G.noArgs
@@ -47,5 +51,7 @@ routes = root $ G.sum
 
 needsLogin :: MittKontoRoute -> Boolean
 needsLogin PasswordRecovery = false
+needsLogin PasswordRecovery2 = false
+needsLogin PasswordRecovery3 = false
 needsLogin (PasswordRecoveryCode _) = false
 needsLogin _ = true

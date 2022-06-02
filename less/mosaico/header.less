@@ -68,22 +68,14 @@
   grid-column: 2 / span 3;
 
   grid-template-rows: auto;
-  grid-template-columns: 15% 1fr 15%;
-
-  @media (min-width: @breakpoint-3col) {
-    // grid-template-rows: 1fr 55px 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+  @media (min-width: @breakpoint-2col) {
+    grid-template-columns: 15% 1fr 15%;
+    row-gap: 5px;
   }
-
   .menu-label {
     display: none;
-    @media (min-width: @breakpoint-2col) {
-      display: inline-block;
-    }
-  }
-
-  .menu-label {
-    display: none;
-    @media (min-width: @breakpoint-2col) {
+    @media (min-width: @breakpoint-3col) {
       display: inline-block;
     }
   }
@@ -94,7 +86,6 @@
     grid-row-start: 1;
     grid-column: 1 / span 2;
 
-    gap: 1%;
     width: fit-content;
     white-space: nowrap;
 
@@ -104,8 +95,10 @@
     display: none;
     z-index: 100; // Fixes the logo overlapping with the links
 
-    @media (min-width: @breakpoint-3col) {
+    @media (min-width: @breakpoint-2col) {
       display: flex;
+      gap: 5px;
+      padding-left: 10px;
     }
 
     a {
@@ -136,7 +129,7 @@
 
     display: none;
 
-    @media (min-width: @breakpoint-3col) {
+    @media (min-width: @breakpoint-2col) {
       display: block;
     }
 
@@ -188,17 +181,20 @@
     color: @grey-deepdark;
     display: flex;
     align-items: center;
+    padding-left: 8px;
+    text-decoration: none;
+    color: inherit;
 
-    @media (min-width: @breakpoint-3col) {
+    @media (min-width: @breakpoint-2col) {
       grid-row-start: 2;
       align-self: stretch;
+      padding-left: 10px;
     }
 
     &-icon {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      width: 19px;
       margin-right: 5px;
       span {
         width: 30px;
@@ -262,13 +258,14 @@
     align-items: center;
     gap: 15px;
 
-    @media (min-width: @breakpoint-3col) {
+    @media (min-width: @breakpoint-2col) {
       grid-row-start: 2;
     }
   }
 
   &__icon-button {
-    &--search, &--menu {
+    &--search,
+    &--menu {
       align-items: center;
       display: flex;
       text-decoration: none;
@@ -292,6 +289,10 @@
     margin-right: 5px;
     &--menu {
       background-image: url("@{path-icons}/icon-mosaico-menu.svg");
+      margin-right: 8px;
+      @media (min-width: @breakpoint-3col) {
+        margin-right: 5px;
+      }
       .menu-open & {
         background-image: url("@{path-icons}/icon-close-mosaico.svg");
         background-size: 20px;
@@ -305,11 +306,6 @@
       background-image: url("@{path-icons}/icon-mosaico-search.svg");
     }
   }
-}
-
-.mosaico-header__account {
-  text-decoration: none;
-  color: inherit;
 }
 
 .mosaico-top-line {
