@@ -19,7 +19,7 @@ import Data.Newtype (unwrap)
 import Data.Int (ceil)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
-import Data.Tuple (Tuple (..), snd)
+import Data.Tuple (Tuple (..), fst)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.AVar as AVar
@@ -72,8 +72,9 @@ import Routing (match)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
 import Simple.JSON as JSON
 import Web.HTML (window) as Web
+import Web.HTML.History (back) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
-import Web.HTML.Window (document, scroll) as Web
+import Web.HTML.Window (document, history, scroll) as Web
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
@@ -99,6 +100,7 @@ type State =
   , singleAdvertorial :: Maybe ArticleStub
   , logger :: Sentry.Logger
   , scrollToYPosition :: Maybe Number
+  , starting :: Boolean
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -332,14 +334,16 @@ mosaicoComponent initialValues props = React.do
       _ -> pure unit
 
     let scrollToYPos y = Web.window >>= Web.scroll 0 y
-    case state.scrollToYPosition, state.route of
+    case state of
+      -- User may have already started scrolling while content is loading
+      { starting: true }              -> setState _ { starting = false }
       -- Let's always scroll to top with article pages, as the behaviour of going back in
       -- browser history is a bit buggy currently. This is because each time we land on an article page,
       -- the page is basically blank, so the browser loses the position anyway (there's nothing to recover to).
       -- If we want to fix this, we'd have to keep prev article in state too.
-      _, Routes.ArticlePage _ -> scrollToYPos 0
-      Just y,  _              -> scrollToYPos (ceil y)
-      Nothing, _              -> scrollToYPos 0
+      { route: Routes.ArticlePage _ } -> scrollToYPos 0
+      { scrollToYPosition: Just y }   -> scrollToYPos (ceil y)
+      { scrollToYPosition: Nothing }  -> scrollToYPos 0
 
     pure mempty
 
@@ -359,7 +363,7 @@ routeListener c setState oldLoc location = do
       (locationState :: Maybe Routes.RouteState) = hush $ JSON.read location.state
       oldPath = maybe "" (\l -> l.pathname <> l.search) oldLoc
 
-  -- If the location we moved to was previosly visited, let's scroll to the last y position it had.
+  -- If the location we moved to was previously visited, let's scroll to the last y position it had.
   -- Note that we cannot scroll the page yet, but we need to do it via Mosaico's state
   -- as the content is rendered that way too (the page is empty at this point, or showing
   -- old content)
@@ -431,6 +435,7 @@ getInitialValues = do
         , singleAdvertorial: Nothing
         , logger
         , scrollToYPosition: Nothing
+        , starting: true
         }
     , components:
         { loginModalComponent
@@ -655,8 +660,16 @@ render props setState state components router onPaywallEvent =
                   , onMenuClick:
                       case state.route of
                         Routes.MenuPage
-                          | Just prevRoute <- state.prevRoute
-                          -> Routes.changeRoute router $ snd prevRoute
+                      -- Confused state, got to go to somewhere but
+                      -- not to menu again
+                          | (fst <$> state.prevRoute) == Just Routes.MenuPage
+                          -> Routes.changeRoute router "/"
+                      -- Using changeRoute would overwrite the stored Y position
+                          | Just _ <- state.prevRoute
+                          -> Web.window >>= Web.history >>= Web.back
+                      -- Don't know what else to do so might as well
+                          | otherwise
+                          -> Routes.changeRoute router "/"
                         _ -> Routes.changeRoute router "/meny"
                   }
               , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade" }
