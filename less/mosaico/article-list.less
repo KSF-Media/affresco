@@ -12,9 +12,15 @@
     display: inline-block;
     margin-bottom: 30px;
     border-bottom: solid 3px #ccc;
-    #HBL & { border-color: @hbl-orange };
-    #ON & { border-color: @on-blue};
-    #VN & { border-color: @vn-red };
+    #HBL & {
+      border-color: @hbl-orange;
+    }
+    #ON & {
+      border-color: @on-blue;
+    }
+    #VN & {
+      border-color: @vn-red;
+    }
   }
 
   .list-article-image {
@@ -29,7 +35,6 @@
   }
 
   .mosaico--list-article {
-
     &.list-article--default {
       margin-bottom: 20px;
 
@@ -45,8 +50,7 @@
         cursor: pointer;
         display: grid;
         grid-template-columns: auto 80px;
-        grid-template-areas:
-          "left right";
+        grid-template-areas: "left right";
 
         @media (min-width: @breakpoint-2col) {
           grid-template-columns: auto 120px;
@@ -58,7 +62,6 @@
           grid-area: left;
           word-break: break-word;
         }
-
 
         .list-article-image {
           grid-area: right;
@@ -106,10 +109,9 @@
   }
 
   .premium-badge {
-    transform: scale(.85);
+    transform: scale(0.85);
     transform-origin: left;
   }
-
 
   &--header {
     font: bold 1.125rem "Roboto", sans-serif;
@@ -156,13 +158,13 @@
             justify-content: center;
 
             #HBL & {
-                    background-color: @hbl-orange;
+              background-color: @hbl-orange;
             }
             #VN & {
-                    background-color: @vn-red;
+              background-color: @vn-red;
             }
             #ON & {
-                    background-color: @on-blue;
+              background-color: @on-blue;
             }
 
             &::after {
@@ -188,7 +190,7 @@
       a {
         cursor: pointer;
         text-decoration: none;
-     }
+      }
     }
   }
 }
@@ -206,7 +208,7 @@
     left: 0;
     padding: 5px 10px;
     display: inline-block;
-    content: 'ANNONS';
+    content: "ANNONS";
     font-size: 11px;
     line-height: 12px;
     font-weight: bold;
@@ -229,5 +231,12 @@
 
     margin-bottom: 5px;
     padding: 30px;
+  }
+}
+
+.mosaico-asidelist.mosaico-asidelist__latest > ul > li:nth-child(5) ~ *,
+.mosaico-asidelist.mosaico-asidelist__mostread > ul > li:nth-child(5) ~ * {
+  @media (max-width: @breakpoint-2col) {
+    display: none;
   }
 }
