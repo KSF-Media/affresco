@@ -586,7 +586,7 @@ render props setState state components router onPaywallEvent =
            (renderRouteContent <<< Routes.ArticlePage <<< _.uuid <<< _.article)
            $ join <<< map hush $ state.article
        Routes.StaticPage _ -> mosaicoLayoutNoAside $ case state.staticPage of
-         Nothing -> DOM.text "laddar"
+         Nothing -> loadingSpinner
          Just (StaticPageResponse page)  ->
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
