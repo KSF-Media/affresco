@@ -1,7 +1,7 @@
 import * as esbuild from "esbuild";
-import babel from "esbuild-plugin-babel";
-import {lessLoader} from "esbuild-plugin-less";
-import {config} from "dotenv";
+import babel from "@babel/core";
+import { lessLoader } from "esbuild-plugin-less";
+import { config } from "dotenv";
 config();
 import glob from "tiny-glob";
 
@@ -10,31 +10,11 @@ import cheerio from "cheerio";
 import * as util from "util";
 import * as cp from "child_process";
 const exec = util.promisify(cp.exec);
+const writeFile = util.promisify(fs.writeFile);
 
 const minify = process.env.NODE_ENV === "production";
 
-const plugins = minify
-  ? [
-      lessLoader(),
-      // We use babel only for prod build, as esbuild would run it for every
-      // page load in local, which is very slow.
-      babel({
-        filter: /output\/.*\.js$/,
-        config: {
-          presets: [
-            [
-              "@babel/preset-env",
-              {
-                modules: false,
-              },
-            ],
-            "@babel/preset-react",
-          ],
-        },
-      }),
-    ]
-  : [lessLoader()];
-
+const plugins = [lessLoader()];
 
 export async function runBuild() {
   try {
@@ -117,6 +97,7 @@ export async function runBuild() {
       minify,
       plugins,
       treeShaking: true,
+      metafile: true,
     };
 
     /* The static page building is a three-step process:
@@ -130,13 +111,37 @@ export async function runBuild() {
      */
 
     await exec("mkdir -p dist/static && cp -R ./static/* ./dist/static/");
-    await esbuild.build(staticBuildOpts);
+    const staticResult = await esbuild.build(staticBuildOpts);
     await exec("mkdir -p dist/assets && cp -R ./dist/static/* ./dist/assets/");
 
-    fs.writeFile("./dist/index.html", template.html(), () => {
-      console.log("Wrote index.html");
-    });
+    const staticFiles = Object.keys(staticResult.metafile.outputs);
+
+    if (minify) {
+      console.log("Transpiling results with Babel");
+      await Promise.all(
+        [...outfiles, ...staticFiles].map((file) =>
+          file.endsWith(".js")
+            ? babel
+                .transformFileAsync(file, {
+                  presets: [
+                    [
+                      "@babel/preset-env",
+                      {
+                        modules: false,
+                      },
+                    ],
+                    "@babel/preset-react",
+                  ],
+                })
+                .then(({ code }) => writeFile(file, code))
+            : Promise.resolve(undefined)
+        )
+      );
+    }
+
+    await writeFile("./dist/index.html", template.html());
+    console.log("Wrote index.html");
   } catch (e) {
     console.warn("Build error", e);
   }
-};
+}
