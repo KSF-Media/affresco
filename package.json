@@ -11,6 +11,7 @@
     "react-router-dom": "^5.2.0",
     "spago": "^0.19.1",
     "uglify-es": "^3.3.9",
+    "url": "^0.11.0",
     "uuid": "3.4.0",
     "uuid-validate": "^0.0.3"
   },
@@ -22,7 +23,13 @@
     "apps/*"
   ],
   "devDependencies": {
-    "less": "^4.1.2"
+    "@chialab/esbuild-plugin-html": "^0.15.37",
+    "cssnano": "^5.1.10",
+    "esbuild": "^0.14.42",
+    "esbuild-plugin-alias": "^0.2.1",
+    "esbuild-plugin-less": "^1.1.7",
+    "less": "^4.1.2",
+    "querystring-es3": "^0.2.1"
   },
   "overrides": {
     "cheerio": "1.0.0-rc.9"

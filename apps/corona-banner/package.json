@@ -12,7 +12,12 @@
   "dependencies": {
     "axios": "^0.21.2",
     "dotenv": "^16.0.1",
+    "querystring-es3": "^0.2.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1"
+  },
+  "devDependencies": {
+    "@chialab/esbuild-plugin-html": "^0.15.37",
+    "esbuild-plugin-less": "^1.1.7"
   }
 }
