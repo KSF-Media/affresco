@@ -113,6 +113,7 @@ export async function runBuild() {
     await exec("mkdir -p dist/static && cp -R ./static/* ./dist/static/");
     const staticResult = await esbuild.build(staticBuildOpts);
     await exec("mkdir -p dist/assets && cp -R ./dist/static/* ./dist/assets/");
+    await exec("mkdir -p dist/assets/external-scripts && cp -R ./web/external-scripts/* ./dist/assets/external-scripts");
 
     const staticFiles = Object.keys(staticResult.metafile.outputs);
 
