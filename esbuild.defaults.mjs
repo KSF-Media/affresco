@@ -23,7 +23,7 @@ export function buildOrServe(buildOptions) {
 }
 
 export function transpileIfMinify(buildOptions) {
-  return buildOptions.minify ? transpile : () => Promise.resolve(undefined);
+  return buildOptions.minify ? transpile : result => Promise.resolve(result);
 }
 
 export function transpile(buildResult) {
@@ -46,7 +46,7 @@ export function transpile(buildResult) {
       .then(({ code }) => writeFile(file, code))
       : Promise.resolve(undefined)
     )
-  );
+  ).then(() => buildResult);
 }
 
 export const buildSettings = {
@@ -57,6 +57,10 @@ export const buildSettings = {
   outdir: "dist",
   assetNames: "[name]-[hash]",
   chunkNames: "[name]-[hash]",
+  external: [
+    'querystring',
+    'url',
+  ],
   loader: {
     ".js": "jsx",
     ".jpg": "file",
