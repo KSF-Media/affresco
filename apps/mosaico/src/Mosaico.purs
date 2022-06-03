@@ -3,9 +3,11 @@ module Mosaico where
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (fromFoldable, index, length, mapMaybe, null)
+import Data.Array (find, fromFoldable, index, length, mapMaybe, null)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
 import Data.Either (Either(..), hush)
@@ -16,6 +18,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.String.Regex (match, regex) as Regex
 import Data.Int (ceil)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Time.Duration (Minutes(..), Milliseconds(..))
@@ -249,12 +252,15 @@ mosaicoComponent initialValues props = React.do
           CategoryFeed c
             | Just cat <- unwrap <$> Map.lookup c catMap ->
               let label = unwrap c
-                  getArticleList = ArticleList <<< join <<< fromFoldable <$> Lettera.getFrontpage mosaicoPaper (Just label) Nothing
+                  getArticleList = join <<< fromFoldable <$> Lettera.getFrontpage mosaicoPaper (Just label) Nothing
               in case cat.type of
-                Prerendered ->
-                  map Just <<< maybe getArticleList pure =<<
-                  map Html <<< Lettera.responseBody <$> Lettera.getFrontpageHtml mosaicoPaper label Nothing
-                Feed -> Just <$> getArticleList
+                Prerendered -> do
+                  {list, html} <- sequential $
+                    {list: _, html: _}
+                      <$> parallel getArticleList
+                      <*> parallel (Lettera.responseBody <$> Lettera.getFrontpageHtml mosaicoPaper label Nothing)
+                  pure $ Just $ maybe (ArticleList list) (flip Html list) html
+                Feed -> Just <<< ArticleList <$> getArticleList
                 _ -> pure Nothing
           CategoryFeed _ -> pure Nothing
           SearchFeed q -> Just <<< ArticleList <$> Lettera.search 0 20 mosaicoPaper q
@@ -590,7 +596,7 @@ render props setState state components router onPaywallEvent =
 
     frontpage :: Maybe JSX -> Maybe String -> Maybe ArticleFeed -> JSX
     frontpage maybeHeader maybeCategorLabel (Just (ArticleList list)) = listFrontpage maybeHeader maybeCategorLabel $ Just list
-    frontpage maybeHeader _ (Just (Html html))                        = prerenderedFrontpage maybeHeader $ Just html
+    frontpage maybeHeader _ (Just (Html html list))                   = prerenderedFrontpage maybeHeader list $ Just html
     frontpage maybeHeader _ _                                         = listFrontpage maybeHeader Nothing Nothing
 
     listFrontpage :: Maybe JSX -> Maybe String -> Maybe (Array ArticleStub) -> JSX
@@ -603,17 +609,23 @@ render props setState state components router onPaywallEvent =
         , onTagClick
         })
 
-    prerenderedFrontpage :: Maybe JSX -> Maybe String -> JSX
-    prerenderedFrontpage maybeHeader content =
+    prerenderedFrontpage :: Maybe JSX -> Array ArticleStub -> Maybe String -> JSX
+    prerenderedFrontpage maybeHeader articles content =
       mosaicoLayout "" inner false
       where
+        uuidRegex = hush $ Regex.regex "[^/]+$" mempty
         inner =
           (fromMaybe mempty maybeHeader) <>
           (Frontpage.render $ Frontpage.Prerendered
              { content
              , hooks
              , onClick: onFrontpageClick $
-                \path -> setState _ { clickedArticle = Nothing } *> simpleRoute path
+                \path -> do
+                  let clickedArticle = do
+                        regex <- uuidRegex
+                        uuid <- NonEmptyArray.last =<< Regex.match regex path
+                        find ((_ == uuid) <<< _.uuid) articles
+                  setState _ { clickedArticle = clickedArticle } *> simpleRoute path
              })
 
     hooks :: Array Frontpage.Hook
