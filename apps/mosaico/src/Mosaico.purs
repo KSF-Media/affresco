@@ -334,8 +334,9 @@ mosaicoComponent initialValues props = React.do
       Routes.NotFoundPage _ -> setTitle "Oops... 404"
       Routes.CategoryPage (Category c) -> setTitle $ unwrap c.label
       Routes.EpaperPage -> setTitle "E-Tidningen"
-      Routes.StaticPage page -> setTitle page
+      Routes.StaticPage page -> setTitle (staticPageTitle page)
       _ -> pure unit
+
 
     let scrollToYPos y = Web.window >>= Web.scroll 0 y
     case state.scrollToYPosition, state.route of
@@ -350,6 +351,19 @@ mosaicoComponent initialValues props = React.do
     pure mempty
 
   pure $ render props setState state initialValues.components initialValues.nav onPaywallEvent
+
+staticPageTitle :: String -> String
+staticPageTitle page =
+  case page of
+    "anslagstavlan"   -> "Anslagstavlan"
+    "bruksvillkor"    -> "Bruksvillkor"
+    "fiskecupen"      -> "Fiskecupen"
+    "fragor-och-svar" -> "Frågor och svar"
+    "insandare"       -> "Insändare"
+    "kontakt"         -> "Kontakta oss"
+    "kundservice"     -> "Kundservice"
+    "tipsa-oss"       -> "Tipsa oss"
+    _                 -> page
 
 pickRandomElement :: forall a. Array a -> Effect (Maybe a)
 pickRandomElement [] = pure Nothing
