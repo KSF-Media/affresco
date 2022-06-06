@@ -393,8 +393,8 @@ assets { params: { path } } = Handlers.directory "dist/assets" path
 adsTxt :: forall r. { | r} -> Aff File
 adsTxt = Handlers.file "dist/assets/ads.txt"
 
-googleSiteVerificaton :: forall r. { | r} -> Aff File
-googleSiteVerificaton = Handlers.file "dist/assets/google8c22fe93f3684c84.html"
+googleSiteVerification :: forall r. { | r} -> Aff File
+googleSiteVerification = Handlers.file "dist/assets/google8c22fe93f3684c84.html"
 
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
