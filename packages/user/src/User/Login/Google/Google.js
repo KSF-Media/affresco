@@ -4,16 +4,16 @@ exports.loadGapi_ = function (args) {
   if (window.gapi === undefined) {
     var script = document.createElement("script");
     script.onload = function () {
-      loadGapi();
+      loadGapi(args);
     };
     script.src = "https://apis.google.com/js/platform.js";
     document.head.appendChild(script);
   } else {
-    loadGapi();
+    loadGapi(args);
   }
 };
 
-function loadGapi() {
+function loadGapi(args) {
   gapi.load("auth2", function () {
     var auth2 = gapi.auth2
       .init({
