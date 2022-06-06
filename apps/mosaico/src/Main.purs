@@ -118,6 +118,9 @@ spec ::
                 { response :: String
                 , guards :: Guards ("clientip" : Nil)
                 }
+         , googleSiteVerification ::
+              GET "/google8c22fe93f3684c84.html"
+                { response :: File }
          , frontpageUpdated ::
               GET "/api/reset/<category>"
                 { params :: { category :: String }
