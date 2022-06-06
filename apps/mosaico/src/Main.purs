@@ -238,6 +238,7 @@ main = do
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
         handlers =
           { getHealthz
+          , googleSiteVerification
           , frontpageUpdated: frontpageUpdated env
           , getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
@@ -391,6 +392,9 @@ assets { params: { path } } = Handlers.directory "dist/assets" path
 
 adsTxt :: forall r. { | r} -> Aff File
 adsTxt = Handlers.file "dist/assets/ads.txt"
+
+googleSiteVerificaton :: forall r. { | r} -> Aff File
+googleSiteVerificaton = Handlers.file "dist/assets/google8c22fe93f3684c84.html"
 
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
