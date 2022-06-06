@@ -340,7 +340,7 @@ links self =
   case self.props.accountStatus of
     NewAccount        -> mempty -- Login link shown elsewhere
     ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
-    LoggedInAccount _ -> linksDiv $ faqLink <> subscribePagesLink
+    LoggedInAccount _ -> linksDiv $ faqLink self.props.paper <> subscribePagesLink
   where
     linksDiv linksJsx =
       DOM.div
@@ -350,11 +350,17 @@ links self =
 
 resetPasswordLink :: Array JSX
 resetPasswordLink =
-  mkLink "Glömt lösenordet?" "https://www.hbl.fi/losenord/" "Klicka här"
+  mkLink "Glömt lösenordet?" "https://konto.ksfmedia.fi/#lösenord" "Klicka här"
 
-faqLink :: Array JSX
-faqLink =
-  mkLink "Vad är Premium?" "https://www.hbl.fi/fragor-och-svar/" "Frågor och svar"
+faqLink :: Maybe Paper -> Array JSX
+faqLink paper =
+  mkLink "Vad är Premium?" link "Frågor och svar"
+  where
+    link =
+      (case paper of
+          Just Paper.ON -> Paper.homepage Paper.ON
+          Just Paper.VN -> Paper.homepage Paper.VN
+          _             -> Paper.homepage Paper.HBL) <> "sida/fragor-och-svar"
 
 loginLink :: Self -> JSX
 loginLink self =
