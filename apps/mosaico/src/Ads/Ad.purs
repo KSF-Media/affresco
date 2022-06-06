@@ -5,6 +5,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
 import Data.Nullable (Nullable, toMaybe)
+import Data.String (joinWith)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
@@ -31,17 +32,17 @@ type Self =
 
 type Props =
   { contentUnit :: String
+  , inBody :: Boolean
   }
 
 type State =
-  { populated :: Boolean
-  , gamId :: Maybe String
+  { gamId :: Maybe String
   , isLazy :: Maybe Boolean
   }
 
 ad :: Props -> JSX
 ad = make component
-  { initialState: { populated: false, gamId: Nothing, isLazy: Nothing }
+  { initialState: { gamId: Nothing, isLazy: Nothing }
   , didMount: \self -> do
       runEffectFn1 fetchAdImpl self.props.contentUnit
       gamId <- runEffectFn1 getGamId self.props.contentUnit
@@ -52,13 +53,15 @@ ad = make component
     where
       blockClass = "mosaico-ad"
       networkCode = "21664538223"
-      render self@{ state: { gamId: Just gamId, isLazy: Just isLazy }} = 
-        DOM.div
-          { className: blockClass <> " " <> toLowerCase self.props.contentUnit
+      render self@{ state: { gamId: Just gamId, isLazy: Just isLazy }} =
+        let inBodyClass = if self.props.inBody then "in-body" else mempty
+            contentUnitClass = toLowerCase self.props.contentUnit
+        in DOM.div
+          { className: joinWith " " [blockClass, contentUnitClass]
           , children:
             [ DOM.div
                 { id: self.props.contentUnit
-                , className: blockClass <> "__content-unit"
+                , className: joinWith " " [blockClass <> "__content-unit", inBodyClass]
                 , _data: Object.fromFoldable [Tuple ((guard isLazy $ "lazy-") <> "ad-unit-id") $ "/" <> networkCode <> "/" <> gamId <> "/" <> "hbl"] 
                 }
             ]

@@ -1,14 +1,22 @@
-var esbuild = require("esbuild");
-var lessLoader = require("esbuild-plugin-less").lessLoader;
-require("dotenv").config();
-const glob = require("tiny-glob");
+import * as esbuild from "esbuild";
+import babel from "@babel/core";
+import { lessLoader } from "esbuild-plugin-less";
+import { config } from "dotenv";
+config();
+import glob from "tiny-glob";
 
-const fs = require("fs");
-const cheerio = require("cheerio");
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+import * as fs from "fs";
+import cheerio from "cheerio";
+import * as util from "util";
+import * as cp from "child_process";
+const exec = util.promisify(cp.exec);
+const writeFile = util.promisify(fs.writeFile);
 
-module.exports.runBuild = async function () {
+const minify = process.env.NODE_ENV === "production";
+
+const plugins = [lessLoader()];
+
+export async function runBuild() {
   try {
     console.log("Bundling javascript...");
 
@@ -20,9 +28,9 @@ module.exports.runBuild = async function () {
       entryNames: "[name]-[hash]",
       bundle: true,
       outdir: "./dist/assets",
-      minify: process.env.NODE_ENV === "production",
+      minify,
       metafile: true,
-      plugins: [lessLoader()],
+      plugins,
       loader: {
         ".js": "jsx",
         ".png": "file",
@@ -86,8 +94,10 @@ module.exports.runBuild = async function () {
       entryPoints: staticEntryPoints,
       bundle: true,
       outdir: "./dist/static",
-      minify: process.env.NODE_ENV === "production",
+      minify,
+      plugins,
       treeShaking: true,
+      metafile: true,
     };
 
     /* The static page building is a three-step process:
@@ -101,13 +111,37 @@ module.exports.runBuild = async function () {
      */
 
     await exec("mkdir -p dist/static && cp -R ./static/* ./dist/static/");
-    await esbuild.build(staticBuildOpts);
+    const staticResult = await esbuild.build(staticBuildOpts);
     await exec("mkdir -p dist/assets && cp -R ./dist/static/* ./dist/assets/");
 
-    fs.writeFile("./dist/index.html", template.html(), () => {
-      console.log("Wrote index.html");
-    });
+    const staticFiles = Object.keys(staticResult.metafile.outputs);
+
+    if (minify) {
+      console.log("Transpiling results with Babel");
+      await Promise.all(
+        [...outfiles, ...staticFiles].map((file) =>
+          file.endsWith(".js")
+            ? babel
+                .transformFileAsync(file, {
+                  presets: [
+                    [
+                      "@babel/preset-env",
+                      {
+                        modules: false,
+                      },
+                    ],
+                    "@babel/preset-react",
+                  ],
+                })
+                .then(({ code }) => writeFile(file, code))
+            : Promise.resolve(undefined)
+        )
+      );
+    }
+
+    await writeFile("./dist/index.html", template.html());
+    console.log("Wrote index.html");
   } catch (e) {
     console.warn("Build error", e);
   }
-};
+}

@@ -2,9 +2,9 @@ module Mosaico.Feed where
 
 import Prelude
 
-import Data.Argonaut.Core (toArray, stringify)
+import Data.Argonaut.Core (Json, fromArray, stringify)
+import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Encode (encodeJson)
-import Data.Argonaut.Parser (jsonParser)
 import Data.Array (mapMaybe)
 import Data.DateTime (DateTime)
 import Data.Either (hush)
@@ -16,7 +16,8 @@ import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
-import Lettera.Models (ArticleStub, CategoryLabel(..), Tag(..), encodeStringifyArticleStubs, parseArticleStubWithoutLocalizing)
+import Foreign.Object as Object
+import Lettera.Models (ArticleStub, CategoryLabel(..), Tag(..), articleStubToJson, parseArticleStubWithoutLocalizing)
 
 type FeedSnapshot =
   { stamp :: DateTime
@@ -26,7 +27,7 @@ type FeedSnapshot =
 type JSInitialFeed =
   { feedType        :: Nullable String
   , feedPage        :: Nullable String
-  , feedContent     :: Nullable String
+  , feedContent     :: Nullable Json
   , feedContentType :: Nullable String
   }
 
@@ -45,10 +46,14 @@ parseFeed feed = fromMaybe HashMap.empty do
     contentType <- toMaybe feed.feedContentType
     case contentType of
       "articleList" -> do
-        list <- content # (jsonParser >>> hush) >>= toArray
+        list <- hush $ decodeJson content
         pure $ ArticleList $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list
-      "html" ->
-        pure $ Html content
+      "html" -> do
+        obj <- hush $ decodeJson content
+        list <- hush <<< decodeJson =<< Object.lookup "list" obj
+        Html
+          <$> (hush <<< decodeJson =<< Object.lookup "html" obj)
+          <*> (pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list)
       _ ->
         Nothing
   pure $ HashMap.singleton feedType feedContent
@@ -57,8 +62,9 @@ mkArticleFeed :: ArticleFeedType -> ArticleFeed -> Array (Tuple String String)
 mkArticleFeed feedDefinition feed =
   [ Tuple "frontpageFeed" $ stringify $ encodeJson { feedPage, feedType, feedContent, feedContentType } ]
   where
+    fromArticles = fromArray <<< map articleStubToJson
     (Tuple feedContentType feedContent) = case feed of
-      ArticleList list -> Tuple "articleList" $ encodeStringifyArticleStubs list
+      ArticleList list -> Tuple "articleList" $ fromArticles list
       -- The prerendered HTML is rather large (at some 150kB) so it
       -- would be nice to have a way to not have it second time in a
       -- variable, but there's just no easy way around it.  React
@@ -68,7 +74,7 @@ mkArticleFeed feedDefinition feed =
       -- its internal state.  Getting the HTML from the generated
       -- DOM's containing innerHTML would be ideal but it'd be a
       -- challenge.
-      Html html -> Tuple "html" html
+      Html html list -> Tuple "html" $ encodeJson {html, list: fromArticles list}
     (Tuple feedType feedPage) = case feedDefinition of
       CategoryFeed page -> Tuple "categoryfeed" $ unwrap page
       TagFeed tag       -> Tuple "tagfeed" $ unwrap tag
@@ -76,7 +82,7 @@ mkArticleFeed feedDefinition feed =
 
 data ArticleFeed
   = ArticleList (Array ArticleStub)
-  | Html String
+  | Html String (Array ArticleStub)
 
 data ArticleFeedType
   = CategoryFeed CategoryLabel

@@ -121,9 +121,9 @@ userView router { state: { now, news }, setState } logger user = React.fragment
         frequentIssues =
           [ DOM.dl_
               [ DOM.dt_ [ DOM.text "Frågor och svar" ]
-              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/fragor-och-svar/" ]
-              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/fragor-och-svar/" ]
-              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/fragor-och-svar/" ]
+              , DOM.dd_ [ issueLink "HBL" "https://www.hbl.fi/sida/fragor-och-svar" ]
+              , DOM.dd_ [ issueLink "Västra Nyland" "https://www.vastranyland.fi/sida/fragor-och-svar" ]
+              , DOM.dd_ [ issueLink "Östnyland" "https://www.ostnyland.fi/sida/fragor-och-svar" ]
               ]
           ]
         issueLink description href =
