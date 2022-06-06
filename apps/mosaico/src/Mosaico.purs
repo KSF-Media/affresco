@@ -367,7 +367,7 @@ staticPageTitle page =
     "kontakt"         -> "Kontakta oss"
     "kundservice"     -> "Kundservice"
     "tipsa-oss"       -> "Tipsa oss"
-    _                 -> page
+    _                 -> Paper.paperName mosaicoPaper
 
 pickRandomElement :: forall a. Array a -> Effect (Maybe a)
 pickRandomElement [] = pure Nothing
