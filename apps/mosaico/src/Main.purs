@@ -618,7 +618,7 @@ categoryPage env { guards: { category: category@(Category{label})}} = do
     _ -> renderCategoryPage env category
 
 renderCategoryPage :: Env -> Category -> Aff (Response ResponseBody)
-renderCategoryPage env (Category { label, type: categoryType, url}) = do
+renderCategoryPage env (Category category@{ label, type: categoryType, url}) = do
   { feed, mainContent, mostReadArticles, latestArticles } <- do
     case categoryType of
       Feed -> do
@@ -639,10 +639,9 @@ renderCategoryPage env (Category { label, type: categoryType, url}) = do
              , latestArticles
              }
       Prerendered -> do
-        -- TODO: Error handling
         { pageContent, mostReadArticles, latestArticles, articleStubs } <- sequential $
           { pageContent:_, mostReadArticles: _, latestArticles: _, articleStubs: _ }
-          <$> parallel (map (fromMaybe "") <$> Cache.getFrontpageHtml env.cache label)
+          <$> parallel (Cache.getFrontpageHtml env.cache label)
           <*> parallel (Cache.getMostRead env.cache)
           <*> parallel (Cache.getLatest env.cache)
           <*> parallel (Cache.getFrontpage env.cache label)
@@ -652,12 +651,12 @@ renderCategoryPage env (Category { label, type: categoryType, url}) = do
                     , Frontpage.ArticleUrltoRelative
                     , Frontpage.EpaperBanner
                     ]
-        pure { feed: Just $ Html (Cache.getContent pageContent) (Cache.getContent articleStubs)
+        pure { feed: flip Html (Cache.getContent articleStubs) <$> Cache.getContent pageContent
              , mainContent: articleStubs *>
                  ((\html ->
                      { type: HtmlFrontpageContent
                      , content: Frontpage.render $ Frontpage.Prerendered
-                                  { content: Just html
+                                  { content: html
                                   , hooks
                                   , onClick: mempty
                                   }
@@ -700,19 +699,30 @@ renderCategoryPage env (Category { label, type: categoryType, url}) = do
              , latestArticles
              }
 
-  let htmlTemplate = cloneTemplate env.htmlTemplate
-      mosaicoString = renderContent <$> mainContent <*> mostReadArticles <*> latestArticles
-      windowVars = stdVars env mostReadArticles latestArticles
-                   <> foldMap (mkArticleFeed $ CategoryFeed label) feed
-  html <- liftEffect $ appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
-          appendVars (mkWindowVariables windowVars) >>=
-          appendHead (makeTitle (unwrap label))
-  let rendered = renderTemplateHtml html
-  Cache.saveCategoryRender env.cache label $ mosaicoString $> rendered
-  now <- liftEffect nowDateTime
-  pure $ Cache.addHeader now mosaicoString $
-    htmlContent $ Response.ok $ StringBody rendered
+  -- Fallback to using list feed style
+  let fallbackToList = renderCategoryPage env $ Category $ category { type = Feed }
+  case categoryType of
+    Prerendered
+      | Nothing <- feed -> fallbackToList
+      -- Sanity check
+      | Just (Html html _) <- feed
+      , Right regex <- emptyRegex
+      , Just _ <- Regex.match regex html -> fallbackToList
+    _ -> do
+      let htmlTemplate = cloneTemplate env.htmlTemplate
+          mosaicoString = renderContent <$> mainContent <*> mostReadArticles <*> latestArticles
+          windowVars = stdVars env mostReadArticles latestArticles
+                       <> foldMap (mkArticleFeed $ CategoryFeed label) feed
+      html <- liftEffect $ appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
+              appendVars (mkWindowVariables windowVars) >>=
+              appendHead (makeTitle (unwrap label))
+      let rendered = renderTemplateHtml html
+      Cache.saveCategoryRender env.cache label $ mosaicoString $> rendered
+      now <- liftEffect nowDateTime
+      pure $ Cache.addHeader now mosaicoString $
+        htmlContent $ Response.ok $ StringBody rendered
   where
+    emptyRegex = Regex.regex "^\\s*$" Regex.noFlags
     renderContent mainContent mostReadArticles latestArticles =
       DOM.renderToString
       $ MosaicoServer.app
