@@ -5,6 +5,7 @@ import Prelude
 import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
+import Data.Array as Array
 import Data.Array (cons, find, foldl, fromFoldable, head, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
@@ -18,8 +19,8 @@ import Data.Newtype (unwrap)
 import Data.String (trim)
 import Data.String as String
 import Data.String.Regex (Regex)
-import Data.String.Regex (match, regex) as Regex
-import Data.String.Regex.Flags (ignoreCase) as Regex
+import Data.String.Regex (match, regex, test) as Regex
+import Data.String.Regex.Flags (ignoreCase, noFlags) as Regex
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Data.UUID as UUID
@@ -223,10 +224,17 @@ readDir dir = do
 main :: Effect Unit
 main = do
   staticPages  <- do
-      staticPageNames <- readDir "./dist/static"
-      let makeMap acc staticPageFileName = do
-            pageContent <- FS.readTextFile UTF8 staticPageFileName
-            pure $ HashMap.insert staticPageFileName pageContent acc
+      let pageMatch =
+            maybe (const false) Regex.test $ hush $
+            Regex.regex ("^\\./dist/static/(" <> _mosaicoPaper <> "/[^/]+\\.html|[^/]+\\.js)$")
+            Regex.noFlags
+      staticPageNames <- List.filter pageMatch <$> readDir "./dist/static"
+      let makeMap acc staticPagePath = do
+            case Array.last $ String.split (String.Pattern "/") staticPagePath of
+              Just fileName -> do
+                pageContent <- FS.readTextFile UTF8 staticPagePath
+                pure $ HashMap.insert fileName pageContent acc
+              _ -> pure acc
       foldM makeMap HashMap.empty staticPageNames
   htmlTemplate <- parseTemplate <$> FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
@@ -531,9 +539,9 @@ staticPage env { params: { pageName } } = do
     { mostReadArticles: _, latestArticles: _ }
     <$> parallel (Cache.getContent <$> Cache.getMostRead env.cache)
     <*> parallel (Cache.getContent <$> Cache.getLatest env.cache)
-  case HashMap.lookup ("./static/" <> _mosaicoPaper <> "/" <> pageName <> ".html") env.staticPages of
+  case HashMap.lookup (pageName <> ".html") env.staticPages of
     Just staticPageContent -> do
-      let staticPageScript = HashMap.lookup ("./static/" <> pageName <> ".js") env.staticPages
+      let staticPageScript = HashMap.lookup (pageName <> ".js") env.staticPages
           mosaico = MosaicoServer.app
           htmlTemplate = cloneTemplate env.htmlTemplate
           staticPageJsx =

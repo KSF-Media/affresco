@@ -6,6 +6,7 @@ in conf // {
         [ "affresco-test"
         , "debug"
         , "partial"
+	, "enums"
 	    , "test-unit"
 	    ]
 }
