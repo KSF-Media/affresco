@@ -50,7 +50,7 @@ dateTimeFormatter =
     , Placeholder "-"
     , MonthTwoDigits
     , Placeholder "-"
-    , DayOfMonth
+    , DayOfMonthTwoDigits
     , Placeholder "T"
     , Hours24
     , Placeholder ":"
