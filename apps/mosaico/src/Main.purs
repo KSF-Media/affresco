@@ -378,7 +378,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                         { type: "application/ld+json"
                         , dangerouslySetInnerHTML:
                             { __html:
-                                String.replaceAll (String.Pattern "</script") (String.Replacement "")
+                                String.replaceAll (String.Pattern "<") (String.Replacement "\\u003c")
                                   $ JSON.stringify
                                   $ renderAsJsonLd a'
                             }
