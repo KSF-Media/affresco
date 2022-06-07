@@ -373,6 +373,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                     , DOM.meta { property: "og:title", content: a'.title }
                     , DOM.meta { property: "og:description", content: fold a'.preamble }
                     , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
+                    , DOM.meta { name: "description", content: fold a'.preamble }
                     , DOM.title { children: [ DOM.text a'.title ] }
                     , DOM.script
                         { type: "application/ld+json"
