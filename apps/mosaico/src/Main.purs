@@ -36,6 +36,7 @@ import KSF.Paper as Paper
 import KSF.Random (randomString)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
+import Lettera.ArticleSchema (renderAsJsonLd)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
@@ -373,7 +374,17 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                     , DOM.meta { property: "og:description", content: fold a'.preamble }
                     , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
                     , DOM.title { children: [ DOM.text a'.title ] }
+                    , DOM.script
+                        { type: "application/ld+json"
+                        , dangerouslySetInnerHTML:
+                            { __html:
+                                String.replaceAll (String.Pattern "</script") (String.Replacement "")
+                                  $ JSON.stringify
+                                  $ renderAsJsonLd a'
+                            }
+                        }
                     ]
+
         appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars) >>= appendHead metaTags
 
       pure $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
