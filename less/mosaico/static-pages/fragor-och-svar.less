@@ -43,19 +43,23 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+    margin-bottom: 40px;
   }
 
   .faq__qa-section {
     display: flex;
     flex-direction: column;
-    @media (min-width: @breakpoint-2col) {
-      margin-top: 30px;
-    }
   }
   .faq__section-headline {
     font-size: 1.65rem;
     line-height: 1;
-    margin-top: 30px;
+    margin-top: 80px;
+    @media (min-width: @breakpoint-2col) {
+      margin-top: 110px;
+    }
+    @media (min-width: @breakpoint-3col) {
+      margin-top: 130px;
+    }
   }
 
   .faq__qa {

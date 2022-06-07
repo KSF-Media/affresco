@@ -139,11 +139,10 @@ withCat f (Category cat) =
 initCache :: Paper -> Array Category -> Effect Cache
 initCache paper categoryStructure = do
   let prerenderedCategories = filter (\(Category c) -> c.type == Prerendered) categoryStructure
-      mainFeedCategories = filter (\(Category c) -> c.type == Feed) categoryStructure
   mainCategoryFeed <-
     HashMap.fromArray
     <$> traverse ((map <<< map <<< map <<< map <<< map <<< map) (join <<< fromFoldable) $
-                  withCat $ startUpdates <<< Lettera.getFrontpage paper <<< Just) mainFeedCategories
+                  withCat $ startUpdates <<< Lettera.getFrontpage paper <<< Just) categoryStructure
   prerendered <- HashMap.fromArray <$> traverse
                  (withCat $ startUpdates <<< Lettera.getFrontpageHtml paper) prerenderedCategories
   mostRead <- (map <<< map <<< map) (join <<< fromFoldable) $
