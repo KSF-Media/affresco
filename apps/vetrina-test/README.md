@@ -8,10 +8,10 @@ This is a test deployment for Vetrina (the fast buying path), for:
 
 Run:
 
-Running tests doesn't start the app so do a `yarn start` as well.
+Running tests doesn't start the app so do a `npm run start` as well.
 
 ```bash
-$ yarn install
+$ npm install
 $ export PERSONA_URL=https://persona.staging.ksfmedia.fi/v1
 $ spago test
 ```

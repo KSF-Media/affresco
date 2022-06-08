@@ -7,7 +7,7 @@ Has two important features:
 
 ## For javascript use
 
-Install it from npm `yarn add @ksf-media/user` and just import it into your project: 
+Install it from npm `npm install --save  @ksf-media/user` and just import it into your project: 
 ```javascript
 import ReactDOM from 'react-dom';
 import { Login } from '@ksf-media/user';

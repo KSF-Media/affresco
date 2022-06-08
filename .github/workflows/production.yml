@@ -1,5 +1,6 @@
 env:
   NODE_ENV: production
+  OPENSSL_CONF: /dev/null
   PRODUCTION_BOTTEGA_URL: https://bottega.api.ksfmedia.fi/v1
   PRODUCTION_DUELLEN_URL: https://duellen.api.ksfmedia.fi
   PRODUCTION_FACEBOOK_APP_ID: '894000011480431'
@@ -13,20 +14,21 @@ env:
 jobs:
   check-ci:
     container:
-      image: ksfmedia/diskho:gha-1.1
-      options: "--cpus 2"
+      image: ksfmedia/diskho:gha-1.2
+      options: "--cpus 2 --user root"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Check CI script has been generated from Dhall
         run: |2
+            chown root:root .
             make
             git diff --exit-code
   deploy-app-article-server:
     container:
-      image: ksfmedia/diskho:gha-1.1
-      options: "--cpus 2"
+      image: ksfmedia/diskho:gha-1.2
+      options: "--cpus 2 --user root"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -39,7 +41,7 @@ jobs:
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile
+            npm ci
             mkdir -p build
       - env:
           HIDE_LOGIN_LINKS: 'true'
@@ -71,8 +73,8 @@ jobs:
           ./ci/ae-cleanup.sh app-article-server
   deploy-dispatch-yaml:
     container:
-      image: ksfmedia/diskho:gha-1.1
-      options: "--cpus 2"
+      image: ksfmedia/diskho:gha-1.2
+      options: "--cpus 2 --user root"
     needs:
       - deploy-app-article-server
     runs-on: ubuntu-latest
@@ -86,7 +88,7 @@ jobs:
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile
+            npm ci
             mkdir -p build
       - name: Generate AppEngine domain map
         run: |2
@@ -101,8 +103,8 @@ jobs:
           project_id: ksf-production
   deploy-gs:
     container:
-      image: ksfmedia/diskho:gha-1.1
-      options: "--cpus 2"
+      image: ksfmedia/diskho:gha-1.2
+      options: "--cpus 2 --user root"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -115,38 +117,38 @@ jobs:
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
       - run: |2
-            yarn install --pure-lockfile
+            npm ci
             mkdir -p build
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
+          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/package-lock.json')}}"
           path: |
             apps/mitt-konto/.spago
             apps/mitt-konto/output
       - name: "Setup build cache for Vetrina (for testing only)"
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
+          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/package-lock.json')}}"
           path: |
             apps/vetrina-test/.spago
             apps/vetrina-test/output
       - name: Setup build cache for App article
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
+          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/package-lock.json')}}"
           path: |
             apps/app-article/dist
       - name: Setup build cache for Corona banner
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
+          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/package-lock.json')}}"
           path: |
             apps/corona-banner/dist
       - name: Setup build cache for HBL365
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
+          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/package-lock.json')}}"
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
