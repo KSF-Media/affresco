@@ -22,5 +22,8 @@
     "build",
     "build.js",
     "index.js"
-  ]
+  ],
+  "devDependencies": {
+    "parcel-bundler": "^1.12.3"
+  }
 }

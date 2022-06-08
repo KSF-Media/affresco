@@ -25,7 +25,6 @@
     "material-ui": "^0.20.0",
     "material-ui-superselectfield": "^1.9.0",
     "moment": "^2.29.2",
-    "parcel-bundler": "^1.12.3",
     "path": "^0.12.7",
     "popper.js": "^1.16.0",
     "react": "^16.3.0",
@@ -39,6 +38,9 @@
     "react-swipeable-views": "^0.12.12"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.18.2"
+    "@babel/core": "^7.18.2",
+    "@babel/plugin-proposal-class-properties": "^7.17.12",
+    "@babel/preset-env": "^7.18.2",
+    "parcel-bundler": "^1.12.4"
   }
 }
