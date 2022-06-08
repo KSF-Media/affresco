@@ -1,9 +1,9 @@
-FROM node:12
+FROM node:16
 
 COPY dist /app/dist
 COPY package.json /app/
 
 WORKDIR app
-RUN yarn install
+RUN npm install
 
 CMD node -r dotenv/config dist/server

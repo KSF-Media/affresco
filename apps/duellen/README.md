@@ -1,9 +1,9 @@
 # User Frontend for Duellen
 
 ## DEV Setup
-`yarn install`
+`npm install`
 
 ## DEV run
-`yarn start`
+`npm run start`
 
 runs on localhost:8080

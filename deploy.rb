@@ -95,18 +95,18 @@ def generate_production_dot_env(app, app_vars)
 end
 
 build_cmds_staging = [
-  "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd '#{app['path']}/' run build",
-  "yarn --cwd '#{app['path']}/' run test",
+  "npm ci",
+  "npm --prefix '#{app['path']}/' run build",
+  "npm --prefix '#{app['path']}/' run test",
 ]
 
 if app_name == "mosaico"
-  build_cmds_staging.push("yarn --cwd '#{app['path']}/' run build-deploy-preview")
+  build_cmds_staging.push("npm --prefix '#{app['path']}/' run build-deploy-preview")
 end
 
 build_cmds_production = [
-  "yarn install --pure-lockfile --cache-folder=.yarn-cache",
-  "yarn --cwd '#{app['path']}/' run build",
+  "npm ci",
+  "npm --prefix '#{app['path']}/' run build",
 ]
 
 def deploy_maintenance_page(app_path)
