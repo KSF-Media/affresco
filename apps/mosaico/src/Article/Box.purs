@@ -2,7 +2,7 @@ module Mosaico.Article.Box where
 
 import Prelude
 
-import Data.Foldable (fold)
+import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe)
 import Data.Monoid (guard)
 import Data.String (joinWith, length)
@@ -41,10 +41,11 @@ render setExpanded props =
                     { className: "boxinfo__label"
                     , children: [ DOM.text $ fold props.headline ]
                     }
-                , DOM.h2
-                    { className: "boxinfo__title"
-                    , children: [ DOM.text $ fold props.title ]
-                    }
+                , foldMap
+                  (\x -> DOM.h2
+                           { className: "boxinfo__title"
+                           , dangerouslySetInnerHTML: { __html: x }
+                           }) props.title
                 ]
             }
         , DOM.div
