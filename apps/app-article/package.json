@@ -18,7 +18,7 @@
   "scripts": {
     "start": "parcel src/index.html -p 8000",
     "build-user": "npm --prefix '../../packages/user' run build-npm",
-    "build": "npm run build-user && npm run clean && npm install && parcel build src/index.html --public-url ./ --no-source-maps && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
+    "build": "npm run build-user && npm run clean && npm ci && parcel build src/index.html --public-url ./ --no-source-maps && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
     "clean": "rm -rf .cache dist node_modules",
     "test": "echo 'No testsuite configured...'"
   },

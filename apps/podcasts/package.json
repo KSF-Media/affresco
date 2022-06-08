@@ -22,7 +22,7 @@
   },
   "scripts": {
     "start": "parcel ./src/index.html --https",
-    "prebuild": "npm install",
+    "prebuild": "npm ci",
     "build": "parcel build ./src/index.html --public-url ./",
     "postbuild": "netlify-lambda build functions",
     "lambda-serve": "netlify-lambda serve functions",

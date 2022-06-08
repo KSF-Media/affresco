@@ -4,6 +4,6 @@ COPY dist /app/dist
 COPY package.json /app/
 
 WORKDIR app
-RUN npm install
+RUN npm ci
 
 CMD node -r dotenv/config dist/server
