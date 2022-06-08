@@ -1,3 +1,16 @@
+const _setTimeout = window.setTimeout;
+window.setTimeout = function (fn, timeout, ...args) {
+  /* Google Tag Manager waits for 5 seconds before sending data, except for the
+   * first data blob which is sent after 500ms. This is unfortunately a bit
+   * too slow for us, so we have to do this. Note that this will affect _all_
+   * uses of setTimeout!
+   */
+  if(timeout === 5000) {
+    timeout = 500;
+  }
+  return _setTimeout(fn, timeout, ...args);
+}
+
 import React from "react";
 import ReactDOM from "react-dom";
 import { BrowserRouter as Router } from "react-router-dom";

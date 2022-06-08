@@ -3,14 +3,16 @@ module Mosaico.Frontpage.Models where
 import Prelude
 
 import Data.Array (head)
-import Data.Maybe (Maybe(..), isJust, maybe)
-import Data.String (Pattern(..), contains, stripPrefix)
+import Data.Maybe (Maybe(..), isJust)
+import Data.String (drop, length, take)
 import KSF.HtmlRenderer.Models as HtmlRenderer
+import KSF.Paper (homepage)
 import Lettera.Models (ArticleStub)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.EpaperBanner as EpaperBanner
-import Mosaico.MostReadList as MostReadList
 import Mosaico.LatestList as LatestList
+import Mosaico.MostReadList as MostReadList
+import Mosaico.Paper (mosaicoPaper)
 import React.Basic.Events (EventHandler)
 
 data Hook
@@ -38,8 +40,7 @@ mostReadHook { articles, onClickHandler } = HtmlRenderer.replacingHook
   { shouldProcessNode: (\n ->
                           let info = do
                                 name      <- HtmlRenderer.getName n
-                                attribs   <- HtmlRenderer.getAttribs n
-                                className <- attribs.class
+                                className <- HtmlRenderer.getStringAttrib "class" n
                                 children  <- HtmlRenderer.getChildren n
                                 textChild <- head children
                                 text      <- HtmlRenderer.getData textChild
@@ -67,8 +68,7 @@ latestHook { articles, onClickHandler } = HtmlRenderer.replacingHook
   { shouldProcessNode: (\n ->
                           let info = do
                                 name      <- HtmlRenderer.getName n
-                                attribs   <- HtmlRenderer.getAttribs n
-                                className <- attribs.class
+                                className <- HtmlRenderer.getStringAttrib "class" n
                                 children  <- HtmlRenderer.getChildren n
                                 textChild <- head children
                                 text      <- HtmlRenderer.getData textChild
@@ -96,8 +96,7 @@ adHook { placeholderText, targetId } = HtmlRenderer.replacingHook
   { shouldProcessNode: (\n ->
                           let info = do
                                 name      <- HtmlRenderer.getName n
-                                attribs   <- HtmlRenderer.getAttribs n
-                                className <- attribs.class
+                                className <- HtmlRenderer.getStringAttrib "class" n
                                 children  <- HtmlRenderer.getChildren n
                                 textChild <- head children
                                 text      <- HtmlRenderer.getData textChild
@@ -109,7 +108,7 @@ adHook { placeholderText, targetId } = HtmlRenderer.replacingHook
                               , text      == placeholderText -> true
                             _                                   -> false
                        )
-  , processNode: (\_ _ _ -> pure $ Mosaico.ad { contentUnit: targetId }
+  , processNode: (\_ _ _ -> pure $ Mosaico.ad { contentUnit: targetId, inBody: false }
                  )
   }
 
@@ -118,8 +117,7 @@ epaperBannerHook = HtmlRenderer.replacingHook
   { shouldProcessNode: (\n ->
                           let info = do
                                 name      <- HtmlRenderer.getName n
-                                attribs   <- HtmlRenderer.getAttribs n
-                                className <- attribs.class
+                                className <- HtmlRenderer.getStringAttrib "class" n
                                 children  <- HtmlRenderer.getChildren n
                                 textChild <- head children
                                 text      <- HtmlRenderer.getData textChild
@@ -135,41 +133,32 @@ epaperBannerHook = HtmlRenderer.replacingHook
                  )
   }
 
+-- TODO: Do this in Lettera?
 articleUrltoRelativeHook :: HtmlRenderer.HookRep
 articleUrltoRelativeHook = HtmlRenderer.modifyingHook
   { shouldProcessNode: (\n ->
-                          let info = do
-                                name    <- HtmlRenderer.getName n
-                                attribs <- HtmlRenderer.getAttribs n
-                                href    <- attribs.href
-                                pure { name, href }
+                          let info =
+                                { name:_, href:_ }
+                                  <$> HtmlRenderer.getName n
+                                  <*> HtmlRenderer.getStringAttrib "href" n
                           in case info of
-                            Just { name, href}
-                              | name == "a"
-                              , contains hblArticleUrlPrefix href -> true
-                            _                                     -> false
+                            Just {name, href} -> name == "a" && take siteLen href == site
+                            _                 -> false
                        )
   , processNode: (\n _ -> do
-                    let updatedAttribs = do
-                          attribs      <- HtmlRenderer.getAttribs n
-                          href         <- attribs.href
-                          relativeHref <- stripPrefix hblUrlPrefix href
-                          pure $ attribs { href = Just relativeHref }
-                    case updatedAttribs of
-                      Just attribs -> do
-                        HtmlRenderer.setAttribs n attribs
-                      Nothing      -> pure unit
-                    pure n
+                    pure $ case HtmlRenderer.getStringAttrib "href" n of
+                      Just href -> HtmlRenderer.setStringAttrib "href" (drop (siteLen - 1) href) n
+                      _         -> n
                  )
   }
   where
-    hblUrlPrefix        = Pattern "https://www.hbl.fi"
-    hblArticleUrlPrefix = Pattern "https://www.hbl.fi/artikel"
+    -- Slight abuse of the function but close enough
+    site = homepage mosaicoPaper
+    siteLen = length site
 
 removeTooltipsHook :: HtmlRenderer.HookRep
 removeTooltipsHook = HtmlRenderer.modifyingHook
-  { shouldProcessNode: maybe false (isJust <<< _.title) <<< HtmlRenderer.getAttribs
+  { shouldProcessNode: isJust <<< HtmlRenderer.getStringAttrib "title"
   , processNode: \n _ -> do
-    HtmlRenderer.setAttrib n "title" Nothing
-    pure n
+    pure $ HtmlRenderer.removeAttrib "title" n
   }

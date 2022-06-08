@@ -610,7 +610,7 @@ forgotEmail =
       [ DOM.text "Glömt din e-post? "
       , DOM.a
           { className: "login--important"
-          , href: "https://www.hbl.fi/kundservice/"
+          , href: "https://www.hbl.fi/sida/kundservice"
           , children: [ DOM.text "Ta kontakt med vår kundtjänst!" ]
           }
       ]

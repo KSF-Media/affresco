@@ -406,7 +406,7 @@ data BodyElement
   | Question String
   | Quote QuoteInfo
   -- Note that Ad does NOT come from Lettera, but was added here to make smart ad placement possible
-  | Ad String
+  | Ad Ad
   | Related (Array ArticleStub)
 derive instance bodyElementGeneric :: Generic BodyElement _
 
@@ -440,6 +440,11 @@ type DraftParams =
   , publication :: String
   , user        :: String
   , hash        :: String
+  }
+
+type Ad =
+  { contentUnit :: String
+  , inBody      :: Boolean
   }
 
 data CategoryType

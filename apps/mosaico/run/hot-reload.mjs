@@ -1,6 +1,7 @@
-const { exec } = require("child_process");
-var bs = require("browser-sync").create();
-var build = require("./build");
+import { exec } from "child_process";
+import { create } from "browser-sync";
+const bs = create();
+import * as build from "./build.mjs";
 
 bs.watch("dist/assets/*").on("change", file => bs.reload(file));
 

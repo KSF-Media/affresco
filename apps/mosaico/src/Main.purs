@@ -36,12 +36,13 @@ import KSF.Paper as Paper
 import KSF.Random (randomString)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
+import Lettera.ArticleSchema (renderAsJsonLd)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
 import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
-import Mosaico.Cache (Stamped(..))
+import Mosaico.Cache (Stamped)
 import Mosaico.Cache as Cache
 import Mosaico.Epaper as Epaper
 import Mosaico.Error (notFoundWithAside)
@@ -118,6 +119,9 @@ spec ::
                 { response :: String
                 , guards :: Guards ("clientip" : Nil)
                 }
+         , googleSiteVerification ::
+              GET "/google8c22fe93f3684c84.html"
+                { response :: File }
          , frontpageUpdated ::
               GET "/api/reset/<category>"
                 { params :: { category :: String }
@@ -235,6 +239,7 @@ main = do
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
         handlers =
           { getHealthz
+          , googleSiteVerification
           , frontpageUpdated: frontpageUpdated env
           , getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
@@ -368,8 +373,19 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                     , DOM.meta { property: "og:title", content: a'.title }
                     , DOM.meta { property: "og:description", content: fold a'.preamble }
                     , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
+                    , DOM.meta { name: "description", content: fold a'.preamble }
                     , DOM.title { children: [ DOM.text a'.title ] }
+                    , DOM.script
+                        { type: "application/ld+json"
+                        , dangerouslySetInnerHTML:
+                            { __html:
+                                String.replaceAll (String.Pattern "<") (String.Replacement "\\u003c")
+                                  $ JSON.stringify
+                                  $ renderAsJsonLd a'
+                            }
+                        }
                     ]
+
         appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars) >>= appendHead metaTags
 
       pure $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
@@ -389,6 +405,9 @@ assets { params: { path } } = Handlers.directory "dist/assets" path
 adsTxt :: forall r. { | r} -> Aff File
 adsTxt = Handlers.file "dist/assets/ads.txt"
 
+googleSiteVerification :: forall r. { | r} -> Aff File
+googleSiteVerification = Handlers.file "dist/assets/google8c22fe93f3684c84.html"
+
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
   prerendered <- Cache.readCategoryRender env.cache frontpageCategoryLabel
@@ -399,13 +418,6 @@ frontpage env {} = do
     _ -> case head env.categoryStructure of
       Just frontpageCategory -> renderCategoryPage env frontpageCategory
       _ -> pure $ Response.internalError $ StringBody "no categorystructure defined"
-
-getFrontpage :: Cache.Cache -> CategoryLabel -> Aff (Stamped ArticleFeed)
-getFrontpage cache category = do
-  maybeHtml <- Cache.getFrontpageHtml cache category
-  case maybeHtml of
-    html@(Stamped {content: Just content}) -> pure $ (const $ Html content) <$> html
-    _ -> map ArticleList <$> Cache.getFrontpage cache category
 
 menu :: Env -> {} -> Aff (Response ResponseBody)
 menu env _ = do
@@ -619,16 +631,20 @@ renderCategoryPage env (Category { label, type: categoryType, url}) = do
              }
       Prerendered -> do
         -- TODO: Error handling
-        { pageContent, mostReadArticles, latestArticles } <-
-          parallelWithCommonLists env $ map (fromMaybe "") <$> Cache.getFrontpageHtml env.cache label
+        { pageContent, mostReadArticles, latestArticles, articleStubs } <- sequential $
+          { pageContent:_, mostReadArticles: _, latestArticles: _, articleStubs: _ }
+          <$> parallel (map (fromMaybe "") <$> Cache.getFrontpageHtml env.cache label)
+          <*> parallel (Cache.getMostRead env.cache)
+          <*> parallel (Cache.getLatest env.cache)
+          <*> parallel (Cache.getFrontpage env.cache label)
         let hooks = [ Frontpage.RemoveTooltips
                     , Frontpage.MostRead (Cache.getContent mostReadArticles) (const mempty)
                     , Frontpage.Latest (Cache.getContent latestArticles) (const mempty)
                     , Frontpage.ArticleUrltoRelative
                     , Frontpage.EpaperBanner
                     ]
-        pure { feed: Just $ Html $ Cache.getContent pageContent
-             , mainContent:
+        pure { feed: Just $ Html (Cache.getContent pageContent) (Cache.getContent articleStubs)
+             , mainContent: articleStubs *>
                  ((\html ->
                      { type: HtmlFrontpageContent
                      , content: Frontpage.render $ Frontpage.Prerendered
@@ -781,8 +797,8 @@ notFoundPage env {params: { path } } = do
     ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
     ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
     ["ingen-tidning"] /\ _ -> redir "https://konto.ksfmedia.fi/"
-    ["losenord"] /\ _ -> redir "https://konto.ksfmedia.fi/#lösenord"
-    ["losenord", ""] /\ _ -> redir "https://konto.ksfmedia.fi/#lösenord"
+    ["losenord"] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
+    ["losenord", ""] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
     ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
     ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
     ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
