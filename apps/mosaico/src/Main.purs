@@ -36,6 +36,7 @@ import KSF.Paper as Paper
 import KSF.Random (randomString)
 import Lettera as Lettera
 import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
+import Lettera.ArticleSchema (renderAsJsonLd)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
@@ -118,6 +119,9 @@ spec ::
                 { response :: String
                 , guards :: Guards ("clientip" : Nil)
                 }
+         , googleSiteVerification ::
+              GET "/google8c22fe93f3684c84.html"
+                { response :: File }
          , frontpageUpdated ::
               GET "/api/reset/<category>"
                 { params :: { category :: String }
@@ -235,6 +239,7 @@ main = do
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
         handlers =
           { getHealthz
+          , googleSiteVerification
           , frontpageUpdated: frontpageUpdated env
           , getDraftArticle: getDraftArticle env
           , getArticle: getArticle env
@@ -368,8 +373,19 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                     , DOM.meta { property: "og:title", content: a'.title }
                     , DOM.meta { property: "og:description", content: fold a'.preamble }
                     , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
+                    , DOM.meta { name: "description", content: fold a'.preamble }
                     , DOM.title { children: [ DOM.text a'.title ] }
+                    , DOM.script
+                        { type: "application/ld+json"
+                        , dangerouslySetInnerHTML:
+                            { __html:
+                                String.replaceAll (String.Pattern "<") (String.Replacement "\\u003c")
+                                  $ JSON.stringify
+                                  $ renderAsJsonLd a'
+                            }
+                        }
                     ]
+
         appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars) >>= appendHead metaTags
 
       pure $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
@@ -388,6 +404,9 @@ assets { params: { path } } = Handlers.directory "dist/assets" path
 
 adsTxt :: forall r. { | r} -> Aff File
 adsTxt = Handlers.file "dist/assets/ads.txt"
+
+googleSiteVerification :: forall r. { | r} -> Aff File
+googleSiteVerification = Handlers.file "dist/assets/google8c22fe93f3684c84.html"
 
 frontpage :: Env -> {} -> Aff (Response ResponseBody)
 frontpage env {} = do
@@ -799,6 +818,9 @@ notFoundPage env {params: { path } } = do
     ["rss.xml"] /\ Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
     ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
     ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
+    ["bruksvillkor"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
+    ["bruksvillkor"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
+    ["bruksvillkor"] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
     _ -> pass
 
 notFoundArticleContent :: MainContent

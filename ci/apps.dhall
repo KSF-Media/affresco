@@ -21,7 +21,7 @@ let apps =
           , name = "Mosaico"
           , buildDir = "mosaico"
           , deployDir = "mosaico"
-          , lockfile = Some "yarn.lock"
+          , lockfile = Some "package-lock.json"
           , production = False
           , env = toMap
               { LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v4beta"
@@ -50,7 +50,7 @@ let apps =
                   "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
               , MAINTENANCE_MODE = "false"
               }
-          , lockfile = Some "yarn.lock"
+          , lockfile = Some "package-lock.json"
           , caches = Some
               ''
               apps/mitt-konto/.spago
@@ -66,7 +66,7 @@ let apps =
               , SENTRY_DSN =
                   "https://6479d7c55fbd4e0db7d9ac755083865f@sentry.io/3718842"
               }
-          , lockfile = Some "yarn.lock"
+          , lockfile = Some "package-lock.json"
           , caches = Some
               ''
               apps/vetrina-test/.spago
@@ -100,7 +100,7 @@ let apps =
               , PRODUCTION_SENTRY_DSN =
                   "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
               }
-          , lockfile = Some "yarn.lock"
+          , lockfile = Some "package-lock.json"
           , caches = Some
               ''
               apps/app-article/dist
@@ -110,7 +110,7 @@ let apps =
           , name = "Corona banner"
           , buildDir = "corona-banner"
           , deployDir = "corona-banner"
-          , lockfile = Some "yarn.lock"
+          , lockfile = Some "package-lock.json"
           , caches = Some
               ''
               apps/corona-banner/dist
@@ -120,7 +120,7 @@ let apps =
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
-          , lockfile = Some "yarn.lock"
+          , lockfile = Some "package-lock.json"
           , caches = Some
               ''
               apps/hbl365/.spago
