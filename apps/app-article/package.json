@@ -2,7 +2,6 @@
   "name": "@affresco/app-article",
   "version": "0.1.0",
   "dependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.4.4",
     "@ksf-media/user": "file:../../packages/user",
     "@sentry/browser": "^6.19.7",
     "@sentry/tracing": "^6.19.7",
@@ -24,6 +23,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-0",
-    "@babel/plugin-proposal-class-properties": "^7.5.5"
+    "@babel/plugin-proposal-class-properties": "^7.17.12"
   }
 }
