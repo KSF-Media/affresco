@@ -821,6 +821,9 @@ notFoundPage env {params: { path } } = do
     ["bruksvillkor/"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
     ["bruksvillkor/"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
     ["bruksvillkor/"] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
+    ["bruksvillkor"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
+    ["bruksvillkor"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
+    ["bruksvillkor"] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
     _ -> pass
 
 notFoundArticleContent :: MainContent
