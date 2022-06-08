@@ -13,7 +13,7 @@
     "uuid-validate": "^0.0.3"
   },
   "scripts": {
-    "clean": "rm -rf .cache .psci_modules node_modules output dist"
+    "clean": "rm -rf .cache .psci_modules output dist"
   },
   "workspaces": [
     "packages/*",
