@@ -5,6 +5,8 @@
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
+    "@sentry/browser": "^7.1.1",
+    "@sentry/tracing": "^7.1.1",
     "create-react-class": "^15.6.3",
     "dotenv": "^16.0.1",
     "less": "^3.8.1",
