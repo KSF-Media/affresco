@@ -19,8 +19,6 @@
     "test": "#spago build && npm install && npm run start & npm run wait-for-parcel && spago test"
   },
   "devDependencies": {
-    "@babel/core": "^7.18.2",
-    "@babel/plugin-proposal-class-properties": "^7.17.12",
     "parcel-bundler": "^1.12.3"
   }
 }
