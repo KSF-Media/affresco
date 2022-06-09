@@ -12,9 +12,9 @@ Simply execute
 
 ```
 export PUBLIC_URL=/dist
-npm install
-npm run build
-npm run start
+yarn install
+yarn build
+yarn start
 ```
 
 As an alternative to exporting PUBLIC_URL for every new shell you can also use [direnv](https://direnv.net/docs/installation.html) to have it done automgically.

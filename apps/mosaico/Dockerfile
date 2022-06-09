@@ -1,4 +1,4 @@
-FROM node:16
+FROM node:12
 
 RUN ln -sf /usr/share/zoneinfo/Europe/Helsinki /etc/localtime
 
@@ -8,5 +8,5 @@ COPY static /app/static
 COPY package.json /app/
 
 WORKDIR app
-RUN npm ci
+RUN yarn install
 CMD node -r dotenv/config -e 'require("./output/Main/index").main()'

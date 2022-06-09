@@ -76,7 +76,7 @@ def setup_env(app)
     ENV['NODE_ENV'] = 'production'
   else
     ENV['NODE_ENV'] = 'development'
-    # Copy .env.local to .env.development for esbuild
+    # Copy .env.local to .env.development for Parcel
     if (File.exist?("#{app['path']}/.env.local"))
       FileUtils.cp("#{app['path']}/.env.local", "#{app['path']}/.env.development")
     end
@@ -95,18 +95,18 @@ def generate_production_dot_env(app, app_vars)
 end
 
 build_cmds_staging = [
-  "npm ci",
-  "npm --prefix '#{app['path']}/' run build",
-  "npm --prefix '#{app['path']}/' run test",
+  "yarn install --pure-lockfile --cache-folder=.yarn-cache",
+  "yarn --cwd '#{app['path']}/' run build",
+  "yarn --cwd '#{app['path']}/' run test",
 ]
 
 if app_name == "mosaico"
-  build_cmds_staging.push("npm --prefix '#{app['path']}/' run build-deploy-preview")
+  build_cmds_staging.push("yarn --cwd '#{app['path']}/' run build-deploy-preview")
 end
 
 build_cmds_production = [
-  "npm ci",
-  "npm --prefix '#{app['path']}/' run build",
+  "yarn install --pure-lockfile --cache-folder=.yarn-cache",
+  "yarn --cwd '#{app['path']}/' run build",
 ]
 
 def deploy_maintenance_page(app_path)

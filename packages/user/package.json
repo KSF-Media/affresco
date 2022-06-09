@@ -5,23 +5,18 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8",
     "react": "^16.12",
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "react-dom": "^16.12"
   },
   "scripts": {
-    "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && node build.mjs",
+    "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less ../../less/ksf-utils.less ../../less/InputField.less",
     "test": "echo 'No testsuite configured'"
   },
   "files": [
     "build",
     "build.js",
     "index.js"
-  ],
-  "devDependencies": {
-    "@chialab/esbuild-plugin-html": "^0.15.37",
-    "esbuild-plugin-less": "^1.1.7",
-    "querystring-es3": "^0.2.1"
-  }
+  ]
 }

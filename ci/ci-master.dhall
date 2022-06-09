@@ -85,7 +85,6 @@ in  { name = "production"
         //  refreshCDNJobs
     , env =
       { NODE_ENV = "production"
-      , OPENSSL_CONF = "/dev/null" -- remove when upgrading to node 18
       , PRODUCTION_FACEBOOK_APP_ID = "894000011480431"
       , PRODUCTION_GOOGLE_CLIENT_ID =
           "584250859572-po558qgkq0b4u3j6a1ge40scjhops3oo"

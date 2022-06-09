@@ -15,7 +15,7 @@ let AppYaml =
           , env_variables : Map Text Text
           }
       , default =
-        { runtime = Some "nodejs16"
+        { runtime = Some "nodejs12"
         , service = None Text
         , entrypoint = None Text
         , handlers = [] : List T.Handler.Type

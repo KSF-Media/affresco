@@ -4,20 +4,14 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "PORT=8000 node build.mjs serve",
-    "prebuild": "npm install",
-    "build": "node build.mjs",
+    "start": "parcel index.html -p 8000",
+    "prebuild": "yarn install",
+    "build": "parcel build index.html --public-url ./",
     "test": "echo 'No testsuite configured'"
   },
   "dependencies": {
     "axios": "^0.21.2",
-    "dotenv": "^16.0.1",
-    "querystring-es3": "^0.2.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1"
-  },
-  "devDependencies": {
-    "@chialab/esbuild-plugin-html": "^0.15.37",
-    "esbuild-plugin-less": "^1.1.7"
   }
 }

@@ -1,24 +1,22 @@
 env:
   NODE_ENV: production
-  OPENSSL_CONF: /dev/null
 jobs:
   check-ci:
     container:
-      image: ksfmedia/diskho:gha-1.2
-      options: "--cpus 2 --user root"
+      image: ksfmedia/diskho:gha-1.1
+      options: "--cpus 2"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: "actions/checkout@v2"
       - name: Check CI script has been generated from Dhall
         run: |2
-            chown root:root .
             make
             git diff --exit-code
   deploy-app-article-server:
     container:
-      image: ksfmedia/diskho:gha-1.2
-      options: "--cpus 2 --user root"
+      image: ksfmedia/diskho:gha-1.1
+      options: "--cpus 2"
     needs: check-ci
     outputs:
       preview: "${{ steps.deploy-app-article-server.outputs.url}}"
@@ -33,7 +31,7 @@ jobs:
           project_id: ksf-staging
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
-            npm ci
+            yarn install --pure-lockfile
             mkdir -p build
       - env:
           HIDE_LOGIN_LINKS: 'true'
@@ -70,8 +68,8 @@ jobs:
           ./ci/ae-cleanup.sh app-article-server
   deploy-gs:
     container:
-      image: ksfmedia/diskho:gha-1.2
-      options: "--cpus 2 --user root"
+      image: ksfmedia/diskho:gha-1.1
+      options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
     steps:
@@ -84,45 +82,45 @@ jobs:
           project_id: ksf-staging
           service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
       - run: |2
-            npm ci
+            yarn install --pure-lockfile
             mkdir -p build
       - name: Setup build cache for Mosaico
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/package-lock.json')}}"
+          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
           path: |
             apps/mosaico/.spago
             apps/mosaico/output
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/package-lock.json')}}"
+          key: "${{ runner.os }}-mitt-konto-${{ hashFiles('apps/mitt-konto/yarn.lock')}}"
           path: |
             apps/mitt-konto/.spago
             apps/mitt-konto/output
       - name: "Setup build cache for Vetrina (for testing only)"
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/package-lock.json')}}"
+          key: "${{ runner.os }}-vetrina-test-${{ hashFiles('apps/vetrina-test/yarn.lock')}}"
           path: |
             apps/vetrina-test/.spago
             apps/vetrina-test/output
       - name: Setup build cache for App article
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/package-lock.json')}}"
+          key: "${{ runner.os }}-app-article-${{ hashFiles('apps/app-article/yarn.lock')}}"
           path: |
             apps/app-article/dist
       - name: Setup build cache for Corona banner
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/package-lock.json')}}"
+          key: "${{ runner.os }}-corona-banner-${{ hashFiles('apps/corona-banner/yarn.lock')}}"
           path: |
             apps/corona-banner/dist
       - name: Setup build cache for HBL365
         uses: "actions/cache@v2"
         with:
-          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/package-lock.json')}}"
+          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
           path: |
             apps/hbl365/.spago
             apps/hbl365/output

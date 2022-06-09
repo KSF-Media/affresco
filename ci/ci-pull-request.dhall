@@ -85,6 +85,5 @@ in  { name = "previews"
       }
     , env =
       { NODE_ENV = "production"
-      , OPENSSL_CONF = "/dev/null" -- remove when upgrading to node 18
       }
     }

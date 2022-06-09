@@ -5,25 +5,17 @@
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
-    "@sentry/browser": "^7.1.1",
-    "@sentry/tracing": "^7.1.1",
     "create-react-class": "^15.6.3",
-    "dotenv": "^16.0.1",
     "less": "^3.8.1",
     "puppeteer": "^8.0.0",
-    "querystring-es3": "^0.2.1",
     "react": ">=15.5",
     "react-date-picker": "^7.5.0",
     "react-dom": ">=15.5"
   },
   "scripts": {
-    "start": "PORT=8000 node -r dotenv/config build.mjs serve",
-    "build": "spago build && node -r dotenv/config build.mjs",
-    "wait-for-esbuild": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8000/\"); sleep(1)}'",
-    "test": "#spago build && npm install && npm run start & npm run wait-for-esbuild && spago test"
-  },
-  "devDependencies": {
-    "@chialab/esbuild-plugin-html": "^0.15.37",
-    "esbuild-plugin-less": "^1.1.7"
+    "start": "parcel index.html -p 8000",
+    "build": "spago build && parcel build index.html --public-url ./",
+    "wait-for-parcel": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8000/\"); sleep(1)}'",
+    "test": "#spago build && yarn install --cache-folder ../../.yarn-cache && yarn start & yarn wait-for-parcel && spago test"
   }
 }

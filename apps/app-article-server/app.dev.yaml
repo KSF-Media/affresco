@@ -1,4 +1,4 @@
-runtime: nodejs16
+runtime: nodejs12
 service: app-article-server
 entrypoint: node -r dotenv/config dist/server
 env_variables:

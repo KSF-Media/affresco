@@ -4,28 +4,19 @@
   "description": "A mitt konto frontend, allows customers to manage their subscriptions",
   "license": "MIT",
   "dependencies": {
-    "@sentry/browser": "^7.0.0",
-    "@sentry/tracing": "^7.0.0",
-    "basscss": "^8.1.0",
     "create-react-class": "^15.6.3",
-    "dotenv": "^16.0.1",
     "less": "^3.8.1",
-    "querystring-es3": "^0.2.1",
     "react": ">=16.12",
     "react-date-picker": "^8.0.3",
     "react-dom": ">=16.12",
-    "react-router-dom": "^5.2.0",
-    "xhr2": "^0.2.1"
+    "react-router-dom": "^5.2.0"
   },
   "devDependencies": {
-    "@chialab/esbuild-plugin-html": "^0.15.37",
-    "esbuild-plugin-alias": "^0.2.1",
-    "esbuild-plugin-less": "^1.1.7",
     "puppeteer": "^8.0.0"
   },
   "scripts": {
-    "start": "PORT=8000 node --experimental-import-meta-resolve -r dotenv/config build.mjs serve",
-    "build": "spago build && node --experimental-import-meta-resolve -r dotenv/config build.mjs && cp xd_receiver.html _redirects ./dist",
+    "start": "parcel index.html -p 8000",
+    "build": "spago build && parcel build index.html --public-url ./ --no-source-maps && cp xd_receiver.html _redirects ./dist",
     "test": "echo 'No testsuite configured'"
   }
 }

@@ -5,6 +5,7 @@ build
 .psc-package
 .psci_modules
 .cache
+package-lock.json
 .DS_Store
 .parcel-cache
 
