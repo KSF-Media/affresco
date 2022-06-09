@@ -827,8 +827,11 @@ notFoundPage env {params: { path } } = do
     ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
     ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
     ["bruksvillkor"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
+    ["bruksvillkor", ""] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
     ["bruksvillkor"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
+    ["bruksvillkor", ""] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
     ["bruksvillkor"] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
+    ["bruksvillkor", ""] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
     _ -> pass
 
 notFoundArticleContent :: MainContent
