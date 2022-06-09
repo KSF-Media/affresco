@@ -10,15 +10,14 @@
     "bootstrap-css-only": "^4.3.1",
     "js-cookie": "^2.2.1",
     "react": "^16.8.3",
-    "react-device-detect": "^1.6.2",
     "react-dom": "^16.8.3",
     "react-image-lightbox": "^5.1.0",
     "uuid": "^8.3.2"
   },
   "scripts": {
     "start": "parcel src/index.html -p 8000",
-    "build-user": "npm --prefix '../../packages/user' run build-npm",
-    "build": "npm run build-user && npm run clean && npm install && parcel build src/index.html --public-url ./ --no-source-maps && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
+    "build-user": "yarn --cwd '../../packages/user' build-npm",
+    "build": "yarn build-user && yarn clean && yarn install && parcel build src/index.html --public-url ./ --no-source-maps && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
     "clean": "rm -rf .cache dist node_modules",
     "test": "echo 'No testsuite configured...'"
   },

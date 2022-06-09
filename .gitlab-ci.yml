@@ -1,10 +1,10 @@
-image: ksfmedia/diskho:lts-19.6
+image: ksfmedia/diskho:lts-18.13
 
 variables:
   DOCKER_DRIVER: overlay2
   GIT_SUBMODULE_STRATEGY: recursive
   CI_SCRIPTS: "${CI_PROJECT_DIR}/infra/ci-scripts"
-  NPM_CACHE: "~/.npm"
+  YARN_CACHE: "${CI_PROJECT_DIR}/.yarn-cache"
 
 .mosaico-ci-variables: &mosaico-ci-vars
   SERVICE_NAME: mosaico
@@ -30,9 +30,9 @@ stages:
   only:
     - master
   cache:
-    key: "affresco-npm-cache"
+    key: "affresco-yarn-cache"
     paths:
-      - $NPM_CACHE
+      - $YARN_CACHE
   artifacts:
     paths:
       - artifacts/

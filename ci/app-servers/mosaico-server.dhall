@@ -10,7 +10,7 @@ in  AppServer::{
     , buildDir = "mosaico"
     , deployDir = "mosaico"
     , previewUrl = "artikel/c7da734f-9e2b-45be-b645-5f4742766486"
-    , runtime = "nodejs16"
+    , runtime = "nodejs12"
     , domains = [ "mosaico.app.ksfmedia.fi/*" ]
     , handlers =
       [ Handler::{ url = Some "/assets", static_dir = Some "dist/client" } ]

@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "start": "parcel index.html -p 8000",
-    "prebuild": "npm install",
+    "prebuild": "yarn install",
     "build": "parcel build index.html --public-url ./",
     "test": "echo 'No testsuite configured'"
   },
