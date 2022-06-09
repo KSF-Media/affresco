@@ -5,14 +5,15 @@
   "author": "KSF Media",
   "license": "MIT",
   "scripts": {
-    "start": "parcel index.html -p 8000",
+    "start": "PORT=8000 node --experimental-import-meta-resolve -r dotenv/config build.mjs serve",
     "build-user": "npm --prefix '../../packages/user' run build-npm",
-    "build": "npm run build-user && parcel build index.html --public-url ./ && cp _redirects dist/",
+    "build": "npm run build-user && node --experimental-import-meta-resolve -r dotenv/config build.mjs && cp _redirects dist/",
     "test": "echo 'No testsuite configured'"
   },
   "dependencies": {
     "@ksf-media/user": "^0.1.2",
     "@material-ui/core": "^3.9.3",
+    "assert": "^2.0.0",
     "babel-plugin-transform-react-jsx": "^6.24.1",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-stage-0": "^6.24.1",
@@ -20,14 +21,15 @@
     "bootstrap": "^4.3.1",
     "cogo-toast": "^4.1.1",
     "core-js": "^3.22.7",
+    "dotenv": "^16.0.1",
     "jquery": "^3.5.0",
     "jsonp": "^0.2.1",
     "material-ui": "^0.20.0",
     "material-ui-superselectfield": "^1.9.0",
     "moment": "^2.29.2",
-    "parcel-bundler": "^1.12.3",
     "path": "^0.12.7",
     "popper.js": "^1.16.0",
+    "querystring-es3": "^0.2.1",
     "react": "^16.3.0",
     "react-autosuggest": "^9.3.4",
     "react-dom": "^16.3.0",
@@ -39,6 +41,9 @@
     "react-swipeable-views": "^0.12.12"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.18.2"
+    "@babel/preset-env": "^7.18.2",
+    "@chialab/esbuild-plugin-html": "^0.15.37",
+    "esbuild-plugin-alias": "^0.2.1",
+    "esbuild-plugin-less": "^1.1.7"
   }
 }

@@ -51,7 +51,7 @@ var Mosaico = require("../output/Mosaico/index.js").jsApp();
 
 ```
 
-After that, we run `node -e 'require(\"./run/build\").runBuild()` (`npm run build-spa`). Here, we build the file `index.js` we have under `web/` into a destination directory `dist/assets/`. Esbuild does its thing: it finds every dependency it needs and places them into `dist/assets/`. Unlike Parcel, esbuild will not handle html files automatically. In stead, in `run/build.js` we manually copy `web/index.html` and our static pages from `static/*` into `dist/`.
+After that, we run `node -e 'require(\"./run/build\").runBuild()` (`npm run build-spa`). Here, we build the file `index.js` we have under `web/` into a destination directory `dist/assets/`. Esbuild does its thing: it finds every dependency it needs and places them into `dist/assets/`. Esbuild will handle html files somewhat automatically, but we have to update the resource paths to be absolute rather than relative.
 
 On static pages, the app initialization expects the selector "#app .mosaico--static-content" to match with the element containing the static content.  This assumption isn't checked at build time.
 
