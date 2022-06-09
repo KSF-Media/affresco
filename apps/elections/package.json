@@ -8,6 +8,7 @@
   "dependencies": {
     "dotenv": "^16.0.1",
     "election": "https://github.com/KSF-Media/election-javascript-client#0ccc2c5f6d6a68b4f747c57c8ca14529ca2133d8",
+    "esbuild": "^0.14.43",
     "lodash": "^4.17.19",
     "parliament-svg": "^2.1.3",
     "querystring-es3": "^0.2.1",

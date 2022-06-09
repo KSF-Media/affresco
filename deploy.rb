@@ -96,6 +96,7 @@ end
 
 build_cmds_staging = [
   "npm ci",
+  "npm --prefix '#{app['path']}/' ci",
   "npm --prefix '#{app['path']}/' run build",
   "npm --prefix '#{app['path']}/' run test",
 ]
@@ -106,6 +107,7 @@ end
 
 build_cmds_production = [
   "npm ci",
+  "npm --prefix '#{app['path']}/' ci",
   "npm --prefix '#{app['path']}/' run build",
 ]
 

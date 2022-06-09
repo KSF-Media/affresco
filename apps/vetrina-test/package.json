@@ -7,18 +7,23 @@
   "dependencies": {
     "@sentry/browser": "^7.1.1",
     "@sentry/tracing": "^7.1.1",
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "create-react-class": "^15.6.3",
     "dotenv": "^16.0.1",
+    "esbuild": "^0.14.43",
     "less": "^3.8.1",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8",
     "puppeteer": "^8.0.0",
     "querystring-es3": "^0.2.1",
     "react": ">=15.5",
     "react-date-picker": "^7.5.0",
-    "react-dom": ">=15.5"
+    "react-dom": ">=15.5",
+    "uuid": "^3.4.0",
+    "uuid-validate": "^0.0.3"
   },
   "scripts": {
-    "start": "PORT=8000 node -r dotenv/config build.mjs serve",
-    "build": "spago build && node -r dotenv/config build.mjs",
+    "start": "PORT=8000 node --experimental-import-meta-resolve -r dotenv/config build.mjs serve",
+    "build": "spago build && node --experimental-import-meta-resolve -r dotenv/config build.mjs",
     "wait-for-esbuild": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8000/\"); sleep(1)}'",
     "test": "#spago build && npm install && npm run start & npm run wait-for-esbuild && spago test"
   },

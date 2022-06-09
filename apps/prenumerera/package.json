@@ -5,13 +5,18 @@
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8",
     "basscss": "^8.0.4",
     "create-react-class": "^15.6.3",
     "dotenv": "^16.0.1",
+    "esbuild": "^0.14.43",
     "less": "^3.8.1",
     "querystring-es3": "^0.2.1",
     "react": ">=15.5",
-    "react-dom": ">=15.5"
+    "react-dom": ">=15.5",
+    "uuid": "^3.4.0",
+    "uuid-validate": "^0.0.3"
   },
   "scripts": {
     "start": "PORT=8000 node --experimental-import-meta-resolve -r dotenv/config build.mjs serve",

@@ -6,9 +6,11 @@
   "license": "MIT",
   "dependencies": {
     "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
+    "esbuild": "^0.14.43",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8",
     "react": "^16.12",
-    "react-dom": "^16.12"
+    "react-dom": "^16.12",
+    "uuid-validate": "^0.0.3"
   },
   "scripts": {
     "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && node build.mjs",

@@ -57,6 +57,7 @@ export const buildSettings = {
   outdir: "dist",
   assetNames: "[name]-[hash]",
   chunkNames: "[name]-[hash]",
+  metafile: true,
   loader: {
     ".js": "jsx",
     ".jpg": "file",
