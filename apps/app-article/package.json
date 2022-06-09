@@ -2,14 +2,13 @@
   "name": "@affresco/app-article",
   "version": "0.1.0",
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
     "@ksf-media/user": "file:../../packages/user",
     "@sentry/browser": "^6.19.7",
     "@sentry/tracing": "^6.19.7",
     "basscss": "^8.1.0",
     "bootstrap-css-only": "^4.3.1",
-    "dotenv": "^16.0.1",
     "js-cookie": "^2.2.1",
-    "querystring-es3": "^0.2.1",
     "react": "^16.8.3",
     "react-device-detect": "^1.6.2",
     "react-dom": "^16.8.3",
@@ -17,17 +16,14 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "start": "PORT=8000 node --experimental-import-meta-resolve build.mjs serve",
+    "start": "parcel src/index.html -p 8000",
     "build-user": "npm --prefix '../../packages/user' run build-npm",
-    "build": "npm run build-user && npm run clean && npm install && node --experimental-import-meta-resolve -r dotenv/config build.mjs && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
+    "build": "npm run build-user && npm run clean && npm install && parcel build src/index.html --public-url ./ --no-source-maps && cp src/xd_receiver.html ./dist && cp src/ads.txt ./dist",
     "clean": "rm -rf .cache dist node_modules",
     "test": "echo 'No testsuite configured...'"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-0",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
-    "@chialab/esbuild-plugin-html": "^0.15.37",
-    "esbuild-plugin-alias": "^0.2.1",
-    "esbuild-plugin-less": "^1.1.7"
+    "@babel/plugin-proposal-class-properties": "^7.5.5"
   }
 }

@@ -2,7 +2,7 @@
 
 ## For javascript use
 
-Install it from npm `npm install --save @ksf-media/vetrina` and just import it into your project:
+Install it from npm `yarn add @ksf-media/vetrina` and just import it into your project:
 ```javascript
 import ReactDOM from 'react-dom';
 import { Vetrina } from '@ksf-media/vetrina';

@@ -4,17 +4,16 @@
   "description": "Vetrina, frontend for purchasing KSF Media products",
   "license": "MIT",
   "scripts": {
-    "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && node build.mjs",
+    "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d build ../../less/Vetrina.less",
     "prepublishOnly": "npm --prefix ../../apps/vetrina-test test",
     "test": "echo 'n/a'"
   },
   "dependencies": {
     "@sentry/browser": "^6.19.7",
     "@sentry/tracing": "^6.19.7",
-    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#7e765d472a404bd14579edc199619d5112936b57",
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff",
     "create-react-class": "^15.6.3",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#812432688d5ca1b2688e5cc4fa986467c1106528",
-    "querystring-es3": "^0.2.1",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "uuid-validate": "^0.0.3"
@@ -23,9 +22,5 @@
     "build",
     "build.js",
     "index.js"
-  ],
-  "devDependencies": {
-    "@chialab/esbuild-plugin-html": "^0.15.37",
-    "esbuild-plugin-less": "^1.1.7"
-  }
+  ]
 }

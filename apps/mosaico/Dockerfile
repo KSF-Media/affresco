@@ -8,5 +8,5 @@ COPY static /app/static
 COPY package.json /app/
 
 WORKDIR app
-RUN npm ci
+RUN npm install
 CMD node -r dotenv/config -e 'require("./output/Main/index").main()'
