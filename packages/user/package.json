@@ -11,7 +11,7 @@
     "react-dom": "^16.12"
   },
   "scripts": {
-    "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && parcel build --no-source-maps -d build ../../less/Registration.less ../../less/Login.less ../../less/Button.less ../../less/ksf-utils.less ../../less/InputField.less",
+    "build-npm": "spago bundle-module -m KSF.User.JS -t build.js && node build.mjs",
     "test": "echo 'No testsuite configured'"
   },
   "files": [
@@ -20,7 +20,8 @@
     "index.js"
   ],
   "devDependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.17.12",
-    "parcel-bundler": "^1.12.3"
+    "@chialab/esbuild-plugin-html": "^0.15.37",
+    "esbuild-plugin-less": "^1.1.7",
+    "querystring-es3": "^0.2.1"
   }
 }

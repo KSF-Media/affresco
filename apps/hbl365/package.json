@@ -5,18 +5,24 @@
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
+    "@sentry/browser": "^6.19.7",
+    "@sentry/tracing": "^6.19.7",
     "create-react-class": "^15.6.3",
+    "dotenv": "^16.0.1",
     "less": "^3.8.1",
+    "querystring-es3": "^0.2.1",
     "react": ">=15.5",
     "react-dom": ">=15.5"
   },
   "scripts": {
-    "start": "parcel index.html -p 8000",
-    "build": "spago build && parcel build index.html --public-url ./ --no-source-maps",
-    "wait-for-parcel": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8000/\"); sleep(1)}'",
-    "test": "#spago build && npm install && npm run start & npm run wait-for-parcel && spago test"
+    "start": "PORT=8000 node --experimental-import-meta-resolve -r dotenv/config build.mjs serve",
+    "build": "spago build && node --experimental-import-meta-resolve -r dotenv/config build.mjs",
+    "wait-for-esbuild": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8000/\"); sleep(1)}'",
+    "test": "#spago build && npm install && npm run start & npm run wait-for-esbuild && spago test"
   },
   "devDependencies": {
-    "parcel-bundler": "^1.12.3"
+    "@chialab/esbuild-plugin-html": "^0.15.37",
+    "esbuild-plugin-alias": "^0.2.1",
+    "esbuild-plugin-less": "^1.1.7"
   }
 }
