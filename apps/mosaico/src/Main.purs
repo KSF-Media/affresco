@@ -832,6 +832,7 @@ notFoundPage env {params: { path } } = do
     ["bruksvillkor", ""] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
     ["bruksvillkor"] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
     ["bruksvillkor", ""] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
+    ["prenumerera"] /\ _ -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
     _ -> pass
 
 notFoundArticleContent :: MainContent
