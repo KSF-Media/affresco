@@ -99,7 +99,8 @@ render scrollPosition props =
                         [ DOM.ul_
                             [ DOM.li_
                                 [ DOM.a
-                                    { children: [ DOM.text "KUNDSERVICE" ]
+                                    { className: block <> "__kundservice-link"
+                                    , children: [ DOM.text "KUNDSERVICE" ]
                                     , href: "/sida/kundservice"
                                     , onClick: props.onStaticPageClick "kundservice"
                                     }
