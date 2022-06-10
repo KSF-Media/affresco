@@ -3,6 +3,7 @@ module Main where
 import Prelude
 
 import Control.Parallel.Class (parallel, sequential)
+import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array as Array
@@ -36,7 +37,7 @@ import JSURI as URI
 import KSF.Paper as Paper
 import KSF.Random (randomString)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), encodeStringifyArticle, encodeStringifyArticleStubs, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), articleToJson, articleStubToJson, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
 import Lettera.ArticleSchema (renderAsJsonLd)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
@@ -367,11 +368,11 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
 
       html <- liftEffect do
         let windowVars =
-              [ "article"           /\ encodeStringifyArticle a.article
-              , "articleType"       /\ (show $ show a.articleType)
-              , "mostReadArticles"  /\ encodeStringifyArticleStubs mostReadArticles
-              , "latestArticles"    /\ encodeStringifyArticleStubs latestArticles
-              , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+              [ "article"           /\ (encodeJson $ articleToJson a.article)
+              , "articleType"       /\ (JSON.fromString $ show a.articleType)
+              , "mostReadArticles"  /\ (encodeJson $ map articleStubToJson mostReadArticles)
+              , "latestArticles"    /\ (JSON.fromArray $ map articleStubToJson latestArticles)
+              , "categoryStructure" /\ encodeJson env.categoryStructure
               ]
             metaTags =
               let a' = a.article
@@ -451,7 +452,7 @@ menu env _ = do
           }
   html <- liftEffect do
             let windowVars =
-                  [ "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+                  [ "categoryStructure" /\ encodeJson env.categoryStructure
                   ]
             appendMosaico mosaicoString htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
@@ -564,8 +565,8 @@ staticPage env { params: { pageName } } = do
               }
       html <- liftEffect do
         let windowVars =
-              [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName)
-              , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+              [ "staticPageName" /\ JSON.fromString pageName
+              , "categoryStructure" /\ encodeJson env.categoryStructure
               ]
         appendMosaico mosaicoString htmlTemplate
           >>= appendVars (mkWindowVariables windowVars)
@@ -869,14 +870,14 @@ notFound env mainContent maybeMostReadArticles maybeLatestArticles = do
                         }
   html <- liftEffect $ do
     let windowVars =
-          [ "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+          [ "categoryStructure" /\ encodeJson env.categoryStructure
           ]
-          <> foldMap (pure <<< Tuple "mostReadArticles" <<< encodeStringifyArticleStubs) maybeMostReadArticles
-          <> foldMap (pure <<< Tuple "latestArticles" <<< encodeStringifyArticleStubs) maybeLatestArticles
+          <> foldMap (pure <<< Tuple "mostReadArticles" <<< JSON.fromArray <<< map articleStubToJson) maybeMostReadArticles
+          <> foldMap (pure <<< Tuple "latestArticles" <<< JSON.fromArray <<< map articleStubToJson) maybeLatestArticles
           <> (case mainContent.type of
-                 ArticleContent -> [ "article" /\ encodeStringifyArticle notFoundArticle.article ]
+                 ArticleContent -> [ "article" /\ (encodeJson $ articleToJson notFoundArticle.article) ]
                  TagListContent tag -> mkArticleFeed (TagFeed tag) (ArticleList [])
-                 StaticPageContent pageName -> [ "staticPageName" /\ (JSON.stringify $ JSON.fromString pageName) ]
+                 StaticPageContent pageName -> [ "staticPageName" /\ JSON.fromString pageName ]
                  _ -> mempty
              )
     appendMosaico mosaicoString htmlTemplate >>=
@@ -912,17 +913,19 @@ parallelWithCommonLists env f =
   <*> parallel (Cache.getMostRead env.cache)
   <*> parallel (Cache.getLatest env.cache)
 
-stdVars :: Env -> Stamped (Array ArticleStub) -> Stamped (Array ArticleStub) -> Array (Tuple String String)
+stdVars :: Env -> Stamped (Array ArticleStub) -> Stamped (Array ArticleStub) -> Array (Tuple String Json)
 stdVars env mostReadArticles latestArticles =
-  [ "mostReadArticles"  /\ encodeStringifyArticleStubs (Cache.getContent mostReadArticles)
-  , "latestArticles"    /\ encodeStringifyArticleStubs (Cache.getContent latestArticles)
-  , "categoryStructure" /\ (JSON.stringify $ encodeJson env.categoryStructure)
+  [ "mostReadArticles"  /\ JSON.fromArray (map articleStubToJson (Cache.getContent mostReadArticles))
+  , "latestArticles"    /\ JSON.fromArray (map articleStubToJson (Cache.getContent latestArticles))
+  , "categoryStructure" /\ encodeJson env.categoryStructure
   ]
 
-mkWindowVariables :: Array (Tuple String String) -> String
+mkWindowVariables :: Array (Tuple String Json) -> String
 mkWindowVariables vars =
-  let jsVars = map (\(name /\ value) -> "window." <> name <> "=" <> value <> ";") $
-               cons ("globalDisableAds" /\ show globalDisableAds) vars
+  let jsVars = map (\(name /\ value) -> "window." <> name <> "=" <> stringify value <> ";") $
+               cons ("globalDisableAds" /\ JSON.fromBoolean globalDisableAds) vars
+      stringify =
+        String.replaceAll (String.Pattern "<") (String.Replacement "\\u003c") <<< JSON.stringify
   in "<script>" <> intercalate "" jsVars <> "</script>"
 
 makeTitle :: String -> String

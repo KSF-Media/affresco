@@ -225,12 +225,21 @@ type Author =
   , email  :: Maybe String
   }
 
--- TODO: Could be a type class
-encodeStringifyArticle :: Article -> String
-encodeStringifyArticle = stringify <<< encodeJson <<< articleToJson
-
-encodeStringifyArticleStubs :: Array ArticleStub -> String
-encodeStringifyArticleStubs = stringify <<< encodeJson <<< map articleStubToJson
+articleToArticleStub :: Article -> ArticleStub
+articleToArticleStub a =
+  { title: a.title
+  , listTitle: a.listTitle
+  , uuid: a.uuid
+  , preamble: a.preamble
+  , mainImage: a.mainImage
+  , listImage: Nothing
+  , premium: a.premium
+  , removeAds: a.removeAds
+  , shareUrl: a.shareUrl
+  , publishingTime: a.publishingTime
+  , tags: a.tags
+  , articleType: a.articleType
+  }
 
 articleToJson :: Article -> Json
 articleToJson article =

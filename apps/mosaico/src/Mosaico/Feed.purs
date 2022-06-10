@@ -2,7 +2,7 @@ module Mosaico.Feed where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, fromArray, stringify)
+import Data.Argonaut.Core (Json, fromArray)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (mapMaybe)
@@ -58,9 +58,9 @@ parseFeed feed = fromMaybe HashMap.empty do
         Nothing
   pure $ HashMap.singleton feedType feedContent
 
-mkArticleFeed :: ArticleFeedType -> ArticleFeed -> Array (Tuple String String)
+mkArticleFeed :: ArticleFeedType -> ArticleFeed -> Array (Tuple String Json)
 mkArticleFeed feedDefinition feed =
-  [ Tuple "frontpageFeed" $ stringify $ encodeJson { feedPage, feedType, feedContent, feedContentType } ]
+  [ Tuple "frontpageFeed" $ encodeJson { feedPage, feedType, feedContent, feedContentType } ]
   where
     fromArticles = fromArray <<< map articleStubToJson
     (Tuple feedContentType feedContent) = case feed of
