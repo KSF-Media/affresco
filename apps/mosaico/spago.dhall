@@ -37,7 +37,6 @@ You can edit this file as you like.
   , "parallel"
   , "payload"
   , "prelude"
-  , "psci-support"
   , "random"
   , "react-basic"
   , "react-basic-classic"
