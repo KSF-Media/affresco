@@ -5,6 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core (Json)
+import Data.Argonaut.Core (toArray, toBoolean, toString) as JSON
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (find, fromFoldable, index, length, mapMaybe, null)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -41,7 +42,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, articleToArticleStub, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Analytics (sendArticleAnalytics, sendPageView)
 import Mosaico.Article as Article
@@ -73,7 +74,7 @@ import React.Basic.Hooks (Component, Render, UseEffect, UseState, component, use
 import React.Basic.Hooks as React
 import Routing (match)
 import Routing.PushState (LocationState, PushStateInterface, locations, makeInterface)
-import Simple.JSON as JSON
+import Simple.JSON (read) as JSON
 import Web.HTML (window) as Web
 import Web.HTML.History (back) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
@@ -131,13 +132,13 @@ type Props =
   }
 
 type JSProps =
-  { article :: Nullable Json
-  , articleType :: Nullable String
-  , mostReadArticles :: Nullable (Array Json)
-  , latestArticles :: Nullable (Array Json)
-  , staticPageName :: Nullable String
-  , categoryStructure :: Nullable (Array Json)
-  , globalDisableAds :: Nullable Boolean
+  { article :: Json
+  , articleType :: Json
+  , mostReadArticles :: Json
+  , latestArticles :: Json
+  , staticPageName :: Json
+  , categoryStructure :: Json
+  , globalDisableAds :: Json
   , initialFrontpageFeed :: Nullable JSInitialFeed
   }
 
@@ -161,6 +162,7 @@ mosaicoComponent initialValues props = React.do
       maxAge = Minutes 15.0
   state /\ setState <- useState initialValues.state
                          { article = Right <$> props.article
+                         , clickedArticle = articleToArticleStub <<< _.article <$> props.article
                          , mostReadArticles = fold props.mostReadArticles
                          , latestArticles = fold props.latestArticles
                          , staticPage = map StaticPageResponse $
@@ -478,18 +480,18 @@ getInitialValues = do
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
   let article = { articleType: _, article: _ }
-                <$> (readArticleType =<< toMaybe jsProps.articleType)
-                <*> (hush <<< parseArticleWithoutLocalizing =<< toMaybe jsProps.article)
-      mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.mostReadArticles
-      latestArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ toMaybe jsProps.latestArticles
+                <$> (readArticleType =<< JSON.toString jsProps.articleType)
+                <*> (hush $ parseArticleWithoutLocalizing jsProps.article)
+      mostReadArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ JSON.toArray jsProps.mostReadArticles
+      latestArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ JSON.toArray jsProps.latestArticles
 
       initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
-      globalDisableAds = fromMaybe false $ toMaybe jsProps.globalDisableAds
-      staticPageName = toMaybe jsProps.staticPageName
+      globalDisableAds = fromMaybe false $ JSON.toBoolean jsProps.globalDisableAds
+      staticPageName = JSON.toString jsProps.staticPageName
       -- Decoding errors are being hushed here, although if this
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
-      categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ toMaybe jsProps.categoryStructure
+      categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ JSON.toArray jsProps.categoryStructure
   in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, globalDisableAds }
 
 jsApp :: Effect (React.ReactComponent JSProps)
