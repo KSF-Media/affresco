@@ -176,20 +176,23 @@
   }
   &__tag-n-share {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    gap: 5px;
-
-    @media (max-width: 400px) {
-      flex-direction: column;
+    @media (min-width: 400px) {
+      flex-direction: row;
     }
   }
   &__tag-n-premium {
-    align-items: baseline;
     display: flex;
+    justify-content: center;
+    align-items: baseline;
     flex-wrap: wrap;
-    gap: 5px;
+    @media (min-width: 400px) {
+      justify-content: flex-start;
+    }
     a {
+      margin-right: 5px;
       @media (min-width: @breakpoint-3col) {
         font-size: 0.9rem;
       }
