@@ -25,6 +25,7 @@ testNavigateToStatic page = do
 
 testStaticEmbeds :: Test
 testStaticEmbeds page = do
+  -- With purescript 0.15, this goto seems to never return.
   Chrome.goto (Chrome.URL $ site <> "sida/fragor-och-svar") page
   testQuestion
   log "Navigate to front page and back"

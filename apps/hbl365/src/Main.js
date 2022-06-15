@@ -1,11 +1,12 @@
-exports.appStore = {
-    apple: require('../../../../images/hbl365/apple.png'),
-    android: require('../../../../images/hbl365/android.png')
-};
+import apple from '../../../../images/hbl365/apple.png';
+import android from '../../../../images/hbl365/android.png';
+import logo from '../../../../images/hbl365/app-icon-1024x1024-pixels.png';
 
-exports.logo = require('../../../../images/hbl365/app-icon-1024x1024-pixels.png');
+export const appStore = { apple, android };
 
-exports.addOnScroll = function() {
+export { logo };
+
+export function addOnScroll() {
     const header = document.getElementsByTagName('header')[0];
     window.onscroll = function(ev) {
 	if (window.scrollY > 38) {

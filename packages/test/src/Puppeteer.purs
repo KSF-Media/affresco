@@ -64,7 +64,7 @@ waitForLong_ selector frame = void $ waitFor selector 100000 frame
 waitFor :: forall page. HasFrame page => Selector -> Int -> page -> Aff ElementHandle
 waitFor selector timeout frame = Chrome.waitForSelector selector { visible: true, timeout } frame
 
-foreign import _xpathEval :: forall page. HasFrame page => Fn2 page String (Effect (Promise (Array ElementHandle)))
+foreign import _xpathEval :: forall page. Fn2 page String (Effect (Promise (Array ElementHandle)))
 foreign import _clickElement :: ElementHandle -> Effect (Promise Unit)
 
 xpathEval :: forall page. HasFrame page => String -> page -> Aff (Array ElementHandle)

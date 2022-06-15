@@ -9,7 +9,7 @@
     "less": "^3.8.1",
     "puppeteer": "^8.0.0",
     "react": ">=15.5",
-    "react-date-picker": "^7.5.0",
+    "react-date-picker": "^8.4.0",
     "react-dom": ">=15.5"
   },
   "scripts": {

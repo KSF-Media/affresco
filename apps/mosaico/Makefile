@@ -6,4 +6,4 @@ run-spago-watch:
 run-browser-sync:
 	node ./run/hot-reload.mjs
 start-dev-server:
-	node -r dotenv/config -e 'require("./output/Main/index").main()' dotenv_config_path=.env.development
+	node --input-type=module -r dotenv/config -e 'import index from "./output/Main/index.js"; index.main();' dotenv_config_path=.env.development

@@ -79,6 +79,8 @@ import Web.HTML (window) as Web
 import Web.HTML.History (back) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, history, scroll) as Web
+import KSF.Driver (setDriver)
+import Affjax.Web (driver)
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
@@ -148,6 +150,7 @@ type JSProps =
 app :: Component Props
 app = do
   Auth.enableCookieLogin
+  setDriver driver
   initialValues <- getInitialValues
   component "Mosaico" $ mosaicoComponent initialValues
 

@@ -13,10 +13,10 @@ import Data.JSDate (JSDate, toDateTime, fromInstant)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Ord (abs)
 import Data.Time.Duration (Minutes(..))
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, mkEffectFn1)
-import Math (abs)
 import Prim.Row (class Nub, class Union)
 import React.Basic (JSX, ReactComponent)
 import React.Basic as React
