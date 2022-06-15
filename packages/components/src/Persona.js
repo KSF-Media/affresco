@@ -1,5 +1,5 @@
 "use strict";
-var Persona = require("persona");
+import Persona from "persona";
 
 Persona.ApiClient.instance.basePath = process.env.PERSONA_URL;
 
@@ -9,16 +9,16 @@ Persona.ApiClient.instance.timeout = {
   deadline: 20000, // but up to 20 seconds of overall data transfer
 };
 
-exports.accountApi = new Persona.AccountApi(Persona.ApiClient.instance);
-exports.adminApi = new Persona.AdminApi(Persona.ApiClient.instance);
-exports.loginApi = new Persona.LoginApi(Persona.ApiClient.instance);
-exports.usersApi = new Persona.UsersApi(Persona.ApiClient.instance);
+export const accountApi = new Persona.AccountApi(Persona.ApiClient.instance);
+export const adminApi = new Persona.AdminApi(Persona.ApiClient.instance);
+export const loginApi = new Persona.LoginApi(Persona.ApiClient.instance);
+export const usersApi = new Persona.UsersApi(Persona.ApiClient.instance);
 
-exports.rawJSONStringify = function(x) {
+export function rawJSONStringify(x) {
     return JSON.stringify(x);
 };
 
-exports.rawJSONParse = function(x) {
+export function rawJSONParse(x) {
     const reISO = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/;
     return JSON.parse(x, function (key, value) {
         if (typeof value === 'string') {

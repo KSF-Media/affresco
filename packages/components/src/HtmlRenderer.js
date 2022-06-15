@@ -1,16 +1,16 @@
 // See https://www.npmjs.com/package/html-to-react
 
-const React = require('react');
-const HtmlToReact = require('html-to-react');
-const HtmlToReactParser = require('html-to-react').Parser;
+import React from 'react';
+import HtmlToReact from 'html-to-react';
+const HtmlToReactParser = HtmlToReact.Parser;
 
 const htmlToReactParser = new HtmlToReactParser();
 
-exports.renderHtmlInputImpl = function (htmlInput) {
+export function renderHtmlInputImpl(htmlInput) {
     return htmlToReactParser.parse(htmlInput);
 }
 
-exports.renderHtmlInputWithHooksImpl = function (htmlInput, hooks) {
+export function renderHtmlInputWithHooksImpl(htmlInput, hooks) {
 
     // Not used but needed
     const isValidNode = function () {

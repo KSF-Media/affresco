@@ -1,6 +1,6 @@
 "use strict";
 
-exports.callApi_ = function (api, methodName, params, opts) {
+export function callApi_(api, methodName, params, opts) {
   var debugInfo = { api: api, methodName: methodName, params: params, opts: opts };
   return function (onError, onSuccess) {
     var args = isEmptyObject(opts) ? params : params.concat(opts);

@@ -1,5 +1,5 @@
-exports.letteraBaseUrl = process.env.LETTERA_URL;
+export const letteraBaseUrl = process.env.LETTERA_URL;
 
-exports.encodeURIComponent = function(s) {
+export function _encodeURIComponent(s) {
     return encodeURIComponent(s);
 }

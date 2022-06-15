@@ -9,16 +9,16 @@ However, it creates weird errors and does not work as expected.
 JavaScript, not even once.
 */
 
-exports.setItem_ = function (k, v) {
+export function setItem_(k, v) {
   window.localStorage.setItem(k, v);
   return {};
 };
 
-exports.getItem_ = function (k) {
+export function getItem_(k) {
   return window.localStorage.getItem(k);
 };
 
-exports.removeItem_ = function (k) {
+export function removeItem_(k) {
   window.localStorage.removeItem(k);
   return {};
 };

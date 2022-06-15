@@ -1,3 +1,3 @@
 "use strict";
 
-exports.hideLoginLinks = process.env.HIDE_LOGIN_LINKS === "true";
+export const hideLoginLinks = process.env.HIDE_LOGIN_LINKS === "true";

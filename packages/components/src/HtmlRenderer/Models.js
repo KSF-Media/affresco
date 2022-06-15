@@ -5,55 +5,55 @@
 // https://www.npmjs.com/package/htmlparser
 
 // Getters
-exports.getRawImpl = (node) => {
+export function getRawImpl(node) {
     if (node && node.raw)
       return node.raw;
 
     return null;
 }
 
-exports.getDataImpl = (node) => {
+export function getDataImpl(node) {
     if (node && node.data)
       return node.data;
 
     return null;
 }
 
-exports.getTypeImpl = (node) => {
+export function getTypeImpl(node) {
     if (node && node.type)
       return node.type;
 
     return null;
 }
 
-exports.getNameImpl = (node) => {
+export function getNameImpl(node) {
     if (node && node.name)
       return node.name;
 
     return null;
 }
 
-exports.getStringAttribImpl = (name, node) => {
+export function getStringAttribImpl(name, node) {
     if (node && node.attribs)
       return node.attribs[name];
 
     return null;
 }
 
-exports.getChildrenImpl = (node) => {
+export function getChildrenImpl(node) {
     if (node && node.children)
       return node.children;
 
     return null;
 }
 
-exports.setStringAttribImpl = (name, value, node) => {
+export function setStringAttribImpl(name, value, node) {
     if (node && node.attribs)
 	node.attribs[name] = value;
     return node;
 }
 
-exports.removeAttribImpl = (name, node) => {
+export function removeAttribImpl(name, node) {
     if (node && node.attribs)
 	delete node.attribs[name];
     return node;

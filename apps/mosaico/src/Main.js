@@ -1,37 +1,37 @@
-var cheerio = require("cheerio");
+import cheerio from "cheerio";
 
-exports.parseTemplate = function (HTML_TEMPLATE) {
+export function parseTemplate(HTML_TEMPLATE) {
   return cheerio.load(HTML_TEMPLATE);
 }
 
-exports.renderTemplateHtml = function ($template) {
+export function renderTemplateHtml($template) {
   return $template.html();
 }
 
-exports.cloneTemplate = function ($template) {
+export function cloneTemplate($template) {
   return $template.root().clone();
 }
 
 // Writes mosaico html inside #app
-exports.appendMosaicoImpl = function (a, $template) {
+export function appendMosaicoImpl(a, $template) {
   $template.find("#app").append(a);
   return $template;
 };
 
 // Writes given element under the `head` element
-exports.appendHeadImpl = function (element, $template) {
+export function appendHeadImpl(element, $template) {
   $template.find("head").append(element);
   return $template;
 };
 
 // Appends content to body
-exports.appendVarsImpl = function (script, $template) {
+export function appendVarsImpl(script, $template) {
   $template.find("#app-vars").append(script);
   return $template;
 }
 
 // Server Port
-exports.serverPort = process.env.PORT;
+export const serverPort = process.env.PORT;
 
 // Tests are prone to failing with ads
-exports.globalDisableAds = !!process.env.DISABLE_ADS;
+export const globalDisableAds = !!process.env.DISABLE_ADS;

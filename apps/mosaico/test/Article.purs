@@ -5,8 +5,7 @@ import Prelude hiding (sub)
 import Control.Alternative (guard)
 import Control.Monad.Maybe.Trans (runMaybeT, lift)
 import Data.Maybe (Maybe(..), maybe)
-import Effect.Aff as Aff
-import Effect.Aff (Aff, Milliseconds(..))
+import Effect.Aff (Aff)
 import KSF.Paper (Paper(..))
 import KSF.Puppeteer as Chrome
 import Mosaico.Paper (mosaicoPaper)
@@ -119,7 +118,6 @@ testPaywallLogin loadDirect uuid user password f page = do
     then Chrome.goto (Chrome.URL $ site <> "artikel/" <> uuid) page
     else navigateTo uuid page
   let article = Chrome.Selector "article.mosaico-article"
-      login = Chrome.Selector ".mosaico--login-modal"
   premiumArticleTest article page
   -- Edge case: If premium article has only one body element, it
   -- renders with no body elements with paywall
