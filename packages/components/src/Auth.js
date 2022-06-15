@@ -1,8 +1,12 @@
 "use strict";
 
 // Eww, global state
-var saveTokenInCookies = false;
+var saveTokenInCookies_ = false;
 
-exports.saveTokenInCookies = function() { return saveTokenInCookies; }
+export function saveTokenInCookies() {
+    return saveTokenInCookies_;
+}
 
-exports.enableCookieLogin = function() { saveTokenInCookies = true; }
+export function enableCookieLogin() {
+    saveTokenInCookies_ = true;
+}

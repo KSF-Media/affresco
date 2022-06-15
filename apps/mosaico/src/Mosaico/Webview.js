@@ -1,3 +1,3 @@
-exports.videoJS = function() {
+export function videoJS() {
   videojs('video-js');
 }

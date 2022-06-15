@@ -7,17 +7,17 @@
 // For development environments
 const insecure = !!process.env.INSECURE_COOKIE;
 
-exports.setCookie_ = function (k, v) {
+export function setCookie_(k, v) {
   document.cookie = k + "=" + v + ";SameSite=Strict;Path=/" + (insecure ? "" : ";Secure");
   return {};
 }
 
-exports.getValue_ = function (k) {
+export function getValue_(k) {
   const cookie = document.cookie.split('; ').find(function(row) {return row.startsWith(k+'=')});
   return cookie ? cookie.split('=')[1] : null;
 }
 
-exports.deleteCookie_ = function (k) {
+export function deleteCookie_(k) {
   document.cookie = k + "=;Max-age=0;Path=/";
   return {};
 }
