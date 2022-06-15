@@ -1,4 +1,4 @@
-exports.evalExternalScriptsImpl = function (scripts) {
+export function evalExternalScriptsImpl(scripts) {
   if (typeof document !== "undefined") {
     scripts.forEach((script) => {
       var dummy = document.createElement("div");

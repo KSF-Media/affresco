@@ -9,4 +9,4 @@ COPY package.json /app/
 
 WORKDIR app
 RUN yarn install
-CMD node -r dotenv/config -e 'require("./output/Main/index").main()'
+CMD node --input-type=module -r dotenv/config -e 'import {main} from "./output/Main/index.js"; main();'

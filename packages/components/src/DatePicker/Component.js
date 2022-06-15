@@ -1,5 +1,5 @@
-var DatePicker = require("react-date-picker");
+import DatePicker from 'react-date-picker';
 
-exports.datePicker_ = function () {
-  return DatePicker.default;
+export function datePicker_() {
+  return DatePicker;
 };

@@ -4,9 +4,9 @@ in conf // {
     sources = conf.sources # [ "test/**/*.purs" ],
     dependencies = conf.dependencies #
         [ "affresco-test"
-        , "debug"
         , "partial"
 	, "enums"
+        , "transformers"
 	    , "test-unit"
 	    ]
 }

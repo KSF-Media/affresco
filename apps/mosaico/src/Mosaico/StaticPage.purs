@@ -11,6 +11,8 @@ import Data.Monoid (guard)
 import Data.Nullable (Nullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
+import KSF.Driver (getDriver)
 import Mosaico.Paper (_mosaicoPaper)
 
 foreign import getInitialStaticPageContent :: Effect (Nullable String)
@@ -33,8 +35,9 @@ fetchStaticPage pageName = do
   --The js files have the same content regardless of paper, therefore they are found directly in the static directory
   let staticPageUrl = "/assets/" <> _mosaicoPaper <> "/" <> pageName <> ".html"
   let staticPageJsUrl = "/assets/" <> pageName <> ".js"
-  resPage <- AX.get AX.string staticPageUrl
-  resJs <- AX.get AX.string staticPageJsUrl
+  driver <- liftEffect getDriver
+  resPage <- AX.get driver AX.string staticPageUrl
+  resJs <- AX.get driver AX.string staticPageJsUrl
   let jsContent eitherJs = do
           jsRes <- hush eitherJs
           guard (jsRes.status == StatusCode 200) Just jsRes.body

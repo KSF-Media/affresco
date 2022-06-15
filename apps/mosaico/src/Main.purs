@@ -270,7 +270,8 @@ main = do
           , clientip: getClientIP
           , epaper: epaperGuard
           }
-    Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+    void $ Payload.startGuarded (Payload.defaultOpts { port = 8080 }) spec { handlers, guards }
+    pure unit
 
 getHealthz :: {guards :: {clientip :: Maybe String}} -> Aff String
 getHealthz {guards: {clientip}} =

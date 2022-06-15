@@ -1,4 +1,4 @@
-exports._pushToDataLayer = function(metadata) {
+export function _pushToDataLayer(metadata) {
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push(function() {
         this.reset();
@@ -17,7 +17,7 @@ exports._pushToDataLayer = function(metadata) {
     dataLayer.push(push_data)
 }
 
-exports._sendPageView = function() {
+export function _sendPageView() {
     window.dataLayer = window.dataLayer || []
     window.dataLayer.push(function() {
         this.reset();

@@ -1,4 +1,4 @@
-exports.refreshAdsImpl = function (slotArray) {
+export function refreshAdsImpl(slotArray) {
   if (typeof window.googletag.pubads === "function") {
     window.googletag
       .pubads()
@@ -11,10 +11,10 @@ exports.refreshAdsImpl = function (slotArray) {
       });
   }
 };
-exports.sentryDsn_ = function () {
+export function sentryDsn_() {
   return process.env.SENTRY_DSN;
 };
 
-exports.setManualScrollRestoration = function () {
+export function setManualScrollRestoration() {
   history.scrollRestoration = 'manual';
 }
