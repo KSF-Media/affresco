@@ -17,7 +17,7 @@ footer :: Paper -> (String -> EventHandler) -> JSX
 footer mosaicoPaper onStaticPageClick =
   DOM.footer
     { style: DOM.css {"gridArea": "foot"}
-    , className: "flex flex-col items-center py-12 px-0 m-0 bg-gray-50 md:px-2 md:-mx-3 font-roboto"
+    , className: "flex flex-col items-center py-12 px-0 m-0 bg-gray-50 md:px-2 font-roboto"
     , children:
         [ contactInfo mosaicoPaper onStaticPageClick
         , DOM.hr { className: "w-4/5 sm:w-56 md:w-96 mt-0 mx-auto mb-5 bg-gray-300 border-0 h-[1px]" }
