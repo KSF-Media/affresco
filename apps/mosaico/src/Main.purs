@@ -715,7 +715,8 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
                        <> foldMap (mkArticleFeed $ CategoryFeed label) feed
       html <- liftEffect $ appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
-              appendHead (makeTitle (unwrap label))
+              maybe pure appendHead (guard (label == frontpageCategoryLabel) $ Just startpageMeta) >>=
+              appendHead (makeTitle title)
       let rendered = renderTemplateHtml html
       Cache.saveCategoryRender env.cache label $ mosaicoString $> rendered
       now <- liftEffect nowDateTime
@@ -731,6 +732,18 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
           , latestArticles
           , categoryStructure: env.categoryStructure
           }
+    title = if label == frontpageCategoryLabel then Paper.paperName mosaicoPaper else unwrap label
+    startpageDescription = case mosaicoPaper of
+      Paper.HBL -> Just "En sajt om samtiden för dig som vill uppleva, delta och påverka – på svenska."
+      Paper.ON -> Just "Nyheter från östra Nylands största svenskspråkiga tidning."
+      Paper.VN -> Just "Nyheter från Västnylands största svenskspråkiga tidning."
+      _ -> Nothing
+    startpageMeta = DOM.renderToStaticMarkup $
+      DOM.fragment
+        [ DOM.meta { property: "og:type", content: "website" }
+        , DOM.meta { property: "og:title", content: title }
+        , foldMap (\content -> DOM.meta { property: "og:description", content }) startpageDescription
+        ]
 
 searchPage :: Env -> { query :: { search :: Maybe String } } -> Aff (Response ResponseBody)
 searchPage env { query: { search } } = do
