@@ -813,6 +813,7 @@ notFoundPage env {params: { path } } = do
       pass = notFound env notFoundArticleContent mempty mempty
   -- TODO 2 make these editable somewhere else
   case fromFoldable path /\ mosaicoPaper of
+    ["abi"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/abi"
     ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
     ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
     ["ingen-tidning"] /\ _ -> redir "https://konto.ksfmedia.fi/"
