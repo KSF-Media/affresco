@@ -3,49 +3,59 @@ module Mosaico.Footer
   ) where
 
 import Prelude
+import Data.Foldable (foldMap)
+import Data.Maybe  (Maybe(..))
 import Data.String (Pattern(..), Replacement(..), replaceAll)
-import KSF.Paper (Paper(..), cssName, homepage, paperName)
+import KSF.Paper (Paper(..), homepage, paperName)
 import Mosaico.Ad (openConsentRevocationMessage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Events (handler, EventHandler)
 import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (handler, EventHandler)
 
 footer :: Paper -> (String -> EventHandler) -> JSX
 footer mosaicoPaper onStaticPageClick =
   DOM.footer
-    { className: "mosaico--footer"
+    { style: DOM.css {"gridArea": "foot"}
+    , className: "flex flex-col items-center py-12 px-0 m-0 bg-gray-50 md:px-2 md:-mx-3 font-roboto"
     , children:
         [ contactInfo mosaicoPaper onStaticPageClick
-        , DOM.hr { className: "mosaico-footer__separator" }
+        , DOM.hr { className: "w-4/5 sm:w-56 md:w-96 mt-0 mx-auto mb-5 bg-gray-300 border-0 h-[1px]" }
         , DOM.div
-            { className: "mosaico-footer__caption"
+            { className: "mt-6 mb-4 text-sm font-black text-gray-400"
             , children: [ DOM.text "ALLA KSF-TIDNINGAR" ]
             }
         , DOM.div
-            { className: "mosaico-footer__other-papers"
+            { className: "flex flex-col w-full sm:w-80 md:w-96 xs:flex-row"
             , children: map logo [ VN, HBL, ON ]
             }
         ]
     }
+
   where
   logo :: Paper -> JSX
   logo paper =
     let
-      className = "mosaico-footer__logo mosaico-footer__logo--" <> cssName paper
+      className = "flex flex-col items-center justify-center flex-1 no-underline bg-cover"
 
-      children =
-        [ DOM.div { className: "mosaico-footer__logo-image mosaico-footer__logo-image--" <> cssName paper }
+      children = foldMap (\cls ->
+        [ DOM.div { className: "w-14 h-14 bg-gray-400 mask-size-14" <> cls}
         , DOM.div
-            { className: "mosaico-footer__logo-caption"
+            { className: "text-xs text-gray-400 whitespace-nowrap"
             , children: [ DOM.text $ paperName paper ]
             }
-        ]
+        ]) $ logoClass paper
+
     in
       if paper == mosaicoPaper then
         DOM.div { className, children }
       else
         DOM.a { className, children, href: homepage paper }
+
+  logoClass HBL = Just " maskimage-hbl"
+  logoClass VN = Just " maskimage-vn"
+  logoClass ON = Just " maskimage-on"
+  logoClass _ = Nothing
 
 contactInfo :: Paper -> (String -> EventHandler) -> JSX
 contactInfo ON = ostnylandContactInfo
@@ -59,10 +69,9 @@ contactInfo _ = footerLinks
 hblContactInfo :: (String -> EventHandler) -> JSX
 hblContactInfo onStaticPageClick =
   DOM.div
-    { className: "mosaico-footer__contact-info"
-    , children:
+    { children:
         [ DOM.div
-            { className: "mosaico-footer__contact-info__columns"
+            { className: "inline text-sm text-gray-600 md:flex"
             , children:
                 [ column firstColumn
                 , column secondColumn
@@ -95,10 +104,7 @@ hblContactInfo onStaticPageClick =
         , email "annons@hbl.fi"
         , DOM.br {}
         , DOM.text "Annonskiosken: "
-        , DOM.a
-            { href: "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
-            , children: [ DOM.text "hbl.fi/annonskiosken"]
-            }
+        , columnLink "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet" [ DOM.text "hbl.fi/annonskiosken"]
         ]
     ]
 
@@ -113,21 +119,16 @@ hblContactInfo onStaticPageClick =
         , email "nyheter@hbl.fi"
         ]
     , section "Insändare: "
-        [ DOM.a
-            { href: "/sida/insandare"
-            , children: [ DOM.text "Skriv din insändare här" ]
-            }
-        ]
+        [ columnLink "/sida/insandare" [ DOM.text "Skriv din insändare här" ] ]
     , section "Mejla din insändäre: " [ email "debatt@hbl.fi" ]
     ]
 
 vastranylandContactInfo :: (String -> EventHandler) -> JSX
 vastranylandContactInfo onStaticPageClick =
   DOM.div
-    { className: "mosaico-footer__contact-info"
-    , children:
+    { children:
         [ DOM.div
-            { className: "mosaico-footer__contact-info__columns"
+            { className: "inline text-sm text-gray-600 md:flex"
             , children:
                 [ column firstColumn
                 , column secondColumn
@@ -163,10 +164,7 @@ vastranylandContactInfo onStaticPageClick =
         , email "annons@vastranyland.fi"
         , DOM.br {}
         , DOM.text "Annonskiosken: "
-        , DOM.a
-            { href: "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
-            , children: [ DOM.text "vastranyland.fi/annonskiosken"]
-            }
+        , columnLink "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland" [ DOM.text "vastranyland.fi/annonskiosken"]
         ]
     ]
 
@@ -174,16 +172,10 @@ vastranylandContactInfo onStaticPageClick =
     [ section "Ansvarig utgivare: " [ DOM.text "Erja Yläjärvi" ]
     , section "Chefredaktör för tidningen och nyhetschef: " [ DOM.text "Marina Holmberg" ]
     , section "Insändare: "
-        [ DOM.a
-            { href: "/sida/insandare"
-            , children: [ DOM.text "Skriv din insändare här" ]
-            }
+        [ columnLink "/sida/insandare" [ DOM.text "Skriv din insändare här" ]
         ]
     , section "Anslagstavlan: "
-        [ DOM.a
-            { href: "/sida/anslagstavlan"
-            , children: [ DOM.text "Skicka in din händelse här" ]
-            }
+        [ columnLink "/sida/anslagstavlan" [ DOM.text "Skicka in din händelse här" ]
         ]
     , section "" [ DOM.text "Det lokala kommer först." ]
     ]
@@ -191,10 +183,9 @@ vastranylandContactInfo onStaticPageClick =
 ostnylandContactInfo :: (String -> EventHandler) -> JSX
 ostnylandContactInfo onStaticPageClick =
   DOM.div
-    { className: "mosaico-footer__contact-info"
-    , children:
+    { children:
         [ DOM.div
-            { className: "mosaico-footer__contact-info__columns"
+            { className: "inline text-sm text-gray-600 md:flex"
             , children:
                 [ column firstColumn
                 , column secondColumn
@@ -215,7 +206,7 @@ ostnylandContactInfo onStaticPageClick =
     , section "Prenumerationer och kundservice:"
         [ tel "09 1253 500"
         , DOM.br {}
-        , DOM.a { href: "mailto:pren@ksfmedia.fi", children: [ DOM.text "pren@ksfmedia.fi" ] }
+        , columnLink "mailto:pren@ksfmedia.fi" [ DOM.text "pren@ksfmedia.fi" ]
         , DOM.br {}
         , DOM.text "(mån-fre kl. 8.00-12.00 och 13.00-16.00."
         , DOM.br {}
@@ -232,10 +223,7 @@ ostnylandContactInfo onStaticPageClick =
         , email "annons@ostnyland.fi"
         , DOM.br {}
         , DOM.text "Annonskiosken: "
-        , DOM.a
-            { href: "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
-            , children: [ DOM.text "ostnyland.fi/annonskiosken"]
-            }
+        , columnLink "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland" [ DOM.text "ostnyland.fi/annonskiosken"]
         ]
     ]
 
@@ -246,10 +234,7 @@ ostnylandContactInfo onStaticPageClick =
         , tel "040 506 3977"
         ]
     , section "Insändare: "
-        [ DOM.a
-            { href: "/sida/insandare"
-            , children: [ DOM.text "Skriv din insändare här" ]
-            }
+        [ columnLink "/sida/insandare" [ DOM.text "Skriv din insändare här" ]
         ]
     , section "" [ DOM.text "Det lokala kommer först." ]
     ]
@@ -257,7 +242,7 @@ ostnylandContactInfo onStaticPageClick =
 footerLinks :: (String -> EventHandler) -> JSX
 footerLinks onStaticPageClick =
   DOM.div
-    { className: "mosaico-footer__links"
+    { className: "flex flex-col justify-center items-center mx-auto mt-9 mb-8 md:flex-row"
     , children:
         [ externalLink "Dataskyddsbeskrivning" "https://www.ksfmedia.fi/dataskydd"
         , footerLink "Bruksvillkor" "bruksvillkor"
@@ -270,53 +255,59 @@ footerLinks onStaticPageClick =
   externalLink caption url =
     DOM.a
       { href: url
+      , className: "my-1 mx-auto text-sm text-gray-900 no-underline sm:mx-5"
       , children: [ DOM.text caption ]
       }
 
   footerLink caption link =
     DOM.a
       { href: "/sida/" <> link
+      , className: "my-1 mx-auto text-sm text-gray-900 no-underline sm:mx-5"
       , children: [ DOM.text caption ]
       , onClick: onStaticPageClick link
       }
 
 column :: Array JSX -> JSX
-column children = DOM.div { className: "mosaico-footer__contact-info__column", children: children }
+column children = DOM.div { className: "max-w-xs", children }
+
+columnLink :: String -> Array JSX -> JSX
+columnLink href children = DOM.a { href, children, className: "text-blue-link" }
 
 section :: String -> Array JSX -> JSX
 section title children =
   DOM.div
-    { className: "mosaico-footer__contact-info__section"
+    { className: "block pr-1 pl-1 mt-4 mb-2"
     , children:
-        [ DOM.b { children: [ DOM.text title, DOM.text " " ] }
-        , DOM.div { children: children }
+        [ DOM.b
+        { className: "text-sm font-black"
+        , children: [ DOM.text title, DOM.text " " ] }
+        , DOM.div
+        { className:  "no-underline"
+        , children: children }
         ]
     }
 
 email :: String -> JSX
-email address = DOM.a { href: "mailto:" <> address, children: [ DOM.text address ] }
+email address = columnLink ("mailto:" <> address) [ DOM.text address ]
 
 tel :: String -> JSX
 tel number =
-  DOM.a
-    { href: "tel:" <> replaceAll (Pattern " ") (Replacement "") number
-    , children: [ DOM.text number ]
-    }
+  columnLink
+    ("tel:" <> replaceAll (Pattern " ") (Replacement "") number)
+    [ DOM.text number ]
 
 thirdColumn :: Array JSX
 thirdColumn =
   [ section "" [ DOM.text "KSF Media ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. KSF Media ägs av Konstsamfundet." ]
   , section ""
-      [ DOM.a
-          { href: "https://www.ksfmedia.fi/jobba-hos-oss"
-          , children: [ DOM.text "Jobba hos oss" ]
-          }
+      [ columnLink "https://www.ksfmedia.fi/jobba-hos-oss" [ DOM.text "Jobba hos oss" ]
       ]
   , section "Dataskydd: "
       [ DOM.a
           { href: "#"
           , onClick: handler preventDefault openConsentRevocationMessage
           , children: [ DOM.text "Hantera dataskydd" ]
+          , className: "text-blue-link"
           }
       ]
   ]
