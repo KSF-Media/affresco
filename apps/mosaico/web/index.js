@@ -19,6 +19,7 @@ window.Buffer = window.Buffer || { isBuffer: () => false };
 import "../../../less/mosaico.less";
 import "../../../less/Vetrina.less";
 import "../../../less/Login.less";
+import "../src/_site.scss";
 
 // yup, welcome to react 16
 import createReactClass from "create-react-class";
