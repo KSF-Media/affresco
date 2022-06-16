@@ -89,6 +89,7 @@ module.exports = {
       hbl: "#f07e26",
       on: "#518196",
       vn: "#c90c0f",
+      brand: "var(--brand-color)", // defined in _site.scss
     },
 
     fontFamily: {
