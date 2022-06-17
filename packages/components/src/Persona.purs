@@ -467,9 +467,7 @@ type CusnoInUseRegistration = ServerError
   ( unique_cusno_violation :: CusnoViolationUser )
 
 data Provider
-  = Facebook
-  | GooglePlus
-  | Capture
+  = Capture
 
 derive instance genericProvider :: Generic Provider _
 instance readProvider :: ReadForeign Provider where

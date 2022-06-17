@@ -5,7 +5,6 @@ import Prelude
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
-import Data.Set as Set
 import Data.Traversable (foldMap)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -80,7 +79,6 @@ render props state =
                         Console.log "LAUNCHING AFF"
                         -- TODO: spinners and things
                         Aff.launchAff_ aff
-                    , disableSocialLogins: Set.empty
                     }
                 ]
             }

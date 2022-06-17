@@ -12,7 +12,6 @@ module KSF.User
   , loginIP
   , logout
   , someAuth
-  , facebookSdk
   , createUser
   , createUserWithEmail
   , createCusnoUser
@@ -61,7 +60,6 @@ import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
-import Control.Parallel (parSequence_)
 import Data.Array as Array
 import Data.Date (Date)
 import Data.Either (Either(..), either)
@@ -82,11 +80,9 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
-import Effect.Class.Console as Log
 import Effect.Exception (Error, error)
 import Effect.Exception as Error
 import Effect.Uncurried (mkEffectFn1)
-import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), Password, UserAuth, oauthToken, parseToken) as Api
@@ -103,14 +99,10 @@ import KSF.LocalStorage as LocalStorage
 import KSF.Paper (Paper)
 import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
-import KSF.User.Login.Facebook.Success as Facebook.Success
-import KSF.User.Login.Google as Google
 import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
-
-foreign import facebookAppId :: String
 
 -- Only in admin action responses
 type ConflictingUser =
@@ -130,10 +122,7 @@ conflictingUserFromApiResponse user =
 
 data UserError =
   LoginInvalidCredentials
-  | LoginFacebookEmailMissing
   | LoginEmailMismatchError
-  | LoginGoogleAuthInitError
-  | LoginGoogleAuthInitErrorOrigin
   | LoginTokenInvalid
   | LoginTokenExpired
   | InvalidFormFields ValidationServerError
@@ -487,21 +476,16 @@ loginIP paper = do
           Console.error "An unexpected error occurred during ip login"
           pure $ Left $ UnexpectedError err
 
--- | Logout the user. Calls social-media SDKs and SSO library.
+-- | Logout the user. Calls SSO library.
 --   Wipes out local storage.
 logout :: (Either Error Unit -> Effect Unit) -> Aff Unit
 logout handleLogout = do
   -- use authentication data from local storage to logout first from Persona
-  -- NOTE: In case this request fails, we still want to clear local storage and continue with the social logouts.
+  -- NOTE: In case this request fails, we still want to clear local storage.
   logoutResponse <- try logoutPersona
   -- then we wipe the local storage
   liftEffect deleteToken `catchError` Console.errorShow
-  -- then, in parallel, we run all the third-party logouts
-  parSequence_
-    [ logoutFacebook `catchError` Console.errorShow
-    , logoutGoogle   `catchError` Console.errorShow
-    , logoutJanrain  `catchError` Console.errorShow
-    ]
+  logoutJanrain  `catchError` Console.errorShow
   liftEffect $ handleLogout logoutResponse
 
 logoutPersona :: Aff Unit
@@ -510,24 +494,6 @@ logoutPersona = do
   case token of
     Just t  -> Persona.logout t
     Nothing -> pure unit
-
-logoutFacebook :: Aff Unit
-logoutFacebook = do
-  needsFacebookLogout <- liftEffect do
-    Facebook.Success.getFacebookSuccess <* Facebook.Success.unsetFacebookSuccess
-  when needsFacebookLogout do
-    sdk <- facebookSdk
-    FB.StatusInfo { status } <- FB.loginStatus sdk
-    when (status == FB.Connected) do
-      _ <- FB.logout sdk
-      Log.info "Logged out from Facebook."
-
-logoutGoogle :: Aff Unit
-logoutGoogle = do
-  isSignedWithGoogle <- liftEffect Google.isSignedIn
-  when isSignedWithGoogle do
-    Google.signOut
-    Log.info "Logged out from Google."
 
 logoutJanrain :: Aff Unit
 logoutJanrain = do
@@ -558,9 +524,6 @@ finalizeLogin maybeInvalidateCache auth = do
     Right user -> do
       Console.info "User fetched successfully"
       pure $ Right user
-
-facebookSdk :: Aff FB.Sdk
-facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
 hasScope :: UUID -> AuthScope -> Aff (Maybe Seconds)
 hasScope uuid scope = do

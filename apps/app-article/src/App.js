@@ -619,7 +619,6 @@ class App extends Component {
             onRegister={() => this.onRegisterOpen()}
             onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
             onUserFetchFail={(error) => this.onUserFetchFail(error)}
-            disableSocialLogins={["Facebook", "Google"]}
           />
         </div>
       );
@@ -694,7 +693,6 @@ class App extends Component {
                     onRegister={() => this.onRegisterOpen()}
                     onUserFetchSuccess={(user) => this.onUserFetchSuccess(user)}
                     onUserFetchFail={(error) => this.onUserFetchFail(error)}
-                    disableSocialLogins={["Facebook", "Google"]}
                   />
                 ) : (
                   ""

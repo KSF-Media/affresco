@@ -36,15 +36,10 @@ The props/callbacks for `Login` are
     - `() => { showLoadingSpinner = true }`
 - onLoadingEnd
     - `() => { showLoadingSpinner = false }`
-- disableSocialLogins
-    - array of social login providers, where provider belongs to `{"Google", "Facebook"}`
-    - `disableSocialLogins={["Facebook"]}`
 
 ### Getting it up and running
 The `Login` component offers multiple ways off logging users in:
 - Persona (KSF Media's own login service)
-- Google
-- Facebook
 - SSO
 
 Depending on the production environment we're in (dev, prod), the configuration settings for these features might differ.

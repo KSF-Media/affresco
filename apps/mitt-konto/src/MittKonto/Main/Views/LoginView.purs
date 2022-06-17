@@ -57,7 +57,6 @@ loginView self@{ state, setState } setUser logger =
                 self.setState $ Types.setActiveUser Nothing
               Right user -> setUser user
           , onLogin: Aff.launchAff_
-          , disableSocialLogins: Set.empty
           }
 
     {- This is the exact embed code YouTube gives us that is then converted to PS,
