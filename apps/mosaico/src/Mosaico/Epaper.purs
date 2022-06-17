@@ -36,7 +36,16 @@ component = do
     entitlements /\ setEntitlements <- useState' Nothing
     userAuth /\ setUserAuth <- useState' initialTokens
     useEffect (_.uuid <$> join user) do
-      when (isNothing $ join user) $ setEntitlements Nothing
+      when (isNothing $ join user) $ Aff.launchAff_ do
+        tokens <- User.loginIP paper
+        liftEffect case (hush tokens) of
+          Nothing -> setEntitlements $ Just mempty
+          Just {authToken, userId} -> do
+            let auth = {authToken, userId}
+            setUserAuth $ Just auth
+            Aff.launchAff_ $ do
+              ipEntitlements <- User.getUserEntitlements auth
+              liftEffect $ setEntitlements $ hush ipEntitlements
       when (isNothing entitlements && isJust (join user)) do
         setEntitlements Nothing
         tokens <- loadToken
@@ -46,7 +55,7 @@ component = do
           (Aff.launchAff_ <<< (liftEffect <<< setEntitlements <<< Just
                                <<< fromMaybe Set.empty <<< hush <=< User.getUserEntitlements)) tokens
       pure $ pure unit
-    pure $ render onLogin paper (isNothing user) (join user *> userAuth) entitlements
+    pure $ render onLogin paper (isNothing user) userAuth entitlements
 
 render :: EventHandler -> Paper -> Boolean -> Maybe UserAuth -> Maybe (Set String) -> JSX
 render onLogin paper loadingUser userAuth entitlements =
