@@ -2129,7 +2129,7 @@
   version "0.4.1"
   dependencies:
     bottega "https://github.com/KSF-Media/bottega-javascript-client.git#f58baa4ebf8a494347b212e3378b6168c5e2faff"
-    persona "https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8"
+    persona "https://github.com/KSF-Media/persona-javascript-client.git#a9dda10d5586e926e3fa2d3f0b832f2c824e5f19"
     react "^16.12"
     react-dom "^16.12"
 
@@ -9025,9 +9025,9 @@ performance-now@^2.1.0:
   dependencies:
     superagent "3.7.0"
 
-"persona@https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8":
+"persona@https://github.com/KSF-Media/persona-javascript-client.git#a9dda10d5586e926e3fa2d3f0b832f2c824e5f19":
   version "1.3.0"
-  resolved "https://github.com/KSF-Media/persona-javascript-client.git#a9ea3128afd3e16922cb92a7fb46e506880e04e8"
+  resolved "https://github.com/KSF-Media/persona-javascript-client.git#a9dda10d5586e926e3fa2d3f0b832f2c824e5f19"
   dependencies:
     superagent "3.7.0"
 
