@@ -18,6 +18,7 @@ import KSF.Api (AuthScope(..))
 import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
+import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.Timeout as Timeout
@@ -62,6 +63,7 @@ app = do
   now <- Now.nowDate
   loginComponent <- Login.login
   timeout <- Timeout.newTimer
+  profile <- Profile.component
 
   let initialState =
         { paper: KSF
@@ -187,8 +189,14 @@ app = do
                                                , setPasswordChangeDone
                                                , navToMain: router.pushState (unsafeToForeign {}) "/"
                                                }
+        profileView = case state.activeUser of
+          Just user -> profile { profile: user
+                               , onUpdate: setState <<< Types.setActiveUser <<< Just
+                               , logger
+                               }
+          Nothing -> mempty
         userContent = case route of
-          MittKonto -> foldMap (Views.userView router self logger) state.activeUser
+          MittKonto -> foldMap (Views.userView router self logger profileView) state.activeUser
           Search -> guard state.adminMode searchView
           InvoiceList -> paymentView
           InvoiceDetail invno -> paymentDetailView invno
