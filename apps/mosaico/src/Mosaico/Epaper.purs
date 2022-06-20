@@ -40,8 +40,7 @@ component = do
         tokens <- User.loginIP paper
         liftEffect case (hush tokens) of
           Nothing -> setEntitlements $ Just mempty
-          Just {authToken, userId} -> do
-            let auth = {authToken, userId}
+          Just auth -> do
             setUserAuth $ Just auth
             Aff.launchAff_ $ do
               ipEntitlements <- User.getUserEntitlements auth
