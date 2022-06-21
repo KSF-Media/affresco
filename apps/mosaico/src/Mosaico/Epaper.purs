@@ -39,7 +39,7 @@ component = do
       when (isNothing $ join user) $ Aff.launchAff_ do
         tokens <- User.loginIP paper
         liftEffect case (hush tokens) of
-          Nothing -> setEntitlements $ Just mempty
+          Nothing -> setEntitlements $ Nothing
           Just auth -> do
             setUserAuth $ Just auth
             Aff.launchAff_ $ do
