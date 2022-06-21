@@ -530,7 +530,7 @@ epaperPage env {} = do
         $ MosaicoServer.app
           { mainContent:
               { type: EpaperContent
-              , content: Epaper.render mempty mosaicoPaper true Nothing Nothing
+              , content: Epaper.render mempty mosaicoPaper true Nothing
               }
           , categoryStructure: env.categoryStructure
           , mostReadArticles

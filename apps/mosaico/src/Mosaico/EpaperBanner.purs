@@ -14,7 +14,7 @@ render =
       , children:
         [ DOM.header_ [ DOM.h2_ [ DOM.text "E-tidningen" ] ]
         , DOM.a
-          { href: "/epaper"
+          { href: "/epaper/"
           , className: blockClass <> "--container"
           , children:
             [ DOM.span

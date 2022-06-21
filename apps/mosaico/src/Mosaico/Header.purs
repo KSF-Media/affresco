@@ -90,7 +90,7 @@ render scrollPosition props =
                         , DOM.text "|"
                         , DOM.a
                             { children: [ DOM.text "E-TIDNINGEN" ]
-                            , href: "/epaper"
+                            , href: "/epaper/"
                             , onClick: capture_ $ props.changeRoute "/epaper/"
                             }
                         ]
