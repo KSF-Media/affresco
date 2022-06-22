@@ -11,8 +11,6 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
 import Data.Set as Set
-import Data.String as String
-import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
@@ -331,15 +329,13 @@ render imageComponent boxComponent props =
 -- TODO: maybe we don't want to deal at all with the error cases
 -- and we want to throw them away?
 renderElement :: (Image.Props -> JSX) -> (Box.Props -> JSX) -> Maybe (ArticleStub -> EventHandler) -> BodyElement -> JSX
-renderElement imageComponent boxComponent onArticleClick el = case el of
-  Html content ->
-    -- Can't place div's or blockquotes under p's, so place them under div.
-    -- This is usually case with embeds
-    let domFn = if isDiv content || isBlockquote content then DOM.div else DOM.p
-    in domFn
-       { dangerouslySetInnerHTML: { __html: content }
-       , className: block <> " " <> block <> "__html"
-       }
+renderElement imageComponent boxComponent onArticleClick el =  case el of
+  -- Can't place div's or blockquotes under p's, so place them under div.
+  -- This is usually case with embeds
+  Html content -> DOM.div
+    { dangerouslySetInnerHTML: { __html: content }
+    , className: block <> " " <> block <> "__html"
+    }
   Headline str -> DOM.h4
     { className: block <> " " <> block <> "__subheadline"
     , children: [ DOM.text str ]
@@ -395,11 +391,6 @@ renderElement imageComponent boxComponent onArticleClick el = case el of
       }
   where
     block = "article-element"
-    isDiv = isElem "<div"
-    isBlockquote = isElem "<blockquote"
-    -- Does the string start with wanted element
-    isElem elemName elemString =
-      Just 0 == String.indexOf (Pattern elemName) elemString
     renderRelatedArticle article =
       DOM.li_
         [ DOM.a
