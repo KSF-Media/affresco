@@ -743,6 +743,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
         [ DOM.meta { property: "og:type", content: "website" }
         , DOM.meta { property: "og:title", content: title }
         , foldMap (\content -> DOM.meta { property: "og:description", content }) startpageDescription
+        , foldMap (\content -> DOM.meta { name: "description", content }) startpageDescription
         ]
 
 searchPage :: Env -> { query :: { search :: Maybe String } } -> Aff (Response ResponseBody)
