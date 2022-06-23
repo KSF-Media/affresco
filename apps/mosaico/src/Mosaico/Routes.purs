@@ -73,7 +73,7 @@ type RouteState = { yPositionOnLeave :: Maybe Number }
 
 changeRoute :: PushStateInterface -> String -> Effect Unit
 changeRoute router route = do
-  currentRoute <- _.pathname <$> router.locationState
+  currentRoute <- (\l -> l.pathname <> l.search) <$> router.locationState
   currentY     <- scrollY =<< window
   -- Before changing the route, let's write the y scroll position to the state of the current
   -- location, as this is needed for recovery if users go back in browser history
