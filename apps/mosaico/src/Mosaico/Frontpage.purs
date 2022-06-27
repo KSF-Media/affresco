@@ -54,6 +54,10 @@ render (List props) =
           ]
         }
       where
+        -- Only OC images use this
+        addCrop url =
+          if contains (Pattern "smooth-storage") url then url
+          else url <> "&function=hardcrop&width=200&height=200&q=90"
         renderListArticle :: ArticleStub -> JSX
         renderListArticle a =
           DOM.div
@@ -69,14 +73,14 @@ render (List props) =
                 [ DOM.span
                     { children:
                         [ -- TODO: paper specific fallback img
-                        let imgSrc = maybe (fallbackImage mosaicoPaper)
-                                     ((_ <> "&function=hardcrop&width=200&height=200&q=90") <<< _.url)
-                                     (a.listImage <|> a.mainImage)
-                        in DOM.a
-                            { href: "/artikel/" <> a.uuid
-                            , className: "list-article-image"
-                            , children: [ DOM.img { src: imgSrc } ]
-                            }
+                          let img = a.listImage <|> a.mainImage
+                              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.url) img
+                              alt = fromMaybe "" $ _.caption =<< img
+                          in DOM.a
+                               { href: "/artikel/" <> a.uuid
+                               , className: "list-article-image"
+                               , children: [ DOM.img { src, alt } ]
+                               }
                         ,  DOM.div
                               { className: "list-article-liftup"
                               , children:

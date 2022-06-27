@@ -284,11 +284,9 @@ render imageComponent boxComponent props =
         })
 
     renderAdvertorialTeaser article =
-      let
-        imgSrc =
-          maybe (fallbackImage props.paper)
-            _.thumb
-            (article.listImage <|> article.mainImage)
+      let img = article.listImage <|> article.mainImage
+          imgSrc = maybe (fallbackImage props.paper) _.thumb img
+          alt = fromMaybe "" $ _.caption =<< img
       in
         DOM.a
           { className: "mosaico--list-article-advertorial"
@@ -298,6 +296,7 @@ render imageComponent boxComponent props =
               [ DOM.img
                   { className: "mosaico--list-article-advertorial__image"
                   , src: imgSrc
+                  , alt
                   }
               , DOM.h2
                   { className: "mosaico--list-article-advertorial__title"
