@@ -2,7 +2,6 @@ module Mosaico.Header
   ( Props
   , component
   , render
-  , mainSeparator
   , topLine
   ) where
 

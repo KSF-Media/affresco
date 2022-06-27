@@ -46,13 +46,8 @@ withSpinner setLoadingState action = do
 loadingSpinner :: JSX
 loadingSpinner =
   DOM.div
-    { className: "spinner--loading-spinner"
-    , children:
-        [ DOM.div
-            { className: ""
-            , children: [ DOM.div { className: "spinner--spinner-image", children: [] } ]
-            }
-        ]
+    { className: "spinner--animated-spinner"
+    , children: [DOM.div_ []]
     }
 
 loadingSpinnerWithMessage :: String -> JSX

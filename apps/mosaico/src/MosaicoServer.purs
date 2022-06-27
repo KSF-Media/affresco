@@ -57,7 +57,6 @@ render props = DOM.div_
              , onStaticPageClick: mempty
              , onMenuClick: mempty
              }
-           , Header.mainSeparator
            , props.mainContent.content
            , footer mosaicoPaper mempty
            , case props.mainContent.type of

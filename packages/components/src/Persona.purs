@@ -34,6 +34,8 @@ import KSF.Api.Subscription (BaseSubscription, Subscription, PendingAddressChang
 import KSF.Api.Subscription as Subscription
 import KSF.Helpers (formatDate)
 import KSF.LocalStorage as LocalStorage
+import KSF.Paper (Paper)
+import KSF.Paper as Paper
 import KSF.User.Cusno (Cusno)
 import OpenApiClient (Api, callApi)
 import Record as Record
@@ -54,6 +56,9 @@ loginSome loginData = callApi loginApi "loginSomePost" [ unsafeToForeign loginDa
 
 loginSso :: LoginDataSso -> Aff LoginResponse
 loginSso loginData = callApi loginApi "loginSsoPost" [ unsafeToForeign loginData ] {}
+
+loginIP :: Paper -> Aff LoginResponse
+loginIP paper = callApi loginApi "loginIpGet" [] { paper: Paper.toString paper }
 
 -- Send authUser field only when impersonating a user
 authHeaders :: UUID -> UserAuth -> { authorization :: String, authUser :: Nullable String }
