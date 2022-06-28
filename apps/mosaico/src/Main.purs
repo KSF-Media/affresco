@@ -373,6 +373,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
               , "mostReadArticles"  /\ (encodeJson $ map articleStubToJson mostReadArticles)
               , "latestArticles"    /\ (JSON.fromArray $ map articleStubToJson latestArticles)
               , "categoryStructure" /\ encodeJson env.categoryStructure
+              , "breakingNews"      /\ maybe JSON.jsonNull JSON.fromString (Just "moi")
               ]
             metaTags =
               let a' = a.article
@@ -463,7 +464,7 @@ tagList :: Env -> { params :: { tag :: String } } -> Aff (Response ResponseBody)
 tagList env { params: { tag } } = do
   let tag' = uriComponentToTag tag
       htmlTemplate = cloneTemplate env.htmlTemplate
-  { pageContent: articles, mostReadArticles, latestArticles } <-
+  { pageContent: articles, breakingNews, mostReadArticles, latestArticles } <-
     parallelWithCommonLists env $ Cache.getByTag env.cache tag'
   if null $ Cache.getContent articles
     then notFound
@@ -475,7 +476,7 @@ tagList env { params: { tag } } = do
     let mosaicoString = renderContent tag' <$> articles <*> mostReadArticles <*> latestArticles
     html <- liftEffect do
               let windowVars =
-                    stdVars env mostReadArticles latestArticles
+                    stdVars env (Just breakingNews) mostReadArticles latestArticles
                     <> mkArticleFeed (TagFeed tag') (ArticleList (Cache.getContent articles))
               appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
                 appendVars (mkWindowVariables windowVars) >>=
@@ -514,7 +515,7 @@ epaperPage env {} = do
       mosaicoString = renderContent <$> mostReadArticles <*> latestArticles
   html <- liftEffect do
             let windowVars =
-                  stdVars env mostReadArticles latestArticles
+                  stdVars env Nothing mostReadArticles latestArticles
             appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
               appendHead (makeTitle "E-Tidningen")
@@ -586,7 +587,7 @@ debugList env { params: { uuid } } = do
       mosaicoString = renderContent article <$> mostReadArticles <*> latestArticles
   html <- liftEffect do
             let windowVars =
-                  stdVars env mostReadArticles latestArticles
+                  stdVars env Nothing mostReadArticles latestArticles
                   <> mkArticleFeed (CategoryFeed $ CategoryLabel "debug") (ArticleList $ fromFoldable article)
             appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>= appendVars (mkWindowVariables windowVars)
   pure $ htmlContent $ Response.ok $ StringBody $ renderTemplateHtml html
@@ -619,10 +620,10 @@ categoryPage env { guards: { category: category@(Category{label})}} = do
 
 renderCategoryPage :: Env -> Category -> Aff (Response ResponseBody)
 renderCategoryPage env (Category category@{ label, type: categoryType, url}) = do
-  { feed, mainContent, mostReadArticles, latestArticles } <- do
+  { feed, mainContent, breakingNews, mostReadArticles, latestArticles } <- do
     case categoryType of
       Feed -> do
-        { pageContent, mostReadArticles, latestArticles } <-
+        { pageContent, breakingNews, mostReadArticles, latestArticles } <-
           parallelWithCommonLists env $ Cache.getFrontpage env.cache label
         pure { feed: Just $ ArticleList $ Cache.getContent pageContent
              , mainContent:
@@ -637,11 +638,13 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
                      }) <$> pageContent
              , mostReadArticles
              , latestArticles
+             , breakingNews
              }
       Prerendered -> do
-        { pageContent, mostReadArticles, latestArticles, articleStubs } <- sequential $
-          { pageContent:_, mostReadArticles: _, latestArticles: _, articleStubs: _ }
+        { pageContent, breakingNews, mostReadArticles, latestArticles, articleStubs } <- sequential $
+          { pageContent: _, breakingNews: _, mostReadArticles: _, latestArticles: _, articleStubs: _ }
           <$> parallel (Cache.getFrontpageHtml env.cache label)
+          <*> parallel (Cache.getBreakingNewsHtml env.cache)
           <*> parallel (Cache.getMostRead env.cache)
           <*> parallel (Cache.getLatest env.cache)
           <*> parallel (Cache.getFrontpage env.cache label)
@@ -657,15 +660,17 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
                      { type: HtmlFrontpageContent
                      , content: Frontpage.render $ Frontpage.Prerendered
                                   { content: html
+                                  , breakingNews: Just $ Cache.getContent breakingNews
                                   , hooks
                                   , onClick: mempty
                                   }
                      }) <$> pageContent)
              , mostReadArticles
              , latestArticles
+             , breakingNews
              }
       Link -> do
-        { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
+        { mostReadArticles, latestArticles, breakingNews } <- parallelWithCommonLists env $ pure unit
         pure { feed: Nothing
              , mainContent: mostReadArticles *> latestArticles $>
                             { type: StaticPageContent "link"
@@ -674,10 +679,11 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
                             }
              , mostReadArticles
              , latestArticles
+             , breakingNews
              }
       Webview -> do
         initialRandom <- liftEffect $ randomString 10
-        { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
+        { mostReadArticles, latestArticles, breakingNews } <- parallelWithCommonLists env $ pure unit
         -- video.js fails if it tries to initialize an M3U8 stream for a second time.
         -- If it had the webview component rendered on server side, React's hydrate
         -- would count as a second initialization.
@@ -697,6 +703,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
              , mainContent
              , mostReadArticles
              , latestArticles
+             , breakingNews
              }
 
   -- Fallback to using list feed style
@@ -711,7 +718,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
     _ -> do
       let htmlTemplate = cloneTemplate env.htmlTemplate
           mosaicoString = renderContent <$> mainContent <*> mostReadArticles <*> latestArticles
-          windowVars = stdVars env mostReadArticles latestArticles
+          windowVars = stdVars env (Just breakingNews) mostReadArticles latestArticles
                        <> foldMap (mkArticleFeed $ CategoryFeed label) feed
       html <- liftEffect $ appendMosaico (Cache.getContent mosaicoString) htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
@@ -780,7 +787,7 @@ searchPage env { query: { search } } = do
                           }
   html <- liftEffect do
             let windowVars =
-                  stdVars env mostReadArticles latestArticles
+                  stdVars env Nothing mostReadArticles latestArticles
                   <> mkArticleFeed (SearchFeed $ fromMaybe "" query) (ArticleList articles)
             appendMosaico mosaicoString htmlTemplate >>=
               appendVars (mkWindowVariables windowVars) >>=
@@ -809,7 +816,7 @@ profilePage env {} = do
                           }
   html <- liftEffect do
     let windowVars =
-          stdVars env mostReadArticles latestArticles
+          stdVars env Nothing mostReadArticles latestArticles
     appendMosaico mosaicoString htmlTemplate >>=
       appendVars (mkWindowVariables windowVars) >>=
       appendHead (makeTitle "Min profil")
@@ -896,6 +903,7 @@ notFound env mainContent maybeMostReadArticles maybeLatestArticles = do
   html <- liftEffect $ do
     let windowVars =
           [ "categoryStructure" /\ encodeJson env.categoryStructure
+          , "breakingNews" /\ (encodeJson $ JSON.fromString "notFound")
           ]
           <> foldMap (pure <<< Tuple "mostReadArticles" <<< JSON.fromArray <<< map articleStubToJson) maybeMostReadArticles
           <> foldMap (pure <<< Tuple "latestArticles" <<< JSON.fromArray <<< map articleStubToJson) maybeLatestArticles
@@ -927,22 +935,25 @@ htmlContent (Response response) =
 
 type CommonLists a =
   { pageContent :: a
+  , breakingNews :: Stamped String
   , mostReadArticles :: Stamped (Array ArticleStub)
   , latestArticles :: Stamped (Array ArticleStub)
   }
 
 parallelWithCommonLists :: forall a. Env -> Aff a -> Aff (CommonLists a)
 parallelWithCommonLists env f =
-  sequential $ { pageContent: _, mostReadArticles: _, latestArticles: _ }
+  sequential $ { pageContent: _, breakingNews: _, mostReadArticles: _, latestArticles: _ }
   <$> parallel f
+  <*> parallel (Cache.getBreakingNewsHtml env.cache)
   <*> parallel (Cache.getMostRead env.cache)
   <*> parallel (Cache.getLatest env.cache)
 
-stdVars :: Env -> Stamped (Array ArticleStub) -> Stamped (Array ArticleStub) -> Array (Tuple String Json)
-stdVars env mostReadArticles latestArticles =
+stdVars :: Env -> Maybe (Stamped String) -> Stamped (Array ArticleStub) -> Stamped (Array ArticleStub) -> Array (Tuple String Json)
+stdVars env initialBreakingNews mostReadArticles latestArticles =
   [ "mostReadArticles"  /\ JSON.fromArray (map articleStubToJson (Cache.getContent mostReadArticles))
   , "latestArticles"    /\ JSON.fromArray (map articleStubToJson (Cache.getContent latestArticles))
   , "categoryStructure" /\ encodeJson env.categoryStructure
+  , "breakingNews"      /\ maybe JSON.jsonNull JSON.fromString (Cache.getContent <$> initialBreakingNews)
   ]
 
 mkWindowVariables :: Array (Tuple String Json) -> String
