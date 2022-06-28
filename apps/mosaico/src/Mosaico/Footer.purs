@@ -279,7 +279,7 @@ section title children =
     { className: "block pr-1 pl-1 mt-4 mb-2"
     , children:
         [ DOM.b
-        { className: "text-sm font-black"
+        { className: "font-black"
         , children: [ DOM.text title, DOM.text " " ] }
         , DOM.div
         { className:  "no-underline"
