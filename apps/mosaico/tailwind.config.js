@@ -100,9 +100,9 @@ module.exports = {
     },
 
     screens: {
-      xs: "320px",
-      sm: "760px",
-      md: "1020px",
+      sm: "320px",
+      md: "760px",
+      lg: "1020px",
     },
   },
   plugins: [maskImagePlugin, maskSizePlugin],

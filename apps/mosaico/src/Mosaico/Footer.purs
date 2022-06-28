@@ -17,16 +17,16 @@ footer :: Paper -> (String -> EventHandler) -> JSX
 footer mosaicoPaper onStaticPageClick =
   DOM.footer
     { style: DOM.css {"gridArea": "foot"}
-    , className: "flex flex-col items-center py-12 px-0 m-0 bg-gray-50 md:px-2 font-roboto"
+    , className: "flex flex-col items-center py-12 px-0 m-0 bg-gray-50 lg:px-2 font-roboto"
     , children:
         [ contactInfo mosaicoPaper onStaticPageClick
-        , DOM.hr { className: "w-4/5 sm:w-56 md:w-96 mt-0 mx-auto mb-5 bg-gray-300 border-0 h-[1px]" }
+        , DOM.hr { className: "w-4/5 md:w-56 lg:w-96 mt-0 mx-auto mb-5 bg-gray-300 border-0 h-[1px]" }
         , DOM.div
             { className: "mt-6 mb-4 text-sm font-black text-gray-400"
             , children: [ DOM.text "ALLA KSF-TIDNINGAR" ]
             }
         , DOM.div
-            { className: "flex flex-col w-full sm:w-80 md:w-96 xs:flex-row"
+            { className: "flex flex-col w-full md:w-80 lg:w-96 sm:flex-row"
             , children: map logo [ VN, HBL, ON ]
             }
         ]
@@ -71,7 +71,7 @@ hblContactInfo onStaticPageClick =
   DOM.div
     { children:
         [ DOM.div
-            { className: "inline text-sm text-gray-600 md:flex"
+            { className: "inline text-sm text-gray-600 lg:flex"
             , children:
                 [ column firstColumn
                 , column secondColumn
@@ -128,7 +128,7 @@ vastranylandContactInfo onStaticPageClick =
   DOM.div
     { children:
         [ DOM.div
-            { className: "inline text-sm text-gray-600 md:flex"
+            { className: "inline text-sm text-gray-600 lg:flex"
             , children:
                 [ column firstColumn
                 , column secondColumn
@@ -185,7 +185,7 @@ ostnylandContactInfo onStaticPageClick =
   DOM.div
     { children:
         [ DOM.div
-            { className: "inline text-sm text-gray-600 md:flex"
+            { className: "inline text-sm text-gray-600 lg:flex"
             , children:
                 [ column firstColumn
                 , column secondColumn
@@ -242,7 +242,7 @@ ostnylandContactInfo onStaticPageClick =
 footerLinks :: (String -> EventHandler) -> JSX
 footerLinks onStaticPageClick =
   DOM.div
-    { className: "flex flex-col justify-center items-center mx-auto mt-9 mb-8 md:flex-row"
+    { className: "flex flex-col justify-center items-center mx-auto mt-9 mb-8 lg:flex-row"
     , children:
         [ externalLink "Dataskyddsbeskrivning" "https://www.ksfmedia.fi/dataskydd"
         , footerLink "Bruksvillkor" "bruksvillkor"
@@ -255,14 +255,14 @@ footerLinks onStaticPageClick =
   externalLink caption url =
     DOM.a
       { href: url
-      , className: "my-1 mx-auto text-sm text-gray-900 no-underline sm:mx-5"
+      , className: "my-1 mx-auto text-sm text-gray-900 no-underline md:mx-5"
       , children: [ DOM.text caption ]
       }
 
   footerLink caption link =
     DOM.a
       { href: "/sida/" <> link
-      , className: "my-1 mx-auto text-sm text-gray-900 no-underline sm:mx-5"
+      , className: "my-1 mx-auto text-sm text-gray-900 no-underline md:mx-5"
       , children: [ DOM.text caption ]
       , onClick: onStaticPageClick link
       }
