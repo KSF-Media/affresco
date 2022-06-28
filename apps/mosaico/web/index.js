@@ -16,6 +16,7 @@ import ReactDOM from "react-dom";
 import { BrowserRouter as Router } from "react-router-dom";
 import { rehydrateMarks } from "react-imported-component";
 window.Buffer = window.Buffer || { isBuffer: () => false };
+import "../src/_site.scss";
 import "../../../less/mosaico.less";
 import "../../../less/Vetrina.less";
 import "../../../less/Login.less";
