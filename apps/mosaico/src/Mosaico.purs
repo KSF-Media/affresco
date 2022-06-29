@@ -566,14 +566,14 @@ render props setState state components router onPaywallEvent =
               label = if noResults
                       then Just "Inga resultat"
                       else Just $ "Sökresultat: " <> queryString
-          in frontpage (Just header) Nothing label frontpageArticles
+          in frontpage (Just header) label Nothing frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
          let maybeFeed = _.feed <$> HashMap.lookup (TagFeed tag) state.frontpageFeeds
           in case maybeFeed of
                Just (ArticleList tagFeed)
                  | null tagFeed -> mosaicoDefaultLayout Error.notFoundWithAside
-               _                -> frontpageNoHeader Nothing (Just "maybeFeed") maybeFeed
+               _                -> frontpageNoHeader Nothing Nothing maybeFeed
        Routes.MenuPage ->
          flip (mosaicoLayout "menu-open") false
          $ Menu.render
@@ -608,7 +608,7 @@ render props setState state components router onPaywallEvent =
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
-       Routes.DebugPage _ -> frontpageNoHeader Nothing (Just "debugpage") $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
+       Routes.DebugPage _ -> frontpageNoHeader Nothing Nothing $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
        -- NOTE: This should not ever happen, as we always "redirect" to Frontpage route from DeployPreview
        Routes.DeployPreview -> renderFrontpage
     renderFrontpage = maybe mempty renderCategory $ Map.lookup frontpageCategoryLabel state.catMap
@@ -620,7 +620,7 @@ render props setState state components router onPaywallEvent =
         Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
         Link -> mempty -- TODO
         Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader Nothing state.breakingNews <<< Just) maybeFeed
-        Feed -> frontpageNoHeader (Just c.label) (Just "breaking feed") maybeFeed
+        Feed -> frontpageNoHeader (Just c.label) Nothing maybeFeed
 
     frontpageNoHeader :: Maybe CategoryLabel -> Maybe String -> Maybe ArticleFeed -> JSX
     frontpageNoHeader = frontpage Nothing <<< map unwrap

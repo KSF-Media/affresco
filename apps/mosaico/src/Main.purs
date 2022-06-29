@@ -373,7 +373,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
               , "mostReadArticles"  /\ (encodeJson $ map articleStubToJson mostReadArticles)
               , "latestArticles"    /\ (JSON.fromArray $ map articleStubToJson latestArticles)
               , "categoryStructure" /\ encodeJson env.categoryStructure
-              , "breakingNews"      /\ maybe JSON.jsonNull JSON.fromString (Just "moi")
+              , "breakingNews"      /\ JSON.jsonNull
               ]
             metaTags =
               let a' = a.article
@@ -903,7 +903,7 @@ notFound env mainContent maybeMostReadArticles maybeLatestArticles = do
   html <- liftEffect $ do
     let windowVars =
           [ "categoryStructure" /\ encodeJson env.categoryStructure
-          , "breakingNews" /\ (encodeJson $ JSON.fromString "notFound")
+          , "breakingNews" /\ (encodeJson $ JSON.jsonNull)
           ]
           <> foldMap (pure <<< Tuple "mostReadArticles" <<< JSON.fromArray <<< map articleStubToJson) maybeMostReadArticles
           <> foldMap (pure <<< Tuple "latestArticles" <<< JSON.fromArray <<< map articleStubToJson) maybeLatestArticles
