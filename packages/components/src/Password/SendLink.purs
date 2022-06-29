@@ -69,7 +69,7 @@ requestResetLink = do
                         [ InputField.inputField
                             { type_: InputField.Email
                             , name: "email"
-                            , placeholder: "E-post"
+                            , placeholder: "Fyll i din e-postadress"
                             , value: email
                             , onChange: setEmail
                             , label: Just "E-post"
