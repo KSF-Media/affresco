@@ -355,6 +355,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , mostReadArticles
                   , latestArticles
                   , advertorial: Nothing
+                  , breakingNews: Nothing
                   }
           renderWithComponents :: forall a. ((Image.Props -> JSX) -> (Box.Props -> JSX) -> a -> JSX) -> a -> JSX
           renderWithComponents f = f (Image.render mempty) (Box.render mempty)
@@ -882,6 +883,7 @@ notFoundArticleContent =
     , mostReadArticles: mempty
     , latestArticles: mempty
     , advertorial: Nothing
+    , breakingNews: Nothing
     }
   }
 
