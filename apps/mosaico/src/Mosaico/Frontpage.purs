@@ -40,6 +40,7 @@ type ListFrontpageProps =
 
 type PrerenderedFrontpageProps =
   { content :: Maybe String
+  , breakingNews :: Maybe String
   , hooks   :: Array Hook
   , onClick :: EventHandler
   }
@@ -119,7 +120,9 @@ render (List props) =
             }
 
 render (Prerendered props@{ hooks }) = genericRender
-  (\content -> [ HtmlRenderer.render
+  (\content -> [
+    maybe (DOM.div_ []) (\html -> DOM.div { dangerouslySetInnerHTML: {__html: html }}) props.breakingNews
+    , HtmlRenderer.render
                    { content
                    , hooks: Just $ toHookRep <$> hooks
                    }

@@ -37,6 +37,7 @@ function main() {
 	categoryStructure={window.categoryStructure || null}
 	globalDisableAds={window.globalDisableAds || null}
 	initialFrontpageFeed={window.frontpageFeed || null}
+	initialBreakingNews={window.breakingNews || null}
 	latestArticles={window.latestArticles || null}
 	user={window.user || null}
 	entitlements={window.entitlements || null}
