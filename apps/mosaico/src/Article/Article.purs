@@ -88,8 +88,13 @@ render imageComponent boxComponent props =
         mainImage = getMainImage props.article
         body = getBody props.article
         bodyWithoutAd = map (renderElement imageComponent boxComponent (Just props.onArticleClick)) body
-        bodyWithAd = map (renderElement imageComponent boxComponent (Just props.onArticleClick))
-          <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
+        bodyWithAd = 
+          [ DOM.section
+            { className: "article-content"
+            , children: map (renderElement imageComponent boxComponent (Just props.onArticleClick))
+                <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
+            }
+          ]
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
