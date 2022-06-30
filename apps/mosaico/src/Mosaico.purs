@@ -221,7 +221,7 @@ mosaicoComponent initialValues props = React.do
         _ <- Aff.AVar.take alreadySentInitialAnalytics
         Aff.AVar.put true alreadySentInitialAnalytics
 
-    Aff.launchAff_ do
+    when (isNothing state.breakingNews) $ Aff.launchAff_ do
       breakingNews <- Lettera.responseBody <$> Lettera.getBreakingNewsHtml mosaicoPaper Nothing
       liftEffect $ setState _ { breakingNews = breakingNews }
 
