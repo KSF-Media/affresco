@@ -93,8 +93,7 @@ main = launchAff_ do
   withBrowserPage Tags.testTagList
   log "Test static pages"
   withBrowserPage Static.testNavigateToStatic
--- Test fails, see Test.Static
---  withBrowserPage Static.testStaticEmbeds
+  withBrowserPage Static.testStaticEmbeds
   log "Test listTitle field"
   withBrowserPage Lettera.testListTitle
   withBrowserPage Lettera.testDefaultListTitle
