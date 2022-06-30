@@ -18,8 +18,6 @@ addHandler(
   "scroll"
 );
 
-window.addEventListener('load', console.log);
-
 const goToTop = () => {
   document.body.scrollIntoView({
     behavior: "smooth",
