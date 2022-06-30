@@ -37,7 +37,7 @@ import JSURI as URI
 import KSF.Paper as Paper
 import KSF.Random (randomString)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), articleToJson, articleStubToJson, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), DraftParams, FullArticle, ArticleType(..), articleToJson, articleStubToJson, correctionsCategory, frontpageCategoryLabel, notFoundArticle, uriComponentToTag)
 import Lettera.ArticleSchema (renderAsJsonLd)
 import Mosaico.Article as Article
 import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
@@ -240,7 +240,7 @@ main = do
   htmlTemplate <- parseTemplate <$> FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure mosaicoPaper
-    cache <- liftEffect $ Cache.initCache mosaicoPaper categoryStructure
+    cache <- liftEffect $ Cache.initCache mosaicoPaper $ correctionsCategory `cons` categoryStructure
     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
@@ -926,7 +926,8 @@ parseCategory { categoryRegex, categoryStructure } req = do
       urlDecoded = fromMaybe url $ URI.decodeURIComponent url
       categoryRoute = CategoryLabel $ fold $ NonEmptyArray.last =<< Regex.match categoryRegex urlDecoded
       -- Flatten out categories from the category structure
-      categories = foldl (\acc (Category c) -> acc <> [Category c] <> c.subCategories) [] categoryStructure
+      categories = correctionsCategory `cons`
+                   foldl (\acc (Category c) -> acc <> [Category c] <> c.subCategories) [] categoryStructure
   case find ((_ == categoryRoute) <<< _.label <<< unwrap) categories of
     Just c -> pure $ Right c
     _ -> pure $ Left (Forward "Did not match category")

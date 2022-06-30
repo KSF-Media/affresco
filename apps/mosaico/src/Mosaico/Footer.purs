@@ -4,21 +4,23 @@ module Mosaico.Footer
 
 import Prelude
 import Data.Foldable (foldMap)
-import Data.Maybe  (Maybe(..))
+import Data.Maybe  (Maybe(..), fromMaybe)
+import Data.Newtype (unwrap)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import KSF.Paper (Paper(..), homepage, paperName)
+import Lettera.Models (Category(..), correctionsCategory)
 import Mosaico.Ad (openConsentRevocationMessage)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, EventHandler)
 
-footer :: Paper -> (String -> EventHandler) -> JSX
-footer mosaicoPaper onStaticPageClick =
+footer :: Paper -> (Category -> EventHandler) -> (String -> EventHandler) -> JSX
+footer mosaicoPaper onCategoryClick onStaticPageClick =
   DOM.footer
     { className: "flex flex-col items-center py-12 px-0 m-0 bg-gray-50 lg:px-2 font-roboto [grid-area:foot]"
     , children:
-        [ contactInfo mosaicoPaper onStaticPageClick
+        [ contactInfo mosaicoPaper commonFooter
         , DOM.hr { className: "w-4/5 md:w-56 lg:w-96 mt-0 mx-auto mb-5 bg-gray-300 border-0 h-[1px]" }
         , DOM.div
             { className: "mt-6 mb-4 text-sm font-black text-gray-400"
@@ -55,18 +57,19 @@ footer mosaicoPaper onStaticPageClick =
   logoClass VN = Just " maskimage-vn"
   logoClass ON = Just " maskimage-on"
   logoClass _ = Nothing
+  commonFooter = footerLinks onCategoryClick onStaticPageClick
 
-contactInfo :: Paper -> (String -> EventHandler) -> JSX
+contactInfo :: Paper -> JSX -> JSX
 contactInfo ON = ostnylandContactInfo
 
 contactInfo VN = vastranylandContactInfo
 
 contactInfo HBL = hblContactInfo
 
-contactInfo _ = footerLinks
+contactInfo _ = identity
 
-hblContactInfo :: (String -> EventHandler) -> JSX
-hblContactInfo onStaticPageClick =
+hblContactInfo :: JSX -> JSX
+hblContactInfo commonFooter =
   DOM.div
     { children:
         [ DOM.div
@@ -77,7 +80,7 @@ hblContactInfo onStaticPageClick =
                 , column thirdColumn
                 ]
             }
-        , footerLinks onStaticPageClick
+        , commonFooter
         ]
     }
   where
@@ -122,8 +125,8 @@ hblContactInfo onStaticPageClick =
     , section "Mejla din insändäre: " [ email "debatt@hbl.fi" ]
     ]
 
-vastranylandContactInfo :: (String -> EventHandler) -> JSX
-vastranylandContactInfo onStaticPageClick =
+vastranylandContactInfo :: JSX -> JSX
+vastranylandContactInfo commonFooter =
   DOM.div
     { children:
         [ DOM.div
@@ -134,7 +137,7 @@ vastranylandContactInfo onStaticPageClick =
                 , column thirdColumn
                 ]
             }
-        , footerLinks onStaticPageClick
+        , commonFooter
         ]
     }
   where
@@ -179,8 +182,8 @@ vastranylandContactInfo onStaticPageClick =
     , section "" [ DOM.text "Det lokala kommer först." ]
     ]
 
-ostnylandContactInfo :: (String -> EventHandler) -> JSX
-ostnylandContactInfo onStaticPageClick =
+ostnylandContactInfo :: JSX -> JSX
+ostnylandContactInfo commonFooter =
   DOM.div
     { children:
         [ DOM.div
@@ -191,7 +194,7 @@ ostnylandContactInfo onStaticPageClick =
                 , column thirdColumn
                 ]
             }
-        , footerLinks onStaticPageClick
+        , commonFooter
         ]
     }
   where
@@ -238,8 +241,8 @@ ostnylandContactInfo onStaticPageClick =
     , section "" [ DOM.text "Det lokala kommer först." ]
     ]
 
-footerLinks :: (String -> EventHandler) -> JSX
-footerLinks onStaticPageClick =
+footerLinks :: (Category -> EventHandler) -> (String -> EventHandler) -> JSX
+footerLinks onCategoryClick onStaticPageClick =
   DOM.div
     { className: "flex flex-col justify-center items-center mx-auto mt-9 mb-8 lg:flex-row"
     , children:
@@ -248,23 +251,32 @@ footerLinks onStaticPageClick =
         , footerLink "Kundservice" "kundservice"
         , footerLink "Kontakta oss" "kontakt"
         , footerLink "Tipsa oss" "tipsa-oss"
+        , categoryLink correctionsCategory
         ]
     }
   where
-  externalLink caption url =
-    DOM.a
-      { href: url
-      , className: "my-1 mx-auto text-sm text-gray-900 no-underline md:mx-5"
-      , children: [ DOM.text caption ]
-      }
+    externalLink caption url =
+      DOM.a
+        { href: url
+        , className: "my-1 mx-auto text-sm text-gray-900 no-underline md:mx-5"
+        , children: [ DOM.text caption ]
+        }
 
-  footerLink caption link =
-    DOM.a
-      { href: "/sida/" <> link
-      , className: "my-1 mx-auto text-sm text-gray-900 no-underline md:mx-5"
-      , children: [ DOM.text caption ]
-      , onClick: onStaticPageClick link
-      }
+    footerLink caption link =
+      DOM.a
+        { href: "/sida/" <> link
+        , className: "my-1 mx-auto text-sm text-gray-900 no-underline md:mx-5"
+        , children: [ DOM.text caption ]
+        , onClick: onStaticPageClick link
+        }
+
+    categoryLink cat@(Category {id, label, url}) =
+      DOM.a
+        { href: fromMaybe ("/" <> id) url
+        , className: "my-1 mx-auto text-sm text-gray-900 no-underline md:mx-5"
+        , children: [ DOM.text $ unwrap label ]
+        , onClick: onCategoryClick cat
+        }
 
 column :: Array JSX -> JSX
 column children = DOM.div { className: "max-w-xs", children }

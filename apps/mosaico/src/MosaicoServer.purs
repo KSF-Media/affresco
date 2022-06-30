@@ -58,7 +58,7 @@ render props = DOM.div_
              , onMenuClick: mempty
              }
            , props.mainContent.content
-           , footer mosaicoPaper mempty
+           , footer mosaicoPaper mempty mempty
            , case props.mainContent.type of
                  FrontpageContent -> aside
                  TagListContent _ -> aside

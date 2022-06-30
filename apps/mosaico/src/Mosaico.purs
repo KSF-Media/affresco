@@ -7,7 +7,7 @@ import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core (toArray, toBoolean, toString) as JSON
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (find, fromFoldable, index, length, mapMaybe, null)
+import Data.Array (cons, find, fromFoldable, index, length, mapMaybe, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.DateTime (DateTime)
 import Data.DateTime as DateTime
@@ -42,7 +42,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User (User, logout, magicLogin)
 import KSF.User.Cusno (Cusno)
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, articleToArticleStub, categoriesMap, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
+import Lettera.Models (ArticleStub, ArticleType(..), Categories, Category(..), CategoryLabel(..), CategoryType(..), FullArticle, articleToArticleStub, categoriesMap, correctionsCategory, frontpageCategoryLabel, notFoundArticle, parseArticleStubWithoutLocalizing, parseArticleWithoutLocalizing, readArticleType, tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Analytics (sendArticleAnalytics, sendPageView)
 import Mosaico.Article as Article
@@ -160,7 +160,7 @@ mosaicoComponent
   -> Render Unit (UseEffect (Tuple Routes.MosaicoPage (Maybe Cusno)) (UseEffect Unit (UseState State Unit))) JSX
 mosaicoComponent initialValues props = React.do
   let setTitle t = Web.setTitle t =<< Web.document =<< Web.window
-      initialCatMap = categoriesMap props.categoryStructure
+      initialCatMap = categoriesMap $ correctionsCategory `cons` props.categoryStructure
       initialPath = getPathFromLocationState initialValues.locationState
       maxAge = Minutes 15.0
   state /\ setState <- useState initialValues.state
@@ -389,7 +389,8 @@ routeListener :: Categories -> ((State -> State) -> Effect Unit) -> Maybe Locati
 routeListener c setState oldLoc location = do
   runEffectFn1 refreshAdsImpl ["mosaico-ad__top-parade", "mosaico-ad__parade"]
 
-  let newRoute = match (Routes.routes c) $ Routes.stripFragment $ location.pathname <> location.search
+  let routes = Routes.routes $ Map.union c $ categoriesMap [ correctionsCategory ]
+      newRoute = match routes $ Routes.stripFragment $ location.pathname <> location.search
       (locationState :: Maybe Routes.RouteState) = hush $ JSON.read location.state
       oldPath = maybe "" (\l -> l.pathname <> l.search) oldLoc
 
@@ -713,7 +714,7 @@ render props setState state components router onPaywallEvent =
                   }
               , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade", inBody: false }
               , content
-              , footer mosaicoPaper onStaticPageClick
+              , footer mosaicoPaper onCategoryClick onStaticPageClick
               , guard showAside $ DOM.aside
                   { className: "mosaico--aside"
                   , children:

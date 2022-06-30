@@ -246,7 +246,7 @@ getFrontpage paper categoryId cacheToken = do
   let request = AX.defaultRequest
         { url = letteraFrontPageUrl
                 <> "?paper=" <> Paper.toString paper
-                <> foldMap ("&category=" <> _) categoryId
+                <> foldMap (\x -> "&category=" <> encodeURIComponent x) categoryId
                 <> foldMap ("&cacheToken=" <> _) cacheToken
         , method = Left GET
         , responseFormat = AX.json
@@ -258,7 +258,7 @@ getMostRead start limit category paper onlySubscribers =
   useResponse parseArticleStubs =<< AX.get ResponseFormat.json (letteraMostReadUrl
           <> "?start=" <> show start
           <> "&limit=" <> show limit
-          <> (foldMap ("&category=" <> _) category)
+          <> (foldMap (\x -> "&category=" <> encodeURIComponent x) category)
           <> "&paper=" <> Paper.toString paper
           <> "&onlySubscribers=" <> show onlySubscribers
   )
