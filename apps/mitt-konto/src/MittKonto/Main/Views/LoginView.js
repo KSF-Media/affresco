@@ -1,5 +1,5 @@
-const hbl = require("../../../../images/hbl-logo.png");
-const on = require("../../../../images/on-logo.png");
-const vn = require("../../../../images/vn-logo.png");
+import hbl from "../../../../images/hbl-logo.png";
+import on from "../../../../images/on-logo.png";
+import vn from "../../../../images/vn-logo.png";
 
 export const logos = { hbl, on, vn };
