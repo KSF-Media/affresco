@@ -22,6 +22,7 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box as Box
+import Mosaico.BreakingNews as BreakingNews
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
@@ -69,6 +70,7 @@ type Props =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , advertorial :: Maybe ArticleStub
+  , breakingNews :: Maybe String
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -98,7 +100,8 @@ render imageComponent boxComponent props =
     in DOM.article
       { className: "mosaico-article"
       , children:
-          [ DOM.header_
+          [ DOM.div {className: "[grid-area:breaking] lg:mx-24", children: [BreakingNews.render { content: props.breakingNews }]}
+          , DOM.header_
             [ DOM.h1
                 { className: "mosaico-article__headline"
                 , children: [ DOM.text title ]

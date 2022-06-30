@@ -2,7 +2,7 @@
 @import (reference) "_grid";
 @import (reference) "_breakpoints";
 
-@article-side-margin: 100px;
+@article-side-margin: 96px;
 @full-width-image: @content-block * 6; // == 1920px
 
 .mosaico-article.advertorial-standard {
@@ -16,6 +16,7 @@
   grid-area: article;
   display: grid;
   grid-template-areas:
+    "breaking"
     "head"
     "image"
     "body";
@@ -28,6 +29,7 @@
   }
   @media (min-width: @breakpoint-2col) {
     grid-template-areas:
+      "breaking"
       "head"
       "image"
       "body";
@@ -35,6 +37,7 @@
   @media (min-width: @breakpoint-3col) {
     grid-template-columns: @mosaico-grid-columns;
     grid-template-areas:
+      ". breaking breaking breaking ."
       ". head  head  head  ."
       ". image image image ."
       ". body  body  body  .";

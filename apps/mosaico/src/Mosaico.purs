@@ -774,6 +774,7 @@ render props setState state components router onPaywallEvent =
         , mostReadArticles: state.mostReadArticles
         , latestArticles: state.latestArticles
         , advertorial: state.singleAdvertorial
+        , breakingNews: state.breakingNews
         }
 
     onClickHandler articleStub = capture_ do
