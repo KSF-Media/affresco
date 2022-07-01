@@ -63,7 +63,9 @@ requestResetLink = do
             , id: "forgot-password-form"
             , onSubmit: Events.handler preventDefault $ const $ submit validatedForm
             , children:
-                [ DOM.div
+                [ DOM.div_ [ DOM.text "Ange den e-postadress du skapade kontot med." ]
+                , DOM.div_ [ DOM.text "Ifall mejlet inte kommer fram kan du behöva kolla din skräppost." ]
+                , DOM.div
                     { className: "password--reset-field"
                     , children:
                         [ InputField.inputField
@@ -89,17 +91,19 @@ requestResetLink = do
         renderSuccess =
           DOM.div
             { className: "success-text"
-            , children: [ DOM.text "Vi har skickat ett e-post med instruktioner för att skapa ett nytt lösenord." ]
+            , children: [ DOM.h2_ [ DOM.text "Tack!"]
+                        , DOM.text "Om e-postadressen finns i vårt system har vi skickat ett mejl med instruktioner för att skapa ett nytt lösenord."
+                        ]
             }
 
         renderFailure =
           DOM.div
             { className: "error-text"
-            , children: [ DOM.text "Något gick fel."
+            , children: [ DOM.text "Oj, något gick fel."
                         , DOM.a
                             { href: "/#lösenord"
                             , onClick: capture_ resetForm
-                            , children: [ DOM.text "Försök igen." ]
+                            , children: [ DOM.text "Vänligen försök igen." ]
                             }
                         ]
             }
