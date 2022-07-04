@@ -169,8 +169,8 @@ derive instance eqVisibility :: Eq Visibility
 
 initialState :: State
 initialState =
-  { formEmail: Nothing
-  , formPassword: Nothing
+  { formEmail: Just "kari.pahula+repeattest@ksfmedia.fi"
+  , formPassword: Just "repeattest"
   , errors: { login: Nothing, social: Nothing }
   , merge: Nothing
   , loginViewStep: Login
@@ -349,7 +349,7 @@ renderLoginForm self =
                 , label: Just "E-postadress"
                 , name: "username"
                 , autoComplete: "username"
-                , value: Nothing
+                , value: Just "kari.pahula+repeattest@ksfmedia.fi"
                 , onChange: \email -> self.setState _ { formEmail = email }
                 , validationError:
                    Form.inputFieldErrorMessage $
@@ -361,7 +361,7 @@ renderLoginForm self =
                 , label: Just "Lösenord"
                 , name: "password"
                 , autoComplete: "current-password"
-                , value: Nothing
+                , value: Just "repeattest"
                 , onChange: \pw -> self.setState _ { formPassword = pw }
                 , validationError:
                    Form.inputFieldErrorMessage $

@@ -44,7 +44,16 @@ import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface, matchesWith, makeInterface)
 import Routing.Duplex as Duplex
 
+import Data.Time.Duration (Minutes(..), Milliseconds(..))
+import Data.Nullable (Nullable, toMaybe)
+import Debug
+
 foreign import sentryDsn_ :: Effect String
+
+foreign import getElem :: String -> Effect (Nullable Foo)
+foreign import getElem_ :: String -> Effect Foo
+foreign import click :: Foo -> Effect Unit
+foreign import data Foo :: Type
 
 app :: Component {}
 app = do
@@ -106,6 +115,7 @@ app = do
             liftEffect logout
 
     useEffectOnce do
+      Aff.launchAff_ simulateLogin
       let attemptMagicLogin = do
             User.magicLogin Nothing $ hush >>> case _ of
               Just user -> Aff.launchAff_ do
@@ -225,3 +235,29 @@ render self@{ state } router content logout isPersonating =
         ]
     , Views.footerView
     ]
+
+
+simulateLogin = do
+  traceM "simulateLogin"
+  let repeatUntil action = do
+        result <- action
+        case result of
+          Just x -> pure x
+          Nothing -> do
+            Aff.delay $ Milliseconds 500.0
+            repeatUntil action
+--      openLogin = liftEffect $ toMaybe <$> getElem "*[data-login=\"1\"]"
+      typeLogin = do
+        Aff.delay $ Milliseconds 500.0
+        el3 <- repeatUntil $ liftEffect $ toMaybe <$> getElem "input[type=submit]"
+        liftEffect $ click el3
+      logout = do
+        el2 <- repeatUntil $ liftEffect $ toMaybe <$> getElem ".nav--logout-button"
+        liftEffect $ click el2
+--  login <- repeatUntil openLogin
+--  liftEffect $ click login
+  typeLogin
+  Aff.delay $ Milliseconds 500.0
+  logout
+  Aff.delay $ Milliseconds 500.0
+  simulateLogin

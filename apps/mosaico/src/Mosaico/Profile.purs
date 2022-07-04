@@ -89,6 +89,7 @@ render props@{ onLogin, onLogout, onStaticPageClick } =
                                   , DOM.text "Logga ut"
                                   ]
                       , onClick: onLogout
+                      , className: "this-is-the-logout"
                       }
                   ]
               ]

@@ -253,6 +253,7 @@ mosaicoComponent initialValues props = React.do
         { advertorials = advertorials
         , singleAdvertorial = s.singleAdvertorial <|> randomAdvertorial
         }
+    Routes.changeRoute initialValues.nav "/konto"
     pure $ Aff.launchAff_ giveUpLogin
 
   let loadFeed feedName = do
