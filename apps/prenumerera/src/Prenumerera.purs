@@ -93,7 +93,11 @@ app = do
     route /\ setRoute <- useState' initialRoute
     loading /\ setLoading' <- useState' Nothing
     maybePackages /\ setPackages <- useState' Nothing
-    brand /\ setBrand <- useState' HBL
+    brand /\ setBrand <- useState' $ case locationState.hash of
+      "#/vn" -> VN
+      "#/on" -> ON
+      "#/junior" -> JUNIOR
+      _ -> HBL
     purchasePackage /\ setPurchasePackage <- useState' Nothing
     purchaseDetails /\ setPurchaseDetails <- useState' Nothing
     let userActivePackages = foldMap getActivePackages user
@@ -168,6 +172,7 @@ app = do
                   packageSelectComponent
                     { packages
                     , startPurchase
+                    , brand
                     , setBrand
                     , userActivePackages
                     }

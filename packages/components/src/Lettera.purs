@@ -49,6 +49,9 @@ letteraFrontPageUrl = letteraBaseUrl <> "/list/frontpage"
 letteraFrontPageHtmlUrl :: String
 letteraFrontPageHtmlUrl = letteraBaseUrl <> "/list/frontpage/html"
 
+letteraBreakingNewsUrl :: String
+letteraBreakingNewsUrl = letteraBaseUrl <> "/list/breaking-news/html"
+
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 
@@ -215,6 +218,17 @@ getFrontpageHtml paper category cacheToken = do
         { url = letteraFrontPageHtmlUrl
                 <> "?paper=" <> Paper.toString paper
                 <> "&category=" <> category
+                <> foldMap ("&cacheToken=" <> _) cacheToken
+        , method = Left GET
+        , responseFormat = AX.string
+        }
+  useResponse (pure <<< pure) =<< AX.request request
+
+getBreakingNewsHtml :: Paper -> Maybe String -> Aff (LetteraResponse String)
+getBreakingNewsHtml paper cacheToken = do
+  let request = AX.defaultRequest
+        { url = letteraBreakingNewsUrl
+                <> "?paper=" <> Paper.toString paper
                 <> foldMap ("&cacheToken=" <> _) cacheToken
         , method = Left GET
         , responseFormat = AX.string

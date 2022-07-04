@@ -230,7 +230,7 @@ render scrollPosition props =
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX
-topLine = DOM.hr { className: "mosaico-top-line" }
+topLine = DOM.hr { className: "[grid-area:line] bg-brand w-full h-3 sticky top-0 z-10" }
 
 -- The separator between the header and the rest of the page
 mainSeparator :: JSX
