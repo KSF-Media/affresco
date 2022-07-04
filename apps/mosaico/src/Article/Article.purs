@@ -11,6 +11,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
 import Data.Set as Set
+import Data.String (toUpper)
 import Effect (Effect)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
@@ -148,7 +149,7 @@ render imageComponent boxComponent props =
               , children:
                     [ foldMap (renderMetabyline <<< _.article) $ hush props.article
                     , DOM.div
-                        { className: "mosaico-article__body "
+                        { className: "mosaico-article__body"
                         , children: case _.articleType <$> props.article of
                           Right PreviewArticle ->
                             bodyWithAd
@@ -291,23 +292,44 @@ render imageComponent boxComponent props =
         , onTagClick: props.onTagClick
         })
 
+    renderAdvertorialTeaser :: ArticleStub -> JSX
     renderAdvertorialTeaser article =
       let img = article.listImage <|> article.mainImage
           imgSrc = maybe (fallbackImage props.paper) _.thumb img
           alt = fromMaybe "" $ _.caption =<< img
       in
         DOM.a
-          { className: "mosaico--list-article-advertorial"
+          { className: "block p-3 text-black no-underline bg-advertorial"
           , href: "/artikel/" <> article.uuid
           , onClick: props.onArticleClick article
           , children:
-              [ DOM.img
-                  { className: "mosaico--list-article-advertorial__image"
+              [ DOM.div
+                  { className: "pt-1 pb-2 text-xs font-bold font-duplexserif"
+                  , children: case article.articleTypeDetails of
+                        Just { title: "companyName", description: Just company } ->
+                          [ DOM.span
+                              { className: "mr-1 text-gray-500 font-roboto"
+                              , children: [ DOM.text "ANNONS: " ]
+                              }
+                          , DOM.span
+                            { className: "mr-1 text-black font-duplexserif"
+                            , children: [ DOM.text $ toUpper company ]
+                            }
+                          ]
+                        _ ->
+                          [ DOM.span
+                              { className: "mr-1 text-gray-500 font-roboto"
+                              , children: [ DOM.text "ANNONS" ]
+                              }
+                          ]
+                  }
+              , DOM.img
+                  { className: "w-auto max-w-full h-auto max-h-96"
                   , src: imgSrc
                   , alt
                   }
               , DOM.h2
-                  { className: "mosaico--list-article-advertorial__title"
+                  { className: "mt-3 text-3xl font-semibold font-robotoslab"
                   , children: [ DOM.text $ fromMaybe article.title article.listTitle ]
                   }
               ]
