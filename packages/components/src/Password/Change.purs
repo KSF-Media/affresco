@@ -87,7 +87,7 @@ updatePasswordForm = do
       DOM.div
         { className: "password--reset"
         , children:
-            [ DOM.h2_ [ DOM.text "Ändra lösenord" ]
+            [ DOM.h2_ [ DOM.text "Välj nytt lösenord" ]
             , AsyncWrapper.asyncWrapper
                 { wrapperState: state.formData
                 , readyView: mempty
@@ -109,24 +109,24 @@ updatePasswordForm = do
                 [ InputField.inputField
                     { type_: InputField.Password
                     , name: "password"
-                    , placeholder: "Önskat lösenord"
+                    , placeholder: "Välj ett lösenord"
                     , value: password
                     , onChange: \newPw -> setForm _ { password = newPw }
-                    , label: Just "Önskat lösenord"
+                    , label: Just "Nytt lösenord"
                     , validationError: inputFieldErrorMessage $ validateField Password password state.serverErrors
                     }
                 , InputField.inputField
                     { type_: InputField.Password
                     , name: "confirmPassword"
-                    , placeholder: "Bekräfta lösenordet"
+                    , placeholder: "Bekräfta det valda lösenordet"
                     , value: confirmPassword
                     , onChange: \newPw -> setForm _ { confirmPassword = newPw }
-                    , label: Just "Bekräfta lösenordet"
+                    , label: Just "Bekräfta lösenord"
                     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword password) confirmPassword []
                     }
                 , DOM.button
                     { type: "submit"
-                    , className: "button-green submit-button"
+                    , className: "button-green submit-button new-password-button"
                     , disabled: not $ isValid validatedForm
                     , children: [ DOM.text "Spara" ]
                     }
