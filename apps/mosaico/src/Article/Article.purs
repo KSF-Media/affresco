@@ -372,7 +372,7 @@ renderElement imageComponent boxComponent onArticleClick el =  case el of
         _        -> "factbox"
   Footnote footnote -> DOM.p
       { className: block <> " " <> block <> "__footnote"
-      , children: [ DOM.text footnote ]
+      , dangerouslySetInnerHTML: { __html: footnote }
       }
   Quote { body, author } -> DOM.figure
       { className: block <> " " <> block <> "__quote"
