@@ -146,16 +146,18 @@ type ArticleStubCommon =
   )
 
 type JSArticleStub =
-  { publishingTime :: String
-  , tags           :: Array String
-  , articleType    :: String
+  { publishingTime     :: String
+  , tags               :: Array String
+  , articleType        :: String
+  , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
   }
 
 type ArticleStub =
-  { publishingTime :: Maybe LocalDateTime
-  , tags           :: Array Tag
-  , articleType    :: ArticleType
+  { publishingTime     :: Maybe LocalDateTime
+  , tags               :: Array Tag
+  , articleType        :: ArticleType
+  , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
   }
 
@@ -249,6 +251,7 @@ articleToArticleStub a =
   , publishingTime: a.publishingTime
   , tags: a.tags
   , articleType: a.articleType
+  , articleTypeDetails: a.articleTypeDetails
   }
 
 articleToJson :: Article -> Json
