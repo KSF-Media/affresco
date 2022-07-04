@@ -318,7 +318,8 @@
     color: @dark-text;
     a {
       color: @dark-text;
-      text-decoration-style: underline;
+      text-decoration-style: solid;
+      text-decoration-line: underline;
       text-decoration-thickness: 2px;
       #HBL & {
         text-decoration-color: @hbl-orange;
@@ -362,6 +363,26 @@
       }
       #BRAND-NEUTRAL & {
         background-color: @brand-neutral !important;
+      }
+    }
+    a {
+      text-decoration-style: solid;
+      text-decoration-line: underline;
+      text-decoration-thickness: 2px;
+      #HBL & {
+        text-decoration-color: @hbl-orange;
+      }
+      #VN & {
+        text-decoration-color: @vn-red;
+      }
+      #ON & {
+        text-decoration-color: @on-blue;
+      }
+      #BRAND-NEUTRAL & {
+        text-decoration-color: @brand-neutral !important;
+      }
+      &:hover {
+        color: lighten(@dark-text, 20%);
       }
     }
   }
