@@ -1,8 +1,7 @@
-// The path '
-exports.papers = {
-  hbl: require("../../../../images/logo-hbl.svg"),
-  on: require("../../../../images/logo-on.svg"),
-  vn: require("../../../../images/logo-vn.svg"),
-  ksf: require("../../../../images/logo-ksf.svg"),
-  junior: require("../../../../images/logo-junior.svg"),
-};
+import hbl from "../../../../images/logo-hbl.svg";
+import on from "../../../../images/logo-on.svg";
+import vn from "../../../../images/logo-vn.svg";
+import ksf from "../../../../images/logo-ksf.svg";
+import junior from "../../../../images/logo-junior.svg";
+
+export const papers = { hbl, on, vn, ksf, junior };

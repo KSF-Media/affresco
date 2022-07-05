@@ -2,17 +2,21 @@ module KSF.News where
 
 import Prelude
 
+import Affjax as AX
+import Affjax.ResponseFormat as ResponseFormat
+import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Decode.Error (printJsonDecodeError)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe (..))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
+import KSF.Driver (getDriver)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (useEffectOnce, useState', (/\), UseEffect, UseState)
 import React.Basic.Hooks as React
-import Simple.Ajax as AX
 
 type NewsInput = Maybe (Either Unit (Array News))
 
@@ -25,11 +29,16 @@ useNews newsLoaded = React.do
   n /\ setNews <- useState' Nothing
   useEffectOnce $ do
     Aff.launchAff_ $ do
-      res <- AX.get "https://cdn.ksfmedia.fi/news/mitt-konto.json"
+      driver <- liftEffect getDriver
+      res <- AX.get driver ResponseFormat.json "https://cdn.ksfmedia.fi/news/mitt-konto.json"
       x <- case res of
-        Right x -> pure $ Just $ Right x
+        Right x -> case decodeJson $ _.body x of
+          Right y -> pure $ Just $ Right y
+          Left err -> do
+            Log.error $ "News decocde failed " <> printJsonDecodeError err
+            pure $ Just $ Left unit
         Left err -> do
-          Log.error $ "News load failed" <> show err
+          Log.error $ "News load failed " <> AX.printError err
           pure $ Just $ Left unit
       liftEffect $ do
         setNews x

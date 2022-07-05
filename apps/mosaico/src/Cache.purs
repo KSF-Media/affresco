@@ -129,7 +129,7 @@ startUpdates fetch = do
       reset = withLock resetLock do
         AVar.put unit updateStop
 
-  Aff.launchAff_ start
+  Aff.launchAff_ $ void start
   pure $ Tuple reset start
 
 withCat :: forall a m. Monad m => (String -> m a) -> Category -> m (Tuple CategoryLabel a)

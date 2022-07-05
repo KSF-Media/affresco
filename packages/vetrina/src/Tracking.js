@@ -2,7 +2,7 @@ if (typeof window !== "undefined") {
   window.dataLayer = window.dataLayer || [];
 }
 
-exports.transaction_ = function (orderNumber, productId, productPriceInCents, productCampaignNo) {
+export function transaction_(orderNumber, productId, productPriceInCents, productCampaignNo) {
   return function () {
     var referringArticle = window.location.href.split("?")[0];
     var productPrice = productPriceInCents / 100;

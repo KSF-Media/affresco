@@ -1,6 +1,6 @@
-exports.sso = typeof window !== "undefined" && window.JANRAIN ? window.JANRAIN.SSO : null;
+export const sso = typeof window !== "undefined" && window.JANRAIN ? window.JANRAIN.SSO : null;
 
-exports.loadConfig = function () {
+export function loadConfig() {
   var baseUrl = window.location.protocol + "//" + window.location.host;
   var config = {
     client_id: process.env.JANRAIN_LOGIN_CLIENT_ID,

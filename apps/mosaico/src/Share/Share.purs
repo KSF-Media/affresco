@@ -13,7 +13,7 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.DOM.Events (capture_)
 
-foreign import encodeURIComponent :: String -> String
+foreign import encodeURIComponent_ :: String -> String
 
 type NativeShareProps
   = { title :: String
@@ -37,8 +37,8 @@ makeMailUrl title url = "mailto:?subject=" <> title <> "&body=" <> url
 shareUrl :: (String -> String -> String) -> String -> String -> String
 shareUrl urlTemplate titleStr urlStr = urlTemplate title url
   where
-    title = encodeURIComponent titleStr
-    url = encodeURIComponent urlStr
+    title = encodeURIComponent_ titleStr
+    url = encodeURIComponent_ urlStr
 
 mkShareIcon :: Maybe (Unit -> Effect Unit) -> String -> String -> JSX
 mkShareIcon onClick href someName =
