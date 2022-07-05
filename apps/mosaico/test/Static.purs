@@ -25,7 +25,7 @@ testNavigateToStatic page = do
 
 testStaticEmbeds :: Test
 testStaticEmbeds page = do
-  Chrome.goto (Chrome.URL $ site <> "sida/fragor-och-svar") page
+  Chrome.goto' (Chrome.URL $ site <> "sida/fragor-och-svar") page
   testQuestion
   log "Navigate to front page and back"
   Chrome.click (Chrome.Selector ".mosaico-header__logo") page

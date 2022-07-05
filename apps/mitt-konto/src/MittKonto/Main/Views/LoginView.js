@@ -1,5 +1,5 @@
-exports.logos = {
-  hbl: require("../../../../images/hbl-logo.png"),
-  on: require("../../../../images/on-logo.png"),
-  vn: require("../../../../images/vn-logo.png"),
-};
+import hbl from "../../../../images/hbl-logo.png";
+import on from "../../../../images/on-logo.png";
+import vn from "../../../../images/vn-logo.png";
+
+export const logos = { hbl, on, vn };

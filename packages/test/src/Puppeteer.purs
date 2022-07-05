@@ -8,7 +8,7 @@ import Prelude
 import Control.Promise (Promise, toAffE)
 import Data.Array (replicate)
 import Data.Either (Either(..))
-import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Function.Uncurried (Fn2, Fn3, runFn2, runFn3)
 import Data.String as String
 import Data.Foldable (sequence_)
 import Foreign (unsafeFromForeign)
@@ -64,14 +64,18 @@ waitForLong_ selector frame = void $ waitFor selector 100000 frame
 waitFor :: forall page. HasFrame page => Selector -> Int -> page -> Aff ElementHandle
 waitFor selector timeout frame = Chrome.waitForSelector selector { visible: true, timeout } frame
 
-foreign import _xpathEval :: forall page. HasFrame page => Fn2 page String (Effect (Promise (Array ElementHandle)))
+foreign import _xpathEval :: forall page. Fn2 page String (Effect (Promise (Array ElementHandle)))
 foreign import _clickElement :: ElementHandle -> Effect (Promise Unit)
+foreign import _goto_options :: forall page options. Fn3 URL page options (Effect (Promise Unit))
 
 xpathEval :: forall page. HasFrame page => String -> page -> Aff (Array ElementHandle)
 xpathEval xpath page = toAffE $ runFn2 _xpathEval page xpath
 
 clickElement :: ElementHandle -> Aff Unit
 clickElement elem = toAffE $ _clickElement elem
+
+goto' :: forall page. HasFrame page => URL -> page -> Aff Unit
+goto' url page = toAffE $ runFn3 _goto_options url page { waitUntil: "domcontentloaded" }
 
 findByText :: forall page. HasFrame page => String -> String -> page -> Aff (Array ElementHandle)
 findByText tag selector frame = xpathEval xpath frame

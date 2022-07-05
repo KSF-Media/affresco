@@ -1,20 +1,20 @@
-exports.orderError = function (message) {
+export function orderError(message) {
   return new OrderError(message);
 };
 
-exports.packageError = function (message) {
+export function packageError(message) {
   return new PackageError(message);
 };
 
-exports.loginError = function (message) {
+export function loginError(message) {
   return new LoginError(message);
 };
 
-exports.subscriptionError_ = function (message) {
+export function subscriptionError_(message) {
   return new SubscriptionError(message);
 };
 
-exports.userError = function (message) {
+export function userError(message) {
   return new UserError(message);
 };
 

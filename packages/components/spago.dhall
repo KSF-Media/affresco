@@ -6,7 +6,8 @@
     , "avar"
     , "aff"
     , "aff-promise"
-    , "simple-ajax"
+    , "affjax-node"
+    , "affjax-web"
     , "formatters"
     , "datetime"
     , "react-basic"
@@ -24,7 +25,6 @@
     , "read"
     , "uuid"
     , "quickcheck"
-    , "web-url"
     ]
 , packages =
     ../../packages.dhall

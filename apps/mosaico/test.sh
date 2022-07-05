@@ -7,7 +7,7 @@ error_exit(){
 }
 cp .env.local .env.test
 echo "DISABLE_ADS=1" >> .env.test
-node -r dotenv/config -e 'require("./output/Main/index").main()' dotenv_config_path=.env.test &
+node --input-type=module -r dotenv/config -e 'import {main} from "./output/Main/index.js"; main();' dotenv_config_path=.env.test &
 PIDTOKILL=$! 
 echo "Started server with pid $PIDTOKILL"
 sleep 5

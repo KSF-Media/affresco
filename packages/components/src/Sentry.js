@@ -7,7 +7,7 @@
 
    https://docs.sentry.io/platforms/javascript/
  */
-exports.initSentry_ = function (sentryDsn) {
+export function initSentry_(sentryDsn) {
   var Sentry = require("@sentry/browser");
   var Tracing = require("@sentry/tracing");
   if (sentryDsn && sentryDsn.length > 1) {
@@ -19,16 +19,16 @@ exports.initSentry_ = function (sentryDsn) {
   }
 };
 
-exports.captureMessage_ = function (sentry, appName, message, level) {
+export function captureMessage_(sentry, appName, message, level) {
   return sendSentryEvent(sentry, appName, "captureMessage", message, level);
 };
-exports.captureException_ = function (sentry, appName, err) {
+export function captureException_(sentry, appName, err) {
   return sendSentryEvent(sentry, appName, "captureException", err);
 };
-exports.setTag_ = function (sentry, key, value) {
+export function setTag_(sentry, key, value) {
   return sendSentryEvent(sentry, null, "setTag", key, value);
 };
-exports.setUser_ = function (sentry, cusno) {
+export function setUser_(sentry, cusno) {
   if (sentry) {
     // Empty object is used for istance when user logs out from the system
     sentry.setUser(cusno === null ? {} : { id: cusno });
