@@ -60,6 +60,7 @@ type BaseSubscription p =
   , deliveryAddress       :: Nullable DeliveryAddress
   , receiver              :: Nullable String
   , pendingAddressChanges :: Nullable (Array PendingAddressChange)
+  , deliveryTroubleEnd    :: Nullable JSDate
   , paymentMethod         :: p
   , paymentMethodId       :: Nullable PaymentMethodId
   }
