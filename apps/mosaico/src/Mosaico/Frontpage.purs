@@ -121,7 +121,10 @@ render (List props) =
 
 render (Prerendered props@{ hooks }) = genericRender
   (\content -> [
-    maybe (DOM.div_ []) (\html -> DOM.div { dangerouslySetInnerHTML: {__html: html }}) props.breakingNews
+    maybe (DOM.div_ []) (\html -> DOM.div
+                                    { className: "mosaico--breaking-news"
+                                    , dangerouslySetInnerHTML: {__html: html }
+                                    }) props.breakingNews
     , HtmlRenderer.render
                    { content
                    , hooks: Just $ toHookRep <$> hooks
