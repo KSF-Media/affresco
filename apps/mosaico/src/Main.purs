@@ -383,8 +383,9 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                     [ DOM.meta { property: "og:type", content: "article" }
                     , DOM.meta { property: "og:title", content: a'.title }
                     , DOM.meta { property: "og:description", content: fold a'.preamble }
-                    , DOM.meta { property: "og:image", content: foldMap _.url a'.mainImage }
+                    , foldMap (\url -> DOM.meta { property: "og:image", content: url}) $ _.url <$> a'.mainImage
                     , DOM.meta { name: "description", content: fold a'.preamble }
+                    , foldMap (const $ DOM.meta { name: "robots", content: "max-image-preview:large"}) a'.mainImage
                     , DOM.title { children: [ DOM.text a'.title ] }
                     , DOM.script
                         { type: "application/ld+json"

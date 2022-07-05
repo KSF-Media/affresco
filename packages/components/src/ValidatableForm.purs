@@ -91,7 +91,7 @@ validateFinnishZipCode field zipCode =
 validateEmailAddress :: forall a. Eq a => a -> Maybe String -> ValidatedForm a (Maybe String)
 validateEmailAddress emailField email =
   validateEmptyField emailField "E-postadress krävs." email `andThen`
-  validateInputWithRegex emailField emailRegex "Ogiltig E-postadress."
+  validateInputWithRegex emailField emailRegex "Ogiltig e-postadress."
   where
     -- From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email#Basic_validation
     emailRegex = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
