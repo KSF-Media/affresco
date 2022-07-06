@@ -2,6 +2,8 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@import "./css/box.css";
+
 #HBL {
   --brand-color: #f07e26;
 }
@@ -10,4 +12,7 @@
 }
 #VN {
   --brand-color: #c90c0f;
+}
+#BRAND-NEUTRAL {
+  --brand-color: #00a1ab;
 }
