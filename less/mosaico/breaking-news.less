@@ -5,4 +5,15 @@ div:not(.mosaico-main) > .mosaico--breaking-news > div {
 
 .mosaico--breaking-news .dre-section {
   --size-two-thirds: 100%;
+
+  // These rules are from Aptoma's CSS, update as needed
+  .dre-item__title {
+    font: 600 16px/1 var(--font-duplex-sans-serif);
+  }
+
+  @media (max-width: 767px) {
+    .dre-item__title {
+      font-size: 4.2666666667vw;
+    }
+  }
 }
