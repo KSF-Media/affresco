@@ -16,7 +16,7 @@ export function evalExternalScriptsImpl(scripts) {
 
 function evalScript(s) {
   try {
-    eval(s);
+    window.eval(s);
   } catch (err) {
     console.warn("Failed to eval script:", err);
   }
