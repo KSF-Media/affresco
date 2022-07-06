@@ -120,7 +120,7 @@ render firstRender selectPaper fade activePaper packageGroups =
             { className: "container"
             , children:
                 [ DOM.p_
-                    [ DOM.text "Sommarkampanj: Första månadern gratis, följande 3mån -50%."
+                    [ DOM.text "Sommarkampanj: Första månaden gratis, följande 3 mån. -50%. "
                     , DOM.a
                         { href: "https://www.ksfmedia.fi/sommar?utm_source=prenumerera"
                         , children: [ DOM.text "Prenumerera här!" ]
