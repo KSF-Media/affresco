@@ -70,7 +70,7 @@ module.exports = {
     files: ["./src/**/*", "./static/**/*"],
     transform: {
       // We have to use \\_ instead of \_ in purs files
-      purs: (content) => content.replaceAll('\\\\', '\\')
+      purs: (content) => content.replace(/\\\\/g, '\\')
     },
   },
   theme: {
