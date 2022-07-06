@@ -3,8 +3,8 @@ module Prenumerera.Summary where
 import Prelude
 
 import Bottega.Models (PaymentMethod(..))
-import Data.Foldable (foldr)
-import Data.Maybe (fromMaybe, maybe)
+import Data.Foldable (foldMap, foldr)
+import Data.Maybe (fromMaybe)
 import Data.Nullable (toMaybe)
 import KSF.Helpers (formatEur, paperInvoiceCents)
 import KSF.User (User)
@@ -34,9 +34,9 @@ render user description offer method =
                 , prop "Namn" [ (fromMaybe "" $ toMaybe user.firstName) <> " " <>
                                 (fromMaybe "" $ toMaybe user.lastName) ]
                 , prop "E-post" [ user.email ]
-                , prop "Adress" $
-                  maybe ["", "", "", ""]
-                  (\address -> [ address.streetAddress
+                , foldMap
+                  (\address -> prop "Adress"
+                               [ address.streetAddress
                                , fromMaybe "" $ toMaybe address.zipCode
                                , fromMaybe "" $ toMaybe address.city
                                , address.countryCode
