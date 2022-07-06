@@ -21,6 +21,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Mosaico.BreakingNews as BreakingNews
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage.Models (Hook, toHookRep)
 import Mosaico.Paper (mosaicoPaper)
@@ -121,7 +122,7 @@ render (List props) =
 
 render (Prerendered props@{ hooks }) = genericRender
   (\content -> [
-    maybe (DOM.div_ []) (\html -> DOM.div { dangerouslySetInnerHTML: {__html: html }}) props.breakingNews
+    BreakingNews.render {content: props.breakingNews}
     , HtmlRenderer.render
                    { content
                    , hooks: Just $ toHookRep <$> hooks
