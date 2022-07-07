@@ -22,7 +22,7 @@ render props =
   in DOM.div
        { className: joinWith " " [block, block <> "__mostread"]
        , children:
-           [ DOM.h3
+           [ DOM.h2
                { className: block <> "--header"
                , children: [ DOM.text "Andra läser" ]
                }
@@ -44,7 +44,10 @@ render props =
                 , DOM.div
                     { className: "list-article-liftup"
                     , children:
-                        [ DOM.h6_ [ DOM.text $ fromMaybe a.title a.listTitle ]
+                        [ DOM.h3
+                            { className: "text-xl leading-tight font-duplexserif"
+                            , children: [ DOM.text $ fromMaybe a.title a.listTitle ]
+                            }
                         , guard a.premium $ DOM.div
                             { className: "mosaico-article__meta"
                             , children:
