@@ -18,7 +18,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Foreign.Object as Object
-import KSF.Paper (toString)
+import KSF.Paper (toString, paperName)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
@@ -44,6 +44,7 @@ type Props
     , onMenuClick :: Effect Unit
     -- Nothing for loading state, Just Nothing for no user
     , user :: Maybe (Maybe User)
+    , showHeading :: Boolean
     }
 
 component :: React.Component Props
@@ -76,7 +77,8 @@ render scrollPosition props =
         [ DOM.div
             { className: block
             , children:
-                [ DOM.div
+                [ srHeading
+                , DOM.div
                     { className: block <> "__left-links"
                     , children:
                         [ DOM.a
@@ -147,6 +149,14 @@ render scrollPosition props =
         ]
     }
   where
+    srHeading =
+        if props.showHeading
+        then DOM.h1
+               { className: "sr-only"
+               , children: [DOM.text $ paperName mosaicoPaper]
+               }
+        else mempty
+
     mkCategory category@(Category { label }) =
         DOM.a
         { href: "/" <> show label

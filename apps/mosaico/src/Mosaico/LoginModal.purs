@@ -63,7 +63,7 @@ render props state =
                 [ DOM.div
                     { className: "mosaico--login-modal_title"
                     , children:
-                        [ DOM.h1
+                        [ DOM.h2
                             { className: "mt-8 text-3xl font-bold font-roboto"
                             , children: [ DOM.text "Logga in" ]
                             }

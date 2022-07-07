@@ -19,7 +19,7 @@ searchField :: Chrome.Selector
 searchField = Chrome.Selector ".mosaico-search input"
 
 pageTitle :: Chrome.Selector
-pageTitle = Chrome.Selector ".mosaico--article-list > h1"
+pageTitle = Chrome.Selector ".mosaico--article-list > h2"
 
 testSearchNavigation :: Test
 testSearchNavigation page = do

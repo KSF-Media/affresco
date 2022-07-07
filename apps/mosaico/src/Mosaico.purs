@@ -713,6 +713,10 @@ render props setState state components router onPaywallEvent =
                           | otherwise
                           -> Routes.changeRoute router "/"
                         _ -> Routes.changeRoute router "/meny"
+                  , showHeading: case state.route of
+                        Routes.ArticlePage _ -> false
+                        Routes.StaticPage _ -> false
+                        _ -> true
                   }
               , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade", inBody: false }
               , content

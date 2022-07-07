@@ -283,7 +283,7 @@ render imageComponent boxComponent props =
     renderMostReadArticles articles =
       DOM.div
         { className: "mosaico-article__mostread--header"
-        , children: [ DOM.text "ANDRA LÄSER" ]
+        , children: [ DOM.h2_ [DOM.text "ANDRA LÄSER" ]]
         } <>
       (Frontpage.render $ Frontpage.List
         { label: mempty
@@ -365,7 +365,7 @@ renderElement imageComponent boxComponent onArticleClick el =  case el of
     { dangerouslySetInnerHTML: { __html: content }
     , className: block <> " " <> block <> "__html"
     }
-  Headline str -> DOM.h4
+  Headline str -> DOM.h2
     { className: block <> " " <> block <> "__subheadline"
     , children: [ DOM.text str ]
     }
