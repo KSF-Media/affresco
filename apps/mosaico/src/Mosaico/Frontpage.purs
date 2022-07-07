@@ -97,7 +97,11 @@ render (List props) =
                                       ) $ head a.tags
                                   , DOM.a
                                       { href: "/artikel/" <> a.uuid
-                                      , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
+                                      , children: [ DOM.h3
+                                                      { className: "text-2xl leading-tight font-duplexserif"
+                                                      , children: [ DOM.text $ fromMaybe a.title a.listTitle ]
+                                                      }
+                                                  ]
                                       }
                                   , DOM.span
                                       { className: "list-article-timestamp"
@@ -135,8 +139,8 @@ render (Prerendered props@{ hooks }) = genericRender
 maybeLabel :: Maybe String -> JSX
 maybeLabel categoryLabel =
   case categoryLabel of
-    Just label -> DOM.h1
-                    { className: ""
+    Just label -> DOM.h2
+                    { className: "[grid-area:main] text-3xl leading-none font-roboto font-bold inline-block mb-8 border-b-2 border-brand"
                     , children: [ DOM.text label ]
                     }
     _          -> mempty
