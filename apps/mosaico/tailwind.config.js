@@ -104,9 +104,9 @@ module.exports = {
     },
 
     screens: {
-      sm: "320px",
-      md: "760px",
-      lg: "1020px",
+      sm: "320px", // @content-block
+      md: "760px", // @breakpoint-2col
+      lg: "1020px", // @breakpoint-3col
     },
   },
   plugins: [maskImagePlugin, maskSizePlugin],
