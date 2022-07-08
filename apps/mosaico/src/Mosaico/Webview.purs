@@ -78,15 +78,13 @@ render (Just JPG) url random =
     }
 render (Just M3U8) url _ =
   DOM.div
-    { className: "mosaico-webview"
+    { className: "mosaico-webview--torgcamera"
     , children:
         [ DOM.video
-            { className: "video-js"
+            { className: "video-js vjs-16-9"
             , id: "video-js"
             , controls: true
             , preload: "auto"
-            , width: "1140"
-            , height: "700"
             , _data: Object.fromFoldable [ Tuple "setup" "{}" ]
             , autoPlay: true
             , muted: true
