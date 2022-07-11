@@ -2,7 +2,7 @@
 @import "./header/menu.less";
 
 .header-container {
-  z-index: 10;
+  z-index: 100;
 
   display: grid;
   grid-row-gap: @mosaico-grid-row-gap;
@@ -91,7 +91,7 @@
     color: @grey-medium;
 
     display: none;
-    z-index: 100; // Fixes the logo overlapping with the links
+    z-index: 200; // Fixes the logo overlapping with the links
 
     @media (min-width: @breakpoint-2col) {
       display: flex;

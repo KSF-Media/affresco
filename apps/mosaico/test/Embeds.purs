@@ -14,7 +14,7 @@ testEmbedNavigation page = do
   Chrome.goto (Chrome.URL $ site <> "debug/" <> exampleArticle) page
   Chrome.waitFor_ (Chrome.Selector ".mosaico--article-list") page
   log "Navigate to test article"
-  Chrome.click (Chrome.Selector ".mosaico--article-list .mosaico--list-article") page
+  Chrome.click (Chrome.Selector ".mosaico--article-list article") page
   log "Wait for embed content"
   Chrome.waitFor_ (Chrome.Selector "div.article-element__html iframe") page
 
