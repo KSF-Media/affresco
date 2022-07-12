@@ -25,7 +25,7 @@ import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box as Box
 import Mosaico.BreakingNews as BreakingNews
 import Mosaico.Article.Image as Image
-import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
+-- import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.LatestList as LatestList
@@ -74,8 +74,8 @@ type Props =
   , breakingNews :: Maybe String
   }
 
-evalEmbeds :: Article -> Effect Unit
-evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _.externalScripts
+-- evalEmbeds :: Article -> Effect Unit
+-- evalEmbeds = evalExternalScripts <<< map ScriptTag <<< map unwrap <<< fold <<< _.externalScripts
 
 component :: Component Props
 component = do

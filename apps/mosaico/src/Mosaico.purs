@@ -195,7 +195,7 @@ mosaicoComponent initialValues props = React.do
             liftEffect case eitherArticle of
               Right a@{ article } -> do
                 liftEffect $ setTitle article.title
-                Article.evalEmbeds article
+                -- Article.evalEmbeds article
                 when withAnalytics $
                   sendArticleAnalytics article $ join state.user
                 randomAdvertorial <- pickRandomElement $ fromMaybe [] state.advertorials
@@ -228,7 +228,7 @@ mosaicoComponent initialValues props = React.do
       breakingNews <- Lettera.responseBody <$> Lettera.getBreakingNewsHtml mosaicoPaper Nothing
       liftEffect $ setState _ { breakingNews = breakingNews }
 
-    foldMap (Article.evalEmbeds <<< _.article) props.article
+    -- foldMap (Article.evalEmbeds <<< _.article) props.article
     Aff.launchAff_ do
       when (not $ Map.isEmpty initialCatMap) $ Aff.AVar.put initialCatMap initialValues.catMap
       cats <- if null props.categoryStructure
