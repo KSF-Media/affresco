@@ -76,7 +76,7 @@ render (List props) =
                     { children:
                         [ -- TODO: paper specific fallback img
                           let img = a.listImage <|> a.mainImage
-                              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.url) img
+                              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.thumb) img
                               alt = fromMaybe "" $ _.caption =<< img
                           in DOM.a
                                { href: "/artikel/" <> a.uuid
