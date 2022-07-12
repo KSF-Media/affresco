@@ -22,7 +22,7 @@ site :: String
 site = "http://localhost:8080/"
 
 listArticle :: Chrome.Selector
-listArticle = Chrome.Selector ".mosaico--article-list .mosaico--list-article"
+listArticle = Chrome.Selector ".mosaico--article-list article"
 
 -- Mosaico's and Lettera's data might not match due to timing and
 -- caching issues.  These functions are for testing that they have any
