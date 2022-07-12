@@ -2,7 +2,7 @@
 @import (reference) "_grid";
 @import (reference) "_breakpoints";
 
-@article-side-margin: 100px;
+@article-side-margin: 96px;
 @full-width-image: @content-block * 6; // == 1920px
 
 .mosaico-article.advertorial-standard {
@@ -16,15 +16,20 @@
   grid-area: article;
   display: grid;
   grid-template-areas:
+    "breaking"
     "head"
     "image"
     "body";
+
+  margin-left: 12px;
+  margin-right: 12px;
 
   @media (max-width: 350px) {
     display: block;
   }
   @media (min-width: @breakpoint-2col) {
     grid-template-areas:
+      "breaking"
       "head"
       "image"
       "body";
@@ -32,6 +37,7 @@
   @media (min-width: @breakpoint-3col) {
     grid-template-columns: @mosaico-grid-columns;
     grid-template-areas:
+      ". breaking breaking breaking ."
       ". head  head  head  ."
       ". image image image ."
       ". body  body  body  .";
@@ -176,20 +182,23 @@
   }
   &__tag-n-share {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    gap: 5px;
-
-    @media (max-width: 400px) {
-      flex-direction: column;
+    @media (min-width: 400px) {
+      flex-direction: row;
     }
   }
   &__tag-n-premium {
-    align-items: baseline;
     display: flex;
+    justify-content: center;
+    align-items: baseline;
     flex-wrap: wrap;
-    gap: 5px;
+    @media (min-width: 400px) {
+      justify-content: flex-start;
+    }
     a {
+      margin-right: 5px;
       @media (min-width: @breakpoint-3col) {
         font-size: 0.9rem;
       }
@@ -309,7 +318,8 @@
     color: @dark-text;
     a {
       color: @dark-text;
-      text-decoration-style: underline;
+      text-decoration-style: solid;
+      text-decoration-line: underline;
       text-decoration-thickness: 2px;
       #HBL & {
         text-decoration-color: @hbl-orange;
@@ -353,6 +363,26 @@
       }
       #BRAND-NEUTRAL & {
         background-color: @brand-neutral !important;
+      }
+    }
+    a {
+      text-decoration-style: solid;
+      text-decoration-line: underline;
+      text-decoration-thickness: 2px;
+      #HBL & {
+        text-decoration-color: @hbl-orange;
+      }
+      #VN & {
+        text-decoration-color: @vn-red;
+      }
+      #ON & {
+        text-decoration-color: @on-blue;
+      }
+      #BRAND-NEUTRAL & {
+        text-decoration-color: @brand-neutral !important;
+      }
+      &:hover {
+        color: lighten(@dark-text, 20%);
       }
     }
   }
@@ -399,12 +429,19 @@
     margin-top: 30px;
     margin-bottom: 10px;
   }
+  ul, ol {
+    list-style: revert;
+    padding: revert;
+    margin: revert;
+  }
   &__related {
     display: block;
     margin: 30px auto;
     padding: 0 30px 0 15px;
     ul {
       list-style: none;
+      margin: 0;
+      padding: 0;
       margin-top: 5px;
       li {
         border-left: 4px solid;
@@ -499,8 +536,8 @@
     height: 40px;
     cursor: pointer;
 
-    mask-image: url("@{path-icons}/icon-mosaico-menu-close.svg");
-    -webkit-mask-image: url("@{path-icons}/icon-mosaico-menu-close.svg");
+    mask-image: url("../../images/icon-mosaico-menu-close.svg");
+    -webkit-mask-image: url("../../images/icon-mosaico-menu-close.svg");
     mask-position: 0 0;
     mask-size: 40px 40px;
     mask-repeat: no-repeat;

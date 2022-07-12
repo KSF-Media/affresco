@@ -2,7 +2,6 @@ module Mosaico.Header
   ( Props
   , component
   , render
-  , mainSeparator
   , topLine
   ) where
 
@@ -19,7 +18,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Foreign.Object as Object
-import KSF.Paper (toString)
+import KSF.Paper (toString, paperName)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
@@ -45,6 +44,7 @@ type Props
     , onMenuClick :: Effect Unit
     -- Nothing for loading state, Just Nothing for no user
     , user :: Maybe (Maybe User)
+    , showHeading :: Boolean
     }
 
 component :: React.Component Props
@@ -77,7 +77,8 @@ render scrollPosition props =
         [ DOM.div
             { className: block
             , children:
-                [ DOM.div
+                [ srHeading
+                , DOM.div
                     { className: block <> "__left-links"
                     , children:
                         [ DOM.a
@@ -148,6 +149,14 @@ render scrollPosition props =
         ]
     }
   where
+    srHeading =
+        if props.showHeading
+        then DOM.h1
+               { className: "sr-only"
+               , children: [DOM.text $ paperName mosaicoPaper]
+               }
+        else mempty
+
     mkCategory category@(Category { label }) =
         DOM.a
         { href: "/" <> show label
@@ -231,7 +240,7 @@ render scrollPosition props =
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX
-topLine = DOM.hr { className: "mosaico-top-line" }
+topLine = DOM.hr { className: "[grid-area:line] bg-brand w-full h-3 sticky top-0 z-10" }
 
 -- The separator between the header and the rest of the page
 mainSeparator :: JSX

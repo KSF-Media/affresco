@@ -21,6 +21,7 @@ import KSF.Helpers (formatArticleTime)
 import KSF.HtmlRenderer (render) as HtmlRenderer
 import KSF.Spinner (loadingSpinner)
 import Lettera.Models (ArticleStub, Tag(..), tagToURIComponent)
+import Mosaico.BreakingNews as BreakingNews
 import Mosaico.FallbackImage (fallbackImage)
 import Mosaico.Frontpage.Models (Hook, toHookRep)
 import Mosaico.Paper (mosaicoPaper)
@@ -40,6 +41,7 @@ type ListFrontpageProps =
 
 type PrerenderedFrontpageProps =
   { content :: Maybe String
+  , breakingNews :: Maybe String
   , hooks   :: Array Hook
   , onClick :: EventHandler
   }
@@ -54,6 +56,10 @@ render (List props) =
           ]
         }
       where
+        -- Only OC images use this
+        addCrop url =
+          if contains (Pattern "smooth-storage") url then url
+          else url <> "&function=hardcrop&width=200&height=200&q=90"
         renderListArticle :: ArticleStub -> JSX
         renderListArticle a =
           DOM.div
@@ -69,14 +75,14 @@ render (List props) =
                 [ DOM.span
                     { children:
                         [ -- TODO: paper specific fallback img
-                        let imgSrc = maybe (fallbackImage mosaicoPaper)
-                                     ((_ <> "&function=hardcrop&width=200&height=200&q=90") <<< _.url)
-                                     (a.listImage <|> a.mainImage)
-                        in DOM.a
-                            { href: "/artikel/" <> a.uuid
-                            , className: "list-article-image"
-                            , children: [ DOM.img { src: imgSrc } ]
-                            }
+                          let img = a.listImage <|> a.mainImage
+                              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.url) img
+                              alt = fromMaybe "" $ _.caption =<< img
+                          in DOM.a
+                               { href: "/artikel/" <> a.uuid
+                               , className: "list-article-image"
+                               , children: [ DOM.img { src, alt } ]
+                               }
                         ,  DOM.div
                               { className: "list-article-liftup"
                               , children:
@@ -91,7 +97,11 @@ render (List props) =
                                       ) $ head a.tags
                                   , DOM.a
                                       { href: "/artikel/" <> a.uuid
-                                      , children: [ DOM.h2_ [ DOM.text $ fromMaybe a.title a.listTitle] ]
+                                      , children: [ DOM.h3
+                                                      { className: "text-2xl leading-tight font-duplexserif"
+                                                      , children: [ DOM.text $ fromMaybe a.title a.listTitle ]
+                                                      }
+                                                  ]
                                       }
                                   , DOM.span
                                       { className: "list-article-timestamp"
@@ -115,7 +125,9 @@ render (List props) =
             }
 
 render (Prerendered props@{ hooks }) = genericRender
-  (\content -> [ HtmlRenderer.render
+  (\content -> [
+    BreakingNews.render {content: props.breakingNews}
+    , HtmlRenderer.render
                    { content
                    , hooks: Just $ toHookRep <$> hooks
                    }
@@ -127,8 +139,8 @@ render (Prerendered props@{ hooks }) = genericRender
 maybeLabel :: Maybe String -> JSX
 maybeLabel categoryLabel =
   case categoryLabel of
-    Just label -> DOM.h1
-                    { className: ""
+    Just label -> DOM.h2
+                    { className: "[grid-area:main] text-3xl leading-none font-roboto font-bold inline-block mb-8 border-b-2 border-brand"
                     , children: [ DOM.text label ]
                     }
     _          -> mempty

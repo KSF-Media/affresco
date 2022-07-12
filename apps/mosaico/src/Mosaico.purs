@@ -79,6 +79,8 @@ import Web.HTML (window) as Web
 import Web.HTML.History (back) as Web
 import Web.HTML.HTMLDocument (setTitle) as Web
 import Web.HTML.Window (document, history, scroll) as Web
+import KSF.Driver (setDriver)
+import Affjax.Web (driver)
 
 foreign import refreshAdsImpl :: EffectFn1 (Array String) Unit
 foreign import sentryDsn_ :: Effect String
@@ -105,6 +107,7 @@ type State =
   , logger :: Sentry.Logger
   , scrollToYPosition :: Maybe Number
   , starting :: Boolean
+  , breakingNews :: Maybe String
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -129,6 +132,7 @@ type Props =
   -- For tests, they are prone to break in uninteresting ways with ads
   , globalDisableAds :: Boolean
   , initialFrontpageFeed :: HashMap ArticleFeedType ArticleFeed
+  , initialBreakingNews :: Maybe String
   }
 
 type JSProps =
@@ -140,11 +144,13 @@ type JSProps =
   , categoryStructure :: Json
   , globalDisableAds :: Json
   , initialFrontpageFeed :: Nullable JSInitialFeed
+  , initialBreakingNews :: Nullable String
   }
 
 app :: Component Props
 app = do
   Auth.enableCookieLogin
+  setDriver driver
   initialValues <- getInitialValues
   component "Mosaico" $ mosaicoComponent initialValues
 
@@ -172,6 +178,7 @@ mosaicoComponent initialValues props = React.do
                          , categoryStructure = props.categoryStructure
                          , catMap = initialCatMap
                          , frontpageFeeds = map ({stamp: initialValues.startTime, feed: _}) props.initialFrontpageFeed
+                         , breakingNews = props.initialBreakingNews
                          , route = fromMaybe Routes.Frontpage $ hush $
                                    match (Routes.routes initialCatMap) initialPath
                          , user = Nothing
@@ -216,6 +223,10 @@ mosaicoComponent initialValues props = React.do
         liftEffect $ initialSendAnalytics Nothing
         _ <- Aff.AVar.take alreadySentInitialAnalytics
         Aff.AVar.put true alreadySentInitialAnalytics
+
+    when (isNothing state.breakingNews) $ Aff.launchAff_ do
+      breakingNews <- Lettera.responseBody <$> Lettera.getBreakingNewsHtml mosaicoPaper Nothing
+      liftEffect $ setState _ { breakingNews = breakingNews }
 
     foldMap (Article.evalEmbeds <<< _.article) props.article
     Aff.launchAff_ do
@@ -458,6 +469,7 @@ getInitialValues = do
         , logger
         , scrollToYPosition: Nothing
         , starting: true
+        , breakingNews: Nothing
         }
     , components:
         { loginModalComponent
@@ -486,13 +498,14 @@ fromJSProps jsProps =
       latestArticles = map (mapMaybe (hush <<< parseArticleStubWithoutLocalizing)) $ JSON.toArray jsProps.latestArticles
 
       initialFrontpageFeed = maybe HashMap.empty parseFeed $ toMaybe jsProps.initialFrontpageFeed
+      initialBreakingNews = toMaybe jsProps.initialBreakingNews
       globalDisableAds = fromMaybe false $ JSON.toBoolean jsProps.globalDisableAds
       staticPageName = JSON.toString jsProps.staticPageName
       -- Decoding errors are being hushed here, although if this
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ JSON.toArray jsProps.categoryStructure
-  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, staticPageName, categoryStructure, globalDisableAds }
+  in { article, mostReadArticles, latestArticles, initialFrontpageFeed, initialBreakingNews, staticPageName, categoryStructure, globalDisableAds }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
@@ -556,14 +569,14 @@ render props setState state components router onPaywallEvent =
               label = if noResults
                       then Just "Inga resultat"
                       else Just $ "Sökresultat: " <> queryString
-          in frontpage (Just header) label frontpageArticles
+          in frontpage (Just header) label Nothing frontpageArticles
        Routes.NotFoundPage _ -> mosaicoLayoutNoAside $ renderArticle (Right notFoundArticle)
        Routes.TagPage tag ->
          let maybeFeed = _.feed <$> HashMap.lookup (TagFeed tag) state.frontpageFeeds
           in case maybeFeed of
                Just (ArticleList tagFeed)
                  | null tagFeed -> mosaicoDefaultLayout Error.notFoundWithAside
-               _                -> frontpageNoHeader Nothing maybeFeed
+               _                -> frontpageNoHeader Nothing Nothing maybeFeed
        Routes.MenuPage ->
          flip (mosaicoLayout "menu-open") false
          $ Menu.render
@@ -598,7 +611,7 @@ render props setState state components router onPaywallEvent =
            DOM.div { className: "mosaico--static-page", dangerouslySetInnerHTML: { __html: page.pageContent } }
          Just StaticPageNotFound -> Error.notFoundWithAside
          Just StaticPageOtherError -> Error.somethingWentWrong
-       Routes.DebugPage _ -> frontpageNoHeader Nothing $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
+       Routes.DebugPage _ -> frontpageNoHeader Nothing Nothing $ _.feed <$> HashMap.lookup (CategoryFeed $ CategoryLabel "debug") state.frontpageFeeds
        -- NOTE: This should not ever happen, as we always "redirect" to Frontpage route from DeployPreview
        Routes.DeployPreview -> renderFrontpage
     renderFrontpage = maybe mempty renderCategory $ Map.lookup frontpageCategoryLabel state.catMap
@@ -609,16 +622,16 @@ render props setState state components router onPaywallEvent =
       in case c.type of
         Webview -> mosaicoLayoutNoAside $ components.webviewComponent { category }
         Link -> mempty -- TODO
-        Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader Nothing <<< Just) maybeFeed
-        Feed -> frontpageNoHeader (Just c.label) maybeFeed
+        Prerendered -> maybe (mosaicoLayoutNoAside loadingSpinner) (frontpageNoHeader Nothing state.breakingNews <<< Just) maybeFeed
+        Feed -> frontpageNoHeader (Just c.label) Nothing maybeFeed
 
-    frontpageNoHeader :: Maybe CategoryLabel -> Maybe ArticleFeed -> JSX
+    frontpageNoHeader :: Maybe CategoryLabel -> Maybe String -> Maybe ArticleFeed -> JSX
     frontpageNoHeader = frontpage Nothing <<< map unwrap
 
-    frontpage :: Maybe JSX -> Maybe String -> Maybe ArticleFeed -> JSX
-    frontpage maybeHeader maybeCategorLabel (Just (ArticleList list)) = listFrontpage maybeHeader maybeCategorLabel $ Just list
-    frontpage maybeHeader _ (Just (Html html list))                   = prerenderedFrontpage maybeHeader list $ Just html
-    frontpage maybeHeader _ _                                         = listFrontpage maybeHeader Nothing Nothing
+    frontpage :: Maybe JSX -> Maybe String -> Maybe String -> Maybe ArticleFeed -> JSX
+    frontpage maybeHeader maybeCategorLabel _ (Just (ArticleList list)) = listFrontpage maybeHeader maybeCategorLabel $ Just list
+    frontpage maybeHeader _ breakingNews (Just (Html html list))        = prerenderedFrontpage maybeHeader breakingNews list $ Just html
+    frontpage maybeHeader _ _ _                                         = listFrontpage maybeHeader Nothing Nothing
 
     listFrontpage :: Maybe JSX -> Maybe String -> Maybe (Array ArticleStub) -> JSX
     listFrontpage maybeHeader label content = mosaicoDefaultLayout $
@@ -630,8 +643,8 @@ render props setState state components router onPaywallEvent =
         , onTagClick
         })
 
-    prerenderedFrontpage :: Maybe JSX -> Array ArticleStub -> Maybe String -> JSX
-    prerenderedFrontpage maybeHeader articles content =
+    prerenderedFrontpage :: Maybe JSX -> Maybe String -> Array ArticleStub -> Maybe String -> JSX
+    prerenderedFrontpage maybeHeader breakingNews articles content =
       mosaicoLayout "" inner false
       where
         uuidRegex = hush $ Regex.regex "[^/]+$" mempty
@@ -639,6 +652,7 @@ render props setState state components router onPaywallEvent =
           (fromMaybe mempty maybeHeader) <>
           (Frontpage.render $ Frontpage.Prerendered
              { content
+             , breakingNews
              , hooks
              , onClick: onFrontpageClick $
                 \path -> do
@@ -699,6 +713,10 @@ render props setState state components router onPaywallEvent =
                           | otherwise
                           -> Routes.changeRoute router "/"
                         _ -> Routes.changeRoute router "/meny"
+                  , showHeading: case state.route of
+                        Routes.ArticlePage _ -> false
+                        Routes.StaticPage _ -> false
+                        _ -> true
                   }
               , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade", inBody: false }
               , content
@@ -760,6 +778,7 @@ render props setState state components router onPaywallEvent =
         , mostReadArticles: state.mostReadArticles
         , latestArticles: state.latestArticles
         , advertorial: state.singleAdvertorial
+        , breakingNews: state.breakingNews
         }
 
     onClickHandler articleStub = capture_ do

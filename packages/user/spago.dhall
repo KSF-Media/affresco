@@ -31,7 +31,6 @@
   , "react-basic-classic"
   , "react-basic-dom"
   , "react-basic-hooks"
-  , "react-basic-router"
   , "record"
   , "simple-json"
   , "strings"

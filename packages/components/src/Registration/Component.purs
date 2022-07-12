@@ -350,7 +350,7 @@ submitForm state@{ formData } setState onRegister = validation
           -- is for example the language used (e.g. Swedish for Finnish users).
           -- Also, the error might be gibberish.
           case key of
-            "emailAddress" -> setState _ { serverErrors = Invalid EmailAddress "Ogiltig E-postadress." `cons` state.serverErrors }
+            "emailAddress" -> setState _ { serverErrors = Invalid EmailAddress "Ogiltig e-postadress." `cons` state.serverErrors }
             "password"     -> setState _ { serverErrors = Invalid Password "Lösenordet måste ha minst 6 tecken." `cons` state.serverErrors }
             _              -> pure unit
 

@@ -53,7 +53,7 @@ render setExpanded props =
             , children:
                 [ DOM.div
                     { className: "boxinfo-body__content"
-                    , children: map (\p -> DOM.p { dangerouslySetInnerHTML: { __html: p } }) props.content
+                    , children: map (\p -> DOM.div { dangerouslySetInnerHTML: { __html: p } }) props.content
                     }
                 , guard (not props.expanded) $ DOM.div { className: "boxinfo-body__fader" }
                 ]

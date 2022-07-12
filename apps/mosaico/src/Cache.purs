@@ -31,7 +31,7 @@ import Effect.Now (nowDateTime)
 import KSF.Paper (Paper)
 import Lettera (LetteraResponse(..))
 import Lettera as Lettera
-import Lettera.Models (ArticleStub, Category(..), CategoryLabel, CategoryType(..), Tag)
+import Lettera.Models (ArticleStub, Category(..), CategoryLabel(..), CategoryType(..), Tag)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Response(..))
 
@@ -129,7 +129,7 @@ startUpdates fetch = do
       reset = withLock resetLock do
         AVar.put unit updateStop
 
-  Aff.launchAff_ start
+  Aff.launchAff_ $ void start
   pure $ Tuple reset start
 
 withCat :: forall a m. Monad m => (String -> m a) -> Category -> m (Tuple CategoryLabel a)
@@ -203,6 +203,11 @@ getFrontpageHtml cache category =
       (map <<< map) (\h -> if null h then Nothing else Just h) $
       getUsingCache cache.subPrerendered category $
       Lettera.getFrontpageHtml cache.paper (show category) Nothing
+
+getBreakingNewsHtml :: Cache -> Aff (Stamped String)
+getBreakingNewsHtml cache =
+  getUsingCache cache.subPrerendered (CategoryLabel "breaking-news") $
+      Lettera.getBreakingNewsHtml cache.paper Nothing
 
 getFrontpage :: Cache -> CategoryLabel -> Aff (Stamped (Array ArticleStub))
 getFrontpage cache category = do

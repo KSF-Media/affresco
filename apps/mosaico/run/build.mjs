@@ -5,6 +5,12 @@ import { config } from "dotenv";
 config();
 import glob from "tiny-glob";
 
+import path from "path";
+import { sassPlugin } from "esbuild-sass-plugin";
+import postcss from "postcss";
+import autoprefixer from "autoprefixer";
+import tailwindcss from "tailwindcss";
+
 import * as fs from "fs";
 import cheerio from "cheerio";
 import * as util from "util";
@@ -14,7 +20,15 @@ const writeFile = util.promisify(fs.writeFile);
 
 const minify = process.env.NODE_ENV === "production";
 
-const plugins = [lessLoader()];
+const plugins = [
+  lessLoader(),
+  sassPlugin({
+    async transform(source, resolveDir) {
+      const { css } = await postcss(autoprefixer, tailwindcss(path.resolve("./tailwind.config.js"))).process(source);
+      return css;
+    },
+  }),
+];
 
 export async function runBuild() {
   try {

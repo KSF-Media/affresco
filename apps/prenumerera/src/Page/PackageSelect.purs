@@ -27,6 +27,7 @@ import React.Basic.Hooks as React
 type Props =
   { packages :: Array Package
   , startPurchase :: Package -> Description -> Effect Unit
+  , brand :: Paper
   , setBrand :: Paper -> Effect Unit
   , userActivePackages :: Array PackageId
   }
@@ -55,13 +56,13 @@ component :: Component Props
 component = do
   packageGroupComponent <- PackageGroup.component
   let papers = [HBL, VN, ON, JUNIOR]
-  React.component "ProductSelect" $ \ { packages, startPurchase, setBrand, userActivePackages } -> React.do
+  React.component "ProductSelect" $ \ { packages, startPurchase, brand, setBrand, userActivePackages } -> React.do
     let buildGroupElements =
           map (\pkgs -> packageGroupComponent { startPurchase, packages: pkgs, userActivePackages }) >>>
           NonEmpty.toArray >>> React.fragment
         packagePapers :: Array (Tuple Paper JSX)
         packagePapers = packagesByPaper buildGroupElements packages
-    activePaper /\ setActivePaper <- useState' HBL
+    activePaper /\ setActivePaper <- useState' brand
     fade /\ setFade <- useState' false
     transitionPaper /\ setTransitionPaper <- useState' activePaper
     -- A bit smoother render
@@ -112,6 +113,23 @@ renderSelectPaper selected papers fade setPaper =
 
 render :: Boolean -> JSX -> Boolean -> Paper -> (Array (Tuple Paper JSX)) -> JSX
 render firstRender selectPaper fade activePaper packageGroups =
+  DOM.div
+    { className: "ksf-campaign"
+    , children:
+        [ DOM.div
+            { className: "container"
+            , children:
+                [ DOM.p_
+                    [ DOM.text "Sommarkampanj: Första månaden gratis, följande 3 mån. -50%. "
+                    , DOM.a
+                        { href: "https://www.ksfmedia.fi/sommar?utm_source=prenumerera"
+                        , children: [ DOM.text "Prenumerera här!" ]
+                        }
+                    ]
+                ]
+            }
+        ]
+    } <>
   DOM.div
     { className: "container-fluid ksf-block-productmatrix"
     , children:
