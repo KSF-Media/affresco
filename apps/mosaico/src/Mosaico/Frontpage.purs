@@ -9,7 +9,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (head, null)
-import Data.Foldable (foldMap)
+import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
@@ -92,7 +92,7 @@ render (List props) =
         listArticleImage a =
           let img = a.listImage <|> a.mainImage
               src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.url) img
-              alt = fromMaybe "" $ _.caption =<< img
+              alt = fold $ _.caption =<< img
           in  DOM.img
                 { src
                 , alt
