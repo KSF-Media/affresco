@@ -16,6 +16,7 @@ import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
+import Foreign.Object (singleton)
 import Effect (Effect)
 import Foreign.Object as Object
 import KSF.Paper (toString, paperName)
@@ -121,6 +122,10 @@ render scrollPosition props =
                     { className: block <> "__logo"
                     , href: "/"
                     , onClick: foldMap props.onCategoryClick frontpageCategory
+                    , children: [ DOM.span
+                                    { className: "sr-only"
+                                    , children: [DOM.text (paperName mosaicoPaper)]
+                                    }]
                     }
                 , renderLoginLink props.user
                 , DOM.nav
@@ -131,7 +136,7 @@ render scrollPosition props =
                     { className: block <> "__right-buttons"
                     , children:
                         [ searchButton
-                        , DOM.div
+                        , DOM.button
                             { className: iconButtonClass <> " " <> menuButtonClass
                             , children: [ DOM.span { className: iconClass <> " " <> menuIconClass }
                                         , DOM.span
@@ -173,7 +178,10 @@ render scrollPosition props =
     searchButton :: JSX
     searchButton = DOM.a
                     { className: iconButtonClass <> " " <> searchButtonClass
-                    , children: [ DOM.span { className: iconClass <> " " <> searchIconClass }
+                    , children: [ DOM.span
+                                    { _aria: singleton "hidden" "true"
+                                    , className: iconClass <> " " <> searchIconClass
+                                    }
                                 , DOM.span
                                     { className: "menu-label"
                                     , children: [ DOM.text "SÖK" ]
@@ -204,7 +212,7 @@ render scrollPosition props =
     renderLoginLink Nothing =
       loadingSpinner
     renderLoginLink (Just Nothing) =
-      DOM.div
+      DOM.button
          { children:
              [ DOM.span
                  { className: accountClass <> "-icon"
