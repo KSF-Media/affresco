@@ -9,7 +9,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array (head, null)
-import Data.Foldable (foldMap)
+import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
@@ -60,11 +60,49 @@ render (List props) =
         addCrop url =
           if contains (Pattern "smooth-storage") url then url
           else url <> "&function=hardcrop&width=200&height=200&q=90"
+        tagLink a = foldMap (\tag ->
+                                DOM.a
+                                  { className: "relative z-20 mb-1 mosaico-article__tag"
+                                  , onClick: props.onTagClick tag
+                                  , href: "/tagg/" <> tagToURIComponent tag
+                                  , children: [ DOM.text $ un Tag tag ]
+                                  }
+                            ) $ head a.tags
+
+        articleTitle a = [ DOM.h3
+                             { className: "text-2xl leading-tight text-gray-900 font-duplexserif"
+                             , children: [ DOM.text $ fromMaybe a.title a.listTitle ]
+                             }
+                         , DOM.span
+                             { className: "block mb-1 font-roboto"
+                             , children: [ DOM.text $ foldMap (formatArticleTime <<< unwrap) a.publishingTime ]
+                             }
+                         , guard a.premium $
+                           DOM.div
+                             { className: "mosaico-article__meta"
+                             , children:
+                                 [ DOM.div
+                                     { className: "premium-badge"
+                                     , children: [ DOM.text "premium" ]
+                                     }
+                                 ]
+                             }
+                         ]
+
+        listArticleImage a =
+          let img = a.listImage <|> a.mainImage
+              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.tinyThumb) img
+              alt = fold $ _.caption =<< img
+          in  DOM.img
+                { src
+                , alt
+                , className: "[grid-area:right] w-20 h-fit md:w-28"
+                }
+
         renderListArticle :: ArticleStub -> JSX
         renderListArticle a =
-          DOM.div
-            { className: "mosaico--list-article list-article--default"
-            , onClick: props.onArticleClick a
+          DOM.article
+            { className: "flex relative justify-between mb-5 cursor-pointer"
             , _data: Object.fromFoldable $
               -- Known bug, exclude from tests
               if null a.tags || Just true == (contains (Pattern ":") <<< un Tag <$> head a.tags) then []
@@ -72,55 +110,21 @@ render (List props) =
                     , Tuple "uuid" $ a.uuid
                     ]
             , children:
-                [ DOM.span
-                    { children:
-                        [ -- TODO: paper specific fallback img
-                          let img = a.listImage <|> a.mainImage
-                              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.tinyThumb) img
-                              alt = fromMaybe "" $ _.caption =<< img
-                          in DOM.a
-                               { href: "/artikel/" <> a.uuid
-                               , className: "list-article-image"
-                               , children: [ DOM.img { src, alt } ]
-                               }
-                        ,  DOM.div
-                              { className: "list-article-liftup"
-                              , children:
-                                  [ foldMap
-                                      (\tag ->
-                                          DOM.a
-                                            { className: "mosaico-article__tag"
-                                            , onClick: props.onTagClick tag
-                                            , href: "/tagg/" <> tagToURIComponent tag
-                                            , children: [ DOM.text $ un Tag tag ]
-                                            }
-                                      ) $ head a.tags
-                                  , DOM.a
-                                      { href: "/artikel/" <> a.uuid
-                                      , children: [ DOM.h3
-                                                      { className: "text-2xl leading-tight font-duplexserif"
-                                                      , children: [ DOM.text $ fromMaybe a.title a.listTitle ]
-                                                      }
-                                                  ]
-                                      }
-                                  , DOM.span
-                                      { className: "list-article-timestamp"
-                                      , children: [ DOM.text $ foldMap (formatArticleTime <<< unwrap) a.publishingTime ]
-                                      }
-                                  , guard a.premium $
-                                    DOM.div
-                                      { className: "mosaico-article__meta"
-                                      , children:
-                                          [ DOM.div
-                                              { className: "premium-badge"
-                                              , children: [ DOM.text "premium" ]
-                                              }
-                                          ]
-                                      }
-                                  ]
-                              }
+                [ DOM.div
+                    { className: "mr-4 break-words"
+                    , children:
+                        [ tagLink a
+                        , DOM.a
+                            { href: "/artikel/" <> a.uuid
+                            , onClick: props.onArticleClick a
+                            , children: articleTitle a
+                            -- these ::after styles will be on top of everything except the tag links,
+                            -- making everything clickable
+                            , className: "no-underline after:w-full after:h-full after:absolute after:top-0 after:left-0 after:z-10"
+                            }
                         ]
                     }
+                , listArticleImage a
                 ]
             }
 
