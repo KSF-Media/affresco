@@ -1,4 +1,16 @@
-module Mosaico.Epaper where
+module Mosaico.Epaper
+  ( Props
+  , authQuery
+  , component
+  , epaperDescription
+  , epaperSite
+  , juniorDescription
+  , latestEpaper
+  , render
+  , renderOpen
+  , renderReadPaper
+  )
+  where
 
 import Prelude
 
@@ -17,11 +29,14 @@ import KSF.Paper as Paper
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import KSF.User as User
+import Prim.Row (class Nub, class Union, class Lacks)
+import Record (merge, delete)
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
 import React.Basic.Hooks (Component, useEffect, useState', (/\))
 import React.Basic.Hooks as React
+import Type.Proxy (Proxy(..))
 
 type Props =
   { user :: Maybe (Maybe User)
@@ -144,15 +159,28 @@ epaperDescription =
       ]
   ]
 
+primaryButton
+  :: forall attrs attrs_ extras unioned
+   . Union attrs attrs_ DOM.Props_a
+  => Union extras ( target :: String, className :: String, children :: Array JSX ) unioned
+  => Nub unioned attrs
+  => Lacks "text" extras
+  => Record ( text :: String | extras )
+  -> JSX
+primaryButton props =
+    DOM.a $ merge (delete (Proxy :: Proxy "text") props)
+      { target: "_blank"
+      , className: "text-white border border-hbl bg-hbl"
+      , children: [ DOM.text props.text ]
+      }
+
 renderOpen :: Paper -> EventHandler -> Maybe UserAuth -> Boolean -> JSX
 renderOpen paper _ (Just tokens) true =
   fragment
-    [ DOM.a
-      { target: "_blank"
-      , className: "mosaico-epaper--primary-button"
-      , href: latestEpaper paper <> authQuery tokens
-      , children: [ DOM.text "Öppna det senaste numret" ]
-      }
+    [ primaryButton
+        { href: (latestEpaper paper <> authQuery tokens)
+        , text: "Öppna det senaste numret"
+        }
   , DOM.a
       { target: "_blank"
       , className: "mosaico-epaper--secondary-button"
@@ -163,18 +191,15 @@ renderOpen paper _ (Just tokens) true =
 renderOpen paper _ (Just _) false =
   fragment
     [ DOM.p_ [ DOM.text "Teckna en prenumeration för full åtkomst" ]
-    , DOM.a
-        { target: "_blank"
-        , className: "mosaico-epaper--primary-button"
-        , href: "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName paper
-        , children: [ DOM.text "Prenumerera" ]
+    , primaryButton
+        { href: "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName paper
+        , text: "Prenumerera"
         }
     ]
 renderOpen _ onLogin Nothing _ =
-  DOM.a
+  primaryButton
     { onClick: onLogin
-    , className: "mosaico-epaper--primary-button"
-    , children: [ DOM.text "Logga in" ]
+    , text: "Logga in"
     }
 
 renderReadPaper :: Maybe UserAuth -> Boolean -> JSX
