@@ -450,6 +450,7 @@ type Image =
   { url       :: String
   , caption   :: Maybe String
   , thumb     :: String
+  , tinyThumb :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
   }
