@@ -187,18 +187,12 @@ window.adSlots = {
       targetId: "mosaico-ad__box5",
       isLazy: true
     },
-    // {
-    //   gamId: "WALLPAPER",
-    //   sizes: [ [1600,1200], [1920,1080] ],
-    //   targetId: "mosaico-ad__wallpaper",
-    //   isLazy: true
-    // },
   ]
 }
 
 window.googletag.cmd.push(function () {
 
-  // googletag.pubads().setTargeting("Test", "mosaico_test");
+  googletag.pubads().setTargeting("Test", "mosaico_test");
   googletag.pubads().setTargeting("Newspaper", process.env.PAPER || "hbl");
 
   /* Ad slots to use */
@@ -238,7 +232,7 @@ window.googletag.cmd.push(function () {
               </a>
               <div onclick="closeAdDiv('.mosaico-ad.mosaico-ad__top-parade')" class="ad-close">Stäng</div>
             </div>`;
-
+          break;
         case "BIGMOB":
           var cu = document.getElementById("mosaico-ad__top-parade");
           cu.classList.add("BIGMOB");
@@ -249,6 +243,17 @@ window.googletag.cmd.push(function () {
               </a>
               <div onclick="closeAdDiv('.mosaico-ad.mosaico-ad__top-parade')" class="ad-close">Stäng</div>
             </div>`;
+          break;
+        case "WALLPAPER":
+          document.getElementById("mosaico-ad__parade").innerHTML = `
+            <div>
+              <a target="_blank" href="${message.link}">
+                <img src="${message.wpBanner}">
+              </a>
+            </div>
+          `;
+          document.querySelector("div.mosaico").style.backgroundImage = `url(${message.wpImg})`;
+          break;
       }
     }
   })
