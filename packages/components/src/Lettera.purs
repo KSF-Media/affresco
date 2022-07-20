@@ -291,24 +291,15 @@ getByTag start limit tag paper = do
                                 <> "&paper=" <> Paper.toString paper
                                )
 
-search :: Int -> Int -> Paper -> String -> Aff (Array ArticleStub)
+search :: Int -> Int -> Paper -> String -> Aff (LetteraResponse (Array ArticleStub))
 search start limit paper query = do
   driver <- liftEffect getDriver
-  searchResponse <- AX.get driver ResponseFormat.json (letteraSearchUrl
-                                                <> "?start=" <> show start
-                                                <> "&limit=" <> show limit
-                                                <> "&paper=" <> Paper.toString paper
-                                                <> "&contentQuery=" <> _encodeURIComponent query)
-  case searchResponse of
-    Left err -> do
-      Console.warn $ "Search response failed to decode: " <> AX.printError err
-      pure mempty
-    Right response
-      | Just (responseArray :: Array Json) <- toArray response.body -> do
-        liftEffect $ takeRights <$> traverse parseArticleStub responseArray
-      | otherwise -> do
-        Console.warn "Failed to read API reponse!"
-        pure mempty
+  useResponse parseArticleStubs =<<
+    AX.get driver ResponseFormat.json (letteraSearchUrl
+                                       <> "?start=" <> show start
+                                       <> "&limit=" <> show limit
+                                       <> "&paper=" <> Paper.toString paper
+                                       <> "&contentQuery=" <> _encodeURIComponent query)
 
 getCategoryStructure :: Paper -> Aff (Array Category)
 getCategoryStructure p = do

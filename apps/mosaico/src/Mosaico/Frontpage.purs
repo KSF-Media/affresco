@@ -41,7 +41,7 @@ type ListFrontpageProps =
 
 type PrerenderedFrontpageProps =
   { content :: Maybe String
-  , breakingNews :: Maybe String
+  , breakingNews :: String
   , hooks   :: Array Hook
   , onClick :: EventHandler
   }
