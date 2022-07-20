@@ -15,7 +15,7 @@
     "html-to-react": "^1.4.7",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
-    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#a9dda10d5586e926e3fa2d3f0b832f2c824e5f19",
+    "persona": "https://github.com/KSF-Media/persona-javascript-client.git#3d1c24f121e24ad87e5ed8fea9e732122d2abf41",
     "react": "^16.12",
     "react-date-picker": "^8.4.0",
     "react-dom": "^16.12",

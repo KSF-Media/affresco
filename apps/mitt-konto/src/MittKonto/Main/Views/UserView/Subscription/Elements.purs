@@ -8,7 +8,7 @@ import Data.Date (Date)
 import Data.Either (Either(..))
 import Data.Enum (enumFromTo)
 import Data.Foldable (foldMap, for_, null, maximum)
-import Data.JSDate (toDate)
+import Data.JSDate (toDate, toDateTime)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
@@ -188,6 +188,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
     deliveryReclamationComponent =
       DeliveryReclamation.deliveryReclamation
         { subsno:   props.subscription.subsno
+        , end:      toDateTime =<< toMaybe props.subscription.deliveryTroubleEnd
         , cusno:    props.user.cusno
         , userUuid: props.user.uuid
         , onCancel: self.setState _ { wrapperProgress = AsyncWrapper.Ready }
