@@ -71,7 +71,7 @@ type Props =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , advertorial :: Maybe ArticleStub
-  , breakingNews :: Maybe String
+  , breakingNews :: String
   }
 
 evalEmbeds :: Article -> Effect Unit
