@@ -335,16 +335,24 @@ parallelWithCommonLists cache f =
   <*> parallel (getLatest cache)
 
 parallelWithCommonActions
-  :: Cache
+  :: forall a. Cache
   -> (ArticleFeedType -> ArticleFeed -> Aff Unit)
-  -> Aff (Tuple ArticleFeedType ArticleFeed)
-  -> Aff Unit
+  -> Aff a
+  -> Aff a
 parallelWithCommonActions cache f action = do
   { pageContent, breakingNews, mostReadArticles, latestArticles } <- parallelWithCommonLists cache action
   f BreakingNewsFeed $ Html [] $ getContent breakingNews
   f MostReadFeed $ ArticleList $ getContent mostReadArticles
   f LatestFeed $ ArticleList $ getContent latestArticles
-  uncurry f pageContent
+  pure pageContent
+
+parallelLoadFeeds
+  :: Cache
+  -> (ArticleFeedType -> ArticleFeed -> Aff Unit)
+  -> Aff (Tuple ArticleFeedType ArticleFeed)
+  -> Aff Unit
+parallelLoadFeeds cache f action = do
+  parallelWithCommonActions cache f action >>= uncurry f
 
 loadFeed :: Cache -> Categories -> ArticleFeedType -> Maybe (Aff ArticleFeed)
 loadFeed cache catMap feedName =
