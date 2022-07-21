@@ -173,14 +173,17 @@ mosaicoComponent initialValues props = React.do
                          , ssrPreview = true
                          }
 
-  -- TODO Make this update feeds too
-  let loadArticle articleId withAnalytics = Aff.launchAff_ do
+  let setFeed feed content =
+        liftEffect $ setState $ \s -> s { feeds = HashMap.insert feed content s.feeds }
+      loadArticle articleId withAnalytics = Aff.launchAff_ do
         case UUID.parseUUID articleId of
           Nothing -> liftEffect $ setState _ { article = Just $ Left unit }
           Just uuid -> do
             liftEffect $ setTitle "Laddar..."
             liftEffect $ setState _ { article = Nothing }
-            eitherArticle <- Lettera.getArticleAuth uuid mosaicoPaper
+            cache <- Aff.AVar.read initialValues.cache
+            eitherArticle <- Cache.parallelWithCommonActions cache setFeed $
+                             Lettera.getArticleAuth uuid mosaicoPaper
             liftEffect case eitherArticle of
               Right a@{ article } -> do
                 liftEffect $ setTitle article.title
@@ -252,10 +255,8 @@ mosaicoComponent initialValues props = React.do
         fresh <- Cache.isFresh cache catMap feedName
         when (not fresh) $ liftEffect $
           setState $ \s -> s { feeds = HashMap.delete feedName s.feeds }
-        foldMap (Cache.parallelWithCommonActions cache $
-                 \feed content -> liftEffect $ setState $
-                                  \s -> s { feeds = HashMap.insert feed content s.feeds }
-                ) $ (map <<< map) (Tuple feedName) $ Cache.loadFeed cache catMap feedName
+        foldMap (Cache.parallelLoadFeeds cache setFeed) $
+          (map <<< map) (Tuple feedName) $ Cache.loadFeed cache catMap feedName
       onPaywallEvent = do
         maybe (pure unit) (\u -> loadArticle u true) $ _.article.uuid <$> (join <<< map hush $ state.article)
 
