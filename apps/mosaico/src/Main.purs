@@ -863,12 +863,12 @@ notFoundPage env {params: { path } } = do
     ["rss.xml"] /\ Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
     ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
     ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
-    ["bruksvillkor"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
-    ["bruksvillkor"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
-    ["bruksvillkor"] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
+    ["bruksvillkor"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
+    ["bruksvillkor", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
+    ["kundservice"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
+    ["kundservice", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
+    ["kontakt"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
+    ["kontakt", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
     ["prenumerera"] /\ _ -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
     _ -> pass
 
