@@ -19,7 +19,7 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Foreign (unsafeToForeign)
-import KSF.Api.Subscription (PausedSubscription, SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable, isPause)
+import KSF.Api.Subscription (PausedSubscription, SubscriptionPaymentMethod(..), isPause, isSubscriptionPausable, isSubscriptionTemporaryAddressChangable, isSubscriptionExpired)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
@@ -145,11 +145,16 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
-      { actions: (if package.digitalOnly then
-                   mempty
-                 else
-                   paperOnlyActions)
-                 <> extraActions
+      { actions: if isSubscriptionExpired sub now
+                 then if sub.cusno == props.user.cusno && not (null sub.package.offers) &&
+                         not (sub.package.digitalOnly && isNothing (toMaybe props.user.address))
+                      then [ renewUpdateIcon ]
+                      else mempty
+                 else ((if package.digitalOnly then
+                          mempty
+                        else
+                          paperOnlyActions)
+                       <> extraActions)
       , wrapperState: self.state.wrapperProgress
       , onTryAgain: self.setState _ { wrapperProgress = updateProgress }
       , containerClass: "subscription--actions-container flex"
@@ -183,7 +188,34 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         Just (Types.EditTemporaryAddressChange change) ->
           AsyncWrapper.Editing $ temporaryAddressChangeComponent self $ Just change
         Just Types.DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
+        Just Types.RenewSubscription      -> AsyncWrapper.Editing $ renewSubscriptionComponent self
         Nothing                           -> AsyncWrapper.Ready
+
+    renewUpdateIcon =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+            [ DOM.div
+                { className: "subscription--renew-icon circle"
+                , onClick: showRenewSubscription
+                }
+            , DOM.span
+                { className: "subscription--update-action-text"
+                , children:
+                    [ DOM.u_ [ DOM.text "Förnya prenumerationen" ]]
+                , onClick: showRenewSubscription
+                }
+            ]
+        }
+      where
+        showRenewSubscription = handler_ do
+          self.props.setRenewingSubscription $ Just subsno
+          self.setState _
+            { updateAction = Just Types.RenewSubscription
+            , wrapperProgress = AsyncWrapper.Editing $ renewSubscriptionComponent self
+            }
+
+
 
     deliveryReclamationComponent =
       DeliveryReclamation.deliveryReclamation
@@ -359,6 +391,22 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                         }
                     ]
         }
+
+renewSubscriptionComponent :: Types.Self -> JSX
+renewSubscriptionComponent self@{props, state} =
+  props.renewSubscription
+    { subscription: props.subscription
+    , user: props.user
+    , onCancel: do
+        self.props.setRenewingSubscription Nothing
+        self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+    , onSuccess: do
+        self.props.setRenewingSubscription Nothing
+        self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+    , onError: \err -> do
+        self.props.setRenewingSubscription Nothing
+        self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel" }
+    }
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
 pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =

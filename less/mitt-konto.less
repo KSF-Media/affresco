@@ -254,6 +254,11 @@ h2.mitt-konto--heading {
   margin-bottom: 2em;
 }
 
+.mitt-konto--component-block-container .mitt-konto--break {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
 .mitt-konto--edit-account {
   margin-top: 2em;
 }
@@ -321,6 +326,11 @@ h2.mitt-konto--heading {
 
 .mitt-konto--expired-subscription {
     opacity: 0.7;
+}
+
+.mitt-konto--expired-subscription.renewing,.mitt-konto--canceled-subscription.renewing {
+    opacity: 1.0;
+    transition: opacity 2s ease-out;
 }
 
 .mitt-konto--note {
