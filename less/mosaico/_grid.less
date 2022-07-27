@@ -1,4 +1,4 @@
-@mosaico-grid-row-gap: 8px;
+@mosaico-grid-row-gap: 0;
 @mosaico-grid-columns: 1fr @content-block @content-block @content-block 1fr;
 
 .mosaico {
@@ -28,7 +28,7 @@
       ". head head head ."
       "separator separator separator separator separator"
       ". search search aside ."
-      ". main main aside ."
+      ". main main main ."
       "article article article article article"
       "foot foot foot foot foot";
   }
@@ -41,7 +41,13 @@
 
 .mosaico-main {
   grid-area: main;
-}
+  @media (min-width: @breakpoint-3col) {
+      background-color: #fff;
+      width: 980px;;
+      padding: 10px;
+      margin-bottom: 30px;
+    }
+  }
 
 .mosaico--static-page-error {
   grid-area: main;
