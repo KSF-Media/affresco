@@ -38,7 +38,7 @@ testListTitle page = do
       Chrome.waitFor_ listArticle page
       log "List uses listTitle"
       -- The example should have a listTitle
-      Chrome.assertContent (sub " h2" listArticle) (fromMaybe "☃INVALID" stub.listTitle) page
+      Chrome.assertContent (sub " h3" listArticle) (fromMaybe "☃INVALID" stub.listTitle) page
       Chrome.click listArticle page
       log "Article uses title"
       Chrome.waitFor_ (Chrome.Selector "article.mosaico-article") page
@@ -57,7 +57,7 @@ testDefaultListTitle page = do
     Right stub -> do
       Chrome.waitFor_ listArticle page
       log "List defaults to using title"
-      Chrome.assertContent (sub " h2" listArticle) stub.title page
+      Chrome.assertContent (sub " h3" listArticle) stub.title page
 
 -- TODO do this for other papers as well
 
@@ -91,7 +91,7 @@ testCategoryLists page = do
             Unit.failure "No common articles found in Lettera's and Mosaico's category page"
           Just {i, match} -> do
             let title = fromMaybe match.title match.listTitle
-            Chrome.assertContent (sub (":nth-child(" <> show i <> ") h2") listArticle) title page
+            Chrome.assertContent (sub (":nth-child(" <> show i <> ") h3") listArticle) title page
         Chrome.goto (Chrome.URL $ site <> "meny") page
       | otherwise = do
         log $ "No test for category type " <> Models.toString c.type <> " (" <> show c.label <> ")"

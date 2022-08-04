@@ -63,7 +63,10 @@ render props state =
                 [ DOM.div
                     { className: "mosaico--login-modal_title"
                     , children:
-                        [ DOM.h1_ [ DOM.text "Logga in" ]
+                        [ DOM.h2
+                            { className: "mt-8 text-3xl font-bold font-roboto"
+                            , children: [ DOM.text "Logga in" ]
+                            }
                         , DOM.span
                             { className: "mosaico--login-modal_close"
                             , onClick: handler_ props.onClose

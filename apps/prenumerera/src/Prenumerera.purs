@@ -93,7 +93,11 @@ app = do
     route /\ setRoute <- useState' initialRoute
     loading /\ setLoading' <- useState' Nothing
     maybePackages /\ setPackages <- useState' Nothing
-    brand /\ setBrand <- useState' HBL
+    brand /\ setBrand <- useState' $ case locationState.hash of
+      "#/vn" -> VN
+      "#/on" -> ON
+      "#/junior" -> JUNIOR
+      _ -> HBL
     purchasePackage /\ setPurchasePackage <- useState' Nothing
     purchaseDetails /\ setPurchaseDetails <- useState' Nothing
     let userActivePackages = foldMap getActivePackages user
@@ -168,6 +172,7 @@ app = do
                   packageSelectComponent
                     { packages
                     , startPurchase
+                    , brand
                     , setBrand
                     , userActivePackages
                     }
@@ -270,15 +275,15 @@ renderMain brand logout user content =
                     , children:
                         [ DOM.li_
                             [ DOM.strong_ [ DOM.text "Kundservice" ]
-                            , link "https://www.hbl.fi/kundservice/" HBL
-                            , link "https://www.vastranyland.fi/kundservice/" VN
-                            , link "https://www.ostnyland.fi/kundservice/" ON
+                            , link "https://www.hbl.fi/sida/kundservice" HBL
+                            , link "https://www.vastranyland.fi/sida/kundservice" VN
+                            , link "https://www.ostnyland.fi/sida/kundservice" ON
                             ]
                         , DOM.li_
                             [ DOM.strong_ [ DOM.text "Ta kontakt" ]
-                            , link "https://www.hbl.fi/kontakt/" HBL
-                            , link "https://www.vastranyland.fi/kontakt/" VN
-                            , link "https://www.ostnyland.fi/kontakt/" ON
+                            , link "https://www.hbl.fi/sida/kontakt" HBL
+                            , link "https://www.vastranyland.fi/sida/kontakt" VN
+                            , link "https://www.ostnyland.fi/sida/kontakt" ON
                             ]
                         ]
                     }

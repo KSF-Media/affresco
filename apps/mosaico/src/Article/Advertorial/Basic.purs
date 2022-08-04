@@ -73,7 +73,12 @@ render imageComponent boxComponent { article, imageProps, advertorialClassName }
                    , children:
                        [ DOM.div
                            { className: "mosaico-article__body"
-                           , children: map (Article.renderElement imageComponent boxComponent Nothing) article.body
+                           , children:
+                               [ DOM.section
+                                   { className: "article-content"
+                                   , children: map (Article.renderElement imageComponent boxComponent Nothing) article.body
+                                   }
+                               ]
                            }
                        ]
 

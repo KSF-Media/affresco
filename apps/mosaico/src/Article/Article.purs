@@ -11,6 +11,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (un, unwrap)
 import Data.Set as Set
+import Data.String (toUpper)
 import Effect (Effect)
 import KSF.Helpers (formatArticleTime)
 import KSF.Paper (Paper(..))
@@ -22,6 +23,7 @@ import KSF.Vetrina.Products.Premium (hblPremium, vnPremium, onPremium)
 import Lettera.Models (Article, ArticleStub, ArticleType(..), BodyElement(..), FullArticle, Image, MosaicoArticleType(..), Tag(..), tagToURIComponent)
 import Mosaico.Ad (ad) as Mosaico
 import Mosaico.Article.Box as Box
+import Mosaico.BreakingNews as BreakingNews
 import Mosaico.Article.Image as Image
 import Mosaico.Eval (ScriptTag(..), evalExternalScripts)
 import Mosaico.FallbackImage (fallbackImage)
@@ -69,6 +71,7 @@ type Props =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , advertorial :: Maybe ArticleStub
+  , breakingNews :: String
   }
 
 evalEmbeds :: Article -> Effect Unit
@@ -88,8 +91,13 @@ render imageComponent boxComponent props =
         mainImage = getMainImage props.article
         body = getBody props.article
         bodyWithoutAd = map (renderElement imageComponent boxComponent (Just props.onArticleClick)) body
-        bodyWithAd = map (renderElement imageComponent boxComponent (Just props.onArticleClick))
-          <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
+        bodyWithAd = 
+          [ DOM.section
+            { className: "article-content"
+            , children: map (renderElement imageComponent boxComponent (Just props.onArticleClick))
+                <<< insertAdsIntoBodyText "mosaico-ad__bigbox1" "mosaico-ad__bigbox2" $ body
+            }
+          ]
         advertorial = foldMap renderAdvertorialTeaser props.advertorial
         mostRead = foldMap renderMostReadArticles $
           if null props.mostReadArticles then Nothing else Just $ take 5 props.mostReadArticles
@@ -98,7 +106,8 @@ render imageComponent boxComponent props =
     in DOM.article
       { className: "mosaico-article"
       , children:
-          [ DOM.header_
+          [ DOM.div {className: "[grid-area:breaking] lg:mx-24", children: [BreakingNews.render { content: props.breakingNews }]}
+          , DOM.header_
             [ DOM.h1
                 { className: "mosaico-article__headline"
                 , children: [ DOM.text title ]
@@ -140,7 +149,7 @@ render imageComponent boxComponent props =
               , children:
                     [ foldMap (renderMetabyline <<< _.article) $ hush props.article
                     , DOM.div
-                        { className: "mosaico-article__body "
+                        { className: "mosaico-article__body"
                         , children: case _.articleType <$> props.article of
                           Right PreviewArticle ->
                             bodyWithAd
@@ -274,7 +283,7 @@ render imageComponent boxComponent props =
     renderMostReadArticles articles =
       DOM.div
         { className: "mosaico-article__mostread--header"
-        , children: [ DOM.text "ANDRA LÄSER" ]
+        , children: [ DOM.h2_ [DOM.text "ANDRA LÄSER" ]]
         } <>
       (Frontpage.render $ Frontpage.List
         { label: mempty
@@ -283,23 +292,44 @@ render imageComponent boxComponent props =
         , onTagClick: props.onTagClick
         })
 
+    renderAdvertorialTeaser :: ArticleStub -> JSX
     renderAdvertorialTeaser article =
       let img = article.listImage <|> article.mainImage
           imgSrc = maybe (fallbackImage props.paper) _.thumb img
           alt = fromMaybe "" $ _.caption =<< img
       in
         DOM.a
-          { className: "mosaico--list-article-advertorial"
+          { className: "block p-3 text-black no-underline bg-advertorial"
           , href: "/artikel/" <> article.uuid
           , onClick: props.onArticleClick article
           , children:
-              [ DOM.img
-                  { className: "mosaico--list-article-advertorial__image"
+              [ DOM.div
+                  { className: "pt-1 pb-2 text-xs font-bold font-duplexserif"
+                  , children: case article.articleTypeDetails of
+                        Just { title: "companyName", description: Just company } ->
+                          [ DOM.span
+                              { className: "mr-1 text-gray-500 font-roboto"
+                              , children: [ DOM.text "ANNONS: " ]
+                              }
+                          , DOM.span
+                            { className: "mr-1 text-black font-duplexserif"
+                            , children: [ DOM.text $ toUpper company ]
+                            }
+                          ]
+                        _ ->
+                          [ DOM.span
+                              { className: "mr-1 text-gray-500 font-roboto"
+                              , children: [ DOM.text "ANNONS" ]
+                              }
+                          ]
+                  }
+              , DOM.img
+                  { className: "w-auto max-w-full h-auto max-h-96"
                   , src: imgSrc
                   , alt
                   }
               , DOM.h2
-                  { className: "mosaico--list-article-advertorial__title"
+                  { className: "mt-3 text-3xl font-semibold font-robotoslab"
                   , children: [ DOM.text $ fromMaybe article.title article.listTitle ]
                   }
               ]
@@ -335,7 +365,7 @@ renderElement imageComponent boxComponent onArticleClick el =  case el of
     { dangerouslySetInnerHTML: { __html: content }
     , className: block <> " " <> block <> "__html"
     }
-  Headline str -> DOM.h4
+  Headline str -> DOM.h2
     { className: block <> " " <> block <> "__subheadline"
     , children: [ DOM.text str ]
     }
@@ -364,7 +394,7 @@ renderElement imageComponent boxComponent onArticleClick el =  case el of
         _        -> "factbox"
   Footnote footnote -> DOM.p
       { className: block <> " " <> block <> "__footnote"
-      , children: [ DOM.text footnote ]
+      , dangerouslySetInnerHTML: { __html: footnote }
       }
   Quote { body, author } -> DOM.figure
       { className: block <> " " <> block <> "__quote"

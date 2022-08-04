@@ -6,23 +6,6 @@
     justify-self: center;
   }
 
-  h1 {
-    grid-area: main;
-    font: bold 1.75rem/1 "Roboto", sans-serif;
-    display: inline-block;
-    margin-bottom: 30px;
-    border-bottom: solid 3px #ccc;
-    #HBL & {
-      border-color: @hbl-orange;
-    }
-    #ON & {
-      border-color: @on-blue;
-    }
-    #VN & {
-      border-color: @vn-red;
-    }
-  }
-
   .list-article-image {
     img {
       width: 100%;
@@ -32,61 +15,6 @@
 
   .mosaico--tag {
     margin-bottom: 5px;
-  }
-
-  .mosaico--list-article {
-    &.list-article--default {
-      margin-bottom: 20px;
-
-      h2 {
-        font: 1.125rem/1.1 "Duplex Serif", serif;
-        @media (min-width: @breakpoint-2col) {
-          font: 1.5rem/1.1 "Duplex Serif", serif;
-        }
-        margin-bottom: 5px;
-      }
-
-      > span {
-        cursor: pointer;
-        display: grid;
-        grid-template-columns: auto 80px;
-        grid-template-areas: "left right";
-
-        @media (min-width: @breakpoint-2col) {
-          grid-template-columns: auto 120px;
-          grid-column-gap: @block-padding;
-          grid-template-areas: "left right";
-        }
-
-        .list-article-liftup {
-          grid-area: left;
-          word-break: break-word;
-        }
-
-        .list-article-image {
-          grid-area: right;
-          width: 80px;
-          height: 80px;
-          @media (min-width: @breakpoint-2col) {
-            width: 120px;
-            height: 120px;
-          }
-        }
-
-        .list-article-timestamp {
-          display: block;
-          font-family: "Roboto", sans-serif;
-          margin-bottom: 4px;
-        }
-
-        a {
-          text-decoration: none;
-          h2 {
-            color: @dark-text;
-          }
-        }
-      }
-    }
   }
 
   .spinner--loading-spinner {

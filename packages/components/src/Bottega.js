@@ -1,5 +1,5 @@
 "use strict";
-var Bottega = require("bottega");
+import Bottega from "bottega";
 
 Bottega.ApiClient.instance.basePath = process.env.BOTTEGA_URL;
 
@@ -9,6 +9,6 @@ Bottega.ApiClient.instance.timeout = {
   deadline: 20000, // but up to 20 seconds of overall data transfer
 };
 
-exports.ordersApi = new Bottega.OrdersApi(Bottega.ApiClient.instance);
-exports.packagesApi = new Bottega.PackagesApi(Bottega.ApiClient.instance);
-exports.paymentMethodsApi = new Bottega.PaymentMethodsApi(Bottega.ApiClient.instance);
+export const ordersApi = new Bottega.OrdersApi(Bottega.ApiClient.instance);
+export const packagesApi = new Bottega.PackagesApi(Bottega.ApiClient.instance);
+export const paymentMethodsApi = new Bottega.PaymentMethodsApi(Bottega.ApiClient.instance);

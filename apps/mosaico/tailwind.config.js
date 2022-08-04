@@ -83,6 +83,8 @@ module.exports = {
         900: "#141414", // dark-text
         950: "#0f1011", // deepdark
       },
+      white: "#ffffff",
+      black: "#000000",
       blue: {
         link: "#00698e",
       },
@@ -90,19 +92,21 @@ module.exports = {
       on: "#518196",
       vn: "#c90c0f",
       brand: "var(--brand-color)", // defined in _site.scss
+      advertorial: "var(--color-advertorial, #fff3e6)", // defined in Aptoma's CSS
     },
 
     fontFamily: {
       roboto: ["Roboto", ...sansFonts],
+      robotoslab: ["Roboto Slab", ...sansFonts],
       duplexsans: ['"Duplex Sans"', ...sansFonts],
       duplexserif: ['"Duplex Serif"', ...serifFonts],
       mono: ["ui-monospace", ...monoFonts],
     },
 
     screens: {
-      sm: "320px",
-      md: "760px",
-      lg: "1020px",
+      sm: "320px", // @content-block
+      md: "760px", // @breakpoint-2col
+      lg: "1020px", // @breakpoint-3col
     },
   },
   plugins: [maskImagePlugin, maskSizePlugin],

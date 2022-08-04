@@ -1,3 +1,10 @@
 .mosaico-webview {
   grid-area: main;
 }
+.mosaico-webview--torgcamera {
+  grid-area: main;
+  
+  @media (min-width: @breakpoint-3col) {
+    grid-column: 2/5;
+  }
+}

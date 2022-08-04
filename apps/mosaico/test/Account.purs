@@ -2,12 +2,10 @@ module Mosaico.Test.Account where
 
 import Prelude hiding (sub)
 
-import Data.String as String
 import Effect.Aff as Aff
-import Effect.Aff (Aff, Milliseconds(..))
+import Effect.Aff (Milliseconds(..))
 import Mosaico.Test (Test, site, sub)
 import KSF.Puppeteer as Chrome
-import Test.Unit (failure)
 import Test.Unit.Assert as Assert
 
 accountSelector :: Chrome.Selector

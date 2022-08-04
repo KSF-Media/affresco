@@ -82,7 +82,7 @@ userView router { state: { now, news } } logger profileComponent user = React.fr
             [ IconAction.iconAction
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
-                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU"
+                , onClick: IconAction.Href "https://form.jotform.com/221793422462051"
                 , router
                 }
             ]

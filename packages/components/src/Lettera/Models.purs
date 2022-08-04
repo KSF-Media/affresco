@@ -146,16 +146,18 @@ type ArticleStubCommon =
   )
 
 type JSArticleStub =
-  { publishingTime :: String
-  , tags           :: Array String
-  , articleType    :: String
+  { publishingTime     :: String
+  , tags               :: Array String
+  , articleType        :: String
+  , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
   }
 
 type ArticleStub =
-  { publishingTime :: Maybe LocalDateTime
-  , tags           :: Array Tag
-  , articleType    :: ArticleType
+  { publishingTime     :: Maybe LocalDateTime
+  , tags               :: Array Tag
+  , articleType        :: ArticleType
+  , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
   }
 
@@ -249,6 +251,7 @@ articleToArticleStub a =
   , publishingTime: a.publishingTime
   , tags: a.tags
   , articleType: a.articleType
+  , articleTypeDetails: a.articleTypeDetails
   }
 
 articleToJson :: Article -> Json
@@ -447,6 +450,7 @@ type Image =
   { url       :: String
   , caption   :: Maybe String
   , thumb     :: String
+  , tinyThumb :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
   }
@@ -569,5 +573,6 @@ instance eqTag :: Eq Tag where
 instance hashTag :: Hashable Tag where
   hash (Tag t) = hash $ String.toLower t
 derive newtype instance showTag :: Show Tag
+derive newtype instance ordTag :: Ord Tag
 
 derive instance newtypeTag :: Newtype Tag _

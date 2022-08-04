@@ -1,1 +1,1 @@
-exports._mosaicoPaper = process.env.PAPER || "hbl";
+export const _mosaicoPaper = process.env.PAPER || "hbl";
