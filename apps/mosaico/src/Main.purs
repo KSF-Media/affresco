@@ -44,7 +44,7 @@ import Mosaico.Article.Advertorial.Basic as Advertorial.Basic
 import Mosaico.Article.Advertorial.Standard as Advertorial.Standard
 import Mosaico.Article.Box as Box
 import Mosaico.Article.Image as Image
-import Mosaico.Cache (Stamped)
+import Mosaico.Cache (Stamped, parallelWithCommonLists)
 import Mosaico.Cache as Cache
 import Mosaico.Epaper as Epaper
 import Mosaico.Error (notFoundWithAside)
@@ -240,7 +240,7 @@ main = do
   htmlTemplate <- parseTemplate <$> FS.readTextFile UTF8 indexHtmlFileLocation
   Aff.launchAff_ do
     categoryStructure <- Lettera.getCategoryStructure mosaicoPaper
-    cache <- liftEffect $ Cache.initCache mosaicoPaper categoryStructure
+    cache <- liftEffect $ Cache.initServerCache categoryStructure
     -- This is used for matching a category label from a route, such as "/nyheter" or "/norden-och-världen"
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
@@ -298,7 +298,7 @@ getArticle
 getArticle env { params: { uuidOrSlug: (uuid : _) }, guards: { clientip } }
   | Just articleId <- UUID.parseUUID uuid = do
       { pageContent: article, mostReadArticles, latestArticles } <-
-        parallelWithCommonLists env $ Lettera.getArticle articleId mosaicoPaper Nothing clientip
+        parallelWithCommonLists env.cache $ Lettera.getArticle articleId mosaicoPaper Nothing clientip
       Cache.addHeaderAge 60 <$>
         renderArticle env article (Cache.getContent mostReadArticles) (Cache.getContent latestArticles)
 getArticle env { params: { uuidOrSlug: path }, guards: { clientip } }
@@ -356,7 +356,7 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   , mostReadArticles
                   , latestArticles
                   , advertorial: Nothing
-                  , breakingNews: Nothing
+                  , breakingNews: mempty
                   }
           renderWithComponents :: forall a. ((Image.Props -> JSX) -> (Box.Props -> JSX) -> a -> JSX) -> a -> JSX
           renderWithComponents f = f (Image.render mempty) (Box.render mempty)
@@ -468,7 +468,7 @@ tagList env { params: { tag } } = do
   let tag' = uriComponentToTag tag
       htmlTemplate = cloneTemplate env.htmlTemplate
   { pageContent: articles, breakingNews, mostReadArticles, latestArticles } <-
-    parallelWithCommonLists env $ Cache.getByTag env.cache tag'
+    parallelWithCommonLists env.cache $ Cache.getByTag env.cache tag'
   if null $ Cache.getContent articles
     then notFound
           env
@@ -513,7 +513,7 @@ epaperGuard req = do
 
 epaperPage :: Env -> { params :: { path :: List String }, query :: { query :: Object (Array String) }, guards :: { epaper :: Unit } } -> Aff (Response ResponseBody)
 epaperPage env {} = do
-  { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
+  { mostReadArticles, latestArticles } <- parallelWithCommonLists env.cache $ pure unit
   let htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = renderContent <$> mostReadArticles <*> latestArticles
   html <- liftEffect do
@@ -584,7 +584,7 @@ staticPage env { params: { pageName } } = do
 debugList :: Env -> { params :: { uuid :: String } } -> Aff (Response ResponseBody)
 debugList env { params: { uuid } } = do
   { pageContent: article, mostReadArticles, latestArticles } <-
-    parallelWithCommonLists env $
+    parallelWithCommonLists env.cache $
     maybe (pure Nothing) (map hush <<< Lettera.getArticleStub) (UUID.parseUUID uuid)
   let htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = renderContent article <$> mostReadArticles <*> latestArticles
@@ -627,7 +627,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
     case categoryType of
       Feed -> do
         { pageContent, breakingNews, mostReadArticles, latestArticles } <-
-          parallelWithCommonLists env $ Cache.getFrontpage env.cache label
+          parallelWithCommonLists env.cache $ Cache.getFrontpage env.cache label
         pure { feed: Just $ ArticleList $ Cache.getContent pageContent
              , mainContent:
                  (\articles ->
@@ -657,13 +657,13 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
                     , Frontpage.ArticleUrltoRelative
                     , Frontpage.EpaperBanner
                     ]
-        pure { feed: flip Html (Cache.getContent articleStubs) <$> Cache.getContent pageContent
+        pure { feed: Html (Cache.getContent articleStubs) <$> Cache.getContent pageContent
              , mainContent: articleStubs *>
                  ((\html ->
                      { type: HtmlFrontpageContent
                      , content: Frontpage.render $ Frontpage.Prerendered
                                   { content: html
-                                  , breakingNews: Just $ Cache.getContent breakingNews
+                                  , breakingNews: Cache.getContent breakingNews
                                   , hooks
                                   , onClick: mempty
                                   }
@@ -673,7 +673,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
              , breakingNews
              }
       Link -> do
-        { mostReadArticles, latestArticles, breakingNews } <- parallelWithCommonLists env $ pure unit
+        { mostReadArticles, latestArticles, breakingNews } <- parallelWithCommonLists env.cache $ pure unit
         pure { feed: Nothing
              , mainContent: mostReadArticles *> latestArticles $>
                             { type: StaticPageContent "link"
@@ -686,7 +686,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
              }
       Webview -> do
         initialRandom <- liftEffect $ randomString 10
-        { mostReadArticles, latestArticles, breakingNews } <- parallelWithCommonLists env $ pure unit
+        { mostReadArticles, latestArticles, breakingNews } <- parallelWithCommonLists env.cache $ pure unit
         -- video.js fails if it tries to initialize an M3U8 stream for a second time.
         -- If it had the webview component rendered on server side, React's hydrate
         -- would count as a second initialization.
@@ -715,7 +715,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
     Prerendered
       | Nothing <- feed -> fallbackToList
       -- Sanity check
-      | Just (Html html _) <- feed
+      | Just (Html _ html) <- feed
       , Right regex <- emptyRegex
       , Just _ <- Regex.match regex html -> fallbackToList
     _ -> do
@@ -761,7 +761,8 @@ searchPage env { query: { search } } = do
   let query = if (trim <$> search) == Just "" then Nothing else search
   searchComponent <- liftEffect Search.searchComponent
   { pageContent: articles, mostReadArticles, latestArticles } <-
-    parallelWithCommonLists env $ maybe (pure mempty) (Lettera.search 0 20 mosaicoPaper) query
+    parallelWithCommonLists env.cache $
+    maybe (pure mempty) (pure <<< join <<< fromFoldable <=< Lettera.search 0 20 mosaicoPaper) query
   let mosaico = MosaicoServer.app
       htmlTemplate = cloneTemplate env.htmlTemplate
       noResults = isJust query && null articles
@@ -799,7 +800,7 @@ searchPage env { query: { search } } = do
 
 profilePage :: Env -> {} -> Aff (Response ResponseBody)
 profilePage env {} = do
-  { mostReadArticles, latestArticles } <- parallelWithCommonLists env $ pure unit
+  { mostReadArticles, latestArticles } <- parallelWithCommonLists env.cache $ pure unit
   let htmlTemplate = cloneTemplate env.htmlTemplate
       mosaicoString = DOM.renderToString
                         $ MosaicoServer.app
@@ -862,12 +863,12 @@ notFoundPage env {params: { path } } = do
     ["rss.xml"] /\ Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
     ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
     ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
-    ["bruksvillkor"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/bruksvillkor"
-    ["bruksvillkor"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/bruksvillkor"
-    ["bruksvillkor"] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ Paper.ON -> redir "https://www.ostnyland.fi/sida/bruksvillkor"
+    ["bruksvillkor"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
+    ["bruksvillkor", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
+    ["kundservice"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
+    ["kundservice", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
+    ["kontakt"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
+    ["kontakt", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
     ["prenumerera"] /\ _ -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
     _ -> pass
 
@@ -885,7 +886,7 @@ notFoundArticleContent =
     , mostReadArticles: mempty
     , latestArticles: mempty
     , advertorial: Nothing
-    , breakingNews: Nothing
+    , breakingNews: mempty
     }
   }
 
@@ -936,21 +937,6 @@ parseCategory { categoryRegex, categoryStructure } req = do
 htmlContent :: forall a. Response a -> Response a
 htmlContent (Response response) =
   Response $ response { headers = Headers.set "content-type" ContentType.html response.headers }
-
-type CommonLists a =
-  { pageContent :: a
-  , breakingNews :: Stamped String
-  , mostReadArticles :: Stamped (Array ArticleStub)
-  , latestArticles :: Stamped (Array ArticleStub)
-  }
-
-parallelWithCommonLists :: forall a. Env -> Aff a -> Aff (CommonLists a)
-parallelWithCommonLists env f =
-  sequential $ { pageContent: _, breakingNews: _, mostReadArticles: _, latestArticles: _ }
-  <$> parallel f
-  <*> parallel (Cache.getBreakingNewsHtml env.cache)
-  <*> parallel (Cache.getMostRead env.cache)
-  <*> parallel (Cache.getLatest env.cache)
 
 stdVars :: Env -> Maybe (Stamped String) -> Stamped (Array ArticleStub) -> Stamped (Array ArticleStub) -> Array (Tuple String Json)
 stdVars env initialBreakingNews mostReadArticles latestArticles =

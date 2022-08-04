@@ -41,7 +41,7 @@ type ListFrontpageProps =
 
 type PrerenderedFrontpageProps =
   { content :: Maybe String
-  , breakingNews :: Maybe String
+  , breakingNews :: String
   , hooks   :: Array Hook
   , onClick :: EventHandler
   }
@@ -91,7 +91,7 @@ render (List props) =
 
         listArticleImage a =
           let img = a.listImage <|> a.mainImage
-              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.url) img
+              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.tinyThumb) img
               alt = fold $ _.caption =<< img
           in  DOM.img
                 { src
