@@ -18,6 +18,7 @@ type Props =
   , mostReadArticles :: Array ArticleStub
   , latestArticles :: Array ArticleStub
   , categoryStructure :: Array Category
+  , headless :: Boolean
   }
 
 type MainContent =
@@ -42,29 +43,34 @@ app = render
 render :: Props -> JSX
 render props = DOM.div_
     [ DOM.div
-       { className: "mosaico grid " <> menuOpen
-       , id: Paper.toString mosaicoPaper
-       , children:
-           [ Header.topLine
-           , Header.render 0
-             { changeRoute: const mempty
-             , categoryStructure: props.categoryStructure
-             , catMap: categoriesMap props.categoryStructure
-             , onCategoryClick: const mempty
-             , user: Nothing
-             , onLogin: mempty
-             , onProfile: mempty
-             , onStaticPageClick: mempty
-             , onMenuClick: mempty
-             }
-           , props.mainContent.content
-           , footer mosaicoPaper mempty
-           , case props.mainContent.type of
-                 FrontpageContent -> aside
-                 TagListContent _ -> aside
-                 _ -> mempty
-           ]
-       }
+        { className: "mosaico grid " <> menuOpen
+        , id: Paper.toString mosaicoPaper
+        , children:
+            (if props.headless
+            then [DOM.text "hello, this test message should appear in the Network->Response tab, but not in the browser where frontend JS kicks in with the full header."]
+            else [ Header.topLine
+                , Header.render 0
+                  { changeRoute: const mempty
+                  , categoryStructure: props.categoryStructure
+                  , catMap: categoriesMap props.categoryStructure
+                  , onCategoryClick: const mempty
+                  , user: Nothing
+                  , onLogin: mempty
+                  , onProfile: mempty
+                  , onStaticPageClick: mempty
+                  , onMenuClick: mempty
+                  }
+                ]) <>
+            [ props.mainContent.content ] <>
+            (if props.headless
+            then []
+            else [ footer mosaicoPaper mempty
+                , case props.mainContent.type of
+                    FrontpageContent -> aside
+                    TagListContent _ -> aside
+                    _ -> mempty
+                ])
+        }
     ]
   where
     aside =
