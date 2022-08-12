@@ -59,6 +59,7 @@ render props = DOM.div_
                   , onProfile: mempty
                   , onStaticPageClick: mempty
                   , onMenuClick: mempty
+                  , showHeading: false
                   }
                 ]) <>
             [ props.mainContent.content ] <>
