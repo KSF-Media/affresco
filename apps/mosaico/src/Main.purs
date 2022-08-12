@@ -837,40 +837,35 @@ notFoundPage env {params: { path } } = do
         Response.found EmptyBody
       pass = notFound env notFoundArticleContent mempty mempty
   -- TODO 2 make these editable somewhere else
-  case fromFoldable path /\ mosaicoPaper of
-    ["abi"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/abi"
-    ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
-    ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
-    ["ingen-tidning"] /\ _ -> redir "https://konto.ksfmedia.fi/"
-    ["losenord"] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
-    ["losenord", ""] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
-    ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
-    ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
-    ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
-    ["kampanj"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/kampanj-hbl"
-    ["kampanj"] /\ Paper.VN  -> redir "https://www.ksfmedia.fi/kampanj-vn"
-    ["kampanj"] /\ Paper.ON  -> redir "https://www.ksfmedia.fi/kampanj-on"
-    ["akademen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/akademen"
-    ["studierabatt"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/studierabatt"
-    ["hbljunior"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/hbljunior"
-    ["boknas"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/boknas"
-    ["svenskadagen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/svenskadagen"
-    ["medlem"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
-    ["digital"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
-    ["homefound"] /\ Paper.VN -> redir "https://www.ksfmedia.fi/vn-homefound"
-    ["fiskecupen"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/fiskecupen"
+  case path, mosaicoPaper of
+    ("abi":_),           Paper.HBL -> redir "https://www.hbl.fi/sida/abi"
+    ("sommar":_),        _         -> redir "https://www.ksfmedia.fi/sommar"
+    ("shop":_),          _         -> redir "https://shop.hbl.fi/"
+    ("ingen-tidning":_), _         -> redir "https://konto.ksfmedia.fi/"
+    ("losenord":_),      _         -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
+    ("annonskiosken":_), Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
+    ("annonskiosken":_), Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
+    ("annonskiosken":_), Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
+    ("kampanj":_),       Paper.HBL -> redir "https://www.ksfmedia.fi/kampanj-hbl"
+    ("kampanj":_),       Paper.VN  -> redir "https://www.ksfmedia.fi/kampanj-vn"
+    ("kampanj":_),       Paper.ON  -> redir "https://www.ksfmedia.fi/kampanj-on"
+    ("studierabatt":_),  Paper.HBL -> redir "https://www.ksfmedia.fi/studierabatt"
+    ("hbljunior":_),     Paper.HBL -> redir "https://www.ksfmedia.fi/hbljunior"
+    ("boknas":_),        Paper.HBL -> redir "https://www.ksfmedia.fi/boknas"
+    ("svenskadagen":_),  Paper.HBL -> redir "https://www.ksfmedia.fi/svenskadagen"
+    ("medlem":_),        Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
+    ("digital":_),       Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
+    ("homefound":_),     Paper.VN  -> redir "https://www.ksfmedia.fi/vn-homefound"
+    ("fiskecupen":_),    Paper.VN  -> redir "https://www.vastranyland.fi/sida/fiskecupen"
     -- Old RSS URLs
-    ["rss.xml"] /\ Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
-    ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
-    ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
-    ["bruksvillkor"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
-    ["kundservice"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
-    ["kundservice", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
-    ["kontakt"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
-    ["kontakt", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
-    ["prenumerera"] /\ _ -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
-    _ -> pass
+    ("rss.xml":_),       Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
+    ("rss.xml":_),       Paper.VN  -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
+    ("rss.xml":_),       Paper.ON  -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
+    ("bruksvillkor":_),  _         -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
+    ("kundservice":_),   _         -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
+    ("kontakt":_),       _         -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
+    ("prenumerera":_),   _         -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
+    _, _ -> pass
 
 notFoundArticleContent :: MainContent
 notFoundArticleContent =
