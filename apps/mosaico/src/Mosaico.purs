@@ -637,67 +637,72 @@ render props setState state components router onPaywallEvent =
     mosaicoLayoutNoAside content = mosaicoLayout "" content false
 
     mosaicoLayout :: String -> JSX -> Boolean -> JSX
-    mosaicoLayout extraClasses content showAside = DOM.div_
-      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade", inBody: false }
-      , DOM.div
-          { className: "mosaico grid " <> extraClasses
-          , id: Paper.toString mosaicoPaper
-          , children:
-              [ Header.topLine
-              , components.headerComponent
-                  { changeRoute: Routes.changeRoute router
-                  , categoryStructure: state.categoryStructure
-                  , catMap: state.catMap
-                  , onCategoryClick
-                  , user: state.user
-                  , onLogin
-                  , onProfile
-                  , onStaticPageClick
-                  , onMenuClick:
-                      case state.route of
-                        Routes.MenuPage
-                      -- Confused state, got to go to somewhere but
-                      -- not to menu again
-                          | (fst <$> state.prevRoute) == Just Routes.MenuPage
-                          -> Routes.changeRoute router "/"
-                      -- Using changeRoute would overwrite the stored Y position
-                          | Just _ <- state.prevRoute
-                          -> Web.window >>= Web.history >>= Web.back
-                      -- Don't know what else to do so might as well
-                          | otherwise
-                          -> Routes.changeRoute router "/"
-                        _ -> Routes.changeRoute router "/meny"
-                  , showHeading: case state.route of
-                        Routes.ArticlePage _ -> false
-                        Routes.StaticPage _ -> false
-                        _ -> true
-                  }
-              , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade", inBody: false }
-              , content
-              , footer mosaicoPaper onStaticPageClick
-              , guard showAside $ DOM.aside
-                  { className: "mosaico--aside"
-                  , children:
-                      [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box", inBody: false }
-                      , MostReadList.render
-                          { mostReadArticles
-                          , onClickHandler
-                          }
-                      , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box1", inBody: false }
-                      , LatestList.render
-                          { latestArticles
-                          , onClickHandler
-                          }
-                      ] <> guard showAds
-                      [ Mosaico.ad { contentUnit: "mosaico-ad__box2", inBody: false }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box3", inBody: false }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box4", inBody: false }
-                      , Mosaico.ad { contentUnit: "mosaico-ad__box5", inBody: false }
-                      ]
-                  }
-              ]
-          }
-      ]
+    mosaicoLayout extraClasses content showAside =
+      let header =
+            [ Header.topLine
+            , components.headerComponent
+                 { changeRoute: Routes.changeRoute router
+                 , categoryStructure: state.categoryStructure
+                 , catMap: state.catMap
+                 , onCategoryClick
+                 , user: state.user
+                 , onLogin
+                 , onProfile
+                 , onStaticPageClick
+                 , onMenuClick:
+                     case state.route of
+                       Routes.MenuPage
+                     -- Confused state, got to go to somewhere but
+                     -- not to menu again
+                         | (fst <$> state.prevRoute) == Just Routes.MenuPage
+                         -> Routes.changeRoute router "/"
+                     -- Using changeRoute would overwrite the stored Y position
+                         | Just _ <- state.prevRoute
+                         -> Web.window >>= Web.history >>= Web.back
+                     -- Don't know what else to do so might as well
+                         | otherwise
+                         -> Routes.changeRoute router "/"
+                       _ -> Routes.changeRoute router "/meny"
+                 , showHeading: case state.route of
+                      Routes.ArticlePage _ -> false
+                      Routes.StaticPage _ -> false
+                      _ -> true
+                 }
+            ]
+      in DOM.div_
+        [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__top-parade", inBody: false }
+        , DOM.div
+            { className: "mosaico grid " <> extraClasses
+            , id: Paper.toString mosaicoPaper
+            , children:
+                guard (not props.headless) header
+                <>
+                     [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__parade", inBody: false }
+                     , content
+                     , guard (not props.headless) (footer mosaicoPaper onStaticPageClick) --remember to hide footer if headless
+                     , guard showAside $ DOM.aside
+                         { className: "mosaico--aside"
+                         , children:
+                             [ guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box", inBody: false }
+                             , MostReadList.render
+                                 { mostReadArticles
+                                 , onClickHandler
+                                 }
+                             , guard showAds Mosaico.ad { contentUnit: "mosaico-ad__box1", inBody: false }
+                             , LatestList.render
+                                 { latestArticles
+                                 , onClickHandler
+                                 }
+                             ] <> guard showAds
+                             [ Mosaico.ad { contentUnit: "mosaico-ad__box2", inBody: false }
+                             , Mosaico.ad { contentUnit: "mosaico-ad__box3", inBody: false }
+                             , Mosaico.ad { contentUnit: "mosaico-ad__box4", inBody: false }
+                             , Mosaico.ad { contentUnit: "mosaico-ad__box5", inBody: false }
+                             ]
+                         }
+                     ]
+            }
+        ]
 
     showAds = not props.globalDisableAds && case state.route of
       Routes.Frontpage -> true
