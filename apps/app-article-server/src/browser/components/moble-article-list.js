@@ -70,10 +70,7 @@ const MobileList = (props) => {
                   ) : (
                     <img
                       className="card-img-top"
-                      src={item.listImage.url.includes("imengine")
-                          ? item.listImage.url + "&function=hardcrop&width=798&height=649&q=95"
-                          : item.listImage.url
-                          }
+                      src={item.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}
                       alt=""
                     />
                   )}

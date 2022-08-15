@@ -53,11 +53,7 @@ const Card = (props) => {
         {!!props.article.listImage ? (
           <img
             className={"card-img-top"}
-            src={
-                props.article.listImage.url.includes("imengine")
-                ? props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"
-                : props.article.listImage.url
-                }
+            src={props.article.listImage.url + "&function=hardcrop&width=798&height=649&q=95"}
           />
         ) : (
           <img className="card-img-top" src={hblDefaultImage} alt="" />
