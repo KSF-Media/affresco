@@ -379,6 +379,7 @@ renderArticle env fullArticle mostReadArticles latestArticles headless = do
               , "latestArticles"    /\ (JSON.fromArray $ map articleStubToJson latestArticles)
               , "categoryStructure" /\ encodeJson env.categoryStructure
               , "breakingNews"      /\ JSON.jsonNull
+              , "headless"          /\ JSON.fromBoolean headless
               ]
             metaTags =
               let a' = a.article

@@ -41,6 +41,7 @@ function main() {
 	latestArticles={window.latestArticles || null}
 	user={window.user || null}
 	entitlements={window.entitlements || null}
+  headless={window.headless || null}
       />
     );
     ReactDOM.hydrate(mosaico, document.getElementById("app"));

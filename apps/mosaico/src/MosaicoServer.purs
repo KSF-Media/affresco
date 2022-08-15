@@ -47,21 +47,21 @@ render props = DOM.div_
         , id: Paper.toString mosaicoPaper
         , children:
             (if props.headless
-            then [DOM.text "hello, this test message should appear in the Network->Response tab, but not in the browser where frontend JS kicks in with the full header."]
+            then [DOM.text "hello from server"]
             else [ Header.topLine
-                , Header.render 0
-                  { changeRoute: const mempty
-                  , categoryStructure: props.categoryStructure
-                  , catMap: categoriesMap props.categoryStructure
-                  , onCategoryClick: const mempty
-                  , user: Nothing
-                  , onLogin: mempty
-                  , onProfile: mempty
-                  , onStaticPageClick: mempty
-                  , onMenuClick: mempty
-                  , showHeading: false
-                  }
-                ]) <>
+                 , Header.render 0
+                     { changeRoute: const mempty
+                     , categoryStructure: props.categoryStructure
+                     , catMap: categoriesMap props.categoryStructure
+                     , onCategoryClick: const mempty
+                     , user: Nothing
+                     , onLogin: mempty
+                     , onProfile: mempty
+                     , onStaticPageClick: mempty
+                     , onMenuClick: mempty
+                     , showHeading: false
+                     }
+                 ]) <>
             [ props.mainContent.content ] <>
             (if props.headless
             then []
