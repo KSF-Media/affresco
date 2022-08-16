@@ -125,6 +125,7 @@ type Props =
   -- For tests, they are prone to break in uninteresting ways with ads
   , globalDisableAds :: Boolean
   , initialFeeds :: Array (Tuple ArticleFeedType ArticleFeed)
+  , headless :: Boolean
   }
 
 type JSProps =
@@ -137,6 +138,7 @@ type JSProps =
   , globalDisableAds :: Json
   , initialFrontpageFeed :: Nullable JSInitialFeed
   , initialBreakingNews :: Nullable String
+  , headless :: Json
   }
 
 app :: Component Props
@@ -457,7 +459,8 @@ fromJSProps jsProps =
       -- comes from `window.categoryStructure`, they should be
       -- valid categories
       categoryStructure = foldMap (mapMaybe (hush <<< decodeJson)) $ JSON.toArray jsProps.categoryStructure
-  in { article, initialFeeds, staticPageName, categoryStructure, globalDisableAds }
+      headless = fromMaybe false $ JSON.toBoolean jsProps.headless
+  in { article, initialFeeds, staticPageName, categoryStructure, globalDisableAds, headless }
 
 jsApp :: Effect (React.ReactComponent JSProps)
 jsApp = do
