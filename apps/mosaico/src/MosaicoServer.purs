@@ -3,6 +3,7 @@ module MosaicoServer where
 import Prelude
 
 import Data.Maybe (Maybe(Nothing))
+import Data.Monoid (guard)
 import KSF.Paper as Paper
 import Lettera.Models (ArticleStub, Category, Tag, categoriesMap)
 import Mosaico.Footer (footer)
@@ -46,34 +47,34 @@ render props = DOM.div_
         { className: "mosaico grid " <> menuOpen
         , id: Paper.toString mosaicoPaper
         , children:
-            (if props.headless
-            then [DOM.text "hello from server"]
-            else [ Header.topLine
-                 , Header.render 0
-                     { changeRoute: const mempty
-                     , categoryStructure: props.categoryStructure
-                     , catMap: categoriesMap props.categoryStructure
-                     , onCategoryClick: const mempty
-                     , user: Nothing
-                     , onLogin: mempty
-                     , onProfile: mempty
-                     , onStaticPageClick: mempty
-                     , onMenuClick: mempty
-                     , showHeading: false
-                     }
-                 ]) <>
+            guard (not props.headless) header
+            <>
             [ props.mainContent.content ] <>
-            (if props.headless
-            then []
-            else [ footer mosaicoPaper mempty
-                , case props.mainContent.type of
-                    FrontpageContent -> aside
-                    TagListContent _ -> aside
-                    _ -> mempty
-                ])
+            guard (not props.headless)
+              [ footer mosaicoPaper mempty
+              , case props.mainContent.type of
+                  FrontpageContent -> aside
+                  TagListContent _ -> aside
+                  _ -> mempty
+              ]
         }
     ]
   where
+    header =
+      [ Header.topLine
+      , Header.render 0
+          { changeRoute: const mempty
+          , categoryStructure: props.categoryStructure
+          , catMap: categoriesMap props.categoryStructure
+          , onCategoryClick: const mempty
+          , user: Nothing
+          , onLogin: mempty
+          , onProfile: mempty
+          , onStaticPageClick: mempty
+          , onMenuClick: mempty
+          , showHeading: false
+          }
+      ]
     aside =
       DOM.aside
         { className: "mosaico--aside"
