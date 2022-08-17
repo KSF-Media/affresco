@@ -6,23 +6,15 @@ import Data.Argonaut.Core (Json, fromArray)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Encode (encodeJson)
 import Data.Array (mapMaybe)
-import Data.DateTime (DateTime)
 import Data.Either (hush)
 import Data.Hashable (class Hashable, hash)
-import Data.HashMap (HashMap)
-import Data.HashMap as HashMap
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Foreign.Object as Object
 import Lettera.Models (ArticleStub, CategoryLabel(..), Tag(..), articleStubToJson, parseArticleStubWithoutLocalizing)
-
-type FeedSnapshot =
-  { stamp :: DateTime
-  , feed :: ArticleFeed
-  }
 
 type JSInitialFeed =
   { feedType        :: Nullable String
@@ -31,8 +23,8 @@ type JSInitialFeed =
   , feedContentType :: Nullable String
   }
 
-parseFeed :: JSInitialFeed -> HashMap ArticleFeedType ArticleFeed
-parseFeed feed = fromMaybe HashMap.empty do
+parseFeed :: JSInitialFeed -> Maybe (Tuple ArticleFeedType ArticleFeed)
+parseFeed feed = do
   let feedPage = toMaybe feed.feedPage
   feedType <- do
     f <- toMaybe feed.feedType
@@ -40,6 +32,9 @@ parseFeed feed = fromMaybe HashMap.empty do
       "categoryfeed" -> CategoryFeed <<< CategoryLabel <$> feedPage
       "tagfeed"      -> map (TagFeed <<< Tag) feedPage
       "searchfeed"   -> SearchFeed <$> feedPage
+      "latestfeed"   -> Just LatestFeed
+      "mostreadfeed" -> Just MostReadFeed
+      "breakingnews" -> Just BreakingNewsFeed
       _              -> Nothing
   feedContent <- do
     content <- toMaybe feed.feedContent
@@ -52,11 +47,11 @@ parseFeed feed = fromMaybe HashMap.empty do
         obj <- hush $ decodeJson content
         list <- hush <<< decodeJson =<< Object.lookup "list" obj
         Html
-          <$> (hush <<< decodeJson =<< Object.lookup "html" obj)
-          <*> (pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list)
+          <$> (pure $ mapMaybe (hush <<< parseArticleStubWithoutLocalizing) list)
+          <*> (hush <<< decodeJson =<< Object.lookup "html" obj)
       _ ->
         Nothing
-  pure $ HashMap.singleton feedType feedContent
+  pure $ Tuple feedType feedContent
 
 mkArticleFeed :: ArticleFeedType -> ArticleFeed -> Array (Tuple String Json)
 mkArticleFeed feedDefinition feed =
@@ -74,24 +69,42 @@ mkArticleFeed feedDefinition feed =
       -- its internal state.  Getting the HTML from the generated
       -- DOM's containing innerHTML would be ideal but it'd be a
       -- challenge.
-      Html html list -> Tuple "html" $ encodeJson {html, list: fromArticles list}
+      Html list html -> Tuple "html" $ encodeJson {html, list: fromArticles list}
     (Tuple feedType feedPage) = case feedDefinition of
       CategoryFeed page -> Tuple "categoryfeed" $ unwrap page
       TagFeed tag       -> Tuple "tagfeed" $ unwrap tag
       SearchFeed query  -> Tuple "searchfeed" query
+      LatestFeed        -> Tuple "latestfeed" ""
+      MostReadFeed      -> Tuple "mostreadfeed" ""
+      BreakingNewsFeed  -> Tuple "breakingnews" ""
 
 data ArticleFeed
   = ArticleList (Array ArticleStub)
-  | Html String (Array ArticleStub)
+  | Html (Array ArticleStub) String
 
 data ArticleFeedType
   = CategoryFeed CategoryLabel
   | TagFeed Tag
   | SearchFeed String
+  | LatestFeed
+  | MostReadFeed
+  | BreakingNewsFeed
 derive instance eqArticleFeedType :: Eq ArticleFeedType
+derive instance ordArticleFeedType :: Ord ArticleFeedType
 instance showArticleFeed :: Show ArticleFeedType where
   show (CategoryFeed c) = "CategoryFeed " <> show c
   show (TagFeed t) = "TagFeed" <> show t
   show (SearchFeed s) = "SearchFeed " <> s
+  show LatestFeed = "LatestFeed"
+  show MostReadFeed = "MostReadFeed"
+  show BreakingNewsFeed = "BreakingNewsFeed"
 instance hashableArticleFeedType :: Hashable ArticleFeedType where
   hash = hash <<< show
+
+toList :: ArticleFeed -> Array ArticleStub
+toList (ArticleList list) = list
+toList _ = []
+
+toHtml :: ArticleFeed -> String
+toHtml (Html _ html) = html
+toHtml _ = ""
