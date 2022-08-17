@@ -11,7 +11,7 @@
 @media (min-width: 768px) and (max-width: 999px) {
   // Show senast publicerat and andra läser at the bottom on this screen size,
   // not at the top
-  .front>.dre-section {
+  .front > .dre-section {
     display: flex;
     flex-direction: column;
   }
@@ -40,4 +40,11 @@
 .dre-item--feature-advertorial .dre-item__header {
   // there's a pretty specific selector setting this to 400 in Aptoma's CSS...
   font-weight: 700 !important;
+}
+
+[data-placeholder="widget"] > .dre-item__title {
+  visibility: hidden;
+  > * {
+    visibility: visible;
+  }
 }

@@ -17,7 +17,13 @@ render =
           { href: "/epaper"
           , className: blockClass <> "--container"
           , children:
-            [ DOM.span { className: blockClass <> "--cover" } ]
+            [ DOM.span
+                { className: blockClass <> "--cover"
+                , children: [ DOM.span
+                                { className: "sr-only"
+                                , children: [DOM.text "E-tidningen"]
+                                } ]
+             } ]
           }
         ]
       }
