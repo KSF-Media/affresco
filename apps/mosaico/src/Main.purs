@@ -6,7 +6,6 @@ import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
-import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
 import Data.Array as Array
 import Data.Array (cons, find, foldl, fromFoldable, head, null)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -20,7 +19,6 @@ import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
-import Data.Traversable (for_)
 import Data.String (trim)
 import Data.String as String
 import Data.String.Regex (Regex)
@@ -81,8 +79,6 @@ import React.Basic.DOM (div, meta, script, text, title) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
 import React.Basic.Events (handler_)
 import Simple.JSON (readJSON)
-
-import Effect.Class.Console as Console
 
 foreign import data Template :: Type
 foreign import data TemplateMaster :: Type
@@ -263,7 +259,7 @@ main = do
       -- The redirects are read from a JSON file for now,
       -- but it's easy to change this to read whatever
       -- bucket or source we want to have it in the future
-      redirJson <- FS.readTextFile UTF8 "./redir/redir.json"
+      redirJson <- FS.readTextFile UTF8 "./dist/redir.json"
       case readJSON redirJson of
         Right (redirs :: Array Redirect) ->
           let mkRedir acc { route, paper, destination } =

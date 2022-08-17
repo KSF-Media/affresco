@@ -39,7 +39,7 @@ main :: Effect Unit
 main = launchAff_ do
   log "Validate redir.json file"
   liftEffect $ void do
-    redirJson <- FS.readTextFile UTF8 "./redir/redir.json"
+    redirJson <- FS.readTextFile UTF8 "./dist/redir.json"
     case readJSON redirJson of
       Right (_ :: Array Redirect) -> pure []
       Left err -> throw ("Could not parse redir.json! Please fix. Error: " <> show err)
