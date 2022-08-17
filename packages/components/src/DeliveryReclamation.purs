@@ -4,10 +4,13 @@ import Prelude
 
 import Data.Array (snoc)
 import Data.Date (Date)
+import Data.DateTime (DateTime, date, time)
 import Data.Either (Either(..))
+import Data.Enum (fromEnum)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.String.Read (read)
+import Data.Time (Time, hour, minute)
 import Data.UUID (UUID)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
@@ -29,11 +32,11 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
 import KSF.Tracking as Tracking
 
-
 type State =
   { publicationDate    :: Maybe Date
   , claim              :: Maybe User.DeliveryReclamationClaim
   , maxPublicationDate :: Maybe Date
+  , deliveryTroubleEnd :: Maybe Time
   , validationError    :: Maybe String
   }
 
@@ -41,6 +44,7 @@ type Self = React.Self Props State
 
 type Props =
   { subsno    :: Subsno
+  , end       :: Maybe DateTime
   , cusno     :: Cusno
   , userUuid  :: UUID
   , onCancel  :: Effect Unit
@@ -58,6 +62,7 @@ initialState =
   , claim: Nothing
   , maxPublicationDate: Nothing
   , validationError: Nothing
+  , deliveryTroubleEnd: Nothing
   }
 
 component :: React.Component Props
@@ -65,8 +70,10 @@ component = React.createComponent "DeliveryReclamation"
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  now <- Now.nowDate
-  self.setState _ { maxPublicationDate = Just now }
+  now <- Now.nowDateTime
+  when (maybe false (\end -> now < end && date now == date end) self.props.end) $
+    self.setState _ { deliveryTroubleEnd = time <$> self.props.end}
+  self.setState _ { maxPublicationDate = Just $ date now }
 
 render :: Self -> JSX
 render self@{ state: { publicationDate, claim }} =
@@ -91,7 +98,8 @@ render self@{ state: { publicationDate, claim }} =
       DOM.form
           { onSubmit: handler preventDefault (\_ -> submitForm publicationDate claim)
           , children:
-              [ publicationDayInput
+              [ foldMap delayMessage self.state.deliveryTroubleEnd
+              , publicationDayInput
               , claimExtensionInput
               , claimNewDeliveryInput
               , eveningMessage
@@ -118,6 +126,15 @@ render self@{ state: { publicationDate, claim }} =
         , label: Just "Jag klarar mig utan den uteblivna tidningen, förläng i stället min prenumeration med en dag"
         , validationError: Nothing
         }
+
+    delayMessage time =
+      let msg = "Utdelningen är försenad på ert område och beräknas vara klar till klockan " <>
+                (show $ fromEnum $ hour time) <> ":" <>
+                (let m = fromEnum $ minute time
+                 in if m < 10 then "0" <> show m else show m) <> "."
+      in DOM.div { className: "delivery-reclamation--estimated-time"
+                 , children: [ DOM.text msg ]
+                 }
 
     claimNewDeliveryInput =
       InputField.inputField

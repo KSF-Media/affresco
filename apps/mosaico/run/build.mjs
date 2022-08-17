@@ -158,6 +158,8 @@ export async function runBuild() {
       );
     }
 
+    await exec("mkdir -p dist/ && cp ./redir/redir.json ./dist/");
+
     await writeFile("./dist/index.html", template.html());
     console.log("Wrote index.html");
   } catch (e) {

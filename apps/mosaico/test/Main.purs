@@ -2,10 +2,13 @@ module Test.Main where
 
 import Prelude
 
+import Data.Either (Either (..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class.Console (log)
+import Effect.Class (liftEffect)
+import Effect.Exception (throw)
 import Mosaico.Test.Account as Account
 import Mosaico.Test.Article as Article
 import Mosaico.Test.Embeds as Embeds
@@ -15,8 +18,11 @@ import Mosaico.Test.Lettera as Lettera
 import Mosaico.Test.Search as Search
 import Mosaico.Test.Static as Static
 import Mosaico.Test.Tags as Tags
+import Main (Redirect)
 import KSF.Puppeteer as Chrome
-
+import Node.Encoding (Encoding(..))
+import Node.FS.Sync (readTextFile) as FS
+import Simple.JSON (readJSON)
 
 foreign import testUser :: String
 foreign import testPassword :: String
@@ -31,11 +37,21 @@ defaultPremiumArticleId = "cf100445-d2d8-418a-b190-79d0937bf7fe"
 
 main :: Effect Unit
 main = launchAff_ do
-  if testUser == "" || testPassword == ""
+  log "Validate redir.json file"
+  liftEffect $ void do
+    redirJson <- FS.readTextFile UTF8 "./dist/redir.json"
+    case readJSON redirJson of
+      Right (_ :: Array Redirect) -> pure []
+      Left err -> throw ("Could not parse redir.json! Please fix. Error: " <> show err)
+
+  let loginTestUser = if testUser == "" then entitledUser else testUser
+      loginTestPassword = if testPassword == "" then entitledPassword else testPassword
+  if loginTestUser == "" || loginTestPassword == ""
     then log "skip login and logout test, user or password not set"
     else do
     log "Test login and logout"
-    withBrowserPage $ Account.loginLogout testUser testPassword
+    withBrowserPage $ Account.loginLogout loginTestUser loginTestPassword
+
   log "Test news page and get free article and premium article"
   { articleId, premiumArticleId } <- withBrowserPage Article.testNewsPage
   log $ "Free article " <> show articleId <> " premium " <> show premiumArticleId
@@ -77,8 +93,11 @@ main = launchAff_ do
   log "Test front page embedded HTML"
   withBrowserPage Frontpage.testHtmlEmbed
   withBrowserPage Frontpage.testHtmlEmbedNavigation
+  -- Very flaky, especially in the times of day when there's only a few articles available
+  {-
   log "Test most read list"
   withDesktopBrowserPage $ Frontpage.testMostRead
+   -}
   log "Test embed render via navigation"
   withBrowserPage Embeds.testEmbedNavigation
   log "Test embed render, direct"

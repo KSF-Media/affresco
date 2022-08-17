@@ -41,7 +41,7 @@ type ListFrontpageProps =
 
 type PrerenderedFrontpageProps =
   { content :: Maybe String
-  , breakingNews :: Maybe String
+  , breakingNews :: String
   , hooks   :: Array Hook
   , onClick :: EventHandler
   }
@@ -49,7 +49,7 @@ type PrerenderedFrontpageProps =
 render :: Frontpage -> JSX
 render (List props) =
     DOM.div
-        { className: "mosaico--article-list"
+        { className: "mx-4 mosaico--article-list md:mx-0"
         , children:
           [ maybeLabel props.label
           , genericRender (\list -> map renderListArticle list) mempty props.content
@@ -91,12 +91,12 @@ render (List props) =
 
         listArticleImage a =
           let img = a.listImage <|> a.mainImage
-              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.url) img
+              src = maybe (fallbackImage mosaicoPaper) (addCrop <<< _.tinyThumb) img
               alt = fold $ _.caption =<< img
           in  DOM.img
                 { src
                 , alt
-                , className: "[grid-area:right] w-20 h-fit md:w-28"
+                , className: "w-20 h-full md:w-28"
                 }
 
         renderListArticle :: ArticleStub -> JSX
@@ -144,7 +144,7 @@ maybeLabel :: Maybe String -> JSX
 maybeLabel categoryLabel =
   case categoryLabel of
     Just label -> DOM.h2
-                    { className: "[grid-area:main] text-3xl leading-none font-roboto font-bold inline-block mb-8 border-b-2 border-brand"
+                    { className: "inline-block mb-8 text-3xl font-bold leading-none border-b-2 font-roboto border-brand"
                     , children: [ DOM.text label ]
                     }
     _          -> mempty

@@ -450,6 +450,7 @@ type Image =
   { url       :: String
   , caption   :: Maybe String
   , thumb     :: String
+  , tinyThumb :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
   }
@@ -572,5 +573,6 @@ instance eqTag :: Eq Tag where
 instance hashTag :: Hashable Tag where
   hash (Tag t) = hash $ String.toLower t
 derive newtype instance showTag :: Show Tag
+derive newtype instance ordTag :: Ord Tag
 
 derive instance newtypeTag :: Newtype Tag _
