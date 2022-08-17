@@ -6,17 +6,21 @@ import Control.Parallel.Class (parallel, sequential)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as JSON
 import Data.Argonaut.Encode (encodeJson)
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.!=), (.:), (.:?))
 import Data.Array as Array
 import Data.Array (cons, find, foldl, fromFoldable, head, null)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
-import Data.List (List, union, intercalate, (:), snoc)
+import Data.Map as Map
+import Data.Map (Map)
+import Data.List (List (..), union, intercalate, (:), snoc)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.Traversable (for_)
 import Data.String (trim)
 import Data.String as String
 import Data.String.Regex (Regex)
@@ -76,6 +80,9 @@ import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta, script, text, title) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
 import React.Basic.Events (handler_)
+import Simple.JSON (readJSON)
+
+import Effect.Class.Console as Console
 
 foreign import data Template :: Type
 foreign import data TemplateMaster :: Type
@@ -108,6 +115,13 @@ type Env =
   , categoryRegex :: Regex
   , staticPages :: HashMap.HashMap String String
   , cache :: Cache.Cache
+  , redirects :: Map (Tuple String (Maybe Paper.Paper)) String
+  }
+
+type Redirect = 
+  { paper :: Paper.Paper
+  , route :: String
+  , destination :: String
   }
 
 indexHtmlFileLocation :: String
@@ -245,7 +259,16 @@ main = do
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
-    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
+    redirects <- liftEffect do
+      redirJson <- FS.readTextFile UTF8 "./redir/redir.json"
+      case readJSON redirJson of
+        Right (x :: Array Redirect) -> 
+          let mkRedir acc r =
+                Map.insert (r.route /\ r.paper) r.destination acc
+          in pure $ foldl mkRedir Map.empty x
+        Left e -> throw "Could not parse redir.json! Check the file and try again"
+    for_ redirects (\r -> Console.log r)
+    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache, redirects }
         handlers =
           { getHealthz
           , googleSiteVerification
@@ -830,14 +853,18 @@ notFoundPage
   :: Env
   -> { params :: { path :: List String } }
   -> Aff (Response ResponseBody)
-notFoundPage env {params: { path } } = do
+notFoundPage env { params: { path } } = do
   -- TODO move redirect logic behind its own guard and route
   let redir to = pure $
         (\(Response r) -> Response $ r { headers = Headers.set "Location" to r.headers }) $
         Response.found EmptyBody
       pass = notFound env notFoundArticleContent mempty mempty
-  -- TODO 2 make these editable somewhere else
-  case fromFoldable path /\ mosaicoPaper of
+  case path, mosaicoPaper of
+    (route : Nil),      paper | Just destination <- Map.lookup (route /\ paper) env.redirects -> redir destination
+    (route : "" : Nil), paper | Just destination <- Map.lookup (route /\ paper) env.redirects -> redir destination
+    _, _                                                                                      -> pass
+
+  {- case fromFoldable path /\ mosaicoPaper of
     ["abi"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/abi"
     ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
     ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
@@ -870,7 +897,7 @@ notFoundPage env {params: { path } } = do
     ["kontakt"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
     ["kontakt", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
     ["prenumerera"] /\ _ -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
-    _ -> pass
+    _ -> pass -}
 
 notFoundArticleContent :: MainContent
 notFoundArticleContent =

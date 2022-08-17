@@ -4,10 +4,19 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.String as String
+import Foreign as Foreign
+import Simple.JSON as JSON
 
 data Paper = HBL | ON | VN | KSF | JUNIOR
 derive instance eqPaper :: Eq Paper
 derive instance ordPaper :: Ord Paper
+
+instance readForeignPaper :: JSON.ReadForeign Paper where
+  readImpl f = do
+    paper <- JSON.readImpl f
+    case fromString paper of
+      Just p -> pure p
+      Nothing -> Foreign.fail $ Foreign.ForeignError ("Could not parse paper: " <> paper)
 
 fromString :: String -> Maybe Paper
 fromString paperString =
