@@ -9,15 +9,13 @@ bs.watch("static/*").on("change", file => {
   exec("cp ./static/* ./dist/assets/");
 });
 
-bs.watch("./web/*").on("change", file => {
-  build.runBuild();
-});
-
-bs.watch("./output/Mosaico/index.js").on("change", () => {
-  build.runBuild();
-});
-
-bs.watch("../../less/**/*").on("change", file => {
+bs.watch([
+  "./web/*",
+  "./output/Mosaico/index.js",
+  "../../less/**/*",
+  "./src/_site.scss",
+  "./src/css/**/*",
+]).on("change", file => {
   build.runBuild();
 });
 

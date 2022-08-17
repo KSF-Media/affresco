@@ -66,7 +66,13 @@ const maskSizePlugin = plugin(function ({ matchUtilities, theme }) {
 });
 
 module.exports = {
-  content: ["./src/**/*", "./static/**/*"],
+  content: {
+    files: ["./src/**/*", "./static/**/*"],
+    transform: {
+      // We have to use \\_ instead of \_ in purs files
+      purs: (content) => content.replace(/\\\\/g, '\\')
+    },
+  },
   theme: {
     extend: {},
     colors: {

@@ -32,36 +32,55 @@ autoExpand a = (length $ joinWith mempty a) < 600
 render :: EventHandler -> Props -> JSX
 render setExpanded props =
   DOM.section
-    { className: "boxinfo"
+    { className: "bg-gray-50 border-b-2 border-t-4 border-brand [.article-element\\_\\_reviewbox>&]:border [.article-element\\_\\_reviewbox>&]:border-gray-100"
     , children:
         [ DOM.header
-            { className: "boxinfo__header"
+            { className: "p-4 border-b border-gray-100"
             , children:
                 [ DOM.h3
-                    { className: "boxinfo__label"
+                    { className: "m-0 mt-3 text-2xl font-medium font-duplexsans"
                     , children: [ DOM.text $ fold props.headline ]
                     }
                 , foldMap
                   (\x -> DOM.h2
-                           { className: "boxinfo__title"
+                           { className: "m-0 text-xl font-medium font-duplexsans"
                            , dangerouslySetInnerHTML: { __html: x }
                            }) props.title
                 ]
             }
-        , DOM.div
-            { className: "boxinfo__body" <> guard props.expanded "--expanded"
+        , if props.expanded
+          then DOM.div
+            { className: "text-base font-light font-roboto"
             , children:
                 [ DOM.div
-                    { className: "boxinfo-body__content"
-                    , children: map (\p -> DOM.div { dangerouslySetInnerHTML: { __html: p } }) props.content
+                    { className: "p-4"
+                    , children: map (\p -> DOM.div
+                                             { className: "mb-3"
+                                             , dangerouslySetInnerHTML: { __html: p }
+                                             }) props.content
                     }
-                , guard (not props.expanded) $ DOM.div { className: "boxinfo-body__fader" }
+                ]
+            }
+          else DOM.div
+            { className: "overflow-hidden relative h-40 text-base font-light font-roboto"
+            , children:
+                [ DOM.div
+                    { className: "absolute z-10 p-4"
+                    , children: map (\p -> DOM.div
+                                             { className: "mb-3"
+                                             , dangerouslySetInnerHTML: { __html: p }
+                                             }) props.content
+                    }
+                , DOM.div { className: "absolute z-20 w-full h-40 t-0 boxinfo-fader-gradient" }
                 ]
             }
         , DOM.footer
             { onClick: setExpanded
-            , className: "boxinfo__toggle"
-            , children: guard (not props.expanded) [ DOM.a_ [ DOM.text "Vik ut ▼" ] ]
+            , className: "text-center cursor-pointer boxinfo__toggle"
+            , children: guard (not props.expanded)
+                    [ DOM.a { className: "text-base font-semibold font-roboto"
+                            , children:  [ DOM.text "Vik ut ▼" ]
+                            } ]
             }
         ]
     }
