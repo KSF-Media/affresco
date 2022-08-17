@@ -44,11 +44,14 @@ main = launchAff_ do
       Right (_ :: Array Redirect) -> pure []
       Left err -> throw ("Could not parse redir.json! Please fix. Error: " <> show err)
 
-  if testUser == "" || testPassword == ""
+  let loginTestUser = if testUser == "" then entitledUser else testUser
+      loginTestPassword = if testPassword == "" then entitledPassword else testPassword
+  if loginTestUser == "" || loginTestPassword == ""
     then log "skip login and logout test, user or password not set"
     else do
-      log "Test login and logout"
-      withBrowserPage $ Account.loginLogout testUser testPassword
+    log "Test login and logout"
+    withBrowserPage $ Account.loginLogout loginTestUser loginTestPassword
+
   log "Test news page and get free article and premium article"
   { articleId, premiumArticleId } <- withBrowserPage Article.testNewsPage
   log $ "Free article " <> show articleId <> " premium " <> show premiumArticleId
@@ -91,7 +94,7 @@ main = launchAff_ do
   withBrowserPage Frontpage.testHtmlEmbed
   withBrowserPage Frontpage.testHtmlEmbedNavigation
   -- Very flaky, especially in the times of day when there's only a few articles available
-  {- 
+  {-
   log "Test most read list"
   withDesktopBrowserPage $ Frontpage.testMostRead
    -}
