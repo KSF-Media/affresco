@@ -118,7 +118,7 @@ type Env =
   , redirects :: Map (Tuple String Paper.Paper) String
   }
 
-type Redirect = 
+type Redirect =
   { paper :: Maybe Paper.Paper
   , route :: String
   , destination :: String
@@ -265,18 +265,18 @@ main = do
       -- bucket or source we want to have it in the future
       redirJson <- FS.readTextFile UTF8 "./redir/redir.json"
       case readJSON redirJson of
-        Right (redirs :: Array Redirect) -> 
+        Right (redirs :: Array Redirect) ->
           let mkRedir acc { route, paper, destination } =
                 case paper of
                   Just p -> Map.insert (route /\ p) destination acc
                   -- If it's paper agnostic, let's create
                   -- a redirect rule for all our three mosaico papers
-                  Nothing -> 
+                  Nothing ->
                     Map.empty
                     # Map.insert (route /\ Paper.HBL) destination
                     # Map.insert (route /\ Paper.VN)  destination
                     # Map.insert (route /\ Paper.ON)  destination
-                    # Map.union acc 
+                    # Map.union acc
           in pure $ foldl mkRedir Map.empty redirs
         Left _err -> throw "Could not parse redir.json! Check the file and try again"
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache, redirects }
