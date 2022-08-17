@@ -2,9 +2,11 @@ module Mosaico.Epaper where
 
 import Prelude
 
-import Data.Either (hush)
+import Control.Alt ((<|>))
+import Data.Array (mapMaybe)
+import Data.Either (Either(..), hush)
 import Data.Foldable (lookup)
-import Data.Maybe (Maybe(..), isJust, isNothing, fromMaybe,  maybe)
+import Data.Maybe (Maybe(..), isJust, isNothing, fromMaybe, maybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.UUID as UUID
@@ -20,7 +22,7 @@ import KSF.User as User
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
 import React.Basic.Events (EventHandler)
-import React.Basic.Hooks (Component, useEffect, useState', (/\))
+import React.Basic.Hooks (Component, useEffect, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
 
 type Props =
@@ -29,35 +31,70 @@ type Props =
   , onLogin :: EventHandler
   }
 
+type Credentials =
+  { auth :: UserAuth
+  , entitlements :: Set Paper
+  }
+
 component :: Component Props
 component = do
   initialTokens <- loadToken
   React.component "Epaper" $ \{user, paper, onLogin} -> React.do
-    entitlements /\ setEntitlements <- useState' Nothing
+    -- Nothing when loading
+    userEntitlements /\ setUserEntitlements <- useState' $ Just mempty
     userAuth /\ setUserAuth <- useState' initialTokens
-    useEffect (_.uuid <$> join user) do
-      when (isNothing $ join user) $ Aff.launchAff_ do
+    loadingIpAuth /\ setLoadingIpAuth <- useState' true
+    ipUserAuth /\ setIpUserAuth <- useState' Nothing
+    ipEntitlements /\ setIpEntitlements <- useState' Nothing
+    useEffectOnce do
+      Aff.launchAff_ do
         tokens <- User.loginIP paper
-        liftEffect case (hush tokens) of
-          Nothing -> setEntitlements $ Nothing
-          Just auth -> do
-            setUserAuth $ Just auth
-            Aff.launchAff_ $ do
-              ipEntitlements <- User.getUserEntitlements auth
-              liftEffect $ setEntitlements $ hush ipEntitlements
-      when (isNothing entitlements && isJust (join user)) do
-        setEntitlements Nothing
+        case tokens of
+          Left _ -> liftEffect $ setLoadingIpAuth false
+          Right auth -> do
+            liftEffect $ setIpUserAuth $ Just auth
+            ipEnt <- User.getUserEntitlements auth
+            liftEffect do
+              setIpEntitlements $ Just $
+                maybe Set.empty (toPaperEntitlements <<< Set.fromFoldable) $
+                hush ipEnt
+              setLoadingIpAuth false
+      pure $ pure unit
+    useEffect (_.uuid <$> join user) $ pure (pure unit) <* case join user of
+      Nothing -> do
+        setUserEntitlements $ Just mempty
+        setUserAuth Nothing
+      Just _ -> do
+        setUserEntitlements Nothing
         tokens <- loadToken
         setUserAuth tokens
         maybe
-          (setEntitlements $ Just mempty)
-          (Aff.launchAff_ <<< (liftEffect <<< setEntitlements <<< Just
-                               <<< fromMaybe Set.empty <<< hush <=< User.getUserEntitlements)) tokens
-      pure $ pure unit
-    pure $ render onLogin paper (isNothing user) userAuth entitlements
+          (setUserEntitlements $ Just mempty)
+          (Aff.launchAff_ <<< (liftEffect <<< setUserEntitlements <<< Just
+                               <<< maybe Set.empty toPaperEntitlements <<< hush
+                               <=< User.getUserEntitlements)) tokens
+    let loading = loadingIpAuth || isNothing user || isNothing userEntitlements
+        userCredentials =
+          { auth:_, entitlements:_ }
+          <$> userAuth
+          <*> userEntitlements
+        ipCredentials =
+          { auth:_, entitlements:_ }
+          <$> ipUserAuth
+          <*> ipEntitlements
+        credentials = ipCredentials <|> userCredentials
+    pure $ render onLogin paper loading credentials
+  where
+    entitlementGiven = [ "hbl-epaper" /\ HBL
+                       , "vn-epaper" /\ VN
+                       , "on-epaper" /\ ON
+                       , "junior-epaper" /\ JUNIOR
+                       ]
+    toPaperEntitlements :: Set String -> Set Paper
+    toPaperEntitlements = Set.mapMaybe (flip lookup entitlementGiven)
 
-render :: EventHandler -> Paper -> Boolean -> Maybe UserAuth -> Maybe (Set String) -> JSX
-render onLogin paper loadingUser userAuth entitlements =
+render :: EventHandler -> Paper -> Boolean -> Maybe Credentials -> JSX
+render onLogin paper loading credentials =
   DOM.div
     { className: "mosaico-epaper"
     , children:
@@ -75,8 +112,8 @@ render onLogin paper loadingUser userAuth entitlements =
                         if loading
                         then [ loadingSpinner ]
                         else [ DOM.h2_ [ DOM.text "Läs dagens tidning" ]
-                             , renderReadPaper userAuth entitled
-                             , renderOpen paper onLogin userAuth entitled
+                             , renderReadPaper entitled
+                             , renderOpen paper onLogin (_.auth <$> credentials) entitled
                              ]
                     }
                 ]
@@ -87,6 +124,7 @@ render onLogin paper loadingUser userAuth entitlements =
         ]
     }
   where
+    isEntitledTo p = maybe false (Set.member p <<< _.entitlements) credentials
     entitled = isEntitledTo paper
     junior =
       DOM.div
@@ -101,19 +139,11 @@ render onLogin paper loadingUser userAuth entitlements =
                 , children:
                     [ juniorDescription
                     , if loading then loadingSpinner
-                      else renderOpen JUNIOR onLogin userAuth $ isEntitledTo JUNIOR
+                      else renderOpen JUNIOR onLogin (_.auth <$> credentials) $ isEntitledTo JUNIOR
                     ]
                 }
             ]
         }
-    loading = loadingUser || isJust userAuth && isNothing entitlements
-    entitlementNeeded = [ HBL /\ "hbl-epaper"
-                        , VN /\ "vn-epaper"
-                        , ON /\ "on-epaper"
-                        , JUNIOR /\ "junior-epaper"
-                        ]
-    isEntitledTo p = fromMaybe false $
-                     Set.member <$> lookup p entitlementNeeded <*> entitlements
 
 epaperSite :: Paper -> String
 epaperSite HBL    = "https://etidningen.hbl.fi/"
@@ -177,17 +207,17 @@ renderOpen _ onLogin Nothing _ =
     , children: [ DOM.text "Logga in" ]
     }
 
-renderReadPaper :: Maybe UserAuth -> Boolean -> JSX
-renderReadPaper (Just _) true =
+renderReadPaper :: Boolean -> JSX
+renderReadPaper entitled  =
   fragment
-  [ DOM.p_ [ DOM.text "Välkommen till den digitala e-tidningen! Här får du hela papperstidningen i en digital form. Klicka på en av länkarna nedan för att börja läsa." ]
+  [ DOM.p_ [ DOM.text $ "Välkommen till den digitala e-tidningen!" <> entitledDescription ]
   , epaperDescription
   ]
-renderReadPaper _ _ =
-  fragment
-  [ DOM.p_ [ DOM.text "Välkommen till den digitala e-tidningen!" ]
-  , epaperDescription
-  ]
+  where
+  entitledDescription =
+    if entitled
+    then " Här får du hela papperstidningen i en digital form. Klicka på en av länkarna nedan för att börja läsa."
+    else ""
 
 juniorDescription :: JSX
 juniorDescription =
