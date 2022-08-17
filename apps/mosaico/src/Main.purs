@@ -12,7 +12,9 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), hush)
 import Data.Foldable (fold, foldM, foldMap, elem)
 import Data.HashMap as HashMap
-import Data.List (List, union, intercalate, (:), snoc)
+import Data.Map as Map
+import Data.Map (Map)
+import Data.List (List (..), union, intercalate, (:), snoc)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Monoid (guard)
@@ -76,6 +78,7 @@ import React.Basic (fragment) as DOM
 import React.Basic.DOM (div, meta, script, text, title) as DOM
 import React.Basic.DOM.Server (renderToStaticMarkup, renderToString) as DOM
 import React.Basic.Events (handler_)
+import Simple.JSON (readJSON)
 
 foreign import data Template :: Type
 foreign import data TemplateMaster :: Type
@@ -108,6 +111,13 @@ type Env =
   , categoryRegex :: Regex
   , staticPages :: HashMap.HashMap String String
   , cache :: Cache.Cache
+  , redirects :: Map (Tuple String Paper.Paper) String
+  }
+
+type Redirect =
+  { paper :: Maybe Paper.Paper
+  , route :: String
+  , destination :: String
   }
 
 indexHtmlFileLocation :: String
@@ -245,7 +255,27 @@ main = do
     categoryRegex <- case Regex.regex "^\\/([\\w|ä|ö|å|-]+)\\b" Regex.ignoreCase of
       Right r -> pure r
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
-    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache }
+    redirects <- liftEffect do
+      -- The redirects are read from a JSON file for now,
+      -- but it's easy to change this to read whatever
+      -- bucket or source we want to have it in the future
+      redirJson <- FS.readTextFile UTF8 "./dist/redir.json"
+      case readJSON redirJson of
+        Right (redirs :: Array Redirect) ->
+          let mkRedir acc { route, paper, destination } =
+                case paper of
+                  Just p -> Map.insert (route /\ p) destination acc
+                  -- If it's paper agnostic, let's create
+                  -- a redirect rule for all our three mosaico papers
+                  Nothing ->
+                    Map.empty
+                    # Map.insert (route /\ Paper.HBL) destination
+                    # Map.insert (route /\ Paper.VN)  destination
+                    # Map.insert (route /\ Paper.ON)  destination
+                    # Map.union acc
+          in pure $ foldl mkRedir Map.empty redirs
+        Left _err -> throw "Could not parse redir.json! Check the file and try again"
+    let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache, redirects }
         handlers =
           { getHealthz
           , googleSiteVerification
@@ -830,47 +860,17 @@ notFoundPage
   :: Env
   -> { params :: { path :: List String } }
   -> Aff (Response ResponseBody)
-notFoundPage env {params: { path } } = do
+notFoundPage env { params: { path } } = do
   -- TODO move redirect logic behind its own guard and route
   let redir to = pure $
         (\(Response r) -> Response $ r { headers = Headers.set "Location" to r.headers }) $
         Response.found EmptyBody
       pass = notFound env notFoundArticleContent mempty mempty
-  -- TODO 2 make these editable somewhere else
-  case fromFoldable path /\ mosaicoPaper of
-    ["abi"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/abi"
-    ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
-    ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
-    ["ingen-tidning"] /\ _ -> redir "https://konto.ksfmedia.fi/"
-    ["losenord"] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
-    ["losenord", ""] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
-    ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
-    ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
-    ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
-    ["kampanj"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/kampanj-hbl"
-    ["kampanj"] /\ Paper.VN  -> redir "https://www.ksfmedia.fi/kampanj-vn"
-    ["kampanj"] /\ Paper.ON  -> redir "https://www.ksfmedia.fi/kampanj-on"
-    ["akademen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/akademen"
-    ["studierabatt"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/studierabatt"
-    ["hbljunior"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/hbljunior"
-    ["boknas"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/boknas"
-    ["svenskadagen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/svenskadagen"
-    ["medlem"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
-    ["digital"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
-    ["homefound"] /\ Paper.VN -> redir "https://www.ksfmedia.fi/vn-homefound"
-    ["fiskecupen"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/fiskecupen"
-    -- Old RSS URLs
-    ["rss.xml"] /\ Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
-    ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
-    ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
-    ["bruksvillkor"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
-    ["kundservice"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
-    ["kundservice", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
-    ["kontakt"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
-    ["kontakt", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
-    ["prenumerera"] /\ _ -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
-    _ -> pass
+  case path of
+    (route : Nil)      | Just destination <- Map.lookup (route /\ mosaicoPaper) env.redirects -> redir destination
+    -- Same route with trailing slash
+    (route : "" : Nil) | Just destination <- Map.lookup (route /\ mosaicoPaper) env.redirects -> redir destination
+    _                                                                                         -> pass
 
 notFoundArticleContent :: MainContent
 notFoundArticleContent =
