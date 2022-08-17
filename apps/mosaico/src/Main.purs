@@ -115,11 +115,11 @@ type Env =
   , categoryRegex :: Regex
   , staticPages :: HashMap.HashMap String String
   , cache :: Cache.Cache
-  , redirects :: Map (Tuple String (Maybe Paper.Paper)) String
+  , redirects :: Map (Tuple String Paper.Paper) String
   }
 
 type Redirect = 
-  { paper :: Paper.Paper
+  { paper :: Maybe Paper.Paper
   , route :: String
   , destination :: String
   }
@@ -262,10 +262,20 @@ main = do
     redirects <- liftEffect do
       redirJson <- FS.readTextFile UTF8 "./redir/redir.json"
       case readJSON redirJson of
-        Right (x :: Array Redirect) -> 
+        Right (redirs :: Array Redirect) -> 
           let mkRedir acc r =
-                Map.insert (r.route /\ r.paper) r.destination acc
-          in pure $ foldl mkRedir Map.empty x
+                case r.paper of
+                  Just p  -> Map.insert (r.route /\ p) r.destination acc
+                  -- If it's paper agnostic, let's create
+                  -- a redirect rule for all our three mosaico papers
+                  Nothing -> 
+                    Map.empty
+                    # Map.insert (r.route /\ Paper.HBL) r.destination
+                    # Map.insert (r.route /\ Paper.VN)  r.destination
+                    # Map.insert (r.route /\ Paper.ON)  r.destination
+                    # Map.union acc 
+
+          in pure $ foldl mkRedir Map.empty redirs
         Left e -> throw "Could not parse redir.json! Check the file and try again"
     for_ redirects (\r -> Console.log r)
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache, redirects }
@@ -859,45 +869,11 @@ notFoundPage env { params: { path } } = do
         (\(Response r) -> Response $ r { headers = Headers.set "Location" to r.headers }) $
         Response.found EmptyBody
       pass = notFound env notFoundArticleContent mempty mempty
-  case path, mosaicoPaper of
-    (route : Nil),      paper | Just destination <- Map.lookup (route /\ paper) env.redirects -> redir destination
-    (route : "" : Nil), paper | Just destination <- Map.lookup (route /\ paper) env.redirects -> redir destination
-    _, _                                                                                      -> pass
-
-  {- case fromFoldable path /\ mosaicoPaper of
-    ["abi"] /\ Paper.HBL -> redir "https://www.hbl.fi/sida/abi"
-    ["sommar"] /\ _ -> redir "https://www.ksfmedia.fi/sommar"
-    ["shop"] /\ _ -> redir "https://shop.hbl.fi/"
-    ["ingen-tidning"] /\ _ -> redir "https://konto.ksfmedia.fi/"
-    ["losenord"] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
-    ["losenord", ""] /\ _ -> redir "https://konto.ksfmedia.fi/#l%C3%B6senord"
-    ["annonskiosken"] /\ Paper.HBL -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
-    ["annonskiosken"] /\ Paper.VN  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
-    ["annonskiosken"] /\ Paper.ON  -> redir "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
-    ["kampanj"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/kampanj-hbl"
-    ["kampanj"] /\ Paper.VN  -> redir "https://www.ksfmedia.fi/kampanj-vn"
-    ["kampanj"] /\ Paper.ON  -> redir "https://www.ksfmedia.fi/kampanj-on"
-    ["akademen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/akademen"
-    ["studierabatt"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/studierabatt"
-    ["hbljunior"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/hbljunior"
-    ["boknas"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/boknas"
-    ["svenskadagen"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/svenskadagen"
-    ["medlem"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/medlem"
-    ["digital"] /\ Paper.HBL -> redir "https://www.ksfmedia.fi/digital"
-    ["homefound"] /\ Paper.VN -> redir "https://www.ksfmedia.fi/vn-homefound"
-    ["fiskecupen"] /\ Paper.VN -> redir "https://www.vastranyland.fi/sida/fiskecupen"
-    -- Old RSS URLs
-    ["rss.xml"] /\ Paper.HBL -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
-    ["rss.xml"] /\ Paper.VN -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
-    ["rss.xml"] /\ Paper.ON -> redir "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
-    ["bruksvillkor"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
-    ["bruksvillkor", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/bruksvillkor"
-    ["kundservice"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
-    ["kundservice", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kundservice"
-    ["kontakt"] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
-    ["kontakt", ""] /\ _ -> redir $ Paper.homepage mosaicoPaper <> "sida/kontakt"
-    ["prenumerera"] /\ _ -> redir $ "https://prenumerera.ksfmedia.fi/#/" <> Paper.cssName mosaicoPaper
-    _ -> pass -}
+  case path of
+    (route : Nil)      | Just destination <- Map.lookup (route /\ mosaicoPaper) env.redirects -> redir destination
+    -- Same route with trailing slash
+    (route : "" : Nil) | Just destination <- Map.lookup (route /\ mosaicoPaper) env.redirects -> redir destination
+    _                                                                                         -> pass
 
 notFoundArticleContent :: MainContent
 notFoundArticleContent =

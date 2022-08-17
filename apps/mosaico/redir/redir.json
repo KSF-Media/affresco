@@ -1,7 +1,162 @@
 [
   {
-    "paper": "hbl",
     "route": "abi",
+    "paper": "hbl",
     "destination": "https://www.hbl.fi/sida/abi"
+  },
+  {
+    "route": "sommar",
+    "destination": "https://www.ksfmedia.fi/sommar"
+  },
+  {
+    "route": "shop",
+    "destination": "https://shop.hbl.fi/"
+  },
+  {
+    "route": "ingen-tidning",
+    "destination": "https://konto.ksfmedia.fi/"
+  },
+  {
+    "route": "losenord",
+    "destination": "https://konto.ksfmedia.fi/#l%C3%B6senord"
+  },
+  {
+    "route": "annonskiosken",
+    "paper": "hbl",
+    "destination": "https://annonskiosken.ksfmedia.fi/ilmoita/hufvudstadsbladet"
+  },
+  {
+    "route": "annonskiosken",
+    "paper": "vn",
+    "destination": "https://annonskiosken.ksfmedia.fi/ilmoita/vastranyland"
+  },
+  {
+    "route": "annonskiosken",
+    "paper": "on",
+    "destination": "https://annonskiosken.ksfmedia.fi/ilmoita/ostnyland"
+  },
+  {
+    "route": "kampanj",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/kampanj-hbl"
+  },
+  {
+    "route": "kampanj",
+    "paper": "vn",
+    "destination": "https://www.ksfmedia.fi/kampanj-vn"
+  },
+  {
+    "route": "kampanj",
+    "paper": "on",
+    "destination": "https://www.ksfmedia.fi/kampanj-on"
+  },
+  {
+    "route": "akademen",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/akademen"
+  },
+  {
+    "route": "studierabatt",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/studierabatt"
+  },
+  {
+    "route": "hbljunior",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/hbljunior"
+  },
+  {
+    "route": "boknas",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/boknas"
+  },
+  {
+    "route": "svenskadagen",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/svenskadagen"
+  },
+  {
+    "route": "medlem",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/medlem"
+  },
+  {
+    "route": "digital",
+    "paper": "hbl",
+    "destination": "https://www.ksfmedia.fi/digital"
+  },
+  {
+    "route": "homefound",
+    "paper": "vn",
+    "destination": "https://www.ksfmedia.fi/vn-homefound"
+  },
+  {
+    "route": "fiskecupen",
+    "paper": "vn",
+    "destination": "https://www.vastranyland.fi/sida/fiskecupen"
+  },
+  {
+    "route": "rss.xml",
+    "paper": "hbl",
+    "destination": "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=HBL"
+  },
+  {
+    "route": "rss.xml",
+    "paper": "vn",
+    "destination": "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=VN"
+  },
+  {
+    "route": "rss.xml",
+    "paper": "on",
+    "destination": "https://lettera.api.ksfmedia.fi/v4/list/frontpage?paper=ON"
+  },
+  {
+    "route": "bruksvillkor",
+    "paper": "hbl",
+    "destination": "https://www.hbl.fi/sida/bruksvillkor"
+  },
+  {
+    "route": "bruksvillkor",
+    "paper": "vn",
+    "destination": "https://www.vastranyland.fi/sida/bruksvillkor"
+  },
+  {
+    "route": "bruksvillkor",
+    "paper": "on",
+    "destination": "https://www.ostnyland.fi/sida/bruksvillkor"
+  },
+  {
+    "route": "kundservice",
+    "paper": "hbl",
+    "destination": "https://www.hbl.fi/sida/kundservice"
+  },
+  {
+    "route": "kundservice",
+    "paper": "vn",
+    "destination": "https://www.vastranyland.fi/sida/kundservice"
+  },
+  {
+    "route": "kundservice",
+    "paper": "on",
+    "destination": "https://www.ostnyland.fi/sida/kundservice"
+  },
+  {
+    "route": "kontakt",
+    "paper": "hbl",
+    "destination": "https://www.hbl.fi/sida/kontakt"
+  },
+  {
+    "route": "kontakt",
+    "paper": "vn",
+    "destination": "https://www.vastranyland.fi/sida/kontakt"
+  },
+  {
+    "route": "kontakt",
+    "paper": "on",
+    "destination": "https://www.ostnyland.fi/sida/kontakt"
+  },
+  {
+    "route": "prenumerera",
+    "destination": "https://prenumerera.ksfmedia.fi"
   }
 ]
