@@ -9,8 +9,9 @@
         [input-field] 2.5em
         [error-message] 1em;
     grid-column-gap: 20px;
-    grid-row-gap: auto;
+    grid-row-gap: 10px;
     align-items: baseline;
+    margin: 10px 0;
     input[type=text], input[type=password], input[type=email], select {
         width: 100%;
         max-height: 2.5em;
@@ -18,6 +19,7 @@
         border-style: solid;
         border-width: 1px;
         border-color: @color-input-border;
+        margin-top: 5px;
         padding: 8px 10px 8px;
         background: @white;
         box-sizing: border-box;
@@ -65,8 +67,9 @@
 
 .input-field--input-label {
     text-align: left;
-    font-size: 0.9em;
+    font-size: 1rem;
     font-weight: 500;
+    margin: 10px 0;
 }
 
 .input-field--invalid-field {

@@ -26,13 +26,14 @@ import Effect.Class.Console as Console
 import Foreign.Object (lookup)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
+import KSF.Driver (getDriver)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
 
 foreign import letteraBaseUrl :: String
-foreign import encodeURIComponent :: String -> String
+foreign import _encodeURIComponent :: String -> String
 
 letteraArticleUrl :: String
 letteraArticleUrl = letteraBaseUrl <>  "/article/"
@@ -48,6 +49,9 @@ letteraFrontPageUrl = letteraBaseUrl <> "/list/frontpage"
 
 letteraFrontPageHtmlUrl :: String
 letteraFrontPageHtmlUrl = letteraBaseUrl <> "/list/frontpage/html"
+
+letteraBreakingNewsUrl :: String
+letteraBreakingNewsUrl = letteraBaseUrl <> "/list/breaking-news/html"
 
 letteraMostReadUrl :: String
 letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
@@ -125,7 +129,8 @@ getArticleWithUrl url paper auth clientip = do
               _ ->
                 [ AX.RequestHeader "X-Real-Ip" (fromMaybe "" clientip) ]
         }
-  articleResponse <- AX.request request
+  driver <- liftEffect getDriver
+  articleResponse <- AX.request driver request
   case articleResponse of
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
@@ -159,7 +164,8 @@ getArticleWithUrl url paper auth clientip = do
 
 getArticleStub :: UUID -> Aff (Either String ArticleStub)
 getArticleStub uuid = do
-  articleResponse <- AX.get ResponseFormat.json $ letteraArticleUrl <> toString uuid <> "/stub"
+  driver <- liftEffect getDriver
+  articleResponse <- AX.get driver ResponseFormat.json $ letteraArticleUrl <> toString uuid <> "/stub"
   case articleResponse of
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
@@ -185,7 +191,8 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
         , method = Left GET
         , responseFormat = AX.json
         }
-  articleResponse <- AX.request request
+  driver <- liftEffect getDriver
+  articleResponse <- AX.request driver request
   case articleResponse of
     Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
@@ -219,7 +226,20 @@ getFrontpageHtml paper category cacheToken = do
         , method = Left GET
         , responseFormat = AX.string
         }
-  useResponse (pure <<< pure) =<< AX.request request
+  driver <- liftEffect getDriver
+  useResponse (pure <<< pure) =<< AX.request driver request
+
+getBreakingNewsHtml :: Paper -> Maybe String -> Aff (LetteraResponse String)
+getBreakingNewsHtml paper cacheToken = do
+  let request = AX.defaultRequest
+        { url = letteraBreakingNewsUrl
+                <> "?paper=" <> Paper.toString paper
+                <> foldMap ("&cacheToken=" <> _) cacheToken
+        , method = Left GET
+        , responseFormat = AX.string
+        }
+  driver <- liftEffect getDriver
+  useResponse (pure <<< pure) =<< AX.request driver request
 
 parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
 parseArticleStubs response
@@ -237,11 +257,13 @@ getFrontpage paper categoryId cacheToken = do
         , method = Left GET
         , responseFormat = AX.json
         }
-  useResponse parseArticleStubs =<< AX.request request
+  driver <- liftEffect getDriver
+  useResponse parseArticleStubs =<< AX.request driver request
 
 getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
-getMostRead start limit category paper onlySubscribers =
-  useResponse parseArticleStubs =<< AX.get ResponseFormat.json (letteraMostReadUrl
+getMostRead start limit category paper onlySubscribers = do
+  driver <- liftEffect getDriver
+  useResponse parseArticleStubs =<< AX.get driver ResponseFormat.json (letteraMostReadUrl
           <> "?start=" <> show start
           <> "&limit=" <> show limit
           <> (foldMap ("&category=" <> _) category)
@@ -250,9 +272,10 @@ getMostRead start limit category paper onlySubscribers =
   )
 
 getLatest :: Int -> Int -> Paper -> Aff (LetteraResponse (Array ArticleStub))
-getLatest start limit paper =
+getLatest start limit paper = do
+  driver <- liftEffect getDriver
   useResponse parseArticleStubs =<<
-    AX.get ResponseFormat.json (letteraLatestUrl
+    AX.get driver ResponseFormat.json (letteraLatestUrl
                                 <> "?start=" <> show start
                                 <> "&limit=" <> show limit
                                 <> "&paper=" <> Paper.toString paper
@@ -260,34 +283,28 @@ getLatest start limit paper =
 
 getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do
+  driver <- liftEffect getDriver
   useResponse parseArticleStubs =<<
-    AX.get ResponseFormat.json (letteraTagUrl <> encodeURIComponent(un Tag tag)
+    AX.get driver ResponseFormat.json (letteraTagUrl <> _encodeURIComponent(un Tag tag)
                                 <> "?start=" <> show start
                                 <> "&limit=" <> show limit
                                 <> "&paper=" <> Paper.toString paper
                                )
 
-search :: Int -> Int -> Paper -> String -> Aff (Array ArticleStub)
+search :: Int -> Int -> Paper -> String -> Aff (LetteraResponse (Array ArticleStub))
 search start limit paper query = do
-  searchResponse <- AX.get ResponseFormat.json (letteraSearchUrl
-                                                <> "?start=" <> show start
-                                                <> "&limit=" <> show limit
-                                                <> "&paper=" <> Paper.toString paper
-                                                <> "&contentQuery=" <> encodeURIComponent query)
-  case searchResponse of
-    Left err -> do
-      Console.warn $ "Search response failed to decode: " <> AX.printError err
-      pure mempty
-    Right response
-      | Just (responseArray :: Array Json) <- toArray response.body -> do
-        liftEffect $ takeRights <$> traverse parseArticleStub responseArray
-      | otherwise -> do
-        Console.warn "Failed to read API reponse!"
-        pure mempty
+  driver <- liftEffect getDriver
+  useResponse parseArticleStubs =<<
+    AX.get driver ResponseFormat.json (letteraSearchUrl
+                                       <> "?start=" <> show start
+                                       <> "&limit=" <> show limit
+                                       <> "&paper=" <> Paper.toString paper
+                                       <> "&contentQuery=" <> _encodeURIComponent query)
 
 getCategoryStructure :: Paper -> Aff (Array Category)
 getCategoryStructure p = do
-  categoriesRes <- AX.get ResponseFormat.json $ letteraCategoryUrl <> "?paper=" <> Paper.toString p
+  driver <- liftEffect getDriver
+  categoriesRes <- AX.get driver ResponseFormat.json $ letteraCategoryUrl <> "?paper=" <> Paper.toString p
   case categoriesRes of
     Right r
       | Just (responseArray :: Array Json) <- toArray r.body -> do
@@ -302,9 +319,10 @@ getCategoryStructure p = do
       pure mempty
 
 getAdvertorials :: Paper -> Aff (LetteraResponse (Array ArticleStub))
-getAdvertorials paper =
+getAdvertorials paper = do
+  driver <- liftEffect getDriver
   useResponse parseArticleStubs
-    =<< AX.get ResponseFormat.json
+    =<< AX.get driver ResponseFormat.json
         ( letteraAdvertorialUrl
             <> "?paper="
             <> Paper.toString paper

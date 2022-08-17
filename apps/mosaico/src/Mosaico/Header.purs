@@ -2,7 +2,6 @@ module Mosaico.Header
   ( Props
   , component
   , render
-  , mainSeparator
   , topLine
   ) where
 
@@ -17,9 +16,10 @@ import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
+import Foreign.Object (singleton)
 import Effect (Effect)
 import Foreign.Object as Object
-import KSF.Paper (toString)
+import KSF.Paper (toString, paperName)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
 import Lettera.Models (Categories, Category(..))
@@ -45,6 +45,7 @@ type Props
     , onMenuClick :: Effect Unit
     -- Nothing for loading state, Just Nothing for no user
     , user :: Maybe (Maybe User)
+    , showHeading :: Boolean
     }
 
 component :: React.Component Props
@@ -77,7 +78,8 @@ render scrollPosition props =
         [ DOM.div
             { className: block
             , children:
-                [ DOM.div
+                [ srHeading
+                , DOM.div
                     { className: block <> "__left-links"
                     , children:
                         [ DOM.a
@@ -120,6 +122,10 @@ render scrollPosition props =
                     { className: block <> "__logo"
                     , href: "/"
                     , onClick: foldMap props.onCategoryClick frontpageCategory
+                    , children: [ DOM.span
+                                    { className: "sr-only"
+                                    , children: [DOM.text (paperName mosaicoPaper)]
+                                    }]
                     }
                 , renderLoginLink props.user
                 , DOM.nav
@@ -130,7 +136,7 @@ render scrollPosition props =
                     { className: block <> "__right-buttons"
                     , children:
                         [ searchButton
-                        , DOM.div
+                        , DOM.button
                             { className: iconButtonClass <> " " <> menuButtonClass
                             , children: [ DOM.span { className: iconClass <> " " <> menuIconClass }
                                         , DOM.span
@@ -148,6 +154,14 @@ render scrollPosition props =
         ]
     }
   where
+    srHeading =
+        if props.showHeading
+        then DOM.h1
+               { className: "sr-only"
+               , children: [DOM.text $ paperName mosaicoPaper]
+               }
+        else mempty
+
     mkCategory category@(Category { label }) =
         DOM.a
         { href: "/" <> show label
@@ -164,7 +178,10 @@ render scrollPosition props =
     searchButton :: JSX
     searchButton = DOM.a
                     { className: iconButtonClass <> " " <> searchButtonClass
-                    , children: [ DOM.span { className: iconClass <> " " <> searchIconClass }
+                    , children: [ DOM.span
+                                    { _aria: singleton "hidden" "true"
+                                    , className: iconClass <> " " <> searchIconClass
+                                    }
                                 , DOM.span
                                     { className: "menu-label"
                                     , children: [ DOM.text "SÖK" ]
@@ -195,7 +212,7 @@ render scrollPosition props =
     renderLoginLink Nothing =
       loadingSpinner
     renderLoginLink (Just Nothing) =
-      DOM.div
+      DOM.button
          { children:
              [ DOM.span
                  { className: accountClass <> "-icon"
@@ -231,7 +248,7 @@ render scrollPosition props =
 
 -- The characteristic line at the top of every KSF media's site
 topLine :: JSX
-topLine = DOM.hr { className: "mosaico-top-line" }
+topLine = DOM.hr { className: "[grid-area:line] bg-brand w-full h-3 sticky top-0 z-10" }
 
 -- The separator between the header and the rest of the page
 mainSeparator :: JSX

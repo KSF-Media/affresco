@@ -7,22 +7,18 @@ bs.watch("dist/assets/*").on("change", file => bs.reload(file));
 
 bs.watch("static/*").on("change", file => {
   exec("cp ./static/* ./dist/assets/");
-  bs.reload(file);
 });
 
 bs.watch("./web/*").on("change", file => {
   build.runBuild();
-  bs.reload(file);
 });
 
 bs.watch("./output/Mosaico/index.js").on("change", () => {
   build.runBuild();
-  bs.reload();
 });
 
 bs.watch("../../less/**/*").on("change", file => {
   build.runBuild();
-  bs.reload(file);
 });
 
 function redirToRoot(req, res, next) {

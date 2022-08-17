@@ -37,7 +37,7 @@ resetPassword = do
         true, Just _ ->
           setResetElement $ Just $
             React.fragment
-              [ DOM.div_ [ DOM.text "Din lösenord har redan ändrats." ]
+              [ DOM.div_ [ DOM.text "Ditt lösenord har redan ändrats." ]
               , DOM.div_
                   [ DOM.a
                       { href: "/"
@@ -48,9 +48,7 @@ resetPassword = do
               ]
         _, Nothing -> setResetElement $ Just $
                      React.fragment
-                       [ DOM.text "Vi skickar dig en länk som låter dig skapa ett nytt lösenord."
-                       , resetLinkForm { user }
-                       ]
+                       [ resetLinkForm { user } ]
         _, Just c -> launchAff_ do
           -- Check that the recovery code is valid and reserve it for use.
           startResult <- User.startPasswordReset c
@@ -62,10 +60,10 @@ resetPassword = do
             Left err -> do
               msg <- case err of
                 User.PasswordResetTokenInvalid -> do
-                  pure "Länken är föråldrad. Beställ en ny återställningslänk till din e-post."
+                  pure "Länken har tyvärr upphört att gälla. Vänligen begär en ny."
                 _ -> do
                   Tracking.updateResetPassword $ show err
-                  pure "Något gick fel. Vänligen försok igen eller kontakta vår kundtjänst."
+                  pure "Oj, något gick fel. Vänligen försök igen eller kontakta vår kundtjänst."
               pure $
                 React.fragment
                   [ DOM.div
@@ -79,7 +77,7 @@ resetPassword = do
       DOM.div
         { id: "forgot-password-page"
         , children:
-            [ DOM.h2_ [ DOM.text "Skapa nytt lösenord" ]
+            [ DOM.h1_ [ DOM.text "Lösenord" ]
             , DOM.div
                 { className: "password-reset--content"
                 , children: [ fromMaybe (DOM.div { className: "tiny-spinner right" }) resetElement ]

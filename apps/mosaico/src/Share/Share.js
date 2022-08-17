@@ -1,8 +1,8 @@
-exports.encodeURIComponent = function (s) {
+export function encodeURIComponent_(s) {
   return encodeURIComponent(s);
 };
 
-exports.nativeShare = (typeof window !== "undefined" && window.navigator && window.navigator.share)
+export const nativeShare = (typeof window !== "undefined" && window.navigator && window.navigator.share)
   ? (data) => {
       window.navigator.share(data);
     }

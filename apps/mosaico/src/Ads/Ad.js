@@ -1,4 +1,4 @@
-exports.fetchAdImpl = function (contentUnit) {
+export function fetchAdImpl(contentUnit) {
   try {
     window.googletag.cmd.push(function () {
       if (window.definedSlots.includes(contentUnit)) {
@@ -18,7 +18,7 @@ exports.fetchAdImpl = function (contentUnit) {
   } catch (err) {}
 };
 
-exports.getGamId = function (contentUnit) {
+export function getGamId(contentUnit) {
   try {
     const slots = window.innerWidth < 1020 ? window.adSlots.mobile : window.adSlots.desktop;
     const slot = slots.find((element) => contentUnit === element.targetId);
@@ -32,7 +32,7 @@ exports.getGamId = function (contentUnit) {
   }
 };
 
-exports.getIsLazy = function (contentUnit) {
+export function getIsLazy(contentUnit) {
   try {
     const slots = window.innerWidth < 1020 ? window.adSlots.mobile : window.adSlots.desktop;
     const slot = slots.find((element) => contentUnit === element.targetId);
@@ -46,6 +46,6 @@ exports.getIsLazy = function (contentUnit) {
   }
 }
 
-exports.showConsentRevocationMessage = function () {
+export function showConsentRevocationMessage() {
   window.googlefc && window.googlefc.showRevocationMessage();
 }

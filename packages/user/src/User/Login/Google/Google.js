@@ -1,6 +1,6 @@
 var googleClientId = process.env.GOOGLE_CLIENT_ID;
 
-exports.loadGapi_ = function (args) {
+export function loadGapi_(args) {
   if (window.gapi === undefined) {
     var script = document.createElement("script");
     script.onload = function () {
@@ -62,7 +62,7 @@ function mkAuthResponse(user) {
   return { accessToken: userAccessToken, email: userEmail };
 }
 
-exports.isSignedIn_ = function () {
+export function isSignedIn_() {
   if (typeof gapi !== "undefined" && gapi["auth2"]) {
     var auth2 = gapi.auth2.getAuthInstance();
     return auth2.isSignedIn.get();
@@ -70,7 +70,7 @@ exports.isSignedIn_ = function () {
   return false;
 };
 
-exports.signOut_ = function () {
+export function signOut_() {
   var auth2 = gapi.auth2.getAuthInstance();
   return auth2.signOut();
 };

@@ -1,4 +1,4 @@
-exports.testUser = process.env.TEST_USER;
-exports.testPassword = process.env.TEST_PASSWORD;
-exports.entitledUser = process.env.ENTITLED_USER;
-exports.entitledPassword = process.env.ENTITLED_PASSWORD;
+export const testUser = process.env.TEST_USER;
+export const testPassword = process.env.TEST_PASSWORD;
+export const entitledUser = process.env.ENTITLED_USER;
+export const entitledPassword = process.env.ENTITLED_PASSWORD;

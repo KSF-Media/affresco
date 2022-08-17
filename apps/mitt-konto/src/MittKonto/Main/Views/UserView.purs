@@ -12,7 +12,6 @@ import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView.Subscription (subscription) as Subscription
 import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
-import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.User (User)
 import React.Basic (JSX)
@@ -23,8 +22,8 @@ import Routing.PushState (PushStateInterface)
 foreign import images :: { subscribe :: String }
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: PushStateInterface -> Types.Self -> Sentry.Logger -> User -> JSX
-userView router { state: { now, news }, setState } logger user = React.fragment
+userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> User -> JSX
+userView router { state: { now, news } } logger profileComponent user = React.fragment
   [ Helpers.classy DOM.div "mitt-konto--column mitt-konto--profile" [ newsView news, profileView ]
   , Helpers.classy DOM.div "mitt-konto--column" [ subscriptionsView ]
   ]
@@ -42,11 +41,7 @@ userView router { state: { now, news }, setState } logger user = React.fragment
         , Elements.disappearingBreak
         ]
       where
-        profileComponentBlock = componentBlockContent $ Profile.profile
-          { profile: user
-          , onUpdate: setState <<< Types.setActiveUser <<< Just
-          , logger
-          }
+        profileComponentBlock = componentBlockContent profileComponent
         editAccountBlock = DOM.div
           { className: "mitt-konto--edit-account"
           , children:
@@ -87,7 +82,7 @@ userView router { state: { now, news }, setState } logger user = React.fragment
             [ IconAction.iconAction
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
-                , onClick: IconAction.Href "https://ksfmedia1.typeform.com/to/zbh3kU"
+                , onClick: IconAction.Href "https://form.jotform.com/221793422462051"
                 , router
                 }
             ]

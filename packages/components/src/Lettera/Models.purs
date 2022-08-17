@@ -18,6 +18,7 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, un, unwrap)
+import Data.Show.Generic (genericShow)
 import Data.String (joinWith, toLower)
 import Data.String (Pattern(..), Replacement(..), replaceAll, toLower) as String
 import Data.String.Extra (kebabCase) as String
@@ -93,6 +94,9 @@ data ArticleType
   | Advertorial
 
 derive instance eqArticleType :: Eq ArticleType
+derive instance genericArticleType :: Generic ArticleType _
+instance showDataArticleType :: Show ArticleType where
+  show = genericShow
 
 articleTypes :: Array (Tuple ArticleType String)
 articleTypes =
@@ -107,6 +111,9 @@ articleTypes =
 
 newtype LocalDateTime = LocalDateTime DateTime
 derive instance newtypeLocalDateTime :: Newtype LocalDateTime _
+derive instance localDateTimeGeneric :: Generic LocalDateTime _
+instance showLocalDateTime :: Show LocalDateTime where
+  show = genericShow
 
 localizeArticleDateTimeString :: String -> String -> Effect (Maybe LocalDateTime)
 localizeArticleDateTimeString uuid dateTimeString =
@@ -139,16 +146,18 @@ type ArticleStubCommon =
   )
 
 type JSArticleStub =
-  { publishingTime :: String
-  , tags           :: Array String
-  , articleType    :: String
+  { publishingTime     :: String
+  , tags               :: Array String
+  , articleType        :: String
+  , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
   }
 
 type ArticleStub =
-  { publishingTime :: Maybe LocalDateTime
-  , tags           :: Array Tag
-  , articleType    :: ArticleType
+  { publishingTime     :: Maybe LocalDateTime
+  , tags               :: Array Tag
+  , articleType        :: ArticleType
+  , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
   }
 
@@ -157,6 +166,9 @@ type ArticleStub =
 -- when we decode/encode the thing
 newtype ExternalScript = ExternalScript String
 derive instance newtypeExternalScript :: Newtype ExternalScript _
+derive instance genericExternalScript :: Generic ExternalScript _
+instance showExternalScript :: Show ExternalScript where
+  show = genericShow
 
 instance readForeignExternalScript :: ReadForeign ExternalScript where
   readImpl f = do
@@ -239,6 +251,7 @@ articleToArticleStub a =
   , publishingTime: a.publishingTime
   , tags: a.tags
   , articleType: a.articleType
+  , articleTypeDetails: a.articleTypeDetails
   }
 
 articleToJson :: Article -> Json
@@ -418,6 +431,8 @@ data BodyElement
   | Ad Ad
   | Related (Array ArticleStub)
 derive instance bodyElementGeneric :: Generic BodyElement _
+instance bodyElementShow :: Show BodyElement where
+  show = genericShow
 
 type BoxInfo =
   { title :: Maybe String
@@ -435,6 +450,7 @@ type Image =
   { url       :: String
   , caption   :: Maybe String
   , thumb     :: String
+  , tinyThumb :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
   }
@@ -557,5 +573,6 @@ instance eqTag :: Eq Tag where
 instance hashTag :: Hashable Tag where
   hash (Tag t) = hash $ String.toLower t
 derive newtype instance showTag :: Show Tag
+derive newtype instance ordTag :: Ord Tag
 
 derive instance newtypeTag :: Newtype Tag _

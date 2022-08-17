@@ -9,6 +9,7 @@ module KSF.User
   , module Address
   , loginTraditional
   , magicLogin
+  , loginIP
   , logout
   , someAuth
   , facebookSdk
@@ -99,6 +100,7 @@ import KSF.Auth (loadToken, saveToken, deleteToken, requireToken)
 import KSF.Error as KSF.Error
 import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
+import KSF.Paper (Paper)
 import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
@@ -464,6 +466,26 @@ loginSso maybeInvalidateCache callback = do
                user <- finalizeLogin maybeInvalidateCache =<< saveToken loginResponse
                liftEffect $ callback user
             }
+
+loginIP :: Paper -> Aff (Either UserError UserAuth)
+loginIP paper = do
+  loginResponse <- try $ Persona.loginIP paper
+  case loginResponse of
+    Right {uuid, token } -> do
+        pure $ Right { userId: uuid, authToken: token}
+    Left err
+      | Just (errData :: Persona.InvalidCredentials) <- Api.Error.errorData err -> do
+          -- This is normal, most people don't have IP access, let's not log anything
+          pure $ Left LoginInvalidCredentials
+      | KSF.Error.serviceUnavailableError err -> do
+          Console.error "Service unavailable with ip login"
+          pure $ Left ServiceUnavailable
+      | Just serverError <- KSF.Error.internalServerError err -> do
+          Console.error "Something went wrong with ip login"
+          pure $ Left SomethingWentWrong
+      | otherwise -> do
+          Console.error "An unexpected error occurred during ip login"
+          pure $ Left $ UnexpectedError err
 
 -- | Logout the user. Calls social-media SDKs and SSO library.
 --   Wipes out local storage.
