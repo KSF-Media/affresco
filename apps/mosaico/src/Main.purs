@@ -260,24 +260,25 @@ main = do
       Right r -> pure r
       Left _  -> liftEffect $ throw "I have a very safe regex to parse, yet somehow I didn't know how to parse it. Fix it please. Exploding now, goodbye."
     redirects <- liftEffect do
+      -- The redirects are read from a JSON file for now,
+      -- but it's easy to change this to read whatever
+      -- bucket or source we want to have it in the future
       redirJson <- FS.readTextFile UTF8 "./redir/redir.json"
       case readJSON redirJson of
         Right (redirs :: Array Redirect) -> 
-          let mkRedir acc r =
-                case r.paper of
-                  Just p  -> Map.insert (r.route /\ p) r.destination acc
+          let mkRedir acc { route, paper, destination } =
+                case paper of
+                  Just p -> Map.insert (route /\ p) destination acc
                   -- If it's paper agnostic, let's create
                   -- a redirect rule for all our three mosaico papers
                   Nothing -> 
                     Map.empty
-                    # Map.insert (r.route /\ Paper.HBL) r.destination
-                    # Map.insert (r.route /\ Paper.VN)  r.destination
-                    # Map.insert (r.route /\ Paper.ON)  r.destination
+                    # Map.insert (route /\ Paper.HBL) destination
+                    # Map.insert (route /\ Paper.VN)  destination
+                    # Map.insert (route /\ Paper.ON)  destination
                     # Map.union acc 
-
           in pure $ foldl mkRedir Map.empty redirs
-        Left e -> throw "Could not parse redir.json! Check the file and try again"
-    for_ redirects (\r -> Console.log r)
+        Left _err -> throw "Could not parse redir.json! Check the file and try again"
     let env = { htmlTemplate, categoryStructure, categoryRegex, staticPages, cache, redirects }
         handlers =
           { getHealthz
