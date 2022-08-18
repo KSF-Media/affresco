@@ -413,6 +413,8 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   DOM.fragment
                     [ DOM.meta { property: "og:type", content: "article" }
                     , DOM.meta { property: "og:title", content: a'.title }
+                    -- , DOM.meta { property: "og:url", content: a'.shareUrl }
+                    , DOM.meta { property: "og:url", content: "og:url placeholder" }
                     , DOM.meta { property: "og:description", content: fold a'.preamble }
                     , foldMap (\url -> DOM.meta { property: "og:image", content: url}) $ _.url <$> a'.mainImage
                     , DOM.meta { name: "description", content: fold a'.preamble }
