@@ -53,3 +53,9 @@ homepage ON     = "https://www.ostnyland.fi/"
 homepage VN     = "https://www.vastranyland.fi/"
 homepage JUNIOR = "https://www.ksfmedia.fi/hbljunior"
 homepage KSF    = "https://www.ksfmedia.fi/"
+
+paperDescription :: Paper -> Maybe String
+paperDescription HBL = Just "En sajt om samtiden för dig som vill uppleva, delta och påverka – på svenska."
+paperDescription ON = Just "Nyheter från östra Nylands största svenskspråkiga tidning."
+paperDescription VN = Just "Nyheter från Västnylands största svenskspråkiga tidning."
+paperDescription _ = Nothing

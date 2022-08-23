@@ -50,6 +50,7 @@ import Mosaico.Cache (Stamped, parallelWithCommonLists)
 import Mosaico.Cache as Cache
 import Mosaico.Epaper as Epaper
 import Mosaico.Error (notFoundWithAside)
+import Mosaico.FallbackImage (fallbackImageShare)
 import Mosaico.Feed (ArticleFeed(..), ArticleFeedType(..), mkArticleFeed)
 import Mosaico.Frontpage (Frontpage(..), render) as Frontpage
 import Mosaico.Frontpage.Models (Hook(..)) as Frontpage
@@ -408,26 +409,28 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
               , "breakingNews"      /\ JSON.jsonNull
               ]
             metaTags =
-              let a' = a.article
-              in DOM.renderToStaticMarkup $
+                DOM.renderToStaticMarkup $
                   DOM.fragment
                     [ DOM.meta { property: "og:type", content: "article" }
-                    , DOM.meta { property: "og:title", content: a'.title }
-                    , DOM.meta { property: "og:description", content: fold a'.preamble }
-                    , foldMap (\url -> DOM.meta { property: "og:image", content: url}) $ _.url <$> a'.mainImage
-                    , DOM.meta { name: "description", content: fold a'.preamble }
-                    , foldMap (const $ DOM.meta { name: "robots", content: "max-image-preview:large"}) a'.mainImage
-                    , DOM.title { children: [ DOM.text a'.title ] }
+                    , DOM.meta { property: "og:title", content: article.title }
+                    , DOM.meta { property: "og:url", content: fromMaybe "" article.shareUrl }
+                    , DOM.meta { property: "og:description", content: description }
+                    , DOM.meta { property: "og:image", content: maybe (fallbackImageShare mosaicoPaper) _.url article.mainImage }
+                    , DOM.meta { name: "description", content: description }
+                    , foldMap (const $ DOM.meta { name: "robots", content: "max-image-preview:large"}) article.mainImage
+                    , DOM.title { children: [ DOM.text article.title ] }
                     , DOM.script
                         { type: "application/ld+json"
                         , dangerouslySetInnerHTML:
                             { __html:
                                 String.replaceAll (String.Pattern "<") (String.Replacement "\\u003c")
                                   $ JSON.stringify
-                                  $ renderAsJsonLd a'
+                                  $ renderAsJsonLd article
                             }
                         }
                     ]
+                where
+                  description = if null article.preamble then fold (Paper.paperDescription mosaicoPaper) else fold article.preamble
 
         appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars) >>= appendHead metaTags
 
@@ -773,15 +776,12 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
           , categoryStructure: env.categoryStructure
           }
     title = if label == frontpageCategoryLabel then Paper.paperName mosaicoPaper else unwrap label
-    startpageDescription = case mosaicoPaper of
-      Paper.HBL -> Just "En sajt om samtiden för dig som vill uppleva, delta och påverka – på svenska."
-      Paper.ON -> Just "Nyheter från östra Nylands största svenskspråkiga tidning."
-      Paper.VN -> Just "Nyheter från Västnylands största svenskspråkiga tidning."
-      _ -> Nothing
+    startpageDescription = Paper.paperDescription mosaicoPaper
     startpageMeta = DOM.renderToStaticMarkup $
       DOM.fragment
         [ DOM.meta { property: "og:type", content: "website" }
         , DOM.meta { property: "og:title", content: title }
+        , DOM.meta { property: "og:image", content: fallbackImageShare mosaicoPaper }
         , foldMap (\content -> DOM.meta { property: "og:description", content }) startpageDescription
         , foldMap (\content -> DOM.meta { name: "description", content }) startpageDescription
         ]
