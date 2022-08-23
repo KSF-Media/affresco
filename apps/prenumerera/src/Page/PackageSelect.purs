@@ -114,23 +114,6 @@ renderSelectPaper selected papers fade setPaper =
 render :: Boolean -> JSX -> Boolean -> Paper -> (Array (Tuple Paper JSX)) -> JSX
 render firstRender selectPaper fade activePaper packageGroups =
   DOM.div
-    { className: "ksf-campaign"
-    , children:
-        [ DOM.div
-            { className: "container"
-            , children:
-                [ DOM.p_
-                    [ DOM.text "Sommarkampanj: Första månaden gratis, följande 3 mån. -50%. "
-                    , DOM.a
-                        { href: "https://www.ksfmedia.fi/sommar?utm_source=prenumerera"
-                        , children: [ DOM.text "Prenumerera här!" ]
-                        }
-                    ]
-                ]
-            }
-        ]
-    } <>
-  DOM.div
     { className: "container-fluid ksf-block-productmatrix"
     , children:
         [ DOM.div

@@ -1,0 +1,8 @@
+.boxinfo-fader-gradient {
+  background: linear-gradient(
+    0deg,
+    theme("colors.gray.50 / 100%") 0%,
+    theme("colors.gray.50 / 50%") 40%,
+    theme("colors.gray.50 / 0%") 100%
+  );
+}

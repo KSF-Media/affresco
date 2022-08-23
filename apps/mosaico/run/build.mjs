@@ -24,7 +24,12 @@ const plugins = [
   lessLoader(),
   sassPlugin({
     async transform(source, resolveDir) {
-      const { css } = await postcss(autoprefixer, tailwindcss(path.resolve("./tailwind.config.js"))).process(source);
+      const { css } = await postcss()
+        .use(autoprefixer)
+        .use(tailwindcss(path.resolve("./tailwind.config.js")))
+        .process(source, {
+          from: "./src/_site.scss",
+        });
       return css;
     },
   }),
@@ -152,6 +157,8 @@ export async function runBuild() {
         )
       );
     }
+
+    await exec("mkdir -p dist/ && cp ./redir/redir.json ./dist/");
 
     await writeFile("./dist/index.html", template.html());
     console.log("Wrote index.html");
