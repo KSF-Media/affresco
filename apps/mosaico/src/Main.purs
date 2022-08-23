@@ -413,14 +413,10 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                   DOM.fragment
                     [ DOM.meta { property: "og:type", content: "article" }
                     , DOM.meta { property: "og:title", content: article.title }
-                    -- , DOM.meta { property: "og:url", content: article.shareUrl }
                     , DOM.meta { property: "og:url", content: fromMaybe "" article.shareUrl }
-                    , DOM.meta { property: "og:description", content: if null article.preamble then fold (Paper.paperDescription mosaicoPaper) else fold article.preamble }
-                    --, foldMap (\url -> DOM.meta { property: "og:image", content: url}) $ _.url <$> article.mainImage || map _.url article.mainImage
-                    -- \mainImage -> mainImage.url or just ._url Is how you take an Image and return a String i.e. \Image -> String
+                    , DOM.meta { property: "og:description", content: description }
                     , DOM.meta { property: "og:image", content: maybe (fallbackImageShare mosaicoPaper) _.url article.mainImage }
-                    --, DOM.meta { name: "description", content: fold article.preamble }
-                    , DOM.meta { name: "description", content: if null article.preamble then fold (Paper.paperDescription mosaicoPaper) else fold article.preamble }
+                    , DOM.meta { name: "description", content: description }
                     , foldMap (const $ DOM.meta { name: "robots", content: "max-image-preview:large"}) article.mainImage
                     , DOM.title { children: [ DOM.text article.title ] }
                     , DOM.script
@@ -433,7 +429,8 @@ renderArticle env fullArticle mostReadArticles latestArticles = do
                             }
                         }
                     ]
-            -- TODO here move descripthion to own function in a where
+                where
+                  description = if null article.preamble then fold (Paper.paperDescription mosaicoPaper) else fold article.preamble
 
         appendMosaico mosaicoString htmlTemplate >>= appendVars (mkWindowVariables windowVars) >>= appendHead metaTags
 
