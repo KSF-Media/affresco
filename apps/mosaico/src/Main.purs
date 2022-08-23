@@ -779,7 +779,7 @@ renderCategoryPage env (Category category@{ label, type: categoryType, url}) = d
     startpageDescription = Paper.paperDescription mosaicoPaper
     startpageMeta = DOM.renderToStaticMarkup $
       DOM.fragment
-        [ DOM.meta { property: "og:type", content: "website" } --TODO: Add fallbackImageShare to og:image
+        [ DOM.meta { property: "og:type", content: "website" }
         , DOM.meta { property: "og:title", content: title }
         , DOM.meta { property: "og:image", content: fallbackImageShare mosaicoPaper }
         , foldMap (\content -> DOM.meta { property: "og:description", content }) startpageDescription
