@@ -12,17 +12,16 @@ function checkEncodedConsentCookie(id) {
   }
   
   function setDecodedConsentCookie(encodedCookie) {
-      console.log("setDecodedConsentCookie")
       let consents = {}
-      const decodedTCString = TCString.decode(JSON.parse(encodedTCString)[3][0]);
-      decodedTCString.publisherLegitimateInterests.has(8) ? consents["send_analytics"]="granted" : consents["send_analytics"]="denied"
+      const decodedTCString = TCString.decode(JSON.parse(encodedCookie)[3][0]);
       decodedTCString.purposeConsents.has(1) ? consents["store_cookies"]="granted" : consents["store_cookies"]="denied"
       Cookies.set("consents", JSON.stringify(consents))
+      console.log("set consent cookie to: ", consents)
   }
   
   export function startConsentCookieSetup() {
-      console.log("startConsentCookieSetup")
-      let consents = {"analytics_storage": "denied"}
+      let consents = {"store_cookies": "denied"}
+      console.log("initial consent cookie: ", consents)
       Cookies.set("consents", JSON.stringify(consents))
       if (Cookies.get('FCCDCF') == undefined) {
           const id = window.setInterval(function () { checkEncodedConsentCookie(id) }, 1000)
@@ -30,14 +29,3 @@ function checkEncodedConsentCookie(id) {
           setDecodedConsentCookie(Cookies.get('FCCDCF'))
       }
   }
-
-//   export function startConsentCookieSetupp() {
-//     console.log("startConsentCookieSetup")
-//     let consents = {"analytics_storage": "denied"}
-//     Cookies.set("consents", JSON.stringify(consents))
-//     if (Cookies.get('FCCDCF') == undefined) {
-//         const id = window.setInterval(function () { checkEncodedConsentCookie(id) }, 1000)
-//     } else {
-//         setDecodedConsentCookie(Cookies.get('FCCDCF'))
-//     }
-// }
