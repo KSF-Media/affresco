@@ -12,6 +12,7 @@ import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Foreign.Object as Object
 import Payload.Internal.Utils (toLowerCase)
 import React.Basic (JSX)
+import Consent.Consent (startConsentCookieSetup2)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -70,3 +71,8 @@ ad = make component
 
 openConsentRevocationMessage :: forall a. a -> Effect Unit
 openConsentRevocationMessage = runEffectFn1 showConsentRevocationMessage
+
+openConsentAndSetCookie :: forall a. a -> Effect Unit
+openConsentAndSetCookie a = do
+  openConsentRevocationMessage a
+  startConsentCookieSetup2

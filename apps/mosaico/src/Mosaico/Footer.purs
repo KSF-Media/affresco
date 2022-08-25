@@ -7,7 +7,7 @@ import Data.Foldable (foldMap)
 import Data.Maybe  (Maybe(..))
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import KSF.Paper (Paper(..), homepage, paperName)
-import Mosaico.Ad (openConsentRevocationMessage)
+import Mosaico.Ad (openConsentAndSetCookie)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -304,7 +304,7 @@ thirdColumn =
   , section "Dataskydd: "
       [ DOM.a
           { href: "#"
-          , onClick: handler preventDefault openConsentRevocationMessage
+          , onClick: handler preventDefault openConsentAndSetCookie
           , children: [ DOM.text "Hantera dataskydd" ]
           , className: "text-blue-link"
           }
