@@ -84,13 +84,6 @@ jobs:
       - run: |2
             yarn install --pure-lockfile
             mkdir -p build
-      - name: Setup build cache for Mosaico
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-mosaico-${{ hashFiles('apps/mosaico/yarn.lock')}}"
-          path: |
-            apps/mosaico/.spago
-            apps/mosaico/output
       - name: Setup build cache for Mitt Konto
         uses: "actions/cache@v2"
         with:
@@ -124,21 +117,6 @@ jobs:
           path: |
             apps/hbl365/.spago
             apps/hbl365/output
-      - env:
-          BOTTEGA_URL: https://bottega.staging.ksfmedia.fi/v1
-          ENTITLED_PASSWORD: password
-          ENTITLED_USER: "stan.marsh@skug.fi"
-          INSECURE_COOKIE: '1'
-          LETTERA_URL: https://lettera.staging.ksfmedia.fi/v4beta
-          PERSONA_URL: https://persona.staging.ksfmedia.fi/v1
-          PORT: '8080'
-          TEST_PASSWORD: password
-          TEST_USER: "wendy.testaburger@skug.fi"
-        name: Build Mosaico
-        run: |2
-            ruby deploy.rb mosaico
-            cp -R apps/mosaico/dist build/mosaico
-        shell: bash
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -199,13 +177,6 @@ jobs:
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
         shell: bash
-      - name: Upload Mosaico
-        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
-        with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
-          destination: "deploy-previews/${{ github.sha }}/mosaico"
-          parent: 'false'
-          path: build/mosaico
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
@@ -283,7 +254,6 @@ jobs:
           check_for_duplicate_msg: 'false'
           msg: |
             Deploy previews are ready :sunglasses:
-            - [Mosaico](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mosaico/index.html)
             - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)
             - [Mitt Konto](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mitt-konto/index.html)
             - [Vetrina (for testing only)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-test/index.html)

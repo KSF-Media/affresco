@@ -13,34 +13,15 @@ let App =
           , production : Bool
           }
       , default =
-        { env = [] : Map Text Text, lockfile = None Text, caches = None Text, production = True }
+        { env = [] : Map Text Text
+        , lockfile = None Text
+        , caches = None Text
+        , production = True
+        }
       }
 
 let apps =
-        [ App::{
-          , name = "Mosaico"
-          , buildDir = "mosaico"
-          , deployDir = "mosaico"
-          , lockfile = Some "yarn.lock"
-          , production = False
-          , env = toMap
-              { LETTERA_URL = "https://lettera.staging.ksfmedia.fi/v4beta"
-              , BOTTEGA_URL = "https://bottega.staging.ksfmedia.fi/v1"
-              , PERSONA_URL = "https://persona.staging.ksfmedia.fi/v1"
-              , TEST_USER   = "wendy.testaburger@skug.fi"
-              , TEST_PASSWORD = "password"
-              , ENTITLED_USER = "stan.marsh@skug.fi"
-              , ENTITLED_PASSWORD = "password"
-              , PORT = "8080"
-              , INSECURE_COOKIE = "1"
-              }
-          , caches = Some
-          ''
-          apps/mosaico/.spago
-          apps/mosaico/output
-          ''
-          }
-        , App::{ name = "Scripts", buildDir = "scripts", deployDir = "scripts" }
+        [ App::{ name = "Scripts", buildDir = "scripts", deployDir = "scripts" }
         , App::{
           , name = "Mitt Konto"
           , buildDir = "mitt-konto"
