@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toMaybe)
 import KSF.Spinner (loadingSpinner)
 import KSF.User (User)
-import Mosaico.Ad (openConsentRevocationMessage)
+import Mosaico.Ad (openConsentAndSetCookie)
 import React.Basic (JSX, fragment)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler, EventHandler)
@@ -78,7 +78,7 @@ render props@{ onLogin, onLogout, onStaticPageClick } =
               , DOM.div_
                   [ DOM.a
                       { href: "#"
-                      , onClick: handler preventDefault openConsentRevocationMessage
+                      , onClick: handler preventDefault openConsentAndSetCookie
                       , children: [ DOM.span { className: "glyphicon glyphicon-edit" }
                                   , DOM.text "Hantera dataskydd" ]
                       }

@@ -15,11 +15,13 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { BrowserRouter as Router } from "react-router-dom";
 import { rehydrateMarks } from "react-imported-component";
+import { startConsentCookieSetup } from "../src/Consent/Consent"
 window.Buffer = window.Buffer || { isBuffer: () => false };
 import "../src/_site.scss";
 import "../../../less/mosaico.less";
 import "../../../less/Vetrina.less";
 import "../../../less/Login.less";
+
 
 // yup, welcome to react 16
 import createReactClass from "create-react-class";
@@ -55,7 +57,10 @@ if (module.hot) {
 }
 
 console.log("starting");
-
+startConsentCookieSetup()
+//set initial cookie to "Jag godkänner"
+document.hasConsent = true // variable for testing only, will remove
+document.cookie = 'FCCDCF=[null,null,null,["CPeQ1MAPeQ1MAEsABBSVCdCoAP_AAG_AAApAImQOQAAgAIgAUABkADwAQAAkABUAC4AHAAPAAtABkADQAHIAPoAiACKAEmAJgAmgBPACoAFsAL4AfoBAAEIAIwAUIApQBggDKAGaANEAbIA7gB-gEIAIiARMAiwBIgCUgGBAMVAaYBp4DqAOqAdsA_QCBQEagKbAVYAtkBd4C8wGCAMZAfEA_kCJgHxQMQAAgAIgAUABkADwAQAAqABcADgAHgAWgAyABoADkAH0ARABFgCYAJoATwAtgB-gEAAQQAhABGAChAFKAMoAZoA0QBsgDuAH6AQgAiIBEwCLAEiAJSAYEAxUB1AHVAO2AgUBGoCmwFWALZAXeAvMBggDGQHxAAA.d5AACGgAAAA","1~2072.2074.70.89.1097","37B79C06-8922-44EB-84E1-9F51784C10DD"],null,null,[]]'
 window.googletag = window.googletag || { cmd: [] };
 
 // My suggestion would be to set all the ad slots in viewport on the initial

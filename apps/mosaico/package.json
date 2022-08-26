@@ -4,6 +4,7 @@
   "description": "",
   "license": "MIT",
   "dependencies": {
+    "@iabtcf/core": "^1.5.3",
     "@sentry/browser": "^6.19.7",
     "@sentry/tracing": "^6.19.7",
     "@typeform/embed": "^1.27.1",
@@ -13,6 +14,7 @@
     "esbuild": "^0.14.27",
     "esbuild-plugin-less": "^1.1.6",
     "html-to-react": "^1.4.7",
+    "js-cookie": "^3.0.1",
     "parcel": "1.12.3",
     "parcel-bundler": "^1.12.3",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#3d1c24f121e24ad87e5ed8fea9e732122d2abf41",
