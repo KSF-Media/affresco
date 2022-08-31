@@ -12,6 +12,7 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Now as Now
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
@@ -42,6 +43,7 @@ type State =
 component :: Component Props
 component = do
   poller <- Poller.new
+  today <- Now.nowDate
   React.component "Payment" $ \ { user, package, description, offer, method, next } -> React.do
     orderState /\ setOrderState <- useState' $ Right OrderUnknownState
     netsUrl /\ setNetsUrl <- useState' Nothing
@@ -78,7 +80,7 @@ component = do
     useEffect orderState do
       when (orderState == Right OrderCompleted) next
       pure $ pure unit
-    let orderSummary = Summary.render user description offer method
+    let orderSummary = Summary.render today user description offer method
     pure $ case method of
       PaperInvoice -> case paperInvoiceConfirmed of
         false -> renderPaperInvoice orderSummary startPaperInvoicePurchase

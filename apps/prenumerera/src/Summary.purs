@@ -3,19 +3,23 @@ module Prenumerera.Summary where
 import Prelude
 
 import Bottega.Models (PaymentMethod(..))
+import Data.Date (Date)
+import Data.Date as Date
 import Data.Foldable (foldMap, foldr)
 import Data.Maybe (fromMaybe)
 import Data.Nullable (toMaybe)
+import Data.Time.Duration (Days(..))
 import KSF.Helpers (formatEur, paperInvoiceCents)
 import KSF.User (User)
+import KSF.User.Address (effectiveAddress)
 import KSF.User.Cusno as Cusno
 import Prenumerera.Package (PackageOffer)
 import Prenumerera.Package.Description (Description)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
-render :: User -> Description -> PackageOffer -> PaymentMethod -> JSX
-render user description offer method =
+render :: Date -> User -> Description -> PackageOffer -> PaymentMethod -> JSX
+render today user description offer method =
   DOM.div
     { className: "order-summary"
     , children:
@@ -37,10 +41,10 @@ render user description offer method =
                 , foldMap
                   (\address -> prop "Adress"
                                [ address.streetAddress
-                               , fromMaybe "" $ toMaybe address.zipCode
-                               , fromMaybe "" $ toMaybe address.city
+                               , address.zipcode
+                               , fromMaybe "" address.city
                                , address.countryCode
-                               ]) $ toMaybe user.address
+                               ]) $ effectiveAddress user orderDate
                 , prop "Kundnummer" [ Cusno.toString user.cusno ]
                 ]
             }
@@ -64,6 +68,7 @@ render user description offer method =
         ]
     }
   where
+    orderDate = fromMaybe today $ Date.adjust (Days 1.0) today
     header title =
       DOM.div
         { className: "summary-header"
@@ -74,4 +79,3 @@ render user description offer method =
       DOM.p_ $
         [ DOM.span { className: "prop", children: [ DOM.text title ] } ] <>
         foldr (\x xs -> ([ DOM.br {}, DOM.text x ] <> xs)) [] props
-
