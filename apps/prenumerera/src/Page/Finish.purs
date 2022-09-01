@@ -3,6 +3,7 @@ module Prenumerera.Page.Finish where
 import Prelude
 
 import Bottega.Models (PaymentMethod)
+import Effect.Now as Now
 import KSF.User (User)
 import Prenumerera.Package (PackageOffer)
 import Prenumerera.Package.Description (Description)
@@ -21,8 +22,9 @@ type Props =
 
 component :: Component Props
 component = do
+  today <- Now.nowDate
   React.component "Finish" \ { user, description, offer, method } -> do
-    let summary = Summary.render user description offer method
+    let summary = Summary.render today user description offer method
     pure $ render summary
 
 render :: JSX -> JSX
