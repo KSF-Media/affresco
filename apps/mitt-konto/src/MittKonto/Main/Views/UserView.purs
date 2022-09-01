@@ -3,8 +3,10 @@ module MittKonto.Main.UserView where
 import Prelude
 
 import Data.Array (snoc, sortBy, (:))
-import Data.Maybe (Maybe(..))
-import Data.String (toUpper)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Nullable as Nullable
+import Data.String (contains, toUpper)
+import Data.String.Pattern (Pattern(..))
 import MittKonto.Main.UserView.AccountEdit as AccountEdit
 import MittKonto.Main.UserView.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
@@ -14,12 +16,14 @@ import MittKonto.Main.UserView.Subscription (subscription) as Subscription
 import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
 import KSF.Sentry as Sentry
 import KSF.User (User)
+import KSF.User.Cusno as Cusno
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface)
 
 foreign import images :: { subscribe :: String }
+foreign import _encodeURIComponent :: String -> String
 
 -- | User info page with profile info, subscriptions, etc.
 userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> User -> JSX
@@ -82,11 +86,26 @@ userView router { state: { now, news } } logger profileComponent user = React.fr
             [ IconAction.iconAction
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
-                , onClick: IconAction.Href "https://form.jotform.com/221793422462051"
+                , onClick: IconAction.Href $ "https://form.jotform.com/221793422462051"
+                  <> "?kundnummer=" <> Cusno.toString user.cusno
+                  <> "&namn=" <> _encodeURIComponent name
+                  <> (maybe "" (("&epost=" <> _) <<< _encodeURIComponent) email)
+                  <> (maybe "" (("&telefonnummer=" <> _) <<< _encodeURIComponent) $ Nullable.toMaybe user.phone)
                 , router
                 }
             ]
         }
+      where
+        -- Jotform has a prefill decode bug which prevents from using
+        -- emails with plus signs on them.  "%2B" will be interpreted
+        -- as a space, just like "+".  Let's just make the customer
+        -- input it if it happens.
+        email = if contains (Pattern "+") user.email then Nothing else Just user.email
+        name = case Nullable.toMaybe user.firstName, Nullable.toMaybe user.lastName of
+                 Just f, Just l -> f <> " " <> l
+                 Just f, _ -> f
+                 _, Just l -> l
+                 _, _ -> ""
 
     subscribeImage =
       DOM.div
