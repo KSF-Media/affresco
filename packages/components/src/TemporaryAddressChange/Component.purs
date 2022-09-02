@@ -6,6 +6,7 @@ import Control.Alt ((<|>))
 import Data.Array (length)
 import Data.Date (Date, adjust)
 import Data.Date as Date
+import Data.DateTime as DateTime
 import Data.Either (Either(..))
 import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, isJust, maybe)
@@ -21,10 +22,11 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Now as Now
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Grid as Grid
-import KSF.Helpers (formatDateDots)
+import KSF.Helpers (formatDateDots, noon, getCurrentTZOffset)
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
@@ -128,19 +130,31 @@ calcMinEndDate lastDelivery (Just startDate) = do
       span = if diffToLastDelivery > Time.Duration.Days 0.0 then week <> diffToLastDelivery else week
   adjust span startDate
 
+-- If doing temporary address change before 12:00, allow it to start
+-- from next day.  Otherwise, 2 days from now.
+getMinStartDate :: Maybe Date -> Effect (Maybe Date)
+getMinStartDate nextDelivery = do
+  offset <- Time.Duration.negateDuration <$> getCurrentTZOffset
+  localNow <- DateTime.adjust offset <$> Now.nowDateTime
+  case localNow of
+    -- Shouldn't happen
+    Nothing -> pure Nothing
+    Just now -> do
+      let soonestDuration = Time.Duration.Days $ if DateTime.time now < noon then 1.0 else 2.0
+          soonestStart = adjust soonestDuration (DateTime.date now)
+          byNextIssue = max <$> soonestStart <*> nextDelivery
+      pure $ byNextIssue <|> soonestStart
+
 didMount :: Self -> Effect Unit
 didMount self = do
-  -- We set the minimum start date two days ahead because of system issues.
-  -- TODO: This could be set depending on the time of day
-  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) self.props.now
-      byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
-      ongoing = fromMaybe false do
+  minStartDate <- getMinStartDate self.props.nextDelivery
+  let ongoing = fromMaybe false do
         current <- self.props.editing
         start <- toDate current.startDate
         -- No need to check for end, this component shouldn't even show
         -- up then.
         pure $ self.props.now >= start
-  self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow }
+  self.setState _ { minStartDate = minStartDate }
   case self.props.editing of
     Just p -> do
       self.setState _ { streetAddress = toMaybe p.address.streetAddress
@@ -356,7 +370,13 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
 
     submitForm :: Maybe Date -> Maybe Date -> Maybe Date -> Maybe User.PendingAddressChange -> AddressChange -> Effect Unit
     submitForm Nothing (Just startDate') endDate' Nothing addressChangeFormValues = do
-      Aff.launchAff_ do
+      -- Check start date again
+      minStartDate <- getMinStartDate self.props.nextDelivery
+      if not self.state.ongoing && maybe true (startDate' < _) minStartDate
+        then self.setState _ { minStartDate = minStartDate
+                             , startDate = Nothing
+                             }
+        else Aff.launchAff_ do
         validation
           -- Shows validation errors if submit button is pushed with uninitialized values
           (\_ -> liftEffect $ self.setState _

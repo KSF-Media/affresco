@@ -13,10 +13,20 @@ import           Data.Maybe              (fromJust)
 import           Data.String             (Pattern (..))
 import           Data.String             as String
 import           Data.Time               (Time (..))
+import           Data.Time.Duration      (Hours (..))
+import           Effect                  (Effect)
 import           Partial.Unsafe          (unsafePartial)
+
+foreign import getCurrentTZOffset_ :: Effect Int
 
 midnight :: Time
 midnight = unsafePartial $ fromJust $ Time <$> toEnum 0 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
+
+noon :: Time
+noon = unsafePartial $ fromJust $ Time <$> toEnum 12 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
+
+getCurrentTZOffset :: Effect Hours
+getCurrentTZOffset = Hours <<< toNumber <$> getCurrentTZOffset_
 
 formatDate :: Date -> String
 formatDate date = format formatter $ DateTime date midnight
