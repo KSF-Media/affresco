@@ -105,7 +105,7 @@ import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import KSF.User.Login.Facebook.Success as Facebook.Success
 import KSF.User.Login.Google as Google
-import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim, NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim(..), NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
@@ -659,10 +659,11 @@ createDeliveryReclamation
   :: UUID
   -> Subsno
   -> Date
+  -> String
   -> PersonaReExport.DeliveryReclamationClaim
   -> Aff (Either Persona.InvalidDateInput Persona.DeliveryReclamation)
-createDeliveryReclamation uuid subsno date claim = do
-  deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date claim =<< requireToken
+createDeliveryReclamation uuid subsno date doorCode claim = do
+  deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date doorCode claim =<< requireToken
   case deliveryReclamation of
     Right recl -> pure $ Right recl
     Left _ -> do
