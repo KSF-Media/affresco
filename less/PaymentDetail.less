@@ -1,13 +1,39 @@
 .payment-detail--table {
-    table-layout: fixed;
-    width: 100%;
-
+  table-layout: fixed;
+  width: 100%;
 }
 
 .payment-detail--table th {
-    text-align: left;
+  text-align: left;
 }
 
 .payment-detail--container {
-    overflow-x: auto;
+  overflow-x: auto;
+}
+
+@media screen {
+  .payment-detail--print-header {
+    display: none;
+  }
+
+  .payment-detail--print-button {
+    div {
+      background-image: url("../images/print-icon.png");
+      background-size: cover;
+      width: 40px;
+      height: 40px;
+    }
+    overflow: visible;
+    display: block;
+    width: 40px;
+    cursor: pointer;
+    float: right;
+    height: 20px;
+  }
+}
+
+@media @to-medium {
+  .payment-detail--print-button {
+    height: 20px;
+  }
 }
