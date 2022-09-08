@@ -540,6 +540,15 @@ newtype Category = Category
   , url           :: Maybe String
   }
 
+correctionsCategory :: Category
+correctionsCategory = Category
+  { id: "rättelser"
+  , label: CategoryLabel "Rättelser"
+  , type: Feed
+  , subCategories: mempty
+  , url: Nothing
+  }
+
 type Categories = Map CategoryLabel Category
 
 instance categoryDecodeJson :: DecodeJson Category where
