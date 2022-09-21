@@ -22,5 +22,8 @@
   "workspaces": [
     "packages/*",
     "apps/*"
-  ]
+  ],
+  "devDependencies": {
+    "esbuild": "0.14.27"
+  }
 }
