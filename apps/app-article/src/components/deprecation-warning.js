@@ -1,6 +1,6 @@
 import React from "react";
 
-const DepricationWarning = () => {
+const DeprecationWarning = () => {
     const warningstyle = {
         border: "10px solid red",
         background: "white",
@@ -19,4 +19,4 @@ const DepricationWarning = () => {
     )
 }
 
-export default DepricationWarning;
+export default DeprecationWarning;
