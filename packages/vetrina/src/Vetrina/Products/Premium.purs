@@ -20,7 +20,7 @@ hblPremium =
         ]
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
-      { no: 4071
+      { no: 4349
       , id: "HBL_0E1KK"
       , name: "0 E FÖRSTA MÅNADEN"
       , length: 1
