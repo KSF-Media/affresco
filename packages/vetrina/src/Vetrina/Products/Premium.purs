@@ -16,16 +16,16 @@ hblPremium =
       DOM.div_
         [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
         , DOM.br {}
-        , DOM.text "Läs Hufvudstadsbladet för 1€ i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
+        , DOM.text "Läs Hufvudstadsbladet gratis i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
         ]
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
       { no: 4071
-      , id: "1MÅN1 EURO"
-      , name: "FÖRSTA MÅNADEN FÖR 1 EURO"
+      , id: "HBL_0E1KK"
+      , name: "0 E FÖRSTA MÅNADEN"
       , length: 1
       , lengthUnit: Month
-      , priceEur: 1.0
+      , priceEur: 0.0
       }
   , contents:
       [ { title: "Premium"
