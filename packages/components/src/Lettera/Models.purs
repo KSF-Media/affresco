@@ -61,12 +61,19 @@ notFoundArticle :: FullArticle
 notFoundArticle =
   { articleType: ErrorArticle
   , article:
-    { title: "Hoppsan! Sidan eller artikeln hittades inte"
+    { title: "Hoppsan! Vi kan inte hitta sidan eller artikeln du sökte efter."
     , listTitle: Nothing
     , body: []
     , analyticsCategory: Nothing
     , analyticsSection: Nothing
-    , mainImage: Nothing
+    , mainImage: Just
+        { url: notFoundImage
+        , caption: Nothing
+        , thumb: notFoundImage
+        , tinyThumb: notFoundImage
+        , alignment: Nothing
+        , byline: Nothing
+      }
     , tags: []
     , uuid: "notfound"
     , preamble: []
@@ -83,6 +90,9 @@ notFoundArticle =
     , shareUrl: Nothing
     }
   }
+
+notFoundImage :: String
+notFoundImage = "https://cdn.ksfmedia.fi/mosaico/illu-404.svg"
 
 data ArticleType
   = NyhetStor
@@ -528,6 +538,15 @@ newtype Category = Category
   , type          :: CategoryType
   , subCategories :: Array Category
   , url           :: Maybe String
+  }
+
+correctionsCategory :: Category
+correctionsCategory = Category
+  { id: "rättelser"
+  , label: CategoryLabel "Rättelser"
+  , type: Feed
+  , subCategories: mempty
+  , url: Nothing
   }
 
 type Categories = Map CategoryLabel Category
