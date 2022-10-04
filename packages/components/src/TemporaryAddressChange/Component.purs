@@ -46,6 +46,7 @@ import KSF.Tracking as Tracking
 type State =
   { startDate      :: Maybe Date
   , minStartDate   :: Maybe Date
+  , maxStartDate   :: Maybe Date
   , endDate        :: Maybe Date
   , minEndDate     :: Maybe Date
   , streetAddress  :: Maybe String
@@ -103,6 +104,7 @@ initialState :: State
 initialState =
   { startDate: Nothing
   , minStartDate: Nothing
+  , maxStartDate: Nothing
   , endDate: Nothing
   , minEndDate: Nothing
   , streetAddress: Nothing
@@ -154,7 +156,9 @@ didMount self = do
         -- No need to check for end, this component shouldn't even show
         -- up then.
         pure $ self.props.now >= start
-  self.setState _ { minStartDate = minStartDate }
+  self.setState _ { minStartDate = minStartDate
+                  , maxStartDate = adjust (Time.Duration.Days 180.0) self.props.now
+                  }
   case self.props.editing of
     Just p -> do
       self.setState _ { streetAddress = toMaybe p.address.streetAddress
@@ -263,7 +267,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
                       }
         , value: self.state.startDate
         , minDate: self.state.minStartDate
-        , maxDate: Nothing
+        , maxDate: self.state.maxStartDate
         , disabled: false
         , label: "Börjar från"
         , id: "edit-start"
