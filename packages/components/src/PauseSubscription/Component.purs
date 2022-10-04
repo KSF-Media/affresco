@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Data.Date (Date, adjust)
 import Data.Date as Date
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Time.Duration as Time.Duration
 import Data.Tuple (Tuple(..))
@@ -50,6 +50,7 @@ type Props =
 type State =
   { startDate    :: Maybe Date
   , minStartDate :: Maybe Date
+  , maxStartDate :: Maybe Date
   , endDate      :: Maybe Date
   , minEndDate   :: Maybe Date
   , maxEndDate   :: Maybe Date
@@ -66,6 +67,7 @@ initialState :: State
 initialState =
   { startDate: Nothing
   , minStartDate: Nothing
+  , maxStartDate: Nothing
   , endDate: Nothing
   , minEndDate: Nothing
   , maxEndDate: Nothing
@@ -102,6 +104,10 @@ didMount self = do
         Nothing -> false
         Just date -> date <= self.props.now
   self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow
+                  , maxStartDate = adjust (Time.Duration.Days 180.0) $
+                                   if ongoing
+                                   then fromMaybe self.props.now self.props.oldStart
+                                   else self.props.now
                   , startDate = self.props.oldStart
                   , ongoing = ongoing
                   , minEndDate = if ongoing then calcMinEndDate Nothing self.props.oldStart else Nothing
@@ -158,7 +164,7 @@ render self =
         { action: onStartDateChange
         , value: if self.state.ongoing then self.props.oldStart else self.state.startDate
         , minDate: if self.state.ongoing then self.props.oldStart else self.state.minStartDate
-        , maxDate: Nothing
+        , maxDate: self.state.maxStartDate
         , disabled: self.state.ongoing
         , label: "Börjar från"
         , id: "pause-start"
