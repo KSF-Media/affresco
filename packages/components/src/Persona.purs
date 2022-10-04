@@ -321,16 +321,17 @@ createDeliveryReclamation
   :: UUID
   -> Subsno
   -> Date
+  -> String
   -> DeliveryReclamationClaim
   -> UserAuth
   -> Aff DeliveryReclamation
-createDeliveryReclamation uuid (Subsno subsno) date claim auth = do
+createDeliveryReclamation uuid (Subsno subsno) date doorCode claim auth = do
   let dateISO = formatDate date
   let claim'  = show claim
   callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { publicationDate: dateISO, claim: claim' }
+    , unsafeToForeign { publicationDate: dateISO, claim: claim', doorCode }
     ]
     ( authHeaders uuid auth )
 
@@ -539,6 +540,7 @@ type DeliveryReclamation =
   , publicationDate    :: JSDate
   , claim              :: DeliveryReclamationClaim
   , status             :: DeliveryReclamationStatus
+  , doorCode           :: String
   }
 
 data DeliveryReclamationClaim
@@ -551,6 +553,7 @@ instance readDeliveryReclamationClaim :: Read DeliveryReclamationClaim where
       "Extension"   -> pure Extension
       "NewDelivery" -> pure NewDelivery
       _             -> Nothing
+derive instance eqDeliveryReclamationClaim :: Eq DeliveryReclamationClaim
 derive instance genericDeliveryReclamationClaim :: Generic DeliveryReclamationClaim _
 instance readForeignDeliveryReclamationClaim :: ReadForeign DeliveryReclamationClaim where
   readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
