@@ -27,6 +27,7 @@ import ManuallyRelatedArticles from "./components/manually-related-articles";
 import Cookies from "js-cookie";
 import { AndroidView } from "react-device-detect";
 import { Sentry } from "./sentry";
+import DeprecationWarning from "./components/deprecation-warning";
 
 class App extends Component {
   constructor(props) {
@@ -641,6 +642,7 @@ class App extends Component {
 
         <div className={`container-fluid article ${isDarkModeOn() ? "darkMode" : ""} `}>
           <React.Fragment>
+            {!this.state.isLoading && <DeprecationWarning />}
             <Tag tags={this.state.tags} />
             {this.state.category === "Advertorial" ? (
               <div>

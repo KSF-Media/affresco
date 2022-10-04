@@ -5,6 +5,7 @@ import Prelude
 import Data.Foldable (find)
 import Data.Formatter.Number as FormatterN
 import Data.Maybe (Maybe(..), isJust, fromMaybe)
+import Effect (Effect)
 import KSF.Helpers (formatDateDots)
 import KSF.User (Payment)
 import MittKonto.Payment.Types (Props, percentFormatter, formatEuro)
@@ -12,6 +13,9 @@ import React.Basic (JSX)
 import React.Basic.Hooks (type (/\), Component, component, (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
+import React.Basic.DOM.Events (capture_)
+
+foreign import printPage :: Effect Unit
 
 paymentDetail :: Component Props
 paymentDetail = do
@@ -36,7 +40,16 @@ render name payment =
   DOM.div
     { className: "payment-detail--table-container mitt-konto--component-block-content"
     , children:
-        [ DOM.table
+        [ DOM.h2
+            { className: "payment-detail--print-header"
+            , children: [ DOM.text "Faktura" ]
+            }
+        , DOM.div
+            { className: "payment-detail--print-button"
+            , onClick: capture_ printPage
+            , children: [ DOM.div_ [] ]
+            }
+        , DOM.table
             { className: "payment-detail--table"
             , children:
                 [ DOM.tbody_ $ map renderRow
