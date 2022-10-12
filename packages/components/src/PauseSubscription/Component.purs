@@ -2,7 +2,6 @@ module KSF.PauseSubscription.Component where
 
 import Prelude
 
-import Control.Alt ((<|>))
 import Data.Date (Date, adjust)
 import Data.Date as Date
 import Data.Either (Either(..))
@@ -18,7 +17,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (toString) as Subsno
-import KSF.Helpers (formatDateDots)
+import KSF.Helpers (formatDateDots, getMinStartDate)
 import KSF.Grid as Grid
 import KSF.User as User
 import KSF.User.Cusno (Cusno)
@@ -96,14 +95,11 @@ calcMaxEndDate (Just startDate) = do
 
 didMount :: Self -> Effect Unit
 didMount self = do
-  -- We set the minimum start date two days ahead because of system issues.
-  -- TODO: This could be set depending on the time of day
-  let dayAfterTomorrow = adjust (Time.Duration.Days 2.0) self.props.now
-      byNextIssue = max <$> dayAfterTomorrow <*> self.props.nextDelivery
-      ongoing = case self.props.oldStart of
+  minStartDate <- getMinStartDate self.props.nextDelivery
+  let ongoing = case self.props.oldStart of
         Nothing -> false
         Just date -> date <= self.props.now
-  self.setState _ { minStartDate = byNextIssue <|> dayAfterTomorrow
+  self.setState _ { minStartDate = minStartDate
                   , maxStartDate = adjust (Time.Duration.Days 180.0) $
                                    if ongoing
                                    then fromMaybe self.props.now self.props.oldStart
@@ -135,7 +131,7 @@ render self =
   where
     pauseForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm self.state self.props)
+          { onSubmit: handler preventDefault (\_ -> submitForm self.state self.setState self.props)
           , className: "pause-subscription--form"
           , children:
               (case Tuple self.props.oldStart self.props.oldEnd of
@@ -233,12 +229,17 @@ dateInput self { action, value, minDate, maxDate, disabled, label, id, defaultAc
     , id: id <> "--" <> Subsno.toString self.props.subsno
     }
 
-submitForm :: State -> Props -> Effect Unit
+submitForm :: State -> ((State -> State) -> Effect Unit) -> Props -> Effect Unit
 
-submitForm { startDate: Just start, endDate: Just end, ongoing } props@{ userUuid, subsno, oldStart: Just oldStart, oldEnd: Just oldEnd} = do
-  props.onLoading
+submitForm { startDate: Just start, endDate: Just end, ongoing } setState props@{ userUuid, subsno, oldStart: Just oldStart, oldEnd: Just oldEnd} = do
+  -- Check start date again
+  minStartDate <- getMinStartDate props.nextDelivery
   let newStart = if ongoing then oldStart else start
-  Aff.launchAff_ $
+  if not ongoing && maybe true (start < _) minStartDate
+    then setState _ { minStartDate = minStartDate
+                    , startDate = Nothing
+                    }
+    else props.onLoading *> Aff.launchAff_ do
     User.editSubscriptionPause userUuid subsno oldStart oldEnd newStart end >>=
       case _ of
         Right sub -> liftEffect do
@@ -248,9 +249,14 @@ submitForm { startDate: Just start, endDate: Just end, ongoing } props@{ userUui
           props.onError invalidDateInput
           Tracking.editSubscriptionPause props.cusno subsno oldStart oldEnd start end "error: invalid date input"
 
-submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno } = do
-  props.onLoading
-  Aff.launchAff_ $
+submitForm { startDate: Just start, endDate: Just end } setState props@{ userUuid, subsno } = do
+  -- Check start date again
+  minStartDate <- getMinStartDate props.nextDelivery
+  if maybe true (start < _) minStartDate
+    then setState _ { minStartDate = minStartDate
+                    , startDate = Nothing
+                    }
+    else props.onLoading *> Aff.launchAff_ do
     User.pauseSubscription userUuid subsno start end >>=
       case _ of
         Right sub -> liftEffect do
@@ -260,4 +266,4 @@ submitForm { startDate: Just start, endDate: Just end } props@{ userUuid, subsno
           props.onError invalidDateInput
           Tracking.pauseSubscription props.cusno subsno start end "error: invalid date input"
 
-submitForm _ _ = Console.error "Pause subscription dates were not defined."
+submitForm _ _ _ = Console.error "Pause subscription dates were not defined."
