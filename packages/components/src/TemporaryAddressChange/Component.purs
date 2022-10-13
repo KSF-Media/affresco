@@ -6,7 +6,6 @@ import Control.Alt ((<|>))
 import Data.Array (length)
 import Data.Date (Date, adjust)
 import Data.Date as Date
-import Data.DateTime as DateTime
 import Data.Either (Either(..))
 import Data.JSDate (toDate)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, isJust, maybe)
@@ -22,11 +21,10 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Now as Now
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Grid as Grid
-import KSF.Helpers (formatDateDots, noon, getCurrentTZOffset)
+import KSF.Helpers (formatDateDots, getMinStartDate)
 import KSF.InputField as InputField
 import KSF.InputField.Checkbox as InputCheckbox
 import KSF.User as User
@@ -131,21 +129,6 @@ calcMinEndDate lastDelivery (Just startDate) = do
       -- subscription
       span = if diffToLastDelivery > Time.Duration.Days 0.0 then week <> diffToLastDelivery else week
   adjust span startDate
-
--- If doing temporary address change before 12:00, allow it to start
--- from next day.  Otherwise, 2 days from now.
-getMinStartDate :: Maybe Date -> Effect (Maybe Date)
-getMinStartDate nextDelivery = do
-  offset <- Time.Duration.negateDuration <$> getCurrentTZOffset
-  localNow <- DateTime.adjust offset <$> Now.nowDateTime
-  case localNow of
-    -- Shouldn't happen
-    Nothing -> pure Nothing
-    Just now -> do
-      let soonestDuration = Time.Duration.Days $ if DateTime.time now < noon then 1.0 else 2.0
-          soonestStart = adjust soonestDuration (DateTime.date now)
-          byNextIssue = max <$> soonestStart <*> nextDelivery
-      pure $ byNextIssue <|> soonestStart
 
 didMount :: Self -> Effect Unit
 didMount self = do
