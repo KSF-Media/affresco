@@ -6,27 +6,31 @@ import "./index.css";
 import Article from "./components/article";
 import * as serviceWorker from "./serviceWorker";
 if (window.article) {
+  var body = [...window.article.body];
+  body.splice(2, 0, { ad: "MOBMITT" });
+  body.splice(8, 0, { ad: "DIGIHELMOB" });
+
   rehydrateMarks().then(() => {
     ReactDOM.hydrate(
       <Article
-	title={window.article.title}
-	mainImage={window.article.mainImage}
-	body={window.article.body}
-	tags={window.article.tags || []}
-	relatedArticles={window.article.relatedArticles || []}
-	preamble={window.article.preamble}
-	articleType={window.article.articleType}
-	articleTypeDetails={window.article.articleTypeDetails}
-	publishingTime={window.article.publishingTime}
-	updateTime={window.article.updateTime}
-	authors={window.article.authors}
-	premium={window.article.premium}
-	isPreview={window.article.isPreview}
-	mostReadArticles={window.article.mostReadArticles}
-	fontSize={window.article.fontSize}
-	darkModeEnabled={window.article.darkModeEnabled}
-	queryString={window.article.queryString}
-	paper={window.article.paper}
+        articleType={window.article.articleType}
+        articleTypeDetails={window.article.articleTypeDetails}
+        authors={window.article.authors}
+        body={body}
+        darkModeEnabled={window.article.darkModeEnabled}
+        fontSize={window.article.fontSize}
+        isPreview={window.article.isPreview}
+        mainImage={window.article.mainImage}
+        mostReadArticles={window.article.mostReadArticles}
+        paper={window.article.paper}
+        preamble={window.article.preamble}
+        premium={window.article.premium}
+        publishingTime={window.article.publishingTime}
+        queryString={window.article.queryString}
+        relatedArticles={window.article.relatedArticles || []}
+        tags={window.article.tags || []}
+        title={window.article.title}
+        updateTime={window.article.updateTime}
       />,
       document.getElementById("root")
     );
