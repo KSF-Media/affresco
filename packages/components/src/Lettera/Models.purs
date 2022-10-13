@@ -66,6 +66,7 @@ notFoundArticle =
     , body: []
     , analyticsCategory: Nothing
     , analyticsSection: Nothing
+    , charLength: 0
     , mainImage: Just
         { url: notFoundImage
         , caption: Nothing
@@ -202,6 +203,7 @@ type ArticleCommon =
   , authors            :: Array Author
   , analyticsSection   :: Maybe String
   , analyticsCategory  :: Maybe String
+  , charLength         :: Int
   , premium            :: Boolean
   , removeAds          :: Boolean
   , externalScripts    :: Maybe (Array ExternalScript)
