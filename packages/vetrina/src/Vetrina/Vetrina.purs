@@ -25,7 +25,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
 import KSF.Api.Package (PackageId)
-import KSF.Api.Subscription (Subscription, isSubscriptionStateCanceled)
+import KSF.Api.Subscription (Subscription, isSubscriptionCanceled)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
 import KSF.Paper (Paper)
@@ -440,12 +440,16 @@ mkPurchase self@{ state: { logger } } askAccount validForm affUser =
     product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
     paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
-    when (userHasPackage product.id user.subs)
+    let existingSubscriptions = Array.filter (\s -> product.id == s.package.id) user.subs
+        allCanceled = Array.all isCanceled existingSubscriptions
+    when (not allCanceled)
       $ except $ Left SubscriptionExists
 
-    userEntitlements <- ExceptT getUserEntitlements
-    when (isUserEntitled self.props.accessEntitlements userEntitlements)
-      $ except $ Left SubscriptionExists
+    -- Allow new purchases even if entitled if the subscriptions are canceled.
+    when (Array.null existingSubscriptions) do
+      userEntitlements <- ExceptT getUserEntitlements
+      when (isUserEntitled self.props.accessEntitlements userEntitlements)
+        $ except $ Left SubscriptionExists
 
     -- If props.askAccountAlways is true, mkPurchase gets called once
     -- with askAccount true and this triggers, after which
@@ -515,10 +519,8 @@ mkPurchase self@{ state: { logger } } askAccount validForm affUser =
               _ -> Nothing
         }
 
-userHasPackage :: PackageId -> Array Subscription -> Boolean
-userHasPackage packageId = Array.any
-                           (\s -> packageId == s.package.id
-                                  && not (isSubscriptionStateCanceled s.state))
+isCanceled :: Subscription -> Boolean
+isCanceled s = isSubscriptionCanceled s || isJust (toMaybe s.dates.suspend)
 
 isUserEntitled :: Set String -> Set String -> Boolean
 isUserEntitled accessEntitlements userEntitlements =
