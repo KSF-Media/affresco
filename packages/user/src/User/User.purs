@@ -145,7 +145,7 @@ data UserError =
   | ServiceUnavailable
   | UniqueViolation
   | InvalidCusno
-  | NoSSOScript
+  | NoSSOScript --TODO revisit when SSO include has been added
   | UnexpectedError Error
 derive instance genericUserError :: Generic UserError _
 instance showUserError :: Show UserError where
@@ -435,7 +435,7 @@ loginSso maybeInvalidateCache callback = do
   case Nullable.toMaybe config of
     Nothing -> do
       Console.log "sso_lite.js script is not loaded, giving up"
-      liftEffect $ callback $ Left NoSSOScript
+      liftEffect $ callback $ Left NoSSOScript --TODO revisit when SSO include has been added
     Just conf -> liftEffect $ checkSsoSession conf
   where
     checkSsoSession loginConfig = do
