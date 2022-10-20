@@ -53,7 +53,7 @@
       const getUrlParam = () => {
         return new URLSearchParams(window.location.search);
       };
-    
+
       const getBrandValueParam = () => {
         let urlParams = getUrlParam();
         if (urlParams.has("paper")) {
@@ -63,23 +63,19 @@
       };
 
       const brandValueName = getBrandValueParam();
-      let appToTarget = "";
-
-      if (brandValueName == "on") {
-        appToTarget = "appON";
-      } else if (brandValueName == "vn") {
-        appToTarget = "appVN";
-      } else {
-        appToTarget = "appHBL";
-      }
-
+      const networkCode = "21664538223";
       const mobparadContainer = document.getElementById("MOBPARAD");
+
+      function getGamId(name) {
+        console.log("/" + networkCode + "/" + brandValueName + "/" + brandValueName + "_" + name);
+        return "/" + networkCode + "/" + brandValueName + "/" + brandValueName + "_" + name;
+      }
 
       window.googletag = window.googletag || { cmd: [] };
       window.googletag.cmd.push(function () {
         googletag
           .defineSlot(
-            "/21664538223/MOBPARAD",
+            getGamId("mobparad"),
             [
               [300, 100],
               [300, 250],
@@ -92,7 +88,7 @@
           .addService(googletag.pubads());
         googletag
           .defineSlot(
-            "/21664538223/MOBNER",
+            getGamId("mobbox1"),
             [
               [300, 100],
               [300, 250],
@@ -100,13 +96,13 @@
               [300, 431],
               [300, 600],
             ],
-            "MOBNER"
+            "MOBBOX1"
           )
           .addService(googletag.pubads());
         googletag.pubads().enableSingleRequest();
         googletag.pubads().collapseEmptyDivs();
         googletag.enableServices();
-        googletag.pubads().setTargeting("newspaper", appToTarget);
+        // googletag.pubads().setTargeting("Test", "mosaico_test");
       });
     </script>
     <!--End Google Ad-->
@@ -138,7 +134,7 @@
     <script>
       googletag.cmd.push(function () {
         googletag.display("MOBPARAD");
-        googletag.display("MOBNER");
+        googletag.display("MOBBOX1");
       });
     </script>
   </body>
