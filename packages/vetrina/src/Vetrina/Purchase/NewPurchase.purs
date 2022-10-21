@@ -175,7 +175,10 @@ title self =
   where
     headline child =
       DOM.h1
-        { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper
+        { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper <>
+                     case self.props.accountStatus of
+                       LoggedInAccount _ -> " vetrina--headline-existing-account"
+                       _                 -> mempty
         , _data: Object.fromFoldable $ case self.props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -185,7 +188,10 @@ title self =
 description :: Self -> JSX
 description self =
   DOM.p
-    { className: "vetrina--description-text"
+    { className: "vetrina--description-text" <>
+                 case self.props.accountStatus of
+                       LoggedInAccount _ -> " vetrina--description-text-existing-account"
+                       _                 -> mempty
     , children: Array.singleton $
         case self.props.accountStatus of
           NewAccount        -> mempty

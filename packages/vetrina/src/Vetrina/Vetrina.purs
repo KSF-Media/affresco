@@ -24,7 +24,6 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (PackageId)
 import KSF.Api.Subscription (Subscription, isSubscriptionCanceled)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage

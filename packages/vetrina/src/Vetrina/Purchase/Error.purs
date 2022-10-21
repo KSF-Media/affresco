@@ -14,7 +14,7 @@ type Props =
 error :: Props -> JSX
 error props =
   DOM.h1
-    { className: "vetrina--headline"
+    { className: "vetrina--headline vetrina--headline-error"
     , children: [ DOM.text "Något gick fel med ditt inköp!" ]
     }
   <> DOM.div
@@ -23,7 +23,7 @@ error props =
            [ DOM.p
                { className: ""
                , children:
-                   [ DOM.text "Klicka nedan för pröva på nytt eller ta kontakt med vår kundservice på "
+                   [ DOM.text "Klicka nedan för att pröva på nytt eller ta kontakt med vår kundservice på "
                    , DOM.b_ [ DOM.text "pren@ksfmedia.fi" ]
                    , DOM.text "."
                    ]
