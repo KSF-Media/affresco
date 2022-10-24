@@ -73,21 +73,6 @@ let apps =
               }
           }
         , App::{
-          , name = "App article"
-          , buildDir = "app-article"
-          , deployDir = "app-article"
-          , env = toMap
-              { HIDE_LOGIN_LINKS = "true"
-              , PRODUCTION_SENTRY_DSN =
-                  "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
-              }
-          , lockfile = Some "yarn.lock"
-          , caches = Some
-              ''
-              apps/app-article/dist
-              ''
-          }
-        , App::{
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
