@@ -74,6 +74,7 @@ notFoundArticle =
         , tinyThumb: notFoundImage
         , alignment: Nothing
         , byline: Nothing
+        , aoiCropped: Nothing
       }
     , tags: []
     , uuid: "notfound"
@@ -465,6 +466,7 @@ type Image =
   , tinyThumb :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
+  , aoiCropped :: Maybe String
   }
 
 type ArticleTypeDetails =
