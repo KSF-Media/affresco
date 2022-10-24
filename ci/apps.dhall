@@ -73,16 +73,6 @@ let apps =
               }
           }
         , App::{
-          , name = "Corona banner"
-          , buildDir = "corona-banner"
-          , deployDir = "corona-banner"
-          , lockfile = Some "yarn.lock"
-          , caches = Some
-              ''
-              apps/corona-banner/dist
-              ''
-          }
-        , App::{
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
