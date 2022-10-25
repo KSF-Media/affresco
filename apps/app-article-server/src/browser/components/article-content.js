@@ -218,10 +218,6 @@ class Content extends Component {
   }
 
   render() {
-    // console.log("hello there!")
-    // console.log(this.props.body)
-    console.log("body", this.props.body);
-
     return (
       <div className={"row"}>
         <div
