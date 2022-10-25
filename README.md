@@ -11,7 +11,6 @@ Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautifu
 | [Mitt Konto](https://konto.ksfmedia.fi/) | PureScript |
 | [KSF National Elections](https://frontends.ksfmedia.fi/elections/index.html) | JavaScript |
 | [KSF EU Elections](https://frontends.ksfmedia.fi/elections-eu/index.html) | JavaScript |
-| [App Article View](https://app-article.ksfmedia.fi/) | PS/JS |
 | [Scripts](https://frontends.ksfmedia.fi/scripts) | JS |
 | [Vetrina (test)](https://frontends.ksfmedia.fi/vetrina/index.html) | PS |
 | [Podcasts](https://frontends.ksfmedia.fi/podcasts/index.html) | JS |

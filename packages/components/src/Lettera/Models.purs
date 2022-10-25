@@ -66,6 +66,7 @@ notFoundArticle =
     , body: []
     , analyticsCategory: Nothing
     , analyticsSection: Nothing
+    , charLength: 0
     , mainImage: Just
         { url: notFoundImage
         , caption: Nothing
@@ -73,6 +74,7 @@ notFoundArticle =
         , tinyThumb: notFoundImage
         , alignment: Nothing
         , byline: Nothing
+        , aoiCropped: Nothing
       }
     , tags: []
     , uuid: "notfound"
@@ -202,6 +204,7 @@ type ArticleCommon =
   , authors            :: Array Author
   , analyticsSection   :: Maybe String
   , analyticsCategory  :: Maybe String
+  , charLength         :: Int
   , premium            :: Boolean
   , removeAds          :: Boolean
   , externalScripts    :: Maybe (Array ExternalScript)
@@ -463,6 +466,7 @@ type Image =
   , tinyThumb :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
+  , aoiCropped :: Maybe String
   }
 
 type ArticleTypeDetails =
