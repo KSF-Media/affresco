@@ -50,9 +50,9 @@ class Content extends Component {
 
   renderAd(block, key) {
     if (block.ad === "MOBMITT" && this.props.articleType !== "Advertorial") {
-      return <p>MOBMITT ad</p>;
+      return <p key={key} className="ksf-app-ad" id="MOBMITT"></p>;
     } else if (this.props.articleType !== "Advertorial") {
-      return <p>DIGIHELMOB ad</p>;
+      return <p key={key} className="ksf-app-ad" id="DIGIHELMOB"></p>;
     } else {
       console.log("No ads shown in advertorials.");
     }
@@ -235,7 +235,7 @@ class Content extends Component {
                 return this.conditionalRendering(block, key);
               })
             : ""}
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBNER"></div>}
+          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBBOX1"></div>}
         </div>
       </div>
     );

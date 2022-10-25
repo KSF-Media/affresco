@@ -7,8 +7,47 @@ import Article from "./components/article";
 import * as serviceWorker from "./serviceWorker";
 if (window.article) {
   var body = [...window.article.body];
-  body.splice(2, 0, { ad: "MOBMITT" });
-  body.splice(8, 0, { ad: "DIGIHELMOB" });
+  var bodyElems = body.map((elem) => Object.keys(elem));
+  var elemsCount = bodyElems.length;
+
+  var ad1RoughPosition;
+  var ad2RoughPosition;
+
+  if (elemsCount > 15) {
+    ad1RoughPosition = Math.floor(elemsCount / 3);
+    ad2RoughPosition = Math.floor(elemsCount / 1.5);
+  } else if (elemsCount > 6) {
+    ad1RoughPosition = Math.floor(elemsCount / 2);
+  }
+
+  function findExactPositionForAd(roughPosition) {
+    var position;
+    for (let i = roughPosition; i < elemsCount; i++) {
+      if (canAdGoHere(i)) {
+        position = i;
+        break;
+      }
+    }
+    return position;
+  }
+
+  function canAdGoHere(i) {
+    if (bodyElems[i - 1] == "html" && bodyElems[i] == "html") {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  var ad1Position = findExactPositionForAd(ad1RoughPosition);
+  var ad2Position = findExactPositionForAd(ad2RoughPosition);
+
+  if (ad1Position && ad2Position) {
+    body.splice(ad1Position, 0, { ad: "MOBMITT" });
+    body.splice(ad2Position, 0, { ad: "DIGIHELMOB" });
+  } else if (ad1Position) {
+    body.splice(ad1Position, 0, { ad: "MOBMITT" });
+  }
 
   rehydrateMarks().then(() => {
     ReactDOM.hydrate(
