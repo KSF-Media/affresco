@@ -218,7 +218,7 @@ class Content extends Component {
                 return this.conditionalRendering(block, key);
               })
             : ""}
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBNER"></div>}
+          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBBOX1"></div>}
         </div>
       </div>
     );
