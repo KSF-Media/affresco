@@ -53,7 +53,7 @@
       const getUrlParam = () => {
         return new URLSearchParams(window.location.search);
       };
-    
+
       const getBrandValueParam = () => {
         let urlParams = getUrlParam();
         if (urlParams.has("paper")) {
@@ -73,8 +73,6 @@
         appToTarget = "appHBL";
       }
 
-      const mobparadContainer = document.getElementById("MOBPARAD");
-
       window.googletag = window.googletag || { cmd: [] };
       window.googletag.cmd.push(function () {
         googletag
@@ -90,9 +88,10 @@
             "MOBPARAD"
           )
           .addService(googletag.pubads());
+
         googletag
           .defineSlot(
-            "/21664538223/MOBNER",
+            "/21664538223/MOBMITT",
             [
               [300, 100],
               [300, 250],
@@ -100,12 +99,45 @@
               [300, 431],
               [300, 600],
             ],
-            "MOBNER"
+            "MOBMITT"
           )
           .addService(googletag.pubads());
+
+        googletag
+          .defineSlot(
+            "/21664538223/DIGIHELMOB",
+            [
+              [300, 100],
+              [300, 250],
+              [300, 300],
+              [300, 431],
+              [300, 600],
+            ],
+            "DIGIHELMOB"
+          )
+          .addService(googletag.pubads());
+
+        googletag
+          .defineSlot(
+            "/21664538223/MOBBOX1",
+            [
+              [300, 100],
+              [300, 250],
+              [300, 300],
+              [300, 431],
+              [300, 600],
+            ],
+            "MOBBOX1"
+          )
+          .addService(googletag.pubads());
+
         googletag.pubads().enableSingleRequest();
         googletag.pubads().collapseEmptyDivs();
         googletag.enableServices();
+
+        // Testing
+        // googletag.pubads().setTargeting("Test", "mosaico_test");
+        // Production
         googletag.pubads().setTargeting("newspaper", appToTarget);
       });
     </script>
@@ -138,7 +170,7 @@
     <script>
       googletag.cmd.push(function () {
         googletag.display("MOBPARAD");
-        googletag.display("MOBNER");
+        googletag.display("MOBBOX1");
       });
     </script>
   </body>

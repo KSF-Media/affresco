@@ -13,6 +13,9 @@ class Content extends Component {
   conditionalRendering(block, key) {
     let blockType = Object.keys(block)[0].toLowerCase() || null;
     if (blockType != null) {
+      if (blockType === "ad") {
+        return this.renderAd(block, key);
+      }
       if (blockType === "paragraph") {
         return this.renderParagraph(block, key);
       } else if (blockType === "headline") {
@@ -42,6 +45,16 @@ class Content extends Component {
       }
     } else {
       console.log("couldn't render " + { blockType });
+    }
+  }
+
+  renderAd(block, key) {
+    if (block.ad === "MOBMITT" && this.props.articleType !== "Advertorial") {
+      return <p key={key} className="ksf-app-ad" id="MOBMITT"></p>;
+    } else if (this.props.articleType !== "Advertorial") {
+      return <p key={key} className="ksf-app-ad" id="DIGIHELMOB"></p>;
+    } else {
+      console.log("No ads shown in advertorials.");
     }
   }
 
@@ -218,7 +231,7 @@ class Content extends Component {
                 return this.conditionalRendering(block, key);
               })
             : ""}
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBNER"></div>}
+          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBBOX1"></div>}
         </div>
       </div>
     );
