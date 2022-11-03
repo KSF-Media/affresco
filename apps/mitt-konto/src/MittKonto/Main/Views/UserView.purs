@@ -2,11 +2,15 @@ module MittKonto.Main.UserView where
 
 import Prelude
 
-import Data.Array (snoc, sortBy, (:))
-import Data.Maybe (Maybe(..), maybe)
+import Data.Array (concat, concatMap, snoc, sortBy, (:))
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
+import Data.Map as Map
 import Data.Nullable as Nullable
 import Data.String (contains, toUpper)
 import Data.String.Pattern (Pattern(..))
+import Data.Tuple (uncurry)
+import Effect (Effect)
+import Effect.Aff (Aff, launchAff_)
 import MittKonto.Main.UserView.AccountEdit as AccountEdit
 import MittKonto.Main.UserView.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
@@ -14,11 +18,16 @@ import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView.Subscription (subscription) as Subscription
 import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
+import KSF.Paper as Paper
 import KSF.Sentry as Sentry
 import KSF.User (User)
+import KSF.User as User
 import KSF.User.Cusno as Cusno
+import Persona (Newsletter, NewsletterSubscription)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler)
+import React.Basic.DOM.Events (targetValue, capture_)
 import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface)
 
@@ -26,10 +35,10 @@ foreign import images :: { subscribe :: String }
 foreign import _encodeURIComponent :: String -> String
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> User -> JSX
-userView router { state: { now, news } } logger profileComponent user = React.fragment
+userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> (Array Newsletter -> Aff Unit) -> User -> JSX
+userView router { state: { now, news, activeUserNewsletters } } logger profileComponent updateNewsletters user = React.fragment
   [ Helpers.classy DOM.div "mitt-konto--column mitt-konto--profile" [ newsView news, profileView ]
-  , Helpers.classy DOM.div "mitt-konto--column" [ subscriptionsView ]
+  , Helpers.classy DOM.div "mitt-konto--column" [ subscriptionsView, mailinglistView ]
   ]
   where
     componentHeader title =
@@ -146,6 +155,59 @@ userView router { state: { now, news } } logger profileComponent user = React.fr
             , href
             , target: "_blank"
             }
+
+    mailinglistView =
+      componentBlock "Mina nyhetsbrev:" $ [ componentBlockContent contents ]
+      where
+        newsletterCheckbox :: (NewsletterSubscription -> Effect Unit) -> NewsletterSubscription -> JSX
+        newsletterCheckbox updateSubs newsletter =
+          DOM.dd_
+            [ DOM.label_
+                [ DOM.input
+                    { type: "checkbox"
+                    , checked: newsletter.subscribed
+                    , onChange: handler targetValue \_ -> updateSubs (newsletter {subscribed = not newsletter.subscribed} )
+                    }
+                , DOM.text $ newsletter.listName ]]
+
+        replaceMatching :: forall f a b. Functor f => Eq b => (a -> b) -> a -> f a -> f a
+        replaceMatching fn replacement arr = map (\existing -> if fn existing == fn replacement then replacement else existing) arr
+
+        paperSection :: Newsletter -> (Newsletter -> Effect Unit) -> Array JSX
+        paperSection paperNewsletters updateNewsletter = concat [
+                  [ DOM.dt_ [DOM.text $ Paper.paperName paperNewsletters.paper, legalLink paperNewsletters.paper]]
+                  , concatMap
+                      (uncurry (\categoryId newsletters ->
+                         map (newsletterCheckbox
+                              (\replacement ->
+                                let subscriptions = replaceMatching _.id replacement newsletters
+                                    newSubs = Map.insert categoryId subscriptions paperNewsletters.subscriptions
+                                in updateNewsletter $ paperNewsletters {subscriptions = newSubs})) newsletters))
+
+                      (Map.toUnfoldable paperNewsletters.subscriptions)]
+
+        contents = DOM.div_ [checkboxes, Elements.break, acceptChangesButton]
+        checkboxes = case activeUserNewsletters of
+          Nothing -> mempty
+          Just allNewsletters -> DOM.dl_ $ concatMap (\paper -> paperSection paper (\replacement ->
+            let replaced = replaceMatching _.listId replacement allNewsletters
+            in launchAff_ $ updateNewsletters replaced
+           ) ) allNewsletters
+        link href = DOM.a { children: [DOM.text " (bruksvillkor)"], href, target: "_blank" }
+        legalLink :: Paper.Paper -> JSX
+        legalLink Paper.HBL = link "https://www.hbl.fi/bruksvillkor"
+        legalLink Paper.VN = link "https://www.vastranyland.fi/bruksvillkor"
+        legalLink Paper.ON = link "https://www.ostnyland.fi/bruksvillkor"
+        legalLink _ = legalLink Paper.HBL
+        acceptChangesButton =
+          DOM.div_
+            [ DOM.text "Päivitä tilaukset nappulasta. Nappulaa painamalla hyväksyt KSF:n ehdot."
+            , DOM.br {}
+            , DOM.button
+                { onClick: capture_ $ launchAff_ $ void $ User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
+                , children: [DOM.text "Nappula"]
+                }
+            ]
 
     newsView Nothing = mempty
     newsView (Just n) =

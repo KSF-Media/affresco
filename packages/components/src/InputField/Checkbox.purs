@@ -75,7 +75,7 @@ inputCheckbox props = React.make component
 render :: Self -> JSX
 render { props } =
   DOM.div
-    { className: "input-chekcbox--checkbox-container" <>
+    { className: "input-checkbox--checkbox-container" <>
         if isNothing props.label && isNothing props.labelJSX then " input-field--no-label" else ""
     , children:
         -- The final order of the children is defined in css!
