@@ -44,7 +44,6 @@ module KSF.User
   , registerCreditCard
   , registerCreditCardFromExisting
   , getCreditCardRegister
-  , updateCreditCardSubscriptions
   , getPackages
   , getUserEntitlements
   , getUserEntitlementsLoadToken
@@ -56,7 +55,7 @@ where
 import Prelude
 
 import Bottega (BottegaError(..))
-import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, registerCreditCardFromExisting, getCreditCardRegister, updateCreditCardSubscriptions, InsufficientAccount) as Bottega
+import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, registerCreditCardFromExisting, getCreditCardRegister, InsufficientAccount) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
@@ -725,9 +724,6 @@ registerCreditCardFromExisting creditCardId = callBottega $ \tokens -> Bottega.r
 
 getCreditCardRegister :: Bottega.CreditCardId -> Bottega.CreditCardRegisterNumber ->  Aff (Either BottegaError Bottega.CreditCardRegister)
 getCreditCardRegister creditCardId creditCardRegisterNumber = callBottega $ \tokens -> Bottega.getCreditCardRegister tokens creditCardId creditCardRegisterNumber
-
-updateCreditCardSubscriptions :: Bottega.CreditCardId -> Bottega.CreditCardId -> Aff (Either BottegaError Unit)
-updateCreditCardSubscriptions oldCreditCardId newCreditCardId = callBottega $ \tokens -> Bottega.updateCreditCardSubscriptions tokens oldCreditCardId newCreditCardId
 
 
 callBottega :: forall a. (UserAuth -> Aff a) -> Aff (Either BottegaError a)
