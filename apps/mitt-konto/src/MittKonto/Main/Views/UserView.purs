@@ -2,7 +2,7 @@ module MittKonto.Main.UserView where
 
 import Prelude
 
-import Data.Array (concat, concatMap, snoc, sortBy, (:))
+import Data.Array (concatMap, snoc, sortBy, (:))
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Map as Map
 import Data.Nullable as Nullable
@@ -23,6 +23,7 @@ import KSF.Sentry as Sentry
 import KSF.User (User)
 import KSF.User as User
 import KSF.User.Cusno as Cusno
+import KSF.Spinner as Spinner
 import Persona (Newsletter, NewsletterSubscription)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -174,31 +175,52 @@ userView router { state: { now, news, activeUserNewsletters } } logger profileCo
         replaceMatching fn replacement arr = map (\existing -> if fn existing == fn replacement then replacement else existing) arr
 
         paperSection :: Newsletter -> (Newsletter -> Effect Unit) -> Array JSX
-        paperSection paperNewsletters updateNewsletter = concat [
-                  [ DOM.dt_ [DOM.text $ Paper.paperName paperNewsletters.paper, legalLink paperNewsletters.paper]]
-                  , concatMap
-                      (uncurry (\categoryId newsletters ->
-                         map (newsletterCheckbox
-                              (\replacement ->
-                                let subscriptions = replaceMatching _.id replacement newsletters
-                                    newSubs = Map.insert categoryId subscriptions paperNewsletters.subscriptions
-                                in updateNewsletter $ paperNewsletters {subscriptions = newSubs})) newsletters))
+        paperSection paperNewsletters updateNewsletter =
+          DOM.dt_
+            [ DOM.text $ Paper.paperName paperNewsletters.paper
+            , legalLink paperNewsletters.paper
+            ]
+          : concatMap
+              (uncurry
+                (\categoryId newsletters ->
+                  map (newsletterCheckbox
+                        (\replacement ->
+                          let subscriptions = replaceMatching _.id replacement newsletters
+                              newSubs = Map.insert categoryId subscriptions paperNewsletters.subscriptions
+                          in updateNewsletter $ paperNewsletters {subscriptions = newSubs})) newsletters))
+              (Map.toUnfoldable paperNewsletters.subscriptions)
 
-                      (Map.toUnfoldable paperNewsletters.subscriptions)]
+        contents :: JSX
+        contents = case activeUserNewsletters of
+          Nothing -> Spinner.loadingSpinner
+          Just allNewsletters ->
+            DOM.div_
+              [ checkboxes allNewsletters
+              , Elements.break
+              , acceptChangesButton
+              ]
 
-        contents = DOM.div_ [checkboxes, Elements.break, acceptChangesButton]
-        checkboxes = case activeUserNewsletters of
-          Nothing -> mempty
-          Just allNewsletters -> DOM.dl_ $ concatMap (\paper -> paperSection paper (\replacement ->
-            let replaced = replaceMatching _.listId replacement allNewsletters
-            in launchAff_ $ updateNewsletters replaced
-           ) ) allNewsletters
+        checkboxes :: Array Newsletter -> JSX
+        checkboxes allNewsletters =
+          DOM.dl_ $
+            concatMap
+              (\paper -> paperSection paper (\replacement ->
+               let replaced = replaceMatching _.listId replacement allNewsletters
+               in launchAff_ $ updateNewsletters replaced
+              ))
+            allNewsletters
+
+        link :: String -> JSX
         link href = DOM.a { children: [DOM.text " (bruksvillkor)"], href, target: "_blank" }
+
         legalLink :: Paper.Paper -> JSX
-        legalLink Paper.HBL = link "https://www.hbl.fi/bruksvillkor"
-        legalLink Paper.VN = link "https://www.vastranyland.fi/bruksvillkor"
-        legalLink Paper.ON = link "https://www.ostnyland.fi/bruksvillkor"
-        legalLink _ = legalLink Paper.HBL
+        legalLink paper = case paper of
+          Paper.HBL -> link "https://www.hbl.fi/bruksvillkor"
+          Paper.VN -> link "https://www.vastranyland.fi/bruksvillkor"
+          Paper.ON -> link "https://www.ostnyland.fi/bruksvillkor"
+          _ -> legalLink Paper.HBL
+
+        acceptChangesButton :: JSX
         acceptChangesButton =
           DOM.div_
             [ DOM.text "Päivitä tilaukset nappulasta. Nappulaa painamalla hyväksyt KSF:n ehdot."
