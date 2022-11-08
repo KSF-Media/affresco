@@ -406,7 +406,7 @@ orderErrorMessage :: OrderFailure -> String
 orderErrorMessage failure =
   case failure of
     AuthenticationError -> "Kombinationen av e-postadress och lösenord finns inte"
-    _                   -> "Något gick fel. Vänligen försök om en stund igen."
+    _                   -> "Något gick fel. Vänligen försök igen om en stund."
 
 -- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
 mkPurchaseWithNewAccount :: Self -> NewPurchase.NewAccountForm -> Effect Unit

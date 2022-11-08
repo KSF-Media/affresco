@@ -177,8 +177,8 @@ title self =
       DOM.h1
         { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper <>
                      case self.props.accountStatus of
-                       LoggedInAccount _ -> " vetrina--headline-existing-account"
-                       _                 -> mempty
+                       NewAccount -> mempty
+                       _          -> " vetrina--headline-existing-account"
         , _data: Object.fromFoldable $ case self.props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -448,7 +448,7 @@ emailInput self accountStatus =
              { type_: InputField.Email
              , label: Just "E-postadress"
              , name: "emailAddress"
-             , placeholder: "E-postadress"
+             , placeholder: "Fyll i din e-postadress"
              , onChange: onChange
              , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress emailValue self.state.serverErrors
              , value: emailValue
@@ -483,7 +483,7 @@ passwordInput self =
     , children:
         [ InputField.inputField
             { type_: InputField.Password
-            , placeholder: "Lösenord"
+            , placeholder: "Fyll i ditt lösenord"
             , label: Just "Lösenord"
             , name: "password"
             , value: self.state.existingAccountForm.password
@@ -502,9 +502,9 @@ acceptTermsCheckbox =
       label =
         DOM.span_ $
           [ DOM.text "Jag godkänner KSF Medias " ]
-          <> mkLink "" "https://www.hbl.fi/bruksvillkor/#terms" "användarvillkor"
+          <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "användarvillkor"
           <> [ DOM.text " och bekräftar att jag har läst och förstått " ]
-          <> mkLink "" "https://www.hbl.fi/bruksvillkor/#privacy" "integritets-policyn"
+          <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "integritets-policyn"
 
   in DOM.div
     { className: "vetrina--checkbox-container"

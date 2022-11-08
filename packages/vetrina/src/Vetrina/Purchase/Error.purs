@@ -15,7 +15,7 @@ error :: Props -> JSX
 error props =
   DOM.h1
     { className: "vetrina--headline vetrina--headline-error"
-    , children: [ DOM.text "Något gick fel med ditt inköp!" ]
+    , children: [ DOM.text "Oj, något gick fel med ditt inköp!" ]
     }
   <> DOM.div
        { className: "vetrina--description-text"
