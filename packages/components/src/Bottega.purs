@@ -169,10 +169,3 @@ getCreditCardRegister { userId, authToken } creditCardId creditCardRegisterNumbe
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
-
-updateCreditCardSubscriptions :: UserAuth -> CreditCardId -> CreditCardId -> Aff Unit
-updateCreditCardSubscriptions { userId, authToken } oldCreditCardId newCreditCardId =
-  callApi paymentMethodsApi "paymentMethodCreditCardIdSubscriptionPut" [ unsafeToForeign oldCreditCardId, unsafeToForeign newCreditCardId ] { authorization, authUser }
-  where
-    authorization = oauthToken authToken
-    authUser = unsafeToForeign userId

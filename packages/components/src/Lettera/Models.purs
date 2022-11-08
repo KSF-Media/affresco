@@ -74,6 +74,7 @@ notFoundArticle =
         , tinyThumb: notFoundImage
         , alignment: Nothing
         , byline: Nothing
+        , aoiCropped: Nothing
       }
     , tags: []
     , uuid: "notfound"
@@ -465,6 +466,7 @@ type Image =
   , tinyThumb :: String
   , alignment :: Maybe String
   , byline    :: Maybe String
+  , aoiCropped :: Maybe String
   }
 
 type ArticleTypeDetails =
@@ -587,7 +589,7 @@ uriComponentToTag :: String -> Tag
 uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "-") (String.Replacement " ")
 
 tagToURIComponent :: Tag -> String
-tagToURIComponent = String.toLower <<< String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
+tagToURIComponent = String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
 
 instance eqTag :: Eq Tag where
   eq (Tag a) (Tag b) = String.toLower a == String.toLower b

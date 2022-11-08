@@ -6,27 +6,70 @@ import "./index.css";
 import Article from "./components/article";
 import * as serviceWorker from "./serviceWorker";
 if (window.article) {
+  var body = [...window.article.body];
+  var bodyElems = body.map((elem) => Object.keys(elem));
+  var elemsCount = bodyElems.length;
+
+  var ad1RoughPosition;
+  var ad2RoughPosition;
+
+  if (elemsCount > 15) {
+    ad1RoughPosition = Math.floor(elemsCount / 3);
+    ad2RoughPosition = Math.floor(elemsCount / 1.5);
+  } else if (elemsCount > 6) {
+    ad1RoughPosition = Math.floor(elemsCount / 2);
+  }
+
+  function findExactPositionForAd(roughPosition) {
+    var position;
+    for (let i = roughPosition; i < elemsCount; i++) {
+      if (canAdGoHere(i)) {
+        position = i;
+        break;
+      }
+    }
+    return position;
+  }
+
+  function canAdGoHere(i) {
+    if (bodyElems[i - 1] == "html" && bodyElems[i] == "html") {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  var ad1Position = findExactPositionForAd(ad1RoughPosition);
+  var ad2Position = findExactPositionForAd(ad2RoughPosition);
+
+  if (ad1Position && ad2Position) {
+    body.splice(ad1Position, 0, { ad: "MOBMITT" });
+    body.splice(ad2Position, 0, { ad: "DIGIHELMOB" });
+  } else if (ad1Position) {
+    body.splice(ad1Position, 0, { ad: "MOBMITT" });
+  }
+
   rehydrateMarks().then(() => {
     ReactDOM.hydrate(
       <Article
-	title={window.article.title}
-	mainImage={window.article.mainImage}
-	body={window.article.body}
-	tags={window.article.tags || []}
-	relatedArticles={window.article.relatedArticles || []}
-	preamble={window.article.preamble}
-	articleType={window.article.articleType}
-	articleTypeDetails={window.article.articleTypeDetails}
-	publishingTime={window.article.publishingTime}
-	updateTime={window.article.updateTime}
-	authors={window.article.authors}
-	premium={window.article.premium}
-	isPreview={window.article.isPreview}
-	mostReadArticles={window.article.mostReadArticles}
-	fontSize={window.article.fontSize}
-	darkModeEnabled={window.article.darkModeEnabled}
-	queryString={window.article.queryString}
-	paper={window.article.paper}
+        articleType={window.article.articleType}
+        articleTypeDetails={window.article.articleTypeDetails}
+        authors={window.article.authors}
+        body={body}
+        darkModeEnabled={window.article.darkModeEnabled}
+        fontSize={window.article.fontSize}
+        isPreview={window.article.isPreview}
+        mainImage={window.article.mainImage}
+        mostReadArticles={window.article.mostReadArticles}
+        paper={window.article.paper}
+        preamble={window.article.preamble}
+        premium={window.article.premium}
+        publishingTime={window.article.publishingTime}
+        queryString={window.article.queryString}
+        relatedArticles={window.article.relatedArticles || []}
+        tags={window.article.tags || []}
+        title={window.article.title}
+        updateTime={window.article.updateTime}
       />,
       document.getElementById("root")
     );
