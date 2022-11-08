@@ -24,7 +24,6 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error, message)
 import KSF.Api (InvalidateCache(..))
-import KSF.Api.Package (PackageId)
 import KSF.Api.Subscription (Subscription, isSubscriptionCanceled)
 import KSF.JSError as Error
 import KSF.LocalStorage as LocalStorage
@@ -407,7 +406,7 @@ orderErrorMessage :: OrderFailure -> String
 orderErrorMessage failure =
   case failure of
     AuthenticationError -> "Kombinationen av e-postadress och lösenord finns inte"
-    _                   -> "Något gick fel. Vänligen försök om en stund igen."
+    _                   -> "Något gick fel. Vänligen försök igen om en stund."
 
 -- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
 mkPurchaseWithNewAccount :: Self -> NewPurchase.NewAccountForm -> Effect Unit
