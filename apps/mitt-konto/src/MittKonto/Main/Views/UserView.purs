@@ -194,11 +194,14 @@ userView router { state: { now, news, activeUserNewsletters } } logger profileCo
         contents = case activeUserNewsletters of
           Nothing -> Spinner.loadingSpinner
           Just allNewsletters ->
-            DOM.div_
-              [ checkboxes allNewsletters
-              , Elements.break
-              , acceptChangesButton
-              ]
+            DOM.div
+              { className: "mitt-konto--newsletters"
+              , children:
+                [ checkboxes allNewsletters
+                , Elements.break
+                , acceptChangesButton
+                ]
+              }
 
         checkboxes :: Array Newsletter -> JSX
         checkboxes allNewsletters =
@@ -226,7 +229,8 @@ userView router { state: { now, news, activeUserNewsletters } } logger profileCo
             [ DOM.text "Päivitä tilaukset nappulasta. Nappulaa painamalla hyväksyt KSF:n ehdot."
             , DOM.br {}
             , DOM.button
-                { onClick: capture_ $ launchAff_ $ void $ User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
+                { className: "button-green newsletters--update-submit"
+                , onClick: capture_ $ launchAff_ $ void $ User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
                 , children: [DOM.text "Nappula"]
                 }
             ]
