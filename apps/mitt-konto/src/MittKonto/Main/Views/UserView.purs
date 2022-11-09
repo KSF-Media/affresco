@@ -226,12 +226,12 @@ userView router { state: { now, news, activeUserNewsletters } } logger profileCo
         acceptChangesButton :: JSX
         acceptChangesButton =
           DOM.div_
-            [ DOM.text "Päivitä tilaukset nappulasta. Nappulaa painamalla hyväksyt KSF:n ehdot."
+            [ DOM.text "Hantera dina nyhetsbrev genom att kryssa för de nyhetsbrev du vill få och tryck på Spara. Genom att beställa godkänner du KSF Medias bruksvillkor."
             , DOM.br {}
             , DOM.button
                 { className: "button-green newsletters--update-submit"
                 , onClick: capture_ $ launchAff_ $ void $ User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
-                , children: [DOM.text "Nappula"]
+                , children: [DOM.text "Spara"]
                 }
             ]
 
