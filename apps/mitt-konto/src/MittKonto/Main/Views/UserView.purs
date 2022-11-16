@@ -172,17 +172,17 @@ userView router { state: { now, news, activeUserNewsletters, newslettersUpdated 
             Types.UpdateFailed -> DOM.p_ [ DOM.text "Something failed when updating newsletter subscriptions." ]
 
         contents :: JSX
-        contents = case activeUserNewsletters of
-          Nothing -> loadingSpinner
-          Just allNewsletters ->
-            DOM.div
-              { className: "mitt-konto--newsletters"
-              , children:
-                [ checkboxes allNewsletters
-                , Elements.break
-                , acceptChangesButton
-                ]
-              }
+        contents =
+          DOM.div
+            { className: "mitt-konto--newsletters"
+            , children: case activeUserNewsletters of
+                Nothing -> [ loadingSpinner ]
+                Just allNewsletters ->
+                  [ checkboxes allNewsletters
+                  , Elements.break
+                  , acceptChangesButton
+                  ]
+            }
 
         newsletterCheckbox :: (NewsletterSubscription -> Effect Unit) -> NewsletterSubscription -> JSX
         newsletterCheckbox updateSubs newsletter =
