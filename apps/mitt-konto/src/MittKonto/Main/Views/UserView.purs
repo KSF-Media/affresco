@@ -168,8 +168,8 @@ userView router { state: { now, news, activeUserNewsletters, newslettersUpdated 
         updateResultMessage = case newslettersUpdated of
             Types.NotUpdated -> mempty
             Types.Updating -> mempty
-            Types.Updated -> DOM.p_ [ DOM.text "Successfully updated newsletter subscriptions." ]
-            Types.UpdateFailed -> DOM.p_ [ DOM.text "Something failed when updating newsletter subscriptions." ]
+            Types.Updated -> DOM.p_ [ DOM.text "Uppdateringen av prenumerationen på nyhetsbrevet lyckades." ]
+            Types.UpdateFailed -> DOM.p_ [ DOM.text "Något gick fel med uppdateringen av prenumerationen på nyhetsbrevet." ]
 
         contents :: JSX
         contents =
