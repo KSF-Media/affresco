@@ -13,11 +13,15 @@ import Persona (Newsletter)
 import KSF.User.Login as Login
 import React.Basic (JSX)
 
+data NewsletterUpdateState = NotUpdated | Updating | Updated | UpdateFailed
+derive instance eqNewsletterUpdateState :: Eq NewsletterUpdateState
+
 type State =
   { paper :: Paper
   , adminMode :: Boolean
   , activeUser :: Maybe User
   , activeUserNewsletters :: Maybe (Array Newsletter)
+  , newslettersUpdated :: NewsletterUpdateState
   , loading :: Maybe Spinner.Loading
   , showWelcome :: Boolean
   , alert :: Maybe Alert

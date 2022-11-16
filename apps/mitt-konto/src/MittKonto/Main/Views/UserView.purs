@@ -3,6 +3,7 @@ module MittKonto.Main.UserView where
 import Prelude
 
 import Data.Array (concatMap, snoc, sortBy, (:))
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Map as Map
 import Data.Nullable as Nullable
@@ -10,20 +11,21 @@ import Data.String (contains, toUpper)
 import Data.String.Pattern (Pattern(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
 import MittKonto.Main.UserView.AccountEdit as AccountEdit
 import MittKonto.Main.UserView.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView.Subscription (subscription) as Subscription
+import KSF.AsyncWrapper (loadingSpinner)
 import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
 import KSF.Paper as Paper
 import KSF.Sentry as Sentry
 import KSF.User (User)
 import KSF.User as User
 import KSF.User.Cusno as Cusno
-import KSF.Spinner as Spinner
 import Persona (Newsletter, NewsletterSubscription)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -36,12 +38,14 @@ foreign import images :: { subscribe :: String }
 foreign import _encodeURIComponent :: String -> String
 
 -- | User info page with profile info, subscriptions, etc.
-userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> (Array Newsletter -> Aff Unit) -> User -> JSX
-userView router { state: { now, news, activeUserNewsletters } } logger profileComponent updateNewsletters user = React.fragment
+userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> ((Types.State -> Types.State) -> Effect Unit) -> User -> JSX
+userView router { state: { now, news, activeUserNewsletters, newslettersUpdated } } logger profileComponent setState user = React.fragment
   [ Helpers.classy DOM.div "mitt-konto--column mitt-konto--profile" [ newsView news, profileView ]
   , Helpers.classy DOM.div "mitt-konto--column" [ subscriptionsView, mailinglistView ]
   ]
   where
+    updateNewsletters newsletters =
+      liftEffect $ setState $ _ { activeUserNewsletters = Just newsletters }
     componentHeader title =
       Helpers.classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]
 
@@ -158,8 +162,28 @@ userView router { state: { now, news, activeUserNewsletters } } logger profileCo
             }
 
     mailinglistView =
-      componentBlock "Mina nyhetsbrev:" $ [ componentBlockContent contents ]
+      componentBlock "Mina nyhetsbrev:" $ [ componentBlockContent $ contents ]
       where
+        updateResultMessage :: JSX
+        updateResultMessage = case newslettersUpdated of
+            Types.NotUpdated -> mempty
+            Types.Updating -> mempty
+            Types.Updated -> DOM.p_ [ DOM.text "Successfully updated newsletter subscriptions." ]
+            Types.UpdateFailed -> DOM.p_ [ DOM.text "Something failed when updating newsletter subscriptions." ]
+
+        contents :: JSX
+        contents = case activeUserNewsletters of
+          Nothing -> loadingSpinner
+          Just allNewsletters ->
+            DOM.div
+              { className: "mitt-konto--newsletters"
+              , children:
+                [ checkboxes allNewsletters
+                , Elements.break
+                , acceptChangesButton
+                ]
+              }
+
         newsletterCheckbox :: (NewsletterSubscription -> Effect Unit) -> NewsletterSubscription -> JSX
         newsletterCheckbox updateSubs newsletter =
           DOM.dd_
@@ -190,19 +214,6 @@ userView router { state: { now, news, activeUserNewsletters } } logger profileCo
                           in updateNewsletter $ paperNewsletters {subscriptions = newSubs})) newsletters))
               (Map.toUnfoldable paperNewsletters.subscriptions)
 
-        contents :: JSX
-        contents = case activeUserNewsletters of
-          Nothing -> Spinner.loadingSpinner
-          Just allNewsletters ->
-            DOM.div
-              { className: "mitt-konto--newsletters"
-              , children:
-                [ checkboxes allNewsletters
-                , Elements.break
-                , acceptChangesButton
-                ]
-              }
-
         checkboxes :: Array Newsletter -> JSX
         checkboxes allNewsletters =
           DOM.dl_ $
@@ -230,9 +241,20 @@ userView router { state: { now, news, activeUserNewsletters } } logger profileCo
             , DOM.br {}
             , DOM.button
                 { className: "button-green newsletters--update-submit"
-                , onClick: capture_ $ launchAff_ $ void $ User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
-                , children: [DOM.text "Spara"]
+                , onClick: capture_ $ launchAff_ $ do
+                    liftEffect $ setState $ _ { newslettersUpdated = Types.Updating }
+                    res <- User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
+                    case res of
+                      Left _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.UpdateFailed }
+                      Right _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.Updated }
+                , disabled: newslettersUpdated == Types.Updating
+                , children:
+                  [ DOM.div_ []
+                  , DOM.text "Spara"
+                  , DOM.div_ [ if newslettersUpdated == Types.Updating then loadingSpinner else mempty ]
+                  ]
                 }
+            , updateResultMessage
             ]
 
     newsView Nothing = mempty

@@ -23,11 +23,21 @@
 }
 
 .button-green {
+    &:hover {
+        background: @button-color-primary-hover;
+    }
+    &:active {
+        background-color: mix(@button-color-primary, @button-color-primary-hover, 50%);
+        -webkit-box-shadow: inset 0px 0px 5px #060;
+        -moz-box-shadow: inset 0px 0px 5px #060;
+        box-shadow: inset 0px 0px 5px #060;
+        outline: none;
+    }
     &:disabled {
 	background: grey;
 	cursor: auto;
     }
-    background: green;
+    background: @button-color-primary;
     color: @white;
     width: 100%;
     border: none;

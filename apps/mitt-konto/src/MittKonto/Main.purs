@@ -70,6 +70,7 @@ app = do
         , adminMode: false
         , activeUser: Nothing
         , activeUserNewsletters: Nothing
+        , newslettersUpdated: Types.NotUpdated
         -- Let's show the spinner while we try to magically login the user
         , loading: Just Spinner.Loading
         , showWelcome: true
@@ -201,11 +202,9 @@ app = do
                                , logger
                                }
           Nothing -> mempty
-        updateNewsletters newsletters = do
-          liftEffect $ setState $ _ { activeUserNewsletters = Just newsletters }
 
         userContent = case route of
-          MittKonto -> foldMap (Views.userView router self logger profileView updateNewsletters) state.activeUser
+          MittKonto -> foldMap (Views.userView router self logger profileView setState) state.activeUser
           Search -> guard state.adminMode searchView
           InvoiceList -> paymentView
           InvoiceDetail invno -> paymentDetailView invno
