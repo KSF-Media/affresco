@@ -37,6 +37,7 @@ import Routing.PushState (PushStateInterface)
 foreign import images :: { subscribe :: String }
 foreign import _encodeURIComponent :: String -> String
 
+-- TODO: convert this to a stateful component
 -- | User info page with profile info, subscriptions, etc.
 userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> ((Types.State -> Types.State) -> Effect Unit) -> User -> JSX
 userView router { state: { now, news, activeUserNewsletters, newslettersUpdated } } logger profileComponent setState user = React.fragment
