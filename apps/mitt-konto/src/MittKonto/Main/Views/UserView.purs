@@ -202,6 +202,7 @@ userView router { state: { now, news, activeUserNewsletters, newslettersUpdated 
         paperSection paperNewsletters updateNewsletter =
           DOM.dt_
             [ DOM.text $ Paper.paperName paperNewsletters.paper
+            , DOM.text " "
             , legalLink paperNewsletters.paper
             ]
           : concatMap
@@ -224,8 +225,6 @@ userView router { state: { now, news, activeUserNewsletters, newslettersUpdated 
               ))
             allNewsletters
 
-        link :: String -> JSX
-        link href = DOM.a { children: [DOM.text " (bruksvillkor)"], href, target: "_blank" }
 
         legalLink :: Paper.Paper -> JSX
         legalLink paper = case paper of
@@ -233,6 +232,9 @@ userView router { state: { now, news, activeUserNewsletters, newslettersUpdated 
           Paper.VN -> link "https://www.vastranyland.fi/bruksvillkor"
           Paper.ON -> link "https://www.ostnyland.fi/bruksvillkor"
           _ -> legalLink Paper.HBL
+          where
+            link :: String -> JSX
+            link href = DOM.a { children: [DOM.text " (bruksvillkor)"], href, target: "_blank" }
 
         acceptChangesButton :: JSX
         acceptChangesButton =
@@ -241,12 +243,13 @@ userView router { state: { now, news, activeUserNewsletters, newslettersUpdated 
             , DOM.br {}
             , DOM.button
                 { className: "button-green newsletters--update-submit"
-                , onClick: capture_ $ launchAff_ $ do
+                , onClick: capture_ $ do
                     liftEffect $ setState $ _ { newslettersUpdated = Types.Updating }
-                    res <- User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
-                    case res of
-                      Left _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.UpdateFailed }
-                      Right _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.Updated }
+                    launchAff_ $ do
+                      res <- User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
+                      case res of
+                        Left _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.UpdateFailed }
+                        Right _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.Updated }
                 , disabled: newslettersUpdated == Types.Updating
                 , children:
                   [ DOM.div_ []

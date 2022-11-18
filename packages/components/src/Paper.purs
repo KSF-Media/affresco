@@ -11,9 +11,6 @@ data Paper = HBL | ON | VN | KSF | JUNIOR
 derive instance eqPaper :: Eq Paper
 derive instance ordPaper :: Ord Paper
 
-instance showPaper :: Show Paper where
-  show = toString
-
 instance readForeignPaper :: JSON.ReadForeign Paper where
   readImpl f = do
     paper <- JSON.readImpl f
