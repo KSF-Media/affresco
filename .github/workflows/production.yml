@@ -180,7 +180,9 @@ jobs:
             ruby deploy.rb hbl365
             cp -R apps/hbl365/dist build/hbl365
         shell: bash
-      - name: Build Prenumerera
+      - env:
+          MAINTENANCE_MODE: 'true'
+        name: Build Prenumerera
         run: |2
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
