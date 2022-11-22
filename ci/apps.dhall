@@ -29,7 +29,7 @@ let apps =
           , env = toMap
               { PRODUCTION_SENTRY_DSN =
                   "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
-              , MAINTENANCE_MODE = "false"
+              , MAINTENANCE_MODE = "true"
               }
           , lockfile = Some "yarn.lock"
           , caches = Some
@@ -87,6 +87,9 @@ let apps =
           , name = "Prenumerera"
           , buildDir = "prenumerera"
           , deployDir = "prenumerera"
+          , env = toMap {
+            MAINTENANCE_MODE = "true"
+          }
           }
         ]
       : List App.Type
