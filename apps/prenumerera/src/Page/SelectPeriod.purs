@@ -33,14 +33,18 @@ type Props =
   { package :: Package
   , description :: Description
   , user :: User
+  , gift :: Boolean
   , next :: PackageOffer -> PaymentMethod -> User -> Effect Unit
   , cancel :: Effect Unit
   }
 
 component :: Component Props
 component = do
-  React.component "SelectPeriod" $ \ { package, description, user, next } -> React.do
-    let initial = _.form $ Register.initialRegisterData false $ Just user
+  React.component "SelectPeriod" $ \ { package, description, user, gift, next } -> React.do
+    let initial = _.form $ Register.initialRegisterData false false $ Just user
+        -- Gift subscriptions don't ask for address even for paper
+        -- products
+        digitalOnly = package.digitalOnly || gift
     offer /\ setOffer <- useState' $ head package.offers
     remind /\ setRemind <- useState' false
     paymentMethod /\ setPaymentMethod <- useState' CreditCard
@@ -50,16 +54,19 @@ component = do
     let setFormData f = setForm $ \s -> s { formData = f s.formData }
         confirm o m = case paymentMethod of
           PaperInvoice -> Register.updateUser
-                          initial.formData setFormData
+                          initial.formData
+                          initial.formData
+                          gift
+                          setFormData
                           (setUpdateUserError true) (next o m) user $
                           Registration.formValidations form
           CreditCard -> next o m user
     let remindElement = guard remind renderRemind
         paymentOfferElement = renderPaymentOffer package.offers setOffer paymentMethod setPaymentMethod
         acceptElement = renderAccept acceptTerms setAcceptTerms
-        addressElement = guard (paymentMethod == PaperInvoice) $ renderAddress package form setForm
+        addressElement = guard (paymentMethod == PaperInvoice) $ renderAddress digitalOnly form setForm
     pure $ render description remindElement paymentOfferElement addressElement acceptElement
-      form offer paymentMethod acceptTerms updateUserError $
+      form offer paymentMethod acceptTerms gift updateUserError $
       if acceptTerms then confirm offer paymentMethod else setRemind true
 
 renderRemind :: JSX
@@ -160,8 +167,8 @@ renderAccept accept setAccept =
         ]
     }
 
-renderAddress :: Package -> Registration.State -> ((Registration.State -> Registration.State) -> Effect Unit) -> JSX
-renderAddress { digitalOnly } form setForm = guard digitalOnly $
+renderAddress :: Boolean -> Registration.State -> ((Registration.State -> Registration.State) -> Effect Unit) -> JSX
+renderAddress digitalOnly form setForm = guard digitalOnly $
   DOM.div
     { className: "accept-terms--wide"
     , children:
@@ -181,8 +188,8 @@ renderAddress { digitalOnly } form setForm = guard digitalOnly $
         }
     inputField field = Registration.inputField field form setForm
 
-render :: Description -> JSX -> JSX -> JSX -> JSX -> Registration.State -> PackageOffer -> PaymentMethod -> Boolean -> Boolean -> Effect Unit -> JSX
-render description remindElement paymentOfferElement addressElement acceptElement form offer paymentMethod acceptTerms updateUserError submit =
+render :: Description -> JSX -> JSX -> JSX -> JSX -> Registration.State -> PackageOffer -> PaymentMethod -> Boolean -> Boolean -> Boolean -> Effect Unit -> JSX
+render description remindElement paymentOfferElement addressElement acceptElement form offer paymentMethod acceptTerms gift updateUserError submit =
   DOM.div
     { className: "container ksf-identify"
     , children:
@@ -204,7 +211,10 @@ render description remindElement paymentOfferElement addressElement acceptElemen
                                     ]
                                 , DOM.p_
                                     [ DOM.text "Prenumerationstyp: "
-                                    , DOM.strong_ [ DOM.text "Fortlöpande" ]
+                                    , DOM.strong_ [ DOM.text $
+                                                    if gift then "Fortlöpande, gift"
+                                                    else "Fortlöpande"
+                                                  ]
                                     ]
                                 ]
                             }

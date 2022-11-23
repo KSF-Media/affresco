@@ -16,8 +16,8 @@ type StageDescription =
   , stage :: Progress
   }
 
-stages :: Array StageDescription
-stages =
+stages :: Boolean -> Array StageDescription
+stages giftRedeem =
   [ { num: "1"
     , desc: "Skapa ditt konto"
     , stage: Login
@@ -27,7 +27,7 @@ stages =
     , stage: Accept
     }
   , { num: "3"
-    , desc: "Betalningsuppgifter"
+    , desc: if giftRedeem then "Förlossa" else "Betalningsuppgifter"
     , stage: Payment
     }
   , { num: "4"
@@ -36,8 +36,8 @@ stages =
     }
   ]
 
-render :: Progress -> JSX
-render progress =
+render :: Progress -> Boolean -> JSX
+render progress giftRedeem =
   DOM.div
     { className: "container"
     , children:
@@ -47,7 +47,7 @@ render progress =
                 [ DOM.ul
                     { id: "progressIndicator"
                     , className: "ksf-progress-bar"
-                    , children: map renderStage stages
+                    , children: map renderStage $ stages giftRedeem
                     }
                 ]
             }

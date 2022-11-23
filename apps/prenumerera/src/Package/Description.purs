@@ -5,6 +5,7 @@ import Prelude
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Data.Maybe (Maybe(..))
+import Data.Map as Map
 import Data.Map (Map, fromFoldable)
 import KSF.Paper (Paper(..))
 import React.Basic (JSX)
@@ -260,3 +261,6 @@ packageDescriptions = fromFoldable
                                   ]
                       )
     ribbon a b = React.fragment [ DOM.strong_ [ DOM.text a ], DOM.span_ [ DOM.text b ] ]
+
+lookup :: String -> Maybe Description
+lookup = flip Map.lookup packageDescriptions
