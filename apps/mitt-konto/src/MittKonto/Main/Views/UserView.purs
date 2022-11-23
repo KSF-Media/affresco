@@ -2,36 +2,51 @@ module MittKonto.Main.UserView where
 
 import Prelude
 
-import Data.Array (snoc, sortBy, (:))
-import Data.Maybe (Maybe(..), maybe)
+import Data.Array (concatMap, snoc, sortBy, (:))
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
+import Data.Map as Map
 import Data.Nullable as Nullable
 import Data.String (contains, toUpper)
 import Data.String.Pattern (Pattern(..))
+import Data.Tuple (uncurry)
+import Effect (Effect)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
 import MittKonto.Main.UserView.AccountEdit as AccountEdit
 import MittKonto.Main.UserView.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import MittKonto.Main.UserView.Subscription (subscription) as Subscription
+import KSF.AsyncWrapper (loadingSpinner)
 import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
+import KSF.Paper as Paper
 import KSF.Sentry as Sentry
 import KSF.User (User)
+import KSF.User as User
 import KSF.User.Cusno as Cusno
+import Persona (Newsletter, NewsletterSubscription)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Events (handler)
+import React.Basic.DOM.Events (targetValue, capture_)
 import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface)
 
 foreign import images :: { subscribe :: String }
 foreign import _encodeURIComponent :: String -> String
 
+-- TODO: convert this to a stateful component
 -- | User info page with profile info, subscriptions, etc.
-userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> User -> JSX
-userView router { state: { now, news } } logger profileComponent user = React.fragment
+userView :: PushStateInterface -> Types.Self -> Sentry.Logger ->  JSX -> ((Types.State -> Types.State) -> Effect Unit) -> User -> JSX
+userView router { state: { now, news, activeUserNewsletters, newslettersUpdated } } logger profileComponent setState user = React.fragment
   [ Helpers.classy DOM.div "mitt-konto--column mitt-konto--profile" [ newsView news, profileView ]
-  , Helpers.classy DOM.div "mitt-konto--column" [ subscriptionsView ]
+  , Helpers.classy DOM.div "mitt-konto--column" [ subscriptionsView, mailinglistView ]
   ]
   where
+    updateNewsletters newsletters =
+      liftEffect $ setState $ _ { activeUserNewsletters = Just newsletters }
     componentHeader title =
       Helpers.classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]
 
@@ -146,6 +161,105 @@ userView router { state: { now, news } } logger profileComponent user = React.fr
             , href
             , target: "_blank"
             }
+
+    mailinglistView =
+      componentBlock "Mina nyhetsbrev:" $ [ componentBlockContent $ contents ]
+      where
+        updateResultMessage :: JSX
+        updateResultMessage = case newslettersUpdated of
+            Types.NotUpdated -> mempty
+            Types.Updating -> mempty
+            Types.Updated -> DOM.p_ [ DOM.text "Uppdateringen av prenumerationen på nyhetsbrevet lyckades." ]
+            Types.UpdateFailed -> DOM.p_ [ DOM.text "Något gick fel med uppdateringen av prenumerationen på nyhetsbrevet." ]
+
+        contents :: JSX
+        contents =
+          DOM.div
+            { className: "mitt-konto--newsletters"
+            , children: case activeUserNewsletters of
+                Nothing -> [ loadingSpinner ]
+                Just allNewsletters ->
+                  [ checkboxes allNewsletters
+                  , Elements.break
+                  , acceptChangesButton
+                  ]
+            }
+
+        newsletterCheckbox :: (NewsletterSubscription -> Effect Unit) -> NewsletterSubscription -> JSX
+        newsletterCheckbox updateSubs newsletter =
+          DOM.dd_
+            [ DOM.label_
+                [ DOM.input
+                    { type: "checkbox"
+                    , checked: newsletter.subscribed
+                    , onChange: handler targetValue \_ -> updateSubs (newsletter {subscribed = not newsletter.subscribed} )
+                    }
+                , DOM.text $ newsletter.listName ]]
+
+        replaceMatching :: forall f a b. Functor f => Eq b => (a -> b) -> a -> f a -> f a
+        replaceMatching fn replacement arr = map (\existing -> if fn existing == fn replacement then replacement else existing) arr
+
+        paperSection :: Newsletter -> (Newsletter -> Effect Unit) -> Array JSX
+        paperSection paperNewsletters updateNewsletter =
+          DOM.dt_
+            [ DOM.text $ Paper.paperName paperNewsletters.paper
+            , DOM.text " "
+            , legalLink paperNewsletters.paper
+            ]
+          : concatMap
+              (uncurry
+                (\categoryId newsletters ->
+                  map (newsletterCheckbox
+                        (\replacement ->
+                          let subscriptions = replaceMatching _.id replacement newsletters
+                              newSubs = Map.insert categoryId subscriptions paperNewsletters.subscriptions
+                          in updateNewsletter $ paperNewsletters {subscriptions = newSubs})) newsletters))
+              (Map.toUnfoldable paperNewsletters.subscriptions)
+
+        checkboxes :: Array Newsletter -> JSX
+        checkboxes allNewsletters =
+          DOM.dl_ $
+            concatMap
+              (\paper -> paperSection paper (\replacement ->
+               let replaced = replaceMatching _.listId replacement allNewsletters
+               in launchAff_ $ updateNewsletters replaced
+              ))
+            allNewsletters
+
+
+        legalLink :: Paper.Paper -> JSX
+        legalLink paper = case paper of
+          Paper.HBL -> link "https://www.hbl.fi/bruksvillkor"
+          Paper.VN -> link "https://www.vastranyland.fi/bruksvillkor"
+          Paper.ON -> link "https://www.ostnyland.fi/bruksvillkor"
+          _ -> legalLink Paper.HBL
+          where
+            link :: String -> JSX
+            link href = DOM.a { children: [DOM.text " (bruksvillkor)"], href, target: "_blank" }
+
+        acceptChangesButton :: JSX
+        acceptChangesButton =
+          DOM.div_
+            [ DOM.p_ [ DOM.text "Hantera dina nyhetsbrev genom att kryssa för de nyhetsbrev du vill få och tryck på Spara. Genom att beställa godkänner du KSF Medias bruksvillkor." ]
+            , DOM.p_ [ DOM.text "Om du inte tidigare prenumererat på ett nyhetsbrev måste du först bekräfta din e-postadress. Vi skickar ett meddelande till din e-postadress där du kan bekräfta att adressen är rätt." ]
+            , DOM.button
+                { className: "button-green newsletters--update-submit"
+                , onClick: capture_ $ do
+                    liftEffect $ setState $ _ { newslettersUpdated = Types.Updating }
+                    launchAff_ $ do
+                      res <- User.updateUserNewsletters user.uuid $ fromMaybe [] activeUserNewsletters
+                      case res of
+                        Left _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.UpdateFailed }
+                        Right _ -> liftEffect $ setState $ _ { newslettersUpdated = Types.Updated }
+                , disabled: newslettersUpdated == Types.Updating
+                , children:
+                  [ DOM.div_ []
+                  , DOM.text "Spara"
+                  , DOM.div_ [ if newslettersUpdated == Types.Updating then loadingSpinner else mempty ]
+                  ]
+                }
+            , updateResultMessage
+            ]
 
     newsView Nothing = mempty
     newsView (Just n) =

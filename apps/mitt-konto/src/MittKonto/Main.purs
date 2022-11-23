@@ -69,6 +69,8 @@ app = do
         { paper: KSF
         , adminMode: false
         , activeUser: Nothing
+        , activeUserNewsletters: Nothing
+        , newslettersUpdated: Types.NotUpdated
         -- Let's show the spinner while we try to magically login the user
         , loading: Just Spinner.Loading
         , showWelcome: true
@@ -102,6 +104,11 @@ app = do
           admin <- User.isAdminUser
           setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
           logger.setUser $ Just user
+          Aff.launchAff_ $ do
+            newsletters <- User.getUserNewsletters user.uuid
+            case newsletters of
+                Right n -> liftEffect $ setState $ _ { activeUserNewsletters = Just n }
+                Left _ -> pure unit
           Aff.launchAff_ $ Timeout.startTimer duration timeout do
             liftEffect logout
 
@@ -195,8 +202,9 @@ app = do
                                , logger
                                }
           Nothing -> mempty
+
         userContent = case route of
-          MittKonto -> foldMap (Views.userView router self logger profileView) state.activeUser
+          MittKonto -> foldMap (Views.userView router self logger profileView setState) state.activeUser
           Search -> guard state.adminMode searchView
           InvoiceList -> paymentView
           InvoiceDetail invno -> paymentDetailView invno

@@ -47,6 +47,8 @@ module KSF.User
   , getPackages
   , getUserEntitlements
   , getUserEntitlementsLoadToken
+  , getUserNewsletters
+  , updateUserNewsletters
   , module Api
   , module Subscription
   )
@@ -694,6 +696,24 @@ getPayments uuid = do
     Right pay -> pure $ Right pay
     Left _ -> do
       Console.error "Unexpected error when getting user payment history "
+      pure $ Left "unexpected"
+
+getUserNewsletters :: UUID -> Aff (Either String (Array Persona.Newsletter))
+getUserNewsletters uuid = do
+  payments <- try $ Persona.getUserNewsletters uuid =<< requireToken
+  case payments of
+    Right newsletters -> pure $ Right newsletters
+    Left _ -> do
+      Console.error "Unexpected error when getting user newsletters"
+      pure $ Left "unexpected"
+
+updateUserNewsletters :: UUID -> Array Persona.Newsletter -> Aff (Either String (Array Persona.Newsletter))
+updateUserNewsletters uuid newsletters = do
+  payments <- try $ Persona.updateUserNewsletters uuid newsletters =<< requireToken
+  case payments of
+    Right letters -> pure $ Right letters
+    Left _ -> do
+      Console.error "Unexpected error when updating user newsletters"
       pure $ Left "unexpected"
 
 
