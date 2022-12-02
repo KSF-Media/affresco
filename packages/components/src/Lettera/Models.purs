@@ -13,6 +13,7 @@ import Data.Foldable (foldMap, foldr, lookup)
 import Data.Formatter.DateTime (format, unformat)
 import Data.Generic.Rep (class Generic)
 import Data.Hashable (class Hashable, hash)
+import Data.Int (round, toNumber)
 import Data.JSDate as JSDate
 import Data.Map (Map)
 import Data.Map as Map
@@ -30,7 +31,7 @@ import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign (renderForeignError)
 import Foreign.Object as Object
-import KSF.Helpers (dateTimeFormatter)
+import KSF.Helpers (dateTimeFormatter, localDateTimeFormatter, parseLocalDateTime)
 import Record (merge, modify)
 import Simple.JSON (class ReadForeign, readImpl)
 import Simple.JSON as JSON
@@ -121,17 +122,20 @@ articleTypes =
   , Tuple Advertorial "Advertorial"
   ]
 
-newtype LocalDateTime = LocalDateTime DateTime
-derive instance newtypeLocalDateTime :: Newtype LocalDateTime _
+data LocalDateTime = LocalDateTime Int DateTime
 derive instance localDateTimeGeneric :: Generic LocalDateTime _
 instance showLocalDateTime :: Show LocalDateTime where
   show = genericShow
 
+buildLocal :: { offset :: Int, dateTime :: DateTime } -> LocalDateTime
+buildLocal { offset, dateTime } = LocalDateTime offset dateTime
+
 localizeArticleDateTimeString :: String -> String -> Effect (Maybe LocalDateTime)
 localizeArticleDateTimeString uuid dateTimeString =
-  case parseDateTime dateTimeString of
-    Just d -> fromUTCTime d
-    Nothing -> do
+  case parseLocalDateTime dateTimeString of
+    Just {offset, dateTime}
+      | Just d <- adjust (Duration.Minutes $ toNumber $ negate offset) dateTime -> fromUTCTime d
+    _ -> do
       Console.warn $ "Could not parse timestamp for article " <> uuid
       pure Nothing
 
@@ -142,8 +146,8 @@ localizeArticleDateTimeString uuid dateTimeString =
 fromUTCTime :: DateTime -> Effect (Maybe LocalDateTime)
 fromUTCTime utcTime = do
   let jsDate = JSDate.fromDateTime utcTime
-  offset <- (_ * -1.0) <$> JSDate.getTimezoneOffset jsDate
-  pure $ (LocalDateTime <$> adjust (Duration.Minutes offset) utcTime)
+  offset <- negate <$> JSDate.getTimezoneOffset jsDate
+  pure $ LocalDateTime (round offset) <$> adjust (Duration.Minutes offset) utcTime
 
 type ArticleStubCommon =
   ( title     :: String
@@ -305,7 +309,8 @@ articleStubToJson = encodeJson
                     <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
 
 formatLocalDateTime :: LocalDateTime -> String
-formatLocalDateTime = format dateTimeFormatter <<< un LocalDateTime
+formatLocalDateTime (LocalDateTime offset dateTime) =
+  format (localDateTimeFormatter offset) dateTime
 
 parseArticleWith :: forall a b. ReadForeign b => (b -> Effect a) -> Json -> Effect (Either String a)
 parseArticleWith parseFn articleResponse = do
@@ -331,9 +336,9 @@ parseArticleWithoutLocalizing =
       body <- parseArticlePure (fromJSBody (parseArticleStubWithoutLocalizing <<< encodeJson)) $
               encodeJson (jsArticle.body :: Array BodyElementJS)
       pure $ merge
-        { publishingTime: LocalDateTime <$> parseDateTime jsArticle.publishingTime
+        { publishingTime: buildLocal <$> parseLocalDateTime jsArticle.publishingTime
         , publishingTimeUtc: parseDateTime =<< jsArticle.publishingTimeUtc
-        , updateTime: LocalDateTime <$> (parseDateTime =<< jsArticle.updateTime)
+        , updateTime: buildLocal <$> (parseLocalDateTime =<< jsArticle.updateTime)
         , tags: map Tag jsArticle.tags
         , body: body
         , articleType: fromMaybe NyhetStor $ lookup jsArticle.articleType $ map swap articleTypes
@@ -343,7 +348,7 @@ parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
   parseArticlePure
     \jsStub -> pure $
-               jsStub { publishingTime = LocalDateTime <$> parseDateTime jsStub.publishingTime
+               jsStub { publishingTime = buildLocal <$> parseLocalDateTime jsStub.publishingTime
                       , tags           = map Tag jsStub.tags
                       , articleType    = fromMaybe NyhetStor $ lookup jsStub.articleType $ map swap articleTypes
                       }

@@ -6,10 +6,12 @@ import           Control.Alt ((<|>))
 import           Data.Date               (Date, adjust)
 import           Data.DateTime           (DateTime (..))
 import           Data.DateTime           as DateTime
+import           Data.Either             (hush)
 import           Data.Enum               (toEnum)
 import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
-                                          format)
-import           Data.Int                (toNumber)
+                                          format, unformat)
+import           Data.Int                as Int
+import           Data.Int                (toNumber, rem)
 import           Data.List               (fromFoldable)
 import           Data.Maybe              (Maybe (..), fromJust)
 import           Data.String             (Pattern (..))
@@ -55,7 +57,7 @@ formatDateDots date = format formatter $ DateTime date midnight
       , YearFull
       ]
 
--- "2021-04-29T08:45:00Z"
+-- "2021-04-29T08:45:00Z" RFC3339 format
 dateTimeFormatter :: Formatter
 dateTimeFormatter =
   fromFoldable
@@ -72,6 +74,50 @@ dateTimeFormatter =
     , SecondsTwoDigits
     , Placeholder "Z"
     ]
+
+-- Local time aware formatter for RFC3339.  Won't apply any offset by
+-- its own.  Probably only useful for output.
+localDateTimeFormatter :: Int -> Formatter
+localDateTimeFormatter offset =
+  fromFoldable
+    [ YearFull
+    , Placeholder "-"
+    , MonthTwoDigits
+    , Placeholder "-"
+    , DayOfMonthTwoDigits
+    , Placeholder "T"
+    , Hours24
+    , Placeholder ":"
+    , MinutesTwoDigits
+    , Placeholder ":"
+    , SecondsTwoDigits
+    , Placeholder $ if offset == 0 then "Z"
+                    else if offset < 0
+                         then "-" <> offsetStr (negate offset)
+                         else "+" <> offsetStr offset
+    ]
+    where
+      offsetStr o = show (div o 60) <> ":" <>
+                    let r = rem o 60 in if r < 10 then "0" <> show r else show r
+
+-- RFC3339 parser.  Returns offset but doesn't apply it.
+parseLocalDateTime :: String -> Maybe { offset :: Int, dateTime :: DateTime }
+parseLocalDateTime str = do
+  -- time-offset starts always at pos 19 with RFC3339
+  let { after, before } = String.splitAt 19 str
+  offset <- case String.splitAt 1 after of
+    {before: "Z"} -> pure 0
+    {before: "+", after: offsetStr } -> parseOffset offsetStr
+    {before: "-", after: offsetStr } -> negate <$> parseOffset offsetStr
+    _ -> Nothing
+  dateTime <- hush $ unformat dateTimeFormatter $ before <> "Z"
+  pure { offset, dateTime }
+  where
+    parseOffset x = do
+      idx <- String.lastIndexOf (Pattern ":") x
+      hours <- Int.fromString $ String.take idx x
+      minutes <- Int.fromString $ String.drop (idx + 1) x
+      pure $ 60 * hours + minutes
 
 formatArticleTime :: DateTime -> String
 formatArticleTime = format articleFormatter
