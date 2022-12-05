@@ -247,12 +247,13 @@ parseArticleStubs response
       map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
   | otherwise = pure $ Left ParseError
 
-getFrontpage :: Paper -> Maybe Int -> Maybe String -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
-getFrontpage paper limit categoryId cacheToken = do
+getFrontpage :: Paper -> Maybe Int -> Maybe Int -> Maybe String -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
+getFrontpage paper start limit categoryId cacheToken = do
   let request = AX.defaultRequest
         { url = letteraFrontPageUrl
                 <> "?paper=" <> Paper.toString paper
                 <> foldMap (("&category=" <> _) <<< _encodeURIComponent ) categoryId
+                <> foldMap (("&start=" <> _) <<< show) start
                 <> foldMap (("&limit=" <> _) <<< show) limit
                 <> foldMap ("&cacheToken=" <> _) cacheToken
         , method = Left GET
