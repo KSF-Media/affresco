@@ -2,8 +2,6 @@ let Prelude = ./Prelude.dhall
 
 let A = ./apps.dhall
 
-let AS = ./app-servers/AppServer.dhall
-
 let Map = Prelude.Map.Type
 
 let default = Prelude.Text.default
@@ -13,8 +11,6 @@ let not = Prelude.Bool.not
 let null = Prelude.Optional.null
 
 let Env = < Staging | Production >
-
-let AppServer = AS.AppServer
 
 let App = A.App
 
@@ -102,31 +98,6 @@ let mkBuildStep =
             ''
         }
 
-let mkBuildServerStep =
-      \(app : AppServer.Type) ->
-        Step::{
-        , name = Some "Build Server ${app.name}"
-        , env = app.env
-        , shell = Some "bash"
-        , run = Some
-            ''
-              ruby deploy.rb ${app.buildDir}
-              cp -R apps/${app.buildDir} build/${app.deployDir}
-            ''
-        }
-
-let copyAppYamlForStaging =
-      \(app : AppServer.Type) ->
-        Step::{
-        , name = Some "Copy app.yaml.dev to app.yaml"
-        , env = app.env
-        , shell = Some "bash"
-        , run = Some
-            ''
-            cp build/${app.deployDir}/app.dev.yaml build/${app.deployDir}/app.yaml
-            ''
-        }
-
 let mkUploadStep =
       \(env : Env) ->
       \(app : App.Type) ->
@@ -152,55 +123,6 @@ let mkUploadStep =
             }
         }
 
-let mkAppEngineStep =
-      \(env : Env) ->
-      \(promote : Text) ->
-      \(app : AppServer.Type) ->
-        Step::{
-        , id =
-            merge
-              { Staging = Some "deploy-${app.id}"
-              , Production = Some "deploy-${app.id}-production"
-              }
-              env
-        , name = Some "Deploy ${app.name}"
-        , uses = Some "google-github-actions/deploy-appengine@v0.8.0"
-        , `with` = toMap
-            { working_directory = "build/${app.deployDir}"
-            , promote
-            , project_id =
-                merge
-                  { Staging = "ksf-staging", Production = "ksf-production" }
-                  env
-            , credentials =
-                merge
-                  { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-                  }
-                  env
-            }
-        }
-
-let deployDispatchYamlStep =
-      \(env : Env) ->
-        Step::{
-        , name = Some "Deploy AppEngine domain map"
-        , uses = Some "google-github-actions/deploy-appengine@v0.8.0"
-        , `with` = toMap
-            { deliverables = "dispatch.yaml"
-            , project_id =
-                merge
-                  { Staging = "ksf-staging", Production = "ksf-production" }
-                  env
-            , credentials =
-                merge
-                  { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
-                  }
-                  env
-            }
-        }
-
 let checkCISteps =
       [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
       , Step::{
@@ -213,42 +135,8 @@ let checkCISteps =
         }
       ]
 
-let generateDispatchYamlStep =
-      \(env : Env) ->
-        Step::{
-        , name = Some "Generate AppEngine domain map"
-        , shell = Some "bash"
-        , run =
-            merge
-              { Staging = Some
-                  ''
-                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Staging" > ./dispatch.yaml
-                    cat dispatch.yaml
-                  ''
-              , Production = Some
-                  ''
-                    dhall-to-yaml --omit-empty <<< "./ci/dispatch.yaml.dhall <Staging|Production>.Production" > ./dispatch.yaml
-                    cat dispatch.yaml
-                  ''
-              }
-              env
-        }
-
-let generateAppYaml =
-      \(app : AppServer.Type) ->
-        Step::{
-        , name = Some "Generate app.yaml for ${app.id}"
-        , shell = Some "bash"
-        , run = Some
-            ''
-            dhall-to-yaml --omit-empty <<< "./ci/app.yaml.dhall ./ci/app-servers/${app.id}.dhall" > ./build/${app.deployDir}/app.yaml
-            cat ./build/${app.deployDir}/app.yaml
-            ''
-        }
-
 let linkPreviewsStep =
       \(apps : List App.Type) ->
-      \(appServers : List AppServer.Type) ->
       \(previewUrl : Text) ->
         Step::{
         , name = Some "Post preview links"
@@ -261,10 +149,6 @@ let linkPreviewsStep =
                       \(app : App.Type) ->
                         "- [${app.name}](${previewUrl}/${app.deployDir}/index.html)"
 
-                let renderAELink =
-                      \(app : AppServer.Type) ->
-                        "- [${app.name}](\${{ needs.deploy-${app.id}.outputs.preview }}/${app.previewUrl})"
-
                 in  ''
                     Deploy previews are ready :sunglasses:
                     ${Prelude.Text.concatMapSep
@@ -272,26 +156,9 @@ let linkPreviewsStep =
                         App.Type
                         renderAppLink
                         apps}
-                    ${Prelude.Text.concatMapSep
-                        "\n"
-                        AppServer.Type
-                        renderAELink
-                        appServers}
                     ''
             , check_for_duplicate_msg = "false"
             }
-        }
-
-let mkCleanAppEngineStep =
-      \(env : Env) ->
-      \(app : AppServer.Type) ->
-        Step::{
-        , name = Some "Keep only 10 latest versions of ${app.id}"
-        , continue-on-error = Some True
-        , run = Some
-            ''
-            ./ci/ae-cleanup.sh ${app.id}
-            ''
         }
 
 let refreshCDNSteps =
@@ -325,19 +192,7 @@ let refreshCDNJob =
 let uploadSteps =
       \(env : Env) -> Prelude.List.map App.Type Step.Type (mkUploadStep env)
 
-let deployAppEngineSteps =
-      \(env : Env) ->
-      \(promote : Text) ->
-        Prelude.List.map AppServer.Type Step.Type (mkAppEngineStep env promote)
-
 let buildSteps = Prelude.List.map App.Type Step.Type mkBuildStep
-
-let buildServerSteps =
-      Prelude.List.map AppServer.Type Step.Type mkBuildServerStep
-
-let cleanAppEngineSteps =
-      \(env : Env) ->
-        Prelude.List.map AppServer.Type Step.Type (mkCleanAppEngineStep env)
 
 let cacheSteps = Prelude.List.map App.Type Step.Type mkCacheAppStep
 
@@ -350,20 +205,10 @@ in  { Step
     , Env
     , setupSteps
     , buildSteps
-    , buildServerSteps
-    , mkBuildServerStep
     , uploadSteps
-    , deployAppEngineSteps
-    , mkAppEngineStep
     , checkCISteps
     , linkPreviewsStep
     , refreshCDNJob
-    , generateDispatchYamlStep
-    , deployDispatchYamlStep
     , cacheSteps
     , hasLockfile
-    , cleanAppEngineSteps
-    , mkCleanAppEngineStep
-    , copyAppYamlForStaging
-    , generateAppYaml
     }
