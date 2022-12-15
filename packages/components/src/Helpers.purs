@@ -3,6 +3,7 @@ module KSF.Helpers where
 import           Prelude
 
 import           Control.Alt ((<|>))
+import           Data.Array              as Array
 import           Data.Date               (Date, adjust)
 import           Data.DateTime           (DateTime (..))
 import           Data.DateTime           as DateTime
@@ -13,9 +14,10 @@ import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
 import           Data.Int                as Int
 import           Data.Int                (toNumber, rem)
 import           Data.List               (fromFoldable)
-import           Data.Maybe              (Maybe (..), fromJust)
-import           Data.String             (Pattern (..))
+import           Data.Maybe              (Maybe (..), fromJust, fromMaybe)
+import           Data.String             (Pattern (..), Replacement (..))
 import           Data.String             as String
+import           Data.String.Regex       as Regex
 import           Data.Time               (Time (..))
 import           Data.Time.Duration      (Days (..), Hours (..), negateDuration)
 import           Effect                  (Effect)
@@ -57,7 +59,7 @@ formatDateDots date = format formatter $ DateTime date midnight
       , YearFull
       ]
 
--- "2021-04-29T08:45:00Z" RFC3339 format
+-- "2021-04-29T08:45:00Z" ISO 8601 format
 dateTimeFormatter :: Formatter
 dateTimeFormatter =
   fromFoldable
@@ -75,8 +77,8 @@ dateTimeFormatter =
     , Placeholder "Z"
     ]
 
--- Local time aware formatter for RFC3339.  Won't apply any offset by
--- its own.  Probably only useful for output.
+-- Local time aware output formatter for ISO 8601.  Not really useful
+-- for input since it uses a fixed offset.
 localDateTimeFormatter :: Int -> Formatter
 localDateTimeFormatter offset =
   fromFoldable
@@ -97,26 +99,31 @@ localDateTimeFormatter offset =
                          else "+" <> offsetStr offset
     ]
     where
-      offsetStr o = show (div o 60) <> ":" <>
-                    let r = rem o 60 in if r < 10 then "0" <> show r else show r
+      padLeadingZero n | n < 10 = "0" <> show n
+      padLeadingZero n = show n
+      offsetStr o = padLeadingZero (div o 60) <> ":" <> padLeadingZero (rem 0 60)
 
--- RFC3339 parser.  Returns offset but doesn't apply it.
+-- ISO 8601 parser.  Returns offset but doesn't apply it.
 parseLocalDateTime :: String -> Maybe { offset :: Int, dateTime :: DateTime }
 parseLocalDateTime str = do
-  -- time-offset starts always at pos 19 with RFC3339
-  let { after, before } = String.splitAt 19 str
+  offsetRegex <- hush $ Regex.regex "(.{19}(?:\\.[0-9]+)?)(Z|[+-].+)" mempty
+  match <- Array.fromFoldable <$> Regex.match offsetRegex str
+  after <- join $ Array.index match 2
   offset <- case String.splitAt 1 after of
     {before: "Z"} -> pure 0
     {before: "+", after: offsetStr } -> parseOffset offsetStr
     {before: "-", after: offsetStr } -> negate <$> parseOffset offsetStr
     _ -> Nothing
-  dateTime <- hush $ unformat dateTimeFormatter $ before <> "Z"
+  -- Seconds precision is enough for our use
+  dateTime <- hush $ unformat dateTimeFormatter $ (String.take 19 str) <> "Z"
   pure { offset, dateTime }
   where
+    -- Possible offset formats: HH, HHMM, HH:MM
     parseOffset x = do
-      idx <- String.lastIndexOf (Pattern ":") x
-      hours <- Int.fromString $ String.take idx x
-      minutes <- Int.fromString $ String.drop (idx + 1) x
+      let bare = String.replace (Pattern ":") (Replacement "") x
+      --idx <- String.lastIndexOf (Pattern ":") x
+      hours <- Int.fromString $ String.take 2 bare
+      let minutes = fromMaybe 0 $ Int.fromString $ String.drop 2 x
       pure $ 60 * hours + minutes
 
 formatArticleTime :: DateTime -> String
