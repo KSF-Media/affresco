@@ -30,7 +30,8 @@ import Data.Tuple (Tuple(..), swap)
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign.Object as Object
-import KSF.Helpers (dateTimeFormatter, localDateTimeFormatter, parseLocalDateTime)
+import KSF.Helpers (dateTimeFormatter)
+import KSF.LocalDateTime (LocalDateTime(..), formatLocalDateTime, parseLocalDateTime)
 import KSF.Paper as Paper
 import Record (merge, modify)
 import Type.Prelude (Proxy(..))
@@ -123,19 +124,11 @@ articleTypes =
   , Tuple Advertorial "Advertorial"
   ]
 
-data LocalDateTime = LocalDateTime Int DateTime
-derive instance localDateTimeGeneric :: Generic LocalDateTime _
-instance showLocalDateTime :: Show LocalDateTime where
-  show = genericShow
-
-buildLocal :: { offset :: Int, dateTime :: DateTime } -> LocalDateTime
-buildLocal { offset, dateTime } = LocalDateTime offset dateTime
-
 localizeArticleDateTimeString :: String -> String -> Effect (Maybe LocalDateTime)
 localizeArticleDateTimeString uuid dateTimeString =
   case parseLocalDateTime dateTimeString of
     Just time
-      | Just d <- fromLocal $ buildLocal time -> fromUTCTime d
+      | Just d <- fromLocal time -> fromUTCTime d
     _ -> do
       Console.warn $ "Could not parse timestamp for article " <> uuid
       pure Nothing
@@ -312,10 +305,6 @@ articleStubToJson = encodeJson
                     <<< modify (Proxy :: Proxy "tags") (map unwrap)
                     <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
 
-formatLocalDateTime :: LocalDateTime -> String
-formatLocalDateTime (LocalDateTime offset dateTime) =
-  format (localDateTimeFormatter offset) dateTime
-
 parseArticleWith :: forall a b. DecodeJson b => (b -> Effect a) -> Json -> Effect (Either String a)
 parseArticleWith parseFn articleResponse = do
   case decodeJson articleResponse of
@@ -340,9 +329,9 @@ parseArticleWithoutLocalizing =
       body <- parseArticlePure (fromJSBody (parseArticleStubWithoutLocalizing <<< encodeJson)) $
               encodeJson (jsArticle.body :: Array Json)
       pure $ merge
-        { publishingTime: buildLocal <$> parseLocalDateTime jsArticle.publishingTime
+        { publishingTime: parseLocalDateTime jsArticle.publishingTime
         , publishingTimeUtc: parseDateTime =<< jsArticle.publishingTimeUtc
-        , updateTime: buildLocal <$> (parseLocalDateTime =<< jsArticle.updateTime)
+        , updateTime: parseLocalDateTime =<< jsArticle.updateTime
         , tags: map Tag jsArticle.tags
         , body: body
         , articleType: fromMaybe NyhetStor $ lookup jsArticle.articleType $ map swap articleTypes
@@ -353,7 +342,7 @@ parseArticleStubWithoutLocalizing :: Json -> (Either String ArticleStub)
 parseArticleStubWithoutLocalizing =
   parseArticlePure
     \jsStub -> pure $
-               jsStub { publishingTime = buildLocal <$> parseLocalDateTime jsStub.publishingTime
+               jsStub { publishingTime = parseLocalDateTime jsStub.publishingTime
                       , tags           = map Tag jsStub.tags
                       , articleType    = fromMaybe NyhetStor $ lookup jsStub.articleType $ map swap articleTypes
                       }
