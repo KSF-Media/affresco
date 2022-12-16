@@ -55,7 +55,7 @@ formatDateDots date = format formatter $ DateTime date midnight
       , YearFull
       ]
 
--- "2021-04-29T08:45:00Z"
+-- "2021-04-29T08:45:00Z" ISO 8601 format
 dateTimeFormatter :: Formatter
 dateTimeFormatter =
   fromFoldable
@@ -72,22 +72,6 @@ dateTimeFormatter =
     , SecondsTwoDigits
     , Placeholder "Z"
     ]
-
-formatArticleTime :: DateTime -> String
-formatArticleTime = format articleFormatter
- where
-   articleFormatter =
-    fromFoldable
-      [ DayOfMonthTwoDigits
-      , Placeholder "."
-      , MonthTwoDigits
-      , Placeholder "."
-      , YearFull
-      , Placeholder " "
-      , Hours24
-      , Placeholder ":"
-      , MinutesTwoDigits
-      ]
 
 formatEur :: Int -> String
 formatEur amountCent =

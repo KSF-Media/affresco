@@ -6,7 +6,8 @@ import Prelude
 import Data.Maybe (Maybe(..), maybe)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Encode.Class (encodeJson)
-import Lettera.Models (Article, formatLocalDateTime)
+import Lettera.Models (Article)
+import KSF.LocalDateTime (formatLocalDateTime)
 
 type JsonLdArticle
   = { "@context" :: String
