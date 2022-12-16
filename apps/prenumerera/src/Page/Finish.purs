@@ -2,10 +2,9 @@ module Prenumerera.Page.Finish where
 
 import Prelude
 
-import Bottega.Models (PaymentMethod)
+import Data.Either (Either)
 import Effect.Now as Now
 import KSF.User (User)
-import Prenumerera.Package (PackageOffer)
 import Prenumerera.Package.Description (Description)
 import Prenumerera.Summary as Summary
 import React.Basic (JSX)
@@ -16,15 +15,14 @@ import React.Basic.Hooks as React
 type Props =
   { user :: User
   , description :: Description
-  , offer :: PackageOffer
-  , method :: PaymentMethod
+  , orderDetails :: Either Summary.GiftState Summary.PaymentDetails
   }
 
 component :: Component Props
 component = do
   today <- Now.nowDate
-  React.component "Finish" \ { user, description, offer, method } -> do
-    let summary = Summary.render today user description offer method
+  React.component "Finish" \ { user, description, orderDetails } -> do
+    let summary = Summary.render today user description orderDetails
     pure $ render summary
 
 render :: JSX -> JSX

@@ -35,12 +35,14 @@ type Props =
   , disabled        :: Boolean
   , extraClass      :: String
   , autoComplete    :: String
+  , pattern         :: String
   )
 
 type DefaultProps =
   ( disabled        :: Boolean
   , extraClass      :: String
   , autoComplete    :: String
+  , pattern         :: String
   )
 
 type State =
@@ -66,6 +68,7 @@ inputField userProps = React.make component
       { disabled: false
       , extraClass: ""
       , autoComplete: ""
+      , pattern: ""
       }
 
     didMount { props, setState } = when (isJust props.value) $
@@ -101,6 +104,7 @@ render self@{ props, state } =
                 else mempty
             , disabled: props.disabled
             , autoComplete: if props.autoComplete == "" then unsafeCoerce Nullable.null else props.autoComplete
+            , pattern: if props.pattern == "" then unsafeCoerce Nullable.null else props.pattern
             }
         ] `snoc` foldMap errorMessage props.validationError
     }

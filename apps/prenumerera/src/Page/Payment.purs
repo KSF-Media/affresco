@@ -8,7 +8,9 @@ import Bottega.Models.Order (OrderSource(..))
 import Bottega.Poller as Poller
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 import Data.Either (Either(..))
+import Data.Identity (Identity(..))
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -32,7 +34,8 @@ type Props =
   , description :: Description
   , offer :: PackageOffer
   , method :: PaymentMethod
-  , next :: Effect Unit
+  , gift :: Boolean
+  , next :: Maybe String -> Effect Unit
   }
 
 type State =
@@ -44,11 +47,12 @@ component :: Component Props
 component = do
   poller <- Poller.new
   today <- Now.nowDate
-  React.component "Payment" $ \ { user, package, description, offer, method, next } -> React.do
+  React.component "Payment" $ \ { user, package, description, offer, method, gift, next } -> React.do
     orderState /\ setOrderState <- useState' $ Right OrderUnknownState
     netsUrl /\ setNetsUrl <- useState' Nothing
     error /\ setError <- useState' $ Right unit
     paperInvoiceConfirmed /\ setPaperInvoiceConfirmed <- useState' false
+    giftCode /\ setGiftCode <- useState' Nothing
     let startPayOrder :: Effect Unit
         startPayOrder = do
           Aff.launchAff_ do
@@ -59,9 +63,11 @@ component = do
                     , payAmountCents: offer.totalPrice
                     , campaignNo: Nothing
                     , orderSource: Just PrenumereraSource
+                    , gift
                     }
               order <- ExceptT $ User.createOrder newOrder
               nets <- ExceptT $ User.payOrder order.number method
+              liftEffect $ setGiftCode order.giftCode
               pure { nets, order }
             case eitherNetsUrl of
               Left err -> liftEffect do
@@ -78,9 +84,13 @@ component = do
       when (method == CreditCard) startPayOrder
       pure $ Aff.launchAff_ $ Poller.kill poller
     useEffect orderState do
-      when (orderState == Right OrderCompleted) next
+      case orderState of
+        Right OrderCompleted -> next Nothing
+        Right OrderGiftPaid -> next giftCode
+        _ -> pure unit
       pure $ pure unit
-    let orderSummary = Summary.render today user description offer method
+    let orderSummary = Summary.render today user description $ unwrap $
+                       Summary.toDetails Nothing giftCode gift $ Identity { offer, method }
     pure $ case method of
       PaperInvoice -> case paperInvoiceConfirmed of
         false -> renderPaperInvoice orderSummary startPaperInvoicePurchase

@@ -26,6 +26,7 @@ type ApiOrder =
   { number :: OrderNumber
   , user :: UUID
   , status :: ApiOrderStatus
+  , giftCode :: Nullable String
   }
 
 type ApiOrderStatus =
@@ -79,7 +80,7 @@ bottegaErrorMessage e = show e
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder@{ campaignNo, orderSource } =
-  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource } ] { authorization, authUser }
+  readOrder <$> callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource } ] { authorization, authUser }
   where
     -- NOTE/REMINDER: We don't want send Maybes to the server,
     -- as they will be sent as objects
@@ -91,15 +92,19 @@ createOrder { userId, authToken } newOrder@{ campaignNo, orderSource } =
 
 getOrder :: UserAuth -> OrderNumber -> Aff Order
 getOrder { userId, authToken } orderNumber = do
-  readOrder =<< callApi ordersApi "orderOrderNumberGet" [ unsafeToForeign orderNumber ] { authorization, authUser }
+  readOrder <$> callApi ordersApi "orderOrderNumberGet" [ unsafeToForeign orderNumber ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-readOrder :: ApiOrder -> Aff Order
-readOrder orderObj = do
+readOrder :: ApiOrder -> Order
+readOrder orderObj =
   let state = parseOrderState orderObj.status.state (toMaybe orderObj.status.failReason)
-  pure $ { number: orderObj.number, user: orderObj.user, status: { state, time: orderObj.status.time }}
+  in { number: orderObj.number
+     , user: orderObj.user
+     , status: { state, time: orderObj.status.time }
+     , giftCode: toMaybe orderObj.giftCode
+     }
 
 type PaymentTerminalUrlApi = Nullable { paymentTerminalUrl :: Nullable String }
 

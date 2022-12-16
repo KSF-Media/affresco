@@ -35,3 +35,15 @@ renderPackageLoadFailed =
             }
         ]
     }
+
+renderGiftLoadFailed :: JSX
+renderGiftLoadFailed =
+  DOM.div
+    { className: "container ksf-block"
+    , children:
+        [ DOM.div
+            { className: "row"
+            , children: [ DOM.text "Error loading gift data." ]
+            }
+        ]
+    }

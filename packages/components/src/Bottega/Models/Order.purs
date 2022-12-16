@@ -15,6 +15,7 @@ type Order =
   { number     :: OrderNumber
   , user       :: UUID
   , status     :: OrderStatus
+  , giftCode   :: Maybe String
   }
 
 type OrderStatus =
@@ -25,6 +26,7 @@ type OrderStatus =
 data OrderState
   = OrderCreated
   | OrderStarted
+  | OrderGiftPaid
   | OrderCompleted
   | OrderFailed FailReason
   | OrderCanceled
@@ -46,9 +48,15 @@ parseOrderState state maybeFailReason =
       "created"   -> OrderCreated
       "started"   -> OrderStarted
       "completed" -> OrderCompleted
+      "giftPaid"  -> OrderGiftPaid
       "failed"    -> OrderFailed $ maybe UnknownReason parseFailReason maybeFailReason
       "canceled"  -> OrderCanceled
       _           -> OrderUnknownState
+
+type Gift =
+  { owner   :: UUID
+  , package :: String
+  }
 
 type NewOrder =
   { packageId      :: String
@@ -56,6 +64,7 @@ type NewOrder =
   , payAmountCents :: Int
   , campaignNo     :: Maybe Int
   , orderSource    :: Maybe OrderSource
+  , gift           :: Boolean
   }
 
 data OrderSource = CampaignPagesSource

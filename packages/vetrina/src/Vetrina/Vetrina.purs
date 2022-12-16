@@ -295,6 +295,9 @@ pollOrder setState state@{ logger } (Right order) = do
       logger.log "Customer canceled order" Sentry.Info
       setState _ { purchaseState = NewPurchase }
     OrderCreated      -> pollOrder setState state =<< User.getOrder order.number
+    OrderGiftPaid     -> liftEffect do
+      logger.error $ Error.orderError "Unexpected state OrderGiftPaid"
+      setState _ { purchaseState = PurchaseFailed ServerError}
     OrderUnknownState -> liftEffect do
       logger.error $ Error.orderError "Got UnknownState from server"
       setState _ { purchaseState = PurchaseFailed ServerError }
@@ -575,6 +578,7 @@ createOrder _ product orderSource = do
         , payAmountCents: product.priceCents
         , campaignNo: map _.no product.campaign
         , orderSource: Just orderSource
+        , gift: false
         }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of

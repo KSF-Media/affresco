@@ -5,6 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.List.NonEmpty (all)
+import Data.Profunctor (lcmap)
 import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
@@ -14,6 +15,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Exception as Exception
 import KSF.InputField as InputField
+import KSF.InputField.Checkbox as InputCheckbox
 import KSF.Registration.Component (RegistrationInputField(..))
 import KSF.Registration.Component as Registration
 import KSF.Spinner as Spinner
@@ -29,6 +31,7 @@ import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, useEffect, useState, useState', (/\))
 import React.Basic.Hooks as React
+import Debug
 
 type Props =
   { user :: Maybe User
@@ -36,23 +39,33 @@ type Props =
   , package :: Package
   , description :: Description
   , scrollToTop :: Effect Unit
-  , next :: User -> Effect Unit
+  , giftRedeem :: Boolean
+  , next :: Boolean -> User -> Effect Unit
   , cancel :: Effect Unit
   }
 
 type RegisterData =
   { existingUser :: Boolean
+  , giftSubscription :: Boolean
+  , giftRedeem :: Boolean
+  , acceptTerms :: Boolean
   , form :: Registration.State
   }
 
-initialRegisterData :: Boolean -> Maybe User -> RegisterData
-initialRegisterData digitalOnly Nothing =
+initialRegisterData :: Boolean -> Boolean -> Maybe User -> RegisterData
+initialRegisterData giftRedeem digitalOnly Nothing =
   { existingUser: false
+  , giftSubscription: false
+  , giftRedeem
+  , acceptTerms: false
   , form: Registration.initialState { digitalOnly = digitalOnly }
   }
 
-initialRegisterData digitalOnly (Just user) =
+initialRegisterData giftRedeem digitalOnly (Just user) =
   { existingUser: true
+  , giftSubscription: false
+  , giftRedeem
+  , acceptTerms: false
   , form:
       { formData:
           { emailAddress: Just user.email
@@ -78,12 +91,31 @@ initialRegisterData digitalOnly (Just user) =
 component :: Component Props
 component = do
   login <- Login.login
-  React.component "Register" $ \ { user, setUser, package, description, scrollToTop, next, cancel } -> React.do
+  React.component "Register" $ \ { user, setUser, giftRedeem, package, description, scrollToTop, next, cancel } -> React.do
     loading /\ setLoading' <- useState' Nothing
-    let initialAtInit = initialRegisterData package.digitalOnly user
-    allowLateLogin /\ setAllowLateLogin <- useState' $ isNothing user
+    let initialAtInit = initialRegisterData package.digitalOnly giftRedeem user
+    allowLateLogin /\ setAllowLateLogin <- useState' $ isNothing Nothing
+--    (allowLateLogin :: Boolean) /\ (setAllowLateLogin :: Boolean -> Effect Unit) <- useState' true
     initial /\ setInitial <- useState' initialAtInit
-    registerData /\ setRegisterData <- useState initial
+    -- Just in case user has started to fill out the form and then
+    -- uses the checkbox.  Reset to initial data since selecting it
+    -- hides the address fields regardless of package and set
+    -- digitalOnly true to skip validating them.
+    let updateGift :: RegisterData -> RegisterData
+        updateGift reg = if not reg.giftSubscription
+                         then reg { form = reg.form
+                                           { digitalOnly = package.digitalOnly
+                                           }
+                                  }
+                         else reg { form = reg.form
+                                           { formData = initial.form.formData
+                                                        { firstName = reg.form.formData.firstName
+                                                        , lastName = reg.form.formData.lastName
+                                                        }
+                                           , digitalOnly = true
+                                           }
+                                  }
+    registerData /\ setRegisterData <- (map $ map $ lcmap $ map updateGift) $ useState initial
     loginScreen /\ setLoginScreen <- useState' $ isNothing user
     let withSpinner :: forall a. Aff a -> Aff a
         withSpinner = Spinner.withSpinner setLoading'
@@ -98,12 +130,12 @@ component = do
             , disableSocialLogins: mempty
             }
         userFetched (Right u) = do
-          let initialAfterLogin = initialRegisterData package.digitalOnly $ Just u
+          let initialAfterLogin = initialRegisterData giftRedeem package.digitalOnly $ Just u
           setInitial initialAfterLogin
           setRegisterData $ const initialAfterLogin
           scrollToTop
           setLoginScreen false
-          setAllowLateLogin false
+          (setAllowLateLogin :: Boolean -> Effect Unit) false
           setUser $ Just u
         userFetched (Left _) = do
           pure unit
@@ -113,12 +145,14 @@ component = do
                             (Aff.runAff_ userCreate <<< withSpinner) form
               update = flip (updateUser
                              initial.form.formData
+                             registerData.form.formData
+                             registerData.giftSubscription
                              (setFormData setRegisterData)
                              (scrollToTop *> setCreateError true)
-                             next) form
+                             (next registerData.giftSubscription)) form
           maybe registerNew update user
         userCreate (Right u) = do
-          next u
+          next registerData.giftSubscription u
         userCreate (Left err) = do
           case Exception.message err of
             -- Do nothing, createUser should have marked the fields already
@@ -127,10 +161,10 @@ component = do
             _ -> setCreateError true
     -- Login may have succeeded asynchronously via magiclogin when
     -- this component was already open
-    useEffect (isNothing user /\ allowLateLogin) do
+    useEffect (isNothing user /\ (allowLateLogin :: Boolean)) do
       case user of
         Nothing -> pure unit
-        Just u -> when allowLateLogin $ userFetched $ Right u
+        Just u -> when (allowLateLogin :: Boolean) $ userFetched $ Right u
       pure $ pure unit
     pure $ case loading of
       Nothing -> render description $
@@ -183,20 +217,6 @@ renderLogin content startRegister =
                     , id: "loginPrompt"
                     , children: [ DOM.text "Registrera dig eller logga in för att beställa" ]
                     }
-                , DOM.p
-                    { className: "gift-disclaimer"
-                    , children:
-                        [ DOM.text "Önskar du ge tidningen i gåva? Kontakta kundservice "
-                        , DOM.a { href: "mailto:pren@ksfmedia.fi"
-                                , children: [ DOM.text "pren@ksfmedia.fi" ]
-                                }
-                        , DOM.text " eller på numret "
-                        , DOM.a { href: "tel:+35891253500"
-                                , children: [ DOM.text "09 125 35 00" ]
-                                }
-                        , DOM.text " (vardagar kl. 8-12 och 13-16)."
-                        ]
-                    }
                 ]
             }
         , content
@@ -233,11 +253,24 @@ renderRegister reg@{ form } setState save cancel =
                 [ DOM.form
                     { className: "janrain-api-form user-form"
                     , onSubmit: handler preventDefault $ const $ save $ Registration.formValidations form
+{-
+                    , onSubmit: handler preventDefault $ const $
+                      -- The accept terms checkbox, if applicable, is
+                      -- not part of the same validations.
+                      if not isFormInvalid then save $ Registration.formValidations form
+                      else pure unit
+-}
                     , children:
                         (if reg.existingUser then [ DOM.h3_ [ DOM.text "Din information" ] ] else []) <>
                         [ row [ inputField FirstName, inputField LastName ]
                         ] <>
-                        (guard (not form.digitalOnly) $
+                        (guard (not reg.giftRedeem) $
+                         [ row [ giftOrderSelection ]
+                         ]) <>
+                        (guard reg.giftSubscription $
+                         [ row [ giftDescription ]
+                         ]) <>
+                        (guard (not form.digitalOnly && not reg.giftSubscription) $
                          [ row [ inputField StreetAddress, inputField (Zip (form.formData.country)) ]
                          , row [ inputField City, inputField Country ]
                          ]) <>
@@ -245,6 +278,12 @@ renderRegister reg@{ form } setState save cancel =
                         ] <>
                         (guard (not reg.existingUser) $
                          [ row [ inputField Password, inputField (ConfirmPassword form.formData.password) ] ]
+{-
+                        ) <>
+                        (guard reg.giftRedeem $
+                         [ row [ accept ]
+                         ]
+-}
                         ) <> [ row [ DOM.div {className: "input-field--container"} , submit ]
                              , row []
                              ]
@@ -258,6 +297,21 @@ renderRegister reg@{ form } setState save cancel =
       DOM.div
         { className: "row"
         , children: xs
+        }
+
+    giftOrderSelection =
+      InputCheckbox.inputCheckbox
+        { type_: InputCheckbox.Checkbox
+        , name: "gift"
+        , checked: reg.giftSubscription
+        , onChange: \checked -> setState _ { giftSubscription = checked }
+        , label: Just "lahjatilaus"
+        , checkboxFirst: true
+        }
+
+    giftDescription =
+      DOM.div
+        { children: [ DOM.text "saat koodin" ]
         }
 
     inputField :: RegistrationInputField -> JSX
@@ -315,6 +369,11 @@ renderRegister reg@{ form } setState save cancel =
       | Left errs <- toEither $ Registration.formValidations form
       = not $ all isNotInitialized errs
       | otherwise = false
+{-
+      -- TODO this check could be done with the same V that the rest
+      -- of registration uses but it's non-trivial
+      | otherwise = reg.giftRedeem && not reg.acceptTerms
+-}
 
 setFormState :: ((RegisterData -> RegisterData) -> Effect Unit) -> (Registration.State -> Registration.State) -> Effect Unit
 setFormState setState f = setState $ \s -> s { form = f s.form }
@@ -324,29 +383,34 @@ setFormData setState f = setFormState setState $ \s -> s { formData = f s.formDa
 
 updateUser
   :: Registration.FormData
+  -> Registration.FormData
+  -> Boolean
   -> ((Registration.FormData -> Registration.FormData) -> Effect Unit)
   -> Effect Unit
   -> (User -> Effect Unit)
   -> User
   -> ValidatedForm Registration.RegistrationInputField Registration.FormData
   -> Effect Unit
-updateUser orig setForm updateError next user = validation
-  (\_ -> setForm _
-           { firstName       = orig.firstName       <|> Just ""
-           , lastName        = orig.lastName        <|> Just ""
-           , streetAddress   = orig.streetAddress   <|> Just ""
-           , city            = orig.city            <|> Just ""
-           , zipCode         = orig.zipCode         <|> Just ""
-           , country         = orig.country         <|> Just ""
-           , password        = orig.password        <|> Just ""
-           , confirmPassword = orig.confirmPassword <|> Just ""
+updateUser orig formData giftSubscription setForm updateError next user = validation
+  (\err -> trace {err} $ const $ setForm _
+           { firstName       = formData.firstName       <|> Just ""
+           , lastName        = formData.lastName        <|> Just ""
+           , streetAddress   = formData.streetAddress   <|> Just ""
+           , city            = formData.city            <|> Just ""
+           , zipCode         = formData.zipCode         <|> Just ""
+           , country         = formData.country         <|> Just ""
+           , password        = formData.password        <|> Just ""
+           , confirmPassword = formData.confirmPassword <|> Just ""
            }
   )
   \new -> do
+    traceM {success: 1, new}
     let nameChanged = orig.firstName /= new.firstName || orig.lastName /= new.lastName
-        addressChanged = orig.streetAddress /= new.streetAddress ||
-                         orig.zipCode /= new.zipCode ||
-                         orig.country /= new.country
+        addressChanged =
+          not giftSubscription &&
+          (orig.streetAddress /= new.streetAddress ||
+           orig.zipCode /= new.zipCode ||
+           orig.country /= new.country)
         afterUpdate (Left _) = updateError
         afterUpdate (Right (Left _)) = updateError
         afterUpdate (Right (Right u)) = next u
