@@ -1,0 +1,18 @@
+{
+  "name": "@affresco/ospedale",
+  "version": "1.0.0",
+  "description": "Ospedale",
+  "license": "MIT",
+  "dependencies": {
+    "create-react-class": "^15.6.3",
+    "less": "^3.8.1",
+    "react": "^16.12",
+    "react-date-picker": "^8.4.0",
+    "react-dom": "^16.12"
+  },
+  "scripts": {
+    "start": "parcel index.html -p 8000",
+    "build": "spago build && parcel build index.html --public-url ./ --no-source-maps && cp xd_receiver.html _redirects ./dist",
+    "test": "echo 'No testsuite configured'"
+  }
+}
