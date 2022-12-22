@@ -17,10 +17,8 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
 import KSF.Api (AuthScope(..))
 import KSF.Api.Subscription (SubscriptionPaymentMethod(CreditCard))
-import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
-import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.Timeout as Timeout
@@ -28,11 +26,12 @@ import KSF.Tracking as Tracking
 import KSF.User as User
 import KSF.User.Login as Login
 import Foreign (unsafeToForeign)
+import MittKonto.Components.User as Components.User
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarView, userView) as Views
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarView) as Views
 import MittKonto.Payment.PaymentAccordion as PaymentAccordion
 import MittKonto.Payment.PaymentDetail as PaymentDetail
 import MittKonto.Payment.Types as Payments
@@ -65,27 +64,23 @@ app = do
   now <- Now.nowDate
   loginComponent <- Login.login
   timeout <- Timeout.newTimer
-  profile <- Profile.component
+  userComponent <- Components.User.component router logger
 
   let initialState =
         { paper: KSF
         , adminMode: false
         , activeUser: Nothing
-        , activeUserNewsletters: Nothing
-        , newslettersUpdated: Types.NotUpdated
         -- Let's show the spinner while we try to magically login the user
         , loading: Just Spinner.Loading
         , showWelcome: true
         , alert: Nothing
         , payments: Nothing
         , now: now
-        , news: News.render Nothing
         , loginComponent
         }
   passwordReset <- Reset.resetPassword
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
-    _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
     route /\ setRoute <- useState' initialRoute
     -- Display a nicer message to a user if they try to navigate back
@@ -106,11 +101,6 @@ app = do
           admin <- User.isAdminUser
           setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
           logger.setUser $ Just user
-          Aff.launchAff_ $ do
-            newsletters <- User.getUserNewsletters user.uuid
-            case newsletters of
-                Right n -> liftEffect $ setState $ _ { activeUserNewsletters = Just n }
-                Left _ -> pure unit
           Aff.launchAff_ $ Timeout.startTimer duration timeout do
             liftEffect logout
 
@@ -201,15 +191,14 @@ app = do
                                                , setPasswordChangeDone
                                                , navToMain: router.pushState (unsafeToForeign {}) "/"
                                                }
-        profileView = case state.activeUser of
-          Just user -> profile { profile: user
-                               , onUpdate: setState <<< Types.setActiveUser <<< Just
-                               , logger
-                               }
-          Nothing -> mempty
-
+        userView user =
+          userComponent
+            { user
+            , state
+            , setState
+            }
         userContent = case route of
-          MittKonto -> foldMap (Views.userView router self logger profileView setState) state.activeUser
+          MittKonto -> foldMap userView state.activeUser
           Search -> guard state.adminMode searchView
           InvoiceList -> paymentView
           InvoiceDetail invno -> paymentDetailView invno
