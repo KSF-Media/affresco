@@ -3,9 +3,10 @@ module MittKonto.Main where
 import Prelude
 
 import Data.Either (Either(..), either, hush, isLeft)
-import Data.Foldable (foldMap)
+import Data.Foldable (find, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
+import Data.Nullable as Nullable
 import Data.Time.Duration (class Duration, Days(..), convertDuration)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -15,6 +16,7 @@ import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
 import KSF.Api (AuthScope(..))
+import KSF.Api.Subscription (SubscriptionPaymentMethod(CreditCard))
 import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
@@ -177,19 +179,22 @@ app = do
             , route: "/fakturor/:invno"
             , routeFrom: "/fakturor"
             }
-        creditCardUpdateInputs subsno user =
+        creditCardUpdateInputs subscription user =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
           , cusno: user.cusno
           , logger: logger
-          , subsno
+          , subsno: subscription.subsno
+          , paymentMethodId: Nullable.toMaybe subscription.paymentMethodId
           }
-        creditCardUpdateView subsno user =
-          creditCardUpdate
-            { contentProps: creditCardUpdateInputs subsno user
-            , closeType: Wrappers.XButton
-            , route: "/kreditkort/uppdatera"
-            , routeFrom: "/"
-            }
+        creditCardUpdateView subsno user = fromMaybe mempty do
+          subs <- find ((_ == subsno) <<< _.subsno) user.subs
+          guard (subs.paymentMethod == CreditCard) $ pure $
+            creditCardUpdate
+              { contentProps: creditCardUpdateInputs subs user
+              , closeType: Wrappers.XButton
+              , route: "/kreditkort/uppdatera"
+              , routeFrom: "/"
+              }
         passwordResetView code = passwordReset { user: state.activeUser
                                                , code
                                                , passwordChangeDone
