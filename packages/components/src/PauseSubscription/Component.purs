@@ -39,6 +39,7 @@ type Props =
   , lastDelivery :: Maybe Date
   , oldStart     :: Maybe Date
   , oldEnd       :: Maybe Date
+  , suspend      :: Maybe Date
   , now          :: Date
   , onCancel     :: Effect Unit
   , onLoading    :: Effect Unit
@@ -87,11 +88,11 @@ calcMinEndDate lastDelivery (Just startDate) = do
   adjust span startDate
 
 -- | Maximum pause period is three months
-calcMaxEndDate :: Maybe Date -> Maybe Date
-calcMaxEndDate Nothing = Nothing
-calcMaxEndDate (Just startDate) = do
+calcMaxEndDate :: Maybe Date -> Maybe Date-> Maybe Date
+calcMaxEndDate Nothing _ = Nothing
+calcMaxEndDate (Just startDate) suspend = do
   let threeMonths = Time.Duration.Days (30.0 * 3.0)
-  adjust threeMonths startDate
+  maybe identity min suspend <$> adjust threeMonths startDate
 
 didMount :: Self -> Effect Unit
 didMount self = do
@@ -192,7 +193,7 @@ render self =
       self.setState _
         { startDate = newStartDate
         , minEndDate = calcMinEndDate self.props.lastDelivery newStartDate
-        , maxEndDate = calcMaxEndDate newStartDate
+        , maxEndDate = calcMaxEndDate newStartDate self.props.suspend
         }
 
 type DateInputField =
