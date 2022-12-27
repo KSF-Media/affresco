@@ -3,9 +3,10 @@ module MittKonto.Main.CreditCardUpdateView where
 import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
-import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..))
+import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..), PaymentMethodId)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Foldable (find)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -35,6 +36,7 @@ type BaseProps =
   , cusno       :: Cusno
   , logger      :: Sentry.Logger
   , subsno      :: Subsno
+  , paymentMethodId :: Maybe PaymentMethodId
   )
 
 type Props =
@@ -75,7 +77,10 @@ creditCardUpdateView = do
             logger.log "No credit cards found" Sentry.Error
             onError self
           [ card ] -> registerCreditCard self closed card
-          _        -> liftEffect $ setState _ { asyncWrapperState = AsyncWrapper.Ready }
+          -- Try to match a paymentId with user's subscriptions
+          _        -> maybe (liftEffect $ setState _ { asyncWrapperState = AsyncWrapper.Ready })
+                      (registerCreditCard self closed) $
+                      find ((_ == props.paymentMethodId) <<< Just <<< _.paymentMethodId) creditCards
       _ <- AVar.tryTake closed
       pure do
         _ <- AVar.tryPut unit closed
