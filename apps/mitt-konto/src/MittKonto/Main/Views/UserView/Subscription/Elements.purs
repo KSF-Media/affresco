@@ -369,6 +369,7 @@ pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } }
       -- Make sure that both exist if used
     , oldStart: oldEnd *> oldStart
     , oldEnd: oldStart *> oldEnd
+    , suspend: toDate =<< toMaybe sub.dates.suspend
     , nextDelivery: toDate =<< toMaybe package.nextDelivery
     , lastDelivery: maximum $ mapMaybe (toDate <=< toMaybe <<< _.nextDelivery) package.products
     , now: self.props.now
