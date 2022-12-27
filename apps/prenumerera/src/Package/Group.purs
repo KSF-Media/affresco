@@ -6,6 +6,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, foldr1)
 import Data.Maybe (Maybe(..))
+import Data.Monoid (guard)
 import Data.Tuple (Tuple(..), fst)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -154,6 +155,18 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                       , onClick: handler preventDefault $ \_ -> startPurchase package description
                       , href: "#"
                       }
+            , guard (description.ordering == 3) $ DOM.div
+              { className: "price-change"
+              , children:
+                  [ DOM.p
+                      { className: "price-change-text"
+                      , children:
+                        [ DOM.span_ [ DOM.text "Obs!"]
+                        , DOM.text " Priset för den här produkten stiger till 44,90 euro 2.2.2023. Prisändringen träder i kraft efter pågående faktureringsperiod."
+                        ]
+                      }
+                  ]
+              }
             , DOM.div
                 { className: "details"
                 , children: [ description.descriptionLong ]
