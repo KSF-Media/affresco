@@ -34,17 +34,19 @@ type Props =
   { package :: Package
   , description :: Description
   , user :: User
+  , initialPaymentMethod :: PaymentMethod
+  , availablePaymentMethods :: Array PaymentMethod
   , next :: PackageOffer -> PaymentMethod -> User -> Effect Unit
   , cancel :: Effect Unit
   }
 
 component :: Component Props
 component = do
-  React.component "SelectPeriod" $ \ { package, description, user, next } -> React.do
+  React.component "SelectPeriod" $ \ props@{ package, description, user, next, availablePaymentMethods } -> React.do
     let initial = _.form $ Register.initialRegisterData false $ Just user
     offer /\ setOffer <- useState' $ head package.offers
     remind /\ setRemind <- useState' false
-    paymentMethod /\ setPaymentMethod <- useState' CreditCard
+    paymentMethod /\ setPaymentMethod <- useState' props.initialPaymentMethod
     acceptTerms /\ setAcceptTerms <- useState' false
     form /\ setForm <- useState initial
     updateUserError /\ setUpdateUserError <- useState' false
@@ -56,7 +58,7 @@ component = do
                           Registration.formValidations form
           CreditCard -> next o m user
     let remindElement = guard remind renderRemind
-        paymentOfferElement = renderPaymentOffer package.offers setOffer paymentMethod setPaymentMethod
+        paymentOfferElement = renderPaymentOffer package.offers setOffer availablePaymentMethods paymentMethod setPaymentMethod
         acceptElement = renderAccept acceptTerms setAcceptTerms
         addressElement = guard (paymentMethod == PaperInvoice) $ renderAddress package form setForm
     pure $ render description remindElement paymentOfferElement addressElement acceptElement
@@ -76,8 +78,8 @@ renderRemind =
         ]
     }
 
-renderPaymentOffer :: NonEmptyArray PackageOffer -> (PackageOffer -> Effect Unit) -> PaymentMethod -> (PaymentMethod -> Effect Unit) -> JSX
-renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
+renderPaymentOffer :: NonEmptyArray PackageOffer -> (PackageOffer -> Effect Unit) -> Array PaymentMethod -> PaymentMethod -> (PaymentMethod -> Effect Unit) -> JSX
+renderPaymentOffer offers setOffer availablePaymentMethods paymentMethod setPaymentMethod =
   DOM.div
     { className: "payment accept-terms--narrow"
     , children:
@@ -89,7 +91,7 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
                 , required: true
                 , onChange: handler targetValue $ setPaymentMethod <<< decodeMethod
                 , defaultValue: paymentOptionText paymentMethod
-                , children: map renderPaymentOptionOption [ CreditCard, PaperInvoice ]
+                , children: map renderPaymentOptionOption availablePaymentMethods
                 }
             ]
         , DOM.label_

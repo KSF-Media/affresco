@@ -78,11 +78,10 @@ render :: Types.Self -> JSX -> JSX
 render self@{ props: { now, subscription: sub } } informationColumn =
   Grid.row2
     informationColumn
-    (if expired then mempty else Elements.subscriptionUpdates self)
+    (Elements.subscriptionUpdates self)
     { extraClasses: [ "subscription--container" ]
     , _data: [ Tuple "subsno" subsno ]
     , id: "subscription-" <> subsno
     }
   where
-    expired = isSubscriptionExpired sub now
     subsno = Subsno.toString sub.subsno

@@ -9,6 +9,7 @@ import Data.Nullable as Nullable
 import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
 import MittKonto.Components.Mailinglists as Mailinglists
+import MittKonto.Components.Renew as Renew
 import MittKonto.Components.Subscription (component) as Subscription
 import MittKonto.Main.UserView.AccountEdit as AccountEdit
 import MittKonto.Main.UserView.IconAction as IconAction
@@ -22,7 +23,7 @@ import KSF.User.Cusno as Cusno
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
-import React.Basic.Hooks (Component)
+import React.Basic.Hooks (Component, useState', (/\))
 import Routing.PushState (PushStateInterface)
 
 foreign import images :: { subscribe :: String }
@@ -34,7 +35,9 @@ component router logger = do
   subscriptionComponent <- Subscription.component
   profile <- Profile.component
   mailinglists <- Mailinglists.component
+  renewSubscription <- Renew.component
   React.component "UserView" \{ state: { news, now }, setState, user } -> React.do
+    renewingSubscription /\ setRenewingSubscription <- useState' Nothing
     let profileView =
           Helpers.componentBlock
           "Mina uppgifter:"
@@ -59,10 +62,11 @@ component router logger = do
               }
 
         subscriptionView subscription =
-          subscriptionComponent { subscription, user, logger, now, router }
+          subscriptionComponent { subscription, user, logger, now, router, renewSubscription, setRenewingSubscription }
         subscriptionsView =
           Helpers.componentBlock "Mina prenumerationer:" $ subscriptions <> [ Elements.break, subscribeImage ]
           where
+            renewing subscription = if Just subscription.subsno == renewingSubscription then " renewing" else ""
             subscriptions =
               -- Sort the canceled subscriptions to the end of the list
               case sortBy (comparing _.state) user.subs of
@@ -75,10 +79,10 @@ component router logger = do
             subscriptionComponentBlockContent subscription
               -- If the subscription has a canceled state, we want to add extra css to it.
               | Subscription.isSubscriptionCanceled subscription =
-                Helpers.componentBlockContent " mitt-konto--canceled-subscription" $
+                Helpers.componentBlockContent (" mitt-konto--canceled-subscription" <> (renewing subscription)) $
                 subscriptionView subscription
               | Subscription.isSubscriptionExpired subscription now =
-                Helpers.componentBlockContent " mitt-konto--expired-subscription" $
+                Helpers.componentBlockContent (" mitt-konto--expired-subscription" <> (renewing subscription)) $
                 subscriptionView subscription
               | otherwise = Helpers.componentBlockContent "" $ subscriptionView subscription
 

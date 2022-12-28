@@ -3,6 +3,7 @@ module Prenumerera where
 import Prelude
 
 import Bottega as Bottega
+import Bottega.Models (PaymentMethod(..))
 import Control.Alt ((<|>))
 import Data.Array (elem, filter, mapMaybe)
 import Data.Either (Either(..), either, isLeft)
@@ -201,6 +202,8 @@ app = do
                     { package
                     , description
                     , user: u
+                    , availablePaymentMethods: [ CreditCard, PaperInvoice ]
+                    , initialPaymentMethod: CreditCard
                     , next: offerAndMethodSelected
                     , cancel: nav.pushState (unsafeToForeign {}) "/"
                     }

@@ -6,13 +6,11 @@
   , "arrays"
   , "console"
   , "control"
-  , "datetime"
   , "effect"
   , "either"
   , "exceptions"
   , "foldable-traversable"
   , "foreign"
-  , "lists"
   , "maybe"
   , "now"
   , "nullable"
@@ -23,9 +21,7 @@
   , "react-basic-hooks"
   , "routing"
   , "strings"
-  , "transformers"
   , "tuples"
-  , "validation"
   , "web-html"
   ]
 , packages = ../../packages.dhall

@@ -10,16 +10,18 @@ import Data.Enum (enumFromTo)
 import Data.Foldable (foldMap, for_, null, maximum)
 import Data.JSDate (toDate, toDateTime)
 import Data.List (intercalate)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
+import Data.Nullable as Nullable
 import Data.Nullable (toMaybe)
 import Data.String (length, splitAt, trim)
 import Data.Tuple (Tuple(..))
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Foreign (unsafeToForeign)
-import KSF.Api.Subscription (PausedSubscription, SubscriptionPaymentMethod(..), isSubscriptionPausable, isSubscriptionTemporaryAddressChangable, isPause)
+import KSF.Api.Subscription (PausedSubscription, SubscriptionPaymentMethod(..), isPause, isSubscriptionExpired, isSubscriptionPausable, isSubscriptionTemporaryAddressChangable)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
@@ -37,6 +39,8 @@ import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
 import MittKonto.Wrappers.Elements (successWrapper)
+import Prenumerera.Package as Prenumerera.Package
+import Prenumerera.Package.Description (Description, packageDescriptions)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
@@ -141,15 +145,25 @@ subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMa
   ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe suspend)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, package } }, state } =
+subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno } }, state } =
   Grid.row_ [ actionsWrapper ]
   where
     actionsWrapper = ActionsWrapper.actionsWrapper
-      { actions: (if package.digitalOnly then
-                   mempty
-                 else
-                   paperOnlyActions)
-                 <> extraActions
+      { actions: if isSubscriptionExpired sub now
+                 then case Tuple
+                           <$> Map.lookup sub.package.id packageDescriptions
+                           <*> Prenumerera.Package.fromApiPackage sub.package
+                      of
+                   Just (Tuple description package)
+                     | sub.cusno == props.user.cusno && not (null sub.package.offers) &&
+                       (sub.package.digitalOnly || props.user.address /= Nullable.null) ->
+                         [ renewUpdateIcon description package ]
+                   _ -> mempty
+                 else (if sub.package.digitalOnly then
+                         mempty
+                       else
+                         paperOnlyActions)
+                      <> extraActions
       , wrapperState: self.state.wrapperProgress
       , onTryAgain: self.setState _ { wrapperProgress = updateProgress }
       , containerClass: "subscription--actions-container flex"
@@ -183,6 +197,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         Just (Types.EditTemporaryAddressChange change) ->
           AsyncWrapper.Editing $ temporaryAddressChangeComponent self $ Just change
         Just Types.DeliveryReclamation    -> AsyncWrapper.Editing deliveryReclamationComponent
+        Just (Types.RenewSubscription d p)-> AsyncWrapper.Editing $ renewSubscriptionComponent self d p
         Nothing                           -> AsyncWrapper.Ready
 
     deliveryReclamationComponent =
@@ -360,6 +375,30 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                     ]
         }
 
+    renewUpdateIcon description package =
+      DOM.div
+        { className: "subscription--action-item"
+        , children:
+            [ DOM.div
+                { className: "subscription--renew-icon circle"
+                , onClick: showRenewSubscription
+                }
+            , DOM.span
+                { className: "subscription--update-action-text"
+                , children:
+                    [ DOM.u_ [ DOM.text "Förnya prenumerationen" ]]
+                , onClick: showRenewSubscription
+                }
+            ]
+        }
+      where
+        showRenewSubscription = handler_ do
+          self.props.setRenewingSubscription $ Just subsno
+          self.setState _
+            { updateAction = Just $ Types.RenewSubscription description package
+            , wrapperProgress = AsyncWrapper.Editing $ renewSubscriptionComponent self description package
+            }
+
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
 pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =
   PauseSubscription.pauseSubscription
@@ -505,3 +544,21 @@ changeButton self updateAction component =
                   { updateAction = Just updateAction
                   , wrapperProgress = AsyncWrapper.Editing component
                   }
+
+renewSubscriptionComponent :: Types.Self -> Description -> Prenumerera.Package.Package -> JSX
+renewSubscriptionComponent self@{props} description package =
+  props.renewSubscription
+    { subscription: props.subscription
+    , user: props.user
+    , description
+    , package
+    , onCancel: do
+        self.props.setRenewingSubscription Nothing
+        self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+    , onSuccess: do
+        self.props.setRenewingSubscription Nothing
+        self.setState _ { wrapperProgress = AsyncWrapper.Ready }
+    , onError: const do
+        self.props.setRenewingSubscription Nothing
+        self.setState _ { wrapperProgress = AsyncWrapper.Error "Något gick fel" }
+    }
