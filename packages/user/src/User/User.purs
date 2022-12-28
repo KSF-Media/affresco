@@ -41,12 +41,13 @@ module KSF.User
   , getCreditCards
   , getCreditCard
   , deleteCreditCard
-  , registerCreditCard
   , registerCreditCardFromExisting
   , getCreditCardRegister
   , getPackages
   , getUserEntitlements
   , getUserEntitlementsLoadToken
+  , getUserNewsletters
+  , updateUserNewsletters
   , module Api
   , module Subscription
   )
@@ -55,7 +56,7 @@ where
 import Prelude
 
 import Bottega (BottegaError(..))
-import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCard, registerCreditCardFromExisting, getCreditCardRegister, InsufficientAccount) as Bottega
+import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCardFromExisting, getCreditCardRegister, InsufficientAccount) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
@@ -696,6 +697,24 @@ getPayments uuid = do
       Console.error "Unexpected error when getting user payment history "
       pure $ Left "unexpected"
 
+getUserNewsletters :: UUID -> Aff (Either String (Array Persona.Newsletter))
+getUserNewsletters uuid = do
+  payments <- try $ Persona.getUserNewsletters uuid =<< requireToken
+  case payments of
+    Right newsletters -> pure $ Right newsletters
+    Left _ -> do
+      Console.error "Unexpected error when getting user newsletters"
+      pure $ Left "unexpected"
+
+updateUserNewsletters :: UUID -> Array Persona.Newsletter -> Aff (Either String (Array Persona.Newsletter))
+updateUserNewsletters uuid newsletters = do
+  payments <- try $ Persona.updateUserNewsletters uuid newsletters =<< requireToken
+  case payments of
+    Right letters -> pure $ Right letters
+    Left _ -> do
+      Console.error "Unexpected error when updating user newsletters"
+      pure $ Left "unexpected"
+
 
 createOrder :: Bottega.NewOrder -> Aff (Either BottegaError Bottega.Order)
 createOrder newOrder = callBottega \tokens -> Bottega.createOrder tokens newOrder
@@ -715,9 +734,6 @@ getCreditCard creditCardId = callBottega $ \tokens -> Bottega.getCreditCard toke
 
 deleteCreditCard :: Bottega.CreditCardId -> Aff (Either BottegaError Unit)
 deleteCreditCard creditCardId = callBottega $ \tokens -> Bottega.deleteCreditCard tokens creditCardId
-
-registerCreditCard :: Aff (Either BottegaError Bottega.CreditCardRegister)
-registerCreditCard = callBottega Bottega.registerCreditCard
 
 registerCreditCardFromExisting :: Bottega.CreditCardId -> Aff (Either BottegaError Bottega.CreditCardRegister)
 registerCreditCardFromExisting creditCardId = callBottega $ \tokens -> Bottega.registerCreditCardFromExisting tokens creditCardId

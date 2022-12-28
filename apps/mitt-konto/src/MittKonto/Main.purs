@@ -3,9 +3,10 @@ module MittKonto.Main where
 import Prelude
 
 import Data.Either (Either(..), either, hush, isLeft)
-import Data.Foldable (foldMap)
+import Data.Foldable (find, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Monoid (guard)
+import Data.Nullable as Nullable
 import Data.Time.Duration (class Duration, Days(..), convertDuration)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -15,6 +16,7 @@ import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
 import KSF.Api (AuthScope(..))
+import KSF.Api.Subscription (SubscriptionPaymentMethod(CreditCard))
 import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
@@ -69,6 +71,8 @@ app = do
         { paper: KSF
         , adminMode: false
         , activeUser: Nothing
+        , activeUserNewsletters: Nothing
+        , newslettersUpdated: Types.NotUpdated
         -- Let's show the spinner while we try to magically login the user
         , loading: Just Spinner.Loading
         , showWelcome: true
@@ -102,6 +106,11 @@ app = do
           admin <- User.isAdminUser
           setState $ (Types.setActiveUser $ Just user) <<< (_ { adminMode = admin } )
           logger.setUser $ Just user
+          Aff.launchAff_ $ do
+            newsletters <- User.getUserNewsletters user.uuid
+            case newsletters of
+                Right n -> liftEffect $ setState $ _ { activeUserNewsletters = Just n }
+                Left _ -> pure unit
           Aff.launchAff_ $ Timeout.startTimer duration timeout do
             liftEffect logout
 
@@ -170,19 +179,22 @@ app = do
             , route: "/fakturor/:invno"
             , routeFrom: "/fakturor"
             }
-        creditCardUpdateInputs subsno user =
+        creditCardUpdateInputs subscription user =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
           , cusno: user.cusno
           , logger: logger
-          , subsno
+          , subsno: subscription.subsno
+          , paymentMethodId: Nullable.toMaybe subscription.paymentMethodId
           }
-        creditCardUpdateView subsno user =
-          creditCardUpdate
-            { contentProps: creditCardUpdateInputs subsno user
-            , closeType: Wrappers.XButton
-            , route: "/kreditkort/uppdatera"
-            , routeFrom: "/"
-            }
+        creditCardUpdateView subsno user = fromMaybe mempty do
+          subs <- find ((_ == subsno) <<< _.subsno) user.subs
+          guard (subs.paymentMethod == CreditCard) $ pure $
+            creditCardUpdate
+              { contentProps: creditCardUpdateInputs subs user
+              , closeType: Wrappers.XButton
+              , route: "/kreditkort/uppdatera"
+              , routeFrom: "/"
+              }
         passwordResetView code = passwordReset { user: state.activeUser
                                                , code
                                                , passwordChangeDone
@@ -195,8 +207,9 @@ app = do
                                , logger
                                }
           Nothing -> mempty
+
         userContent = case route of
-          MittKonto -> foldMap (Views.userView router self logger profileView) state.activeUser
+          MittKonto -> foldMap (Views.userView router self logger profileView setState) state.activeUser
           Search -> guard state.adminMode searchView
           InvoiceList -> paymentView
           InvoiceDetail invno -> paymentDetailView invno

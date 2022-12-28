@@ -87,6 +87,9 @@ let apps =
           , name = "Prenumerera"
           , buildDir = "prenumerera"
           , deployDir = "prenumerera"
+          , env = toMap {
+            MAINTENANCE_MODE = "false"
+          }
           }
         ]
       : List App.Type

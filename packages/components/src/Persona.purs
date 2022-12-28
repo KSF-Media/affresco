@@ -3,20 +3,23 @@ module Persona where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (catMaybes, filter)
+import Data.Array (mapMaybe, catMaybes, filter)
 import Data.Date (Date)
 import Data.Date as Date
 import Data.Generic.Rep (class Generic)
 import Data.JSDate (JSDate, toDate)
+import Data.Map (fromFoldable)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, toNullable, toMaybe)
 import Data.Nullable as Nullable
+import Data.Map as Map
 import Data.Show.Generic (genericShow)
 import Data.String as String
 import Data.String (toLower)
 import Data.String.Read (class Read, read)
 import Data.Time.Duration (Days(..))
 import Data.Traversable (sequence)
+import Data.Tuple (Tuple)
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect.Aff (Aff)
@@ -25,6 +28,7 @@ import Effect.Now as Now
 import Foreign (Foreign, unsafeToForeign, unsafeFromForeign)
 import Foreign.Generic.EnumEncoding (defaultGenericEnumOptions, genericDecodeEnum, genericEncodeEnum)
 import Foreign.Object (Object)
+import Foreign.Object as Object
 import KSF.Api (AuthScope(..), InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
@@ -335,6 +339,38 @@ createDeliveryReclamation uuid (Subsno subsno) date doorCode claim auth = do
     ]
     ( authHeaders uuid auth )
 
+getUserNewsletters
+  :: UUID
+  -> UserAuth
+  -> Aff (Array Newsletter)
+getUserNewsletters uuid auth = do
+  res :: Array NewsletterJson <- callApi usersApi "usersUuidNewslettersGet" [ unsafeToForeign uuid ] $ authHeaders auth.userId auth
+  pure $ mapMaybe (\newsletter -> do
+      paper <- Paper.fromString $ newsletter.paper
+      let subs :: Array (Tuple String (Array NewsletterSubscription))
+          subs = Object.toUnfoldable newsletter.subscriptions
+      pure $ { listId: newsletter.listId, paper, subscriptions: fromFoldable subs }) res
+
+updateUserNewsletters
+  :: UUID
+  -> Array Newsletter
+  -> UserAuth
+  -> Aff (Array Newsletter)
+updateUserNewsletters uuid newSubscriptions auth = do
+  let body :: Array NewsletterJson
+      body = map (\newsletter ->
+                    let paper = Paper.toString newsletter.paper
+                        subs :: Array (Tuple String (Array NewsletterSubscription))
+                        subs = Map.toUnfoldable newsletter.subscriptions
+                        listId = newsletter.listId
+                    in { listId, paper, subscriptions: Object.fromFoldable subs })
+                 newSubscriptions
+  callApi usersApi "usersUuidNewslettersPut"
+    [ unsafeToForeign uuid
+    , unsafeToForeign body
+    ]
+    (authHeaders auth.userId auth)
+
 newtype Email = Email String
 derive newtype instance showEmail :: Show Email
 derive newtype instance readforeignEmail :: ReadForeign Email
@@ -581,6 +617,24 @@ instance writeForeignDeliveryReclamationStatus :: WriteForeign DeliveryReclamati
   writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
 instance showDeliveryReclamationStatus :: Show DeliveryReclamationStatus where
   show = genericShow
+
+type Newsletter =
+  { listId        :: String
+  , paper         :: Paper
+  , subscriptions :: Map.Map String (Array NewsletterSubscription)
+  }
+
+type NewsletterJson =
+  { listId        :: String
+  , paper         :: String
+  , subscriptions :: Object (Array NewsletterSubscription)
+  }
+
+type NewsletterSubscription =
+  { id         :: String
+  , listName   :: String
+  , subscribed :: Boolean
+  }
 
 data PaymentState
   = PaymentOpen

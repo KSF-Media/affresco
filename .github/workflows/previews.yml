@@ -13,59 +13,6 @@ jobs:
         run: |2
             make
             git diff --exit-code
-  deploy-app-article-server:
-    container:
-      image: ksfmedia/diskho:gha-1.1
-      options: "--cpus 2"
-    needs: check-ci
-    outputs:
-      preview: "${{ steps.deploy-app-article-server.outputs.url}}"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: "actions/checkout@v2"
-      - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@v0.6.0"
-        with:
-          export_default_credentials: 'true'
-          project_id: ksf-staging
-          service_account_key: "${{ secrets.GCP_STAGING_AE_KEY }}"
-      - run: |2
-            yarn install --pure-lockfile
-            mkdir -p build
-      - env:
-          HIDE_LOGIN_LINKS: 'true'
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
-          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
-          PUBLIC_URL: /dist
-          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
-        name: Build Server App article server
-        run: |2
-            ruby deploy.rb app-article-server
-            cp -R apps/app-article-server build/app-article-server
-        shell: bash
-      - env:
-          HIDE_LOGIN_LINKS: 'true'
-          LETTERA_URL: https://lettera.api.ksfmedia.fi/v3
-          PERSONA_URL: https://persona.api.ksfmedia.fi/v1
-          PUBLIC_URL: /dist
-          SENTRY_DSN: "https://a28dc2fb33d14a269f87ee4b3f2916d8@o360888.ingest.sentry.io/5707650"
-        name: Copy app.yaml.dev to app.yaml
-        run: |
-          cp build/app-article-server/app.dev.yaml build/app-article-server/app.yaml
-        shell: bash
-      - id: deploy-app-article-server
-        name: Deploy App article server
-        uses: "google-github-actions/deploy-appengine@v0.8.0"
-        with:
-          credentials: "${{ secrets.GCP_STAGING_AE_KEY }}"
-          project_id: ksf-staging
-          promote: 'false'
-          working_directory: build/app-article-server
-      - continue-on-error: true
-        name: Keep only 10 latest versions of app-article-server
-        run: |
-          ./ci/ae-cleanup.sh app-article-server
   deploy-gs:
     container:
       image: ksfmedia/diskho:gha-1.1
@@ -147,7 +94,9 @@ jobs:
             ruby deploy.rb hbl365
             cp -R apps/hbl365/dist build/hbl365
         shell: bash
-      - name: Build Prenumerera
+      - env:
+          MAINTENANCE_MODE: 'false'
+        name: Build Prenumerera
         run: |2
             ruby deploy.rb prenumerera
             cp -R apps/prenumerera/dist build/prenumerera
@@ -204,7 +153,6 @@ jobs:
   previews:
     needs:
       - deploy-gs
-      - deploy-app-article-server
     runs-on: ubuntu-latest
     steps:
       - env:
@@ -222,7 +170,6 @@ jobs:
             - [Elections (Parliament)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/elections/index.html)
             - [HBL365](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/hbl365/index.html)
             - [Prenumerera](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/prenumerera/index.html)
-            - [App article server](${{ needs.deploy-app-article-server.outputs.preview }}/article/c7da734f-9e2b-45be-b645-5f4742766486)
 name: previews
 on:
   pull_request:

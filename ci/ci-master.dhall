@@ -13,13 +13,6 @@ let App = A.App
 
 let apps = Prelude.List.filter App.Type (\(a: App.Type) -> a.production)  A.apps
 
-
-let AE = ./app-servers.dhall
-
-let AS = ./app-servers/AppServer.dhall
-
-let AppServer = AS.AppServer
-
 let container = ./container.dhall
 
 let promote = "true"
@@ -28,27 +21,11 @@ let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
 
-let mkAeSteps =
-      \(env : Actions.Env) ->
-      \(app : AppServer.Type) ->
-          Actions.setupSteps env
-        # [ Actions.mkBuildServerStep app ]
-        # [ Actions.generateAppYaml app ]
-        # [ Actions.mkAppEngineStep env promote app ]
-        # [ Actions.mkCleanAppEngineStep env app ]
-
 let steps-gs =
         Actions.setupSteps Actions.Env.Production
       # Actions.cacheSteps apps-to-cache
       # Actions.buildSteps apps
       # Actions.uploadSteps Actions.Env.Production apps
-
-let steps-app-article = mkAeSteps Actions.Env.Production AE.app-article-server
-
-let steps-dispatch =
-        Actions.setupSteps Actions.Env.Production
-      # [ Actions.generateDispatchYamlStep Actions.Env.Production ]
-      # [ Actions.deployDispatchYamlStep Actions.Env.Production ]
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
@@ -68,18 +45,6 @@ in  { name = "production"
               , container
               , steps = steps-gs
               , needs = "check-ci"
-              }
-            , deploy-app-article-server =
-              { runs-on = "ubuntu-latest"
-              , container
-              , steps = steps-app-article
-              , needs = "check-ci"
-              }
-            , deploy-dispatch-yaml =
-              { runs-on = "ubuntu-latest"
-              , container
-              , steps = steps-dispatch
-              , needs = [ "deploy-app-article-server" ]
               }
             }
         //  refreshCDNJobs

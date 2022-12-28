@@ -11,6 +11,9 @@
     grid-area: headline;
     margin-bottom: .5em;
     margin-top: 0;
+    &.vetrina--headline-existing-account {
+        font-size: 1.5rem;
+    }
     .vetrina--price-headline {
 	border-bottom: 2px solid @brand-color;
     }
@@ -90,6 +93,9 @@
 
 .vetrina--headline {
     grid-area: headline;
+    &.vetrina--headline-error {
+        font-size: 1.5rem;
+    }
 }
 
 .vetrina--product-description {
@@ -216,6 +222,9 @@
 .vetrina--description-text {
     grid-area: notification;
     font-size: 1.2em;
+    &.vetrina--description-text-existing-account {
+        font-size: 1.5rem;
+    }
 }
 
 // A wrapper to the input field to control the width
@@ -227,6 +236,7 @@
 }
 
 .vetrina--temporary-user-email {
+    font-size: 1.2rem;
     margin-bottom: 1em;
     grid-area: customer-email-address;
 }
