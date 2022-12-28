@@ -6,12 +6,12 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, foldr1)
 import Data.Maybe (Maybe(..))
-import Data.Monoid (guard)
 import Data.Tuple (Tuple(..), fst)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Helpers as Helpers
+import KSF.Paper (Paper(..))
 import Prenumerera.Package (Package, PackageId)
 import Prenumerera.Package.Description (Description)
 import React.Basic (JSX)
@@ -155,7 +155,22 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                       , onClick: handler preventDefault $ \_ -> startPurchase package description
                       , href: "#"
                       }
-            , guard (description.ordering == 3) $ DOM.div
+            , renderPriceChange description
+            , DOM.div
+                { className: "details"
+                , children: [ description.descriptionLong ]
+                }
+            ]
+        }
+
+    renderPriceChange description = case description.brand of
+      HBL -> if (description.ordering == 3) then priceChange7days else mempty
+      VN  -> if (description.ordering == 2) then priceChange2days else if (description.ordering == 3) then priceChange7days else mempty
+      ON  -> if (description.ordering == 2) then priceChange2days else if (description.ordering == 3) then priceChange7days else mempty
+      _   -> mempty
+
+    priceChange7days =
+      DOM.div
               { className: "price-change"
               , children:
                   [ DOM.p
@@ -167,9 +182,17 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                       }
                   ]
               }
-            , DOM.div
-                { className: "details"
-                , children: [ description.descriptionLong ]
-                }
-            ]
-        }
+
+    priceChange2days =
+      DOM.div
+              { className: "price-change"
+              , children:
+                  [ DOM.p
+                      { className: "price-change-text"
+                      , children:
+                        [ DOM.span_ [ DOM.text "Obs!"]
+                        , DOM.text " Priset för den här produkten stiger till 22,90 euro 3.2.2023. Prisändringen träder i kraft efter pågående faktureringsperiod."
+                        ]
+                      }
+                  ]
+              }
