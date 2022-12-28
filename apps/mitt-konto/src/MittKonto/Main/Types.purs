@@ -12,9 +12,6 @@ import KSF.User (User, SubscriptionPayments)
 import KSF.User.Login as Login
 import React.Basic (JSX)
 
-data NewsletterUpdateState = NotUpdated | Updating | Updated | UpdateFailed
-derive instance eqNewsletterUpdateState :: Eq NewsletterUpdateState
-
 type State =
   { paper :: Paper
   , adminMode :: Boolean
@@ -24,6 +21,7 @@ type State =
   , alert :: Maybe Alert
   , payments :: Maybe (Array SubscriptionPayments)
   , now :: Date
+  , news :: Maybe JSX
   , loginComponent :: Login.Props -> JSX
   }
 

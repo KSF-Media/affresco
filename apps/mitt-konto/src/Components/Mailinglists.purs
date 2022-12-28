@@ -13,7 +13,6 @@ import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
-import MittKonto.Main.Types as Types
 import KSF.AsyncWrapper (loadingSpinner)
 import KSF.Paper as Paper
 import KSF.User (User)
@@ -24,15 +23,18 @@ import React.Basic.DOM as DOM
 import React.Basic.Events (handler)
 import React.Basic.DOM.Events (targetValue, capture_)
 import React.Basic.Hooks as React
-import React.Basic.Hooks (Component, useEffectOnce, useState', (/\))
+import React.Basic.Hooks (Component, useEffect, useState', (/\))
+
+data NewsletterUpdateState = NotUpdated | Updating | Updated | UpdateFailed
+derive instance eqNewsletterUpdateState :: Eq NewsletterUpdateState
 
 component :: Component User
 component = do
   React.component "Mailinglists" $ \user -> React.do
-    newslettersUpdated /\ setNewslettersUpdated <- useState' Types.NotUpdated
+    newslettersUpdated /\ setNewslettersUpdated <- useState' NotUpdated
     activeUserNewsletters /\ setActiveUserNewsletters <- useState' Nothing
 
-    useEffectOnce do
+    useEffect user.uuid do
       launchAff_ do
         foldMap (liftEffect <<< setActiveUserNewsletters <<< Just) =<< User.getUserNewsletters user.uuid
       pure $ pure unit
@@ -48,10 +50,10 @@ component = do
         }
 
   where
-    updateResultMessage Types.NotUpdated = mempty
-    updateResultMessage Types.Updating = mempty
-    updateResultMessage Types.Updated = DOM.p_ [ DOM.text "Uppdateringen av prenumerationen på nyhetsbrevet lyckades." ]
-    updateResultMessage Types.UpdateFailed = DOM.p_ [ DOM.text "Något gick fel med uppdateringen av prenumerationen på nyhetsbrevet." ]
+    updateResultMessage NotUpdated = mempty
+    updateResultMessage Updating = mempty
+    updateResultMessage Updated = DOM.p_ [ DOM.text "Uppdateringen av prenumerationen på nyhetsbrevet lyckades." ]
+    updateResultMessage UpdateFailed = DOM.p_ [ DOM.text "Något gick fel med uppdateringen av prenumerationen på nyhetsbrevet." ]
 
     newsletterCheckbox :: (NewsletterSubscription -> Effect Unit) -> NewsletterSubscription -> JSX
     newsletterCheckbox updateSubs newsletter =
@@ -110,15 +112,15 @@ component = do
         , DOM.button
             { className: "button-green newsletters--update-submit"
             , onClick: capture_ do
-                setNewslettersUpdated Types.Updating
+                setNewslettersUpdated Updating
                 launchAff_ do
                   res <- User.updateUserNewsletters user.uuid $ fromMaybe [] newsletters
-                  liftEffect $ setNewslettersUpdated $ if isRight res then Types.Updated else Types.UpdateFailed
-            , disabled: newslettersUpdated == Types.Updating
+                  liftEffect $ setNewslettersUpdated $ if isRight res then Updated else UpdateFailed
+            , disabled: newslettersUpdated == Updating
             , children:
                 [ DOM.div_ []
                 , DOM.text "Spara"
-                , DOM.div_ [ if newslettersUpdated == Types.Updating then loadingSpinner else mempty ]
+                , DOM.div_ [ if newslettersUpdated == Updating then loadingSpinner else mempty ]
                 ]
             }
         , updateResultMessage newslettersUpdated

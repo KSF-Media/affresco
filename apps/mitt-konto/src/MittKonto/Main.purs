@@ -17,6 +17,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.Alert.Component as Alert
 import KSF.Api (AuthScope(..))
 import KSF.Api.Subscription (SubscriptionPaymentMethod(CreditCard))
+import KSF.News as News
 import KSF.Paper (Paper(..))
 import KSF.Password.Reset as Reset
 import KSF.Sentry as Sentry
@@ -76,11 +77,13 @@ app = do
         , alert: Nothing
         , payments: Nothing
         , now: now
+        , news: News.render Nothing
         , loginComponent
         }
   passwordReset <- Reset.resetPassword
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
+    _ <- News.useNews $ \n -> setState _ { news = News.render n }
     isPersonating /\ setPersonating <- useState' false
     route /\ setRoute <- useState' initialRoute
     -- Display a nicer message to a user if they try to navigate back

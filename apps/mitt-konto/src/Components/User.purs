@@ -3,13 +3,11 @@ module MittKonto.Components.User where
 import Prelude
 
 import Data.Array (all, snoc, sortBy, (:))
-import Data.Either (Either)
 import Data.Foldable (fold)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable as Nullable
 import Data.String (contains)
 import Data.String.Pattern (Pattern(..))
-import Effect (Effect)
 import MittKonto.Components.Mailinglists as Mailinglists
 import MittKonto.Components.Subscription (component) as Subscription
 import MittKonto.Main.UserView.AccountEdit as AccountEdit
@@ -18,14 +16,13 @@ import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
 import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
-import KSF.News as News
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.User.Cusno as Cusno
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
-import React.Basic.Hooks (Component, useState', (/\))
+import React.Basic.Hooks (Component)
 import Routing.PushState (PushStateInterface)
 
 foreign import images :: { subscribe :: String }
@@ -37,9 +34,7 @@ component router logger = do
   subscriptionComponent <- Subscription.component
   profile <- Profile.component
   mailinglists <- Mailinglists.component
-  React.component "UserView" \{ state: { now }, setState, user } -> React.do
-    (news :: Maybe JSX) /\ (setNews :: Maybe JSX -> Effect Unit) <- useState' Nothing
-    _ <- News.useNews $ (setNews :: Maybe JSX -> Effect Unit) <<< (News.render :: Maybe (Either Unit (Array News.News)) -> Maybe JSX)
+  React.component "UserView" \{ state: { news, now }, setState, user } -> React.do
     let profileView =
           Helpers.componentBlock
           "Mina uppgifter:"
@@ -164,4 +159,4 @@ component router logger = do
     newsView :: Maybe JSX -> JSX
     newsView Nothing = mempty
     newsView (Just n) =
-      Helpers.componentBlock "Nyheter:" [ Helpers.componentBlockContent "" n, Elements.break ]
+      Helpers.componentBlock "Aktuellt:" [ Helpers.componentBlockContent "" n, Elements.break ]

@@ -7,7 +7,6 @@ import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Data.Tuple (Tuple(..))
-import Effect (Effect)
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Api.Subscription (isSubscriptionExpired)
 import KSF.AsyncWrapper as AsyncWrapper
@@ -39,14 +38,6 @@ component = do
     informationColumn <- useMemo (state.pausedSubscriptions /\ state.pendingAddressChanges) $ const $
                          renderInformationColumn self
     pure $ render self informationColumn
-
-didMount :: Types.Self -> Effect Unit
-didMount self = do
-  self.setState _
-    { pausedSubscriptions = toMaybe self.props.subscription.paused
-    , pendingAddressChanges = toMaybe self.props.subscription.pendingAddressChanges
-    }
-  self.props.logger.setUser $ Just self.props.user
 
 renderInformationColumn :: Types.Self -> JSX
 renderInformationColumn self@{ props: { now, subscription: sub@{ package, state } } } =
