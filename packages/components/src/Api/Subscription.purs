@@ -77,6 +77,7 @@ data SubscriptionPaymentMethod
 newtype SleepType = SleepType String
 
 derive instance newtypeSleepType :: Newtype SleepType _
+derive newtype instance eqSleepType :: Eq SleepType
 
 type PausedSubscription =
   { startDate :: JSDate
