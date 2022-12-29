@@ -12,6 +12,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
 import Data.Validation.Semigroup (toEither)
 import Effect (Effect)
+import KSF.CountryDropDown (countryDropDown, limitedCountries)
 import KSF.Helpers (formatEur, paperInvoiceCents)
 import KSF.InputField.Checkbox as Checkbox
 import KSF.Paper as Paper
@@ -179,6 +180,9 @@ renderAddress { digitalOnly } form setForm = guard digitalOnly $
         { className: "row"
         , children: xs
         }
+    inputField Country =
+      countryDropDown limitedCountries false
+      (\val -> setForm _ { formData { country = val } }) form.formData.country
     inputField field = Registration.inputField field form setForm
 
 render :: Description -> JSX -> JSX -> JSX -> JSX -> Registration.State -> PackageOffer -> PaymentMethod -> Boolean -> Boolean -> Effect Unit -> JSX
