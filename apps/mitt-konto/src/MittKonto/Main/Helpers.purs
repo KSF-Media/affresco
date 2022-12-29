@@ -5,6 +5,7 @@ import Prelude
 import Data.Array ((:))
 import Data.Foldable (oneOf)
 import Data.Maybe (Maybe(..))
+import Data.String (toUpper)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
@@ -54,3 +55,23 @@ useLoadSpinner setState test spinnerableAction =
           , message: "Något gick fel, ta kontakt med kundservice."
           }
     pure $ pure unit
+
+componentHeader :: String -> JSX
+componentHeader title =
+  classy DOM.span "mitt-konto--component-heading" [ DOM.text $ toUpper title ]
+
+componentBlock :: String -> Array JSX -> JSX
+componentBlock headerText content =
+  DOM.div
+    { className: "mitt-konto--component-block-container"
+    , children:
+        componentHeader headerText
+        : content
+    }
+
+componentBlockContent :: String -> JSX -> JSX
+componentBlockContent extraClasses child =
+  DOM.div
+    { className: "mitt-konto--component-block-content" <> extraClasses
+    , children: [ child ]
+    }

@@ -3,25 +3,19 @@ module MittKonto.Main.Types where
 import Prelude
 
 import Data.Date (Date)
-import Data.Maybe (Maybe(Nothing))
+import Data.Maybe (Maybe)
 import Effect (Effect)
 import KSF.Alert.Component (Alert)
 import KSF.Paper (Paper)
 import KSF.Spinner as Spinner
 import KSF.User (User, SubscriptionPayments)
-import Persona (Newsletter)
 import KSF.User.Login as Login
 import React.Basic (JSX)
-
-data NewsletterUpdateState = NotUpdated | Updating | Updated | UpdateFailed
-derive instance eqNewsletterUpdateState :: Eq NewsletterUpdateState
 
 type State =
   { paper :: Paper
   , adminMode :: Boolean
   , activeUser :: Maybe User
-  , activeUserNewsletters :: Maybe (Array Newsletter)
-  , newslettersUpdated :: NewsletterUpdateState
   , loading :: Maybe Spinner.Loading
   , showWelcome :: Boolean
   , alert :: Maybe Alert
@@ -36,14 +30,18 @@ type Self =
   , setState :: (State -> State) -> Effect Unit
   }
 
+type UserView =
+  { state :: State
+  , setState :: (State -> State) -> Effect Unit
+  , user :: User
+  }
+
 setLoading :: Maybe Spinner.Loading -> State -> State
 setLoading loading = _ { loading = loading }
 
 -- Force reload of payments whenever user changes
 setActiveUser :: Maybe User -> State -> State
 setActiveUser activeUser = _ { activeUser = activeUser
-                             , activeUserNewsletters = Nothing
-                             , payments = Nothing
                              }
 
 setAlert :: Maybe Alert -> State -> State
