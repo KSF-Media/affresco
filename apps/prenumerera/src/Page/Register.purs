@@ -13,6 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Exception as Exception
+import KSF.CountryDropDown (countryDropDown, limitedCountries)
 import KSF.InputField as InputField
 import KSF.Registration.Component (RegistrationInputField(..))
 import KSF.Registration.Component as Registration
@@ -272,6 +273,15 @@ renderRegister reg@{ form } setState save cancel =
         , onChange: const $ pure unit
         , validationError: Nothing
         , disabled: true
+        }
+    inputField Country =
+      DOM.div
+        { className: "input-field--with-message"
+        , children:
+            [ countryDropDown limitedCountries false
+              (\val -> setFormData setState $ _ { country = val }) form.formData.country
+            , DOM.text "Om du vill prenumerera utomlands, ta kontakt med vår kundservice."
+            ]
         }
     inputField field = Registration.inputField field form $ setFormState setState
     submit =
