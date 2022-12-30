@@ -280,7 +280,13 @@ renderRegister reg@{ form } setState save cancel =
         , children:
             [ countryDropDown limitedCountries false
               (\val -> setFormData setState $ _ { country = val }) form.formData.country
-            , DOM.text "Om du vill prenumerera utomlands, ta kontakt med vår kundservice."
+            , DOM.text "Om du vill prenumerera utomlands, ta kontakt med vår "
+            , DOM.a
+                { href: "https://www.hbl.fi/sida/kundservice/"
+                , children: [ DOM.text "kundservice" ]
+                , target: "_blank"
+                }
+            , DOM.text "."
             ]
         }
     inputField field = Registration.inputField field form $ setFormState setState
