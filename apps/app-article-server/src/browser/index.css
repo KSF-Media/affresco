@@ -203,10 +203,18 @@ h6 {
 }
 
 /*Ads*/
-#MOBPARAD,
-#MOBMITT,
-#DIGIHELMOB,
-#MOBBOX1 {
+#hbl\/hbl_mobparad,
+#hbl\/hbl_mobmitt,
+#hbl\/hbl_digihelmob,
+#hbl\/hbl_mobbox1,
+#on\/on_mobparad,
+#on\/on_mobmitt,
+#on\/on_digihelmob,
+#on\/on_mobbox1,
+#vn\/vn_mobparad,
+#vn\/vn_mobmitt,
+#vn\/vn_digihelmob,
+#vn\/vn_mobbox1 {
   text-align: center;
   margin-bottom: 20px;
   overflow: hidden;
