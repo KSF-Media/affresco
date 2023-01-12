@@ -114,12 +114,8 @@
       window.googletag = window.googletag || { cmd: [] };
 
       window.googletag.cmd.push(function () {
-        // Testing by key-value - are we abandoning key-values now?
-        // #TODO - Remove this key-value targeting before merging code
-        googletag.pubads().setTargeting("Test", "mosaico_test");
-        // Production by key-value
-        // googletag.pubads().setTargeting("newspaper", appToTarget);
-
+        // Testing by key-value - Keep commented out for future testing
+        // googletag.pubads().setTargeting("Test", "mosaico_test");
         const networkCode = "/21664538223/";
 
         const slots = window.adSlots;
@@ -137,15 +133,6 @@
         googletag.pubads().enableSingleRequest();
         googletag.pubads().collapseEmptyDivs();
         googletag.enableServices();
-
-        // #TODO Get this working again - commented out because causing exceptions
-        // Is "populated" being used anywhere? Maybe by Google Ad Manager?
-        // googletag.pubads().addEventListener("slotRenderEnded", (event) => {
-        //   if (!event.isEmpty) {
-        //     let elementId = event.slot.getSlotElementId();
-        //     document.querySelector("#" + elementId).classList.add("populated");
-        //   }
-        // });
       });
     </script>
     <!--End Google Ad-->
