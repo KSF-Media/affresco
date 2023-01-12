@@ -54,7 +54,7 @@
         return new URLSearchParams(window.location.search);
       };
 
-      const getBrandValueParam = () => {
+      const getPaper = () => {
         let urlParams = getUrlParam();
         if (urlParams.has("paper")) {
           return urlParams.get("paper");
@@ -62,83 +62,90 @@
         return "hbl";
       };
 
-      const brandValueName = getBrandValueParam();
-      let appToTarget = "";
+      const paper = getPaper();
 
-      if (brandValueName == "on") {
-        appToTarget = "appON";
-      } else if (brandValueName == "vn") {
-        appToTarget = "appVN";
-      } else {
-        appToTarget = "appHBL";
+      window.buildGamAndTargetId = function(name) {
+        return paper + "/" + paper + "_" + name;
       }
 
+      window.adSlots = [
+        {
+          gamAndTargetId: window.buildGamAndTargetId("mobparad"),
+          sizes: [
+            [300, 100],
+            [300, 250],
+            [300, 300],
+            [300, 431],
+            [300, 600],
+          ],
+        },
+        {
+          gamAndTargetId: window.buildGamAndTargetId("mobmitt"),
+          sizes: [
+            [300, 100],
+            [300, 250],
+            [300, 300],
+            [300, 431],
+            [300, 600],
+          ],
+        },
+        {
+          gamAndTargetId: window.buildGamAndTargetId("digihelmob"),
+          sizes: [
+            [300, 100],
+            [300, 250],
+            [300, 300],
+            [300, 431],
+            [300, 600],
+          ],
+        },
+        {
+          gamAndTargetId: window.buildGamAndTargetId("mobbox1"),
+          sizes: [
+            [300, 100],
+            [300, 250],
+            [300, 300],
+            [300, 431],
+            [300, 600],
+          ],
+        },
+      ];
+
       window.googletag = window.googletag || { cmd: [] };
+
       window.googletag.cmd.push(function () {
-        googletag
-          .defineSlot(
-            "/21664538223/MOBPARAD",
-            [
-              [300, 100],
-              [300, 250],
-              [300, 300],
-              [300, 431],
-              [300, 600],
-            ],
-            "MOBPARAD"
-          )
-          .addService(googletag.pubads());
+        // Testing by key-value - are we abandoning key-values now?
+        // #TODO - Remove this key-value targeting before merging code
+        googletag.pubads().setTargeting("Test", "mosaico_test");
+        // Production by key-value
+        // googletag.pubads().setTargeting("newspaper", appToTarget);
 
-        googletag
-          .defineSlot(
-            "/21664538223/MOBMITT",
-            [
-              [300, 100],
-              [300, 250],
-              [300, 300],
-              [300, 431],
-              [300, 600],
-            ],
-            "MOBMITT"
-          )
-          .addService(googletag.pubads());
+        const networkCode = "/21664538223/";
 
-        googletag
-          .defineSlot(
-            "/21664538223/DIGIHELMOB",
-            [
-              [300, 100],
-              [300, 250],
-              [300, 300],
-              [300, 431],
-              [300, 600],
-            ],
-            "DIGIHELMOB"
-          )
-          .addService(googletag.pubads());
+        const slots = window.adSlots;
+        slots.map((slot) => {
+          googletag
+            .defineSlot(networkCode + slot.gamAndTargetId, slot.sizes, slot.gamAndTargetId)
+            .addService(googletag.pubads());
+        });
 
-        googletag
-          .defineSlot(
-            "/21664538223/MOBBOX1",
-            [
-              [300, 100],
-              [300, 250],
-              [300, 300],
-              [300, 431],
-              [300, 600],
-            ],
-            "MOBBOX1"
-          )
-          .addService(googletag.pubads());
+        window.definedSlots = googletag
+          .pubads()
+          .getSlots()
+          .map((s) => s.getSlotElementId());
 
         googletag.pubads().enableSingleRequest();
         googletag.pubads().collapseEmptyDivs();
         googletag.enableServices();
 
-        // Testing
-        // googletag.pubads().setTargeting("Test", "mosaico_test");
-        // Production
-        googletag.pubads().setTargeting("newspaper", appToTarget);
+        // #TODO Get this working again - commented out because causing exceptions
+        // Is "populated" being used anywhere? Maybe by Google Ad Manager?
+        // googletag.pubads().addEventListener("slotRenderEnded", (event) => {
+        //   if (!event.isEmpty) {
+        //     let elementId = event.slot.getSlotElementId();
+        //     document.querySelector("#" + elementId).classList.add("populated");
+        //   }
+        // });
       });
     </script>
     <!--End Google Ad-->
@@ -169,8 +176,8 @@
     <script src="./index.js"></script>
     <script>
       googletag.cmd.push(function () {
-        googletag.display("MOBPARAD");
-        googletag.display("MOBBOX1");
+        googletag.display(window.buildGamAndTargetId("mobparad"));
+        googletag.display(window.buildGamAndTargetId("mobbox1"));
       });
     </script>
   </body>

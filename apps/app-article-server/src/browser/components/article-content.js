@@ -50,9 +50,9 @@ class Content extends Component {
 
   renderAd(block, key) {
     if (block.ad === "MOBMITT" && this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id="MOBMITT"></p>;
+      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobmitt"}></p>;
     } else if (this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id="DIGIHELMOB"></p>;
+      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "digihelmob"}></p>;
     } else {
       console.log("No ads shown in advertorials.");
     }
@@ -225,13 +225,13 @@ class Content extends Component {
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBPARAD"></div>}
+          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobparad"}></div>}
           {this.props.body != null
             ? this.props.body.map((block, key) => {
                 return this.conditionalRendering(block, key);
               })
             : ""}
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id="MOBBOX1"></div>}
+          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobbox1"}></div>}
         </div>
       </div>
     );
