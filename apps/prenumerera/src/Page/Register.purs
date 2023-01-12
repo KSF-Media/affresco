@@ -97,6 +97,7 @@ component = do
             , onUserFetch: userFetched
             , onLogin: Aff.launchAff_ <<< withSpinner
             , disableSocialLogins: mempty
+            , paper: Nothing
             }
         userFetched (Right u) = do
           let initialAfterLogin = initialRegisterData package.digitalOnly $ Just u

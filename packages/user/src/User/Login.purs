@@ -25,6 +25,7 @@ import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import KSF.Button.Component as Button
 import KSF.InputField as InputField
+import KSF.Paper as Paper
 import KSF.Registration.Component as Registration
 import KSF.Tracking as Tracking
 import KSF.User (User, UserError(..))
@@ -89,6 +90,7 @@ type JSProps =
   , onLoading           :: Nullable (Effect Unit)
   , onLoadingEnd        :: Nullable (Effect Unit)
   , disableSocialLogins :: Nullable (Array String)
+  , paper               :: Nullable String
   }
 
 type JSSelf = React.Classic.Self Props State
@@ -117,6 +119,7 @@ fromJSProps jsProps =
           (\_loading -> maybe (pure unit) liftEffect $ Nullable.toMaybe jsProps.onLoadingEnd)
           (\_loading -> aff)
   , disableSocialLogins: maybe Set.empty (Set.mapMaybe readSocialLoginProvider <<< Set.fromFoldable) $ Nullable.toMaybe jsProps.disableSocialLogins
+  , paper: Paper.fromString =<< Nullable.toMaybe jsProps.paper
   }
   where
     -- TODO: We could have a more descriptive error than just a String
@@ -138,6 +141,7 @@ type Props =
 --  , onLogin :: Either Error Persona.LoginResponse -> Effect Unit
   , onUserFetch :: Either UserError User -> Effect Unit
   , onLogin :: Aff Unit -> Effect Unit
+  , paper :: Maybe Paper.Paper
   , disableSocialLogins :: Set SocialLoginProvider
   }
 
@@ -311,7 +315,7 @@ renderLoginForm self =
               , children:
                   [ forgotPassword
                   , forgotEmail
-                  , buySubscription
+                  , buySubscription self.props.paper
                   ]
               }
         , socialLogins
@@ -577,15 +581,15 @@ loginButton text =
     , value: text
     }
 
-buySubscription :: JSX
-buySubscription =
+buySubscription :: Maybe Paper.Paper -> JSX
+buySubscription paper =
   DOM.div
     { id: "login--buy-subscription"
     , children:
         [ DOM.text "Är du inte prenumerant? "
         , DOM.a
             { className: "login--important"
-            , href: "https://prenumerera.ksfmedia.fi/"
+            , href: "https://prenumerera.ksfmedia.fi/" <> foldMap (("#/" <> _) <<< String.toLower <<< Paper.toString) paper
             , children: [ DOM.text "Köp en prenumeration!" ]
             }
         ]
