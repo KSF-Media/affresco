@@ -36,6 +36,21 @@ error props =
        }
   <> retryButton props
 
+refusedByIssuer :: Props -> JSX
+refusedByIssuer props =
+  DOM.h1
+    { className: "vetrina--headline vetrina--headline-error"
+    , children: [ DOM.text "Betalning nekades av kortutgivaren" ]
+    }
+  <>
+  DOM.div
+    { className: "vetrina--description-text"
+    , children:
+        [ DOM.p_ [ DOM.text "Vänligen kontakta din bank." ]
+        , retryButton props
+        ]
+    }
+
 retryButton :: Props -> JSX
 retryButton props =
   DOM.button

@@ -3,7 +3,7 @@ module MittKonto.Main.CreditCardUpdateView where
 import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
-import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..), PaymentMethodId)
+import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..), FailReason(..), PaymentMethodId)
 import Data.Either (Either(..))
 import Data.Foldable (find)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
@@ -165,7 +165,9 @@ pollRegister self@{ props: { cusno, subsno, logger } } closed oldCreditCard (Rig
       onSuccess self
     CreditCardRegisterFailed reason -> liftEffect do
       track $ "error:" <> show reason
-      onError self
+      case reason of
+        NetsIssuerError -> self.setState _ { asyncWrapperState = AsyncWrapper.Error "Betalning nekades av kortutgivaren. Vänligen kontakta din bank." }
+        _ -> onError self
     CreditCardRegisterCanceled -> liftEffect do
       track "cancel"
       onCancel self
