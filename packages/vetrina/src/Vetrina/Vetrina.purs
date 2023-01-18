@@ -51,6 +51,7 @@ import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct, parseJSCampaign)
 
 foreign import sentryDsn_ :: Effect String
+foreign import scrollToVetrina :: Effect Unit
 
 type JSProps =
   { onClose            :: Nullable (Effect Unit)
@@ -245,10 +246,14 @@ didUpdate self _ = Aff.launchAff_ $ stopOrderPollerOnCompletedState self
 stopOrderPollerOnCompletedState :: Self -> Aff Unit
 stopOrderPollerOnCompletedState self =
   case self.state.purchaseState of
-    PurchaseFailed _    -> killOrderPoller self.state
-    PurchaseCompleted _ -> killOrderPoller self.state
-    NewPurchase         -> killOrderPoller self.state
+    PurchaseFailed _    -> stop
+    PurchaseCompleted _ -> stop
+    NewPurchase         -> stop
     _                   -> pure unit
+  where
+    stop = do
+      liftEffect scrollToVetrina
+      killOrderPoller self.state
 
 killOrderPoller :: State -> Aff Unit
 killOrderPoller state = Aff.killFiber (error "Canceled poller") state.poller
@@ -275,6 +280,7 @@ pollOrder setState state@{ logger } (Right order) = do
             NewAccount      -> PurchaseSetPassword
             _               -> PurchaseCompleted userAccountStatus
       liftEffect do
+        scrollToVetrina
         setState _ { purchaseState = nextPurchaseStep }
         productId         <- LocalStorage.getItem "productId" -- analytics
         productPrice      <- LocalStorage.getItem "productPrice" -- analytics
@@ -294,12 +300,15 @@ pollOrder setState state@{ logger } (Right order) = do
           setState _ { purchaseState = PurchaseFailed RefusedByIssuer }
         _ -> do
           logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
+          scrollToVetrina
           setState _ { purchaseState = PurchaseFailed $ UnexpectedError "" }
     OrderCanceled     -> liftEffect do
       logger.log "Customer canceled order" Sentry.Info
+      scrollToVetrina
       setState _ { purchaseState = NewPurchase }
     OrderCreated      -> pollOrder setState state =<< User.getOrder order.number
     OrderUnknownState -> liftEffect do
+      scrollToVetrina
       logger.error $ Error.orderError "Got UnknownState from server"
       setState _ { purchaseState = PurchaseFailed ServerError }
 pollOrder setState { logger } (Left bottegaErr) = liftEffect do
@@ -307,6 +316,7 @@ pollOrder setState { logger } (Left bottegaErr) = liftEffect do
         BottegaUnexpectedError e   -> e
         BottegaInsufficientAccount -> "InsufficientAccount"
         BottegaTimeout             -> "Timeout"
+  scrollToVetrina
   logger.error $ Error.orderError $ "Failed to get order from server: " <> errMessage
   setState _ { purchaseState = PurchaseFailed ServerError }
 
