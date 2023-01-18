@@ -151,6 +151,7 @@ derive instance eqPurchaseState :: Eq PurchaseState
 data OrderFailure
   = EmailInUse String
   | SubscriptionExists
+  | RefusedByIssuer
   | InsufficientAccount
   | InitializationError
   | FormFieldError (Array NewPurchase.FormInputField)
@@ -294,6 +295,9 @@ pollOrder setState state@{ logger } (Right order) = do
         SubscriptionExistsError -> do
           logger.log "Tried to make purchase to with already existing subscription" Sentry.Info
           setState _ { purchaseState = PurchaseFailed SubscriptionExists }
+        NetsIssuerError -> do
+          logger.log "Refused by issuer for customer" Sentry.Info
+          setState _ { purchaseState = PurchaseFailed RefusedByIssuer }
         _ -> do
           logger.error $ Error.orderError ("Order failed for customer: " <> show reason)
           scrollToVetrina
@@ -352,6 +356,7 @@ render self = vetrinaContainer self $
             -- Can't do much without a user
             Nothing -> self.props.unexpectedError
         AuthenticationError -> newPurchase
+        RefusedByIssuer     -> Purchase.Error.refusedByIssuer { onRetry }
         ServerError         -> Purchase.Error.error { onRetry }
         UnexpectedError _   -> Purchase.Error.error { onRetry }
         InitializationError -> self.props.unexpectedError

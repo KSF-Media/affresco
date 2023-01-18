@@ -161,8 +161,8 @@ class Content extends Component {
           <div
             className={`expand ${this.props.darkModeEnabled ? "darkMode" : ""}`}
             id={"expandFactBox-" + key}
-            onClick={() => {
-              this.expandFactBox(key);
+            onClick={(ev) => {
+              this.expandFactBox(ev);
             }}
           >
             <div className={`expandOpacity ${this.props.darkModeEnabled ? "darkMode" : ""}`} id={"expandOpacity"}></div>
@@ -193,8 +193,8 @@ class Content extends Component {
     );
   }
 
-  expandFactBox(key) {
-    console.log("ayoo");
+  expandFactBox(ev) {
+    const key = /\d+/.exec(ev.currentTarget.id)[0];
     document.getElementById("genericBox-" + key).style.height = "auto";
     document.getElementById("expandFactBox-" + key).style.display = "none";
     document.getElementById("expandOpacity").style.display = "none";
