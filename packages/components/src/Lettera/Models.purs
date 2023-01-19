@@ -359,8 +359,21 @@ parseArticlePure convertJSArticle jsonArticle =
 parseArticleStub :: Json -> Effect (Either String ArticleStub)
 parseArticleStub = parseArticleWith fromJSArticleStub
 
-parseDraftArticle :: Json -> Effect (Either String Article)
-parseDraftArticle = parseArticleWith fromJSDraftArticle
+parseDraftArticle :: Json -> Either String Article
+parseDraftArticle =
+  parseArticlePure
+    \(jsDraftArticle :: JSDraftArticle) -> do
+      body <- parseArticlePure (fromJSBody (parseArticleStubWithoutLocalizing <<< encodeJson)) $
+              encodeJson (jsDraftArticle.body :: Array Json)
+      pure $ merge
+        { publishingTime: parseLocalDateTime =<< jsDraftArticle.publishingTime
+        , publishingTimeUtc: Nothing
+        , updateTime: parseLocalDateTime =<< jsDraftArticle.updateTime
+        , tags: map Tag jsDraftArticle.tags
+        , body: body
+        , articleType: fromMaybe NyhetStor $ lookup jsDraftArticle.articleType $ map swap articleTypes
+        , paper: fromMaybe Paper.KSF $ Paper.fromString jsDraftArticle.paper
+        } jsDraftArticle
 
 parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
@@ -373,21 +386,6 @@ fromJSArticleStub jsStub@{ uuid, publishingTime, tags, articleType } = do
     , tags = map Tag tags
     , articleType = fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
     }
-
-fromJSDraftArticle :: JSDraftArticle -> Effect Article
-fromJSDraftArticle jsDraft@{ uuid, publishingTime, updateTime, tags, body, articleType, paper } = do
-  localPublishingTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) publishingTime
-  localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
-  resolvedBody <- fromJSBody fromJSArticleStub body
-  pure $ merge
-    { publishingTime: localPublishingTime
-    , publishingTimeUtc: parseDateTime =<< publishingTime
-    , updateTime: localUpdateTime
-    , tags: map Tag tags
-    , body: resolvedBody
-    , articleType: fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
-    , paper: fromMaybe Paper.KSF $ Paper.fromString paper
-    } jsDraft
 
 fromJSArticle :: JSArticle -> Effect Article
 fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body, articleType, paper } = do

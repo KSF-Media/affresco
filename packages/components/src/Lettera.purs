@@ -193,15 +193,14 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
         }
   driver <- liftEffect getDriver
   articleResponse <- AX.request driver request
-  case articleResponse of
-    Left err -> pure $ Left $ "Article GET response failed to decode: " <> AX.printError err
+  pure $ case articleResponse of
+    Left err -> Left $ "Article GET response failed to decode: " <> AX.printError err
     Right response
       | (StatusCode 200) <- response.status ->
-        map { articleType: DraftArticle, article: _ } <$>
-        (liftEffect $ parseDraftArticle response.body)
+        { articleType: DraftArticle, article: _ } <$> parseDraftArticle response.body
       | (StatusCode 403) <- response.status ->
-        pure $ Left "Unauthorized"
-      | (StatusCode s) <- response.status -> pure $ Left $ "Unexpected HTTP status: " <> show s
+        Left "Unauthorized"
+      | (StatusCode s) <- response.status -> Left $ "Unexpected HTTP status: " <> show s
 
 useResponse :: forall a b. (a -> Aff (Either LetteraError b)) -> Either AX.Error (AX.Response a) -> Aff (LetteraResponse b)
 useResponse _ (Left err) = pure $ LetteraResponse { maxAge: Nothing, body: Left $ ResponseError err }
