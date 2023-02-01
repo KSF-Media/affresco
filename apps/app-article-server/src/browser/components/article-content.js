@@ -1,5 +1,7 @@
 import React, { Component } from "react";
-import quoteIcon from "../assets/images/quotes-png-11.png";
+import quoteIconHBL from "../assets/images/quotes-hbl.png";
+import quoteIconON from "../assets/images/quotes-on.png";
+import quoteIconVN from "../assets/images/quotes-vn.png";
 const _ = require("lodash");
 
 class Content extends Component {
@@ -66,12 +68,23 @@ class Content extends Component {
     );
   }
 
+  getBrandQuoteIcon(paper) {
+    switch (paper) {
+      case ("on"):
+        return quoteIconON
+      case ("vn"):
+        return quoteIconVN
+      default:
+        return quoteIconHBL
+    }
+  }
+
   renderQuotes(block, key) {
     return (
       <div className={"quotePlaceHolder"} key={key}>
         <div className={"row"}>
           <div className={"col-2 thojzat"}>
-            <img width="30px" src={quoteIcon} alt="" />
+            <img width="30px" src={this.getBrandQuoteIcon(this.state.paper)} alt="" />
           </div>
           <div className={"col-10 quote"} style={{ paddingLeft: "0px" }}>
             {block.quote}
