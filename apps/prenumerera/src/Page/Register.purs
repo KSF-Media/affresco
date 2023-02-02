@@ -15,6 +15,7 @@ import Effect.Aff as Aff
 import Effect.Exception as Exception
 import KSF.CountryDropDown (countryDropDown, limitedCountries)
 import KSF.InputField as InputField
+import KSF.Paper as Paper
 import KSF.Registration.Component (RegistrationInputField(..))
 import KSF.Registration.Component as Registration
 import KSF.Spinner as Spinner
@@ -138,7 +139,7 @@ component = do
       Nothing -> render description $
                  if createError then renderError registerData.existingUser else
                    if loginScreen
-                     then renderLogin loginForm $ (scrollToTop *> setLoginScreen false)
+                     then renderLogin description loginForm $ (scrollToTop *> setLoginScreen false)
                      else renderRegister registerData setRegisterData onSubmit cancel
       Just Spinner.Loading -> Spinner.loadingSpinner
 
@@ -171,8 +172,8 @@ renderError false =
 renderError true =
   DOM.text "Kunde inte uppdateras."
 
-renderLogin :: JSX -> Effect Unit -> JSX
-renderLogin content startRegister =
+renderLogin :: Description -> JSX -> Effect Unit -> JSX
+renderLogin description content startRegister =
   DOM.div
     { id: "ksf-identify-login"
     , children:
@@ -188,15 +189,12 @@ renderLogin content startRegister =
                 , DOM.p
                     { className: "gift-disclaimer"
                     , children:
-                        [ DOM.text "Önskar du ge tidningen i gåva? Kontakta kundservice "
-                        , DOM.a { href: "mailto:pren@ksfmedia.fi"
-                                , children: [ DOM.text "pren@ksfmedia.fi" ]
+                        [ DOM.text "Önskar du ge tidningen i gåva? Ta kontakt med vår "
+                        , DOM.a { href: (getBaseUrl description.brand) <> "sida/kontakt"
+                                , children: [ DOM.text "kundservice" ]
+                                , target: "_blank"
                                 }
-                        , DOM.text " eller på numret "
-                        , DOM.a { href: "tel:+35891253500"
-                                , children: [ DOM.text "09 125 35 00" ]
-                                }
-                        , DOM.text " (vardagar kl. 8-12 och 13-16)."
+                        , DOM.text "."
                         ]
                     }
                 ]
@@ -216,6 +214,11 @@ renderLogin content startRegister =
             }
         ]
     }
+    where 
+      getBaseUrl paper 
+        = case paper of
+            Paper.JUNIOR -> "https://www.hbl.fi/"
+            _            -> Paper.homepage paper
 
 renderRegister :: RegisterData -> ((RegisterData -> RegisterData) -> Effect Unit) -> (ValidatedForm RegistrationInputField Registration.FormData -> Effect Unit) -> Effect Unit -> JSX
 renderRegister reg@{ form } setState save cancel =
