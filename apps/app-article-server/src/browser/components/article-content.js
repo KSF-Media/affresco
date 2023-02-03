@@ -65,6 +65,17 @@ class Content extends Component {
     );
   }
 
+  getBrandQuoteIcon(paper) {
+    switch (paper) {
+      case ("on"):
+        return quoteIconON
+      case ("vn"):
+        return quoteIconVN
+      default:
+        return quoteIconHBL
+    }
+  }
+
   renderQuotes(block, key) {
     return (
       <div className={"quotePlaceHolder"} key={key}>
