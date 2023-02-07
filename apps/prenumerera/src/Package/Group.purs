@@ -11,6 +11,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import KSF.Helpers as Helpers
+import KSF.Paper (Paper(..))
 import Prenumerera.Package (Package, PackageId)
 import Prenumerera.Package.Description (Description)
 import React.Basic (JSX)
@@ -134,6 +135,7 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                         }
                     ]
                 }
+            , renderAdditionalInfo description
             , if package.id `Array.elem` userActivePackages
                 then
                   DOM.a
@@ -160,3 +162,10 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                 }
             ]
         }
+
+    renderAdditionalInfo description = case description.brand of
+      JUNIOR -> DOM.p
+                  { className: "price-info"
+                  , children: [ DOM.text "10 € per månad för 12 månaders faktureringsperiod. Även andra alternativ tillgängliga."]
+                  }
+      _      -> mempty
