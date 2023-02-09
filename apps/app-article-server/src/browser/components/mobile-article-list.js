@@ -64,7 +64,7 @@ const MobileList = (props) => {
                 </div>
               </a>
               <a href={"/article/" + item.uuid + props.queryString} className={"col-4"}>
-                <div className={"articleImage"}>
+                <div className={"listImage"}>
                   {item.listImage === null ? (
                     <img className="card-img-top" src={hblDefaultImage} alt="" />
                   ) : (

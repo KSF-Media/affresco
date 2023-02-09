@@ -616,6 +616,14 @@ h6 {
   text-align: right;
 }
 
+.listImage {
+  margin-top: 3px;
+  margin-bottom: 10px;
+  text-align: right;
+  height: 150px;
+  overflow: hidden;
+}
+
 .authorProfilePic {
   background-size: cover;
   background-repeat: no-repeat;
@@ -652,6 +660,9 @@ h6 {
 .card-img-top {
   border-top-left-radius: 0px !important;
   border-top-right-radius: 0px !important;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
 }
 
 .card-body {
@@ -696,52 +707,19 @@ h6 {
   margin-bottom: 10px;
 }
 
-/*Mobiles*/
-@media (min-width: 320px) and (max-width: 480px) {
-  .mobileView {
-    display: block;
-  }
-
-  .tabletView {
-    display: none;
-  }
-
-  .mobileListItems a {
-    font-size: 16px;
-  }
-  .relatedArticles .articleItem a.darkMode {
-    color: white;
-  }
+.mobileView {
+  display: block;
 }
 
-/*Tablets*/
-@media (min-width: 768px) and (max-width: 1024px) {
-  .mobileView {
-    display: none;
-  }
-
-  .tabletView {
-    display: block;
-  }
-
-  .mobileListItems a {
-    font-size: 22px;
-  }
-
-  .mobileListItems img {
-    width: 75%;
-  }
+.tabletView {
+  display: none;
 }
 
-/*Desktops*/
-@media (min-width: 1025px) and (max-width: 1480px) {
-  .mobileView {
-    display: none;
-  }
-
-  .tabletView {
-    display: block;
-  }
+.mobileListItems a {
+  font-size: 16px;
+}
+.relatedArticles .articleItem a.darkMode {
+  color: white;
 }
 
 .ksf-bright-star {
