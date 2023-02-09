@@ -585,8 +585,21 @@ h6 {
   color: #6c6c6c;
 }
 
-.quotePlaceHolder .thojzat img {
+.quotePlaceHolder .thojzat svg {
   margin-top: 10px;
+  width: 30px;
+}
+
+.quote-hbl svg {
+  fill: #f07e26;
+}
+
+.quote-on svg {
+  fill: #518196;
+}
+
+.quote-vn svg {
+  fill: #c90c0f;
 }
 
 .articleImage {

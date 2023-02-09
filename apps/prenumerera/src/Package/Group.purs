@@ -135,6 +135,7 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                         }
                     ]
                 }
+            , renderAdditionalInfo description
             , if package.id `Array.elem` userActivePackages
                 then
                   DOM.a
@@ -155,7 +156,6 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                       , onClick: handler preventDefault $ \_ -> startPurchase package description
                       , href: "#"
                       }
-            , renderPriceChange description
             , DOM.div
                 { className: "details"
                 , children: [ description.descriptionLong ]
@@ -163,36 +163,9 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
             ]
         }
 
-    renderPriceChange description = case description.brand of
-      HBL -> if (description.ordering == 3) then priceChange7days else mempty
-      VN  -> if (description.ordering == 2) then priceChange2days else if (description.ordering == 3) then priceChange7days else mempty
-      ON  -> if (description.ordering == 2) then priceChange2days else if (description.ordering == 3) then priceChange7days else mempty
-      _   -> mempty
-
-    priceChange7days =
-      DOM.div
-              { className: "price-change"
-              , children:
-                  [ DOM.p
-                      { className: "price-change-text"
-                      , children:
-                        [ DOM.span_ [ DOM.text "Obs!"]
-                        , DOM.text " Priset för den här produkten stiger till 44,90 euro 2.2.2023. Prisändringen träder i kraft efter pågående faktureringsperiod."
-                        ]
-                      }
-                  ]
-              }
-
-    priceChange2days =
-      DOM.div
-              { className: "price-change"
-              , children:
-                  [ DOM.p
-                      { className: "price-change-text"
-                      , children:
-                        [ DOM.span_ [ DOM.text "Obs!"]
-                        , DOM.text " Priset för den här produkten stiger till 22,90 euro 3.2.2023. Prisändringen träder i kraft efter pågående faktureringsperiod."
-                        ]
-                      }
-                  ]
-              }
+    renderAdditionalInfo description = case description.brand of
+      JUNIOR -> DOM.p
+                  { className: "price-info"
+                  , children: [ DOM.text "10 € per månad för 12 månaders faktureringsperiod. Även andra alternativ tillgängliga."]
+                  }
+      _      -> mempty

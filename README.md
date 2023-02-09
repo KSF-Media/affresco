@@ -62,6 +62,8 @@ For building and deploying single page applications from `apps/`, the `deploy.rb
 $ ruby deploy.rb $APP_NAME
 ```
 
+NB: This applies for all except `app-article-server` which is deployed from a mirrored repo in gitlab. Please see `.gitlab-ci.yml` for more details.
+
 #### Scripts
 
 For static scripts, the build command is defined in CI. In this case, we just want to minify all content under `scripts/`.
