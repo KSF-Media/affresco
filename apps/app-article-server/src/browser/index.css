@@ -42,14 +42,21 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 15px;
+  width: 100vw;
 }
 
 body.darkMode {
   background-color: #2b2b2b;
 }
-
 .headerImage {
   width: 100%;
+}
+
+.headerImage img {
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
 }
 
 .article .content h1,
@@ -63,6 +70,7 @@ h6 {
 
 .article {
   padding-bottom: 20px;
+  overflow-x: clip;
 }
 
 .title {
@@ -621,8 +629,8 @@ h6 {
 }
 
 .container-fluid.article {
-  overflow-x: hidden;
-  max-width: 720px;
+  overflow-x: visible;
+  max-width: 630px;
 }
 
 .html iframe {

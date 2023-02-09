@@ -50,7 +50,7 @@ class Article extends Component {
 
   render() {
     return (
-      <div className="article">
+      <div className={`article ${this.props.darkModeEnabled ? "darkMode" : ""}`}>
         {this.state.isImageModalOpen && (
           <Lightbox
             mainSrc={this.state.modalImage + "&width=1200"}
@@ -61,7 +61,7 @@ class Article extends Component {
           />
         )}
 
-        <div className={`container-fluid article ${this.props.darkModeEnabled ? "darkMode" : ""}`}>
+        <div className="container-fluid article">
           <div>
             <Tag tags={this.props.tags} paper={this.props.paper} />
             {this.props.articleType === "Advertorial" ? (
