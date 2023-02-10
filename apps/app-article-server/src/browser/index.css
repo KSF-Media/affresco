@@ -38,10 +38,9 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: Roboto, sans-serif !important;
+  font-family: Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 15px;
   width: 100vw;
 }
 
@@ -51,7 +50,7 @@ body.darkMode {
 
 .container-fluid.article {
   overflow-x: visible;
-  max-width: 630px;
+  max-width: 650px;
 }
 
 .headerImage {
@@ -106,9 +105,13 @@ h6 {
 }
 
 .article .preamble {
-  font-size: 1em;
-  line-height: 1.25em;
-  font-weight: bolder;
+  font: 400 1.4rem/1.2 Duplex Sans,sans-serif;
+}
+
+@media screen and (min-width: 570px) {
+  .article .preamble {
+    font-size: 1.5rem;
+  }
 }
 
 .article .content h2,
@@ -383,6 +386,7 @@ h6 {
   margin-bottom: 16px;
   overflow-wrap: break-word;
   word-wrap: break-word;
+  font-size: 1.07rem;
 }
 
 .premiumBox {
@@ -665,8 +669,8 @@ h6 {
 
 @media screen and (min-width: 570px) {
   .listImage {
-    height: 10rem;
-    width: 10rem;
+    height: 9rem;
+    width: 9rem;
   }
 
   .listTitle {
