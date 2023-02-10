@@ -48,6 +48,12 @@ body {
 body.darkMode {
   background-color: #2b2b2b;
 }
+
+.container-fluid.article {
+  overflow-x: visible;
+  max-width: 630px;
+}
+
 .headerImage {
   width: 100%;
 }
@@ -355,7 +361,7 @@ h6 {
 }
 
 .genericBox-headline.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .genericBox ul {
@@ -680,11 +686,6 @@ h6 {
   width: 100%;
 }
 
-.container-fluid.article {
-  overflow-x: visible;
-  max-width: 630px;
-}
-
 .html iframe {
   border: 0;
 }
@@ -725,7 +726,7 @@ h6 {
 }
 
 .relatedArticles .articleItem a.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .ksf-bright-star {
@@ -757,7 +758,7 @@ h6 {
 }
 
 .text-footnote.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .article .hbl a {
@@ -777,19 +778,23 @@ h6 {
 }
 
 .title.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .preamble.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .html.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.quote.darkMode {
+  color: rgba(255, 255, 255, 0.70);
 }
 
 .headline.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .genericBox.darkMode {
@@ -797,15 +802,15 @@ h6 {
 }
 
 .factboxList.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .faktBoxdarkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .latest.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .expand.darkMode {
@@ -825,11 +830,11 @@ h6 {
 }
 
 .login.darkMode .center {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .ksfMedia.darkMode {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 html iframe {
@@ -838,11 +843,11 @@ html iframe {
 }
 
 .login.darkMode label {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .premiumSection.darkMode label {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .premiumSection strong {
@@ -850,11 +855,11 @@ html iframe {
 }
 
 .premiumSection.darkMode strong {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .premiumSection.darkMode > .login-form.pt2 .center {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .title-xs {

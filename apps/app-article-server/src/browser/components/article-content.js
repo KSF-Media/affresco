@@ -131,7 +131,7 @@ class Content extends Component {
               z"/>
             </svg>
           </div>
-          <div className={"col-10 quote"} style={{ paddingLeft: "0px" }}>
+          <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
             {block.quote}
           </div>
         </div>
