@@ -279,7 +279,7 @@ class Content extends Component {
     return (
       <div className={"row"}>
         <div
-          className={`col-sm-12 content text-left mt-2 ${this.state.paper} ${this.contentStyles()}`}
+          className={`col-sm-12 content text-left mt-2 ${this.state.paper} content-xs ${this.contentStyles()}`}
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >

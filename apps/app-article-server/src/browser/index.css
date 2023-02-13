@@ -101,17 +101,11 @@ h6 {
 .caption {
   color: var(--color-caption);
   margin-top: 5px;
-  font-size: 0.85em;
+  font-size: 0.9rem;
 }
 
-.article .preamble {
+.preamble {
   font: 400 1.4rem/1.2 Duplex Sans,sans-serif;
-}
-
-@media screen and (min-width: 570px) {
-  .article .preamble {
-    font-size: 1.5rem;
-  }
 }
 
 .article .content h2,
@@ -386,7 +380,6 @@ h6 {
   margin-bottom: 16px;
   overflow-wrap: break-word;
   word-wrap: break-word;
-  font-size: 1.07rem;
 }
 
 .premiumBox {
@@ -867,96 +860,126 @@ html iframe {
 }
 
 .title-xs {
-  line-height: 38px !important;
-  font-size: 2rem !important;
+  line-height: 1;
+  font-size: 2rem;
 }
 
 .title-sm {
-  line-height: 1 !important;
-  font-size: 2.2rem !important;
+  line-height: 1;
+  font-size: 2.2rem;
 }
 
 .title-md {
-  line-height: 1 !important;
-  font-size: 2.35rem !important;
+  line-height: 1;
+  font-size: 2.35rem;
 }
 
 .title-lg {
-  line-height: 1 !important;
-  font-size: 2.45rem !important;
+  line-height: 1;
+  font-size: 2.45rem;
 }
 
 .title-xl {
-  line-height: 1 !important;
-  font-size: 2.6rem !important;
+  line-height: 1;
+  font-size: 2.6rem;
 }
 
 .additional-xs {
-  line-height: 1.2 !important;
-  font-size: 1.1rem !important;
+  line-height: 1.2;
+  font-size: 1.4rem;
+}
+
+@media screen and (min-width: 570px) {
+  .additional-xs {
+    font-size: 1.5rem;
+  }
 }
 
 .additional-sm {
-  line-height: 1.2 !important;
-  font-size: 1.15rem !important;
+  line-height: 1.2;
+  font-size: 1.45rem;
+}
+
+@media screen and (min-width: 570px) {
+  .additional-sm {
+    font-size: 1.55rem;
+  }
 }
 
 .additional-md {
-  line-height: 1.2 !important;
-  font-size: 1.2rem !important;
+  line-height: 1.2;
+  font-size: 1.5rem;
+}
+
+@media screen and (min-width: 570px) {
+  .additional-md {
+    font-size: 1.6rem;
+  }
 }
 
 .additional-lg {
-  line-height: 1.2 !important;
-  font-size: 1.3rem !important;
+  line-height: 1.2;
+  font-size: 1.6rem;
+}
+
+@media screen and (min-width: 570px) {
+  .additional-lg {
+    font-size: 1.7rem;
+  }
 }
 
 .additional-xl {
-  line-height: 1.2 !important;
-  font-size: 1.6rem !important;
+  line-height: 1.2;
+  font-size: 2rem;
+}
+
+@media screen and (min-width: 570px) {
+  .additional-xl {
+    font-size: 2.1rem;
+  }
 }
 
 .content-xs {
-  line-height: 1.5 !important;
-  font-size: 1.1rem !important;
+  line-height: 1.5;
+  font-size: 1.1rem;
 }
 
 .content-sm {
-  line-height: 1.5 !important;
-  font-size: 1.15rem !important;
+  line-height: 1.5;
+  font-size: 1.15rem;
 }
 
 .content-md {
-  line-height: 1.5 !important;
-  font-size: 1.2rem !important;
+  line-height: 1.5;
+  font-size: 1.2rem;
 }
 
 .content-lg {
-  line-height: 1.5 !important;
-  font-size: 1.3rem !important;
+  line-height: 1.5;
+  font-size: 1.3rem;
 }
 
 .content-xl {
-  line-height: 1.5 !important;
-  font-size: 1.6rem !important;
+  line-height: 1.5;
+  font-size: 1.6rem;
 }
 
 .caption-xs {
-  font-size: 0.9rem !important;
+  font-size: 0.9rem;
 }
 
 .caption-sm {
-  font-size: 1rem !important;
+  font-size: 1rem;
 }
 
 .caption-md {
-  font-size: 1.2rem !important;
+  font-size: 1.2rem;
 }
 
 .caption-lg {
-  font-size: 1.2rem !important;
+  font-size: 1.2rem;
 }
 
 .caption-xl {
-  font-size: 1.2rem !important;
+  font-size: 1.2rem;
 }
