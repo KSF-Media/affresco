@@ -462,7 +462,7 @@ h6 {
   background-color: var(--color-bg);
 }
 
-.footer h4, .footer strong {
+.footer h4, .footer strong, .footer small {
   color: var(--color-footer);
 }
 
