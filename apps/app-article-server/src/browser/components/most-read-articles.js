@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import MobileList from "./moble-article-list";
-import TabletList from "./tablet-article-list";
+import MobileList from "./mobile-article-list";
 
 class MostReadArticles extends Component {
   constructor(props) {
@@ -23,17 +22,6 @@ class MostReadArticles extends Component {
             queryString={this.props.queryString}
             paper={this.props.paper}
           />
-        </div>
-
-        <div className={"tabletView"}>
-          <div className={"row articleItem"}>
-            <TabletList
-              articles={this.props.mostReadArticles}
-              darkModeEnabled={this.props.darkModeEnabled}
-              queryString={this.props.queryString}
-              paper={this.props.paper}
-            />
-          </div>
         </div>
       </div>
     );

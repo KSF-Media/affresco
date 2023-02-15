@@ -10,10 +10,9 @@ const Header = (props) => {
   classNames.set("3.0", "caption-xl");
   return (
     <div className={"row"}>
-      <div>
+      <div className={"header headerImage"}>
         {props.mainImage != null ? (
           <img
-            className={"header headerImage"}
             onClick={() =>
               props.showHighResolutionImg(
                 props.mainImage.url,
