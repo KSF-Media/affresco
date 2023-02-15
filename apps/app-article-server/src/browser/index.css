@@ -4,6 +4,11 @@
 }
 
 @font-face {
+  font-family: "Roboto Bold";
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Bold.ttf");
+}
+
+@font-face {
   font-family: "Duplex Sans Bold";
   src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex%20Sans-Bold.otf");
 }
@@ -101,7 +106,7 @@ h6 {
 .caption {
   color: var(--color-caption);
   margin-top: 5px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .preamble {
@@ -410,7 +415,7 @@ h6 {
 
 .articleTag {
   text-transform: uppercase;
-  font-family: Roboto, sans-serif;
+  font-family: 'Roboto Bold', sans-serif;
   font-weight: bold;
   font-size: 14px;
 }
@@ -536,7 +541,7 @@ h6 {
 
 .content .image p {
   color: var(--color-caption);
-  font-size: 0.95em;
+  font-size: 0.9em;
 }
 
 .premiumBadge {
@@ -965,15 +970,15 @@ html iframe {
 }
 
 .caption-xs {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .caption-sm {
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .caption-md {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
 }
 
 .caption-lg {
@@ -981,5 +986,5 @@ html iframe {
 }
 
 .caption-xl {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
 }

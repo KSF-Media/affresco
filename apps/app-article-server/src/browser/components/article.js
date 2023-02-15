@@ -176,7 +176,7 @@ const Tag = (props) => {
 
   return (
     <div className={"row"}>
-      <div className={`col-12 mt-1 mb-2 articleTag brandColor-${props.paper}`}>{tag}</div>
+      <div className={`col-12 mt-1 mb-3 articleTag brandColor-${props.paper}`}>{tag}</div>
     </div>
   );
 };
