@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 const _ = require("lodash");
 import * as cheerio from 'cheerio';
-import { prop } from "cheerio/lib/api/attributes";
 
 class Content extends Component {
   constructor(props) {
