@@ -260,7 +260,7 @@ class Content extends Component {
   }
 
   handleInternalLinks(htmlString) {
-    const validHostnames = ['www.hbl.fi', 'www.ostnyland.fi', 'www.vastranyland.fi']
+    const validHostnames = ['www.hbl.fi', 'hbl.fi', 'www.ostnyland.fi', 'ostnyland.fi', 'www.vastranyland.fi', 'vastranyland.fi']
 
     const $ = cheerio.load(htmlString, null, false)
     const $links = $('a')
@@ -269,7 +269,7 @@ class Content extends Component {
       const urlObj = new URL($el.attr('href'))
 
       if(validHostnames.includes(urlObj.hostname) && urlObj.pathname.startsWith('/artikel/')) {
-        let linkUuid = urlObj.pathname.slice(9)
+        let linkUuid = urlObj.pathname.slice('/article/'.length)
         linkUuid = linkUuid.endsWith('/') ? linkUuid.slice(0, -1) : linkUuid
 
         $el.attr('href', '/article/' + linkUuid + this.props.queryString)
