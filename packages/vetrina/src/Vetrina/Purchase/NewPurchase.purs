@@ -174,8 +174,9 @@ title self =
   in foldMap headline headlineText
   where
     headline child =
-      DOM.h1
-        { className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper <>
+      DOM.div
+        { id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString self.props.paper
+        , className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper <>
                      case self.props.accountStatus of
                        NewAccount -> mempty
                        _          -> " vetrina--headline-existing-account"
@@ -188,7 +189,8 @@ title self =
 description :: Self -> JSX
 description self =
   DOM.p
-    { className: "vetrina--description-text" <>
+    { id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString self.props.paper
+    , className: "vetrina--description-text" <>
                  case self.props.accountStatus of
                        LoggedInAccount _ -> " vetrina--description-text-existing-account"
                        _                 -> mempty
