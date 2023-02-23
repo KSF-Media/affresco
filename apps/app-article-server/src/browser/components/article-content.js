@@ -132,7 +132,7 @@ class Content extends Component {
               z"/>
             </svg>
           </div>
-          <div className={"col-10 quote"} style={{ paddingLeft: "0px" }}>
+          <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
             {block.quote}
           </div>
         </div>
@@ -280,7 +280,7 @@ class Content extends Component {
     return (
       <div className={"row"}>
         <div
-          className={`col-sm-12 content text-left mt-2 ${this.state.paper} ${this.contentStyles()}`}
+          className={`col-sm-12 content text-left mt-2 ${this.state.paper} content-xs ${this.contentStyles()}`}
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >

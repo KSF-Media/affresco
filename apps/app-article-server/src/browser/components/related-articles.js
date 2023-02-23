@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-import MobileList from "./moble-article-list";
+import MobileList from "./mobile-article-list";
 
 class RelatedArticles extends Component {
   constructor(props) {

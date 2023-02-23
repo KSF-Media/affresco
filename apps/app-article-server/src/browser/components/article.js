@@ -49,7 +49,7 @@ class Article extends Component {
 
   render() {
     return (
-      <div className="article">
+      <div className={`article ${this.props.darkModeEnabled ? "darkMode" : ""}`}>
         {this.state.isImageModalOpen && (
           <Lightbox
             mainSrc={this.state.modalImage + "&width=1200"}
@@ -60,9 +60,8 @@ class Article extends Component {
           />
         )}
 
-        <div className={`container-fluid article ${this.props.darkModeEnabled ? "darkMode" : ""}`}>
+        <div className="container-fluid article">
           <div>
-            <Tag tags={this.props.tags} paper={this.props.paper} />
             {this.props.articleType === "Advertorial" ? (
               <div>
                 <div className={"row"}>
@@ -79,6 +78,13 @@ class Article extends Component {
               fontSize={this.props.fontSize}
               darkModeEnabled={this.props.darkModeEnabled}
             />
+            <Additional
+              preamble={this.props.preamble}
+              increaseFontSize={this.increaseFontSize}
+              fontSize={this.props.fontSize}
+              darkModeEnabled={this.props.darkModeEnabled}
+            />
+            <Tag tags={this.props.tags} paper={this.props.paper} />
             <Header
               showHighResolutionImg={this.showHighResolutionImage}
               mainImage={this.props.mainImage}
@@ -92,12 +98,6 @@ class Article extends Component {
                   : ""
               }
               byline={_.get(this.props.mainImage, "byline") || ""}
-            />
-            <Additional
-              preamble={this.props.preamble}
-              increaseFontSize={this.increaseFontSize}
-              fontSize={this.props.fontSize}
-              darkModeEnabled={this.props.darkModeEnabled}
             />
             <ArticleDetails
               category={this.props.articleType}
@@ -155,7 +155,7 @@ const Title = (props, state) => {
 
   return (
     <div className={"row"}>
-      <div className={"col-12 mt-2 mb-3"} style={{ wordWrap: "break-word" }}>
+      <div className={"col-12 mt-3 mb-3"} style={{ wordWrap: "break-word" }}>
         <h2 className={`title ${props.darkModeEnabled ? "darkMode" : ""} ${classNames.get(props.fontSize)}`}>
           {props.title}
         </h2>
@@ -173,7 +173,7 @@ const Tag = (props) => {
 
   return (
     <div className={"row"}>
-      <div className={`col-12 mt-2 mb-1 articleTag brandColor-${props.paper}`}>{tag}</div>
+      <div className={`col-12 mt-1 mb-3 articleTag brandColor-${props.paper}`}>{tag}</div>
     </div>
   );
 };

@@ -13,11 +13,15 @@ hblPremium =
   , name: "Hufvudstadsbladet Premium"
   , priceCents: 999
   , description:
-      DOM.div_
-        [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
-        , DOM.br {}
-        , DOM.text "Läs Hufvudstadsbladet gratis i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
-        ]
+      DOM.div
+        { id: "tb-paywall--product-text-hbl"
+        , className: "vetrina--form-product-text"
+        , children:
+            [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
+            , DOM.br {}
+            , DOM.text "Läs Hufvudstadsbladet gratis i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
+            ]
+        }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
       { no: 4349
@@ -46,11 +50,15 @@ vnPremium =
   , name: "Västra Nyland Premium"
   , priceCents: 690
   , description:
-      DOM.div_
-        [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
-        , DOM.br {}
-        , DOM.text "Läs Västra Nyland för 1€ i en månad, därefter 6,90€ / månad tills vidare. Avsluta när du vill."
-        ]
+      DOM.div
+        { id: "tb-paywall--product-text-vn"
+        , className: "vetrina--form-product-text"
+        , children:
+            [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
+            , DOM.br {}
+            , DOM.text "Läs Västra Nyland för 1€ i en månad, därefter 6,90€ / månad tills vidare. Avsluta när du vill."
+            ]
+        }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
       { no: 4072
@@ -69,11 +77,15 @@ onPremium =
   , name: "Östnyland Premium"
   , priceCents: 690
   , description:
-      DOM.div_
-        [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
-        , DOM.br {}
-        , DOM.text "Läs Östnyland för 1€ i en månad, därefter 6,90€ / månad tills vidare. Avsluta när du vill."
-        ]
+      DOM.div
+        { id: "tb-paywall--product-text-on"
+        , className: "vetrina--form-product-text"
+        , children:
+            [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
+            , DOM.br {}
+            , DOM.text "Läs Östnyland för 1€ i en månad, därefter 6,90€ / månad tills vidare. Avsluta när du vill."
+            ]
+        }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på ostnyland.fi."
   , campaign: Just
       { length: 1

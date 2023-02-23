@@ -18,7 +18,7 @@ class Additional extends Component {
       <div className={"row"}>
         <div className="col-12">
           <p
-            className={`preamble mt-3 ${
+            className={`preamble ${
               this.props.darkModeEnabled ? "darkMode" : ""
             } additional-xs ${this.customStyle()}`}
           >
