@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude
 
 import Bottega (createOrder, payOrder) as Bottega
-import Bottega.Models (PaymentMethod(..), PaymentTerminalUrl) as Bottega
+import Bottega.Models (PaymentMethod(..), PaymentTerminalUrl, Order(..)) as Bottega
 import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
 import Effect (Effect)
@@ -11,12 +11,12 @@ import Effect.Aff (Aff, bracket, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import KSF.Api (UserAuth)
+import KSF.Puppeteer as Chrome
 import KSF.Test (getTestCard, getTimeStamp, typeCreditCard)
 import MittKonto.Test.Payment as Payment
 import MittKonto.Test.Profile as Profile
 import MittKonto.Test.Subscription as Subscription
 import Persona as Persona
-import KSF.Puppeteer as Chrome
 
 main :: Effect Unit
 main = launchAff_ do
@@ -72,23 +72,25 @@ inputLogin page email password = do
 
 createAccountAndLogin :: String -> String -> Aff UserAuth
 createAccountAndLogin email password = do
-  logShow =<< Persona.register
-    { firstName: "Test"
-    , lastName: "Testtest"
-    , emailAddress: email
-    , password: password
-    , confirmPassword: password
-    , streetAddress: "Mannerheimintie 18"
-    , zipCode: "00100"
-    , city: "Helsinki"
-    , country: "FI"
-    , phone: "1234567890"
-    , legalConsents: [{
-        dateAccepted: "2020-09-22T12:58:17.691Z",
-        consentId: "legal_acceptance_v1",
-        screenName: "legalAcceptanceScreen"
-      }]
-    }
+  loginResponse <- Persona.register <<< Persona.NewPaperUser $
+     { firstName: "Test"
+     , lastName: "Testtest"
+     , emailAddress: email
+     , password: password
+     , confirmPassword: password
+     , streetAddress: "Mannerheimintie 18"
+     , zipCode: "00100"
+     , city: "Helsinki"
+     , country: "FI"
+     -- , phone: "1234567890" -- This field doesn't seem to exist
+     , legalConsents:
+       [{
+           dateAccepted: "2020-09-22T12:58:17.691Z",
+           consentId: "legal_acceptance_v1",
+           screenName: "legalAcceptanceScreen"
+        }]
+     }
+  logShow loginResponse
   loginData <- Persona.login { username: email, password: password, mergeToken: Nullable.null }
   pure { userId: loginData.uuid, authToken: loginData.token }
 
@@ -99,6 +101,7 @@ createSubscription auth = do
              , period: 1
              , payAmountCents: 3990
              , campaignNo: Nothing
+             , orderSource: Nothing
              }
   logShow order
   Bottega.payOrder auth order.number Bottega.CreditCard
