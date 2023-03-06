@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 const _ = require("lodash");
 import * as cheerio from 'cheerio';
+import PremiumBox from "./premium";
 
 class Content extends Component {
   constructor(props) {
@@ -316,6 +317,9 @@ class Content extends Component {
                 return this.conditionalRendering(block, key);
               })
             : ""}
+          <div className={"row"}>
+            <div className={"col-sm-12"}>{this.props.isPreview ? <PremiumBox paper={this.props.paper} /> : ""}</div>
+          </div>{" "}
           {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobbox1"}></div>}
         </div>
       </div>
