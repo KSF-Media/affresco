@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 const _ = require("lodash");
+import * as cheerio from 'cheerio';
 import PremiumBox from "./premium";
 
 class Content extends Component {
@@ -242,6 +243,13 @@ class Content extends Component {
   }
 
   renderHtml(block, key) {
+    if(
+      block.html.includes("hbl.fi/artikel/")
+      || block.html.includes("ostnyland.fi/artikel/")
+      || block.html.includes("vastranyland.fi/artikel/")
+    ) {
+      block.html = this.handleInternalLinks(block.html)
+    }
     return (
       <div
         className={`html ${this.props.darkModeEnabled ? "darkMode" : ""}`}
@@ -250,6 +258,25 @@ class Content extends Component {
       />
       //    {/*<div className={"html"} key={key}>{htmlToReactParser.parse(block.html)}</div>*/} // youplay videos does not work
     );
+  }
+
+  handleInternalLinks(htmlString) {
+    const validHostnames = ['www.hbl.fi', 'hbl.fi', 'www.ostnyland.fi', 'ostnyland.fi', 'www.vastranyland.fi', 'vastranyland.fi']
+
+    const $ = cheerio.load(htmlString, null, false)
+    const $links = $('a')
+    $links.each((i, el) => {
+      const $el = $(el)
+      const urlObj = new URL($el.attr('href'))
+
+      if(validHostnames.includes(urlObj.hostname) && urlObj.pathname.startsWith('/artikel/')) {
+        let linkUuid = urlObj.pathname.slice('/article/'.length)
+        linkUuid = linkUuid.endsWith('/') ? linkUuid.slice(0, -1) : linkUuid
+
+        $el.attr('href', '/article/' + linkUuid + this.props.queryString)
+      }
+    })
+    return $.html()
   }
 
   expandFactBox(ev) {

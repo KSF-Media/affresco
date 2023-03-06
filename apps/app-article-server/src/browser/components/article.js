@@ -116,6 +116,7 @@ class Article extends Component {
               fontSize={this.props.fontSize}
               darkModeEnabled={this.props.darkModeEnabled}
               articleType={this.props.articleType}
+              queryString={this.props.queryString}
             />
             {this.props.relatedArticles.length > 0 ? (
               <RelatedArticles
