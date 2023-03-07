@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude
 
 import Bottega (createOrder, payOrder) as Bottega
-import Bottega.Models (PaymentMethod(..), PaymentTerminalUrl, Order(..)) as Bottega
+import Bottega.Models (PaymentMethod(..), PaymentTerminalUrl) as Bottega
 import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
 import Effect (Effect)
