@@ -99,9 +99,10 @@ createSubscription auth = do
   order <- Bottega.createOrder auth
              { packageId: "HBL_P+D"
              , period: 1
-             , payAmountCents: 3990
+             , payAmountCents: 4490
              , campaignNo: Nothing
              , orderSource: Nothing
+             , gift: false
              }
   logShow order
   Bottega.payOrder auth order.number Bottega.CreditCard

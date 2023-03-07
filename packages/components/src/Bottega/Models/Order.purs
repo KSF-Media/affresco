@@ -53,6 +53,7 @@ parseOrderState state maybeFailReason =
 type NewOrder =
   { packageId      :: String
   , period         :: Int
+  , gift           :: Boolean
   , payAmountCents :: Int
   , campaignNo     :: Maybe Int
   , orderSource    :: Maybe OrderSource
