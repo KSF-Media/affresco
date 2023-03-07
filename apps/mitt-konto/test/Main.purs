@@ -62,8 +62,8 @@ main = launchAff_ do
 
 inputLogin :: Chrome.Page -> String -> String -> Aff Unit
 inputLogin page email password = do
-  let emailField = Chrome.Selector ".login-form .input-field--container input[name='accountEmail']"
-      passwordField = Chrome.Selector ".login-form .input-field--container input[name='accountPassword']"
+  let emailField = Chrome.Selector ".login-form .input-field--container input[name='username']"
+      passwordField = Chrome.Selector ".login-form .input-field--container input[name='password']"
   Chrome.waitFor_ emailField page
   Chrome.type_ emailField email page
   Chrome.type_ passwordField password page
