@@ -590,6 +590,7 @@ createOrder _ product orderSource = do
         , payAmountCents: product.priceCents
         , campaignNo: map _.no product.campaign
         , orderSource: Just orderSource
+        , gift: false
         }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of

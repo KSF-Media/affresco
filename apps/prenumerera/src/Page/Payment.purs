@@ -59,6 +59,7 @@ component = do
                     , payAmountCents: offer.totalPrice
                     , campaignNo: Nothing
                     , orderSource: Just PrenumereraSource
+                    , gift: false
                     }
               order <- ExceptT $ User.createOrder newOrder
               nets <- ExceptT $ User.payOrder order.number method
