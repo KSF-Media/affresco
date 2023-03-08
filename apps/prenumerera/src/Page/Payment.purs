@@ -8,7 +8,7 @@ import Bottega.Models.Order (OrderSource(..))
 import Bottega.Poller as Poller
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -21,10 +21,12 @@ import Prenumerera.Package.Description (Description)
 import Prenumerera.Summary as Summary
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, useEffect, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
+import Web.HTML as Web.HTML
+import Web.HTML.Window as Window
 
 type Props =
   { user :: User
@@ -44,11 +46,20 @@ component :: Component Props
 component = do
   poller <- Poller.new
   today <- Now.nowDate
+  window <- Web.HTML.window
   React.component "Payment" $ \ { user, package, description, offer, method, next } -> React.do
     orderState /\ setOrderState <- useState' $ Right OrderUnknownState
     netsUrl /\ setNetsUrl <- useState' Nothing
     error /\ setError <- useState' $ Right unit
     paperInvoiceConfirmed /\ setPaperInvoiceConfirmed <- useState' false
+    let needTerminal = method == CreditCard &&
+                       (error *> orderState) == Right OrderCreated &&
+                       isJust netsUrl
+    useEffect needTerminal do
+      if needTerminal then do
+        void $ Window.open (maybe "" _.paymentTerminalUrl netsUrl) "netsTerminal" "noopener" window
+      else pure unit
+      pure $ pure unit
     let startPayOrder :: Effect Unit
         startPayOrder = do
           Aff.launchAff_ do
@@ -81,11 +92,14 @@ component = do
       when (orderState == Right OrderCompleted) next
       pure $ pure unit
     let orderSummary = Summary.render today user description offer method
+    let cancel = Aff.launchAff_ do
+           Poller.kill poller
+           liftEffect $ setOrderState $ Right OrderCanceled
     pure $ case method of
       PaperInvoice -> case paperInvoiceConfirmed of
         false -> renderPaperInvoice orderSummary startPaperInvoicePurchase
-        true -> renderPayment (error *> orderState) netsUrl
-      CreditCard -> renderPayment (error *> orderState) netsUrl
+        true -> renderPayment (error *> orderState) cancel netsUrl
+      CreditCard -> renderPayment (error *> orderState) cancel netsUrl
 
 renderPaperInvoice :: JSX -> Effect Unit -> JSX
 renderPaperInvoice summary confirm =
@@ -119,27 +133,32 @@ renderPaperInvoice summary confirm =
         ]
     }
 
-renderPayment :: Either BottegaError OrderState -> Maybe PaymentTerminalUrl -> JSX
+renderPayment :: Either BottegaError OrderState -> Effect Unit -> Maybe PaymentTerminalUrl -> JSX
 -- This should only happen during initialization
-renderPayment (Right OrderUnknownState) _ = initializing
-renderPayment (Right OrderCreated) (Just { paymentTerminalUrl }) =
-  DOM.iframe
-    { className: "payment-terminal"
-    , src: paymentTerminalUrl
+renderPayment (Right OrderUnknownState) _ _ = initializing
+renderPayment (Right OrderCreated) cancel (Just _) =
+  DOM.div
+    { children:
+        [ DOM.text "Maksu on toisessa täbissä"
+        , DOM.button
+            { children: [ DOM.text "Avbryt" ]
+            , onClick: capture_ cancel
+            }
+        ]
     }
-renderPayment (Right OrderCreated) _ = loading
-renderPayment (Right OrderStarted) _ = loading
-renderPayment (Right OrderCanceled) _ =
+renderPayment (Right OrderCreated) _ _ = loading
+renderPayment (Right OrderStarted) _ _ = loading
+renderPayment (Right OrderCanceled) _ _ =
   errMsg "Beställningen avbrutits."
-renderPayment (Right (OrderFailed NetsCanceled)) _ =
+renderPayment (Right (OrderFailed NetsCanceled)) _ _ =
   errMsg "Beställningen avbrutits."
-renderPayment (Right (OrderFailed NetsIssuerError)) _ =
+renderPayment (Right (OrderFailed NetsIssuerError)) _ _ =
   errMsg "Ett fel uppstod vid Nets."
-renderPayment (Right (OrderFailed SubscriptionExistsError)) _ =
+renderPayment (Right (OrderFailed SubscriptionExistsError)) _ _ =
   errMsg "Du har redan en prenumeration för denna produkt."
-renderPayment (Left BottegaTimeout) _ =
+renderPayment (Left BottegaTimeout) _ _ =
   errMsg "Timeout hände."
-renderPayment _ _ =
+renderPayment _ _ _ =
   errMsg "Något gick fel."
 
 initializing :: JSX
