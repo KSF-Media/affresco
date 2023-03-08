@@ -38,7 +38,7 @@ main = launchAff_ do
     page <- Chrome.newPage browser
     Chrome.goto (Chrome.URL "http://localhost:8000/") page
     inputLogin page customer1 password
-    Chrome.waitFor_ (Chrome.Selector ".profile--profile-row:nth-child(1) .profile--edit-text") page
+    Chrome.waitFor_ (Chrome.Selector "#profile--name .profile--edit-text") page
     runTest "change name" Profile.testNameChange page
     runTest "change address" Profile.testAddressChange page
     runTest "change email" Profile.testEmailChange page

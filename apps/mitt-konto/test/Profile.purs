@@ -15,7 +15,7 @@ import KSF.Puppeteer as Chrome
 
 testNameChange :: Test
 testNameChange page = do
-  Chrome.click (Chrome.Selector ".profile--profile-row:nth-child(1) .profile--edit-text") page
+  Chrome.click (Chrome.Selector "#profile--name .profile--edit-text") page
   let firstNameField = Chrome.Selector ".profile--edit-name input[name='firstName']"
       firstNameText = Chrome.Selector ".profile--profile-row#profile--name dl dd:nth-child(2)"
   Chrome.waitFor_ firstNameField page
@@ -30,7 +30,7 @@ testAddressChange page = do
   changeDate <- liftEffect $ adjust (Days 3.0) <$> Now.nowDate
   let changeDateString = maybe "fail" Helpers.formatDateDots changeDate
       dateFieldText = maybe "fail" formatDateSolid changeDate
-      editAddressLink = Chrome.Selector ".profile--profile-row:nth-child(2) .profile--edit-text"
+      editAddressLink = Chrome.Selector "#profile--address .profile--edit-text"
       dateField = Chrome.Selector ".profile--edit-address .react-date-picker__inputGroup"
   -- Start edit
   Chrome.click editAddressLink page
@@ -42,14 +42,14 @@ testAddressChange page = do
   Chrome.click (Chrome.Selector ".profile--edit-address button[type='submit']") page
   Chrome.waitFor_ editAddressLink page
   -- Check edit
-  Chrome.assertContent (Chrome.Selector "#profile--display dt:nth-child(1)") "Adressändring:" page
+  Chrome.assertContent (Chrome.Selector "#profile--pending-address-change dt") "Adressändring:" page
   let expectedChange = "GENVÄGEN 8, 10650, EKENÄS (fr.o.m. " <> changeDateString <> ")"
-  Chrome.assertContent (Chrome.Selector "#profile--display dd:nth-child(2)") expectedChange page
+  Chrome.assertContent (Chrome.Selector "#profile--pending-address-change dd") expectedChange page
   Chrome.assertContent editAddressLink "Avbryt adressändringen" page
   -- Cancel edit
   Chrome.click editAddressLink page
   Chrome.waitFor_ editAddressLink page
-  Chrome.assertContent (Chrome.Selector "#profile--display dt:nth-child(1)") "Kundnummer:" page
+  Chrome.assertContent (Chrome.Selector "#profile--display dt") "Kundnummer:" page
   Chrome.assertContent editAddressLink "Ändra" page
 
 -- Note that this test isn't idempotent.  If you're reusing an account
@@ -58,7 +58,7 @@ testEmailChange :: Test
 testEmailChange page = do
   dateTimeStr <- liftEffect getTimeStamp
   let email = "mittkonto+test." <> dateTimeStr <> "+change@ksfmedia.fi"
-      editEmailLink = Chrome.Selector ".profile--profile-row:nth-child(3) .profile--edit-text"
+      editEmailLink = Chrome.Selector "#profile--email .profile--edit-text"
       emailField = Chrome.Selector ".profile--edit-email input[name='email']"
   Chrome.click editEmailLink page
   Chrome.typeDelete_ emailField 50 page
