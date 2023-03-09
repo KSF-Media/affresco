@@ -49,16 +49,6 @@ class Content extends Component {
     }
   }
 
-  renderAd(block, key) {
-    if (block.ad === "MOBMITT" && this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobmitt"}></p>;
-    } else if (this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "digihelmob"}></p>;
-    } else {
-      console.log("No ads shown in advertorials.");
-    }
-  }
-
   renderParagraph(block, key) {
     return (
       <p className={"paragraph"} key={key}>
@@ -303,6 +293,28 @@ class Content extends Component {
     );
   }
 
+  renderAd(block, key) {
+    if (this.props.articleType !== "Advertorial") {
+      return (
+        <p
+          key={key}
+          className="ksf-app-ad"
+          id={this.state.paper + "/" + this.state.paper + "_" + block.ad.toLowerCase()}
+        ></p>
+      );
+    } else {
+      console.log("No ads shown in advertorials.");
+    }
+  }
+
+  renderAdOutsideMainBlock(adName) {
+    if (this.props.articleType !== "Advertorial") {
+      return (
+        <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + adName.toLowerCase()}></div>
+      );
+    }
+  }
+
   render() {
     return (
       <div className={"row"}>
@@ -311,7 +323,7 @@ class Content extends Component {
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobparad"}></div>}
+          {this.renderAdOutsideMainBlock("mobparad")}
           {this.props.body != null
             ? this.props.body.map((block, key) => {
                 return this.conditionalRendering(block, key);
@@ -320,7 +332,7 @@ class Content extends Component {
           <div className={"row"}>
             <div className={"col-sm-12"}>{this.props.isPreview ? <PremiumBox paper={this.props.paper} /> : ""}</div>
           </div>{" "}
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobbox1"}></div>}
+          {this.renderAdOutsideMainBlock("mobbox1")}
         </div>
       </div>
     );
