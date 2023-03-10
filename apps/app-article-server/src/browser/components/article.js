@@ -16,10 +16,14 @@ var _ = require("lodash");
 class Article extends Component {
   constructor(props) {
     super(props);
+    // hardcoded until Lettera V3 has a removeAds setting
+    const removeAds = false;
+    const adsAreShown = this.props.articleType !== "Advertorial" && !removeAds;
     this.state = {
       modalCaption: "",
       isImageModalOpen: false,
       mostReadArticles: [],
+      adsAreShown: adsAreShown,
     };
   }
 
@@ -117,7 +121,7 @@ class Article extends Component {
               darkModeEnabled={this.props.darkModeEnabled}
               articleType={this.props.articleType}
               queryString={this.props.queryString}
-              removeAds={false}
+              adsAreShown={this.state.adsAreShown}
             />
             {this.props.relatedArticles.length > 0 ? (
               <RelatedArticles

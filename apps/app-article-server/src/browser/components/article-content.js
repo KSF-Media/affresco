@@ -6,10 +6,8 @@ import PremiumBox from "./premium";
 class Content extends Component {
   constructor(props) {
     super(props);
-    const adsAreShown = this.props.articleType !== "Advertorial" && !this.props.removeAds
     this.state = {
       paper: props.paper || "hbl",
-      adsAreShown: adsAreShown,
     };
   }
 
@@ -296,7 +294,7 @@ class Content extends Component {
   }
 
   renderAd(block, key) {
-    if (this.state.adsAreShown) {
+    if (this.props.adsAreShown) {
       return (
         <p
           key={key}
@@ -310,7 +308,7 @@ class Content extends Component {
   }
 
   renderAdOutsideMainBlock(adName) {
-    if (this.state.adsAreShown) {
+    if (this.props.adsAreShown) {
       return (
         <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + adName.toLowerCase()}></div>
       );
