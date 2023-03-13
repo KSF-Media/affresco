@@ -53,7 +53,7 @@ navbarView { state } router logout isPersonating =
                )
            }
         )
-      , activeUser: state.activeUser
+      , activeUser: (\user -> fromMaybe user.email $ toMaybe user.firstName) <$> state.activeUser
       , logout
       }
   where
