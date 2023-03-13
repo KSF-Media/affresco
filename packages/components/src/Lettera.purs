@@ -31,6 +31,7 @@ import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
+import Debug
 
 foreign import letteraBaseUrl :: String
 foreign import _encodeURIComponent :: String -> String
@@ -70,6 +71,10 @@ letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
 letteraAdvertorialUrl :: String
 letteraAdvertorialUrl = letteraBaseUrl <> "/list/active-advertorial"
+
+letteraFallbackUrl :: String
+--letteraFallbackUrl = letteraBaseUrl <> "/fallback"
+letteraFallbackUrl = "http://localhost:8081/v4/fallback"
 
 data LetteraError
   = ResponseError AX.Error
@@ -226,6 +231,7 @@ getFrontpageHtml paper category cacheToken = do
         , responseFormat = AX.string
         }
   driver <- liftEffect getDriver
+  traceM {action:"getFrontpageHtml", request}
   useResponse (pure <<< pure) =<< AX.request driver request
 
 getBreakingNewsHtml :: Paper -> Maybe String -> Aff (LetteraResponse String)
@@ -240,11 +246,14 @@ getBreakingNewsHtml paper cacheToken = do
   driver <- liftEffect getDriver
   useResponse (pure <<< pure) =<< AX.request driver request
 
-parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
-parseArticleStubs response
+parseArticlesWith :: forall a b. (Json -> Effect (Either b a)) -> Json -> Effect (Either LetteraError (Array a))
+parseArticlesWith f response
   | Just (responseArray :: Array Json) <- toArray response =
-      map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
+      map (Right <<< takeRights) $ traverse f responseArray
   | otherwise = pure $ Left ParseError
+
+parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
+parseArticleStubs = liftEffect <<< parseArticlesWith parseArticleStub
 
 getFrontpage :: Paper -> Maybe Int -> Maybe Int -> Maybe String -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
 getFrontpage paper start limit categoryId cacheToken = do
@@ -259,6 +268,7 @@ getFrontpage paper start limit categoryId cacheToken = do
         , responseFormat = AX.json
         }
   driver <- liftEffect getDriver
+  traceM {action:"getFrontpage", request}
   useResponse parseArticleStubs =<< AX.request driver request
 
 getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))

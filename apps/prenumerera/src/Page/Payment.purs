@@ -29,6 +29,7 @@ import React.Basic.Hooks (Component, useEffect, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
 import Web.HTML as Web.HTML
 import Web.HTML.Location as Web.HTML.Location
+
 import Web.HTML.Window as Window
 
 type Props =
@@ -55,6 +56,7 @@ component = do
     orderState /\ setOrderState <- useState' $ Right OrderUnknownState
     netsUrl /\ setNetsUrl <- useState' Nothing
     error /\ setError <- useState' $ Right unit
+    paymentTab /\ setPaymentTab $ useState' Nothing
     paperInvoiceConfirmed /\ setPaperInvoiceConfirmed <- useState' false
     let needTerminal = method == CreditCard &&
                        (error *> orderState) == Right OrderCreated &&
