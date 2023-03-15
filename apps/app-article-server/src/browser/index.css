@@ -80,7 +80,7 @@ h6 {
 
 .article {
   padding-bottom: 20px;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 .title {
