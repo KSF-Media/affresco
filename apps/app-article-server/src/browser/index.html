@@ -114,8 +114,7 @@
       window.googletag = window.googletag || { cmd: [] };
 
       window.googletag.cmd.push(function () {
-        // Testing by key-value - Keep commented out for future testing
-        // googletag.pubads().setTargeting("Test", "mosaico_test");
+        googletag.pubads().setTargeting("sites-or-apps", "apps-only");
         const networkCode = "/21664538223/";
 
         const slots = window.adSlots;
