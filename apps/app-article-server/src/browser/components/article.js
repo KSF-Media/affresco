@@ -16,9 +16,7 @@ var _ = require("lodash");
 class Article extends Component {
   constructor(props) {
     super(props);
-    // hardcoded until Lettera V3 has a removeAds setting
-    const removeAds = false;
-    const adsAreShown = this.props.articleType !== "Advertorial" && !removeAds;
+    const adsAreShown = this.props.articleType !== "Advertorial" && !this.props.removeAds;
     this.state = {
       modalCaption: "",
       isImageModalOpen: false,
