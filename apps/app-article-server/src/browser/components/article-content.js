@@ -303,7 +303,7 @@ class Content extends Component {
         ></p>
       );
     } else {
-      console.log("No ads shown in advertorials or if removeAds is set to true.");
+      console.log("Ads have been removed for this article.");
     }
   }
 
@@ -313,7 +313,7 @@ class Content extends Component {
         <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + adName.toLowerCase()}></div>
       );
     } else {
-      console.log("No ads shown in advertorials or if removeAds is set to true.");
+      console.log("Ads have been removed for this article.");
     }
   }
 
