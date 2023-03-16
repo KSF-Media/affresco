@@ -96,6 +96,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	    updateTime={article.updateTime}
 	    authors={article.authors}
 	    premium={article.premium}
+			removeAds={article.removeAds}
 	    isPreview={isPreviewArticle}
 	    fontSize={queryParams.fontSize}
 	    darkModeEnabled={queryParams.mode === "dark"}
