@@ -29,7 +29,7 @@ import KSF.Auth as Auth
 import KSF.Driver (getDriver)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
 
 foreign import letteraBaseUrl :: String
@@ -302,10 +302,10 @@ search start limit paper query = do
                                        <> "&paper=" <> Paper.toString paper
                                        <> "&contentQuery=" <> _encodeURIComponent query)
 
-getCategoryStructure :: Paper -> Aff (Array Category)
-getCategoryStructure p = do
+getCategoryStructure :: Maybe Platform -> Paper -> Aff (Array Category)
+getCategoryStructure platform p = do
   driver <- liftEffect getDriver
-  categoriesRes <- AX.get driver ResponseFormat.json $ letteraCategoryUrl <> "?paper=" <> Paper.toString p
+  categoriesRes <- AX.get driver ResponseFormat.json $ letteraCategoryUrl <> "?paper=" <> Paper.toString p <> platformQuery
   case categoriesRes of
     Right r
       | Just (responseArray :: Array Json) <- toArray r.body -> do
@@ -318,6 +318,11 @@ getCategoryStructure p = do
     Left err -> do
       Console.warn $ "Error while getting categories: " <> AX.printError err
       pure mempty
+  where
+    platformQuery = case platform of
+      Nothing      -> ""
+      Just Mobile  -> "&platform=Mobile"
+      Just Desktop -> "&platform=Desktop"
 
 getAdvertorials :: Paper -> Aff (LetteraResponse (Array ArticleStub))
 getAdvertorials paper = do
