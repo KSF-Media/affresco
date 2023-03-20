@@ -67,6 +67,7 @@ if (window.article) {
         publishingTime={window.article.publishingTime}
         queryString={window.article.queryString}
         relatedArticles={window.article.relatedArticles || []}
+        removeAds={window.article.removeAds}
         tags={window.article.tags || []}
         title={window.article.title}
         updateTime={window.article.updateTime}
