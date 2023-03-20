@@ -599,3 +599,5 @@ derive newtype instance showTag :: Show Tag
 derive newtype instance ordTag :: Ord Tag
 
 derive instance newtypeTag :: Newtype Tag _
+
+data Platform = Desktop | Mobile
