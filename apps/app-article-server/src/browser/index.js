@@ -44,7 +44,8 @@ if (window.article) {
 
   if (ad1Position && ad2Position) {
     body.splice(ad1Position, 0, { ad: "MOBMITT" });
-    body.splice(ad2Position, 0, { ad: "DIGIHELMOB" });
+    // +1 needed because inserted ad1 changes positioning after it
+    body.splice(ad2Position+1, 0, { ad: "DIGIHELMOB" });
   } else if (ad1Position) {
     body.splice(ad1Position, 0, { ad: "MOBMITT" });
   }
