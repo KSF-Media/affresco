@@ -16,10 +16,12 @@ var _ = require("lodash");
 class Article extends Component {
   constructor(props) {
     super(props);
+    const adsAreShown = this.props.articleType !== "Advertorial" && !this.props.removeAds;
     this.state = {
       modalCaption: "",
       isImageModalOpen: false,
       mostReadArticles: [],
+      adsAreShown: adsAreShown,
     };
   }
 
@@ -116,6 +118,8 @@ class Article extends Component {
               fontSize={this.props.fontSize}
               darkModeEnabled={this.props.darkModeEnabled}
               articleType={this.props.articleType}
+              queryString={this.props.queryString}
+              adsAreShown={this.state.adsAreShown}
             />
             {this.props.relatedArticles.length > 0 ? (
               <RelatedArticles

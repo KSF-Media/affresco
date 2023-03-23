@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 const _ = require("lodash");
+import * as cheerio from 'cheerio';
 import PremiumBox from "./premium";
 
 class Content extends Component {
@@ -45,16 +46,6 @@ class Content extends Component {
       }
     } else {
       console.log("couldn't render " + { blockType });
-    }
-  }
-
-  renderAd(block, key) {
-    if (block.ad === "MOBMITT" && this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobmitt"}></p>;
-    } else if (this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "digihelmob"}></p>;
-    } else {
-      console.log("No ads shown in advertorials.");
     }
   }
 
@@ -242,6 +233,13 @@ class Content extends Component {
   }
 
   renderHtml(block, key) {
+    if(
+      block.html.includes("hbl.fi/artikel/")
+      || block.html.includes("ostnyland.fi/artikel/")
+      || block.html.includes("vastranyland.fi/artikel/")
+    ) {
+      block.html = this.handleInternalLinks(block.html)
+    }
     return (
       <div
         className={`html ${this.props.darkModeEnabled ? "darkMode" : ""}`}
@@ -250,6 +248,25 @@ class Content extends Component {
       />
       //    {/*<div className={"html"} key={key}>{htmlToReactParser.parse(block.html)}</div>*/} // youplay videos does not work
     );
+  }
+
+  handleInternalLinks(htmlString) {
+    const validHostnames = ['www.hbl.fi', 'hbl.fi', 'www.ostnyland.fi', 'ostnyland.fi', 'www.vastranyland.fi', 'vastranyland.fi']
+
+    const $ = cheerio.load(htmlString, null, false)
+    const $links = $('a')
+    $links.each((i, el) => {
+      const $el = $(el)
+      const urlObj = new URL($el.attr('href'))
+
+      if(validHostnames.includes(urlObj.hostname) && urlObj.pathname.startsWith('/artikel/')) {
+        let linkUuid = urlObj.pathname.slice('/article/'.length)
+        linkUuid = linkUuid.endsWith('/') ? linkUuid.slice(0, -1) : linkUuid
+
+        $el.attr('href', '/article/' + linkUuid + this.props.queryString)
+      }
+    })
+    return $.html()
   }
 
   expandFactBox(ev) {
@@ -276,6 +293,30 @@ class Content extends Component {
     );
   }
 
+  renderAd(block, key) {
+    if (this.props.adsAreShown) {
+      return (
+        <p
+          key={key}
+          className="ksf-app-ad"
+          id={this.state.paper + "/" + this.state.paper + "_" + block.ad.toLowerCase()}
+        ></p>
+      );
+    } else {
+      console.log("Ads have been removed for this article.");
+    }
+  }
+
+  renderAdOutsideMainBlock(adName) {
+    if (this.props.adsAreShown) {
+      return (
+        <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + adName.toLowerCase()}></div>
+      );
+    } else {
+      console.log("Ads have been removed for this article.");
+    }
+  }
+
   render() {
     return (
       <div className={"row"}>
@@ -284,7 +325,7 @@ class Content extends Component {
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobparad"}></div>}
+          {this.renderAdOutsideMainBlock("mobparad")}
           {this.props.body != null
             ? this.props.body.map((block, key) => {
                 return this.conditionalRendering(block, key);
@@ -293,7 +334,7 @@ class Content extends Component {
           <div className={"row"}>
             <div className={"col-sm-12"}>{this.props.isPreview ? <PremiumBox paper={this.props.paper} /> : ""}</div>
           </div>{" "}
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobbox1"}></div>}
+          {this.renderAdOutsideMainBlock("mobbox1")}
         </div>
       </div>
     );
