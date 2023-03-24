@@ -14,8 +14,8 @@ if (window.article) {
   var ad2RoughPosition;
 
   if (elemsCount > 15) {
-    ad1RoughPosition = Math.floor(elemsCount / 3);
-    ad2RoughPosition = Math.floor(elemsCount / 1.5);
+    ad1RoughPosition = Math.floor(elemsCount / 3.3);
+    ad2RoughPosition = Math.floor(elemsCount / 1.6);
   } else if (elemsCount > 6) {
     ad1RoughPosition = Math.floor(elemsCount / 2);
   }
