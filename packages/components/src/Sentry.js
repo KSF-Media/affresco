@@ -17,6 +17,7 @@ export function initSentry_(sentryDsn) {
       tracesSampleRate: 0.8,
       beforeSend(event, hint) {
         const error = hint.originalException;
+        // Ignore an error caused by Instagram's browser
         if (error && error.message && error.message.match(/_AutofillCallbackHandler/i)) {
           return null;
         }
