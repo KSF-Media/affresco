@@ -60,7 +60,7 @@ component = do
                           (setUpdateUserError true) (next o m Nothing) user $
                           Registration.formValidations form
           CreditCard -> do
-            w <- Window.open "" "netsTerminal" "" window
+            w <- Window.open "" "_blank" "" window
             for_ w clearOpener
             next o m w user
     let remindElement = guard remind renderRemind

@@ -64,7 +64,7 @@ component = do
           l <- Window.location w
           Web.HTML.Location.setHref paymentUrl l
         Nothing -> do
-          void $ Window.open paymentUrl "netsTerminal" "noopener" globalWindow
+          void $ Window.open paymentUrl "_blank" "noopener" globalWindow
       else pure unit
       pure $ pure unit
     let startPayOrder :: Effect Unit
