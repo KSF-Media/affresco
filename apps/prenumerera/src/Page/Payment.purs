@@ -26,6 +26,7 @@ import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, useEffect, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
 import Web.HTML as Web.HTML
+import Web.HTML.Location as Web.HTML.Location
 import Web.HTML.Window as Window
 
 type Props =
@@ -35,6 +36,7 @@ type Props =
   , offer :: PackageOffer
   , method :: PaymentMethod
   , next :: Effect Unit
+  , window :: Maybe Window.Window
   }
 
 type State =
@@ -46,8 +48,8 @@ component :: Component Props
 component = do
   poller <- Poller.new
   today <- Now.nowDate
-  window <- Web.HTML.window
-  React.component "Payment" $ \ { user, package, description, offer, method, next } -> React.do
+  globalWindow <- Web.HTML.window
+  React.component "Payment" $ \ { user, package, description, offer, method, next, window } -> React.do
     orderState /\ setOrderState <- useState' $ Right OrderUnknownState
     netsUrl /\ setNetsUrl <- useState' Nothing
     error /\ setError <- useState' $ Right unit
@@ -55,9 +57,14 @@ component = do
     let needTerminal = method == CreditCard &&
                        (error *> orderState) == Right OrderCreated &&
                        isJust netsUrl
+        paymentUrl = (maybe "" _.paymentTerminalUrl netsUrl)
     useEffect needTerminal do
-      if needTerminal then do
-        void $ Window.open (maybe "" _.paymentTerminalUrl netsUrl) "netsTerminal" "noopener" window
+      if needTerminal then case window of
+        Just w -> do
+          l <- Window.location w
+          Web.HTML.Location.setHref paymentUrl l
+        Nothing -> do
+          void $ Window.open paymentUrl "netsTerminal" "noopener" globalWindow
       else pure unit
       pure $ pure unit
     let startPayOrder :: Effect Unit

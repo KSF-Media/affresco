@@ -100,6 +100,7 @@ app = do
       _ -> HBL
     purchasePackage /\ setPurchasePackage <- useState' Nothing
     purchaseDetails /\ setPurchaseDetails <- useState' Nothing
+    netsWindow /\ setNetsWindow <- useState' Nothing
     let userActivePackages = foldMap getActivePackages user
         startPurchase package description = do
           scrollToTop
@@ -113,10 +114,11 @@ app = do
           nav.pushState (unsafeToForeign {}) $
             if packageId `elem` userActivePackages then "/konflikt" else "/godkänn"
           Console.log $ "Account sorted out"
-        offerAndMethodSelected offer method u = do
+        offerAndMethodSelected offer method w u = do
           scrollToTop
           setPurchaseDetails $ Just { offer, method }
           setUser $ const $ Just u
+          setNetsWindow w
           nav.pushState (unsafeToForeign {}) "/betala"
         logout = do
           Aff.launchAff_ $ Spinner.withSpinner setLoading' do
@@ -218,6 +220,7 @@ app = do
                     , offer
                     , method
                     , next: nav.pushState (unsafeToForeign {}) "/bekräftelse"
+                    , window: netsWindow
                     }
                 ]
             EndPage -> fromMaybe mempty do
