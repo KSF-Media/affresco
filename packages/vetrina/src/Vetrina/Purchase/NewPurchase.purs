@@ -32,6 +32,9 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (EventHandler, handler, handler_)
 import Vetrina.Types (AccountStatus(..), Product, ProductContent)
+import Web.HTML as Web.HTML
+import Web.HTML.Window as Window
+import Web.HTML.Window (Window)
 
 type Self = React.Self Props State
 
@@ -55,9 +58,9 @@ type Props =
   { accountStatus                 :: AccountStatus
   , products                      :: Array Product
   , errorMessage                  :: Maybe String
-  , mkPurchaseWithNewAccount      :: NewAccountForm -> Effect Unit
-  , mkPurchaseWithExistingAccount :: ExistingAccountForm -> Effect Unit
-  , mkPurchaseWithLoggedInAccount :: User -> { | PurchaseParameters } -> Effect Unit
+  , mkPurchaseWithNewAccount      :: Maybe Window -> NewAccountForm -> Effect Unit
+  , mkPurchaseWithExistingAccount :: Maybe Window -> ExistingAccountForm -> Effect Unit
+  , mkPurchaseWithLoggedInAccount :: Maybe Window -> User -> { | PurchaseParameters } -> Effect Unit
   , productSelection              :: Maybe Product
   , onLogin                       :: EventHandler
   , headline                      :: Maybe JSX
@@ -227,30 +230,40 @@ form self = DOM.form $
     isExistingAccount (ExistingAccount _) = true
     isExistingAccount _ = false
 
-    onSubmit = handler preventDefault $ case self.props.accountStatus of
-      NewAccount ->
-        (\_ -> validation
-          (\_ ->
-            self.setState _
-              { newAccountForm
-                { emailAddress = self.state.newAccountForm.emailAddress <|> Just "" }})
-          self.props.mkPurchaseWithNewAccount
-          $ newAccountFormValidations self)
-      ExistingAccount _ ->
-        (\_ -> validation
-          (\_ ->
-            self.setState _
-              { existingAccountForm
-                { emailAddress = self.state.existingAccountForm.emailAddress <|> Just ""
-                , password     = self.state.existingAccountForm.password     <|> Just ""
-                }})
-          self.props.mkPurchaseWithExistingAccount
-          $ existingAccountFormValidations self)
-      LoggedInAccount user ->
-        (\_ -> validation
-          (\_ -> pure unit)
-          (\validForm -> self.props.mkPurchaseWithLoggedInAccount user validForm)
-          $ loggedInAccountFormValidations self)
+    onSubmit = handler preventDefault $ \_ -> do
+      window <- Web.HTML.window
+      case self.props.accountStatus of
+        NewAccount ->
+          validation
+            (\_ ->
+              self.setState _
+                { newAccountForm
+                  { emailAddress = self.state.newAccountForm.emailAddress <|> Just "" }})
+            (\validForm -> do
+                w <- Window.open "" "_blank" "" window
+                self.props.mkPurchaseWithNewAccount w validForm
+            )
+            $ newAccountFormValidations self
+        ExistingAccount _ ->
+          validation
+            (\_ ->
+              self.setState _
+                { existingAccountForm
+                  { emailAddress = self.state.existingAccountForm.emailAddress <|> Just ""
+                  , password     = self.state.existingAccountForm.password     <|> Just ""
+                  }})
+            (\validForm -> do
+                w <- Window.open "" "_blank" "" window
+                self.props.mkPurchaseWithExistingAccount w validForm
+            )
+            $ existingAccountFormValidations self
+        LoggedInAccount user ->
+          validation
+            (\_ -> pure unit)
+            (\validForm -> do
+                w <- Window.open "" "_blank" "" window
+                self.props.mkPurchaseWithLoggedInAccount w user validForm)
+            $ loggedInAccountFormValidations self
     children = case self.props.accountStatus of
         NewAccount ->
           [ additionalFormRequirements self.props.accountStatus

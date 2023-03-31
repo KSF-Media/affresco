@@ -49,6 +49,10 @@ import Vetrina.Purchase.NewPurchase as Purchase.NewPurchase
 import Vetrina.Purchase.SetPassword as Purchase.SetPassword
 import Vetrina.Purchase.SubscriptionExists as Purchase.SubscriptionExists
 import Vetrina.Types (AccountStatus(..), JSProduct, Product, fromJSProduct, parseJSCampaign)
+import Web.HTML as Web.HTML
+import Web.HTML.Location as Web.HTML.Location
+import Web.HTML.Window as Window
+import Web.HTML.Window (Window)
 
 foreign import sentryDsn_ :: Effect String
 foreign import scrollToVetrina :: Effect Unit
@@ -116,19 +120,19 @@ fromJSProps jsProps =
   }
 
 type State =
-  { user             :: Maybe User
-  , purchaseState    :: PurchaseState
-  , poller           :: Aff.Fiber Unit
-  , isLoading        :: Maybe Spinner.Loading
-  , loadingMessage   :: Maybe String
-  , accountStatus    :: AccountStatus
-  , logger           :: Sentry.Logger
-  , products         :: Array Product
-  , productSelection :: Maybe Product
-  , paymentMethod    :: Maybe User.PaymentMethod
+  { user                 :: Maybe User
+  , purchaseState        :: PurchaseState
+  , poller               :: Aff.Fiber Unit
+  , isLoading            :: Maybe Spinner.Loading
+  , loadingMessage       :: Maybe String
+  , accountStatus        :: AccountStatus
+  , logger               :: Sentry.Logger
+  , products             :: Array Product
+  , productSelection     :: Maybe Product
+  , paymentMethod        :: Maybe User.PaymentMethod
   , accountFormComponent :: AccountForm.Props -> JSX
-  , retryPurchase :: User -> Effect Unit
-  , paymentMethods :: Array User.PaymentMethod
+  , retryPurchase        :: User -> Effect Unit
+  , paymentMethods       :: Array User.PaymentMethod
   }
 
 type Self = React.Self Props State
@@ -139,7 +143,7 @@ type PrevState = { prevProps :: Props, prevState :: State }
 
 data PurchaseState
   = NewPurchase
-  | CapturePayment PaymentTerminalUrl
+  | CapturePayment
   | ProcessPayment
   | PurchaseFailed OrderFailure
   | PurchaseSetPassword
@@ -329,7 +333,7 @@ render self = vetrinaContainer self $
   else case self.state.purchaseState of
     PurchasePolling -> maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
     NewPurchase -> newPurchase
-    CapturePayment url -> netsTerminalIframe url
+    CapturePayment -> netsTerminalIframe
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed failure ->
       case failure of
@@ -424,25 +428,27 @@ orderErrorMessage failure =
     _                   -> "Något gick fel. Vänligen försök igen om en stund."
 
 -- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
-mkPurchaseWithNewAccount :: Self -> NewPurchase.NewAccountForm -> Effect Unit
-mkPurchaseWithNewAccount self validForm = mkPurchase self self.props.askAccountAlways validForm $ createNewAccount self validForm.emailAddress
+mkPurchaseWithNewAccount :: Self -> Maybe Window -> NewPurchase.NewAccountForm -> Effect Unit
+mkPurchaseWithNewAccount self w validForm = mkPurchase self w self.props.askAccountAlways validForm $ createNewAccount self validForm.emailAddress
 
-mkPurchaseWithExistingAccount :: Self -> NewPurchase.ExistingAccountForm -> Effect Unit
-mkPurchaseWithExistingAccount self validForm =
-  mkPurchase self self.props.askAccountAlways validForm $ loginToExistingAccount self validForm.emailAddress validForm.password
+mkPurchaseWithExistingAccount :: Self -> Maybe Window -> NewPurchase.ExistingAccountForm -> Effect Unit
+mkPurchaseWithExistingAccount self w validForm =
+  mkPurchase self w self.props.askAccountAlways validForm $ loginToExistingAccount self validForm.emailAddress validForm.password
 
-mkPurchaseWithLoggedInAccount :: Self -> User.User -> { | NewPurchase.PurchaseParameters } -> Effect Unit
-mkPurchaseWithLoggedInAccount self user validForm = mkPurchase self self.props.askAccountAlways validForm $ (pure $ Right user)
+mkPurchaseWithLoggedInAccount :: Self -> Maybe Window -> User.User -> { | NewPurchase.PurchaseParameters } -> Effect Unit
+mkPurchaseWithLoggedInAccount self w user validForm = mkPurchase self w self.props.askAccountAlways validForm $ (pure $ Right user)
 
 mkPurchase
   :: forall r
   . Self
+  -> Maybe Window
   -> Boolean
   -> { productSelection :: Maybe Product, paymentMethod :: Maybe PaymentMethod | r }
   -> Aff (Either OrderFailure User.User)
   -> Effect Unit
-mkPurchase self@{ state: { logger } } askAccount validForm affUser =
+mkPurchase self@{ state: { logger } } window askAccount validForm affUser =
   Aff.launchAff_ $ Spinner.withSpinner loadingWithMessage do
+  globalWindow <- liftEffect Web.HTML.window
   eitherUser <- affUser
   eitherOrder <- runExceptT do
 
@@ -483,11 +489,18 @@ mkPurchase self@{ state: { logger } } askAccount validForm affUser =
   case eitherOrder of
     Right { paymentUrl, order } ->
       liftEffect do
-        let newPurchaseState =
-              -- If paper invoice, we don't
-              case paymentUrl of
-                Just url -> CapturePayment url
-                Nothing  -> PurchasePolling
+        newPurchaseState <-
+          -- If paper invoice, we don't
+          case paymentUrl of
+            Just url -> do
+              case window of
+                 Just w -> do
+                   l <- Window.location w
+                   Web.HTML.Location.setHref url.paymentTerminalUrl l
+                 Nothing -> do
+                   void $ Window.open url.paymentTerminalUrl "_blank" "noopener" globalWindow
+              pure $ CapturePayment
+            Nothing -> pure PurchasePolling
 
         let newState =
               self.state { purchaseState = newPurchaseState
@@ -515,8 +528,9 @@ mkPurchase self@{ state: { logger } } askAccount validForm affUser =
             InsufficientAccount           ->
               self.state { purchaseState = PurchaseFailed InsufficientAccount
                          , retryPurchase = \user ->
-                             -- NOTE: This will make the purchase as "logged in user"
-                             mkPurchase self false validForm (pure $ Right user)
+                             -- NOTE: This will make the purchase as "logged in user",
+                             -- and show a 'pop up blocked' to the user
+                             mkPurchase self Nothing false validForm (pure $ Right user)
                          }
             -- TODO: Handle all cases explicitly
             _                             -> self.state { purchaseState = PurchaseFailed $ UnexpectedError "" }
@@ -610,14 +624,13 @@ toOrderFailure bottegaErr =
     BottegaTimeout                -> UnexpectedError "Timeout"
     BottegaUnexpectedError errMsg -> UnexpectedError errMsg
 
-netsTerminalIframe :: PaymentTerminalUrl -> JSX
-netsTerminalIframe { paymentTerminalUrl } =
+netsTerminalIframe :: JSX
+netsTerminalIframe =
   DOM.div
     { className: "vetrina--payment-wrapper"
     , children:
-      [ DOM.iframe
-        { src: paymentTerminalUrl
-        , className: "vetrina--payment-terminal"
-        }
+      [ DOM.div_
+          [ DOM.text "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på pren@ksfmedia.fi."
+          ]
       ]
     }
