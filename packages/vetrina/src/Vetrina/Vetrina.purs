@@ -10,7 +10,7 @@ import Control.Monad.Except.Trans (except)
 import Data.Array (any, filter, head, length, mapMaybe, null, take)
 import Data.Array as Array
 import Data.Either (Either(..), either, hush, isLeft, note)
-import Data.Foldable (foldMap)
+import Data.Foldable (foldMap, for_)
 import Data.JSDate as JSDate
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -56,6 +56,7 @@ import Web.HTML.Window (Window)
 
 foreign import sentryDsn_ :: Effect String
 foreign import scrollToVetrina :: Effect Unit
+foreign import windowClose :: Window -> Effect Unit
 
 type JSProps =
   { onClose            :: Nullable (Effect Unit)
@@ -512,6 +513,7 @@ mkPurchase self@{ state: { logger } } window askAccount validForm affUser =
         -- NOTE: We need to pass the updated state here, not `self.state`.
         startOrderPoller self.setState newState order
     Left err -> do
+      liftEffect $ for_ window windowClose
       case err of
         UnexpectedError e -> liftEffect $ logger.error $ Error.orderError $ "Failed to place an order: " <> e
         _ -> pure unit
