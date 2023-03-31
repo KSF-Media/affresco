@@ -278,14 +278,15 @@ p strong {
   .payment-terminal {
     background: white;
     width: 100%;
-    min-width: 550px;
     height: 440px;
     border: none;
     margin-left: auto;
     margin-right: auto;
     clear: both;
-    @media (max-width: 550px) {
-      min-width: 250px;
+    max-width: 600px;
+    margin-top: 20px;
+    div {
+      padding-top: 20px;
     }
   }
   .payment-terminal.payment-terminal-msg {

@@ -145,12 +145,17 @@ renderPayment :: Either BottegaError OrderState -> Effect Unit -> Maybe PaymentT
 renderPayment (Right OrderUnknownState) _ _ = initializing
 renderPayment (Right OrderCreated) cancel (Just _) =
   DOM.div
-    { children:
-        [ DOM.text "Maksu on toisessa täbissä"
-        , DOM.button
-            { children: [ DOM.text "Avbryt" ]
-            , onClick: capture_ cancel
-            }
+    { className: "payment-terminal payment-terminal-msg"
+    , children:
+        [ DOM.div_
+            [ DOM.text "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på pren@ksfmedia.fi."
+            ]
+        , DOM.div_
+            [ DOM.button
+                { children: [ DOM.text "Avbryt" ]
+                , onClick: capture_ cancel
+                }
+            ]
         ]
     }
 renderPayment (Right OrderCreated) _ _ = loading
