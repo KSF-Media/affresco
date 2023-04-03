@@ -18,9 +18,8 @@ import Effect.Exception (error)
 import KSF.Api.Subscription (Subsno)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Choice (choice) as Choice
-import KSF.CreditCard.Register (register) as Register
+import KSF.CreditCard.Register (render) as Register
 import KSF.Sentry as Sentry
-import KSF.User (PaymentTerminalUrl)
 import KSF.User (getCreditCardRegister, registerCreditCardFromExisting) as User
 import KSF.User.Cusno (Cusno)
 import KSF.Tracking as Tracking
@@ -30,6 +29,10 @@ import React.Basic (JSX)
 import React.Basic.Hooks (Component, component, useState, useEffectOnce, (/\))
 import React.Basic.Hooks as React
 import React.Basic.DOM as DOM
+import Web.HTML as Web.HTML
+import Web.HTML.Location as Web.HTML.Location
+import Web.HTML.Window as Window
+import Web.HTML.Window (Window)
 
 type BaseProps =
   ( creditCards :: Array CreditCard
@@ -37,6 +40,7 @@ type BaseProps =
   , logger      :: Sentry.Logger
   , subsno      :: Subsno
   , paymentMethodId :: Maybe PaymentMethodId
+  , window      :: Maybe Window
   )
 
 type Props =
@@ -60,7 +64,7 @@ type SetState = (State -> State) -> Effect Unit
 
 data UpdateState
   = ChooseCreditCard
-  | RegisterCreditCard PaymentTerminalUrl
+  | RegisterCreditCard
 
 creditCardUpdateView :: Component Props
 creditCardUpdateView = do
@@ -106,9 +110,7 @@ render self@{ setState, state: { asyncWrapperState, updateState }, props: { cred
                                         , onCancel: onCancel self
                                         }
 
-            RegisterCreditCard url -> Register.register
-                                        { terminalUrl: url
-                                        }
+            RegisterCreditCard -> Register.render
         ]
     }
   where
@@ -126,12 +128,19 @@ render self@{ setState, state: { asyncWrapperState, updateState }, props: { cred
     onTryAgain = setState \s -> s { asyncWrapperState = AsyncWrapper.Ready }
 
 registerCreditCard :: Self -> AVar Unit -> CreditCard -> Aff Unit
-registerCreditCard self@{ setState, props: { logger, setWrapperState }, state } closed oldCreditCard@{ id } = do
+registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, state } closed oldCreditCard@{ id } = do
+  globalWindow <- liftEffect Web.HTML.window
   creditCardRegister <- User.registerCreditCardFromExisting id
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
-      let newState = state { updateState = RegisterCreditCard url }
+      let newState = state { updateState = RegisterCreditCard }
       liftEffect do
+        case window of
+          Just w -> do
+            l <- Window.location w
+            Web.HTML.Location.setHref url.paymentTerminalUrl l
+          Nothing -> do
+            void $ Window.open url.paymentTerminalUrl "_blank" "noopener" globalWindow
         setState \_ -> newState
         setWrapperState _ { closeable = true }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
