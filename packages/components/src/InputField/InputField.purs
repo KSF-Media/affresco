@@ -35,12 +35,14 @@ type Props =
   , disabled        :: Boolean
   , extraClass      :: String
   , autoComplete    :: String
+  , autoFocus       :: Boolean
   )
 
 type DefaultProps =
   ( disabled        :: Boolean
   , extraClass      :: String
   , autoComplete    :: String
+  , autoFocus       :: Boolean
   )
 
 type State =
@@ -66,6 +68,7 @@ inputField userProps = React.make component
       { disabled: false
       , extraClass: ""
       , autoComplete: ""
+      , autoFocus: false
       }
 
     didMount { props, setState } = when (isJust props.value) $
