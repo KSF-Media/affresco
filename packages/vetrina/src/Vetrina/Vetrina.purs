@@ -334,7 +334,7 @@ render self = vetrinaContainer self $
   else case self.state.purchaseState of
     PurchasePolling -> maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
     NewPurchase -> newPurchase
-    CapturePayment -> netsTerminalIframe
+    CapturePayment -> netsTerminalModal
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed failure ->
       case failure of
@@ -626,8 +626,8 @@ toOrderFailure bottegaErr =
     BottegaTimeout                -> UnexpectedError "Timeout"
     BottegaUnexpectedError errMsg -> UnexpectedError errMsg
 
-netsTerminalIframe :: JSX
-netsTerminalIframe =
+netsTerminalModal :: JSX
+netsTerminalModal =
   DOM.div
     { className: "vetrina--payment-wrapper"
     , children:
