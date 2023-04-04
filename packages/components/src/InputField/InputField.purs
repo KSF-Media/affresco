@@ -104,6 +104,7 @@ render self@{ props, state } =
                 else mempty
             , disabled: props.disabled
             , autoComplete: if props.autoComplete == "" then unsafeCoerce Nullable.null else props.autoComplete
+            , autoFocus: props.autoFocus
             }
         ] `snoc` foldMap errorMessage props.validationError
     }
