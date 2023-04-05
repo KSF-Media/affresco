@@ -332,8 +332,11 @@ class Content extends Component {
               })
             : ""}
           <div className={"row"}>
-            <div className={"col-sm-12"}>{this.props.isPreview ? <PremiumBox paper={this.props.paper} /> : ""}</div>
-          </div>{" "}
+            {this.props.isPreview
+              ? <div className={"col-sm-12 fade-premium"}><PremiumBox paper={this.props.paper} /></div>
+              : ""
+            }
+          </div>
           {this.renderAdOutsideMainBlock("mobbox1")}
         </div>
       </div>
