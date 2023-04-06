@@ -11,8 +11,9 @@ class Content extends Component {
     };
   }
 
-  conditionalRendering(block, key) {
-    let blockType = Object.keys(block)[0].toLowerCase() || null;
+  conditionalRendering(block) {
+    const blockType = Object.keys(block)[0].toLowerCase() || null;
+    const key = block.key;
     if (blockType != null) {
       if (blockType === "ad") {
         return this.renderAd(block, key);
@@ -211,8 +212,8 @@ class Content extends Component {
           <div
             className={`expand ${this.props.darkModeEnabled ? "darkMode" : ""}`}
             id={"expandFactBox-" + key}
-            onClick={(ev) => {
-              this.expandFactBox(ev);
+            onClick={() => {
+              this.expandFactBox(key);
             }}
           >
             <div className={`expandOpacity ${this.props.darkModeEnabled ? "darkMode" : ""}`} id={"expandOpacity"}></div>
@@ -269,8 +270,7 @@ class Content extends Component {
     return $.html()
   }
 
-  expandFactBox(ev) {
-    const key = /\d+/.exec(ev.currentTarget.id)[0];
+  expandFactBox(key) {
     document.getElementById("genericBox-" + key).style.height = "auto";
     document.getElementById("expandFactBox-" + key).style.display = "none";
     document.getElementById("expandOpacity").style.display = "none";
