@@ -8,6 +8,7 @@ import Bottega.Models.Order (OrderSource(..))
 import Bottega.Poller as Poller
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 import Data.Either (Either(..))
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -16,6 +17,7 @@ import Effect.Now as Now
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
+import KSF.Window (close)
 import Prenumerera.Package (Package, PackageOffer)
 import Prenumerera.Package.Description (Description)
 import Prenumerera.Summary as Summary
@@ -83,6 +85,7 @@ component = do
               pure { nets, order }
             case eitherNetsUrl of
               Left err -> liftEffect do
+                for_ window close
                 setError $ Left err
               Right { nets, order } -> do
                 Poller.startOrder poller setOrderState order.number

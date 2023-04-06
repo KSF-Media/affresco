@@ -5,7 +5,7 @@ import Prelude
 import Bottega (BottegaError, bottegaErrorMessage)
 import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..), FailReason(..), PaymentMethodId)
 import Data.Either (Either(..))
-import Data.Foldable (find)
+import Data.Foldable (find, for_)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -23,6 +23,7 @@ import KSF.Sentry as Sentry
 import KSF.User (getCreditCardRegister, registerCreditCardFromExisting) as User
 import KSF.User.Cusno (Cusno)
 import KSF.Tracking as Tracking
+import KSF.Window (close)
 import MittKonto.Wrappers (AutoClose(..), SetRouteWrapperState)
 import MittKonto.Wrappers.Elements as WrapperElements
 import React.Basic (JSX)
@@ -145,10 +146,12 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, 
         setWrapperState _ { closeable = true }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
     Right { terminalUrl: Nothing } ->
+      for_ window close
       liftEffect do
         logger.log "No terminal url received" Sentry.Error
         onError self
     Left err ->
+      for_ window close
       liftEffect do
         logger.log ("Got the following error when registering credit card: " <> bottegaErrorMessage err) Sentry.Error
         onError self
