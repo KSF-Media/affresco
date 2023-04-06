@@ -513,6 +513,8 @@ mkPurchase self@{ state: { logger } } window askAccount validForm affUser =
         -- NOTE: We need to pass the updated state here, not `self.state`.
         startOrderPoller self.setState newState order
     Left err -> do
+      -- Close the window we might have opened in case we can't get the payment url. We don't have to close
+      -- the window in case the further requests fail, Bottega's html responses should handle that.
       liftEffect $ for_ window windowClose
       case err of
         UnexpectedError e -> liftEffect $ logger.error $ Error.orderError $ "Failed to place an order: " <> e
