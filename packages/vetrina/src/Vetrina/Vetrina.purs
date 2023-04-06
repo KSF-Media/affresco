@@ -121,19 +121,19 @@ fromJSProps jsProps =
   }
 
 type State =
-  { user                 :: Maybe User
-  , purchaseState        :: PurchaseState
-  , poller               :: Aff.Fiber Unit
-  , isLoading            :: Maybe Spinner.Loading
-  , loadingMessage       :: Maybe String
-  , accountStatus        :: AccountStatus
-  , logger               :: Sentry.Logger
-  , products             :: Array Product
-  , productSelection     :: Maybe Product
-  , paymentMethod        :: Maybe User.PaymentMethod
+  { user             :: Maybe User
+  , purchaseState    :: PurchaseState
+  , poller           :: Aff.Fiber Unit
+  , isLoading        :: Maybe Spinner.Loading
+  , loadingMessage   :: Maybe String
+  , accountStatus    :: AccountStatus
+  , logger           :: Sentry.Logger
+  , products         :: Array Product
+  , productSelection :: Maybe Product
+  , paymentMethod    :: Maybe User.PaymentMethod
   , accountFormComponent :: AccountForm.Props -> JSX
-  , retryPurchase        :: User -> Effect Unit
-  , paymentMethods       :: Array User.PaymentMethod
+  , retryPurchase :: User -> Effect Unit
+  , paymentMethods :: Array User.PaymentMethod
   }
 
 type Self = React.Self Props State
