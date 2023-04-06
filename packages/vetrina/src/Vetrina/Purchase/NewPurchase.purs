@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Data.Array (find, head, length, snoc)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (all, foldMap)
+import Data.Foldable (all, foldMap, for_)
 import Data.Int as Int
 import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
@@ -26,6 +26,7 @@ import KSF.User (PaymentMethod(..), User)
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
+import KSF.Window (clearOpener)
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -241,6 +242,7 @@ form self = DOM.form $
                   { emailAddress = self.state.newAccountForm.emailAddress <|> Just "" }})
             (\validForm -> do
                 w <- Window.open "" "_blank" "" window
+                for_ w clearOpener
                 self.props.mkPurchaseWithNewAccount w validForm
             )
             $ newAccountFormValidations self
@@ -254,6 +256,7 @@ form self = DOM.form $
                   }})
             (\validForm -> do
                 w <- Window.open "" "_blank" "" window
+                for_ w clearOpener
                 self.props.mkPurchaseWithExistingAccount w validForm
             )
             $ existingAccountFormValidations self
@@ -262,6 +265,7 @@ form self = DOM.form $
             (\_ -> pure unit)
             (\validForm -> do
                 w <- Window.open "" "_blank" "" window
+                for_ w clearOpener
                 self.props.mkPurchaseWithLoggedInAccount w user validForm)
             $ loggedInAccountFormValidations self
     children = case self.props.accountStatus of

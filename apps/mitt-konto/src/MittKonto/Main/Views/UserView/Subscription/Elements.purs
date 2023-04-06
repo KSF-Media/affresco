@@ -33,6 +33,7 @@ import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.Tracking as Tracking
 import KSF.User (InvalidDateInput(..))
 import KSF.User as User
+import KSF.Window (clearOpener)
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
@@ -345,6 +346,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                         { onClick: handler preventDefault $ \_ -> do
                                     window <- Web.HTML.window
                                     w <- Window.open "" "_blank" "" window
+                                    for_ w clearOpener
                                     self.props.updateWindow $ Just w
                                     props.router.pushState (unsafeToForeign {}) $ "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
                         , href: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"

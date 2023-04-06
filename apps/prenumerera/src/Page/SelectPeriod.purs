@@ -20,6 +20,7 @@ import KSF.Registration.Component (RegistrationInputField(..))
 import KSF.Registration.Component as Registration
 import KSF.User (User)
 import KSF.ValidatableForm (isNotInitialized)
+import KSF.Window (clearOpener)
 import Prenumerera.Package (Package, PackageOffer)
 import Prenumerera.Package.Description (Description)
 import Prenumerera.Page.Register as Register
@@ -31,8 +32,6 @@ import React.Basic.Hooks (Component, useState, useState', (/\))
 import React.Basic.Hooks as React
 import Web.HTML as Web.HTML
 import Web.HTML.Window as Window
-
-foreign import clearOpener :: Window.Window -> Effect Unit
 
 type Props =
   { package :: Package
