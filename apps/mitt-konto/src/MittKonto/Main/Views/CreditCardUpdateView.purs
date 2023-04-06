@@ -145,13 +145,13 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, 
         setState \_ -> newState
         setWrapperState _ { closeable = true }
       void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
-    Right { terminalUrl: Nothing } ->
-      for_ window close
+    Right { terminalUrl: Nothing } -> do
+      liftEffect $ for_ window close
       liftEffect do
         logger.log "No terminal url received" Sentry.Error
         onError self
-    Left err ->
-      for_ window close
+    Left err -> do
+      liftEffect $ for_ window close
       liftEffect do
         logger.log ("Got the following error when registering credit card: " <> bottegaErrorMessage err) Sentry.Error
         onError self
