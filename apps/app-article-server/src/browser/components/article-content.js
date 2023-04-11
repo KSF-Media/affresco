@@ -327,8 +327,8 @@ class Content extends Component {
         >
           {this.renderAdOutsideMainBlock("mobparad")}
           {this.props.body != null
-            ? this.props.body.map((block, key) => {
-                return this.conditionalRendering(block, key);
+            ? this.props.body.map((block) => {
+                return this.conditionalRendering(block);
               })
             : ""}
           <div className={"row"}>

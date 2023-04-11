@@ -9,6 +9,7 @@ const https = require("https");
 const UUID = require("uuid");
 
 import generateHtml from "./generateHtml";
+import insertAds from "./insertAds";
 import Article from "../browser/components/article";
 import ErrorPage from "../browser/components/error";
 import { v4 as uuidv4 } from 'uuid';
@@ -83,7 +84,9 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	}
 	const user = _.get(responses[1], "data");
 
-	const articleBody = article.body.map(block => {
+	const articleBodyWithAds = insertAds(article.body);
+
+	const articleBody = articleBodyWithAds.map(block => {
 		return {
 			...block,
 			key: uuidv4(),
