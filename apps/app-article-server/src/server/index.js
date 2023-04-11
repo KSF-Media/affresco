@@ -9,8 +9,10 @@ const https = require("https");
 const UUID = require("uuid");
 
 import generateHtml from "./generateHtml";
+import insertAds from "./insertAds";
 import Article from "../browser/components/article";
 import ErrorPage from "../browser/components/error";
+import { v4 as uuidv4 } from 'uuid';
 
 app.use("/dist", express.static(`${__dirname}/../client`));
 
@@ -81,6 +83,17 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	  isPreviewArticle = true;
 	}
 	const user = _.get(responses[1], "data");
+
+	const articleBodyWithAds = insertAds(article.body);
+
+	const articleBody = articleBodyWithAds.map(block => {
+		return {
+			...block,
+			key: uuidv4(),
+		}
+	})
+
+	article = {...article, body: articleBody};
 
 	const articleJSX = (
 	  <Article
