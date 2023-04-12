@@ -221,7 +221,7 @@ app = do
                     }
                 ]
             EndPage -> fromMaybe mempty do
-              Tuple _ description <- purchasePackage
+              Tuple package description <- purchasePackage
               { offer, method } <- purchaseDetails
               u <- user
               pure $ React.fragment
@@ -229,6 +229,7 @@ app = do
                 , finishComponent
                     { user: u
                     , description
+                    , package
                     , offer
                     , method
                     }
