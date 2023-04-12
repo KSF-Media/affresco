@@ -11,10 +11,8 @@ import Prenumerera.Package.Description (Description)
 import Prenumerera.Summary as Summary
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, useEffect)
+import React.Basic.Hooks (Component, useEffectOnce)
 import React.Basic.Hooks as React
-import Web.HTML.HTMLElement (offsetParent)
-
 
 type Props =
   { user :: User
@@ -29,7 +27,7 @@ component = do
   today <- Now.nowDate
   React.component "Finish" \ { user, description, offer, method, package } -> React.do
     let summary = Summary.render today user description offer method
-    useEffect unit do
+    useEffectOnce do
         analyticsSendPurchase user package method offer
         pure $ pure unit
     pure $ render summary
