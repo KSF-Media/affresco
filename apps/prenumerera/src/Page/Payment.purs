@@ -61,13 +61,12 @@ component = do
                        isJust netsUrl
         paymentUrl = (maybe "" _.paymentTerminalUrl netsUrl)
     useEffect needTerminal do
-      if needTerminal then case window of
+      when needTerminal $ case window of
         Just w -> do
           l <- Window.location w
           Web.HTML.Location.setHref paymentUrl l
         Nothing -> do
           void $ Window.open paymentUrl "_blank" "noopener" globalWindow
-      else pure unit
       pure $ pure unit
     let startPayOrder :: Effect Unit
         startPayOrder = do

@@ -61,7 +61,7 @@ type Props =
   , errorMessage                  :: Maybe String
   , mkPurchaseWithNewAccount      :: Maybe Window -> NewAccountForm -> Effect Unit
   , mkPurchaseWithExistingAccount :: Maybe Window -> ExistingAccountForm -> Effect Unit
-  , mkPurchaseWithLoggedInAccount :: Maybe Window -> User -> { | PurchaseParameters } -> Effect Unit
+  , mkPurchaseWithLoggedInAccount :: User -> Maybe Window -> { | PurchaseParameters } -> Effect Unit
   , productSelection              :: Maybe Product
   , onLogin                       :: EventHandler
   , headline                      :: Maybe JSX
@@ -231,8 +231,14 @@ form self = DOM.form $
     isExistingAccount (ExistingAccount _) = true
     isExistingAccount _ = false
 
+
     onSubmit = handler preventDefault $ \_ -> do
       window <- Web.HTML.window
+      let withWindow :: forall a. (Maybe Window -> a -> Effect Unit) -> a -> Effect Unit
+          withWindow f validForm = do
+            w <- Window.open "" "_blank" "" window
+            for_ w clearOpener
+            f w validForm
       case self.props.accountStatus of
         NewAccount ->
           validation
@@ -240,11 +246,7 @@ form self = DOM.form $
               self.setState _
                 { newAccountForm
                   { emailAddress = self.state.newAccountForm.emailAddress <|> Just "" }})
-            (\validForm -> do
-                w <- Window.open "" "_blank" "" window
-                for_ w clearOpener
-                self.props.mkPurchaseWithNewAccount w validForm
-            )
+            (withWindow self.props.mkPurchaseWithNewAccount)
             $ newAccountFormValidations self
         ExistingAccount _ ->
           validation
@@ -254,19 +256,12 @@ form self = DOM.form $
                   { emailAddress = self.state.existingAccountForm.emailAddress <|> Just ""
                   , password     = self.state.existingAccountForm.password     <|> Just ""
                   }})
-            (\validForm -> do
-                w <- Window.open "" "_blank" "" window
-                for_ w clearOpener
-                self.props.mkPurchaseWithExistingAccount w validForm
-            )
+            (withWindow self.props.mkPurchaseWithExistingAccount)
             $ existingAccountFormValidations self
         LoggedInAccount user ->
           validation
             (\_ -> pure unit)
-            (\validForm -> do
-                w <- Window.open "" "_blank" "" window
-                for_ w clearOpener
-                self.props.mkPurchaseWithLoggedInAccount w user validForm)
+            (withWindow $ self.props.mkPurchaseWithLoggedInAccount user)
             $ loggedInAccountFormValidations self
     children = case self.props.accountStatus of
         NewAccount ->

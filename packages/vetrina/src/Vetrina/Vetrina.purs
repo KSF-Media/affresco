@@ -436,8 +436,8 @@ mkPurchaseWithExistingAccount :: Self -> Maybe Window -> NewPurchase.ExistingAcc
 mkPurchaseWithExistingAccount self w validForm =
   mkPurchase self w self.props.askAccountAlways validForm $ loginToExistingAccount self validForm.emailAddress validForm.password
 
-mkPurchaseWithLoggedInAccount :: Self -> Maybe Window -> User.User -> { | NewPurchase.PurchaseParameters } -> Effect Unit
-mkPurchaseWithLoggedInAccount self w user validForm = mkPurchase self w self.props.askAccountAlways validForm $ (pure $ Right user)
+mkPurchaseWithLoggedInAccount :: Self -> User.User -> Maybe Window -> { | NewPurchase.PurchaseParameters } -> Effect Unit
+mkPurchaseWithLoggedInAccount self user w validForm = mkPurchase self w self.props.askAccountAlways validForm $ (pure $ Right user)
 
 mkPurchase
   :: forall r
