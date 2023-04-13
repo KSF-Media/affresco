@@ -288,7 +288,7 @@ class Content extends Component {
   renderFootnote(block, key) {
     return (
       <div className={"html text-footnote"} key={key}>
-        <i>{block.footnote}</i>
+        <i dangerouslySetInnerHTML={{__html: block.footnote}} />
       </div>
     );
   }
