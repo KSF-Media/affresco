@@ -40,6 +40,11 @@
   --color-footer: #fff;
 }
 
+/* Try to remove grey background sometimes present on hyperlinks */
+a {
+  background-color: transparent;
+}
+
 body {
   margin: 0;
   padding: 0;
