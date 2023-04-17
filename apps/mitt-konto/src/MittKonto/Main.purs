@@ -79,6 +79,7 @@ app = do
         , now: now
         , news: News.render Nothing
         , loginComponent
+        , window: Nothing
         }
   passwordReset <- Reset.resetPassword
   component "MittKonto" \_ -> React.do
@@ -172,18 +173,20 @@ app = do
             , route: "/fakturor/:invno"
             , routeFrom: "/fakturor"
             }
-        creditCardUpdateInputs subscription user =
+        creditCardUpdateInputs window subscription user =
           { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
           , cusno: user.cusno
           , logger: logger
           , subsno: subscription.subsno
           , paymentMethodId: Nullable.toMaybe subscription.paymentMethodId
+          , window: window
           }
         creditCardUpdateView subsno user = fromMaybe mempty do
           subs <- find ((_ == subsno) <<< _.subsno) user.subs
+          w <- state.window
           guard (subs.paymentMethod == CreditCard) $ pure $
             creditCardUpdate
-              { contentProps: creditCardUpdateInputs subs user
+              { contentProps: creditCardUpdateInputs w subs user
               , closeType: Wrappers.XButton
               , route: "/kreditkort/uppdatera"
               , routeFrom: "/"
