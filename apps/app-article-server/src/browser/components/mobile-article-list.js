@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import { LazyLoadImage, trackWindowScroll } from "react-lazy-load-image-component";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 const _ = require("lodash");
-import 'react-lazy-load-image-component/src/effects/blur.css';
 
 const isArray = (value) => {
   return value && typeof value === "object" && value.constructor === Array;
@@ -75,7 +74,7 @@ const MobileList = (props) => {
                       className="listImage"
                       scrollPosition={props.scrollPosition}
                       placeholderSrc={hblDefaultImage}
-                      effect="blur"
+                      effect="opacity"
                     />
 
 {/*                     <img

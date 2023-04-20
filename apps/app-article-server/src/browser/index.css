@@ -618,6 +618,7 @@ h6 {
   margin-top: 3px;
   margin-bottom: 10px;
   text-align: right;
+  min-height: 150px;
 }
 
 .listImageContainer {
