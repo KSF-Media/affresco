@@ -4,7 +4,6 @@ import Header from "./header";
 import Additional from "./article-additional";
 import ArticleDetails from "./article-details";
 import Content from "./article-content";
-// import MostReadArticles from "./most-read-articles";
 import Footer from "./footer";
 import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
