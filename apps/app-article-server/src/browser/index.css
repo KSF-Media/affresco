@@ -1,21 +1,27 @@
 @font-face {
   font-family: "Roboto";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Regular.ttf");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Regular-webfont.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Roboto Bold";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Bold.ttf");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Bold-webfont.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Duplex Sans Bold";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex%20Sans-Bold.otf");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Bold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Duplex Sans Light";
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Light.woff2") format("woff2");
+  font-weight: 300;
 }
 
 @font-face {
   font-family: "Duplex Serif Bold";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Bold.otf");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Web-Bold.woff2") format("woff2");
 }
 
 :root {
@@ -91,7 +97,7 @@ h6 {
 .title {
   color: #333;
   line-height: 30px;
-  font-family: "Duplex Serif Bold", sans-serif;
+  font-family: "Duplex Serif Bold", serif;
   font-size: 2rem;
   letter-spacing: 0px;
 }
@@ -115,7 +121,7 @@ h6 {
 }
 
 .preamble {
-  font: 400 1.4rem/1.2 Duplex Sans,sans-serif;
+  font: 300 1.4rem/1.2 "Duplex Sans Light",sans-serif;
 }
 
 .article .content h2,
@@ -433,8 +439,7 @@ h6 {
 
 .articleTag {
   text-transform: uppercase;
-  font-family: 'Roboto Bold', sans-serif;
-  font-weight: bold;
+  font-family: "Roboto Bold", sans-serif;
   font-size: 14px;
 }
 
@@ -577,7 +582,7 @@ h6 {
 }
 
 .relatedArticles .articleItem {
-  font-family: "Duplex Serif Bold", sans-serif;
+  font-family: "Duplex Serif Bold", serif;
   color: #323232;
 }
 
