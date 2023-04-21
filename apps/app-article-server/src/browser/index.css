@@ -1,27 +1,32 @@
 @font-face {
   font-family: "Roboto";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Regular-webfont.woff2") format("woff2");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Regular-webfont.woff2") format("woff2"),
+    url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Regular.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "Roboto Bold";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Bold-webfont.woff2") format("woff2");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Bold-webfont.woff2") format("woff2"),
+    url("https://cdn.ksfmedia.fi/assets/fonts/Roboto-Bold.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "Duplex Sans Bold";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Bold.woff2") format("woff2");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Bold.woff2") format("woff2"),
+    url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Bold.otf") format("opentype");
 }
 
 @font-face {
   font-family: "Duplex Sans Light";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Light.woff2") format("woff2");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Light.woff2") format("woff2"),
+    url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Light.otf") format("opentype");
   font-weight: 300;
 }
 
 @font-face {
   font-family: "Duplex Serif Bold";
-  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Web-Bold.woff2") format("woff2");
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Web-Bold.woff2") format("woff2"),
+    url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Bold.otf") format("opentype");
 }
 
 :root {

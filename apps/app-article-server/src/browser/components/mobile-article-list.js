@@ -68,8 +68,8 @@ const MobileList = (props) => {
                     <>
                     <LazyLoadImage
                       src={item.listImage.url.includes("imengine")
-                      ? item.listImage.url + "&function=hardcrop&width=360&height=200&q=65"
-                      : item.listImage.tinyThumb
+                        ? item.listImage.url + "&function=hardcrop&width=360&height=200&q=65"
+                        : item.listImage.tinyThumb
                       }
                       className="listImage"
                       scrollPosition={props.scrollPosition}
