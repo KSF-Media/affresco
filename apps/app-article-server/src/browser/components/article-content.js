@@ -167,15 +167,6 @@ class Content extends Component {
             this.props.showHighResolutionImage(block.image.url, caption + " " + appendBylineLabel + " " + byline)
           }
         />
-{/*         <img
-          className={"articleImage"}
-          width="100%"
-          src={block.image.url}
-          alt=""
-          onClick={() =>
-            this.props.showHighResolutionImage(block.image.url, caption + " " + appendBylineLabel + " " + byline)
-          }
-        /> */}
         <p
           dangerouslySetInnerHTML={{
             __html: caption + " " + appendBylineLabel + " " + byline,
