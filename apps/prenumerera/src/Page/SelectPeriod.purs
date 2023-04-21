@@ -6,7 +6,7 @@ import Bottega.Models (PaymentMethod(..))
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, head)
 import Data.Either (Either(..))
-import Data.Foldable (find)
+import Data.Foldable (find, for_)
 import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
@@ -20,6 +20,7 @@ import KSF.Registration.Component (RegistrationInputField(..))
 import KSF.Registration.Component as Registration
 import KSF.User (User)
 import KSF.ValidatableForm (isNotInitialized)
+import KSF.Window (clearOpener)
 import Prenumerera.Package (Package, PackageOffer)
 import Prenumerera.Package.Description (Description)
 import Prenumerera.Page.Register as Register
@@ -29,17 +30,20 @@ import React.Basic.DOM.Events (targetValue, preventDefault)
 import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, useState, useState', (/\))
 import React.Basic.Hooks as React
+import Web.HTML as Web.HTML
+import Web.HTML.Window as Window
 
 type Props =
   { package :: Package
   , description :: Description
   , user :: User
-  , next :: PackageOffer -> PaymentMethod -> User -> Effect Unit
+  , next :: PackageOffer -> PaymentMethod -> Maybe Window.Window -> User -> Effect Unit
   , cancel :: Effect Unit
   }
 
 component :: Component Props
 component = do
+  window <- Web.HTML.window
   React.component "SelectPeriod" $ \ { package, description, user, next } -> React.do
     let initial = _.form $ Register.initialRegisterData false $ Just user
     offer /\ setOffer <- useState' $ head package.offers
@@ -52,9 +56,12 @@ component = do
         confirm o m = case paymentMethod of
           PaperInvoice -> Register.updateUser
                           initial.formData setFormData
-                          (setUpdateUserError true) (next o m) user $
+                          (setUpdateUserError true) (next o m Nothing) user $
                           Registration.formValidations form
-          CreditCard -> next o m user
+          CreditCard -> do
+            w <- Window.open "" "_blank" "" window
+            for_ w clearOpener
+            next o m w user
     let remindElement = guard remind renderRemind
         paymentOfferElement = renderPaymentOffer package.offers setOffer paymentMethod setPaymentMethod
         acceptElement = renderAccept acceptTerms setAcceptTerms

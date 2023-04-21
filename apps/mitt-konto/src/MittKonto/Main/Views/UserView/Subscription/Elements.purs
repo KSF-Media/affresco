@@ -33,6 +33,7 @@ import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.Tracking as Tracking
 import KSF.User (InvalidDateInput(..))
 import KSF.User as User
+import KSF.Window (clearOpener)
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
@@ -41,6 +42,8 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler, handler_)
+import Web.HTML as Web.HTML
+import Web.HTML.Window as Window
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
 receiverName { props: { subscription: { receiver } } } =
@@ -340,8 +343,12 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
       DOM.div
         { className: "subscription--action-item"
         , children: [ DOM.a
-                        { onClick: handler preventDefault $ const $ props.router.pushState (unsafeToForeign {}) $
-                                   "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
+                        { onClick: handler preventDefault $ \_ -> do
+                                    window <- Web.HTML.window
+                                    w <- Window.open "" "_blank" "" window
+                                    for_ w clearOpener
+                                    self.props.updateWindow $ Just w
+                                    props.router.pushState (unsafeToForeign {}) $ "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
                         , href: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
                         , children: [ DOM.div
                                         { className: "subscription--action-link"

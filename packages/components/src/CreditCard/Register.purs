@@ -1,29 +1,12 @@
 module KSF.CreditCard.Register where
 
-import KSF.User (PaymentTerminalUrl)
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
-type Props =
-  { terminalUrl :: PaymentTerminalUrl
-  }
-
-type Self = React.Self Props State
-
-type State = {}
-
-register :: Props -> JSX
-register = make component { initialState: {}, render }
-
-component :: React.Component Props
-component = React.createComponent "Register"
-
-render :: Self -> JSX
-render { props: { terminalUrl } } =
+render :: JSX
+render =
   DOM.div_ [ warning
-           , netsTerminalIframe terminalUrl
+           , netsMessage
            ]
   where
     warning :: JSX
@@ -32,13 +15,9 @@ render { props: { terminalUrl } } =
       , children: [ DOM.text "På kortet görs en reservation på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
       }
 
-    netsTerminalIframe :: PaymentTerminalUrl -> JSX
-    netsTerminalIframe { paymentTerminalUrl } =
+    netsMessage :: JSX
+    netsMessage =
       DOM.div
         { className: "credit-card-register--wrapper"
-        , children : [ DOM.iframe
-                         { src: paymentTerminalUrl
-                         , className: "credit-card-register--terminal"
-                         }
-                     ]
+        , children : [ DOM.text "Registering öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när registering genomförts. Vid problem ta kontakt med vår kundtjänst på pren@ksfmedia.fi." ]
         }
