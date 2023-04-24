@@ -27,6 +27,7 @@
   font-family: "Duplex Serif Bold";
   src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Web-Bold.woff2") format("woff2"),
     url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Serif-Bold.otf") format("opentype");
+  font-weight: 700;
 }
 
 :root {
