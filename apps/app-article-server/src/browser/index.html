@@ -130,6 +130,11 @@
 
         googletag.pubads().enableSingleRequest();
         googletag.pubads().collapseEmptyDivs();
+        googletag.pubads().enableLazyLoad({
+          fetchMarginPercent: 0.85, // Fetch slots within 0.5 viewports.
+          renderMarginPercent: 0.85, // Render slots within 0.2 viewports.
+          mobileScaling: 1.5, // Double the above values on mobile.
+        });
         googletag.enableServices();
       });
     </script>
