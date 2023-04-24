@@ -9,6 +9,7 @@ import Data.Argonaut.Encode.Class (encodeJson)
 import Lettera.Models (Article)
 import KSF.LocalDateTime (formatLocalDateTime)
 
+-- https://developers.google.com/search/docs/appearance/structured-data/paywalled-content
 type JsonLdArticle
   = { "@context" :: String
     , "@type" :: String
@@ -21,6 +22,12 @@ type JsonLdArticle
           { "@type" :: String
           , "name" :: String
           , "url" :: Maybe String
+          }
+    , "isAccessibleForFree" :: String
+    , "hasPart" :: Maybe
+          { "@type" :: String
+          , "isAccessibleForFree" :: String
+          , "cssSelector" :: String
           }
     }
 
@@ -41,6 +48,13 @@ articleToJsonLd article =
             }
         )
         article.authors
+  , isAccessibleForFree: if article.premium then "False" else "True"
+  , hasPart: if article.premium
+             then Just { "@type": "WebPageElement"
+                       , "isAccessibleForFree": "False"
+                       , "cssSelector": ".premium-only"
+                       }
+             else Nothing
   }
 
 renderAsJsonLd :: Article -> Json

@@ -484,6 +484,7 @@ data CategoryType
   | Prerendered
   | Webview
   | Link
+  | CategoryTag
 
 derive instance eqCategoryType :: Eq CategoryType
 
@@ -492,6 +493,7 @@ toString Feed = "feed"
 toString Webview = "webview"
 toString Link = "link"
 toString Prerendered = "prerendered"
+toString CategoryTag = "tag"
 
 instance categoryTypeDecodeJson :: DecodeJson CategoryType where
   decodeJson json = do
@@ -501,6 +503,7 @@ instance categoryTypeDecodeJson :: DecodeJson CategoryType where
       "webview"     -> Right Webview
       "link"        -> Right Link
       "prerendered" -> Right Prerendered
+      "tag"         -> Right CategoryTag
       _             -> Left $ UnexpectedValue json
 
 newtype CategoryLabel = CategoryLabel String
@@ -535,6 +538,7 @@ newtype Category = Category
   , type          :: CategoryType
   , subCategories :: Array Category
   , url           :: Maybe String
+  , tag           :: Maybe Tag
   }
 
 correctionsCategory :: Category
@@ -544,6 +548,7 @@ correctionsCategory = Category
   , type: Feed
   , subCategories: mempty
   , url: Nothing
+  , tag: Nothing
   }
 
 type Categories = Map CategoryLabel Category
@@ -556,7 +561,8 @@ instance categoryDecodeJson :: DecodeJson Category where
     type_         <- categoryObj .: "type"
     subCategories <- categoryObj .:? "subcategories" .!= mempty
     url           <- categoryObj .:? "url"
-    pure $ Category { id, label, type: type_, subCategories, url }
+    tag           <- (map <<< map) uriComponentToTag (categoryObj .:? "tag")
+    pure $ Category { id, label, type: type_, subCategories, url, tag }
 
 instance categoryEncodeJson :: EncodeJson Category where
   encodeJson (Category c) = do
@@ -565,6 +571,7 @@ instance categoryEncodeJson :: EncodeJson Category where
     # Object.insert "type" (encodeJson $ toString c.type)
     # Object.insert "subcategories" (encodeJson c.subCategories)
     # Object.insert "url" (encodeJson c.url)
+    # Object.insert "tag" (encodeJson $ tagToURIComponent <$> c.tag)
     # encodeJson
 
 derive instance newtypeCategory :: Newtype Category _
@@ -592,3 +599,5 @@ derive newtype instance showTag :: Show Tag
 derive newtype instance ordTag :: Ord Tag
 
 derive instance newtypeTag :: Newtype Tag _
+
+data Platform = Desktop | Mobile

@@ -5,17 +5,19 @@ import Prelude
 import Bottega.Models (PaymentMethod)
 import Effect.Now as Now
 import KSF.User (User)
-import Prenumerera.Package (PackageOffer)
+import Prenumerera.Analytics.Analytics (analyticsSendPurchase)
+import Prenumerera.Package (Package, PackageOffer)
 import Prenumerera.Package.Description (Description)
 import Prenumerera.Summary as Summary
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component)
+import React.Basic.Hooks (Component, useEffectOnce)
 import React.Basic.Hooks as React
 
 type Props =
   { user :: User
   , description :: Description
+  , package :: Package
   , offer :: PackageOffer
   , method :: PaymentMethod
   }
@@ -23,8 +25,11 @@ type Props =
 component :: Component Props
 component = do
   today <- Now.nowDate
-  React.component "Finish" \ { user, description, offer, method } -> do
+  React.component "Finish" \ { user, description, offer, method, package } -> React.do
     let summary = Summary.render today user description offer method
+    useEffectOnce do
+        analyticsSendPurchase user package method offer
+        pure $ pure unit
     pure $ render summary
 
 render :: JSX -> JSX

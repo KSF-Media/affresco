@@ -1,14 +1,15 @@
-import React, { Component } from "react";
+import React, { Component, Suspense } from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 import Header from "./header";
 import Additional from "./article-additional";
 import ArticleDetails from "./article-details";
 import Content from "./article-content";
-import MostReadArticles from "./most-read-articles";
 import Footer from "./footer";
 import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
 import "react-image-lightbox/style.css";
+
+const MostReadArticles = React.lazy(() => import('./most-read-articles'))
 
 const axios = require("axios");
 var _ = require("lodash");
@@ -16,10 +17,12 @@ var _ = require("lodash");
 class Article extends Component {
   constructor(props) {
     super(props);
+    const adsAreShown = this.props.articleType !== "Advertorial" && !this.props.removeAds;
     this.state = {
       modalCaption: "",
       isImageModalOpen: false,
       mostReadArticles: [],
+      adsAreShown: adsAreShown,
     };
   }
 
@@ -117,6 +120,7 @@ class Article extends Component {
               darkModeEnabled={this.props.darkModeEnabled}
               articleType={this.props.articleType}
               queryString={this.props.queryString}
+              adsAreShown={this.state.adsAreShown}
             />
             {this.props.relatedArticles.length > 0 ? (
               <RelatedArticles
@@ -129,12 +133,14 @@ class Article extends Component {
               ""
             )}
             {this.state.mostReadArticles.length > 0 ? (
-              <MostReadArticles
-                mostReadArticles={this.state.mostReadArticles}
-                queryString={this.props.queryString}
-                darkModeEnabled={this.props.darkModeEnabled}
-                paper={this.props.paper}
-              />
+              <Suspense fallback={<div>Laddar ...</div>}>
+                <MostReadArticles
+                  mostReadArticles={this.state.mostReadArticles}
+                  queryString={this.props.queryString}
+                  darkModeEnabled={this.props.darkModeEnabled}
+                  paper={this.props.paper}
+                />
+              </Suspense>
             ) : (
               ""
             )}

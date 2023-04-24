@@ -2,6 +2,8 @@ import React, { Component } from "react";
 const _ = require("lodash");
 import * as cheerio from 'cheerio';
 import PremiumBox from "./premium";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import 'react-lazy-load-image-component/src/effects/opacity.css';
 
 class Content extends Component {
   constructor(props) {
@@ -11,8 +13,9 @@ class Content extends Component {
     };
   }
 
-  conditionalRendering(block, key) {
-    let blockType = Object.keys(block)[0].toLowerCase() || null;
+  conditionalRendering(block) {
+    const blockType = Object.keys(block)[0].toLowerCase() || null;
+    const key = block.key;
     if (blockType != null) {
       if (blockType === "ad") {
         return this.renderAd(block, key);
@@ -46,16 +49,6 @@ class Content extends Component {
       }
     } else {
       console.log("couldn't render " + { blockType });
-    }
-  }
-
-  renderAd(block, key) {
-    if (block.ad === "MOBMITT" && this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobmitt"}></p>;
-    } else if (this.props.articleType !== "Advertorial") {
-      return <p key={key} className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "digihelmob"}></p>;
-    } else {
-      console.log("No ads shown in advertorials.");
     }
   }
 
@@ -163,10 +156,12 @@ class Content extends Component {
     let byline = block.image.byline === null ? "" : block.image.byline;
     return (
       <div className={"image"} key={key}>
-        <img
+        <LazyLoadImage 
           className={"articleImage"}
           width="100%"
           src={block.image.url}
+          threshold="200"
+          effect="opacity"
           alt=""
           onClick={() =>
             this.props.showHighResolutionImage(block.image.url, caption + " " + appendBylineLabel + " " + byline)
@@ -221,8 +216,8 @@ class Content extends Component {
           <div
             className={`expand ${this.props.darkModeEnabled ? "darkMode" : ""}`}
             id={"expandFactBox-" + key}
-            onClick={(ev) => {
-              this.expandFactBox(ev);
+            onClick={() => {
+              this.expandFactBox(key);
             }}
           >
             <div className={`expandOpacity ${this.props.darkModeEnabled ? "darkMode" : ""}`} id={"expandOpacity"}></div>
@@ -279,8 +274,7 @@ class Content extends Component {
     return $.html()
   }
 
-  expandFactBox(ev) {
-    const key = /\d+/.exec(ev.currentTarget.id)[0];
+  expandFactBox(key) {
     document.getElementById("genericBox-" + key).style.height = "auto";
     document.getElementById("expandFactBox-" + key).style.display = "none";
     document.getElementById("expandOpacity").style.display = "none";
@@ -298,9 +292,33 @@ class Content extends Component {
   renderFootnote(block, key) {
     return (
       <div className={"html text-footnote"} key={key}>
-        <i>{block.footnote}</i>
+        <i dangerouslySetInnerHTML={{__html: block.footnote}} />
       </div>
     );
+  }
+
+  renderAd(block, key) {
+    if (this.props.adsAreShown) {
+      return (
+        <p
+          key={key}
+          className="ksf-app-ad"
+          id={this.state.paper + "/" + this.state.paper + "_" + block.ad.toLowerCase()}
+        ></p>
+      );
+    } else {
+      console.log("Ads have been removed for this article.");
+    }
+  }
+
+  renderAdOutsideMainBlock(adName) {
+    if (this.props.adsAreShown) {
+      return (
+        <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + adName.toLowerCase()}></div>
+      );
+    } else {
+      console.log("Ads have been removed for this article.");
+    }
   }
 
   render() {
@@ -311,16 +329,19 @@ class Content extends Component {
           id={"content"}
           style={_.merge({ wordWrap: "break-word" })}
         >
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobparad"}></div>}
+          {this.renderAdOutsideMainBlock("mobparad")}
           {this.props.body != null
-            ? this.props.body.map((block, key) => {
-                return this.conditionalRendering(block, key);
+            ? this.props.body.map((block) => {
+                return this.conditionalRendering(block);
               })
             : ""}
           <div className={"row"}>
-            <div className={"col-sm-12"}>{this.props.isPreview ? <PremiumBox paper={this.props.paper} /> : ""}</div>
-          </div>{" "}
-          {this.props.articleType === "Advertorial" || <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + "mobbox1"}></div>}
+            {this.props.isPreview
+              ? <div className={"col-sm-12 fade-premium"}><PremiumBox paper={this.props.paper} /></div>
+              : ""
+            }
+          </div>
+          {this.renderAdOutsideMainBlock("mobbox1")}
         </div>
       </div>
     );

@@ -59,7 +59,7 @@ component router logger = do
               }
 
         subscriptionView subscription =
-          subscriptionComponent { subscription, user, logger, now, router }
+          subscriptionComponent { subscription, user, logger, now, router, updateWindow: \w -> setState _ {window = w} }
         subscriptionsView =
           Helpers.componentBlock "Mina prenumerationer:" $ subscriptions <> [ Elements.break, subscribeImage ]
           where

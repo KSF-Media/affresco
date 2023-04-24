@@ -12,6 +12,7 @@
   , "exceptions"
   , "foldable-traversable"
   , "foreign"
+  , "integers"
   , "lists"
   , "maybe"
   , "now"

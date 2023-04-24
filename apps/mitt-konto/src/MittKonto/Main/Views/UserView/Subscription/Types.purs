@@ -11,6 +11,7 @@ import KSF.User as User
 import KSF.User (User)
 import React.Basic (JSX)
 import Routing.PushState (PushStateInterface)
+import Web.HTML.Window (Window)
 
 type Self =
   { props :: Props
@@ -24,6 +25,7 @@ type Props =
   , logger :: Sentry.Logger
   , now :: Date
   , router :: PushStateInterface
+  , updateWindow :: Maybe (Maybe Window) -> Effect Unit
   }
 
 type State =

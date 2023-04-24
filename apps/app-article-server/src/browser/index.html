@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="theme-color" content="#000000" />
     <link rel="stylesheet" type="text/css" href="../../../../less/app-article.less" />
-    <link rel="stylesheet" type="text/css" href="./index.css" />
     <link
       rel="stylesheet"
       type="text/css"
@@ -114,8 +113,7 @@
       window.googletag = window.googletag || { cmd: [] };
 
       window.googletag.cmd.push(function () {
-        // Testing by key-value - Keep commented out for future testing
-        // googletag.pubads().setTargeting("Test", "mosaico_test");
+        googletag.pubads().setTargeting("sites-or-apps", "apps-only");
         const networkCode = "/21664538223/";
 
         const slots = window.adSlots;

@@ -11,6 +11,7 @@ import KSF.Spinner as Spinner
 import KSF.User (User, SubscriptionPayments)
 import KSF.User.Login as Login
 import React.Basic (JSX)
+import Web.HTML.Window (Window)
 
 type State =
   { paper :: Paper
@@ -23,6 +24,7 @@ type State =
   , now :: Date
   , news :: Maybe JSX
   , loginComponent :: Login.Props -> JSX
+  , window :: Maybe (Maybe Window) -- Nothing=window.open has not been called, Just Nothing=window.open returned null
   }
 
 type Self =
