@@ -2,6 +2,8 @@ import React, { Component } from "react";
 const _ = require("lodash");
 import * as cheerio from 'cheerio';
 import PremiumBox from "./premium";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import 'react-lazy-load-image-component/src/effects/opacity.css';
 
 class Content extends Component {
   constructor(props) {
@@ -154,10 +156,12 @@ class Content extends Component {
     let byline = block.image.byline === null ? "" : block.image.byline;
     return (
       <div className={"image"} key={key}>
-        <img
+        <LazyLoadImage 
           className={"articleImage"}
           width="100%"
           src={block.image.url}
+          threshold="200"
+          effect="opacity"
           alt=""
           onClick={() =>
             this.props.showHighResolutionImage(block.image.url, caption + " " + appendBylineLabel + " " + byline)
