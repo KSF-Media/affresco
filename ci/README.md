@@ -69,13 +69,6 @@ In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
 3. Create a new SSL certificate for the new host on this load balancer, and point a DNS A record to the IP of the load balancer
 4. Edit the `refreshCDNSteps` [source](./workflows.dhall) to include a `gcloud` command to clear the CDN cache on new deployments
 
-## Adding a new App Engine App
-
-1. Create a new `<appname>.dhall` in `.ci/app-servers/` and add it to the record in app-servers.dhall
-2. Configure the settings for the new app (You can use any of the other AE apps as an example)
-3. Create a `app.dev.yaml` to the root of your app (look for examples from other apps)
-4. You'll find the production app deployed at https://${sevice-name}-dot-ksf-production.ey.r.appspot.com
-
 ### Maintenance Mode
 
 Change the `MAINTENANCE_MODE` env var to `true` for the desired app in `apps.dhall`
