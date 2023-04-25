@@ -14,7 +14,7 @@ export function initSentry_(sentryDsn) {
     Sentry.init({
       dsn: sentryDsn,
       integrations: [new Tracing.BrowserTracing()],
-      tracesSampleRate: 0.8,
+      tracesSampleRate: 0.03,
       beforeSend(event, hint) {
         const error = hint.originalException;
         // Ignore an error caused by Instagram's browser
