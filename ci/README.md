@@ -23,7 +23,6 @@ The two workflow are slightly different. They both:
 - check that the generated workflows are up to date with the Dhall source (do this with `make generate-ci-local`)
 - build all the apps
 - upload them to a bucket
-- deploy apps to App Engine (Where applicable)
 
 Then the "preview" workflows posts a comment to the PR with the link to the newly
 deployed previews, while the "production" workflows clears the CDN cache so that
@@ -34,10 +33,6 @@ the new version of the apps goes live.
 The global environment variables (i.e. the ones shared by more than one app)
 should go in every workflow's `env` key, while the ones belonging to a single app
 should go in the `apps.dhall` file.
-
-### AppEngine env vars
-
-All env vars needed by an AppEngine app should be defined in `.ci/app-servers/<appname>.dhall`
 
 ## Build caching
 
