@@ -16,7 +16,7 @@
     "puppeteer": "^8.0.0"
   },
   "scripts": {
-    "start": "parcel index.html -p 8000",
+    "start": "parcel index.html -p 8001",
     "build": "spago build && parcel build index.html --public-url ./ --no-source-maps && cp xd_receiver.html _redirects ./dist",
     "test": "echo 'No testsuite configured'"
   }
