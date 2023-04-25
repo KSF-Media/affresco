@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="theme-color" content="#000000" />
     <link rel="stylesheet" type="text/css" href="../../../../less/app-article.less" />
-    <link rel="stylesheet" type="text/css" href="./index.css" />
     <link
       rel="stylesheet"
       type="text/css"
@@ -131,6 +130,11 @@
 
         googletag.pubads().enableSingleRequest();
         googletag.pubads().collapseEmptyDivs();
+        googletag.pubads().enableLazyLoad({
+          fetchMarginPercent: 0.85, // Fetch slots within 0.5 viewports.
+          renderMarginPercent: 0.85, // Render slots within 0.2 viewports.
+          mobileScaling: 1.5, // Double the above values on mobile.
+        });
         googletag.enableServices();
       });
     </script>
