@@ -42,9 +42,9 @@ testAddressChange page = do
   Chrome.click (Chrome.Selector ".profile--edit-address button[type='submit']") page
   Chrome.waitFor_ editAddressLink page
   -- Check edit
-  Chrome.assertContent (Chrome.Selector "#profile--display dt:nth-child(1)") "Adressändring:" page
+  Chrome.assertContent (Chrome.Selector "#profile--pending-address-change > dl:nth-child(1) > dt:nth-child(1)") "Adressändring:" page
   let expectedChange = "GENVÄGEN 8, 10650, EKENÄS (fr.o.m. " <> changeDateString <> ")"
-  Chrome.assertContent (Chrome.Selector "#profile--display dd:nth-child(2)") expectedChange page
+  Chrome.assertContent (Chrome.Selector "#profile--pending-address-change > dl:nth-child(1) > dd:nth-child(2)") expectedChange page
   Chrome.assertContent editAddressLink "Avbryt adressändringen" page
   -- Cancel edit
   Chrome.click editAddressLink page

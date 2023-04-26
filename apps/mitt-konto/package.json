@@ -13,11 +13,14 @@
     "xhr2": "0.2.1"
   },
   "devDependencies": {
-    "puppeteer": "^8.0.0"
+    "puppeteer": "^8.0.0",
+    "start-server-and-test": "^2.0.0"
   },
   "scripts": {
     "start": "parcel index.html -p 8000",
     "build": "spago build && parcel build index.html --public-url ./ --no-source-maps && cp xd_receiver.html _redirects ./dist",
-    "test": "echo 'No testsuite configured'"
+    "wait-for-parcel": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8000/\"); sleep(1)}'",
+    "test": "start-server-and-test http://localhost:8000 'spago -x test.dhall test'",
+    "clean": "rm -rf .cache .spago dist node_modules output"
   }
 }
