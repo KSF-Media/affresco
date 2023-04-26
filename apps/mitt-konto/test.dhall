@@ -4,6 +4,6 @@ in conf // {
     sources = conf.sources # [ "test/**/*.purs" ],
     dependencies = conf.dependencies #
         [ "affresco-test"
-	    , "test-unit"
-	    ]
+        , "test-unit"
+        ]
 }

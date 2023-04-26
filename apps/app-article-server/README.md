@@ -26,4 +26,6 @@ TODO
 
 ## Deploying
 
+When a PR is merged to __master__ it gets __deployed__ to __production__
+
 Deployment is handled by our gitlab mirror, see [.gitlab-ci.yml](../../.gitlab-ci.yml) and [infra](../../infra/README.md) for details
