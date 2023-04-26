@@ -7,14 +7,14 @@
 
    https://docs.sentry.io/platforms/javascript/
  */
-export function initSentry_(sentryDsn) {
+export function initSentry_(sentryDsn, tSampleRate) {
   var Sentry = require("@sentry/browser");
   var Tracing = require("@sentry/tracing");
   if (sentryDsn && sentryDsn.length > 1) {
     Sentry.init({
       dsn: sentryDsn,
       integrations: [new Tracing.BrowserTracing()],
-      tracesSampleRate: 0.8,
+      tracesSampleRate: tSampleRate,
       beforeSend(event, hint) {
         const error = hint.originalException;
         // Ignore an error caused by Instagram's browser
