@@ -19,7 +19,7 @@ yarn install
 export PERSONA_URL=https://persona.staging.ksfmedia.fi/v1
 export BOTTEGA_URL=https://bottega.staging.ksfmedia.fi/v1
 spago build
-spago -x test.dhall test
+yarn run local-tests
 ```
 
 ## Deploying 

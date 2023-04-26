@@ -15,6 +15,7 @@
   "scripts": {
     "start": "parcel index.html -p 8002",
     "build": "spago build && parcel build index.html --no-cache --public-url ./ --no-source-maps",
-    "clean": "rm -rf .cache .spago dist node_modules output"
+    "clean": "rm -rf .cache .spago dist node_modules output",
+    "test": "echo 'No testsuite configured'"
   }
 }
