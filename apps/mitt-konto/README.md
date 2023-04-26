@@ -10,7 +10,7 @@ yarn build
 yarn start
 ```
 
-devsite now available @ http://localhost:8001
+Dev site now available @ http://localhost:8001
 
 ## End-to-end tests
 
