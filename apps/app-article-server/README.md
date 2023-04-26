@@ -20,3 +20,12 @@ yarn start
 As an alternative to exporting PUBLIC_URL for every new shell you can also use [direnv](https://direnv.net/docs/installation.html) to have it done automgically.
 
 A server in port `8080` should be now up. Here's an example article for you to test it `http://localhost:8080/article/44f345b5-eb92-4e60-a884-26396cd3d831`.
+
+## Tests
+TODO
+
+## Deploying
+
+When a PR is merged to __master__ it gets __deployed__ to __production__
+
+Deployment is handled by our gitlab mirror, see [.gitlab-ci.yml](../../.gitlab-ci.yml) and [infra](../../infra/README.md) for details

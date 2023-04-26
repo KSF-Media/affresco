@@ -13,11 +13,14 @@
     "xhr2": "0.2.1"
   },
   "devDependencies": {
-    "puppeteer": "^8.0.0"
+    "puppeteer": "^8.0.0",
+    "start-server-and-test": "^2.0.0"
   },
   "scripts": {
     "start": "parcel index.html -p 8001",
     "build": "spago build && parcel build index.html --public-url ./ --no-source-maps && cp xd_receiver.html _redirects ./dist",
-    "test": "echo 'No testsuite configured'"
+    "local-tests": "start-server-and-test http://localhost:8001 'spago -x test.dhall test'",
+    "test": "echo 'No CI testsuite configured'",
+    "clean": "rm -rf .cache .spago dist node_modules output"
   }
 }

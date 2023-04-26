@@ -15,7 +15,7 @@
   "scripts": {
     "start": "parcel index.html -p 8002",
     "build": "spago build && parcel build index.html --no-cache --public-url ./ --no-source-maps",
-    "wait-for-parcel": "perl -e '$a = 1; while ($a) { $a = system(\"curl http://localhost:8002/\"); sleep(1)}'",
-    "test": "#spago build && yarn install && yarn start & yarn wait-for-parcel && spago test"
+    "clean": "rm -rf .cache .spago dist node_modules output",
+    "test": "echo 'No testsuite configured'"
   }
 }
