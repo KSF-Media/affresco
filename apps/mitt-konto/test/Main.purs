@@ -36,7 +36,7 @@ main = launchAff_ do
         Chrome.waitForNavigation {} page
       _ -> pure unit
     page <- Chrome.newPage browser
-    Chrome.goto (Chrome.URL "http://localhost:8000/") page
+    Chrome.goto (Chrome.URL "http://localhost:8001/") page
     inputLogin page customer1 password
     Chrome.waitFor_ (Chrome.Selector ".profile--profile-row:nth-child(1) .profile--edit-text") page
     runTest "change name" Profile.testNameChange page
@@ -48,7 +48,7 @@ main = launchAff_ do
     -- runTest "credit card change test" (Payment.testCreditCardChange auth) page
     -- The first page load may not have had the subscription on the
     -- page yet.  Force a reload.
-    Chrome.goto (Chrome.URL "http://localhost:8000/?") page
+    Chrome.goto (Chrome.URL "http://localhost:8001/?") page
     runTest "pause subscription" Subscription.testPause page
     -- Temp address change test disabled for now
     -- TODO: find out why changes with end date still show up as "tillsvidare"
