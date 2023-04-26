@@ -89,7 +89,7 @@ testTemporaryAddressChange page = do
         Chrome.waitFor_ (Chrome.Selector $ "#subscription-" <> subsno <> " .actions-wrapper--success") page
         Chrome.assertNotFound (Chrome.Selector $ "#subscription-" <> subsno <> " .error-text") page
         Chrome.assertContent pendingAddressText
-          ("ÄndraKSF, GENVÄGEN 8, 10650, EKENÄS (" <> start <> " – " <> fromMaybe "" end <> ")") page
+          ("ÄndraKSF, GENVÄGEN 8, 10650, EKENÄS (" <> start <> " – " <> fromMaybe "tillsvidare" end <> ")") page
   Chrome.waitFor_ startDateField page
   Chrome.click startDateField page
   Chrome.type_ startDateField startDateFieldText page

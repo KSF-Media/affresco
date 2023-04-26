@@ -59,7 +59,7 @@ testCreditCardChange auth page = do
   testCard originalCard
   Chrome.waitFor_ updateCardLink page
   Chrome.click updateCardLink page
-  frameHandle <- Chrome.waitFor netsIframe page
+  frameHandle <- Chrome.waitFor netsIframe 30000 page
   iframe <- Chrome.contentFrame frameHandle
   typeCreditCard iframe updatedCard
   Chrome.waitFor_ (Chrome.Selector ".subscription--container") page

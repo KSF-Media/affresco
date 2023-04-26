@@ -23,7 +23,6 @@ The two workflow are slightly different. They both:
 - check that the generated workflows are up to date with the Dhall source (do this with `make generate-ci-local`)
 - build all the apps
 - upload them to a bucket
-- deploy apps to App Engine (Where applicable)
 
 Then the "preview" workflows posts a comment to the PR with the link to the newly
 deployed previews, while the "production" workflows clears the CDN cache so that
@@ -34,10 +33,6 @@ the new version of the apps goes live.
 The global environment variables (i.e. the ones shared by more than one app)
 should go in every workflow's `env` key, while the ones belonging to a single app
 should go in the `apps.dhall` file.
-
-### AppEngine env vars
-
-All env vars needed by an AppEngine app should be defined in `.ci/app-servers/<appname>.dhall`
 
 ## Build caching
 
@@ -68,13 +63,6 @@ In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
 	- path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
 3. Create a new SSL certificate for the new host on this load balancer, and point a DNS A record to the IP of the load balancer
 4. Edit the `refreshCDNSteps` [source](./workflows.dhall) to include a `gcloud` command to clear the CDN cache on new deployments
-
-## Adding a new App Engine App
-
-1. Create a new `<appname>.dhall` in `.ci/app-servers/` and add it to the record in app-servers.dhall
-2. Configure the settings for the new app (You can use any of the other AE apps as an example)
-3. Create a `app.dev.yaml` to the root of your app (look for examples from other apps)
-4. You'll find the production app deployed at https://${sevice-name}-dot-ksf-production.ey.r.appspot.com
 
 ### Maintenance Mode
 
