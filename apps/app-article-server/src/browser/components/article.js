@@ -7,6 +7,7 @@ import Content from "./article-content";
 import Footer from "./footer";
 import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
+import AdvertorialLiftup from "./advertorial-liftup.js";
 import "react-image-lightbox/style.css";
 
 const MostReadArticles = React.lazy(() => import('./most-read-articles'))
@@ -131,7 +132,14 @@ class Article extends Component {
               />
             ) : (
               ""
-            )}
+              )}
+	      {this.state.adsAreShown && (
+		<AdvertorialLiftup
+		  uuid={this.props.advertorialLiftups[Math.floor(Math.random()*this.props.advertorialLiftups.length)]}
+		  company="KSF Media"
+		  title="Lorem ipsum dolor sit amet"
+		/>
+	      )}
             {this.state.mostReadArticles.length > 0 ? (
               <Suspense fallback={<div>Laddar ...</div>}>
                 <MostReadArticles
