@@ -53,7 +53,14 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
   const paper = queryParams.paper || "hbl";
   const darkModeEnabled = queryParams.mode === "dark";
 
-  const requests = [articleReq];
+  let advertorialsReq = axios.get(process.env.LETTERA_V4_URL + "/list/active-advertorial?paper=" + paper, {
+    headers: authHeaders,
+    validateStatus: function (httpStatus) {
+      return httpStatus < 400 || httpStatus === 403;
+    },
+  });
+
+  const requests = [articleReq, advertorialsReq];
   // If we have a user id in the headers, let's fetch the user too
   if (_.has(authHeaders, "authuser") && _.has(authHeaders, "authorization")) {
     requests.push(
@@ -115,6 +122,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	    darkModeEnabled={queryParams.mode === "dark"}
 	    queryString={queryString}
 	    paper={paper}
+	    advertorialLiftups={responses[1].data}
 	  />
 	);
 
