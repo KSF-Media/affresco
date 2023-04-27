@@ -98,6 +98,10 @@
     }
 }
 
+triggerbee-widget {
+    grid-area: headline;
+}
+
 .vetrina--product-description {
     text-align: center;
 }
@@ -127,13 +131,18 @@
 }
 
 .vetrina--form {
+    grid-area: beef;
     max-width: 600px;
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
     margin-top: 1em;
     .input-field--container {
 	width: 100%;
     }
-    grid-area: beef;
+
+    triggerbee-widget {
+        grid-area: none;
+    }
 }
 
 .vetrina--checkbox-container {
