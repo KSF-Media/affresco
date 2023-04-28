@@ -32,6 +32,7 @@ class Article extends Component {
       document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
     }
     this.getMostReadArticles();
+    this.getAdvertorialLiftup();
   }
 
   showHighResolutionImage = (imgSrc, caption) => {
@@ -50,6 +51,13 @@ class Article extends Component {
       this.setState({ mostReadArticles: res.data });
     });
   }
+
+    getAdvertorialLiftup() {
+      const advertorialsReq = process.env.LETTERA_V4_URL + "/list/active-advertorial?paper=" + this.props.paper
+      axios(advertorialsReq).then((res) => {
+        this.setState({ advertorialLiftup: res.data[Math.floor(Math.random() * res.data.length)] });
+      });
+    }
 
   render() {
     return (
@@ -134,11 +142,12 @@ class Article extends Component {
               ""
               )}
 	      {this.state.adsAreShown && (
+		this.state.advertorialLiftup && (
 		<AdvertorialLiftup
-		  uuid={this.props.advertorialLiftups[Math.floor(Math.random()*this.props.advertorialLiftups.length)]}
-		  company="KSF Media"
-		  title="Lorem ipsum dolor sit amet"
-		/>
+		  uuid={this.state.advertorialLiftup.uuid}
+		  company={this.state.advertorialLiftup.company}
+		  listTitle={this.state.advertorialLiftup.listTitle}
+		/>)
 	      )}
             {this.state.mostReadArticles.length > 0 ? (
               <Suspense fallback={<div>Laddar ...</div>}>
