@@ -147,6 +147,11 @@ class Article extends Component {
 		  uuid={this.state.advertorialLiftup.uuid}
 		  company={this.state.advertorialLiftup.company}
 		  listTitle={this.state.advertorialLiftup.listTitle}
+                  image={this.state.advertorialLiftup.listImage.thumb
+			 || this.state.advertorialLiftup.mainImage.thumb
+			 || (this.props.paper === "ON" && "https://cdn.ksfmedia.fi/mosaico/on-og-fallback.png")
+			 || (this.props.paper === "VN" && "https://cdn.ksfmedia.fi/mosaico/vn-og-fallback.png")
+			 || "https://cdn.ksfmedia.fi/mosaico/hbl-og-fallback.png"}
 		/>)
 	      )}
             {this.state.mostReadArticles.length > 0 ? (
