@@ -16,7 +16,8 @@ const AdvertorialLiftup = (props) => {
       </div>
       <div className="flex overflow-y-hidden items-center w-full max-h-96">
         <img className="overflow-y-hidden w-auto max-w-full"
-           src={props.image}
+             src={props.image}
+             alt=""
         />
       </div>
       <h2 className="mt-3 text-3xl font-semibold break-words font-robotoslab">
