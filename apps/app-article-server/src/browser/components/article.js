@@ -147,6 +147,7 @@ class Article extends Component {
                   uuid={this.state.advertorialLiftup.uuid}
                   company={this.state.advertorialLiftup.company}
                   listTitle={this.state.advertorialLiftup.listTitle}
+                  darkModeEnabled={this.props.darkModeEnabled}
                   image={this.state.advertorialLiftup.listImage.thumb
                          || this.state.advertorialLiftup.mainImage.thumb
                          || (this.props.paper === "ON" && "https://cdn.ksfmedia.fi/mosaico/on-og-fallback.png")

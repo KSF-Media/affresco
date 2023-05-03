@@ -11,6 +11,11 @@
 }
 
 @font-face {
+  font-family: "Roboto Slab";
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/RobotoSlab-Bold.ttf") format("truetype");
+}
+
+@font-face {
   font-family: "Duplex Sans Bold";
   src: url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Bold.woff2") format("woff2"),
     url("https://cdn.ksfmedia.fi/assets/fonts/Duplex-Sans-Web-Bold.otf") format("opentype");
@@ -1018,4 +1023,68 @@ html iframe {
 
 .caption-xl {
   font-size: 1.3rem;
+}
+
+.adv-link {
+  display: block;
+  padding: 0.75rem;
+  color: black;
+  text-decoration-line: none;
+  background-color: #fff3e6;
+}
+
+.adv-link.darkMode {
+  background-color: #27797e;
+  color: #ffffff;
+}
+
+.adv-annons-container {
+  padding-top: 0.25rem;
+  padding-bottom: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  font-family: "Duplex Serif", ui-serif, Georgia, Cambria, Times, serif;
+}
+
+.adv-annons-text {
+  margin-right: 0.25rem;
+  color: rgb(109, 117, 115);
+  font-family: Roboto, ui-sans-serif, system-ui, -apple-system, Neue, Arial, sans-serif;
+}
+
+.adv-annons-text.darkMode {
+  color: #ffffff;
+}
+
+.adv-annons-company {
+  margin-right: 0.25rem;
+  color: black;
+  font-family: "Duplex Serif", ui-serif, Georgia, Cambria, Times, serif;
+}
+
+.adv-annons-company.darkMode {
+  color: #ffffff;
+}
+
+.adv-image-container {
+  display: flex;
+  overflow-y: hidden;
+  align-items: center;
+  width: 100%;
+  max-height: 24rem;
+}
+
+.adv-image {
+  overflow-y: hidden;
+  width: auto;
+  max-width: 100%;
+}
+
+.adv-title {
+  margin-top: 0.75rem;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  overflow-wrap: break-word;
+  font-family: "Roboto Slab", ui-sans-serif, system-ui, -apple-system, Neue, Arial, sans-serif;
 }
