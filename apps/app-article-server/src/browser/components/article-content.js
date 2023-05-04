@@ -261,8 +261,15 @@ class Content extends Component {
     const $ = cheerio.load(htmlString, null, false)
     const $links = $('a')
     $links.each((i, el) => {
-      const $el = $(el)
-      const urlObj = new URL($el.attr('href'))
+      const $el = $(el);
+
+      // Reporters every now and then don't include protocol in the url,
+      // which URL() fails to handle.
+      let url = $el.attr('href');
+      if(!url.match(/^https?:/)) {
+        url = "https://" + url;
+      }
+      const urlObj = new URL(url)
 
       if(validHostnames.includes(urlObj.hostname) && urlObj.pathname.startsWith('/artikel/')) {
         let linkUuid = urlObj.pathname.slice('/article/'.length)
