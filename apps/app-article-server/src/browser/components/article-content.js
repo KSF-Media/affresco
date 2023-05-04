@@ -266,7 +266,7 @@ class Content extends Component {
       // Reporters every now and then don't include protocol in the url,
       // which URL() fails to handle.
       let url = $el.attr('href');
-      if(!url.match(/^https?::/)) {
+      if(!url.match(/^https?:/)) {
         url = "https://" + url;
       }
       const urlObj = new URL(url)
