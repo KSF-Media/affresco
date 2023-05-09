@@ -8,9 +8,9 @@ import Footer from "./footer";
 import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
 import "react-image-lightbox/style.css";
+import { AdvertorialLiftup } from "./advertorial-liftup.js"
 
 const MostReadArticles = React.lazy(() => import('./most-read-articles'))
-const AdvertorialLiftup = React.lazy(() => import('./advertorial-liftup.js'))
 
 const axios = require("axios");
 var _ = require("lodash");
@@ -32,7 +32,6 @@ class Article extends Component {
       document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
     }
     this.getMostReadArticles();
-    this.getAdvertorialLiftup();
   }
 
   showHighResolutionImage = (imgSrc, caption) => {
@@ -51,13 +50,6 @@ class Article extends Component {
       this.setState({ mostReadArticles: res.data });
     });
   }
-
-    getAdvertorialLiftup() {
-      const advertorialsReq = process.env.LETTERA_V4_URL + "/list/active-advertorial?paper=" + this.props.paper
-      axios(advertorialsReq).then((res) => {
-        this.setState({ advertorialLiftup: res.data[Math.floor(Math.random() * res.data.length)] });
-      });
-    }
 
   render() {
     return (
@@ -142,20 +134,10 @@ class Article extends Component {
               ""
               )}
               {this.state.adsAreShown && (
-                this.state.advertorialLiftup && (
-                <Suspense fallback={<div></div>}>
                   <AdvertorialLiftup
-                    uuid={this.state.advertorialLiftup.uuid}
-                    company={this.state.advertorialLiftup.company}
-                    listTitle={this.state.advertorialLiftup.listTitle}
                     darkModeEnabled={this.props.darkModeEnabled}
-                    image={this.state.advertorialLiftup.listImage.thumb
-                           || this.state.advertorialLiftup.mainImage.thumb
-                           || (this.props.paper === "ON" && "https://cdn.ksfmedia.fi/mosaico/on-og-fallback.png")
-                           || (this.props.paper === "VN" && "https://cdn.ksfmedia.fi/mosaico/vn-og-fallback.png")
-                           || "https://cdn.ksfmedia.fi/mosaico/hbl-og-fallback.png"}
+                    paper={this.props.paper}
                   />
-                </Suspense>)
               )}
             {this.state.mostReadArticles.length > 0 ? (
               <Suspense fallback={<div>Laddar ...</div>}>
