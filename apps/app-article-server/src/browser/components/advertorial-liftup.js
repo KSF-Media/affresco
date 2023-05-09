@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 const axios = require("axios");
 
 export function AdvertorialLiftup({ darkModeEnabled, paper }) {
@@ -29,7 +30,7 @@ export function AdvertorialLiftup({ darkModeEnabled, paper }) {
         )}
       </div>
       <div className="adv-image-container">
-        <img className="adv-image" src={image} alt="" />
+        <LazyLoadImage className={"adv-image"} width="100%" src={image} threshold="200" effect="opacity" alt="" />
       </div>
       <h2 className="adv-title">{advertorial.listTitle}</h2>
     </a>
