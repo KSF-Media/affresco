@@ -8,6 +8,7 @@ import Footer from "./footer";
 import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
 import "react-image-lightbox/style.css";
+import { AdvertorialLiftup } from "./advertorial-liftup.js"
 
 const MostReadArticles = React.lazy(() => import('./most-read-articles'))
 
@@ -131,7 +132,13 @@ class Article extends Component {
               />
             ) : (
               ""
-            )}
+              )}
+              {this.state.adsAreShown && (
+                  <AdvertorialLiftup
+                    darkModeEnabled={this.props.darkModeEnabled}
+                    paper={this.props.paper}
+                  />
+              )}
             {this.state.mostReadArticles.length > 0 ? (
               <Suspense fallback={<div>Laddar ...</div>}>
                 <MostReadArticles
