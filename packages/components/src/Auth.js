@@ -4,9 +4,9 @@
 var saveTokenInCookies_ = false;
 
 export function saveTokenInCookies() {
-    return saveTokenInCookies_;
+  return saveTokenInCookies_;
 }
 
 export function enableCookieLogin() {
-    saveTokenInCookies_ = true;
+  saveTokenInCookies_ = true;
 }

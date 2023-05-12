@@ -6,55 +6,47 @@
 
 // Getters
 export function getRawImpl(node) {
-    if (node && node.raw)
-      return node.raw;
+  if (node && node.raw) return node.raw;
 
-    return null;
+  return null;
 }
 
 export function getDataImpl(node) {
-    if (node && node.data)
-      return node.data;
+  if (node && node.data) return node.data;
 
-    return null;
+  return null;
 }
 
 export function getTypeImpl(node) {
-    if (node && node.type)
-      return node.type;
+  if (node && node.type) return node.type;
 
-    return null;
+  return null;
 }
 
 export function getNameImpl(node) {
-    if (node && node.name)
-      return node.name;
+  if (node && node.name) return node.name;
 
-    return null;
+  return null;
 }
 
 export function getStringAttribImpl(name, node) {
-    if (node && node.attribs)
-      return node.attribs[name];
+  if (node && node.attribs) return node.attribs[name];
 
-    return null;
+  return null;
 }
 
 export function getChildrenImpl(node) {
-    if (node && node.children)
-      return node.children;
+  if (node && node.children) return node.children;
 
-    return null;
+  return null;
 }
 
 export function setStringAttribImpl(name, value, node) {
-    if (node && node.attribs)
-	node.attribs[name] = value;
-    return node;
+  if (node && node.attribs) node.attribs[name] = value;
+  return node;
 }
 
 export function removeAttribImpl(name, node) {
-    if (node && node.attribs)
-	delete node.attribs[name];
-    return node;
+  if (node && node.attribs) delete node.attribs[name];
+  return node;
 }

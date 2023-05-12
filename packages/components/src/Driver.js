@@ -1,13 +1,13 @@
 // Would require something else too if we used web workers
-export const webEnvironment = (typeof window) !== 'undefined';
+export const webEnvironment = typeof window !== "undefined";
 var driver = null;
 
 export function globalDriver() {
-    return driver;
+  return driver;
 }
 
 export function setDriver(d) {
-    return function() {
-	driver = d;
-    }
+  return function () {
+    driver = d;
+  };
 }
