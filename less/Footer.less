@@ -1,88 +1,89 @@
-@import (reference) 'ksf-variables';
-@import (reference) 'ksf-colors';
+@import (reference) "ksf-variables";
+@import (reference) "ksf-colors";
 
 .footer--container {
-    margin-right: auto;
-    margin-left: auto;
-    margin-bottom: 4rem;
-    margin-top: 4rem;
-    text-align: center;
+  margin-right: auto;
+  margin-left: auto;
+  margin-bottom: 4rem;
+  margin-top: 4rem;
+  text-align: center;
 }
 
-.footer--container:before, .footer--container:after {
-    content: " ";
-    display: table;
+.footer--container:before,
+.footer--container:after {
+  content: " ";
+  display: table;
 }
 
 .footer--container:after {
-    clear: both;
+  clear: both;
 }
 
 .footer--container > * {
-    justify-content: center;
-    margin-left: auto;
-    margin-right: auto;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .footer--container > *:first-child {
-    width: 58%;
+  width: 58%;
 }
 
-.footer--container > *:not(:first-child ) {
-    margin-top: 2rem;
-    width: 100%;
-    float: left;
+.footer--container > *:not(:first-child) {
+  margin-top: 2rem;
+  width: 100%;
+  float: left;
 }
 
 .footer--paper-images {
-    a {
-	margin-left: 5em;
-	@media @to-small {
-	    margin-left: 2em;
-	}
-	&:first-child {
-	    margin-left: 0;
-	}
-	img {
-	    opacity: .4;
-	    height: 7vw;
-	    max-height: 40px;
-	}
+  a {
+    margin-left: 5em;
+    @media @to-small {
+      margin-left: 2em;
     }
-    display: flex;
+    &:first-child {
+      margin-left: 0;
+    }
+    img {
+      opacity: 0.4;
+      height: 7vw;
+      max-height: 40px;
+    }
+  }
+  display: flex;
 }
 
 .footer--ksf-address {
-    @media @to-small {
-	display: block;
-    }
-    display: flex;
+  @media @to-small {
+    display: block;
+  }
+  display: flex;
 }
 
 .footer--address-separator {
-    margin-left: 1em;
-    margin-right: 1em;
-    @media @to-small {
-	display: none;
-    }
+  margin-left: 1em;
+  margin-right: 1em;
+  @media @to-small {
+    display: none;
+  }
 }
 
 .footer--ksf-logo {
-    max-width: 100px;
+  max-width: 100px;
 }
 
 .footer--break {
-    border: 0;
-    height: 1px;
-    background: @grey-almostlight;
-    margin-top: 2em;
-    margin-bottom: 2em;
+  border: 0;
+  height: 1px;
+  background: @grey-almostlight;
+  margin-top: 2em;
+  margin-bottom: 2em;
 }
 
 .footer--ksf-address {
-    div {
-	@media @to-small {
-	    margin: .5em;
-	}
+  div {
+    @media @to-small {
+      margin: 0.5em;
     }
+  }
 }

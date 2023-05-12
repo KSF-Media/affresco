@@ -1,78 +1,82 @@
-@import (reference) 'ksf-colors';
+@import (reference) "ksf-colors";
 
 .make-icon(@icon-name) {
-    display: block;
-    width: 30px;
-    min-width: 20px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/@{icon-name}.svg');
-    background-size: 20px;
-    cursor: pointer;
+  display: block;
+  width: 30px;
+  min-width: 20px;
+  height: 30px;
+  background-position: center;
+  background-repeat: no-repeat, repeat;
+  background-image: url("../images/@{icon-name}.svg");
+  background-size: 20px;
+  cursor: pointer;
 }
 
 .check-icon {
-    display: block;
-    width: 14px;
-    height: 14px;
-    background-position: top;
-    background-repeat: no-repeat, repeat;
-    background-image: url('../images/check.svg');
-    background-size: 30px;
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-position: top;
+  background-repeat: no-repeat, repeat;
+  background-image: url("../images/check.svg");
+  background-size: 30px;
 }
 
 .button-green {
-    &:hover {
-        background: @button-color-primary-hover;
-    }
-    &:active {
-        background-color: mix(@button-color-primary, @button-color-primary-hover, 50%);
-        -webkit-box-shadow: inset 0px 0px 5px #060;
-        -moz-box-shadow: inset 0px 0px 5px #060;
-        box-shadow: inset 0px 0px 5px #060;
-        outline: none;
-    }
-    &:disabled {
-	background: grey;
-	cursor: auto;
-    }
-    background: @button-color-primary;
-    color: @white;
-    width: 100%;
-    border: none;
-    border-radius: 5px;
-    padding: 10px;
-    font-weight: 500;
-    cursor: pointer;
+  &:hover {
+    background: @button-color-primary-hover;
+  }
+  &:active {
+    background-color: mix(@button-color-primary, @button-color-primary-hover, 50%);
+    -webkit-box-shadow: inset 0px 0px 5px #060;
+    -moz-box-shadow: inset 0px 0px 5px #060;
+    box-shadow: inset 0px 0px 5px #060;
+    outline: none;
+  }
+  &:disabled {
+    background: grey;
+    cursor: auto;
+  }
+  background: @button-color-primary;
+  color: @white;
+  width: 100%;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .close-icon {
-    .make-icon('icon-close-lg');
+  .make-icon("icon-close-lg");
 }
 
 .edit-icon {
-    .make-icon('edit');
+  .make-icon("edit");
 }
 
 .tiny-spinner {
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #a69e9a;
-    border-radius: 50%;
-    width: 15px;
-    height: 15px;
-    animation: spin 2s linear infinite;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #a69e9a;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  animation: spin 2s linear infinite;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-text {
-    color: red;
+  color: red;
 }
 
 .success-text {
-    color: green;
+  color: green;
 }

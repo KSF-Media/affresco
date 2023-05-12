@@ -1,35 +1,58 @@
-@import (reference) 'ksf-colors';
-@import (reference) 'ksf-variables';
+@import (reference) "ksf-colors";
+@import (reference) "ksf-variables";
 
 @z-index-navbar: 3;
 @nav-box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.1);
 
 .nav--hamburger-button {
-    cursor: pointer;
-    justify-self: end;
+  cursor: pointer;
+  justify-self: end;
 }
 
 .nav--hamburger-stripe {
-    width: 25px;
-    height: 2px;
-    background-color: #333;
-    margin: 6px 0;
+  width: 25px;
+  height: 2px;
+  background-color: #333;
+  margin: 6px 0;
 }
 
 .nav--navbars {
-    position: relative;
+  position: relative;
 }
 
 .nav--nav-container {
-    @media @to-medium { display: none; }
+  @media @to-medium {
+    display: none;
+  }
+  display: grid;
+  grid-template-columns:
+    [margin-left] @page-full-margin
+    [logo] 1fr
+    [logout-limpet] 1fr
+    [display-user] minmax(min-content, auto)
+    [logout-button] minmax(min-content, auto)
+    [margin-right] @page-full-margin;
+  grid-column-gap: 2em;
+  align-items: center;
+  height: 100px;
+  background: @white;
+  width: 100%;
+  position: relative;
+  z-index: @z-index-navbar;
+  @media @from-medium {
+    box-shadow: @nav-box-shadow;
+  }
+}
+
+.nav--hamburger-container {
+  display: none;
+  @media @to-medium {
     display: grid;
     grid-template-columns:
-        [margin-left] @page-full-margin
-        [logo] 1fr
-        [logout-limpet] 1fr
-	[display-user] minmax(min-content, auto)
-        [logout-button] minmax(min-content, auto)
-        [margin-right]  @page-full-margin;
+      [margin-left] @page-small-margin
+      [logo] 1fr
+      [hamburger] 1fr
+      [margin-right] @page-small-margin;
     grid-column-gap: 2em;
     align-items: center;
     height: 100px;
@@ -38,80 +61,61 @@
     position: relative;
     z-index: @z-index-navbar;
     @media @from-medium {
-        box-shadow: @nav-box-shadow;
+      box-shadow: @nav-box-shadow;
     }
-}
-
-.nav--hamburger-container {
-    display: none;
-    @media @to-medium {
-        display: grid;
-        grid-template-columns:
-            [margin-left] @page-small-margin
-            [logo] 1fr
-            [hamburger] 1fr
-            [margin-right] @page-small-margin;
-        grid-column-gap: 2em;
-        align-items: center;
-        height: 100px;
-        background: @white;
-        width: 100%;
-        position: relative;
-        z-index: @z-index-navbar;
-        @media @from-medium {
-            box-shadow: @nav-box-shadow;
-        }
-        @media @to-xsmall {
-            grid-template-columns:
-                [margin-left] @page-xsmall-margin
-                [logo] 1fr
-                [hamburger] 1fr
-                [margin-right] @page-xsmall-margin;
-        }
+    @media @to-xsmall {
+      grid-template-columns:
+        [margin-left] @page-xsmall-margin
+        [logo] 1fr
+        [hamburger] 1fr
+        [margin-right] @page-xsmall-margin;
     }
+  }
 }
 
 .mitt-konto--personating .nav--nav-container {
-    background-color: gold;
+  background-color: gold;
 }
 
 .nav--paper-logo {
-    grid-column-start: logo;
-    align-self: center;
-    height: 38px;
+  grid-column-start: logo;
+  align-self: center;
+  height: 38px;
 }
 
 .nav--logout-limpet {
-    grid-column-start: logout-limpet;
-    justify-self: end;
+  grid-column-start: logout-limpet;
+  justify-self: end;
 }
 
 .nav--nav-container {
-    .nav--display-user img {
-	width: 24px;
-	vertical-align: bottom;
-	margin-right: 5px;
-    }
+  .nav--display-user img {
+    width: 24px;
+    vertical-align: bottom;
+    margin-right: 5px;
+  }
 
-    font-weight: 400;
-    grid-column-start: display-user;
-    justify-self: end;
+  font-weight: 400;
+  grid-column-start: display-user;
+  justify-self: end;
 }
 
 .nav--logout-button {
-    grid-column-start: logout-button;
-    justify-self: end; // Horizontal position on grid
-    img { width: 35px; }
+  grid-column-start: logout-button;
+  justify-self: end; // Horizontal position on grid
+  img {
+    width: 35px;
+  }
 
-    display: flex;
-    align-items: center; // Vertical position on flexbox
+  display: flex;
+  align-items: center; // Vertical position on flexbox
 
-    font-size: 1.2em;
-    font-weight: 400;
-    cursor: pointer;
+  font-size: 1.2em;
+  font-weight: 400;
+  cursor: pointer;
 }
 
 a .nav--logout-button {
-    color: @dark-text;
-    text-decoration: inherit;
+  color: @dark-text;
+  text-decoration: inherit;
 }

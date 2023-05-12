@@ -1,10 +1,10 @@
-@import (reference) 'ksf-colors';
-@import (reference) 'ksf-variables';
-@import 'ksf-fonts';
-@import 'Components';
+@import (reference) "ksf-colors";
+@import (reference) "ksf-variables";
+@import "ksf-fonts";
+@import "Components";
 
 body {
-  font-family: 'Duplex Sans', sans-serif;
+  font-family: "Duplex Sans", sans-serif;
   font-weight: 300;
   background-color: @grey-light;
   margin: 0;
@@ -35,7 +35,7 @@ dd {
 h1,
 .mitt-konto--heading {
   color: @grey-dark;
-  font-family: 'Duplex Serif Web', serif;
+  font-family: "Duplex Serif Web", serif;
   font-weight: 700;
   letter-spacing: -0.015em;
   margin-bottom: 10px;
@@ -48,7 +48,7 @@ h2.mitt-konto--heading {
 
 .mitt-konto--component-heading {
   color: @grey-mediumlight;
-  font-family: 'Roboto', serif;
+  font-family: "Roboto", serif;
 }
 
 .mitt-konto--frontpage {
@@ -56,7 +56,7 @@ h2.mitt-konto--heading {
   grid-template-rows: 70px auto auto auto auto auto;
   grid-template-columns: 2fr 1fr 345px 1fr 2fr;
 
-  background-image: url('../images/shield.png');
+  background-image: url("../images/shield.png");
   background-repeat: no-repeat;
   background-size: 280px 380px;
   background-position: 50% 30%;
@@ -122,7 +122,7 @@ h2.mitt-konto--heading {
         background-size: 100%;
         width: @check-size;
         height: @check-size;
-        background-image: url('../images/checkmark-round.png');
+        background-image: url("../images/checkmark-round.png");
       }
 
       .text {
@@ -147,17 +147,21 @@ h2.mitt-konto--heading {
 }
 
 .mitt-konto--main-container-container {
-    margin-top: 2rem;
-    margin-bottom: 4rem;
+  margin-top: 2rem;
+  margin-bottom: 4rem;
 }
 
-.mitt-konto--main-container-container:before, .mitt-konto--main-container-container:after, .mitt-konto--main-container:before, .mitt-konto--main-container:after {
-    content: " ";
-    display: table;
+.mitt-konto--main-container-container:before,
+.mitt-konto--main-container-container:after,
+.mitt-konto--main-container:before,
+.mitt-konto--main-container:after {
+  content: " ";
+  display: table;
 }
 
-.mitt-konto--main-container:after, .mitt-konto--main-container-container:after {
-    clear: both;
+.mitt-konto--main-container:after,
+.mitt-konto--main-container-container:after {
+  clear: both;
 }
 
 .mitt-konto--main-container {
@@ -174,7 +178,7 @@ h2.mitt-konto--heading {
 
 .mitt-konto--container {
   position: relative;
-  clear: both
+  clear: both;
 }
 
 .mitt-konto--loading {
@@ -186,12 +190,12 @@ h2.mitt-konto--heading {
   background: @grey-light;
   z-index: @loading;
   .mitt-konto--loading-image-container {
-      clear: both;
-      margin-left: auto;
-      margin-right: auto;
+    clear: both;
+    margin-left: auto;
+    margin-right: auto;
   }
   .mitt-konto--loading-image {
-    background-image: url('../images/loader-gif.gif');
+    background-image: url("../images/loader-gif.gif");
     background-size: 32px 32px;
     width: 32px;
     height: 32px;
@@ -223,17 +227,17 @@ h2.mitt-konto--heading {
 }
 
 .mitt-konto--cancel-subscription-icon-container {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }
 
 .mitt-konto--cancel-subscription-icon {
-  .icon-action--format-icon('ui-cross-2.svg');
+  .icon-action--format-icon("ui-cross-2.svg");
 }
 
 .mitt-konto--backwards {
   background-position: center;
   background-repeat: no-repeat, repeat;
-  background-image: url('../images/backwards.svg');
+  background-image: url("../images/backwards.svg");
   background-size: 120px;
   width: 140px;
   height: 40px;
@@ -320,7 +324,7 @@ h2.mitt-konto--heading {
 }
 
 .mitt-konto--expired-subscription {
-    opacity: 0.7;
+  opacity: 0.7;
 }
 
 .mitt-konto--note {
@@ -333,56 +337,57 @@ h2.mitt-konto--heading {
 }
 
 .mitt-konto--date-picker-container {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 .mitt-konto--form-submit-container {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }
 
-.mitt-konto--form-submit-container:before, .mitt-konto--form-submit-container:after {
-    content: " ";
-    display: table;
+.mitt-konto--form-submit-container:before,
+.mitt-konto--form-submit-container:after {
+  content: " ";
+  display: table;
 }
 
 .mitt-konto--form-submit-container:after {
-    clear: both;
+  clear: both;
 }
 
 .mitt-konto--column {
-    float: left;
-    box-sizing: border-box;
-    width: 50%;
-    @media @to-medium {
-	width: 100%;
-    }
+  float: left;
+  box-sizing: border-box;
+  width: 50%;
+  @media @to-medium {
+    width: 100%;
+  }
 }
 
 .mitt-konto--alert {
-    width: 33.33%;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
+  width: 33.33%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
 }
 
 .news--container {
-    clear: both;
+  clear: both;
 }
 
 .mitt-konto--closable-row {
-    >*:first-child {
-	width: 91.6%;
-	float: left;
-	box-sizing: border-box;
-    }
-    >*:last-child {
-	width: 8.3%;
-	display: flex;
-    }
+  > *:first-child {
+    width: 91.6%;
+    float: left;
+    box-sizing: border-box;
+  }
+  > *:last-child {
+    width: 8.3%;
+    display: flex;
+  }
 }
 
 .delivery-reclamation--estimated-time {
-    margin-bottom: 1ex;
+  margin-bottom: 1ex;
 }
 
 @media print {
@@ -412,7 +417,7 @@ h2.mitt-konto--heading {
     align-items: center;
     justify-content: space-around;
 
-    >div {
+    > div {
       width: 15px;
     }
   }

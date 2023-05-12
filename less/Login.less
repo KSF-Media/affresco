@@ -1,110 +1,110 @@
-@import (reference) 'ksf-colors';
-@import 'ksf-fonts';
-@fb-logo: '../images/fb-logo.svg';
-@google-logo: '../images/google-logo.svg';
+@import (reference) "ksf-colors";
+@import "ksf-fonts";
+@fb-logo: "../images/fb-logo.svg";
+@google-logo: "../images/google-logo.svg";
 
 .underline {
-    a {
-	text-decoration: underline;
-    }
+  a {
+    text-decoration: underline;
+  }
 }
 .login--email-input {
-	margin-bottom: 10px;
-	&:before {
-	    background-image: url('../images/icon-mail-white.png');
-	    background-size: 16px 11px;
-	}
+  margin-bottom: 10px;
+  &:before {
+    background-image: url("../images/icon-mail-white.png");
+    background-size: 16px 11px;
+  }
 }
 .login-form {
-    font-family: 'Duplex Sans', sans-serif;
-    font-weight: 300;
-    max-width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 1rem;
-    a {
-	color: @link-color;
-	text-decoration: none;
-	&:hover {
-	    transition: color 0.2s linear;
-	    color: @grey-mediumdark;
-	}
+  font-family: "Duplex Sans", sans-serif;
+  font-weight: 300;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 1rem;
+  a {
+    color: @link-color;
+    text-decoration: none;
+    &:hover {
+      transition: color 0.2s linear;
+      color: @grey-mediumdark;
     }
-    form {
-	padding-bottom: 1rem;
-    }
+  }
+  form {
+    padding-bottom: 1rem;
+  }
 
-    a.login--important {
-	text-decoration: underline;
-    }
+  a.login--important {
+    text-decoration: underline;
+  }
 }
 
 .login--error-msg {
-    text-align: center;
+  text-align: center;
+  color: red;
+  a {
     color: red;
-    a {
-	color: red;
-	text-decoration: underline;
-    }
-    padding-bottom: 0.5rem;
+    text-decoration: underline;
+  }
+  padding-bottom: 0.5rem;
 }
 
 .login--cancel {
-    text-decoration: underline;
-    text-align: center;
+  text-decoration: underline;
+  text-align: center;
 }
 
 .login--merge-account {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .format-some-button(@bg-color; @bg-color-hover; @image-url) {
-    .button--blank-button {
-	background-color: @bg-color;
-	background-image: url(@image-url) !important;
-	background-size: 20px;
-	background-position: 20px center;
-	background-repeat: no-repeat;
-	&:hover {
-	    background-color: @bg-color-hover !important;
-	}
+  .button--blank-button {
+    background-color: @bg-color;
+    background-image: url(@image-url) !important;
+    background-size: 20px;
+    background-position: 20px center;
+    background-repeat: no-repeat;
+    &:hover {
+      background-color: @bg-color-hover !important;
     }
+  }
 }
 
 .login--some-button {
-    margin-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .login--some-button-fb {
-    .format-some-button(@color-facebook; @color-facebook-hover; @fb-logo);
+  .format-some-button(@color-facebook; @color-facebook-hover; @fb-logo);
 }
 
 .login--some-button-google {
-    .format-some-button(@color-googleplus; @color-googleplus-hover; @google-logo);
+  .format-some-button(@color-googleplus; @color-googleplus-hover; @google-logo);
 }
 
 .login--some-disabled-note {
-    text-align: center;
-    margin-bottom: 1em;
-    a {
-	text-decoration: underline;
-    }
+  text-align: center;
+  margin-bottom: 1em;
+  a {
+    text-decoration: underline;
+  }
 }
 
 .login--login-social-media-text {
-    display: block;
-    margin-top: 2em;
-    margin-bottom: 1em;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: underline;
+  display: block;
+  margin-top: 2em;
+  margin-bottom: 1em;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: underline;
 }
 
 .login--loginLinks > * {
-    text-align: center;
+  text-align: center;
 }
 
 .login--loginLinks > *:not(:first-child) {
-    padding-top: 0.5rem;
+  padding-top: 0.5rem;
 }

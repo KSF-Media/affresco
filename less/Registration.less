@@ -1,58 +1,60 @@
-@import (reference) 'ksf-colors';
-@import (reference) 'ksf-variables';
-@icon-triangle-down: '../images/icon-triangle-down.svg';
+@import (reference) "ksf-colors";
+@import (reference) "ksf-variables";
+@icon-triangle-down: "../images/icon-triangle-down.svg";
 
 .registration--form-title {
-    margin-bottom: 1em;
-    text-align: center;
+  margin-bottom: 1em;
+  text-align: center;
 }
 
 .registration--container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(6, auto);
-    grid-column-gap: 20px;
-    grid-row-gap: auto;
-    @media @to-medium {
-	margin-left: 1em;
-	margin-right: 1em;
-	grid-template-columns: 1fr;
-    }
-    @media @to-small {
-	margin-left: 2em;
-	margin-right: 2em;
-    }
-    .input-field--container {
-	margin-top: 1em;
-    }
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(6, auto);
+  grid-column-gap: 20px;
+  grid-row-gap: auto;
+  @media @to-medium {
+    margin-left: 1em;
+    margin-right: 1em;
+    grid-template-columns: 1fr;
+  }
+  @media @to-small {
+    margin-left: 2em;
+    margin-right: 2em;
+  }
+  .input-field--container {
+    margin-top: 1em;
+  }
 }
 
 .registration--create-button {
-    &:disabled { background: grey }
-    background: green;
-    color: @white;
-    width: 100%;
-    border: none;
-    border-radius: 5px;
-    padding: 10px;
-    font-weight: 500;
+  &:disabled {
+    background: grey;
+  }
+  background: green;
+  color: @white;
+  width: 100%;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  font-weight: 500;
 }
 
 .registration--accept-terms {
-    text-align: left;
+  text-align: left;
 }
 
 .registration--invalid-form-generic-message {
-    color: red;
+  color: red;
 }
 
 .registration--submit {
-    grid-column-start: 2;
-    @media @to-medium {
-	grid-column-start: 1;
-    }
+  grid-column-start: 2;
+  @media @to-medium {
+    grid-column-start: 1;
+  }
 }
 
 .registration--submit > *:not(:first-child) {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }

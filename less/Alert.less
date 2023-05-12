@@ -1,4 +1,4 @@
-@import (reference) 'ksf-colors';
+@import (reference) "ksf-colors";
 
 .alert {
   width: 100%;
@@ -17,10 +17,18 @@
   border-bottom-style: solid;
   border-bottom-width: 10px;
 
-  &.alert--success { border-bottom-color: @alert-success; }
-  &.alert--info    { border-bottom-color: @alert-info;    }
-  &.alert--warning { border-bottom-color: @alert-warning; }
-  &.alert--danger  { border-bottom-color: @alert-danger;  }
+  &.alert--success {
+    border-bottom-color: @alert-success;
+  }
+  &.alert--info {
+    border-bottom-color: @alert-info;
+  }
+  &.alert--warning {
+    border-bottom-color: @alert-warning;
+  }
+  &.alert--danger {
+    border-bottom-color: @alert-danger;
+  }
 
   .alert__title {
     font-weight: 400;
