@@ -87,10 +87,10 @@ const ArticleDetails = (props) => {
                             style={{
                               backgroundImage:
                                 author.image && author.image.includes("imengine")
-                                ? `url(${author.image + "?width=740&height=850&function=hardcrop"})`
-                                : author.image
+                                  ? `url(${author.image + "?width=740&height=850&function=hardcrop"})`
+                                  : author.image
                                   ? `url(${author.image})`
-                                  : "none"
+                                  : "none",
                             }}
                           ></div>
                         </div>

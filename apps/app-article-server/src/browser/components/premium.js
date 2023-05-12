@@ -7,10 +7,10 @@ const PremiumBox = (props) => {
       <br />
       <p>En del av vårt material är endast tillgängligt för våra prenumeranter.</p>
       <p className="cta-login-existing">
-	Redan kund?{" "}
-	<a onClick={(e) => showLogin(e)} href={"#"}>
-	  Logga in
-	</a>
+        Redan kund?{" "}
+        <a onClick={(e) => showLogin(e)} href={"#"}>
+          Logga in
+        </a>
       </p>
     </div>
   );
