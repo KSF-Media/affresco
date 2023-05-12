@@ -11,7 +11,7 @@ export function loadGapi_(args) {
   } else {
     loadGapi(args);
   }
-};
+}
 
 function loadGapi(args) {
   gapi.load("auth2", function () {
@@ -68,9 +68,9 @@ export function isSignedIn_() {
     return auth2.isSignedIn.get();
   }
   return false;
-};
+}
 
 export function signOut_() {
   var auth2 = gapi.auth2.getAuthInstance();
   return auth2.signOut();
-};
+}
