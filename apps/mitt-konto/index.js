@@ -8,9 +8,7 @@ React.createClass = createReactClass;
 var Main = require("./output/MittKonto.Main/index.js");
 
 function main() {
-  const myComponent = (
-    <Main.jsApp />
-  );
+  const myComponent = <Main.jsApp />;
 
   ReactDOM.render(myComponent, document.getElementById("app"));
 }
