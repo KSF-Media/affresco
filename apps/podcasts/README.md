@@ -1,9 +1,11 @@
 # Podcasts
 
 ## DEV Setup
+
 `yarn install`
 
 ## DEV run
+
 Get the user id from the podcasts you want to include in this app from Soundcloud.
 
 Add the ids in `.env` separated by comma, like  
@@ -16,4 +18,5 @@ Run dev server
 `yarn start`
 
 ## Build bundle
+
 `yarn build`
